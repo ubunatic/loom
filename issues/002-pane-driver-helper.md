@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 002 — Ship an exported pane-driver helper
 
-**Status:** Open
+**Status:** Done in loom (2026-07-04) — consumer cutover tracked in 004
 
 **Priority:** P2 — quality-of-life for consumers; not strictly release-blocking
 
@@ -41,16 +41,22 @@ This requires promoting uzu's `paneable` interface (`ContentHeight`, `Nav`,
 
 ## Tasks
 
-- [ ] Define exported `Paneable` interface in loom.
-- [ ] Add `RunPane` (port `uzu/main.go:runPane`).
-- [ ] Ensure terminal restore on error/signal/panic is handled or clearly
-  documented as the caller's responsibility.
-- [ ] Update README example to use `RunPane`.
+- [x] Define exported `Paneable` interface in loom (`driver.go`).
+- [x] Add `RunPane` (`driver.go`). Signature landed as
+  `RunPane(w Paneable) (item Item, ok bool, nav Nav, err error)` — the extra
+  `ok` preserves `Selected()`'s abort/select distinction (a zero `Item` alone is
+  ambiguous when an item legitimately has an empty `Name`).
+- [x] Terminal restore on error/signal/panic: **loom owns it.** `Pane` installs
+  a SIGINT/SIGTERM handler that restores and exits, and `Pane.Run` restores on
+  panic before re-panicking (`pane.go`). `RunPane` always `Close()`s the pane
+  before returning. No caller wiring required.
+- [x] Update README example to use `RunPane`.
 - [ ] uzu/uman switch their local helper to `loom.RunPane` (relates to 004 and
-  uman issue 005).
+  uman issue 005) — happens in those repos after the tag.
 
-## Open questions
+## Resolved questions
 
-- Should loom own the signal/panic terminal-restore handlers, or leave that to
-  the consuming binary? (uzu currently owns them in `main.go`.) Leaning: loom
-  offers a `Restore()` / deferred cleanup, consumer wires the signal handler.
+- Should loom own the signal/panic terminal-restore handlers? **Yes — it already
+  does**, via `Pane.installSignalHandler` and the `recover` in `Pane.Run`. The
+  earlier lean toward a caller-wired `Restore()` is unnecessary; the extraction
+  already carried uzu's handlers into `Pane`.

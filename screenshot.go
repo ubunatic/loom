@@ -20,6 +20,9 @@ func Render(root Widget, cols, rows int) []string {
 
 // ScreenshotScript turns rendered ANSI rows into a minimal, self-printing POSIX
 // shell script: running it replays the captured frame with its original colors.
+//
+// It is a testing/debugging utility (pair it with Render to capture a frame
+// without a terminal), not part of the interactive widget API.
 // Each row is emitted as a single-quoted argument to one printf, with ESC bytes
 // written as \033 and embedded single quotes escaped, so the file stays plain
 // 7-bit text with no raw control characters. The comment is placed in a header

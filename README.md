@@ -36,6 +36,21 @@ import "codeberg.org/ubunatic/loom"
 choice := loom.NewChoice(items)
 choice.Prompt = ":pick> "
 
+// RunPane opens a pane sized to the widget, runs it, and always closes the
+// pane (restoring the terminal) before returning the selection.
+item, ok, _, err := loom.RunPane(choice)
+if err != nil {
+	return err
+}
+if ok {
+	fmt.Println(item.Name)
+}
+```
+
+If you need finer control, drive the pane yourself — always `Close` before
+printing to stdout:
+
+```go
 pane, err := loom.New(choice.ContentHeight())
 if err != nil {
 	return err
@@ -44,9 +59,6 @@ err = pane.Run(choice)
 pane.Close() // always close before printing to stdout
 item, ok := choice.Selected()
 ```
-
-> `uzu` wraps this open/run/close dance in a small `runPane` helper. loom does
-> not yet ship one — see [`issues/002`](issues/002-pane-driver-helper.md).
 
 ## Dependencies
 

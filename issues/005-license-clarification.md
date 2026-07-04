@@ -5,9 +5,15 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 005 — Confirm AGPL is the intended license for a shared library
 
-**Status:** Open — needs a decision before the tag
+**Status:** Resolved — keep AGPL-3.0-or-later (2026-07-04)
 
 **Priority:** P1 — licensing is hard to change after downstreams adopt
+
+## Decision
+
+**Option 1 — keep `AGPL-3.0-or-later`.** loom is internal glue for the author's
+own AGPL tools (uman/uzu); no non-AGPL importer is expected. No SPDX header or
+`REUSE.toml` changes are needed. Unblocks the v0.1.0 tag (001).
 
 ## Problem
 

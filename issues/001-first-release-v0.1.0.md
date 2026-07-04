@@ -27,12 +27,13 @@ widget library instead of reaching into `uzu/loom`. Consumers need a tagged,
 ## Remaining before tagging
 
 - [ ] Create the repository on Codeberg (`ubunatic/loom`) and push `main`.
-- [ ] Resolve blocking issues: 002 (driver helper), 003 (API audit), 005
-  (license). 004 (uzu migration) can follow the tag.
-- [ ] `go vet ./...` clean.
-- [ ] Decide versioning: start at `v0.1.0` (pre-1.0, API may still move) —
+  **(User action — Codeberg does not auto-create on push.)**
+- [x] Resolve blocking issues: 002 (driver helper, done), 003 (API audit, done),
+  005 (license — keep AGPL, decided). 004 (uzu migration) follows the tag.
+- [x] `go vet ./...` clean (also `go build`/`go test` green).
+- [x] Decide versioning: start at `v0.1.0` (pre-1.0, API may still move) —
   consistent with uman/uzu which are both `v0.1.x`.
-- [ ] Tag `v0.1.0` and push the tag.
+- [ ] Tag `v0.1.0` and push the tag. **(User action — needs the Codeberg repo.)**
 - [ ] Smoke-test consumption from a scratch module: `go get
   codeberg.org/ubunatic/loom@v0.1.0` then import + build.
 
