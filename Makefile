@@ -1,7 +1,10 @@
 # SPDX-FileCopyrightText: 2026 Uwe Jugel
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-.PHONY: ⚙️  # make all targets phony
+.PHONY: ⚙️ 🤖  # ⚙️ = manual/once, 🤖 = managed
+_prim := \033[36m
+_rst  := \033[0m
+
 
 help: ⚙️  ## show this help
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | \
