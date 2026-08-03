@@ -67,8 +67,9 @@ Intentionally minimal:
 
 ## Status
 
-Freshly extracted from `uzu`. See [`issues/`](issues/) for the work remaining
-before the first tagged release.
+Released as `v0.1.0` and consumed by [`uzu`](https://codeberg.org/ubunatic/uzu)
+through the public module proxy. Pre-1.0: the API may still move. See
+[`issues/`](issues/) for what is open.
 
 ## License
 

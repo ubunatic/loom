@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 001 — Cut the first release (v0.1.0)
 
-**Status:** Done — v0.1.0 tagged and pushed; one doc follow-up left (see below)
+**Status:** Done — v0.1.0 tagged and pushed; README refreshed 2026-08-04
 
 **Priority:** P1 — the goal this repo exists for
 
@@ -42,11 +42,10 @@ widget library instead of reaching into `uzu/loom`. Consumers need a tagged,
 
 ## Follow-up (2026-08-04)
 
-- [ ] **`README.md` "Status" is stale.** It still reads "Freshly extracted from
-  `uzu`. See `issues/` for the work remaining before the first tagged release."
-  — untrue since the tag landed. Same for this issue index's header, which
-  frames every issue as pre-release work. Replace with the actual state:
-  released `v0.1.0`, pre-1.0, API may still move.
+- [x] **`README.md` "Status" was stale** — it still described the release as
+  pending. Now states the actual position: released `v0.1.0`, consumed by uzu
+  through the public proxy, pre-1.0 so the API may still move. The issue index
+  header was rewritten at the same time.
 
 ## Open questions
 
