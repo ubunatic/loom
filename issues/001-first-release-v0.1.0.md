@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 001 — Cut the first release (v0.1.0)
 
-**Status:** Open
+**Status:** Done — v0.1.0 tagged and pushed; one doc follow-up left (see below)
 
 **Priority:** P1 — the goal this repo exists for
 
@@ -26,21 +26,32 @@ widget library instead of reaching into `uzu/loom`. Consumers need a tagged,
 
 ## Remaining before tagging
 
-- [ ] Create the repository on Codeberg (`ubunatic/loom`) and push `main`.
-  **(User action — Codeberg does not auto-create on push.)**
+- [x] Create the repository on Codeberg (`ubunatic/loom`) and push `main`.
+  Public and reachable.
 - [x] Resolve blocking issues: 002 (driver helper, done), 003 (API audit, done),
   005 (license — keep AGPL, decided). 004 (uzu migration) follows the tag.
 - [x] `go vet ./...` clean (also `go build`/`go test` green).
 - [x] Decide versioning: start at `v0.1.0` (pre-1.0, API may still move) —
   consistent with uman/uzu which are both `v0.1.x`.
-- [ ] Tag `v0.1.0` and push the tag. **(User action — needs the Codeberg repo.)**
-- [ ] Smoke-test consumption from a scratch module: `go get
-  codeberg.org/ubunatic/loom@v0.1.0` then import + build.
+- [x] Tag `v0.1.0` and push the tag. Confirmed 2026-08-04:
+  `git ls-remote --tags origin` → `refs/tags/v0.1.0` (`0600f48`).
+- [x] Smoke-test consumption from a scratch module. Superseded by a stronger
+  proof: `uzu/go.mod` requires `codeberg.org/ubunatic/loom v0.1.0` and
+  `uzu/go.sum` carries real module-proxy hashes for it, so the tag resolves and
+  builds through the public proxy.
+
+## Follow-up (2026-08-04)
+
+- [ ] **`README.md` "Status" is stale.** It still reads "Freshly extracted from
+  `uzu`. See `issues/` for the work remaining before the first tagged release."
+  — untrue since the tag landed. Same for this issue index's header, which
+  frames every issue as pre-release work. Replace with the actual state:
+  released `v0.1.0`, pre-1.0, API may still move.
 
 ## Open questions
 
-- Does Codeberg need the repo created via the web UI / API first, or will a push
-  to a non-existent repo be rejected? (Codeberg does **not** auto-create on
-  push — the repo must exist first.)
-- Any CI on Codeberg (Woodpecker) desired for the release, or manual tag for
-  now?
+- ~~Does Codeberg need the repo created via the web UI / API first?~~ Answered:
+  Codeberg does **not** auto-create on push — the repo must exist first. It
+  now does.
+- Any CI on Codeberg (Woodpecker) desired for future releases, or manual tag
+  for now? Still open.
