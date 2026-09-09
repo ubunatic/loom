@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 023 — Add negative schema controls and column-value validation for box rows
 
-**Status**: Open
+**Status**: Closed — added comprehensive negative schema controls for rows in validate-spec.py
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Schema / Validation
@@ -23,13 +23,13 @@ With the addition of declarative `rows` in commit `c19f226`, schema definitions 
 
 ## Acceptance criteria
 
-- [ ] Extend [`scripts/validate-spec.py`](../scripts/validate-spec.py) with negative controls for `rows`:
+- [x] Extend [`scripts/validate-spec.py`](../scripts/validate-spec.py) with negative controls for `rows`:
   - invalid alignment enum (e.g. `align: center`),
   - non-positive column width (`width: 0` or negative),
   - negative gap (`gap: -1`),
   - unknown fields under `rows` and `columns` items (confirming `additionalProperties: false`).
-- [ ] Confirm that `monitor.schema.json` rejects these configurations independently of Go code.
-- [ ] Ensure `make validate-spec` passes all positive and negative assertions.
+- [x] Confirm that `monitor.schema.json` rejects these configurations independently of Go code.
+- [x] Ensure `make validate-spec` passes all positive and negative assertions.
 
 ## Verification
 
@@ -38,3 +38,16 @@ Run `make validate-spec` (and `python3 scripts/validate-spec.py`) and verify tha
 ## Scope limits
 
 Limited to JSON Schema definitions in `spec/schemas/` and Python validation in `scripts/validate-spec.py`. Does not change Go runtime behavior.
+
+## Delivery evidence
+
+1. Added 7 negative control probes to `scripts/validate-spec.py`:
+   - `invalid_align`: verifies `align: center` is rejected
+   - `zero_column_width`: verifies `width: 0` is rejected
+   - `negative_column_width`: verifies `width: -1` is rejected
+   - `negative_gap`: verifies `gap: -1` is rejected
+   - `unknown_rows_field`: verifies unknown property under `rows` is rejected
+   - `unknown_column_field`: verifies unknown property under column items is rejected
+   - `non_string_value`: verifies non-string value entries are rejected
+2. Registered `testdata/fixtures/empty-shell.yaml` in `pairs` to ensure the empty shell is validated against `monitor.schema.json`.
+3. `make validate-spec` passes with all negative controls confirmed.

@@ -19,6 +19,7 @@ def main():
         ("spec/box.yaml", "spec/schemas/box.schema.json"),
         ("examples/monitor/spec/watch.yaml", "spec/schemas/watch.schema.json"),
         ("examples/monitor/spec/monitor.yaml", "spec/schemas/monitor.schema.json"),
+        ("testdata/fixtures/empty-shell.yaml", "spec/schemas/monitor.schema.json"),
     )
     for document_path, schema_path in pairs:
         schema = json.loads((root / schema_path).read_text())
@@ -45,6 +46,36 @@ def main():
                     invalid["pane"] = invalid["view"]
                 if validator.is_valid(invalid):
                     raise RuntimeError(f"{schema_path}: accepts {change}")
+            box = document["view"]["frame"]["boxes"][0]
+            if "rows" in box:
+                for change in (
+                    "invalid_align",
+                    "zero_column_width",
+                    "negative_column_width",
+                    "negative_gap",
+                    "unknown_rows_field",
+                    "unknown_column_field",
+                    "non_string_value",
+                ):
+                    invalid = copy.deepcopy(document)
+                    rbox = invalid["view"]["frame"]["boxes"][0]
+                    rows = rbox["rows"]
+                    if change == "invalid_align":
+                        rows["columns"][0]["align"] = "center"
+                    elif change == "zero_column_width":
+                        rows["columns"][0]["width"] = 0
+                    elif change == "negative_column_width":
+                        rows["columns"][0]["width"] = -1
+                    elif change == "negative_gap":
+                        rows["gap"] = -1
+                    elif change == "unknown_rows_field":
+                        rows["unknown_field"] = True
+                    elif change == "unknown_column_field":
+                        rows["columns"][0]["unknown_field"] = True
+                    elif change == "non_string_value":
+                        rows["values"][0][0] = 123
+                    if validator.is_valid(invalid):
+                        raise RuntimeError(f"{schema_path}: accepts {change}")
         print(f"validated {document_path} (including negative controls)")
 
 
