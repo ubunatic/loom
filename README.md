@@ -28,6 +28,15 @@ the same widgets and look/feel.
 Declarative layouts (`.loom.yaml`) are supported via `yaml.go`
 (`BuildWidget` / `ParseYAML`, Router, ASCII grids).
 
+A [static monitor example](examples/monitor/README.md) declares a title bar,
+two empty boxes, and a status bar in embedded YAML. Run it without a TTY:
+
+```sh
+GOWORK=off go run ./examples/monitor
+```
+
+This is the first dashboard slice; watch and responsive wrapping follow later.
+
 ## Usage
 
 ```go

@@ -20,8 +20,9 @@ dashboard and the Voxi monitor.
 
 ## Assessment against code and backlog
 
-Assessed 2026-09-09. Loom is currently an inline widget library, not yet the
-declarative monitor described here. Reuse its working primitives incrementally:
+Assessed 2026-09-09. The findings below describe the planning baseline before
+ticket 006. Stage 1 has since shipped the static shell, initial schemas, and
+YAML root/order corrections; later monitor capabilities remain open.
 
 - [`yaml.go`](../yaml.go) already builds widgets and routes views without a
   terminal, but is a narrow widget factory: `StyleName` and `OnChange` are
@@ -62,8 +63,9 @@ Reuse is evidenced above; no measured cost-savings percentage is established.
 
 ### Ticket sequencing
 
-**Now:** Stage 1, including minimal schema and geometry coverage.
-**Next:** Stages 2–5, proving independent redraw, responsive layout, controls,
+**Shipped:** Stage 1, including minimal schema and geometry coverage.
+**Now:** Stage 2, establishing clock collection and independent redraw.
+**Next:** Stages 3–5, proving responsive layout, controls,
 and the full geometry gate before complex content. **Later:** Stages 6–9 prove
 both simulated targets, then Stages 10–11 introduce external sources and explore
 declarative wiring. Each stage should leave a runnable example and deterministic
@@ -85,6 +87,12 @@ the target document's nested `go.mod` is illustrative, not a requirement.
 | 11 — Declarative source prototype | [019](../issues/019-evaluate-declarative-source-and-action-wiring.md) |
 
 ## Stage 1 — Static monitor shell
+
+Implemented in ticket 006. Run `GOWORK=off go run ./examples/monitor`;
+see the [example and contract](../examples/monitor/README.md). The shell uses
+declared dimensions, printable ASCII chrome/text, and spec-defined borders.
+Schema validation, existing Go tests, baseline geometry tests, and a no-TTY
+smoke run pass. This does not complete the broader Stage 5 visual gate.
 
 Build the smallest useful Loom application in show-once mode.
 

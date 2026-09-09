@@ -1,0 +1,17 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom box border",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical", "title_prefix", "title_suffix"],
+  "properties": {
+    "top_left": {"type": "string", "enum": ["┌", "╭", "+"]},
+    "top_right": {"type": "string", "enum": ["┐", "╮", "+"]},
+    "bottom_left": {"type": "string", "enum": ["└", "╰", "+"]},
+    "bottom_right": {"type": "string", "enum": ["┘", "╯", "+"]},
+    "horizontal": {"type": "string", "enum": ["─", "-"]},
+    "vertical": {"type": "string", "enum": ["│", "|"]},
+    "title_prefix": {"type": "string", "pattern": "^[ -~]*$"},
+    "title_suffix": {"type": "string", "pattern": "^[ -~]*$"}
+  }
+}

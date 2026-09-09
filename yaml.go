@@ -58,6 +58,10 @@ type YamlView struct {
 	MaxW     int                    `yaml:"max_width"`
 	Grid     string                 `yaml:"grid"`
 	Elements map[string]YamlElement `yaml:"elements"`
+	Order    []string               `yaml:"order"`
+	Frame    *Frame                 `yaml:"frame"`
+	// OnKey is retained for legacy documents; routing still uses Widget.HandleKey.
+	OnKey map[string]string `yaml:"on_key"`
 }
 
 // YamlConfig is the top-level container for the Loom YAML configuration.
@@ -70,10 +74,29 @@ type YamlConfig struct {
 
 // RootView resolves the entrypoint layout configuration.
 func (c *YamlConfig) RootView() (*YamlView, error) {
+	forms := 0
 	if c.View != nil {
+		forms++
+	}
+	if c.Pane != nil {
+		forms++
+	}
+	if c.Views != nil {
+		forms++
+	}
+	if forms != 1 {
+		return nil, fmt.Errorf("root: declare exactly one of pane, view, views")
+	}
+	if c.View != nil {
+		if c.App.Root != "" && c.App.Root != c.View.Name && !(c.View.Name == "" && c.App.Root == "main") {
+			return nil, fmt.Errorf("app.root: unknown view %q", c.App.Root)
+		}
 		return c.View, nil
 	}
 	if c.Pane != nil {
+		if c.App.Root != "" && c.App.Root != c.Pane.Name && !(c.Pane.Name == "" && c.App.Root == "main") {
+			return nil, fmt.Errorf("app.root: unknown pane %q", c.App.Root)
+		}
 		return c.Pane, nil
 	}
 	if len(c.Views) > 0 {
@@ -81,10 +104,13 @@ func (c *YamlConfig) RootView() (*YamlView, error) {
 		if rootName == "" {
 			rootName = "main"
 		}
-		for _, v := range c.Views {
-			if v.Name == rootName {
-				return &v, nil
+		for i := range c.Views {
+			if c.Views[i].Name == rootName {
+				return &c.Views[i], nil
 			}
+		}
+		if c.App.Root != "" {
+			return nil, fmt.Errorf("app.root: unknown view %q", c.App.Root)
 		}
 		return &c.Views[0], nil
 	}
@@ -146,59 +172,14 @@ func (c *YamlConfig) MaxWidth() int {
 
 // Validate checks that all views, layout grids, and elements are correctly configured.
 func (c *YamlConfig) Validate() error {
-	if c.Height(10) <= 0 {
-		return fmt.Errorf("pane height must be positive, got %d", c.Height(10))
-	}
-
-	root, err := c.RootView()
-	if err != nil {
-		return err
-	}
-
-	widgets := make(map[string]Widget)
-	for key, elem := range root.Elements {
-		w, err := compileWidget(elem)
-		if err != nil {
-			return fmt.Errorf("element %s invalid: %w", key, err)
-		}
-		widgets[key] = w
-	}
-
-	if root.Grid != "" {
-		_, err = ParseASCIIGrid(root.Grid, widgets)
-		if err != nil {
-			return fmt.Errorf("layout grid invalid: %w", err)
-		}
-	}
-
-	for _, v := range c.Views {
-		vWidgets := make(map[string]Widget)
-		for key, elem := range v.Elements {
-			w, err := compileWidget(elem)
-			if err != nil {
-				return fmt.Errorf("view %s element %s invalid: %w", v.Name, key, err)
-			}
-			vWidgets[key] = w
-		}
-		if v.Grid != "" {
-			_, err = ParseASCIIGrid(v.Grid, vWidgets)
-			if err != nil {
-				return fmt.Errorf("view %s layout grid invalid: %w", v.Name, err)
-			}
-		}
-	}
-
-	return nil
+	_, err := c.build()
+	return err
 }
 
 // ValidateYAML decodes and validates a Loom YAML layout configuration stream.
 func ValidateYAML(r io.Reader) error {
-	var cfg YamlConfig
-	dec := yaml.NewDecoder(r)
-	if err := dec.Decode(&cfg); err != nil {
-		return fmt.Errorf("loom: decode yaml: %w", err)
-	}
-	return cfg.Validate()
+	_, _, err := BuildWidget(r)
+	return err
 }
 
 // ParseYAMLFile reads a .loom.yaml file and constructs the widget tree and Pane.
@@ -380,84 +361,131 @@ func (r *Router) HandleMouse(e MouseEvent) (quit bool) {
 func BuildWidget(r io.Reader) (Widget, *YamlConfig, error) {
 	var cfg YamlConfig
 	dec := yaml.NewDecoder(r)
+	dec.KnownFields(true)
 	if err := dec.Decode(&cfg); err != nil {
 		return nil, nil, fmt.Errorf("loom: decode yaml: %w", err)
 	}
-
-	router := &Router{
-		config:  &cfg,
-		views:   make(map[string]Widget),
-		current: cfg.App.Root,
-	}
-	if router.current == "" {
-		router.current = "main"
-	}
-
-	// Compile all views in the config
-	for _, v := range cfg.Views {
-		widgets := make(map[string]Widget)
-		for key, elem := range v.Elements {
-			w, err := compileWidget(elem)
-			if err != nil {
-				return nil, nil, fmt.Errorf("loom: view %s element %s: %w", v.Name, key, err)
-			}
-			widgets[key] = w
-		}
-
-		// Wire Choice selection to transition screens on Enter
-		for key, elem := range v.Elements {
-			if elem.Type == "choice" {
-				if choice, ok := widgets[key].(*Choice); ok {
-					choice.OnSelect = func(item Item) {
-						router.RouteTo(item.Name)
-					}
-				}
-			}
-		}
-
-		var viewRoot Widget
-		if v.Grid != "" {
-			var err error
-			viewRoot, err = ParseASCIIGrid(v.Grid, widgets)
-			if err != nil {
-				return nil, nil, fmt.Errorf("loom: view %s grid: %w", v.Name, err)
-			}
-		} else {
-			var list []Widget
-			for _, w := range widgets {
-				list = append(list, w)
-			}
-			if len(list) == 1 {
-				viewRoot = list[0]
-			} else if len(list) > 1 {
-				viewRoot = NewStack(Vertical, list...)
-			}
-		}
-		router.views[v.Name] = viewRoot
-	}
-
-	// Legacy single pane fallback
-	var legacyRoot Widget
-	if len(router.views) == 0 && cfg.Pane != nil {
-		widgets := make(map[string]Widget)
-		for key, elem := range cfg.Pane.Elements {
-			w, err := compileWidget(elem)
-			if err != nil {
-				return nil, nil, err
-			}
-			widgets[key] = w
-		}
-		var err error
-		legacyRoot, err = ParseASCIIGrid(cfg.Pane.Grid, widgets)
+	var extra yaml.Node
+	if err := dec.Decode(&extra); err != io.EOF {
 		if err != nil {
-			return nil, nil, err
+			return nil, nil, fmt.Errorf("loom: decode yaml: %w", err)
 		}
+		return nil, nil, fmt.Errorf("loom: expected one YAML document")
 	}
+	w, err := cfg.build()
+	if err != nil {
+		return nil, nil, fmt.Errorf("loom: %w", err)
+	}
+	return w, &cfg, nil
+}
 
-	if legacyRoot != nil {
-		return legacyRoot, &cfg, nil
+func (c *YamlConfig) build() (Widget, error) {
+	root, err := c.RootView()
+	if err != nil {
+		return nil, err
 	}
-	return router, &cfg, nil
+	if err := validateDimensions("app", c.App.Height, c.App.MinH, c.App.MaxH, c.App.MaxW); err != nil {
+		return nil, err
+	}
+	if len(c.Views) == 0 {
+		if root.Frame != nil && (c.App.Height <= 0 || c.App.MaxW <= 0) {
+			return nil, fmt.Errorf("app: frame documents require positive height and max_width")
+		}
+		return compileView(root, nil)
+	}
+	router := &Router{config: c, views: make(map[string]Widget), current: root.Name}
+	for i := range c.Views {
+		v := &c.Views[i]
+		if v.Frame != nil && (c.App.Height <= 0 || c.App.MaxW <= 0) {
+			return nil, fmt.Errorf("app: frame documents require positive height and max_width")
+		}
+		if v.Name == "" {
+			return nil, fmt.Errorf("views[%d].name: required", i)
+		}
+		if _, exists := router.views[v.Name]; exists {
+			return nil, fmt.Errorf("views[%d].name: duplicate %q", i, v.Name)
+		}
+		w, err := compileView(v, router)
+		if err != nil {
+			return nil, fmt.Errorf("views[%d]: %w", i, err)
+		}
+		router.views[v.Name] = w
+	}
+	return router, nil
+}
+
+func validateDimensions(path string, height, minH, maxH, maxW int) error {
+	if height < 0 || minH < 0 || maxH < 0 || maxW < 0 {
+		return fmt.Errorf("%s: dimensions cannot be negative", path)
+	}
+	if minH > 0 && maxH > 0 && minH > maxH {
+		return fmt.Errorf("%s: min_height exceeds max_height", path)
+	}
+	return nil
+}
+
+func compileView(v *YamlView, router *Router) (Widget, error) {
+	if err := validateDimensions("view", v.Height, v.MinH, v.MaxH, v.MaxW); err != nil {
+		return nil, err
+	}
+	if v.Frame != nil {
+		if len(v.Elements) != 0 || v.Grid != "" || len(v.Order) != 0 {
+			return nil, fmt.Errorf("view.frame: cannot combine with elements, grid or order")
+		}
+		if err := v.Frame.validate(); err != nil {
+			return nil, err
+		}
+		return v.Frame, nil
+	}
+	keys := make([]string, 0, len(v.Elements))
+	for key := range v.Elements {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys) // Legacy maps have a stable lexical fallback; order is explicit.
+	widgets := make(map[string]Widget, len(keys))
+	for _, key := range keys {
+		w, err := compileWidget(v.Elements[key])
+		if err != nil {
+			return nil, fmt.Errorf("elements.%s: %w", key, err)
+		}
+		if choice, ok := w.(*Choice); ok && router != nil && v.Elements[key].Type == "choice" {
+			choice.OnSelect = func(item Item) { router.RouteTo(item.Name) }
+		}
+		widgets[key] = w
+	}
+	if v.Grid != "" {
+		if len(v.Order) != 0 {
+			return nil, fmt.Errorf("view: grid and order are mutually exclusive")
+		}
+		return ParseASCIIGrid(v.Grid, widgets)
+	}
+	if len(v.Order) > 0 {
+		seen := make(map[string]bool)
+		for i, key := range v.Order {
+			if widgets[key] == nil {
+				return nil, fmt.Errorf("order[%d]: unknown element %q", i, key)
+			}
+			if seen[key] {
+				return nil, fmt.Errorf("order[%d]: duplicate element %q", i, key)
+			}
+			seen[key] = true
+		}
+		if len(seen) != len(keys) {
+			return nil, fmt.Errorf("order: must include every element")
+		}
+		keys = v.Order
+	}
+	if len(keys) == 0 {
+		return nil, fmt.Errorf("view: no elements or frame declared")
+	}
+	children := make([]Widget, 0, len(keys))
+	for _, key := range keys {
+		children = append(children, widgets[key])
+	}
+	if len(children) == 1 {
+		return children[0], nil
+	}
+	return NewStack(Vertical, children...), nil
 }
 
 // ParseYAML reads YAML configuration from a reader and builds the TUI layout with view routing.
@@ -729,6 +757,8 @@ func ParseASCIIGrid(gridStr string, widgets map[string]Widget) (Widget, error) {
 
 				if w, ok := widgets[key]; ok {
 					colWidgets = append(colWidgets, w)
+				} else if key != "" {
+					return nil, fmt.Errorf("grid: unknown element %q at row %d", key, yStart+1)
 				}
 				cStart = cNext
 			}

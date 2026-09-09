@@ -17,7 +17,7 @@ upkeep.
 | 003 | [003-public-api-audit.md](003-public-api-audit.md) | Audit and document the public API surface | Done (2026-07-04) |
 | 004 | [004-migrate-uzu-to-shared-loom.md](004-migrate-uzu-to-shared-loom.md) | Migrate uzu to depend on the shared loom module | Open |
 | 005 | [005-license-clarification.md](005-license-clarification.md) | Confirm AGPL is the intended license for a shared library | Resolved — keep AGPL-3.0-or-later (2026-07-04) |
-| 006 | [006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md](006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md) | Static declarative monitor shell with a minimal validated contract | Open |
+| 006 | [006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md](006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md) | Static declarative monitor shell with a minimal validated contract | Closed — static declarative shell implemented and verified |
 | 007 | [007-clock-watch-mode-with-independent-collection-and-redraw.md](007-clock-watch-mode-with-independent-collection-and-redraw.md) | Clock watch mode with independent collection and redraw | Open |
 | 008 | [008-responsive-declared-box-layout.md](008-responsive-declared-box-layout.md) | Responsive declared box layout | Open |
 | 009 | [009-declarative-box-visibility-controls.md](009-declarative-box-visibility-controls.md) | Declarative box visibility controls | Open |

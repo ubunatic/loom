@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 006 — Static declarative monitor shell with a minimal validated contract
 
-**Status**: Open
+**Status**: Closed — static declarative shell implemented and verified
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
@@ -19,12 +19,12 @@ Loom needs its first runnable declarative monitor, with a minimal contract prove
 
 ## Acceptance criteria
 
-- [ ] Provide a documented runnable example with a minimal Go entrypoint: show once, print one frame and exit without waiting for input or requiring a controlling TTY. The frame contains a title bar, exactly two empty titled bordered boxes, and a bottom status bar.
-- [ ] Implement only the generic box/chrome composition needed here. Declare ordered children, titles, spacing, padding and initial dimensions in embedded YAML; Go does not duplicate those values or place application widgets at coordinates.
-- [ ] Add small baseline checks for intact borders, declared padding, child-content clipping and tiny bounds. These protect the first shell; the broader independent final-display oracle and visual gate follow in 010.
-- [ ] Include the smallest consumed spec/declaration contract and companion JSON Schema under spec/ in this ticket, with a schema reference, embedding, and automated schema validation. Reject unknown fields, invalid dimensions, duplicate identifiers and unresolved references with useful locations. Do not create an unused actions/source registry.
-- [ ] Define deterministic child order explicitly, not through Go map iteration. Make validation and construction agree on the accepted root forms (pane, view, views), root precedence and missing/ambiguous roots; cover existing forms without silently dropping cfg.View.
-- [ ] Retain existing widget/YAML behavior except documented, tested corrections. Add one small sample and its exact invocation; no mandatory new nested module or invented public runtime API.
+- [x] Provide a documented runnable example with a minimal Go entrypoint: show once, print one frame and exit without waiting for input or requiring a controlling TTY. The frame contains a title bar, exactly two empty titled bordered boxes, and a bottom status bar.
+- [x] Implement only the generic box/chrome composition needed here. Declare ordered children, titles, spacing, padding and initial dimensions in embedded YAML; Go does not duplicate those values or place application widgets at coordinates.
+- [x] Add small baseline checks for intact borders, declared padding, child-content clipping and tiny bounds. These protect the first shell; the broader independent final-display oracle and visual gate follow in 010.
+- [x] Include the smallest consumed spec/declaration contract and companion JSON Schema under spec/ in this ticket, with a schema reference, embedding, and automated schema validation. Reject unknown fields, invalid dimensions, duplicate identifiers and unresolved references with useful locations. Do not create an unused actions/source registry.
+- [x] Define deterministic child order explicitly, not through Go map iteration. Make validation and construction agree on the accepted root forms (pane, view, views), root precedence and missing/ambiguous roots; cover existing forms without silently dropping cfg.View.
+- [x] Retain existing widget/YAML behavior except documented, tested corrections. Add one small sample and its exact invocation; no mandatory new nested module or invented public runtime API.
 
 ## Verification
 
@@ -33,3 +33,12 @@ Run GOWORK=off go vet ./... then GOWORK=off go test ./.... Add positive/negative
 ## Scope limits
 
 No watch loop, clock, visibility actions, responsive breakpoints, graphs, data bindings, general schema compiler or wholesale YAML redesign. This is the prerequisite contract within a visible deliverable, not a separate framework project.
+
+## Implementation evidence
+
+- [Example and exact invocation](../examples/monitor/README.md): `GOWORK=off go run ./examples/monitor`, with embedded `spec/monitor.yaml` in the root module.
+- [Frame/Box](../frame.go) isolate child canvases; [baseline tests](../frame_test.go) check exact rows, borders, padding, tiny bounds, invalid declarations and YAML-only title/order changes.
+- [Root/order tests](../yaml_contract_test.go) exercise all three forms, deterministic legacy ordering, duplicate IDs, missing references and matching validation/build errors.
+- [Schemas](../spec/schemas/monitor.schema.json) validate the initial shell vocabulary through `make validate-spec`; legacy widgets retain Go validation. Border presentation is consumed from embedded `spec/box.yaml`.
+- Verified `GOWORK=off make test` (standard JSON Schema checks with negative controls, Go vet, Go tests), standalone `sh scripts/check-no-tty.sh`, and `setsid --wait env GOWORK=off go run ./examples/monitor </dev/null`.
+- Intentional limits: fixed declared dimensions, printable ASCII shell labels, spec-defined border glyphs; unknown YAML fields and ambiguous roots now fail explicitly. Full Unicode/ANSI geometry and human visual acceptance remain ticket 010.

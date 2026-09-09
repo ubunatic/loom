@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../../spec/schemas/monitor.schema.json
+app:
+  height: 9
+  max_width: 64
+view:
+  name: main
+  frame:
+    title: Loom monitor
+    status: Show once
+    gap: 2
+    boxes:
+      - id: usage
+        title: All Usage
+        width: 31
+        height: 7
+        padding: 1
+      - id: load
+        title: Load
+        width: 31
+        height: 7
+        padding: 1

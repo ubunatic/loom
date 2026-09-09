@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=schemas/box.schema.json
+top_left: "┌"
+top_right: "┐"
+bottom_left: "└"
+bottom_right: "┘"
+horizontal: "─"
+vertical: "│"
+title_prefix: " "
+title_suffix: " "
