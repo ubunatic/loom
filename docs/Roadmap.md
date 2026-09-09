@@ -21,8 +21,9 @@ dashboard and the Voxi monitor.
 ## Assessment against code and backlog
 
 Assessed 2026-09-09. The findings below describe the planning baseline before
-ticket 006. Stage 1 has since shipped the static shell, initial schemas, and
-YAML root/order corrections; later monitor capabilities remain open.
+ticket 006. Stages 1–5 (tickets 006–010) have now completely shipped, establishing
+the static shell, initial schemas, watch mode, responsive layout, controls, and
+geometry gate. Later monitor capabilities and active bug fixes remain open.
 
 - [`yaml.go`](../yaml.go) already builds widgets and routes views without a
   terminal, but is a narrow widget factory: `StyleName` and `OnChange` are
@@ -49,8 +50,8 @@ YAML root/order corrections; later monitor capabilities remain open.
 - At the initial assessment, `harnez find` reported only [004, uzu migration](../issues/004-migrate-uzu-to-shared-loom.md)
   open, with no appended implementation plan. Issues 001–003 are marked done;
   005 is resolved. Release and driver work are foundations already shipped,
-  not new roadmap dependencies. Tickets 006–019 cover the monitor capabilities
-  missing from that initial backlog.
+  not new roadmap dependencies. Tickets 011–023 cover the monitor capabilities,
+  hygiene, and test reliability work.
 
 ### Close / Park
 
@@ -63,23 +64,18 @@ Reuse is evidenced above; no measured cost-savings percentage is established.
 
 ### Ticket sequencing
 
-**Shipped:** Stage 1, including minimal schema and geometry coverage.
-**Now:** Stage 2, establishing clock collection and independent redraw.
-**Next:** Stages 3–5, proving responsive layout, controls,
-and the full geometry gate before complex content. **Later:** Stages 6–9 prove
-both simulated targets, then Stages 10–11 introduce external sources and explore
-declarative wiring. Each stage should leave a runnable example and deterministic
-checks. Keep examples in the root module so root test discovery includes them;
-the target document's nested `go.mod` is illustrative, not a requirement.
+**Shipped:** Stages 1–5 (tickets 006-010), including the static shell, watch mode, responsive layout, controls, and the initial geometry gate.
+**Hygiene/Immediate:** Tickets 021 (cmd :help tty blocking), 022 (decouple static shell golden), and 023 (schema validation) address immediate bugs and technical debt.
+**Now:** Ticket 011 (rows & ANSI-safe truncation) is mid-flight. Ticket 020 (review & target alignment) provides a critical check before moving to graphs.
+**Next:** Stages 6–9 (tickets 012-016), introducing Harnez graph primitives, simulated live data, colors, and completing the simulated targets.
+**Later:** Stages 10–11 (tickets 017-019), introducing external sources and declarative wiring.
+Each stage should leave a runnable example and deterministic checks. Keep examples in the root module so root test discovery includes them; the target document's nested `go.mod` is illustrative, not a requirement.
 
 | Stage | Tickets |
 |---|---|
-| 1 — Static shell | [006](../issues/006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md) |
-| 2 — Clock/watch | [007](../issues/007-clock-watch-mode-with-independent-collection-and-redraw.md) |
-| 3 — Responsive layout | [008](../issues/008-responsive-declared-box-layout.md) |
-| 4 — Visibility controls | [009](../issues/009-declarative-box-visibility-controls.md) |
-| 5 — Geometry milestone | [010](../issues/010-geometry-and-visual-evidence-milestone-before-rich-content.md) |
-| 6 — Rows and graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md), [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) |
+| 1–5 — Shipped Foundation | [006](../issues/006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md), [007](../issues/007-clock-watch-mode-with-independent-collection-and-redraw.md), [008](../issues/008-responsive-declared-box-layout.md), [009](../issues/009-declarative-box-visibility-controls.md), [010](../issues/010-geometry-and-visual-evidence-milestone-before-rich-content.md) |
+| Hygiene & Fixes | [021](../issues/021-cmd-help-tty-blocking-in-tests.md), [022](../issues/022-decouple-static-shell-golden-from-evolving-monitor-spec.md), [023](../issues/023-rows-schema-validation-and-negative-controls.md) |
+| 6 — Rows and graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md), [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) |
 | 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
