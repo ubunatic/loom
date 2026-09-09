@@ -32,3 +32,13 @@ Use fake time/counters to assert independent tick counts, unchanged snapshots ac
 ## Scope limits
 
 Clock only; no histories, hardware collectors, controls beyond quit, adaptive FPS or generalized scheduling/dataflow framework.
+
+## Implementation progress
+
+- First stable increment: `Cadence` validates positive independent intervals,
+  serializes collection/draw callbacks, stops owned timers on return, and exposes
+  cancellation and callback failures. Injected tick-channel tests prove twenty
+  50 ms redraw ticks preserve one snapshot between 1 s collection ticks.
+- Verified with `go vet ./...` and `go test -race ./...`.
+- Still open: connect the scheduler to Pane, add declared clock presentation and
+  watch CLI, and verify terminal lifecycle with a standalone PTY canary.
