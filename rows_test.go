@@ -34,7 +34,7 @@ func TestRowsStableColumns(t *testing.T) {
 }
 
 func TestDeclaredDummyRowsGeometry(t *testing.T) {
-	root, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
+	root, _, err := BuildWidget(strings.NewReader(monitorFixture(t)))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -59,7 +59,7 @@ func TestDeclaredDummyRowsGeometry(t *testing.T) {
 		{"width: 13", "width: 0"}, {"align: left", "align: center"},
 		{"['Claude Code', '60%', '2d20h']", "['Claude Code']"},
 	} {
-		if _, _, err := BuildWidget(strings.NewReader(strings.Replace(shellFixture(t), tc.old, tc.new, 1))); err == nil {
+		if _, _, err := BuildWidget(strings.NewReader(strings.Replace(monitorFixture(t), tc.old, tc.new, 1))); err == nil {
 			t.Fatalf("accepted invalid rows %s", tc.new)
 		}
 	}

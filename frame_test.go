@@ -9,7 +9,16 @@ import (
 	"testing"
 )
 
-func shellFixture(t *testing.T) string {
+func emptyShellFixture(t *testing.T) string {
+	t.Helper()
+	data, err := os.ReadFile("testdata/fixtures/empty-shell.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+
+func monitorFixture(t *testing.T) string {
 	t.Helper()
 	data, err := os.ReadFile("examples/monitor/spec/monitor.yaml")
 	if err != nil {
@@ -18,14 +27,14 @@ func shellFixture(t *testing.T) string {
 	return string(data)
 }
 
+func shellFixture(t *testing.T) string {
+	return emptyShellFixture(t)
+}
+
 func TestStaticShellGolden(t *testing.T) {
-	w, cfg, err := BuildWidget(strings.NewReader(shellFixture(t)))
+	w, cfg, err := BuildWidget(strings.NewReader(emptyShellFixture(t)))
 	if err != nil {
 		t.Fatal(err)
-	}
-	// Preserve the original empty-shell geometry fixture as content is added.
-	for i := range w.(*Frame).Boxes {
-		w.(*Frame).Boxes[i].Child = nil
 	}
 	rows := Render(w, cfg.MaxWidth(), cfg.Height(0))
 	// Explicit expected columns, independent of production width/layout helpers.
@@ -48,6 +57,21 @@ func TestStaticShellGolden(t *testing.T) {
 		if got != want[y] {
 			t.Errorf("row %d\n got %q\nwant %q", y, got, want[y])
 		}
+	}
+}
+
+func TestMonitorExampleGolden(t *testing.T) {
+	w, cfg, err := BuildWidget(strings.NewReader(monitorFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	rows := Render(w, cfg.MaxWidth(), cfg.Height(0))
+	if len(rows) != cfg.Height(0) {
+		t.Fatalf("rows=%d want=%d", len(rows), cfg.Height(0))
+	}
+	rendered := strings.Join(rows, "\n")
+	if !strings.Contains(rendered, "Claude Code") || !strings.Contains(rendered, "cpu (16c)") {
+		t.Fatalf("monitor fixture missing expected row values:\n%s", rendered)
 	}
 }
 

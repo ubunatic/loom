@@ -33,5 +33,5 @@ upkeep.
 | 019 | [019-evaluate-declarative-source-and-action-wiring.md](019-evaluate-declarative-source-and-action-wiring.md) | Evaluate declarative source and action wiring | Open |
 | 020 | [020-review-ticket-011-rows-and-target-state-alignment.md](020-review-ticket-011-rows-and-target-state-alignment.md) | Review of Ticket 011 increments and target state alignment | Open |
 | 021 | [021-cmd-help-tty-blocking-in-tests.md](021-cmd-help-tty-blocking-in-tests.md) | Fix :help command blocking on interactive /dev/tty in test environments | Closed — decoupled showHelp from /dev/tty via headless detection and test hook |
-| 022 | [022-decouple-static-shell-golden-from-evolving-monitor-spec.md](022-decouple-static-shell-golden-from-evolving-monitor-spec.md) | Decouple static shell golden tests from evolving example monitor spec | Open |
+| 022 | [022-decouple-static-shell-golden-from-evolving-monitor-spec.md](022-decouple-static-shell-golden-from-evolving-monitor-spec.md) | Decouple static shell golden tests from evolving example monitor spec | Closed — extracted dedicated empty-shell fixture and removed in-memory mutation |
 | 023 | [023-rows-schema-validation-and-negative-controls.md](023-rows-schema-validation-and-negative-controls.md) | Add negative schema controls and column-value validation for box rows | Open |

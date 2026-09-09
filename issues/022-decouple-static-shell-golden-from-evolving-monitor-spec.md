@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 022 — Decouple static shell golden tests from evolving example monitor spec
 
-**Status**: Open
+**Status**: Closed — extracted dedicated empty-shell fixture and removed in-memory mutation
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Tech Debt / Testing
@@ -32,10 +32,10 @@ This anti-pattern creates test coupling between the evolving runnable example ([
 
 ## Acceptance criteria
 
-- [ ] Extract an explicit, immutable empty-shell specification fixture (e.g. in `testdata/fixtures/empty-shell.yaml`) for testing the bare frame and box chrome layout.
-- [ ] Update `TestStaticShellGolden` to load the dedicated empty-shell fixture and remove the `b.Child = nil` mutation.
-- [ ] Add explicit golden test coverage for `examples/monitor/spec/monitor.yaml` verifying that rendered output includes declared rows, values, and titles without mutation.
-- [ ] Verify `check-geometry-replay.py` and `make test` pass cleanly with clean fixture boundaries.
+- [x] Extract an explicit, immutable empty-shell specification fixture (e.g. in `testdata/fixtures/empty-shell.yaml`) for testing the bare frame and box chrome layout.
+- [x] Update `TestStaticShellGolden` to load the dedicated empty-shell fixture and remove the `b.Child = nil` mutation.
+- [x] Add explicit golden test coverage for `examples/monitor/spec/monitor.yaml` verifying that rendered output includes declared rows, values, and titles without mutation.
+- [x] Verify `check-geometry-replay.py` and `make test` pass cleanly with clean fixture boundaries.
 
 ## Verification
 
@@ -44,3 +44,11 @@ Run `go test ./...` and `make test` to verify that both the empty shell regressi
 ## Scope limits
 
 Limited to test fixtures and assertions in `frame_test.go` and `testdata/`. Does not modify `Frame` rendering or `Canvas` logic.
+
+## Delivery evidence
+
+1. Extracted `testdata/fixtures/empty-shell.yaml` with the pure 64x9 frame and two 31x7 empty boxes.
+2. Updated `frame_test.go`: `emptyShellFixture` loads the baseline shell fixture; `TestStaticShellGolden` runs without in-memory mutations.
+3. Added `TestMonitorExampleGolden` verifying that `examples/monitor/spec/monitor.yaml` renders its declared row values.
+4. Updated `rows_test.go` to use `monitorFixture(t)`.
+5. Verified `make test` and `check-geometry-replay.py` pass cleanly.
