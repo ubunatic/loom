@@ -3,7 +3,8 @@
 - [Roadmap](Roadmap.md): assessed stages and implementation tickets.
 - [Roadmap context](RoadmapContext.md): product vision and session summary.
 - [UI targets](HarnezUsageTarget.md): Harnez and Voxi reference layouts.
-- [Static monitor example](../examples/monitor/README.md): the implemented first slice.
+- [Monitor example](../examples/monitor/README.md): show-once/watch, responsive boxes and controls.
+- [Geometry gate](Geometry.md): supported text policy, independent checks and ANSI replay evidence.
 
 ## Case Studies
 

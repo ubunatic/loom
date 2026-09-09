@@ -4,10 +4,65 @@
 package loom
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strings"
 	"testing"
 )
+
+func TestGeometryArtifacts(t *testing.T) {
+	root, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := root.(*Frame)
+	for i := range f.Boxes {
+		f.Boxes[i].Child = geometryChild{}
+	}
+	for _, tc := range []struct {
+		name string
+		w, h int
+	}{{"wide", 64, 9}, {"slim", 40, 18}} {
+		rows := Render(f, tc.w, tc.h)
+		replay := ScreenshotScript(rows, fmt.Sprintf("geometry %s: %dx%d; ANSI replay, not raster", tc.name, tc.w, tc.h))
+		artifact := struct {
+			Name          string
+			Width, Height int
+			Rows          []string
+			Replay        string
+		}{tc.name, tc.w, tc.h, rows, replay}
+		if os.Getenv("LOOM_GEOMETRY_EXPORT") == "1" {
+			data, err := json.Marshal(artifact)
+			if err != nil {
+				t.Fatal(err)
+			}
+			fmt.Println("GEOMETRY_EXPORT " + string(data))
+			continue
+		}
+		data, err := os.ReadFile("testdata/geometry/" + tc.name + ".json")
+		if err != nil {
+			t.Fatal(err)
+		}
+		var saved struct {
+			Width, Height int
+			Rows          []string
+		}
+		if err := json.Unmarshal(data, &saved); err != nil {
+			t.Fatal(err)
+		}
+		if saved.Width != tc.w || saved.Height != tc.h || strings.Join(saved.Rows, "\n") != strings.Join(rows, "\n") {
+			t.Fatalf("%s golden changed", tc.name)
+		}
+		script, err := os.ReadFile("testdata/geometry/" + tc.name + ".sh")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(script) != replay {
+			t.Fatalf("%s replay changed", tc.name)
+		}
+	}
+}
 
 // oracleCells is deliberately corpus-bounded. It interprets emitted SGR and
 // explicit, independently specified glyph widths, never Loom width helpers.
@@ -73,6 +128,20 @@ func checkGeometry(rows []string, width int, boxes []Rect) error {
 			}
 			if grid[y][r.X] != left || grid[y][r.X+r.W-1] != right {
 				return fmt.Errorf("broken border at row %d", y)
+			}
+			if y == r.Y+r.H-1 {
+				for x := r.X + 1; x < r.X+r.W-1; x++ {
+					if grid[y][x] != "─" {
+						return fmt.Errorf("broken bottom border at %d,%d", x, y)
+					}
+				}
+			}
+			if y > r.Y && y < r.Y+r.H-1 && r.W >= 4 && r.H >= 4 {
+				for x := r.X + 1; x < r.X+r.W-1; x++ {
+					if (x == r.X+1 || x == r.X+r.W-2 || y == r.Y+1 || y == r.Y+r.H-2) && grid[y][x] != " " {
+						return fmt.Errorf("broken padding at %d,%d", x, y)
+					}
+				}
 			}
 		}
 	}

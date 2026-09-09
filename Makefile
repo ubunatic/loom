@@ -13,12 +13,15 @@ help: 🤖  # show this help
 build: ⚙️  ## compile the package
 	go build ./...
 
-test: ⚙️ validate-spec  ## validate specs, vet and run the test suite
+test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the test suite
 	go vet ./...
 	go test ./...
 
 validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Python jsonschema + PyYAML)
 	python3 scripts/validate-spec.py
+
+geometry-replay: ⚙️  ## verify saved ANSI replay bytes against geometry goldens
+	python3 scripts/check-geometry-replay.py
 
 tidy: ⚙️  ## sync go.mod/go.sum
 	go mod tidy
