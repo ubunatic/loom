@@ -24,6 +24,7 @@
 package loom
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -64,6 +65,7 @@ type Pane struct {
 	// waits on it so a lingering blocked Read cannot steal input meant for
 	// whatever reads the terminal after the pane (e.g. the calling shell).
 	readerDone chan struct{}
+	interrupts chan os.Signal
 }
 
 // New opens /dev/tty, enters raw mode, and reserves height rows below the
@@ -149,38 +151,39 @@ func queryCursor(tty *os.File) (row, col int, err error) {
 	if _, err = tty.WriteString("\x1b[6n"); err != nil {
 		return 0, 0, err
 	}
-	type res struct {
-		row, col int
-		err      error
-	}
-	ch := make(chan res, 1)
-	go func() {
-		var buf [32]byte
-		n := 0
-		for n < len(buf) {
-			m, rerr := tty.Read(buf[n : n+1])
-			if rerr != nil {
-				ch <- res{err: rerr}
-				return
-			}
-			n += m
-			if m > 0 && buf[n-1] == 'R' {
-				break
-			}
+	// Poll synchronously: a timed-out reader goroutine would steal later keys.
+	deadline := time.Now().Add(100 * time.Millisecond)
+	poll := []unix.PollFd{{Fd: int32(tty.Fd()), Events: unix.POLLIN}}
+	var buf [32]byte
+	for n := 0; n < len(buf); {
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			return 0, 0, fmt.Errorf("cursor query timed out")
 		}
-		var r, c int
-		if _, serr := fmt.Sscanf(string(buf[:n]), "\x1b[%d;%dR", &r, &c); serr != nil {
-			ch <- res{err: serr}
-			return
+		ready, err := unix.Poll(poll, max(1, int(remaining.Milliseconds())))
+		if err == unix.EINTR {
+			continue
 		}
-		ch <- res{row: r, col: c}
-	}()
-	select {
-	case out := <-ch:
-		return out.row, out.col, out.err
-	case <-time.After(100 * time.Millisecond):
-		return 0, 0, fmt.Errorf("cursor query timed out")
+		if err != nil {
+			return 0, 0, err
+		}
+		if ready == 0 {
+			continue
+		}
+		m, err := tty.Read(buf[n : n+1])
+		if err != nil {
+			return 0, 0, err
+		}
+		if m == 0 {
+			return 0, 0, fmt.Errorf("cursor query: input closed")
+		}
+		n += m
+		if buf[n-1] == 'R' {
+			_, err := fmt.Sscanf(string(buf[:n]), "\x1b[%d;%dR", &row, &col)
+			return row, col, err
+		}
 	}
+	return 0, 0, fmt.Errorf("cursor query: response too long")
 }
 
 func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
@@ -313,6 +316,33 @@ func (p *Pane) applyWinch(cols *int) {
 // Run renders root on every frame and dispatches events until the root signals
 // quit or an unrecoverable error occurs.
 func (p *Pane) Run(root Widget) error {
+	return p.run(context.Background(), root, nil, nil, nil)
+}
+
+// RunWatch runs collection and redraw on independent timers. Collection and
+// widget callbacks share the event-loop goroutine; Draw must not collect data.
+// The caller owns Close, as with Run. Collection callbacks must not block.
+func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, collect func(time.Time) error) error {
+	if err := cadence.Validate(); err != nil {
+		return err
+	}
+	if collect == nil {
+		return fmt.Errorf("loom: watch collection callback required")
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	samples := time.NewTicker(cadence.Collect)
+	defer samples.Stop()
+	frames := time.NewTicker(cadence.Redraw)
+	defer frames.Stop()
+	if err := collect(time.Now()); err != nil {
+		return err
+	}
+	return p.run(ctx, root, samples.C, frames.C, collect)
+}
+
+func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
 	defer func() {
 		if r := recover(); r != nil {
 			p.close()
@@ -376,7 +406,7 @@ func (p *Pane) Run(root Widget) error {
 					return
 				}
 			}
-			if rerr != nil {
+			if rerr != nil || m == 0 {
 				select {
 				case reads <- readResult{err: rerr}:
 				case <-done:
@@ -398,6 +428,7 @@ func (p *Pane) Run(root Widget) error {
 		canvas.Flush(p.tty, p.startRow)
 	}
 
+	dirty := true
 	for {
 		if p.Resizeable {
 			if ch, ok := root.(ContentHeighter); ok {
@@ -408,18 +439,36 @@ func (p *Pane) Run(root Widget) error {
 			}
 		}
 
-		redraw()
+		if dirty {
+			redraw()
+		}
+		dirty = false
 
 		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-p.interrupts:
+			return nil
+		case now := <-samples:
+			if err := collect(now); err != nil {
+				return err
+			}
+		case <-frames:
+			dirty = true
 		case <-p.winch:
 			// Terminal window resized: reflow width/bounds and repaint.
 			p.applyWinch(&cols)
 			canvas = NewCanvas(cols, p.rows)
+			dirty = true
 			continue
 		case rr := <-reads:
-			if rr.err != nil || len(rr.data) == 0 {
+			if rr.err != nil {
+				return fmt.Errorf("loom: input: %w", rr.err)
+			}
+			if len(rr.data) == 0 {
 				return nil
 			}
+			dirty = true
 			raw := rr.data
 
 			// Try mouse first (SGR: \x1b[<…M/m). A single read may carry several
@@ -471,6 +520,9 @@ func (p *Pane) close() {
 	if p.winch != nil {
 		signal.Stop(p.winch)
 	}
+	if p.interrupts != nil {
+		signal.Stop(p.interrupts)
+	}
 
 	if p.mouse {
 		p.tty.WriteString("\x1b[?1003l\x1b[?1006l") //nolint:errcheck
@@ -512,14 +564,8 @@ func (p *Pane) drainInput() {
 }
 
 func (p *Pane) installSignalHandler() {
-	ch := make(chan os.Signal, 1)
-	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		if _, ok := <-ch; ok {
-			p.close()
-			os.Exit(1)
-		}
-	}()
+	p.interrupts = make(chan os.Signal, 1)
+	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM)
 
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.
 	// Cap 1 coalesces a burst of resizes (e.g. an interactive drag) into one.

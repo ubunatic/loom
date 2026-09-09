@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -29,6 +30,31 @@ func TestShowOnce(t *testing.T) {
 	}
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
+	}
+}
+
+func TestCommand(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+		fail bool
+	}{
+		{"help", []string{"-h"}, "--watch", false},
+		{"once", nil, "All Usage", false},
+		{"unknown", []string{"--watc"}, "", true},
+		{"argument", []string{"extra"}, "", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var out bytes.Buffer
+			err := execute(context.Background(), tc.args, &out)
+			if (err != nil) != tc.fail {
+				t.Fatalf("got %v", err)
+			}
+			if !strings.Contains(out.String(), tc.want) {
+				t.Fatal(out.String())
+			}
+		})
 	}
 }
 

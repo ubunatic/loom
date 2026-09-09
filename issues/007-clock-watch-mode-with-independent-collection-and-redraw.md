@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 007 — Clock watch mode with independent collection and redraw
 
-**Status**: Open
+**Status**: Closed — watch clock with independent cadence and verified terminal restoration
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -19,11 +19,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Acceptance criteria
 
-- [ ] Extend the shell with a documented --watch path showing a ticking clock; preserve the same one-shot layout and exit behavior.
-- [ ] Collect time independently into the latest snapshot; redraw on an explicitly configured refresh cadence. Rates and presentation come from validated declarations/configuration, while Go owns collection and lifecycle.
-- [ ] Demonstrate a 1 Hz clock producer and 20 Hz redraw with an injected test clock: twenty draws between sample ticks do not call the producer or mutate state.
-- [ ] Serialize UI updates or publish safe immutable snapshots; stop timers and producers on quit, cancellation and input failure, and restore the terminal. Invalid/nonpositive intervals fail clearly.
-- [ ] Keep runtime changes additive and bounded to independent collection/redraw and shutdown; document the selected extension to Pane rather than assuming an existing ticker API.
+- [x] Extend the shell with a documented --watch path showing a ticking clock; preserve the same one-shot layout and exit behavior.
+- [x] Collect time independently into the latest snapshot; redraw on an explicitly configured refresh cadence. Rates and presentation come from validated declarations/configuration, while Go owns collection and lifecycle.
+- [x] Demonstrate a 1 Hz clock producer and 20 Hz redraw with an injected test clock: twenty draws between sample ticks do not call the producer or mutate state.
+- [x] Serialize UI updates or publish safe immutable snapshots; stop timers and producers on quit, cancellation and input failure, and restore the terminal. Invalid/nonpositive intervals fail clearly.
+- [x] Keep runtime changes additive and bounded to independent collection/redraw and shutdown; document the selected extension to Pane rather than assuming an existing ticker API.
 
 ## Verification
 
@@ -40,5 +40,12 @@ Clock only; no histories, hardware collectors, controls beyond quit, adaptive FP
   cancellation and callback failures. Injected tick-channel tests prove twenty
   50 ms redraw ticks preserve one snapshot between 1 s collection ticks.
 - Verified with `go vet ./...` and `go test -race ./...`.
-- Still open: connect the scheduler to Pane, add declared clock presentation and
-  watch CLI, and verify terminal lifecycle with a standalone PTY canary.
+- Second increment: `Pane.RunWatch` selects independent collection/redraw ticks
+  alongside input, resize, cancellation, and signals; callbacks stay serialized.
+  `--watch` and CLI help use Cobra; presentation/rates use embedded watch YAML
+  with a companion schema. Existing show-once output is unchanged.
+- Lifecycle fixes: bounded cursor query has no stranded reader after timeout;
+  signals return via the event loop rather than racing cleanup or calling exit.
+- Verified `make test`, `go test -race ./...`, help and redirected/no-TTY output.
+  Standalone PTY canary passed before monitor smoke tests; idle redraw, resize,
+  q, missing cursor reply, and SIGTERM runs restored the exact terminal mode.

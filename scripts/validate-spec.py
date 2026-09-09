@@ -17,6 +17,7 @@ def main():
     root = Path(__file__).resolve().parent.parent
     pairs = (
         ("spec/box.yaml", "spec/schemas/box.schema.json"),
+        ("examples/monitor/spec/watch.yaml", "spec/schemas/watch.schema.json"),
         ("examples/monitor/spec/monitor.yaml", "spec/schemas/monitor.schema.json"),
     )
     for document_path, schema_path in pairs:

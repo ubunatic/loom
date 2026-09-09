@@ -5,6 +5,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io"
@@ -12,9 +13,10 @@ import (
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
+	"github.com/spf13/cobra"
 )
 
-//go:embed spec/monitor.yaml
+//go:embed spec/*.yaml
 var documents embed.FS
 
 func run(out io.Writer) error {
@@ -38,8 +40,29 @@ func run(out io.Writer) error {
 }
 
 func main() {
-	if err := run(os.Stdout); err != nil {
+	if err := execute(context.Background(), os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
+}
+
+func execute(ctx context.Context, args []string, out io.Writer) error {
+	spec, err := loadWatch()
+	if err != nil {
+		return err
+	}
+	var watch bool
+	cmd := &cobra.Command{Use: spec.Command, Short: spec.Description, Args: cobra.NoArgs, SilenceUsage: true, SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			if watch {
+				return runWatch(cmd.Context(), spec)
+			}
+			return run(out)
+		},
+	}
+	cmd.Flags().BoolVar(&watch, "watch", false, spec.WatchHelp)
+	cmd.SetArgs(args)
+	cmd.SetOut(out)
+	cmd.SetErr(out)
+	return cmd.ExecuteContext(ctx)
 }
