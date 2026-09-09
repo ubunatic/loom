@@ -5,11 +5,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 011 — Aligned dashboard rows and ANSI-safe truncation
 
-**Status**: Open
+**Status**: Closed — aligned dashboard rows, left/right truncation, graph placeholders, and dynamic value binding implemented and verified
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: [Roadmap](../docs/Roadmap.md), [context](../docs/RoadmapContext.md), [targets](../docs/HarnezUsageTarget.md), [spec conventions](../docs/Spec.md)
+**Related**: [Roadmap](../docs/Roadmap.md), [context](../docs/RoadmapContext.md), [targets](../docs/HarnezUsageTarget.md), [spec conventions](../docs/Spec.md), [020](020-review-ticket-011-rows-and-target-state-alignment.md)
 **Roadmap stage**: 6 — rows
 **Depends on**: [010](010-geometry-and-visual-evidence-milestone-before-rich-content.md) (transitive prerequisites apply).
 
@@ -19,10 +19,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Acceptance criteria
 
-- [ ] Declare reusable aligned label/value rows within the boxes; label and reserved value columns stay fixed as values change from 99% to 100% and durations/names lengthen.
-- [ ] Fit rows to actual inner width with an explicit overflow priority and ellipsis policy. Widths 0, 1 and 2 never exceed budget; preserve valid style boundaries and do not split supported combining/wide text.
-- [ ] Demonstrate static labels, timestamps/durations, multiple value columns and placeholders for later graphs using fixed fake data.
-- [ ] Reuse the geometry contract for clipping and final positions; declaration properties have schema coverage and Go contains no target-specific column coordinates.
+- [x] Declare reusable aligned label/value rows within the boxes; label and reserved value columns stay fixed as values change from 99% to 100% and durations/names lengthen.
+- [x] Fit rows to actual inner width with an explicit overflow priority and ellipsis policy. Widths 0, 1 and 2 never exceed budget; preserve valid style boundaries and do not split supported combining/wide text.
+- [x] Demonstrate static labels, timestamps/durations, multiple value columns and placeholders for later graphs using fixed fake data.
+- [x] Reuse the geometry contract for clipping and final positions; declaration properties have schema coverage and Go contains no target-specific column coordinates.
 
 ## Verification
 
@@ -32,22 +32,10 @@ Add table-driven alignment/truncation cases for ANSI, bold/regular, combining/CJ
 
 No graph algorithms, collectors, live histories or table-widget rewrite. Take Voxi behavior as inspiration without importing its monitor domain or mutating the sibling.
 
-## Implementation progress — 2026-09-10
+## Delivery evidence
 
-First small increment: `TruncateText(text, width, marker)` implements bounded
-terminal-cell truncation with caller-declared marker text, including budgets
-0/1/2, combining clusters and complete wide glyphs. Raw ANSI is stripped under
-the geometry policy; styles are supplied separately, not embedded in strings.
-Tests use the independent emitted-cell oracle rather than production width
-helpers for the budget assertion. Vet, full tests and race checks pass.
-
-Second small increment: box `rows` now declares fixed-width columns, alignment,
-optional bold style, gaps, ellipsis and fixed string values. Runtime validation
-rejects invalid widths/alignment and mismatched value counts; schema covers all
-fields. Leftmost columns have overflow priority; trailing columns clip or vanish.
-The monitor shows three dummy usage rows and three dummy hardware rows, entirely
-from YAML. Headless geometry tests cover wide/slim/tiny layouts; alignment tests
-cover 99%/100%, long names/durations and styled columns.
-
-Still open: graph-placeholder demonstration and final ticket-level review of
-all acceptance criteria. Values are static, not collected system measurements.
+1. `TruncateText` and `TruncateTextLeft` in `truncate.go` enforce cell-budget truncation from both right and left edges, safely handling combining marks, CJK wide glyphs, Braille glyphs, and budgets 0/1/2. Tested against independent cell oracles in `truncate_test.go`.
+2. `Rows` in `rows.go` provides fixed-width columns, left/right alignment, gaps, ellipsis, and child canvas isolation. Right-aligned columns use `TruncateTextLeft` so numbers and unit suffixes remain visible when truncated.
+3. `examples/monitor/spec/monitor.yaml` updated to 10-row frame and 8-row boxes accommodating all 4 canonical target rows in both All Usage and Load, complete with Braille graph placeholders (`[⣿⣿  ]`, rolling Braille timelines, and split VRAM/GTT dual timelines `[⣿⣿⣿⣿][⣀⣀⣀⣀]`).
+4. Implemented dynamic binding via `Rows.SetValues` / `Rows.GetValues`, `Box.SetRowsValues`, and `Frame.Box(id)`, decoupling runtime updates from YAML declarations.
+5. Golden tests in `frame_test.go` and `examples/monitor/main_test.go` pass. `make test` and `make validate-spec` pass with zero failures.

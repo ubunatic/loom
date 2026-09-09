@@ -9,7 +9,7 @@ go run ./examples/monitor --help
 go run ./examples/monitor --width 40
 ```
 
-This prints a 64-column, nine-row monochrome frame and exits. It works with
+This prints a 64-column, ten-row monochrome frame and exits. It works with
 redirected stdin/stdout and does not open a terminal, wait for keys, or change
 terminal modes. Dimensions come from the document, not terminal detection.
 

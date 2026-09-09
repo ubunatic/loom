@@ -42,6 +42,13 @@ type Box struct {
 	Rows    *Rows     `yaml:"rows"`
 }
 
+// SetRowsValues updates the box's rows values dynamically if rows are present.
+func (b *Box) SetRowsValues(values [][]string) {
+	if b.Rows != nil {
+		b.Rows.SetValues(values)
+	}
+}
+
 // Draw paints a box. Bounds smaller than a complete border are left blank.
 func (b *Box) Draw(c *Canvas, r Rect) {
 	paintClipped(c, r, func(local *Canvas) {
@@ -234,6 +241,16 @@ func (f *Frame) HandleKey(k KeyEvent) bool {
 
 // HandleMouse leaves show-once frames inert.
 func (f *Frame) HandleMouse(MouseEvent) bool { return false }
+
+// Box returns a pointer to the box with matching ID, or nil if not found.
+func (f *Frame) Box(id string) *Box {
+	for i := range f.Boxes {
+		if f.Boxes[i].ID == id {
+			return &f.Boxes[i]
+		}
+	}
+	return nil
+}
 
 func (f *Frame) validate() error {
 	if f.Breakpoint < 0 {

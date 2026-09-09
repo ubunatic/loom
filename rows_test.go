@@ -40,9 +40,9 @@ func TestDeclaredDummyRowsGeometry(t *testing.T) {
 	}
 	f := root.(*Frame)
 	for _, width := range []int{64, 40, 8} {
-		boxes := []Rect{{0, 1, 31, 7}, {33, 1, 31, 7}}
+		boxes := []Rect{{0, 1, 31, 8}, {33, 1, 31, 8}}
 		if width < 64 {
-			boxes[1] = Rect{0, 10, 31, 7}
+			boxes[1] = Rect{0, 11, 31, 8}
 		}
 		if width == 8 {
 			boxes[0].W = 8
@@ -52,15 +52,48 @@ func TestDeclaredDummyRowsGeometry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if !strings.Contains(strings.Join(Render(f, 64, 9), "\n"), "Claude Code") {
+	if !strings.Contains(strings.Join(Render(f, 64, 10), "\n"), "Claude") {
 		t.Fatal("dummy values missing")
 	}
 	for _, tc := range []struct{ old, new string }{
-		{"width: 13", "width: 0"}, {"align: left", "align: center"},
-		{"['Claude Code', '60%', '2d20h']", "['Claude Code']"},
+		{"width: 8", "width: 0"}, {"align: left", "align: center"},
+		{"['Claude', '[⣿⣿  ]', '60%', '[    ]']", "['Claude']"},
 	} {
 		if _, _, err := BuildWidget(strings.NewReader(strings.Replace(monitorFixture(t), tc.old, tc.new, 1))); err == nil {
 			t.Fatalf("accepted invalid rows %s", tc.new)
 		}
+	}
+}
+
+func TestRowsSetValuesDynamicBinding(t *testing.T) {
+	root, _, err := BuildWidget(strings.NewReader(monitorFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := root.(*Frame)
+	usageBox := f.Box("usage")
+	if usageBox == nil || usageBox.Rows == nil {
+		t.Fatal("usage box or rows missing")
+	}
+
+	// Verify GetValues returns initial values
+	initial := usageBox.Rows.GetValues()
+	if len(initial) != 4 || initial[0][0] != "Claude" {
+		t.Fatalf("unexpected initial values: %v", initial)
+	}
+
+	// Update dynamically
+	dynamicValues := [][]string{
+		{"Updated", "[⣿⣿⣿⣿]", "100%", "[⣿⣿  ]"},
+		{"WorkerB", "[⣀⣀⣀⣀]", "0%", "[    ]"},
+	}
+	f.Box("usage").SetRowsValues(dynamicValues)
+
+	rendered := strings.Join(Render(f, 64, 10), "\n")
+	if !strings.Contains(rendered, "Updated") || !strings.Contains(rendered, "100%") {
+		t.Fatalf("rendered output did not reflect dynamic values:\n%s", rendered)
+	}
+	if strings.Contains(rendered, "Claude") {
+		t.Fatalf("rendered output still contains old value:\n%s", rendered)
 	}
 }

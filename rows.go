@@ -39,10 +39,13 @@ func (rows *Rows) Draw(c *Canvas, r Rect) {
 				if i < len(values) {
 					value = values[i]
 				}
-				text := TruncateText(value, width, rows.Ellipsis)
+				text := ""
 				offset := 0
 				if col.Align == "right" {
+					text = TruncateTextLeft(value, width, rows.Ellipsis)
 					offset = width - StringWidth(text)
+				} else {
+					text = TruncateText(value, width, rows.Ellipsis)
 				}
 				local.Write(x+offset, y, text, Style{Bold: col.Bold})
 				x += width
@@ -50,6 +53,16 @@ func (rows *Rows) Draw(c *Canvas, r Rect) {
 			}
 		}
 	})
+}
+
+// SetValues updates row values dynamically from Go application code.
+func (rows *Rows) SetValues(values [][]string) {
+	rows.Values = values
+}
+
+// GetValues returns the active row values.
+func (rows *Rows) GetValues() [][]string {
+	return rows.Values
 }
 
 // HandleKey keeps static rows inert.

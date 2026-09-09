@@ -20,8 +20,8 @@ func TestShowOnce(t *testing.T) {
 		t.Fatal("plain output contains terminal controls")
 	}
 	rows := strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n")
-	if len(rows) != 9 {
-		t.Fatalf("got %d rows", len(rows))
+	if len(rows) != 10 {
+		t.Fatalf("got %d rows, want 10", len(rows))
 	}
 	for i, row := range rows {
 		if len([]rune(row)) != 64 {
@@ -30,6 +30,12 @@ func TestShowOnce(t *testing.T) {
 	}
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
+	}
+	content := out.String()
+	for _, expected := range []string{"Claude", "[⣿⣿  ]", "Gemini", "cpu (16c)", "[⣿⣿⣿⣿][⣀⣀⣀⣀]"} {
+		if !strings.Contains(content, expected) {
+			t.Errorf("monitor output missing %q:\n%s", expected, content)
+		}
 	}
 }
 

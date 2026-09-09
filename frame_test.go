@@ -70,7 +70,7 @@ func TestMonitorExampleGolden(t *testing.T) {
 		t.Fatalf("rows=%d want=%d", len(rows), cfg.Height(0))
 	}
 	rendered := strings.Join(rows, "\n")
-	if !strings.Contains(rendered, "Claude Code") || !strings.Contains(rendered, "cpu (16c)") {
+	if !strings.Contains(rendered, "Claude") || !strings.Contains(rendered, "cpu (16c)") || !strings.Contains(rendered, "[⣿⣿  ]") || !strings.Contains(rendered, "[⣿⣿⣿⣿][⣀⣀⣀⣀]") {
 		t.Fatalf("monitor fixture missing expected row values:\n%s", rendered)
 	}
 }

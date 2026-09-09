@@ -91,7 +91,7 @@ func oracleCells(row string) ([]string, error) {
 			continue
 		}
 		switch {
-		case r >= ' ' && r <= '~', strings.ContainsRune("┌┐└┘─│⣿⣀█░", r):
+		case r >= ' ' && r <= '~', strings.ContainsRune("┌┐└┘─│█░", r), r >= '\u2800' && r <= '\u28ff':
 			cells = append(cells, string(r))
 		case r == '界' || r == '中' || r == '🔍':
 			cells = append(cells, string(r), "")

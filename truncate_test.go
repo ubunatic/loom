@@ -38,3 +38,36 @@ func TestTruncateTextBudgets(t *testing.T) {
 		})
 	}
 }
+
+func TestTruncateTextLeftBudgets(t *testing.T) {
+	for _, tc := range []struct {
+		text, marker string
+		width        int
+		want         string
+	}{
+		{"12345", "...", -1, ""},
+		{"12345", "...", 0, ""},
+		{"12345", "...", 1, "."},
+		{"12345", "...", 2, ".."},
+		{"12345", "...", 3, "..."},
+		{"12345", "...", 4, "...5"},
+		{"12345", "...", 5, "12345"},
+		{"100.0%", "...", 5, "...0%"},
+		{"16.4/45.1G", "...", 8, "...45.1G"},
+		{"e\u0301中ABC", ".", 4, ".ABC"},
+		{"中中中", ".", 4, ".中"},
+		{"ABC", "中", 1, "C"},
+		{"⣿⣀█░", "", 2, "█░"},
+	} {
+		t.Run(tc.text, func(t *testing.T) {
+			got := TruncateTextLeft(tc.text, tc.width, tc.marker)
+			if got != tc.want {
+				t.Fatalf("got %q want %q", got, tc.want)
+			}
+			cells, err := oracleCells(got)
+			if err != nil || len(cells) > max(0, tc.width) {
+				t.Fatalf("independent width check: %v %v", cells, err)
+			}
+		})
+	}
+}

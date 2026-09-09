@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../spec/schemas/monitor.schema.json
 app:
-  height: 9
+  height: 10
   max_width: 64
 view:
   name: main
@@ -36,32 +36,35 @@ view:
       - id: usage
         title: All Usage
         width: 31
-        height: 7
+        height: 8
         padding: 1
         rows:
           gap: 1
           ellipsis: '...'
           columns:
-            - {width: 13, align: left}
+            - {width: 8, align: left}
+            - {width: 6, align: left}
             - {width: 4, align: right}
-            - {width: 7, align: left}
+            - {width: 6, align: left}
           values:
-            - ['Claude Code', '60%', '2d20h']
-            - ['Gemini', '95%', '1d2h']
-            - ['OpenAI Codex', '41%', '5d12h']
+            - ['Claude', '[⣿⣿  ]', '60%', '[    ]']
+            - ['Gemini', '[⣿⣿⣿⡇]', '95%', '[    ]']
+            - ['Claude/G', '[⣿⣿⣿⡇]', '99%', '[    ]']
+            - ['OpenAI', '[⣿⡇  ]', '41%', '[    ]']
       - id: load
         title: Load
         width: 31
-        height: 7
+        height: 8
         padding: 1
         rows:
           gap: 1
           ellipsis: '...'
           columns:
-            - {width: 13, align: left}
+            - {width: 9, align: left}
+            - {width: 12, align: left}
             - {width: 4, align: right}
-            - {width: 7, align: left}
           values:
-            - ['cpu (16c)', '1%', '47 C']
-            - ['ram (45G)', '36%', '16.4G']
-            - ['gpu (Phoenix)', '3%', '31 C']
+            - ['cpu (16c)', '[⣠⣀⣀⣀⣀⣀⣀⣄⣀⣀]', '1%']
+            - ['ram (45G)', '[⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤]', '36%']
+            - ['gpu (Phx)', '[⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀]', '0%']
+            - ['vram/gtt', '[⣿⣿⣿⣿][⣀⣀⣀⣀]', '6%']

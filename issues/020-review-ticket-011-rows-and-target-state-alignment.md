@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 020 — Review of Ticket 011 increments and target state alignment
 
-**Status**: Open
+**Status**: Closed — proposed alignment changes implemented and verified across tickets 011, 021, 022, 023
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Planning / Review
@@ -30,11 +30,11 @@ Work on [ticket 011](011-aligned-dashboard-rows-and-ansi-safe-truncation.md) is 
 
 ## Acceptance criteria
 
-- [ ] Complete Ticket 011 scope by adding graph placeholder columns to [examples/monitor/spec/monitor.yaml](../examples/monitor/spec/monitor.yaml) with static Braille/block dummy data matching [HarnezUsageTarget.md](../docs/HarnezUsageTarget.md).
-- [ ] Adjust box dimensions and inner layout capacity to fit all 4 canonical target rows in both the Usage and Load panels without vertical overflow.
-- [ ] Ensure right-aligned columns handle truncation consistently without displacing column alignment boundaries.
-- [ ] Expose an update/binding interface on `Rows` so Go can supply row values programmatically while YAML preserves layout, column widths, and alignment structure.
-- [ ] Complete Ticket 011 delivery evidence and verification before transitioning to Ticket 012 rograph porting.
+- [x] Complete Ticket 011 scope by adding graph placeholder columns to [examples/monitor/spec/monitor.yaml](../examples/monitor/spec/monitor.yaml) with static Braille/block dummy data matching [HarnezUsageTarget.md](../docs/HarnezUsageTarget.md).
+- [x] Adjust box dimensions and inner layout capacity to fit all 4 canonical target rows in both the Usage and Load panels without vertical overflow.
+- [x] Ensure right-aligned columns handle truncation consistently without displacing column alignment boundaries.
+- [x] Expose an update/binding interface on `Rows` so Go can supply row values programmatically while YAML preserves layout, column widths, and alignment structure.
+- [x] Complete Ticket 011 delivery evidence and verification before transitioning to Ticket 012 rograph porting.
 
 ## Verification
 
@@ -43,3 +43,10 @@ Run `go test ./...`, `make test`, and `go run ./examples/monitor` to verify that
 ## Scope limits
 
 Graph algorithms, Braille interpolation, live data collection, and palette-based color mapping belong to tickets 012, 013, and 014. This review coordinates the completion of ticket 011 and structural alignment with subsequent tickets.
+
+## Delivery evidence
+
+1. Proposed changes executed in Ticket 011: 4-row layout, 8-row boxes, 10-row frame, graph placeholders for dual usage bars, rolling timelines, and split dual VRAM/GTT timeline in `monitor.yaml`.
+2. Implemented `TruncateTextLeft` in `truncate.go` and connected to right-aligned columns in `rows.go`.
+3. Added `SetValues` / `GetValues` on `Rows`, `Box.SetRowsValues`, and `Frame.Box` for programmatic snapshot updates.
+4. Spun off independent bug fixes into Tickets 021, 022, and 023; all three tickets are resolved and verified with tests.
