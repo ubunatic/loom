@@ -15,11 +15,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Problem and findings
 
-Copy the bounded dependency-free Harnez rograph implementation into Loom initially. Inspected sibling revision: 01e59b331c9d85699e55fbbb946c579e19901083. [bar.go](../../harnez/internal/rograph/bar.go), [sparkline.go](../../harnez/internal/rograph/sparkline.go) and [options.go](../../harnez/internal/rograph/options.go) expose RenderBar, PercentSparkline and RenderSparkline. The checked files have no SPDX headers; the checked sibling root has no tracked LICENSE/REUSE file, and README/go.mod supplied no license attribution. Loom's [REUSE.toml](../REUSE.toml) and [005](005-license-clarification.md) establish Loom's AGPL intent but do not establish permission for sibling code.
+The user explicitly authorized copying Harnez rograph into Loom while retaining it in Harnez; no further copy permission is needed. Inspected sibling revision: 01e59b331c9d85699e55fbbb946c579e19901083. [bar.go](../../harnez/internal/rograph/bar.go), [sparkline.go](../../harnez/internal/rograph/sparkline.go) and [options.go](../../harnez/internal/rograph/options.go) expose RenderBar, PercentSparkline and RenderSparkline. The checked files have no SPDX headers; the checked sibling root has no tracked LICENSE/REUSE file, and README/go.mod supplied no license attribution. Record that metadata gap accurately alongside source provenance and the existing authorization; preserve applicable notices. Loom's licensing context is in [REUSE.toml](../REUSE.toml) and [005](005-license-clarification.md).
 
 ## Acceptance criteria
 
-- [ ] Before copying, verify and record source revision, file list, authorship, applicable source license/permission and required notices. If authoritative permission is absent, record the precise blocker and resolve it before copying; do not infer it from common ownership or Loom's license.
+- [ ] Record the existing user authorization, source revision, copied file list and verified authorship/license metadata; preserve applicable notices and identify missing metadata without inventing attribution or requiring renewed permission.
 - [ ] Copy only the required graph implementation and relevant tests into Loom with attribution and a recorded adaptation diff. Do not import another module's internal package, extract a shared package, or modify Harnez/Voxi.
 - [ ] Adapt bars and percentage timelines to Loom's cells/styles and declared presentation inputs. Keep metric names, collectors and spec loading outside the renderer; avoid importing Harnez's mutable DefaultBackgroundANSI as a new Loom global.
 - [ ] Provide exact allocated graph widths even for empty/short histories. Current PercentSparkline emits one glyph per sample; RenderSparkline emits up to Width from newest 2*Width samples, not automatic full-width padding. Specify padding independently of sample storage and test both semantics.
@@ -32,4 +32,4 @@ Record provenance/permission evidence and verify imported file checksums or sour
 
 ## Scope limits
 
-No source copy until licensing is established; no sibling mutation, public-package extraction, Harnez collectors or palette framework. Any missing license is an implementation gate, not a reason to omit this roadmap ticket.
+Copy within the existing user authorization and document provenance accurately. No sibling mutation, public-package extraction, Harnez collectors or palette framework; missing source metadata is an attribution finding, not an automatic approval gate.

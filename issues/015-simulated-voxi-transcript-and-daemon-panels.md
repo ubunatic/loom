@@ -15,7 +15,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Problem and findings
 
-The roadmap's stage-7 completion wording risks omitting Voxi. The [Voxi target](../docs/HarnezUsageTarget.md#voxi-monitor-target) adds transcript and daemon/health content beyond Harnez graphs. Existing [TextArea](../textarea.go) is an editor, not an established transcript-feed API.
+A Harnez-only dashboard misses the Voxi target. The [Voxi target](../docs/HarnezUsageTarget.md#voxi-monitor-target) adds transcript and daemon/health content beyond Harnez graphs. Existing [TextArea](../textarea.go) is an editor, not an established transcript-feed API.
 
 ## Acceptance criteria
 
