@@ -39,6 +39,7 @@ type Box struct {
 	Border  BoxBorder `yaml:"-"`
 	Child   Widget    `yaml:"-"`
 	Hidden  bool      `yaml:"hidden"`
+	Rows    *Rows     `yaml:"rows"`
 }
 
 // Draw paints a box. Bounds smaller than a complete border are left blank.
@@ -274,6 +275,12 @@ func (f *Frame) validate() error {
 			return fmt.Errorf("frame.boxes[%d]: width/height must fit border and nonnegative padding", i)
 		}
 		b.Border = border
+		if b.Rows != nil {
+			if err := b.Rows.validate(); err != nil {
+				return fmt.Errorf("frame.boxes[%d]: %w", i, err)
+			}
+			b.Child = b.Rows
+		}
 	}
 	keys, ids, targets := map[string]bool{}, map[string]bool{}, map[string]bool{}
 	if !shellText(f.ControlSeparator) {

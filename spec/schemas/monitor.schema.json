@@ -52,6 +52,26 @@
         "title_hint": {"$ref": "#/definitions/text"}
       }
     },
+    "rows": {
+      "type": "object", "additionalProperties": false,
+      "required": ["columns", "values", "gap", "ellipsis"],
+      "properties": {
+        "gap": {"type": "integer", "minimum": 0},
+        "ellipsis": {"type": "string"},
+        "columns": {
+          "type": "array", "minItems": 1,
+          "items": {
+            "type": "object", "additionalProperties": false, "required": ["width"],
+            "properties": {
+              "width": {"type": "integer", "minimum": 1},
+              "align": {"enum": ["left", "right"]},
+              "bold": {"type": "boolean"}
+            }
+          }
+        },
+        "values": {"type": "array", "items": {"type": "array", "items": {"type": "string"}}}
+      }
+    },
     "box": {
       "type": "object", "additionalProperties": false,
       "required": ["id", "width", "height"],
@@ -61,6 +81,7 @@
         "width": {"type": "integer", "minimum": 2},
         "height": {"type": "integer", "minimum": 2},
         "padding": {"type": "integer", "minimum": 0}
+        ,"rows": {"$ref": "#/definitions/rows"}
         ,"hidden": {"type": "boolean"}
       }
     }

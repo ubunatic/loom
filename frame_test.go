@@ -23,6 +23,10 @@ func TestStaticShellGolden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// Preserve the original empty-shell geometry fixture as content is added.
+	for i := range w.(*Frame).Boxes {
+		w.(*Frame).Boxes[i].Child = nil
+	}
 	rows := Render(w, cfg.MaxWidth(), cfg.Height(0))
 	// Explicit expected columns, independent of production width/layout helpers.
 	want := []string{

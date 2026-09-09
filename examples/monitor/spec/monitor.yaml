@@ -38,8 +38,30 @@ view:
         width: 31
         height: 7
         padding: 1
+        rows:
+          gap: 1
+          ellipsis: '...'
+          columns:
+            - {width: 13, align: left}
+            - {width: 4, align: right}
+            - {width: 7, align: left}
+          values:
+            - ['Claude Code', '60%', '2d20h']
+            - ['Gemini', '95%', '1d2h']
+            - ['OpenAI Codex', '41%', '5d12h']
       - id: load
         title: Load
         width: 31
         height: 7
         padding: 1
+        rows:
+          gap: 1
+          ellipsis: '...'
+          columns:
+            - {width: 13, align: left}
+            - {width: 4, align: right}
+            - {width: 7, align: left}
+          values:
+            - ['cpu (16c)', '1%', '47 C']
+            - ['ram (45G)', '36%', '16.4G']
+            - ['gpu (Phoenix)', '3%', '31 C']

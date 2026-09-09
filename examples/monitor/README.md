@@ -13,6 +13,12 @@ This prints a 64-column, nine-row monochrome frame and exits. It works with
 redirected stdin/stdout and does not open a terminal, wait for keys, or change
 terminal modes. Dimensions come from the document, not terminal detection.
 
+The boxes now contain fixed dummy usage and CPU/RAM/GPU rows. These are not real
+measurements. Edit each box's `rows` in `spec/monitor.yaml` to change the values,
+column widths, alignment, gap or ellipsis. Column positions do not depend on value
+length; on narrow layouts, left columns take priority and later columns clip.
+The empty-shell illustration below documents the original geometry only.
+
 `--watch` opens an inline pane. The clock is collected at 1 Hz and redrawn at
 20 Hz independently of input. Press `u`/`l` to toggle usage/load, `q` or Ctrl-C
 to quit. Both boxes can be hidden and restored without resetting the clock. The embedded

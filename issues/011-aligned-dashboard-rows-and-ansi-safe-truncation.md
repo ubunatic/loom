@@ -41,6 +41,13 @@ the geometry policy; styles are supplied separately, not embedded in strings.
 Tests use the independent emitted-cell oracle rather than production width
 helpers for the budget assertion. Vet, full tests and race checks pass.
 
-Still open: reusable declared row/column models, strict schema/reference
-validation, stable alignment/overflow priority, styled row rendering, and the
-fixed-data example. No row acceptance criteria are marked complete yet.
+Second small increment: box `rows` now declares fixed-width columns, alignment,
+optional bold style, gaps, ellipsis and fixed string values. Runtime validation
+rejects invalid widths/alignment and mismatched value counts; schema covers all
+fields. Leftmost columns have overflow priority; trailing columns clip or vanish.
+The monitor shows three dummy usage rows and three dummy hardware rows, entirely
+from YAML. Headless geometry tests cover wide/slim/tiny layouts; alignment tests
+cover 99%/100%, long names/durations and styled columns.
+
+Still open: graph-placeholder demonstration and final ticket-level review of
+all acceptance criteria. Values are static, not collected system measurements.
