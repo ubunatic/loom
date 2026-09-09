@@ -7,6 +7,7 @@ With a monitor binary, observe idle redraws, answer DSR, resize, then send q.
 import fcntl
 import os
 import pty
+import re
 import select
 import signal
 import struct
@@ -28,7 +29,9 @@ command = sys.argv[1:] or [sys.executable, "-c", "import os,tty,termios; old=ter
 child = subprocess.Popen(command, stdin=slave, stdout=slave, stderr=slave, preexec_fn=attach)
 output = bytearray()
 started = time.monotonic()
-sent = resized = False
+sent = resized = widened = False
+phases = []
+phase_start = 0
 try:
     while child.poll() is None and time.monotonic() - started < 6:
         if select.select([master], [], [], 0.05)[0]:
@@ -38,9 +41,17 @@ try:
                 os.write(master, b"\x1b[1;1R")
         elapsed = time.monotonic() - started
         if not resized and elapsed > 1:
+            phases.append(bytes(output[phase_start:]))
+            phase_start = len(output)
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 20, 60, 0, 0))
             os.kill(child.pid, signal.SIGWINCH)
             resized = True
+        if not widened and elapsed > 1.6:
+            phases.append(bytes(output[phase_start:]))
+            phase_start = len(output)
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 24, 80, 0, 0))
+            os.kill(child.pid, signal.SIGWINCH)
+            widened = True
         if not sent and elapsed > (0.2 if probe else 2.2):
             if os.environ.get("LOOM_TEST_SIGNAL"):
                 os.kill(child.pid, signal.SIGTERM)
@@ -55,6 +66,14 @@ try:
         raise RuntimeError("terminal mode was not restored")
     if not probe and output.count(b"\x1b[?25l") < 20:
         raise RuntimeError("too few idle redraws")
+    if not probe and os.environ.get("LOOM_TEST_RESPONSIVE"):
+        phases.append(bytes(output[phase_start:]))
+        for phase, stacked in zip(phases, [False, True, False]):
+            rows = re.findall(r"\x1b\[(\d+);1H([^\x1b]*)", phase.decode())
+            usage = [int(y) for y, text in rows if "All Usage" in text]
+            load = [int(y) for y, text in rows if "Load" in text]
+            if not usage or not load or ((usage[-1] != load[-1]) != stacked):
+                raise RuntimeError(f"responsive placement failed: {usage}, {load}, stacked={stacked}")
     print(f"PTY {'probe' if probe else 'watch'} passed; {len(output)} bytes; terminal restored")
 finally:
     if child.poll() is None:

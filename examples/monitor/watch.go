@@ -24,6 +24,7 @@ type watchSpec struct {
 	Command     string        `yaml:"command"`
 	Description string        `yaml:"description"`
 	WatchHelp   string        `yaml:"watch_help"`
+	WidthHelp   string        `yaml:"width_help"`
 }
 
 func loadWatch() (watchSpec, error) {
@@ -107,5 +108,6 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	}
 	defer pane.Close()
 	pane.MaxCols = cfg.MaxWidth()
+	pane.Resizeable = true
 	return pane.RunWatch(ctx, &clockView{frame, spec.QuitKeys}, loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}, collect)
 }

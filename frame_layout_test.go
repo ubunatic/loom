@@ -1,0 +1,73 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package loom
+
+import (
+	"reflect"
+	"strings"
+	"testing"
+)
+
+func TestResponsiveFrameLayout(t *testing.T) {
+	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := w.(*Frame)
+	for _, tc := range []struct {
+		name                     string
+		width, height, preferred int
+		want                     []Rect
+	}{
+		{"below", 63, 18, 18, []Rect{{0, 1, 31, 7}, {0, 10, 31, 7}}},
+		{"at", 64, 9, 9, []Rect{{0, 1, 31, 7}, {33, 1, 31, 7}}},
+		{"above", 65, 9, 9, []Rect{{0, 1, 31, 7}, {33, 1, 31, 7}}},
+		{"wide", 100, 9, 9, []Rect{{0, 1, 31, 7}, {33, 1, 31, 7}}},
+		{"slim", 20, 18, 18, []Rect{{0, 1, 20, 7}, {0, 10, 20, 7}}},
+		{"short", 63, 6, 18, []Rect{{0, 1, 31, 4}, {}}},
+		{"tiny width", 1, 18, 18, []Rect{{}, {}}},
+		{"tiny height", 64, 3, 9, []Rect{{}, {}}},
+		{"negative", -1, -1, 18, []Rect{{}, {}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := f.Layout(tc.width, tc.height); !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("got %+v want %+v", got, tc.want)
+			}
+			if got := f.HeightForWidth(tc.width); got != tc.preferred {
+				t.Fatalf("height %d", got)
+			}
+		})
+	}
+}
+
+func TestResponsiveRenderPreservesState(t *testing.T) {
+	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := w.(*Frame)
+	f.Title = "clock snapshot 12:34:56"
+	for _, width := range []int{64, 63, 64, 10, 64} {
+		rows := Render(f, width, f.HeightForWidth(width))
+		loadRow := 1
+		if width < 64 {
+			loadRow = 10
+		}
+		if !strings.Contains(rows[loadRow], "Load") {
+			t.Fatalf("width %d missing load at row %d", width, loadRow)
+		}
+		if f.Title != "clock snapshot 12:34:56" {
+			t.Fatal("layout mutated snapshot")
+		}
+		for i, row := range rows {
+			if len([]rune(strings.TrimSuffix(row, "\x1b[0m"))) != width {
+				t.Fatalf("width %d row %d escaped", width, i)
+			}
+		}
+	}
+	bad := strings.Replace(shellFixture(t), "breakpoint: 64", "breakpoint: -1", 1)
+	if _, _, err := BuildWidget(strings.NewReader(bad)); err == nil {
+		t.Fatal("negative breakpoint accepted")
+	}
+}

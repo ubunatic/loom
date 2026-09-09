@@ -8,3 +8,4 @@ quit_keys: [q, ctrl-c]
 command: monitor
 description: Render the declared Loom monitor once or watch its clock
 watch_help: Watch the clock until quit
+width_help: Show-once width in terminal cells (otherwise use the declaration)

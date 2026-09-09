@@ -431,11 +431,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	dirty := true
 	for {
 		if p.Resizeable {
-			if ch, ok := root.(ContentHeighter); ok {
-				targetH := ch.ContentHeight()
-				if targetH != p.rows {
-					p.Resize(targetH)
-				}
+			targetH := p.wantRows
+			if ch, ok := root.(WidthHeighter); ok {
+				targetH = ch.HeightForWidth(cols)
+			} else if ch, ok := root.(ContentHeighter); ok {
+				targetH = ch.ContentHeight()
+			}
+			if targetH != p.wantRows {
+				p.Resize(targetH)
+				dirty = true
 			}
 		}
 

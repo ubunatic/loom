@@ -8,6 +8,7 @@ view:
     title: Loom monitor
     status: Show once
     gap: 2
+    breakpoint: 64
     boxes:
       - id: usage
         title: All Usage

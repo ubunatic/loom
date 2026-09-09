@@ -45,3 +45,9 @@ type Item struct {
 type ContentHeighter interface {
 	ContentHeight() int
 }
+
+// WidthHeighter estimates preferred height at an allocated terminal-cell width.
+// Resizable panes prefer this over ContentHeighter for responsive roots.
+type WidthHeighter interface {
+	HeightForWidth(width int) int
+}

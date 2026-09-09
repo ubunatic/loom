@@ -6,6 +6,7 @@ From the repository root:
 go run ./examples/monitor
 go run ./examples/monitor --watch
 go run ./examples/monitor --help
+go run ./examples/monitor --width 40
 ```
 
 This prints a 64-column, nine-row monochrome frame and exits. It works with
@@ -54,15 +55,21 @@ development tooling; the executable needs neither Python nor external files.
 
 ## Contract and limits
 
-The frame reserves one title and one status row, placing declared box widths in
-sequence with the declared gap. It clips to available space and does not wrap.
+The frame reserves one title and one status row. At the declared breakpoint
+(64 columns) and wider, boxes form a row; below it they form a vertical stack.
+Declared widths remain preferred widths, clipped to available width. Gaps are
+allocated between boxes in either direction. `--width` sets a deterministic
+show-once width without a TTY; watch reads terminal size and changes reserved
+height through Loom's `WidthHeighter` interface. Layout never collects data.
+When height is insufficient, earlier boxes get space first; later boxes are
+omitted. A clipped box keeps a complete border or is omitted below 2x2 cells.
 At one row, only the title is shown; at zero child area, nothing is drawn. A box
 needs at least two rows and columns for a border. Padding is inside that border.
 Children draw on isolated canvases, protecting border, padding, and neighbors.
 
 The first shell accepts printable ASCII labels and status text; border glyphs
-come from the library spec. General Unicode/ANSI text, color, responsive reflow,
-and visibility controls are later tickets. Watch currently clips narrow layouts.
+come from the library spec. General Unicode/ANSI text, color,
+and visibility controls are later tickets.
 
 YAML loading now rejects unknown fields, multiple documents, ambiguous root
 forms, duplicate IDs, bad dimensions, and unresolved grid/order/root references.

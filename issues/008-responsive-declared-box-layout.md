@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 008 — Responsive declared box layout
 
-**Status**: Open
+**Status**: Closed — responsive layout verified headlessly and through PTY resize
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -19,10 +19,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Acceptance criteria
 
-- [ ] One validated declaration places both boxes side by side at/above a declared breakpoint and stacks them below it, preserving declaration order.
-- [ ] Allocate title/status chrome, borders, padding and gaps before child content; no negative rectangles or overlap. Define deterministic behavior when terminal width or height cannot fit minimum dimensions.
-- [ ] Resize across the breakpoint in both directions during watch without losing clock state; one-shot and watch use the same layout calculation.
-- [ ] Keep terminal coordinate arithmetic inside generic layout code, not the example or its producer; preserve existing Stack/Grid consumers.
+- [x] One validated declaration places both boxes side by side at/above a declared breakpoint and stacks them below it, preserving declaration order.
+- [x] Allocate title/status chrome, borders, padding and gaps before child content; no negative rectangles or overlap. Define deterministic behavior when terminal width or height cannot fit minimum dimensions.
+- [x] Resize across the breakpoint in both directions during watch without losing clock state; one-shot and watch use the same layout calculation.
+- [x] Keep terminal coordinate arithmetic inside generic layout code, not the example or its producer; preserve existing Stack/Grid consumers.
 
 ## Verification
 
@@ -31,3 +31,12 @@ Table-test breakpoint minus one, exactly breakpoint, plus one, wide/slim, and ti
 ## Scope limits
 
 Two-box responsive row/column composition only; no CSS/flexbox engine, weighted grids, rich content or visibility controls yet.
+
+## Delivery evidence
+
+Implemented shared `Frame.Layout` / `HeightForWidth`, optional breakpoint YAML,
+and width-aware resizable Pane roots. `--width` renders deterministic one-shot
+sizes without terminal access. Legacy Stack/Grid are unchanged. Explicit rectangle
+and render tests cover breakpoint -1/0/+1, tiny bounds, and preserved state.
+`make test`, `go test -race ./...`, and PTY wide/slim/wide placement and terminal
+restoration checks passed (`LOOM_TEST_RESPONSIVE=1`).

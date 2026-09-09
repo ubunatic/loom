@@ -76,13 +76,14 @@ func (b *Box) HandleKey(KeyEvent) bool { return false }
 // HandleMouse leaves static boxes inert.
 func (b *Box) HandleMouse(MouseEvent) bool { return false }
 
-// Frame is a static horizontal row of ordered boxes between title/status lines.
-// It clips boxes to remaining space; responsive wrapping is a later feature.
+// Frame places ordered boxes between title/status lines. A positive Breakpoint
+// switches the row to a vertical stack at narrower widths; zero keeps a row.
 type Frame struct {
-	Title  string `yaml:"title"`
-	Status string `yaml:"status"`
-	Gap    int    `yaml:"gap"`
-	Boxes  []Box  `yaml:"boxes"`
+	Title      string `yaml:"title"`
+	Status     string `yaml:"status"`
+	Gap        int    `yaml:"gap"`
+	Breakpoint int    `yaml:"breakpoint"`
+	Boxes      []Box  `yaml:"boxes"`
 }
 
 // Draw reserves the first and last rows for chrome. At one row only title fits.
@@ -94,18 +95,53 @@ func (f *Frame) Draw(c *Canvas, r Rect) {
 			return
 		}
 		writeBounded(local, 0, h-1, w, f.Status)
-		x := 0
-		for i := range f.Boxes {
-			b := &f.Boxes[i]
-			if x >= w {
-				break
-			}
-			width := min(max(0, b.Width), w-x)
-			b.Draw(local, Rect{X: x, Y: 1, W: width, H: min(max(0, b.Height), h-2)})
-			x += width
-			x += min(max(0, f.Gap), w-x)
+		for i, rect := range f.Layout(w, h) {
+			f.Boxes[i].Draw(local, rect)
 		}
 	})
+}
+
+// Layout returns one bounded outer rectangle per declared box. Chrome takes
+// precedence, then boxes in declaration order. Unavailable boxes have zero
+// rectangles; areas too small for a full border are omitted rather than broken.
+func (f *Frame) Layout(width, height int) []Rect {
+	result := make([]Rect, len(f.Boxes))
+	if width < 2 || height < 4 {
+		return result
+	}
+	x, y, bottom := 0, 1, height-1
+	stacked := f.Breakpoint > 0 && width < f.Breakpoint
+	for i, b := range f.Boxes {
+		w, h := min(max(0, b.Width), width-x), min(max(0, b.Height), bottom-y)
+		if w < 2 || h < 2 {
+			break
+		}
+		result[i] = Rect{X: x, Y: y, W: w, H: h}
+		if stacked {
+			y += h
+			y += min(max(0, f.Gap), bottom-y)
+		} else {
+			x += w
+			x += min(max(0, f.Gap), width-x)
+		}
+	}
+	return result
+}
+
+// HeightForWidth reports the preferred height, including chrome and stack gaps.
+// It is independent of Draw, so resize never changes application data.
+func (f *Frame) HeightForWidth(width int) int {
+	if f.Breakpoint <= 0 || width >= f.Breakpoint {
+		return f.ContentHeight()
+	}
+	h := 2
+	for i, box := range f.Boxes {
+		if i > 0 {
+			h += max(0, f.Gap)
+		}
+		h += max(0, box.Height)
+	}
+	return h
 }
 
 // ContentHeight includes two chrome rows and the tallest box.
@@ -124,6 +160,9 @@ func (f *Frame) HandleKey(KeyEvent) bool { return false }
 func (f *Frame) HandleMouse(MouseEvent) bool { return false }
 
 func (f *Frame) validate() error {
+	if f.Breakpoint < 0 {
+		return fmt.Errorf("frame.breakpoint: cannot be negative")
+	}
 	if f.Gap < 0 {
 		return fmt.Errorf("frame.gap: cannot be negative")
 	}
