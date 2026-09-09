@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 024 — Port Harnez rograph primitives with provenance
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -28,15 +28,18 @@ Currently, `PercentSparkline` emits one glyph per sample without automatic full-
 
 ## Acceptance criteria
 
-- [ ] Record the source revision (`01e59b331c9d85699e55fbbb946c579e19901083`), copied file list, and verified provenance.
-- [ ] Copy and adapt `RenderBar`, `PercentSparkline`, and `RenderSparkline` to Loom's cell/style conventions without external dependencies or global state.
-- [ ] Guarantee exact allocated column widths even when sample histories are empty or shorter than the requested width.
-- [ ] Port focused unit tests from Harnez for boundary values, empty histories, 2-sample Braille cells, and sub-character precision.
-- [ ] Ensure all tests pass under `go test -race ./...` and `make test`.
+- [x] Record the source revision (`01e59b331c9d85699e55fbbb946c579e19901083`), copied file list, and verified provenance.
+- [x] Copy and adapt `RenderBar`, `PercentSparkline`, and `RenderSparkline` to Loom's cell/style conventions without external dependencies or global state.
+- [x] Guarantee exact allocated column widths even when sample histories are empty or shorter than the requested width.
+- [x] Port focused unit tests from Harnez for boundary values, empty histories, 2-sample Braille cells, and sub-character precision.
+- [x] Ensure all tests pass under `go test -race ./...` and `make test`.
 
 ## Verification
 
-Run unit tests for bar and sparkline renderers verifying byte-exact output, exact cell widths across empty/short/full sample arrays, and race safety.
+- `graph/PROVENANCE.md` records upstream commit `01e59b331c9d85699e55fbbb946c579e19901083`, source files, and architectural adaptations.
+- Zero mutable package globals: `DefaultBackgroundANSI` is an immutable constant; background codes are resolved per options call with `"none"` support.
+- Short and empty sample arrays are automatically padded on the left to guarantee exact `Width`/`maxWidth` rune counts, preventing dashboard row misalignments. `NoPad: true` remains available for callers requesting raw slice lengths.
+- `go test -race ./...` and `make test` pass cleanly.
 
 ## Scope limits
 
