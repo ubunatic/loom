@@ -36,16 +36,32 @@ weight: 60
   ```
   Use the `BINARY` variable from the Makefile as the canonical name so the `.gitignore` entry and the build output always match.
 
+## Workspace Isolation
+
+- Go automatically applies the nearest enclosing `go.work` to every descendant directory. A
+  persistent workspace for sibling-module development can therefore break an unrelated nested
+  repository whose modules are absent from that workspace.
+- `harnez init` probes `go env GOWORK` and the active workspace's parsed module list. When an
+  enclosing workspace omits any Go module found in the target repository, init creates a minimal
+  project-local `go.work` that uses all of the repository's modules. Existing local workspaces are
+  always preserved, and init creates nothing when there is no module or no demonstrated hazard.
+- A project-local workspace is the normal isolation boundary. To deliberately use a different
+  cross-repository workspace for one command, select it explicitly, for example
+  `GOWORK=/path/to/go.work go test ./...`. Release builds still use their separate
+  `GOWORK=off` policy unless `harnez release --allow-workspace` is passed.
+
 ## Spec-Driven Apps
 - Avoid hard-coding application configuration, UI labels, controls, text, icons, or layout variables in Go code.
 - Define them in YAML specs under `spec/` (e.g. `spec/strings.yaml`, `spec/layout.yaml`, `spec/controls.yaml`) with `$schema` in `spec/schemas/`.
 - Embed `spec/` into the Go binary (`//go:embed`); it **IS** part of the code!
 - Write compiler/unit test assertions to verify Go structs match specs.
 
-## CLI
+## CLI & Releases
 - Use Cobra; one `*cobra.Command` per verb, flags defined on that command.
 - Use `RunE` instead of `Run` — return errors, don't `os.Exit` inside commands.
 - Set `SilenceUsage: true` on commands where error is not a usage mistake.
+- **Version Wiring**: Keep `var Version = "..."` in `version.go` (synced automatically by `harnez release` from `version.yaml`) and wire `rootCmd.Version = Version`.
+- **Releases**: Provide a thin `release: check ⚙️` recipe that delegates to `harnez release`. See `@docs/GoRelease.md`.
 
 ## State Management
 - **No package-level mutable variables**: Pass state explicitly via function arguments or state structs (e.g. `type App struct { client *http.Client }`). Mutable global state creates hidden coupling and breaks tests.
@@ -73,5 +89,3 @@ weight: 60
 - Put tests in the same package (e.g. `package main`) to test unexported components easily.
 - Helpers: `t.Helper()`, `t.Fatalf` for setup failures, `t.Errorf` for assertion failures.
 - Standard library `testing` only — no external testing frameworks or mock generators.
-
-

@@ -98,14 +98,51 @@ Install approach is usually: do local + try global
 - `sudo install -m 0755` copies to `$(PREFIX)/bin` for system-wide availability
 - `|| echo …` degrades gracefully when `sudo` is unavailable
 
-## Test target
+## Check target
 
 ```makefile
-test: ⚙️  # run linter and tests
+check: ⚙️  # run static analysis and tests
 	go vet ./...
 	go test ./...
+
+check-fast: ⚙️  # fast local feedback loop
+	go test ./...
+
+test: ⚙️ check  # alias for check
 ```
 
+`make check` is the standard verification target used by development-flow docs.
 Always run `go vet` before `go test`; vet catches issues tests may not exercise.
+Keep `make test` as a compatibility alias when a repo already exposes it.
+Add `make check-fast` when full checks are slow; it should keep broad coverage but use cheap settings. Example: `trafficsim` runs one focused model via `MODEL=...`.
 
+## Deployment target parity
 
+Any project with mutating provisioners (pushes a binary, config, or schedule to a remote host)
+must expose the same four self-documenting targets, so deploy/verify is never ad hoc SSH
+one-liners. For projects with remote deployment, install the optional
+`deployment-transparency` practice
+for why the query targets (`run`/`status`) must probe the live host rather than assume success
+from a completed `deploy`.
+
+```makefile
+deploy: ⚙️ build  # deploy binary, configs, and cron schedules (DRY=1 for dry-run)
+	@scripts/deploy.sh $(if $(DRY),--dry-run)
+
+run: ⚙️  # query live deployment health (process, service, or job status)
+	@scripts/deploy.sh --status
+
+status: ⚙️ run  # alias for run
+
+backup: ⚙️  # sync state snapshots from the remote host
+	@scripts/backup.sh
+```
+
+- `make deploy [DRY=1]` — ships binary, configs, and cron/systemd schedules; `DRY=1` must perform
+  a real dry-run against the remote host, not a no-op.
+- `make run` / `make status` — read-only: query the actual remote process table, systemd units, or
+  crontab, not the local repo state. Keep `status` as an alias when a repo already exposes `run`.
+- `make backup` — sync state snapshots (config overlays, data) down from the remote host before a
+  risky deploy.
+- Every target here queries or mutates a real remote host — treat it like `make smoke` (see
+  `docs/practices/AgenticLoop.md`): safe to define, but only run when you intend the live effect.
