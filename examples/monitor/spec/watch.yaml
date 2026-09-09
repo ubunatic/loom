@@ -3,8 +3,7 @@ collect: 1s
 redraw: 50ms
 clock_format: '15:04:05'
 title: '{{.Title}}  {{.Time}}'
-status: '[q]quit  [Ctrl-C]quit'
-quit_keys: [q, ctrl-c]
+status: Watch
 command: monitor
 description: Render the declared Loom monitor once or watch its clock
 watch_help: Watch the clock until quit

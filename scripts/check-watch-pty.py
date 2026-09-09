@@ -32,6 +32,7 @@ started = time.monotonic()
 sent = resized = widened = False
 phases = []
 phase_start = 0
+toggle_index = 0
 try:
     while child.poll() is None and time.monotonic() - started < 6:
         if select.select([master], [], [], 0.05)[0]:
@@ -40,6 +41,9 @@ try:
             if b"\x1b[6n" in chunk and not os.environ.get("LOOM_TEST_NO_DSR"):
                 os.write(master, b"\x1b[1;1R")
         elapsed = time.monotonic() - started
+        if os.environ.get("LOOM_TEST_TOGGLES") and toggle_index < 4 and elapsed > 0.25 * (toggle_index + 1):
+            os.write(master, b"ulul"[toggle_index:toggle_index+1])
+            toggle_index += 1
         if not resized and elapsed > 1:
             phases.append(bytes(output[phase_start:]))
             phase_start = len(output)
@@ -74,6 +78,10 @@ try:
             load = [int(y) for y, text in rows if "Load" in text]
             if not usage or not load or ((usage[-1] != load[-1]) != stacked):
                 raise RuntimeError(f"responsive placement failed: {usage}, {load}, stacked={stacked}")
+    if not probe and os.environ.get("LOOM_TEST_TOGGLES"):
+        for hint in [b"[u]usage:off  [l]load:on", b"[u]usage:off  [l]load:off", b"[u]usage:on  [l]load:off", b"[u]usage:on  [l]load:on"]:
+            if hint not in output:
+                raise RuntimeError(f"missing visibility state {hint!r}")
     print(f"PTY {'probe' if probe else 'watch'} passed; {len(output)} bytes; terminal restored")
 finally:
     if child.poll() is None:

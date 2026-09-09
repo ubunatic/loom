@@ -14,9 +14,14 @@ redirected stdin/stdout and does not open a terminal, wait for keys, or change
 terminal modes. Dimensions come from the document, not terminal detection.
 
 `--watch` opens an inline pane. The clock is collected at 1 Hz and redrawn at
-20 Hz independently of input. Press `q` or Ctrl-C to quit. The embedded
+20 Hz independently of input. Press `u`/`l` to toggle usage/load, `q` or Ctrl-C
+to quit. Both boxes can be hidden and restored without resetting the clock. The embedded
 [watch declaration](spec/watch.yaml) sets intervals, clock format, title
-template, status hints, and quit keys. Nonpositive intervals are rejected.
+template and status text. Nonpositive intervals are rejected. Toggle/quit
+actions, keys, targets and visibility/title hints live together in the monitor
+declaration; unknown handlers, duplicate keys/IDs and missing targets fail loading.
+`hidden: true` on a box sets initial visibility for both modes. Hidden boxes use
+no layout space and receive no input; controls remain on the status row.
 Cobra provides CLI parsing/help, as prescribed by the Go conventions.
 
 `Pane.RunWatch` adds owned timers and cancellation to the existing event loop.
@@ -68,8 +73,7 @@ needs at least two rows and columns for a border. Padding is inside that border.
 Children draw on isolated canvases, protecting border, padding, and neighbors.
 
 The first shell accepts printable ASCII labels and status text; border glyphs
-come from the library spec. General Unicode/ANSI text, color,
-and visibility controls are later tickets.
+come from the library spec. General Unicode/ANSI text and color are later tickets.
 
 YAML loading now rejects unknown fields, multiple documents, ambiguous root
 forms, duplicate IDs, bad dimensions, and unresolved grid/order/root references.

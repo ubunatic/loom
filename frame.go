@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -37,6 +38,7 @@ type Box struct {
 	Padding int       `yaml:"padding"`
 	Border  BoxBorder `yaml:"-"`
 	Child   Widget    `yaml:"-"`
+	Hidden  bool      `yaml:"hidden"`
 }
 
 // Draw paints a box. Bounds smaller than a complete border are left blank.
@@ -79,11 +81,45 @@ func (b *Box) HandleMouse(MouseEvent) bool { return false }
 // Frame places ordered boxes between title/status lines. A positive Breakpoint
 // switches the row to a vertical stack at narrower widths; zero keeps a row.
 type Frame struct {
-	Title      string `yaml:"title"`
-	Status     string `yaml:"status"`
-	Gap        int    `yaml:"gap"`
-	Breakpoint int    `yaml:"breakpoint"`
-	Boxes      []Box  `yaml:"boxes"`
+	Title            string        `yaml:"title"`
+	Status           string        `yaml:"status"`
+	Gap              int           `yaml:"gap"`
+	Breakpoint       int           `yaml:"breakpoint"`
+	Boxes            []Box         `yaml:"boxes"`
+	Actions          []FrameAction `yaml:"actions"`
+	ControlSeparator string        `yaml:"control_separator"`
+}
+
+// FrameAction declares a bounded toggle or quit binding and its displayed hints.
+// Toggle targets are box IDs; hints remain reachable even when all boxes hide.
+type FrameAction struct {
+	ID         string `yaml:"id"`
+	Action     string `yaml:"action"`
+	Key        string `yaml:"key"`
+	Target     string `yaml:"target"`
+	Hint       string `yaml:"hint"`
+	HiddenHint string `yaml:"hidden_hint"`
+	TitleHint  string `yaml:"title_hint"`
+}
+
+// StatusText derives current hints from visibility without mutating the spec.
+func (f *Frame) StatusText() string {
+	parts := []string{}
+	if f.Status != "" {
+		parts = append(parts, f.Status)
+	}
+	for _, a := range f.Actions {
+		hint := a.Hint
+		for _, b := range f.Boxes {
+			if b.ID == a.Target && b.Hidden {
+				hint = a.HiddenHint
+			}
+		}
+		if hint != "" {
+			parts = append(parts, hint)
+		}
+	}
+	return strings.Join(parts, f.ControlSeparator)
 }
 
 // Draw reserves the first and last rows for chrome. At one row only title fits.
@@ -94,9 +130,15 @@ func (f *Frame) Draw(c *Canvas, r Rect) {
 		if h < 2 {
 			return
 		}
-		writeBounded(local, 0, h-1, w, f.Status)
+		writeBounded(local, 0, h-1, w, f.StatusText())
 		for i, rect := range f.Layout(w, h) {
-			f.Boxes[i].Draw(local, rect)
+			box := f.Boxes[i]
+			for _, a := range f.Actions {
+				if a.Target == box.ID {
+					box.Title = a.TitleHint + box.Title
+				}
+			}
+			box.Draw(local, rect)
 		}
 	})
 }
@@ -112,6 +154,9 @@ func (f *Frame) Layout(width, height int) []Rect {
 	x, y, bottom := 0, 1, height-1
 	stacked := f.Breakpoint > 0 && width < f.Breakpoint
 	for i, b := range f.Boxes {
+		if b.Hidden {
+			continue
+		}
 		w, h := min(max(0, b.Width), width-x), min(max(0, b.Height), bottom-y)
 		if w < 2 || h < 2 {
 			break
@@ -135,11 +180,16 @@ func (f *Frame) HeightForWidth(width int) int {
 		return f.ContentHeight()
 	}
 	h := 2
-	for i, box := range f.Boxes {
-		if i > 0 {
+	count := 0
+	for _, box := range f.Boxes {
+		if box.Hidden {
+			continue
+		}
+		if count > 0 {
 			h += max(0, f.Gap)
 		}
 		h += max(0, box.Height)
+		count++
 	}
 	return h
 }
@@ -148,13 +198,38 @@ func (f *Frame) HeightForWidth(width int) int {
 func (f *Frame) ContentHeight() int {
 	h := 0
 	for _, box := range f.Boxes {
+		if box.Hidden {
+			continue
+		}
 		h = max(h, box.Height)
 	}
 	return h + 2
 }
 
-// HandleKey leaves show-once frames inert.
-func (f *Frame) HandleKey(KeyEvent) bool { return false }
+// HandleKey dispatches declared actions. Hidden children never receive input.
+func (f *Frame) HandleKey(k KeyEvent) bool {
+	key := k.Key
+	if key == "" {
+		key = k.Text
+	}
+	for _, a := range f.Actions {
+		if a.Key != key {
+			continue
+		}
+		switch a.Action {
+		case "quit":
+			return true
+		case "toggle":
+			for i := range f.Boxes {
+				if f.Boxes[i].ID == a.Target {
+					f.Boxes[i].Hidden = !f.Boxes[i].Hidden
+					return false
+				}
+			}
+		}
+	}
+	return false
+}
 
 // HandleMouse leaves show-once frames inert.
 func (f *Frame) HandleMouse(MouseEvent) bool { return false }
@@ -199,6 +274,35 @@ func (f *Frame) validate() error {
 			return fmt.Errorf("frame.boxes[%d]: width/height must fit border and nonnegative padding", i)
 		}
 		b.Border = border
+	}
+	keys, ids, targets := map[string]bool{}, map[string]bool{}, map[string]bool{}
+	if !shellText(f.ControlSeparator) {
+		return fmt.Errorf("frame.control_separator: expected printable ASCII")
+	}
+	for _, a := range f.Actions {
+		if a.ID == "" || ids[a.ID] || keys[a.Key] {
+			return fmt.Errorf("frame.actions: empty/duplicate id or key")
+		}
+		if !((len(a.Key) == 1 && a.Key[0] >= '!' && a.Key[0] <= '~') || a.Key == "ctrl-c") {
+			return fmt.Errorf("frame.actions: unsupported key %q", a.Key)
+		}
+		if !shellText(a.Hint) || !shellText(a.HiddenHint) || !shellText(a.TitleHint) {
+			return fmt.Errorf("frame.actions: hints must be printable ASCII")
+		}
+		switch a.Action {
+		case "toggle":
+			if !seen[a.Target] || targets[a.Target] || a.Hint == "" || a.HiddenHint == "" {
+				return fmt.Errorf("frame.actions: toggle needs a unique existing target and both hints")
+			}
+			targets[a.Target] = true
+		case "quit":
+			if a.Target != "" || a.HiddenHint != "" || a.TitleHint != "" {
+				return fmt.Errorf("frame.actions: quit cannot target boxes or carry visibility hints")
+			}
+		default:
+			return fmt.Errorf("frame.actions: unknown action %q", a.Action)
+		}
+		ids[a.ID], keys[a.Key] = true, true
 	}
 	return nil
 }

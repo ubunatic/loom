@@ -9,6 +9,29 @@ view:
     status: Show once
     gap: 2
     breakpoint: 64
+    control_separator: '  '
+    actions:
+      - id: toggle_usage
+        action: toggle
+        key: u
+        target: usage
+        title_hint: '[u] '
+        hint: '[u]usage:on'
+        hidden_hint: '[u]usage:off'
+      - id: toggle_load
+        action: toggle
+        key: l
+        target: load
+        title_hint: '[l] '
+        hint: '[l]load:on'
+        hidden_hint: '[l]load:off'
+      - id: quit
+        action: quit
+        key: q
+        hint: '[q]quit'
+      - id: interrupt
+        action: quit
+        key: ctrl-c
     boxes:
       - id: usage
         title: All Usage

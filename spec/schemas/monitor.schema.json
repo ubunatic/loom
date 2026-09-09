@@ -32,9 +32,24 @@
             "status": {"$ref": "#/definitions/text"},
             "gap": {"type": "integer", "minimum": 0},
             "breakpoint": {"type": "integer", "minimum": 0},
+            "control_separator": {"$ref": "#/definitions/text"},
+            "actions": {"type": "array", "items": {"$ref": "#/definitions/action"}},
             "boxes": {"type": "array", "minItems": 1, "items": {"$ref": "#/definitions/box"}}
           }
         }
+      }
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "action", "key"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "action": {"enum": ["toggle", "quit"]},
+        "key": {"type": "string", "pattern": "^([!-~]|ctrl-c)$"},
+        "target": {"type": "string"},
+        "hint": {"$ref": "#/definitions/text"},
+        "hidden_hint": {"$ref": "#/definitions/text"},
+        "title_hint": {"$ref": "#/definitions/text"}
       }
     },
     "box": {
@@ -46,6 +61,7 @@
         "width": {"type": "integer", "minimum": 2},
         "height": {"type": "integer", "minimum": 2},
         "padding": {"type": "integer", "minimum": 0}
+        ,"hidden": {"type": "boolean"}
       }
     }
   }

@@ -20,7 +20,6 @@ type watchSpec struct {
 	ClockFormat string        `yaml:"clock_format"`
 	Title       string        `yaml:"title"`
 	Status      string        `yaml:"status"`
-	QuitKeys    []string      `yaml:"quit_keys"`
 	Command     string        `yaml:"command"`
 	Description string        `yaml:"description"`
 	WatchHelp   string        `yaml:"watch_help"`
@@ -41,31 +40,10 @@ func loadWatch() (watchSpec, error) {
 	if err := (loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}).Validate(); err != nil {
 		return spec, err
 	}
-	if spec.ClockFormat == "" || spec.Title == "" || spec.Command == "" || spec.Description == "" || spec.WatchHelp == "" || len(spec.QuitKeys) == 0 {
+	if spec.ClockFormat == "" || spec.Title == "" || spec.Command == "" || spec.Description == "" || spec.WatchHelp == "" || spec.WidthHelp == "" {
 		return spec, fmt.Errorf("watch: missing required declaration")
 	}
-	seen := make(map[string]bool)
-	for _, key := range spec.QuitKeys {
-		if (key != "q" && key != "ctrl-c") || seen[key] {
-			return spec, fmt.Errorf("watch: invalid quit key %q", key)
-		}
-		seen[key] = true
-	}
 	return spec, nil
-}
-
-type clockView struct {
-	*loom.Frame
-	quit []string
-}
-
-func (v *clockView) HandleKey(k loom.KeyEvent) bool {
-	for _, key := range v.quit {
-		if key == k.Key || key == k.Text {
-			return true
-		}
-	}
-	return false
 }
 
 func runWatch(ctx context.Context, spec watchSpec) error {
@@ -109,5 +87,5 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	defer pane.Close()
 	pane.MaxCols = cfg.MaxWidth()
 	pane.Resizeable = true
-	return pane.RunWatch(ctx, &clockView{frame, spec.QuitKeys}, loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}, collect)
+	return pane.RunWatch(ctx, frame, loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}, collect)
 }

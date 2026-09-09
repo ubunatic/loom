@@ -27,14 +27,14 @@ func TestStaticShellGolden(t *testing.T) {
 	// Explicit expected columns, independent of production width/layout helpers.
 	want := []string{
 		"Loom monitor                                                    ",
-		"┌ All Usage ──────────────────┐  ┌ Load ───────────────────────┐",
+		"┌ [u] All Usage ──────────────┐  ┌ [l] Load ───────────────────┐",
 		"│                             │  │                             │",
 		"│                             │  │                             │",
 		"│                             │  │                             │",
 		"│                             │  │                             │",
 		"│                             │  │                             │",
 		"└─────────────────────────────┘  └─────────────────────────────┘",
-		"Show once                                                       ",
+		"Show once  [u]usage:on  [l]load:on  [q]quit                     ",
 	}
 	if len(rows) != len(want) {
 		t.Fatalf("rows=%d want=%d", len(rows), len(want))
@@ -111,6 +111,7 @@ func TestShellDeclarationFidelity(t *testing.T) {
 	source := shellFixture(t)
 	source = strings.Replace(source, "title: Loom monitor", "title: Changed in YAML", 1)
 	source = strings.Replace(source, "id: usage", "id: first", 1)
+	source = strings.Replace(source, "target: usage", "target: first", 1)
 	source = strings.Replace(source, "title: All Usage", "title: First", 1)
 	w, _, err := BuildWidget(strings.NewReader(source))
 	if err != nil {
@@ -120,13 +121,14 @@ func TestShellDeclarationFidelity(t *testing.T) {
 	if frame.Title != "Changed in YAML" || frame.Boxes[0].ID != "first" || frame.Boxes[0].Padding != 1 || frame.Gap != 2 {
 		t.Fatalf("declaration not consumed: %+v", frame)
 	}
-	parts := strings.Split(source, "      - id:")
-	reordered := parts[0] + "      - id:" + parts[2] + "      - id:" + parts[1]
+	header, boxes, _ := strings.Cut(source, "    boxes:\n")
+	parts := strings.Split(boxes, "      - id:")
+	reordered := header + "    boxes:\n" + parts[0] + "      - id:" + parts[2] + "      - id:" + parts[1]
 	w, _, err = BuildWidget(strings.NewReader(reordered))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasPrefix(Render(w, 64, 9)[1], "┌ Load ") {
+	if !strings.HasPrefix(Render(w, 64, 9)[1], "┌ [l] Load ") {
 		t.Fatal("box sequence ignored")
 	}
 }

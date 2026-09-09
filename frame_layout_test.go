@@ -54,7 +54,7 @@ func TestResponsiveRenderPreservesState(t *testing.T) {
 		if width < 64 {
 			loadRow = 10
 		}
-		if !strings.Contains(rows[loadRow], "Load") {
+		if !strings.Contains(rows[loadRow], "[l] Lo") {
 			t.Fatalf("width %d missing load at row %d", width, loadRow)
 		}
 		if f.Title != "clock snapshot 12:34:56" {
