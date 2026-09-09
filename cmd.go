@@ -5,7 +5,10 @@ package loom
 
 import (
 	"fmt"
+	"os"
 	"strings"
+	"sync"
+	"testing"
 )
 
 // Nav is a navigation signal propagated from a widget through the caller chain.
@@ -169,14 +172,35 @@ func (cb *cmdBar) execute(cmd *Cmd) cmdResult {
 	}
 }
 
+var (
+	helpMu     sync.RWMutex
+	helpRunner = defaultHelpRunner
+)
+
+func defaultHelpRunner(w Widget, height int) error {
+	if isHeadless() {
+		return nil
+	}
+	pane, err := New(height)
+	if err != nil {
+		return err
+	}
+	defer pane.Close()
+	return pane.Run(w)
+}
+
+func isHeadless() bool {
+	return testing.Testing() || os.Getenv("LOOM_HEADLESS") != ""
+}
+
 func (cb *cmdBar) showHelp() Nav {
 	hw := newHelpWidget(cb.allCmds())
-	pane, err := New(hw.ContentHeight())
-	if err != nil {
-		return NavNone
+	helpMu.RLock()
+	runner := helpRunner
+	helpMu.RUnlock()
+	if runner != nil {
+		_ = runner(hw, hw.ContentHeight())
 	}
-	_ = pane.Run(hw)
-	pane.Close()
 	return NavNone
 }
 

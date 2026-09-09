@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
@@ -110,8 +111,8 @@ func TestCmdHomeSetsNavHome(t *testing.T) {
 // ── :help ─────────────────────────────────────────────────────────────────────
 
 func TestCmdHelpDoesNotQuitInTest(t *testing.T) {
-	// In a test environment there is no /dev/tty, so showHelp() silently fails
-	// and returns without quitting. Nav stays NavNone.
+	// In test environments isHeadless() returns true, so showHelp() runs headlessly
+	// without opening /dev/tty or blocking on input. Nav stays NavNone.
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	typeCmd(c, "help")
 	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
@@ -120,6 +121,41 @@ func TestCmdHelpDoesNotQuitInTest(t *testing.T) {
 	}
 	if c.Nav() != loom.NavNone {
 		t.Errorf(":help Nav() = %v, want NavNone", c.Nav())
+	}
+}
+
+func TestCmdHelpInvokesRunner(t *testing.T) {
+	var called bool
+	var gotWidget loom.Widget
+	var gotHeight int
+	restore := loom.SetHelpRunner(func(w loom.Widget, height int) error {
+		called = true
+		gotWidget = w
+		gotHeight = height
+		return nil
+	})
+	defer restore()
+
+	c := loom.NewChoice([]loom.Item{{Name: "x"}})
+	c.AddCmd(loom.Cmd{Name: "custom", Title: "custom title"})
+	typeCmd(c, "help")
+	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	if quit {
+		t.Error(":help should not quit")
+	}
+	if !called {
+		t.Fatal("help runner was not called")
+	}
+	if gotWidget == nil || gotHeight <= 0 {
+		t.Fatalf("expected valid widget and height > 0, got w=%v h=%d", gotWidget, gotHeight)
+	}
+
+	// Render the help widget to verify command contents.
+	rendered := strings.Join(loom.Render(gotWidget, 60, gotHeight), "\n")
+	for _, expected := range []string{":help", ":back", ":home", ":custom", "custom title", "press any key to close"} {
+		if !strings.Contains(rendered, expected) {
+			t.Errorf("help render missing %q:\n%s", expected, rendered)
+		}
 	}
 }
 
