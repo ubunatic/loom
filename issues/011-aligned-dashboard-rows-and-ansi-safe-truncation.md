@@ -31,3 +31,16 @@ Add table-driven alignment/truncation cases for ANSI, bold/regular, combining/CJ
 ## Scope limits
 
 No graph algorithms, collectors, live histories or table-widget rewrite. Take Voxi behavior as inspiration without importing its monitor domain or mutating the sibling.
+
+## Implementation progress — 2026-09-10
+
+First small increment: `TruncateText(text, width, marker)` implements bounded
+terminal-cell truncation with caller-declared marker text, including budgets
+0/1/2, combining clusters and complete wide glyphs. Raw ANSI is stripped under
+the geometry policy; styles are supplied separately, not embedded in strings.
+Tests use the independent emitted-cell oracle rather than production width
+helpers for the budget assertion. Vet, full tests and race checks pass.
+
+Still open: reusable declared row/column models, strict schema/reference
+validation, stable alignment/overflow priority, styled row rendering, and the
+fixed-data example. No row acceptance criteria are marked complete yet.
