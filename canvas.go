@@ -6,6 +6,7 @@ package loom
 import (
 	"fmt"
 	"strings"
+	"unicode"
 )
 
 // Rect describes a rectangular region within the canvas (0-based, top-left origin).
@@ -69,8 +70,42 @@ func (c *Canvas) Bounds() Rect { return Rect{W: c.cols, H: c.rows} }
 
 // Set places a single cell at (x, y). Out-of-bounds writes are silently dropped.
 func (c *Canvas) Set(x, y int, cell Cell) {
-	if x >= 0 && x < c.cols && y >= 0 && y < c.rows {
-		c.cells[y][x] = cell
+	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
+		return
+	}
+	if cell.Continuation {
+		// Only a real wide lead may own a continuation cell.
+		if x > 0 && StringWidth(c.cells[y][x-1].Text) == 2 {
+			c.cells[y][x] = cell
+		}
+		return
+	}
+	clusters := textClusters(cell.Text)
+	cell.Text = " "
+	if len(clusters) > 0 {
+		cell.Text = clusters[0]
+	}
+	w := StringWidth(cell.Text)
+	if w == 2 && x+1 >= c.cols {
+		return
+	}
+	// Erase both halves of any previous wide glyph touched by this write.
+	clear := func(col int) {
+		if c.cells[y][col].Continuation && col > 0 {
+			c.cells[y][col-1] = blank
+		}
+		if col+1 < c.cols && c.cells[y][col+1].Continuation {
+			c.cells[y][col+1] = blank
+		}
+		c.cells[y][col] = blank
+	}
+	clear(x)
+	if w == 2 {
+		clear(x + 1)
+	}
+	c.cells[y][x] = cell
+	if w == 2 {
+		c.cells[y][x+1] = Cell{Style: cell.Style, Continuation: true}
 	}
 }
 
@@ -96,21 +131,15 @@ func (c *Canvas) Fill(r Rect, cell Cell) {
 // Correctly handles wide characters (emojis) by creating continuation cells.
 func (c *Canvas) Write(x, y int, text string, style Style) int {
 	col := x
-	for _, r := range text {
-		if col >= c.cols {
+	for _, cluster := range textClusters(text) {
+		w := StringWidth(cluster)
+		if col+w > c.cols {
 			break
 		}
-		w := RuneWidth(r)
-		if w == 2 {
-			c.Set(col, y, Cell{Text: string(r), Style: style})
-			if col+1 < c.cols {
-				c.Set(col+1, y, Cell{Text: "", Style: style, Continuation: true})
-			}
-			col += 2
-		} else {
-			c.Set(col, y, Cell{Text: string(r), Style: style})
-			col++
+		if col >= 0 {
+			c.Set(col, y, Cell{Text: cluster, Style: style})
 		}
+		col += w
 	}
 	return col - x
 }
@@ -177,7 +206,10 @@ func (c *Canvas) Clear() {
 
 // RuneWidth returns the visual column width of a single rune.
 func RuneWidth(r rune) int {
-	if r >= 0x2e80 && r < 0x20000 {
+	if unicode.IsControl(r) || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || unicode.Is(unicode.Cf, r) {
+		return 0
+	}
+	if r >= 0x1100 && r <= 0x115f || r >= 0x2e80 && r <= 0xa4cf && r != 0x303f || r >= 0xac00 && r <= 0xd7a3 || r >= 0xf900 && r <= 0xfaff || r >= 0xfe10 && r <= 0xfe19 || r >= 0xfe30 && r <= 0xfe6f || r >= 0xff01 && r <= 0xff60 || r >= 0xffe0 && r <= 0xffe6 || r >= 0x20000 && r <= 0x3fffd {
 		return 2
 	}
 	if r >= 0x1f000 && r <= 0x1faff {
@@ -189,8 +221,65 @@ func RuneWidth(r rune) int {
 // StringWidth returns the visual column width of a string.
 func StringWidth(s string) int {
 	w := 0
-	for _, r := range s {
+	for _, r := range plainTerminalText(s) {
 		w += RuneWidth(r)
 	}
 	return w
+}
+
+// plainTerminalText removes terminal instructions from untrusted text. Styles
+// are supplied through Style, not embedded control sequences. Unterminated
+// control strings consume the remainder rather than leaking terminal commands.
+func plainTerminalText(s string) string {
+	var b strings.Builder
+	runes := []rune(s)
+	for i := 0; i < len(runes); i++ {
+		r := runes[i]
+		if r == 27 {
+			i++
+			if i >= len(runes) {
+				break
+			}
+			switch runes[i] {
+			case '[':
+				for i++; i < len(runes); i++ {
+					if runes[i] >= '@' && runes[i] <= '~' {
+						break
+					}
+				}
+			case ']', 'P', '^', '_':
+				for i++; i < len(runes); i++ {
+					if runes[i] == 7 {
+						break
+					}
+					if runes[i] == 27 && i+1 < len(runes) && runes[i+1] == '\\' {
+						i++
+						break
+					}
+				}
+			}
+			continue
+		}
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			continue
+		}
+		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+// textClusters supports base runes with combining marks, not emoji ZWJ clusters.
+// Leading combining marks are dropped: they must not attach outside the region.
+func textClusters(text string) []string {
+	var result []string
+	for _, r := range plainTerminalText(text) {
+		if RuneWidth(r) == 0 {
+			if len(result) > 0 {
+				result[len(result)-1] += string(r)
+			}
+		} else {
+			result = append(result, string(r))
+		}
+	}
+	return result
 }

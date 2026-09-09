@@ -345,12 +345,12 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 
 func writeBounded(c *Canvas, x, y, width int, text string) {
 	end := min(c.Cols(), x+max(0, width))
-	for _, r := range text {
-		w := RuneWidth(r)
+	for _, cluster := range textClusters(text) {
+		w := StringWidth(cluster)
 		if x+w > end {
 			break
 		}
-		c.Write(x, y, string(r), Style{})
+		c.Write(x, y, cluster, Style{})
 		x += w
 	}
 }
