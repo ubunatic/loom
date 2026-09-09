@@ -9,3 +9,4 @@
 ## Case Studies
 
 - [2026-09-09 — From Monitor Screenshots to a Declarative UI Backlog](studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md)
+- [2026-09-10 — Agentic Sprint from Mid-Flight Rows to Stable Graph Milestone](studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md)
