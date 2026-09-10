@@ -141,3 +141,26 @@ func (s *Stack) ContentHeight() int {
 	}
 	return totalH
 }
+
+// ContentWidth estimates the widest child width for horizontal composition.
+func (s *Stack) ContentWidth() int {
+	if len(s.Children) == 0 {
+		return 0
+	}
+	width := 0
+	for _, child := range s.Children {
+		w := 1
+		if measured, ok := child.(ContentWidther); ok {
+			w = measured.ContentWidth()
+		}
+		if s.Dir == Horizontal {
+			width += w
+		} else {
+			width = max(width, w)
+		}
+	}
+	if s.Dir == Horizontal && len(s.Children) > 1 {
+		width += s.Gap * (len(s.Children) - 1)
+	}
+	return width
+}

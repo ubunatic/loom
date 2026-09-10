@@ -3,6 +3,8 @@
 
 package loom
 
+import "codeberg.org/ubunatic/loom/measure"
+
 // Widget is the core interface every loom UI element must satisfy.
 //
 // Pane drives a single root Widget. Composite widgets (Stack, Grid, Popup)
@@ -50,4 +52,14 @@ type ContentHeighter interface {
 // Resizable panes prefer this over ContentHeighter for responsive roots.
 type WidthHeighter interface {
 	HeightForWidth(width int) int
+}
+
+// ContentWidther estimates preferred width from visible widget content.
+type ContentWidther interface {
+	ContentWidth() int
+}
+
+// Measurer reports a preferred size at an optional parent-supplied width.
+type Measurer interface {
+	Measure(width int) measure.Size
 }

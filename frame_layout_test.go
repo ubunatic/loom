@@ -65,6 +65,31 @@ func TestDynamicFrameLayoutStacksAtBreakpoint(t *testing.T) {
 	}
 }
 
+func TestDynamicBoxCanDeriveSizeFromRows(t *testing.T) {
+	input := `app:
+  height: 8
+  max_width: 40
+view:
+  frame:
+    boxes:
+      - id: data
+        dynamic: true
+        rows:
+          columns:
+            - width: 5
+          values:
+            - [hello]
+`
+	w, _, err := BuildWidget(strings.NewReader(input))
+	if err != nil {
+		t.Fatal(err)
+	}
+	f := w.(*Frame)
+	if f.Boxes[0].Width < 7 || f.Boxes[0].Height < 3 {
+		t.Fatalf("derived box size=%dx%d, want content plus chrome", f.Boxes[0].Width, f.Boxes[0].Height)
+	}
+}
+
 func TestResponsiveRenderPreservesState(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {

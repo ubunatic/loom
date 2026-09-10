@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"codeberg.org/ubunatic/loom/layout"
+	"codeberg.org/ubunatic/loom/measure"
 	"gopkg.in/yaml.v3"
 )
 
@@ -47,6 +48,39 @@ type Box struct {
 	Hidden    bool      `yaml:"hidden"`
 	Footer    string    `yaml:"footer"`
 	Rows      *Rows     `yaml:"rows"`
+}
+
+// Measure returns the preferred outer size of the box, including border,
+// padding, title/footer and known child content. A positive width wraps the
+// child content before calculating its height.
+func (b *Box) Measure(width int) measure.Size {
+	const borderWidth, borderHeight = 2, 2
+	padding := max(0, b.Padding)
+	innerInsets := measure.Insets{Top: borderHeight + padding*2, Bottom: 0, Left: borderWidth + padding*2, Right: 0}
+	contentWidth, contentHeight := 0, 1
+	if b.Rows != nil {
+		contentWidth, contentHeight = b.Rows.ContentWidth(), b.Rows.ContentHeight()
+	} else {
+		if child, ok := b.Child.(ContentWidther); ok {
+			contentWidth = child.ContentWidth()
+		}
+		if child, ok := b.Child.(ContentHeighter); ok {
+			contentHeight = child.ContentHeight()
+		}
+	}
+	contentWidth = max(contentWidth, StringWidth(b.Title)+StringWidth(b.Border.TitlePrefix)+StringWidth(b.Border.TitleSuffix))
+	contentWidth = max(contentWidth, StringWidth(b.Footer))
+	if width > 0 {
+		contentWidth = max(1, width-innerInsets.Width())
+	}
+	return measure.Size{Width: contentWidth + innerInsets.Width(), Height: contentHeight + innerInsets.Height() + boolInt(b.Footer != "")}
+}
+
+func boolInt(value bool) int {
+	if value {
+		return 1
+	}
+	return 0
 }
 
 // SetRowsValues updates the box's rows values dynamically if rows are present.
@@ -385,15 +419,24 @@ func (f *Frame) validate() error {
 		if !shellText(b.Title) {
 			return fmt.Errorf("frame.boxes[%d].title: expected printable ASCII", i)
 		}
-		if b.Width < 2 || b.Height < 2 || b.MinWidth < 0 || b.MaxWidth < 0 || b.MinHeight < 0 || b.MaxHeight < 0 || b.MinWidth > b.Width || b.MinHeight > b.Height || b.MaxWidth > 0 && b.MaxWidth < b.Width || b.MaxHeight > 0 && b.MaxHeight < b.Height || b.Padding < 0 || b.Padding > (b.Width-2)/2 || b.Padding > (b.Height-2)/2 {
-			return fmt.Errorf("frame.boxes[%d]: width/height must fit border and nonnegative padding", i)
-		}
 		b.Border = border
 		if b.Rows != nil {
 			if err := b.Rows.validate(); err != nil {
 				return fmt.Errorf("frame.boxes[%d]: %w", i, err)
 			}
 			b.Child = b.Rows
+		}
+		if b.Dynamic {
+			preferred := b.Measure(0)
+			if b.Width == 0 {
+				b.Width = preferred.Width
+			}
+			if b.Height == 0 {
+				b.Height = preferred.Height
+			}
+		}
+		if b.Width < 2 || b.Height < 2 || b.MinWidth < 0 || b.MaxWidth < 0 || b.MinHeight < 0 || b.MaxHeight < 0 || b.MinWidth > b.Width || b.MinHeight > b.Height || b.MaxWidth > 0 && b.MaxWidth < b.Width || b.MaxHeight > 0 && b.MaxHeight < b.Height || b.Padding < 0 || b.Padding > (b.Width-2)/2 || b.Padding > (b.Height-2)/2 {
+			return fmt.Errorf("frame.boxes[%d]: width/height must fit border and nonnegative padding", i)
 		}
 	}
 	keys, ids, targets := map[string]bool{}, map[string]bool{}, map[string]bool{}

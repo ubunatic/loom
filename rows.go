@@ -22,6 +22,26 @@ type Rows struct {
 	Ellipsis string      `yaml:"ellipsis"`
 }
 
+// ContentWidth returns the declared columns and gaps' preferred cell width.
+func (rows *Rows) ContentWidth() int {
+	w := 0
+	for i, col := range rows.Columns {
+		if i > 0 {
+			w += max(0, rows.Gap)
+		}
+		w += max(0, col.Width)
+	}
+	return w
+}
+
+// ContentHeight returns one line per declared value row.
+func (rows *Rows) ContentHeight() int {
+	if len(rows.Values) == 0 {
+		return 1
+	}
+	return len(rows.Values)
+}
+
 // Draw clips all values to their column and the child's isolated canvas.
 func (rows *Rows) Draw(c *Canvas, r Rect) {
 	paintClipped(c, r, func(local *Canvas) {

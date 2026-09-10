@@ -74,12 +74,16 @@
     },
     "box": {
       "type": "object", "additionalProperties": false,
-      "required": ["id", "width", "height"],
+      "required": ["id"],
+      "oneOf": [
+        {"required": ["width", "height"]},
+        {"required": ["dynamic"], "properties": {"dynamic": {"const": true}}}
+      ],
       "properties": {
         "id": {"type": "string", "minLength": 1, "pattern": "^[ -~]+$"},
         "title": {"$ref": "#/definitions/text"},
-        "width": {"type": "integer", "minimum": 2},
-        "height": {"type": "integer", "minimum": 2},
+        "width": {"type": "integer", "minimum": 0},
+        "height": {"type": "integer", "minimum": 0},
         "dynamic": {"type": "boolean"},
         "min_width": {"type": "integer", "minimum": 2},
         "max_width": {"type": "integer", "minimum": 2},
