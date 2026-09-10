@@ -13,8 +13,7 @@ With no `--width`, show-once mode uses the current terminal width up to the
 declared 80-column maximum. Redirected output keeps the deterministic 80-column
 fallback and does not open a terminal, wait for keys, or change terminal modes.
 
-The status line labels the graph values as simulated. The watch declaration
-also labels the CPU file source as real; its raw records are collected but the
+The box titles label provenance: the CPU file source is real, while the
 displayed CPU/RAM/GPU graph values remain deterministic simulated data for now.
 Edit each box's `rows` in `spec/monitor.yaml` to change the values,
 column widths, alignment, gap or ellipsis. Column positions do not depend on value
