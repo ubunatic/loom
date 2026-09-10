@@ -1,0 +1,51 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package measure
+
+import "testing"
+
+func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		text string
+		want int
+	}{
+		{name: "plain", text: "CPU", want: 3},
+		{name: "style", text: "\x1b[31mCPU\x1b[0m", want: 3},
+		{name: "combining", text: "e\u0301", want: 1},
+		{name: "wide", text: "界", want: 2},
+		{name: "graph", text: "⣿", want: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := StringWidth(tc.text); got != tc.want {
+				t.Fatalf("StringWidth(%q)=%d, want %d", tc.text, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestLinesMeasuresVisibleBounds(t *testing.T) {
+	got := Lines("CPU\n界界\n")
+	want := Size{Width: 4, Height: 3}
+	if got != want {
+		t.Fatalf("Lines()=%+v, want %+v", got, want)
+	}
+}
+
+func TestTruncatePreservesCellBudget(t *testing.T) {
+	got := Truncate("12界34", 5, "…")
+	if got != "12界…" {
+		t.Fatalf("Truncate()=%q, want %q", got, "12界…")
+	}
+	if width := StringWidth(got); width > 5 {
+		t.Fatalf("truncated width=%d exceeds budget", width)
+	}
+}
+
+func TestTruncateLeftKeepsTail(t *testing.T) {
+	got := TruncateLeft("abcdef", 4, "…")
+	if got != "…def" {
+		t.Fatalf("TruncateLeft()=%q, want %q", got, "…def")
+	}
+}
