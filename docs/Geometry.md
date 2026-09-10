@@ -23,6 +23,24 @@ Boxes draw children on isolated canvases: even out-of-bounds Fill/Write/Set
 cannot touch padding, borders, siblings or chrome. Bounds below a complete 2x2
 border omit the box. Earlier boxes take priority when terminal height is short.
 
+## Measurement and dynamic layout
+
+The renderer-independent `measure` package exposes the shared cell policy:
+`StringWidth`, `Lines`, `TextSize`, `Fit`, `Pad`, `Truncate`,
+`TruncateLeft`, `MeasureText`, `Insets`, and validated min/preferred/max
+constraints. `MeasureText` rejects parent widths that cannot satisfy a minimum
+or contain the requested insets; a zero preferred value means no preferred hint,
+and an omitted maximum is unlimited.
+
+The `layout` package provides deterministic one-dimensional allocation with
+minimum floors, preferred sizes, optional maxima, gaps, hidden items, and
+unused trailing space when all items reach their maxima. `Stack.Measured` and
+`Box.Dynamic` opt into these policies; default Stack equal-share and fixed Box
+layouts remain compatibility behavior. Dynamic boxes may omit dimensions in
+YAML and derive preferred size from title, footer, padding, border, and known
+row content. The policy intentionally does not claim full Unicode grapheme or
+terminal-emulator conformance.
+
 ## Independent checks
 
 `geometry_test.go` interprets final emitted SGR rows using a deliberately bounded

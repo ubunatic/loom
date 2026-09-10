@@ -90,6 +90,27 @@ view:
 	}
 }
 
+func TestDynamicFrameRendersWithinMeasuredRectangles(t *testing.T) {
+	f := Frame{Gap: 1, Boxes: []Box{
+		{ID: "a", Width: 4, Height: 4, Dynamic: true, MinWidth: 2, MaxWidth: 6, Border: BoxBorder{TopLeft: "+", TopRight: "+", BottomLeft: "+", BottomRight: "+", Horizontal: "-", Vertical: "|"}},
+		{ID: "b", Width: 3, Height: 4, Dynamic: true, MinWidth: 2},
+	}}
+	f.Boxes[1].Border = f.Boxes[0].Border
+	c := NewCanvas(12, 8)
+	f.Draw(c, Rect{W: 12, H: 8})
+	for _, rect := range f.Layout(12, 8) {
+		if rect.W < 2 || rect.H < 2 {
+			continue
+		}
+		if StringWidth(c.Get(rect.X, rect.Y).Text) != 1 || StringWidth(c.Get(rect.X+rect.W-1, rect.Y).Text) != 1 {
+			t.Fatalf("missing top border at %+v", rect)
+		}
+		if rect.X+rect.W > c.Cols() || rect.Y+rect.H > c.Rows() {
+			t.Fatalf("rectangle %+v escapes canvas", rect)
+		}
+	}
+}
+
 func TestResponsiveRenderPreservesState(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {

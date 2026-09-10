@@ -44,8 +44,14 @@ def main():
                     del box["id"]
                 else:
                     invalid["pane"] = invalid["view"]
-                if validator.is_valid(invalid):
-                    raise RuntimeError(f"{schema_path}: accepts {change}")
+            if validator.is_valid(invalid):
+                raise RuntimeError(f"{schema_path}: accepts {change}")
+            dynamic = copy.deepcopy(document)
+            dynamic_box = dynamic["view"]["frame"]["boxes"][0]
+            dynamic_box["dynamic"] = True
+            dynamic_box.pop("width", None)
+            dynamic_box.pop("height", None)
+            validator.validate(dynamic)
             box = document["view"]["frame"]["boxes"][0]
             if "rows" in box:
                 for change in (
