@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../spec/schemas/monitor.schema.json
 app:
-  height: 11
+  height: 12
   max_width: 80
 view:
   name: main
@@ -37,7 +37,7 @@ view:
         title: All Usage
         footer: (simulated data)
         width: 31
-        height: 9
+        height: 10
         padding: 1
         rows:
           gap: 1
@@ -56,7 +56,7 @@ view:
         title: Load
         footer: (real collector data)
         width: 31
-        height: 9
+        height: 10
         padding: 1
         rows:
           gap: 1

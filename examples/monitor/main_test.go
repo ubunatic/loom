@@ -22,8 +22,8 @@ func TestShowOnce(t *testing.T) {
 		t.Fatal("plain output contains terminal controls")
 	}
 	rows := strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n")
-	if len(rows) != 11 {
-		t.Fatalf("got %d rows, want 11", len(rows))
+	if len(rows) != 12 {
+		t.Fatalf("got %d rows, want 12", len(rows))
 	}
 	for i, row := range rows {
 		if len([]rune(row)) != 80 {
