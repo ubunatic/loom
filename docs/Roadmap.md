@@ -64,9 +64,9 @@ Reuse is evidenced above; no measured cost-savings percentage is established.
 
 ### Ticket sequencing
 
-**Shipped:** Stages 1–5 (tickets 006–010), Stage 6 rows (tickets 011 and 020), test/schema hygiene (tickets 021, 022, 023), and graph primitives (ticket 024).
-**Now:** Sub-ticket 025 (integrate graph renderers into declarative monitor) to complete Stage 6.
-**Next:** Stages 7–9 (tickets 013–016), introducing simulated live snapshots/histories, color/glyphs, and completing the combined milestone.
+**Shipped:** Stages 1–5 (tickets 006–010), Stage 6 rows (tickets 011 and 020), test/schema hygiene (tickets 021, 022, 023), graph primitives (ticket 024), and graph integration (ticket 025).
+**Now:** Stage 7 (ticket 013), with the first bounded deterministic simulated producer slice implemented; rate-matrix coverage remains.
+**Next:** Stages 8–9 (tickets 014–016), introducing color/glyphs and completing the combined milestone after Stage 7.
 **Later:** Stages 10–11 (tickets 017–019), introducing external sources and declarative wiring.
 Each stage should leave a runnable example and deterministic checks. Keep examples in the root module so root test discovery includes them; the target document's nested `go.mod` is illustrative, not a requirement.
 
@@ -74,8 +74,8 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 |---|---|
 | 1–5 — Shipped Foundation | [006](../issues/006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md), [007](../issues/007-clock-watch-mode-with-independent-collection-and-redraw.md), [008](../issues/008-responsive-declared-box-layout.md), [009](../issues/009-declarative-box-visibility-controls.md), [010](../issues/010-geometry-and-visual-evidence-milestone-before-rich-content.md) |
 | Hygiene & Fixes (Shipped) | [021](../issues/021-cmd-help-tty-blocking-in-tests.md), [022](../issues/022-decouple-static-shell-golden-from-evolving-monitor-spec.md), [023](../issues/023-rows-schema-validation-and-negative-controls.md) |
-| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (now) |
-| 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) |
+| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done) |
+| 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) (now) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
 | 10 — External sources | [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md) |
