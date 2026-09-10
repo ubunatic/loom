@@ -65,3 +65,30 @@ Investigation is limited to the monitor PTY smoke-test failure and its reproduct
 Do not infer a root cause from issue 007's historical passing result, and do not
 broaden this ticket into general redraw scheduling or terminal support work without
 new evidence.
+
+## 4. Investigation — 2026-09-10
+
+- Reproduced the exact command above: checker exit 1, `too few idle redraws`.
+  An in-memory diagnostic of the unchanged checker observed child exit 0, zero
+  `ESC[?25l` redraw markers, 1,006 output bytes, and exit after about 0.085 s.
+  The PTY starts at 24 rows × 80 columns; stdout/stderr share that PTY.
+- Most likely fix: append `--watch` to the monitor command. In
+  [main.go](../examples/monitor/main.go), `watch` defaults to false and dispatches
+  to `runWidth`; only `--watch` selects `runWatch`. The checker treats every
+  supplied command as a watch process and requires at least 20 cursor-hide
+  markers (emitted by `Canvas.Flush`), so normal show-once output fails this
+  assertion. The responsive/toggle variables configure the checker, not watch mode.
+- Verified the corrected invocation:
+  `env LOOM_TEST_RESPONSIVE=1 LOOM_TEST_TOGGLES=1 GOWORK=off python3 scripts/check-watch-pty.py go run ./examples/monitor --watch`.
+  It passed redraw, responsive placement, all four toggle states, and terminal
+  restoration (56,096 bytes). The standalone checker also passed (6 bytes),
+  but it runs a tiny Python raw-input probe and does not test monitor redraws.
+  The [monitor README](../examples/monitor/README.md) already documents `--watch`
+  with a prebuilt binary.
+- Uncertainty: these local runs establish an invocation mismatch, not a scheduler
+  regression. The checker starts its 0.25 s toggle / 1 s resize / 2.2 s quit
+  deadlines at process launch, so cold `go run` compilation could independently
+  consume the observation window. Prefer the documented prebuilt-binary workflow;
+  readiness-relative timing is a possible follow-up only if that flake reproduces.
+  No implementation changed or full regression suite run; leave the issue Open
+  pending the planned verification and resolution.
