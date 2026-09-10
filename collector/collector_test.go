@@ -8,6 +8,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 )
@@ -79,4 +80,32 @@ func TestHistoryRetainsOnlyLiveWindow(t *testing.T) {
 	if string(history.Snapshot()[0].Data) != "live" {
 		t.Fatal("history snapshot shares record data")
 	}
+}
+
+func TestHistorySupportsConcurrentPublicationAndSnapshots(t *testing.T) {
+	history, err := NewHistory(time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := time.Unix(1000, 0)
+	var done sync.WaitGroup
+	for writer := 0; writer < 2; writer++ {
+		done.Add(1)
+		go func(writer int) {
+			defer done.Done()
+			for i := 0; i < 100; i++ {
+				history.Append(Record{At: base.Add(time.Duration(writer*100+i) * time.Second), Data: []byte("ok")})
+			}
+		}(writer)
+	}
+	for reader := 0; reader < 2; reader++ {
+		done.Add(1)
+		go func() {
+			defer done.Done()
+			for i := 0; i < 100; i++ {
+				_ = history.Snapshot()
+			}
+		}()
+	}
+	done.Wait()
 }

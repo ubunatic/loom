@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -96,6 +97,7 @@ func (s Spec) RetentionDuration() (time.Duration, error) {
 
 // History retains timestamped records only within a live in-memory window.
 type History struct {
+	mu        sync.RWMutex
 	retention time.Duration
 	records   []Record
 }
@@ -114,6 +116,8 @@ func (h *History) Append(record Record) {
 	if h == nil {
 		return
 	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	record.Data = append([]byte(nil), record.Data...)
 	h.records = append(h.records, record)
 	cutoff := record.At.Add(-h.retention)
@@ -131,6 +135,8 @@ func (h *History) Snapshot() []Record {
 	if h == nil {
 		return nil
 	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	result := make([]Record, len(h.records))
 	for i, record := range h.records {
 		result[i] = Record{At: record.At, Data: append([]byte(nil), record.Data...)}
