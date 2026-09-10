@@ -68,7 +68,10 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	}
 	baseTitle := frame.Title
 	frame.Status = spec.Status
+	state := newMonitorState(staticSnapshot, 32)
 	collect := func(now time.Time) error {
+		state.Sample()
+		applySnapshot(frame, state.Snapshot())
 		var b bytes.Buffer
 		if err := title.Execute(&b, struct{ Title, Time string }{baseTitle, now.Format(spec.ClockFormat)}); err != nil {
 			return err

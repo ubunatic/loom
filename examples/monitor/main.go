@@ -37,7 +37,7 @@ func runWidth(out io.Writer, width int) error {
 	if width == 0 {
 		width = cfg.MaxWidth()
 	}
-	applySnapshot(root)
+	applySnapshot(root, staticSnapshot)
 	height := cfg.Height(0)
 	if responsive, ok := root.(loom.WidthHeighter); ok {
 		height = responsive.HeightForWidth(width)
@@ -72,7 +72,7 @@ var staticSnapshot = monitorSnapshot{
 	gtt:  []float64{1, 1, 2, 2, 2, 3, 2, 2},
 }
 
-func applySnapshot(root loom.Widget) {
+func applySnapshot(root loom.Widget, snapshot monitorSnapshot) {
 	frame, ok := root.(*loom.Frame)
 	if !ok {
 		return
@@ -83,8 +83,8 @@ func applySnapshot(root loom.Widget) {
 		case "usage":
 			values := box.Rows.GetValues()
 			for row := range values {
-				if row < len(staticSnapshot.usage) && len(values[row]) > 1 {
-					values[row][1] = graph.RenderBar(staticSnapshot.usage[row], graph.BarOptions{Width: 4, SubChar: true})
+				if row < len(snapshot.usage) && len(values[row]) > 1 {
+					values[row][1] = graph.RenderBar(snapshot.usage[row], graph.BarOptions{Width: 4, SubChar: true})
 				}
 			}
 			box.SetRowsValues(values)
@@ -95,10 +95,10 @@ func applySnapshot(root loom.Widget) {
 					continue
 				}
 				name := values[row][0]
-				history, ok := staticSnapshot.load[name]
+				history, ok := snapshot.load[name]
 				if !ok {
 					if name == "vram/gtt" {
-						values[row][1] = splitTimeline(staticSnapshot.vram, staticSnapshot.gtt)
+						values[row][1] = splitTimeline(snapshot.vram, snapshot.gtt)
 					}
 					continue
 				}

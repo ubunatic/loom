@@ -59,6 +59,25 @@ func TestMonitorGraphWidths(t *testing.T) {
 	}
 }
 
+func TestMonitorStateSamplesIndependentlyFromSnapshot(t *testing.T) {
+	state := newMonitorState(monitorSnapshot{load: map[string][]float64{}}, 2)
+	state.Sample()
+	first := state.Snapshot()
+	state.Sample()
+	second := state.Snapshot()
+	if len(first.load["cpu (16c)"]) != 1 || len(second.load["cpu (16c)"]) != 2 {
+		t.Fatalf("history lengths = %d, %d", len(first.load["cpu (16c)"]), len(second.load["cpu (16c)"]))
+	}
+	first.load["cpu (16c)"][0] = 999
+	if second.load["cpu (16c)"][0] == 999 {
+		t.Fatal("snapshot shares mutable history storage")
+	}
+	state.Sample()
+	if got := len(state.Snapshot().load["cpu (16c)"]); got != 2 {
+		t.Fatalf("retained history length = %d, want 2", got)
+	}
+}
+
 func TestCommand(t *testing.T) {
 	for _, tc := range []struct {
 		name string
