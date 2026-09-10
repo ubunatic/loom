@@ -83,15 +83,17 @@ func TestMonitorStateSamplesIndependentlyFromSnapshot(t *testing.T) {
 
 func TestCommand(t *testing.T) {
 	for _, tc := range []struct {
-		name string
-		args []string
-		want string
-		fail bool
+		name  string
+		args  []string
+		want  string
+		width int
+		fail  bool
 	}{
-		{"help", []string{"-h"}, "--watch", false},
-		{"once", nil, "All Usage", false},
-		{"unknown", []string{"--watc"}, "", true},
-		{"argument", []string{"extra"}, "", true},
+		{"help", []string{"-h"}, "--watch", 0, false},
+		{"once", nil, "All Usage", 0, false},
+		{"short width", []string{"-w", "40"}, "All Usage", 40, false},
+		{"unknown", []string{"--watc"}, "", 0, true},
+		{"argument", []string{"extra"}, "", 0, true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out bytes.Buffer
@@ -101,6 +103,14 @@ func TestCommand(t *testing.T) {
 			}
 			if !strings.Contains(out.String(), tc.want) {
 				t.Fatal(out.String())
+			}
+			if tc.width > 0 {
+				rows := strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n")
+				for i, row := range rows {
+					if len([]rune(row)) != tc.width {
+						t.Fatalf("row %d width=%d, want %d", i, len([]rune(row)), tc.width)
+					}
+				}
 			}
 		})
 	}

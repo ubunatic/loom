@@ -161,7 +161,7 @@ func execute(ctx context.Context, args []string, out io.Writer) error {
 		},
 	}
 	cmd.Flags().BoolVar(&watch, "watch", false, spec.WatchHelp)
-	cmd.Flags().IntVar(&width, "width", 0, spec.WidthHelp)
+	cmd.Flags().IntVarP(&width, "width", "w", 0, spec.WidthHelp)
 	cmd.SetArgs(args)
 	cmd.SetOut(out)
 	cmd.SetErr(out)
