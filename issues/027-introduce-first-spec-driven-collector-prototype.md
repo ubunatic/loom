@@ -37,6 +37,9 @@ source, or action wiring is attempted.
 - Keep collection, snapshot/history ownership and rendering as separate
   boundaries. Rendering consumes a snapshot and never advances collection or
   history merely by drawing.
+- Retain live records in memory only, defaulting to a 15-minute window when a
+  declaration omits `retention`; no state is persisted on disk in this
+  prototype.
 - Express the prototype configuration through the repository's spec/schema
   direction, without hardcoded duplicate spec values or prematurely claiming
   a stable public DSL.
