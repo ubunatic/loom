@@ -62,3 +62,17 @@ func TestPlanIsDeterministic(t *testing.T) {
 		t.Fatalf("plans differ: %v vs %v (err=%v)", a, b, err)
 	}
 }
+
+func TestPlanLeavesCappedSpaceUnused(t *testing.T) {
+	items := []Item{
+		{Visible: true, Constraint: Constraint{Min: 2, Preferred: 2, Max: 2, HasMax: true}},
+		{Visible: true, Constraint: Constraint{Min: 2, Preferred: 2, Max: 2, HasMax: true}},
+	}
+	got, err := Plan(10, 1, items)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got[0] != (Allocation{Offset: 0, Size: 2}) || got[1] != (Allocation{Offset: 3, Size: 2}) {
+		t.Fatalf("capped allocations=%v", got)
+	}
+}

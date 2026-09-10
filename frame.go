@@ -191,7 +191,7 @@ func (f *Frame) Layout(width, height int) []Rect {
 				box := f.Boxes[index]
 				w := min(width, max(0, box.Width))
 				if box.Dynamic {
-					w = width
+					w = clampBox(box.Width, box.MinWidth, box.MaxWidth, width)
 				}
 				if w >= 2 && allocation.Size >= 2 {
 					result[index] = Rect{X: 0, Y: 1 + allocation.Offset, W: w, H: allocation.Size}

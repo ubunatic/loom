@@ -59,7 +59,7 @@ func TestDynamicFrameLayoutStacksAtBreakpoint(t *testing.T) {
 		{ID: "b", Width: 4, Height: 3, Dynamic: true, MinHeight: 2, MaxHeight: 4},
 	}}
 	got := f.Layout(40, 10)
-	want := []Rect{{X: 0, Y: 1, W: 40, H: 4}, {X: 0, Y: 6, W: 40, H: 3}}
+	want := []Rect{{X: 0, Y: 1, W: 4, H: 4}, {X: 0, Y: 6, W: 4, H: 3}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("stacked dynamic layout=%v, want %v", got, want)
 	}

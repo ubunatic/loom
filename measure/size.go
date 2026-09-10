@@ -63,7 +63,6 @@ func TextSize(text string, maxWidth int) Size {
 			continue
 		}
 		used := 0
-		lineWidth := 0
 		for _, cluster := range clusters {
 			w := StringWidth(cluster)
 			if used > 0 && used+w > maxWidth {
@@ -74,14 +73,10 @@ func TextSize(text string, maxWidth int) Size {
 				used = 0
 			}
 			used += w
-			if used > lineWidth {
-				lineWidth = used
-			}
 		}
 		if used > result.Width {
 			result.Width = used
 		}
-		_ = lineWidth
 		result.Height++
 	}
 	if result.Height == 0 {
@@ -100,6 +95,12 @@ func MeasureText(text string, availableWidth int, insets Insets, c Constraints) 
 	if err := c.Validate(); err != nil {
 		return Size{}, err
 	}
+	if availableWidth > 0 && availableWidth < c.Width.Min {
+		return Size{}, fmt.Errorf("available width %d is below minimum %d", availableWidth, c.Width.Min)
+	}
+	if c.Width.HasMax && c.Width.Max < insets.Width() || c.Height.HasMax && c.Height.Max < insets.Height() {
+		return Size{}, fmt.Errorf("constraints cannot contain insets")
+	}
 	contentWidth := availableWidth - insets.Width()
 	if contentWidth <= 0 {
 		contentWidth = c.Width.Preferred - insets.Width()
@@ -114,8 +115,8 @@ func MeasureText(text string, availableWidth int, insets Insets, c Constraints) 
 	}
 	width = clamp(width, c.Width.Min, c.Width.Max, c.Width.HasMax)
 	contentWidth = width - insets.Width()
-	if contentWidth < 1 {
-		contentWidth = 1
+	if contentWidth < 0 {
+		return Size{}, fmt.Errorf("available width cannot contain insets")
 	}
 	natural = TextSize(text, contentWidth)
 	height := natural.Height + insets.Height()

@@ -49,6 +49,9 @@ func Plan(total, gap int, items []Item) ([]Allocation, error) {
 	if len(visible) == 0 {
 		return result, nil
 	}
+	if len(visible) > 1 && gap > total/(len(visible)-1) {
+		return nil, fmt.Errorf("layout: gaps exceed total space")
+	}
 	available := total - gap*(len(visible)-1)
 	if available < 0 {
 		return nil, fmt.Errorf("layout: gaps exceed total space")
@@ -85,12 +88,9 @@ func Plan(total, gap int, items []Item) ([]Allocation, error) {
 				result[index].Size++
 				used++
 			}
-			if i > available*len(visible)+len(visible) {
+			if i >= len(visible) && allCapped(result, items, visible) {
 				break
 			}
-		}
-		if used < available {
-			return nil, fmt.Errorf("layout: maximum sizes leave space unallocatable")
 		}
 	}
 	offset := 0
@@ -99,6 +99,16 @@ func Plan(total, gap int, items []Item) ([]Allocation, error) {
 		offset += result[index].Size + gap
 	}
 	return result, nil
+}
+
+func allCapped(allocations []Allocation, items []Item, visible []int) bool {
+	for _, index := range visible {
+		constraint := items[index].Constraint
+		if !constraint.HasMax || allocations[index].Size < constraint.Max {
+			return false
+		}
+	}
+	return true
 }
 
 func validate(c Constraint) error {

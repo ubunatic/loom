@@ -102,3 +102,10 @@ func TestConstraintsRejectInconsistentLimits(t *testing.T) {
 		t.Fatal("expected preferred-below-minimum error")
 	}
 }
+
+func TestMeasureTextRejectsUnsatisfiableParentWidth(t *testing.T) {
+	_, err := MeasureText("a", 3, Insets{}, Constraints{Width: Limit{Min: 5}})
+	if err == nil {
+		t.Fatal("expected parent-width constraint error")
+	}
+}
