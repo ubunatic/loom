@@ -61,6 +61,29 @@ The request was informed by read-only sibling inspection; neither sibling is to 
 4. Implement dynamic box allocation on those contracts. Test preferred packing, min-floor shrink, max/stretch, gaps/chrome, breakpoint fallback, hidden boxes, and repeated resize in headless and PTY-compatible fixtures.
 5. Run `gofmt` on changed Go files, `go vet ./...`, `go test ./...`, `go test -race ./...`, `make test`, and existing geometry/replay checks. Record dimensions, commands, and unattended visual limitations in delivery evidence.
 
+## Audit — 2026-09-10
+
+Remains Open, with Phase A partially shipped in `fc1bbeb` and `3ed92c7`:
+[measure](../measure/measure.go) now exports `RuneWidth`, `StringWidth`,
+`Clusters`, `Lines`, `Truncate` and `TruncateLeft`, using only the standard
+library. Canvas delegates its cell/cluster policy to it. Package comments
+document ANSI stripping, base/combining clusters and the lack of emoji-ZWJ
+cluster support. Focused tests cover ASCII, SGR, combining/wide/graph glyphs,
+multiline content, OSC state across newlines and left/right truncation.
+
+This does not finish Phase A: exact-width fit/padding is absent, root
+`truncate.go` still duplicates fitting algorithms, and line bounds are not a
+border/padding/min/max content-sizing contract. Existing independent Canvas
+geometry checks pass, but dedicated measure/render agreement and the full
+edge-case/negative-control matrix remain. Phase B is unimplemented:
+`Frame.Layout` still clips declared `Box.Width`/`Height` and switches at a
+breakpoint; no content-sized allocator or min/max/stretch declarations exist.
+Public policy/provenance documentation and migration evidence also remain.
+
+Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
+`GOWORK=off make watch-pty` pass, including existing fixed-layout regressions.
+Continue from the shared policy instead of extracting a second width API.
+
 ## 5. Scope Limits
 
 - This filing changes ticket/index files only; no Loom source code is authorized in this request.

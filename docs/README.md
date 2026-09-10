@@ -9,5 +9,11 @@
 
 ## Case Studies
 
-- [2026-09-09 — From Monitor Screenshots to a Declarative UI Backlog](studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md)
-- [2026-09-10 — Agentic Sprint from Mid-Flight Rows to Stable Graph Milestone](studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md)
+**`docs/studies/`** — case studies, indexed by `harnez index`.
+
+| File | Topic |
+|------|-------|
+| [studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md](studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md) | From Monitor Screenshots to a Declarative UI Backlog |
+| [studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md](studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md) | Agentic Sprint from Mid-Flight Rows to Stable Graph Milestone |
+
+Study files are the source of truth for this table.

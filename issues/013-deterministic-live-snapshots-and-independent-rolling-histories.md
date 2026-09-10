@@ -29,6 +29,24 @@ The static graph target must gain deterministic live data without coupling histo
 
 Use fake time and seeded sequences for empty/short/full/rolling histories; assert sample counts at 1 Hz and a faster rate while drawing at 20 Hz, plus rapid repeated draws and producer shutdown. Run race tests, isolated vet/tests and wide/slim final-output geometry checks.
 
+## Audit — 2026-09-10
+
+Remains Open. `b376e0a` supplies deterministic sampling, copied snapshots and
+bounded per-series slices in [state.go](../examples/monitor/state.go).
+`TestMonitorStateSamplesIndependentlyFromSnapshot` verifies CPU retention and
+copy isolation. `TestCadenceIndependentTicks` in [cadence_test.go](../cadence_test.go)
+proves 20 redraw ticks do not advance one producer's count/timestamp and checks
+cancellation. These are partial acceptance evidence, not a multi-source test.
+
+`monitorState.Sample` still advances CPU/RAM/GPU/VRAM/GTT together, and
+`monitorSnapshot` stores no sample timestamps. There is no independently
+scheduled faster simulated meter or slow/fast producer matrix with both faster
+and slower redraw. Keep the remaining startup/history/render-stability and
+joined producer-shutdown matrix open. The watch path also starts the real
+027 file source; it is not yet an isolated simulated-source demonstration.
+Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
+`GOWORK=off make watch-pty` pass without establishing those missing contracts.
+
 ## Scope limits
 
 No real I/O, unbounded history, source framework, persistence or claim that Harnez alone completes the two-target milestone.

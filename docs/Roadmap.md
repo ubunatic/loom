@@ -24,7 +24,8 @@ dashboard and the Voxi monitor.
 ## Assessment against code and backlog
 
 Reconciled 2026-09-10 against all 11 open tickets returned by
-`harnez find -d . issues status:open`, the current code, and recent commits.
+`harnez find -d . issues status:open`, code/tests at `6b80ced`, and recent commits.
+All 11 remain open after acceptance review; no complete issue was verified.
 The initial 2026-09-09 assessment and sequence in
 [`RoadmapContext.md`](RoadmapContext.md) remain historical context; statements
 there and in the root README about missing schemas/watch support predate the
@@ -51,9 +52,13 @@ implementation below.
 - Collector records are still raw bytes retained by the worker; they do not
   feed displayed metrics. Show-once uses a static numerical snapshot; watch
   graphs remain simulated. Source errors currently end watch, and retention
-  trims relative to appended timestamps. Parsed numeric snapshots, safe
-  publication to the UI, stale/error presentation, and lifecycle/rate tests
-  remain acceptance work for 027. No disk persistence or GPU collector shipped.
+  trims relative to appended timestamps. `316159a` shipped synchronized
+  `History.Append`/`Snapshot` with copied byte slices and concurrent-access
+  tests. Parsed numeric snapshots, wiring those snapshots to the UI,
+  stale/error presentation, and lifecycle/rate tests remain acceptance work
+  for 027. No disk persistence or GPU collector shipped. The Load footer's
+  `(real collector data)` currently mislabels simulated graphs, including
+  show-once output where no source runs; correct it in 027's display proof.
 - Show-once uses terminal width up to the declared 80-column cap, with an
   80-column fallback for redirected output. Plain provenance footers and a
   spacer now appear inside boxes. These improvements still rely on fixed
@@ -61,8 +66,12 @@ implementation below.
   and switches at a breakpoint; it does not measure content or distribute
   min/preferred/max sizes. The footer is a special box field, not a general
   measured vertical stack.
-- New 028 scopes a reusable measurement/layout library analogous to
-  `loom/graph`. Its sibling findings identify Harnez's `internal/uix` min/pref/max,
+- 028's first measurement slice shipped in `fc1bbeb` and `3ed92c7`:
+  [`measure/`](../measure/) exports renderer-independent cell widths, clusters,
+  multiline bounds and left/right truncation; Canvas delegates its width policy.
+  ANSI is stripped and emoji-ZWJ clusters are explicitly unsupported. Exact
+  fit/padding, root truncation deduplication, constrained content sizing and
+  dynamic allocation remain open. Its sibling findings identify Harnez's `internal/uix` min/pref/max,
   wrap/stretch planner and usage measurement pass, plus Voxi's visible-width,
   ANSI-preserving truncation and box sizing. Consolidate Loom's existing width
   helpers against an explicit cell policy; rune-counting sibling code is not
@@ -75,7 +84,9 @@ implementation below.
 - Stages 1–5: 006–010 closed, covering shell, schemas, watch, responsive
   placement, controls and the geometry gate.
 - Stage 6: rows/review 011 and 020 closed; graph primitives 024 and numerical
-  monitor integration 025 closed. Parent 012 still needs acceptance reconciliation.
+  monitor integration 025 closed. Parent 012 remains incomplete: the second
+  usage bar is a literal placeholder, provenance omits the verified metadata
+  gap, and full paired-graph target geometry is not established.
 - Test/schema hygiene: 021–023 closed. Newly reconciled 026 is closed:
   `make watch-pty` builds the monitor and supplies `--watch`, fixing the smoke
   invocation rather than changing the scheduler.
@@ -83,21 +94,39 @@ implementation below.
   and YAML-to-watch wiring landed (`b4d8d02`, `8e87868`, `9914fba`); terminal
   sizing, the 80-column limit, and plain footers/spacer landed through `2c2b782`.
   These are shipped slices of open work, not closure of 027 or 028.
-- 013's first deterministic sampling slice (`b376e0a`) was already recorded in
-  the prior roadmap and remains partial. 028 is newly filed; no measurement or
-  dynamic allocation implementation is implied by that filing.
+- 013's first deterministic sampling slice (`b376e0a`) remains partial.
+  Since the previous roadmap pass, 028's shared measurement policy and 027's
+  synchronized history publication shipped. Neither completes its ticket.
+
+### Verified backlog gaps
+
+Every open ticket was read against the implemented surface and tests. This
+table records why none can close; detailed audit notes accompany 004, 012,
+013, 016, 027 and 028. Unfinished acceptance checkboxes remain unchecked.
+
+| Issue | Evidence and remaining acceptance |
+|---|---|
+| 004 | Expected sibling uzu checkout is absent; dependency/import/copy removal, `RunPane` cutover and downstream checks remain unverified. |
+| 012 | `applySnapshot` updates one usage bar; the second is literal YAML. Graph port/tests exist, but paired target coverage and accurate source-license/authorization evidence remain. |
+| 013 | `monitorState.Sample` advances all series together without timestamps. One-producer cadence tests do not prove independent slow/fast simulations. |
+| 014 | `graph/options.go` offers Go colors/glyphs; monitor schema has no declared palettes/ranges/glyph contract or two-palette target matrix. |
+| 015 | Only the usage/load monitor example exists; no Voxi declaration, bounded transcript events or daemon-state simulation. |
+| 016 | Both target implementations and the combined colored/show-once/watch matrix are incomplete. Only 027 is excepted from its broader-source gate. |
+| 017 | The raw file reader has unit fixtures, but no separate-process file/socket producers, reconnect/framing or partial-write lifecycle evidence. |
+| 018 | `/proc/stat` is read as bytes; no metric parsing/units or daemon-source probe/adapter and no evidence-backed go/no-go report. |
+| 019 | Typed file/cadence YAML is consumed; socket/value mapping, named event handlers, comparison with Go and adopt/narrow/reject decision are absent. |
+| 027 | Raw history publication is synchronized; numeric display integration, error/stale state and rate/in-flight cancellation tests remain. |
+| 028 | Shared cell policy and line bounds exist; fit/padding, constrained content sizing, dynamic layout and full policy/migration evidence remain. |
 
 ### Close / Park
 
-- [004 — uzu migration](../issues/004-migrate-uzu-to-shared-loom.md): retain as
-  a closure candidate. README says uzu consumes the release, but this pass has
-  not verified downstream imports, dependency, removed copy, `RunPane` cutover
-  or checks. That evidence is needed before closure; it need not block UI work.
-- [012 — graph parent](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md):
-  reconcile for possible closure after auditing 024/025 against every parent
-  criterion, especially provenance, paired usage rows and tiny-width geometry.
-  Do not port the graphs again or assume closed children prove full target parity.
-  013 still names 012 as a dependency; resolve any actual acceptance gap.
+- [004 — uzu migration](../issues/004-migrate-uzu-to-shared-loom.md): park pending
+  a downstream checkout or equivalent verifiable evidence. README consumption
+  claims cannot establish its acceptance criteria; it need not block UI work.
+- [012 — graph parent](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md)
+  is no longer a closure candidate: the audit found concrete paired-bar,
+  provenance and target-geometry work. Move that bounded remainder into Now
+  alongside 028, before dependent 013 acceptance; retain the existing graph port.
 - [019 — wider declarative wiring](../issues/019-evaluate-declarative-source-and-action-wiring.md):
   park its socket/event/action and comparative feasibility work until 017/018
   supply proven boundaries. Its narrow file/cadence declaration is already
@@ -109,16 +138,17 @@ implementation below.
 
 ### Ticket sequencing
 
-The immediate sequence is **028 measurement → 028 dynamic layout → remaining
-013 timing contract → 027 displayed file-data proof**, with 012's acceptance
-audit alongside the first step. 028 does not depend on unfinished collectors;
+The immediate sequence is **finish 028 measurement → 028 dynamic layout → remaining
+013 timing contract → 027 displayed file-data proof**, with 012's verified
+acceptance gaps resolved alongside 028. 028 does not depend on unfinished collectors;
 013's timing evidence supports finishing 027. These are bounded increments,
 not a requirement to build a general layout or source framework first.
 
-**Now — reusable sizing and trustworthy live data.** Promote new
+**Now — reusable sizing and trustworthy live data.** Retain
 [028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md)
 because the footer/spacer work exposed repeated manual dimension tuning.
-First consolidate ANSI/cell measurement and content sizing, then add a pure
+Finish fit/padding, truncation consolidation and constrained content sizing
+on the shipped `measure` policy, then add a pure
 deterministic allocator and Frame/Box adapters. Migrate the monitor through
 validated declarations, including rows, plain text, spacer, border and padding
 in its measured height; preserve fixed-size compatibility and graph widths.
@@ -160,9 +190,10 @@ for reusable UI value while host-specific integration remains uncertain.
 prototype forward via 027, ahead of the original 016 → 017 → 018 → 019 gate.
 That is the scoped exception now reflected here; 016 remains the complete
 simulated-target milestone and the gate for broader file/socket/system work.
-The older absolute wording in 016 and the context document needs later tracker
-reconciliation. This pass changes only the roadmap and makes no ticket-status
-or dependency edits.
+016 now records this exception explicitly; the context document retains the
+historical original ordering. This audit changes no issue status or priority.
+012 moves from speculative closure to concrete Now work because its acceptance
+audit found unfinished requirements; the other buckets retain their value order.
 
 Each stage should leave a runnable example and deterministic checks. Keep examples in the root module so root test discovery includes them; the target document's nested `go.mod` is illustrative, not a requirement.
 
@@ -170,7 +201,7 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 |---|---|
 | 1–5 — Shipped Foundation | [006](../issues/006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md), [007](../issues/007-clock-watch-mode-with-independent-collection-and-redraw.md), [008](../issues/008-responsive-declared-box-layout.md), [009](../issues/009-declarative-box-visibility-controls.md), [010](../issues/010-geometry-and-visual-evidence-milestone-before-rich-content.md) |
 | Hygiene & Fixes (Shipped) | [021](../issues/021-cmd-help-tty-blocking-in-tests.md), [022](../issues/022-decouple-static-shell-golden-from-evolving-monitor-spec.md), [023](../issues/023-rows-schema-validation-and-negative-controls.md), [026](../issues/026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) |
-| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done) |
+| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done); parent [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) (now; acceptance gaps) |
 | 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) (now) |
 | Reusable measurement and dynamic layout | [028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md) (now; extends shipped Stage 3) |
 | Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (now; partial slice pulled forward from Stages 10–11) |
@@ -181,14 +212,24 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 
 ### Verification gates for the next increments
 
-028 starts with known-column canaries and measurement/fit tests, then tests
+028 extends existing known-column canaries with measurement/fit tests, then tests
 content height, min/preferred/max allocation, fixed sizing, visibility, wrapping,
 tiny terminals and ANSI geometry independently of its own measurement helper.
 013/027 require deterministic sample-count/timestamp matrices with slower and
 faster redraw, changing file fixtures, stale/error cases, bounded retention and
 joined shutdown. Retain `make test`, relevant race checks and `make watch-pty`
-for implementation delivery. The roadmap update itself only verifies document
-links, backlog coverage and diff scope; it does not claim a fresh code-test run.
+for implementation delivery.
+
+This audit freshly passed `GOWORK=off make test` (schema negative controls,
+64x9/40x18 saved geometry replay, vet and all Go packages),
+`GOWORK=off go test -race ./...`, `GOWORK=off make watch-pty` (redraw,
+resize, toggles and terminal restoration), and the no-controlling-TTY canary.
+`harnez status` reports all 28 tracker entries consistent. `harnez index` and
+`harnez index --check` pass after converting the existing studies list in
+[`docs/README.md`](README.md) to the required anchored table. The issue index
+needed no row changes because all statuses and paths remain unchanged. Existing checks
+validate implemented slices, not the absent acceptance matrices above;
+visual verification was automated, with no human screenshot review.
 
 The stage descriptions below retain the original scope as historical acceptance
 context. Their order is superseded by the sequence above where explicitly noted.

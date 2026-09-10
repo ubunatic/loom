@@ -30,6 +30,33 @@ The user explicitly authorized copying Harnez rograph into Loom while retaining 
 
 Record provenance/permission evidence and verify imported file checksums or source diff. Port focused graph tests for boundaries, empty/short/full/overflow histories, two-sample cells and wrapper widths; run independent wide/slim geometry goldens and isolated vet/tests. Reference [Harnez 198](../../harnez/issues/198-load-box-sparkline-width-and-vram-gtt-split-restoration.md).
 
+## Audit — 2026-09-10
+
+Remains Open after inspecting implementation and tests at Loom `6b80ced`:
+
+- `714bc97` and `e944324` shipped graph primitives and numerical monitor
+  integration. [Graph tests](../graph/graph_test.go) assert clamping,
+  sub-character precision, short/empty padding, wrappers and Braille pairs.
+  [Monitor tests](../examples/monitor/main_test.go) cover rendered numerical
+  bars and fixed single/split timeline widths. These are verified slices.
+- [applySnapshot](../examples/monitor/main.go) updates only the first usage
+  bar (`values[row][1]`); the second bar remains a literal `[    ]` in
+  [monitor.yaml](../examples/monitor/spec/monitor.yaml). Paired numerical
+  usage bars and their target evidence are incomplete. Generic tiny-terminal
+  geometry tests use an injected child; they do not prove full graph-target
+  wrapper/paired-row behavior at tiny widths.
+- [Provenance](../graph/PROVENANCE.md) records the source revision, file list
+  and adaptation summary, but asserts upstream AGPL without recording this
+  ticket's authorization and missing-metadata finding. Read-only inspection
+  of Harnez `01e59b331c9d85699e55fbbb946c579e19901083` confirms no root
+  LICENSE/REUSE file and no license notice in `internal/rograph/bar.go`.
+  Its graph history identifies Uwe Jugel as a commit author; that alone does
+  not establish a source license. Reconcile the provenance record and retain
+  source-diff/checksum evidence before closure; no renewed permission needed.
+- Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
+  `GOWORK=off make watch-pty` pass. Passing children and general geometry
+  checks do not discharge the remaining parent criteria.
+
 ## Scope limits
 
 Copy within the existing user authorization and document provenance accurately. No sibling mutation, public-package extraction, Harnez collectors or palette framework; missing source metadata is an attribution finding, not an automatic approval gate.

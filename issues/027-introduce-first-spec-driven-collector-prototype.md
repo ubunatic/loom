@@ -83,6 +83,36 @@ counts/timestamps while rendering at a different cadence, repeated rendering
 of one snapshot, and clean shutdown. Run schema validation, focused Go tests,
 `GOWORK=off go test ./...`, `GOWORK=off go vet ./...`, and relevant race tests.
 
+## Audit — 2026-09-10
+
+Remains Open. `b4d8d02`, `8e87868` and `9914fba` shipped the typed raw-file
+reader, duration retention and embedded watch wiring. `316159a` adds locking
+around `History.Append`/`Snapshot`; records and returned byte slices are copied.
+[Collector tests](../collector/collector_test.go) verify a timestamped raw
+record, size rejection, pre-cancelled reads, spec construction, the default
+15-minute window, retention trimming, copy isolation and concurrent access.
+
+Still missing: numeric parsing and a changing fixture feeding displayed
+snapshots; malformed/missing/stale presentation; deterministic fixed-rate
+sample-count/timestamp tests across faster/slower redraw; and in-flight read
+cancellation/join evidence. `FileCollector.Collect` checks cancellation before
+and after synchronous file I/O, so the existing cancellation test does not
+prove interruption of a blocked read. `Run` uses real time/tickers and has no
+direct lifecycle/rate test. Retention trims on append relative to that record's
+timestamp, not on idle reads; concurrent-access tests do not establish ordered
+timestamps or retention correctness for out-of-order publication.
+
+[watch.go](../examples/monitor/watch.go) appends records to worker histories,
+but never reads them into `applySnapshot`; errors end watch and the display
+still uses simulated state. The Load footer says `(real collector data)` even
+in show-once mode, which performs no collection. Correct that provenance as
+part of the display-data proof. The spec/schema slice is present, but full
+parsing, lifecycle, compatibility and 018/019 handoff documentation is not.
+
+Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
+`GOWORK=off make watch-pty` pass. They verify the shipped raw-record slice,
+not the outstanding numeric/display/lifecycle acceptance criteria.
+
 ## Scope limits
 
 No external eventing, socket/event-stream transport, daemon integration,

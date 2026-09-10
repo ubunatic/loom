@@ -27,6 +27,13 @@ the extraction round-trips.
 
 ## Risks / notes
 
+### Audit — 2026-09-10
+
+Remains Open. Loom's README reports downstream consumption, but the expected
+`/home/uwe/projects/uzu` checkout is absent. Imports, removal of the private
+copy, dependency version, `RunPane` migration and downstream build/test results
+cannot be verified here. No task checkbox is completed from the README claim.
+
 - **Do not** delete `uzu/loom` until the tag exists and uzu builds against it —
   otherwise uzu is broken in the interim. Sequence: tag loom → point uzu at it →
   verify → delete the copy.
