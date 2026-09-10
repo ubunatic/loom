@@ -72,3 +72,33 @@ func TestFitAndPadUseTerminalCells(t *testing.T) {
 		t.Fatalf("padded width=%d, want 3", got)
 	}
 }
+
+func TestTextSizeWrapsAtCellBoundaries(t *testing.T) {
+	if got := TextSize("ab界d", 3); got != (Size{Width: 3, Height: 2}) {
+		t.Fatalf("TextSize()=%+v, want width 3 height 2", got)
+	}
+	if got := TextSize("\n", 3); got != (Size{Height: 2}) {
+		t.Fatalf("empty lines=%+v, want height 2", got)
+	}
+}
+
+func TestMeasureTextAppliesInsetsAndConstraints(t *testing.T) {
+	c := Constraints{
+		Width:  Limit{Min: 6, Preferred: 8, Max: 10, HasMax: true},
+		Height: Limit{Min: 4, Preferred: 0, Max: 5, HasMax: true},
+	}
+	got, err := MeasureText("abc", 0, Insets{Top: 1, Right: 1, Bottom: 1, Left: 1}, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != (Size{Width: 8, Height: 4}) {
+		t.Fatalf("MeasureText()=%+v, want 8x4", got)
+	}
+}
+
+func TestConstraintsRejectInconsistentLimits(t *testing.T) {
+	err := (Constraints{Width: Limit{Min: 4, Preferred: 2}}).Validate()
+	if err == nil {
+		t.Fatal("expected preferred-below-minimum error")
+	}
+}
