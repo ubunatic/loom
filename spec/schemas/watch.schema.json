@@ -13,5 +13,21 @@
     "description": {"type": "string", "minLength": 1},
     "watch_help": {"type": "string", "minLength": 1}
     ,"width_help": {"type": "string", "minLength": 1}
+    ,"collectors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "type", "path", "rate"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "type": {"const": "file"},
+          "path": {"type": "string", "minLength": 1},
+          "rate": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?(ns|us|ms|s|m|h)$"},
+          "retention": {"type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?(ns|us|ms|s|m|h)$"},
+          "max_bytes": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
   }
 }

@@ -7,23 +7,33 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"sync"
 	"text/template"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/collector"
 	"gopkg.in/yaml.v3"
 )
 
 type watchSpec struct {
-	Collect     time.Duration `yaml:"collect"`
-	Redraw      time.Duration `yaml:"redraw"`
-	ClockFormat string        `yaml:"clock_format"`
-	Title       string        `yaml:"title"`
-	Status      string        `yaml:"status"`
-	Command     string        `yaml:"command"`
-	Description string        `yaml:"description"`
-	WatchHelp   string        `yaml:"watch_help"`
-	WidthHelp   string        `yaml:"width_help"`
+	Collect     time.Duration    `yaml:"collect"`
+	Redraw      time.Duration    `yaml:"redraw"`
+	ClockFormat string           `yaml:"clock_format"`
+	Title       string           `yaml:"title"`
+	Status      string           `yaml:"status"`
+	Command     string           `yaml:"command"`
+	Description string           `yaml:"description"`
+	WatchHelp   string           `yaml:"watch_help"`
+	WidthHelp   string           `yaml:"width_help"`
+	Collectors  []collector.Spec `yaml:"collectors"`
+	sources     []configuredSource
+}
+
+type configuredSource struct {
+	collector collector.Collector
+	interval  time.Duration
+	history   *collector.History
 }
 
 func loadWatch() (watchSpec, error) {
@@ -42,6 +52,17 @@ func loadWatch() (watchSpec, error) {
 	}
 	if spec.ClockFormat == "" || spec.Title == "" || spec.Command == "" || spec.Description == "" || spec.WatchHelp == "" || spec.WidthHelp == "" {
 		return spec, fmt.Errorf("watch: missing required declaration")
+	}
+	for _, declaration := range spec.Collectors {
+		c, interval, retention, err := declaration.Build()
+		if err != nil {
+			return spec, err
+		}
+		history, err := collector.NewHistory(retention)
+		if err != nil {
+			return spec, err
+		}
+		spec.sources = append(spec.sources, configuredSource{collector: c, interval: interval, history: history})
 	}
 	return spec, nil
 }
@@ -69,7 +90,12 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	baseTitle := frame.Title
 	frame.Status = spec.Status
 	state := newMonitorState(staticSnapshot, 32)
+	runtime := startSources(ctx, spec.sources)
+	defer runtime.Close()
 	collect := func(now time.Time) error {
+		if err := runtime.Err(); err != nil {
+			return err
+		}
 		state.Sample()
 		applySnapshot(frame, state.Snapshot())
 		var b bytes.Buffer
@@ -91,4 +117,44 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	pane.MaxCols = cfg.MaxWidth()
 	pane.Resizeable = true
 	return pane.RunWatch(ctx, frame, loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}, collect)
+}
+
+type sourceRuntime struct {
+	cancel context.CancelFunc
+	done   sync.WaitGroup
+	errs   chan error
+}
+
+func startSources(parent context.Context, sources []configuredSource) *sourceRuntime {
+	ctx, cancel := context.WithCancel(parent)
+	runtime := &sourceRuntime{cancel: cancel, errs: make(chan error, len(sources))}
+	for _, source := range sources {
+		source := source
+		runtime.done.Add(1)
+		go func() {
+			defer runtime.done.Done()
+			err := collector.Run(ctx, source.collector, source.interval, func(record collector.Record) error {
+				source.history.Append(record)
+				return nil
+			})
+			if err != nil && ctx.Err() == nil {
+				runtime.errs <- err
+			}
+		}()
+	}
+	return runtime
+}
+
+func (r *sourceRuntime) Err() error {
+	select {
+	case err := <-r.errs:
+		return err
+	default:
+		return nil
+	}
+}
+
+func (r *sourceRuntime) Close() {
+	r.cancel()
+	r.done.Wait()
 }
