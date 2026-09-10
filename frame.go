@@ -39,6 +39,7 @@ type Box struct {
 	Border  BoxBorder `yaml:"-"`
 	Child   Widget    `yaml:"-"`
 	Hidden  bool      `yaml:"hidden"`
+	Footer  string    `yaml:"footer"`
 	Rows    *Rows     `yaml:"rows"`
 }
 
@@ -76,6 +77,9 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		if b.Child != nil && padding < (w-1)/2 && padding < (h-1)/2 {
 			inner := Rect{X: 1 + padding, Y: 1 + padding, W: w - 2 - 2*padding, H: h - 2 - 2*padding}
 			paintClipped(local, inner, func(child *Canvas) { b.Child.Draw(child, child.Bounds()) })
+			if b.Footer != "" {
+				writeBounded(local, inner.X, inner.Y+inner.H-1, inner.W, b.Footer)
+			}
 		}
 	})
 }

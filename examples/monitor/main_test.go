@@ -33,7 +33,7 @@ func TestShowOnce(t *testing.T) {
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
 	}
-	if !strings.Contains(strings.Join(rows, "\n"), "sim") || !strings.Contains(strings.Join(rows, "\n"), "CPU real") {
+	if !strings.Contains(strings.Join(rows, "\n"), "(simulated data)") || !strings.Contains(strings.Join(rows, "\n"), "(real collector data)") {
 		t.Fatalf("box provenance hints missing:\n%s", strings.Join(rows, "\n"))
 	}
 	content := out.String()

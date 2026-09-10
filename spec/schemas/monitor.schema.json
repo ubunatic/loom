@@ -81,6 +81,7 @@
         "width": {"type": "integer", "minimum": 2},
         "height": {"type": "integer", "minimum": 2},
         "padding": {"type": "integer", "minimum": 0}
+        ,"footer": {"$ref": "#/definitions/text"}
         ,"rows": {"$ref": "#/definitions/rows"}
         ,"hidden": {"type": "boolean"}
       }

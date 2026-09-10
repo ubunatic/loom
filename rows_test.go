@@ -78,7 +78,7 @@ func TestRowsSetValuesDynamicBinding(t *testing.T) {
 
 	// Verify GetValues returns initial values
 	initial := usageBox.Rows.GetValues()
-	if len(initial) != 5 || initial[0][0] != "Claude" {
+	if len(initial) != 4 || initial[0][0] != "Claude" {
 		t.Fatalf("unexpected initial values: %v", initial)
 	}
 
