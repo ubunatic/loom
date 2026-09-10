@@ -1,93 +1,69 @@
+<!--
+SPDX-FileCopyrightText: 2026 Uwe Jugel
+SPDX-License-Identifier: AGPL-3.0-or-later
+-->
+
 # 028 — Add reusable measurement and dynamic box layout primitives
 
 **Status**: Open
-**Priority**: P1 (High)
-**Severity**: Major
-**Category**: Feature
-**Related**: [Roadmap](../docs/Roadmap.md), [Spec](../docs/Spec.md), [025](025-integrate-graph-renderers-into-declarative-monitor.md), [027](027-introduce-first-spec-driven-collector-prototype.md), [Harnez uix](../../harnez/internal/uix/uix.go), [Voxi monitor rendering](../../voxi/internal/monitor/render.go)
-**Roadmap stage**: 6–7 UI foundation; prerequisite for richer dynamic monitor panels
+**Priority**: P2 (Medium)
+**Severity**: Moderate
+**Category**: Architecture
+**Related**: [008](008-responsive-declared-box-layout.md), [010](010-geometry-and-visual-evidence-milestone-before-rich-content.md), [011](011-aligned-dashboard-rows-and-ansi-safe-truncation.md), [024](024-port-harnez-rograph-primitives-with-provenance.md), [Loom graph](../graph), [Loom frame](../frame.go), [Loom canvas](../canvas.go), [Loom truncation](../truncate.go)
+**Depends on**: [010](010-geometry-and-visual-evidence-milestone-before-rich-content.md), [011](011-aligned-dashboard-rows-and-ansi-safe-truncation.md); build on [008](008-responsive-declared-box-layout.md).
 
 ---
 
 ## 1. Problem & Motivation
 
-Loom's frame width can follow the terminal, but its boxes still use fixed
-declared width and height. The current layout clips preferred rectangles and
-switches between a horizontal row and a vertical stack; it does not measure
-content or distribute available space according to minimum, preferred, and
-maximum sizes. The monitor therefore needs application-specific dimensions and
-cannot naturally grow or shrink its panels as content changes.
+Loom currently has fixed `Box.Width`/`Box.Height` declarations. `Frame.Layout` only chooses bounded side-by-side placement or breakpoint stacking. `canvas.go`, `rows.go`, `truncate.go`, and `table.go` already perform related width calculations, but measurement and content-sizing policy is not a reusable library primitive. As more widgets and graph-backed rows are added, each consumer can drift on ANSI handling, Unicode cell width, padding, minimums, and shrink behavior.
 
-Loom should gain reusable measurement and layout primitives, analogous to
-`loom/graph`, before more monitor content is added. The first extraction should
-be evidence-led and small rather than a wholesale port of either sibling UI.
+Extract a small public Loom library feature, analogous to `loom/graph`, for visible-width/text measurement and content sizing first, then use it as the basis for dynamic box sizing/layout. Widgets should report preferred/minimum/max dimensions from visible content; parents should allocate rectangles deterministically within terminal bounds.
+
+### Provenance and read-only findings
+
+The request was informed by read-only sibling inspection; neither sibling is to be modified.
+
+- Harnez revision `1dd5e83216865554e8a502cce0da061b98513442`: [internal/usage/watch.go](../../harnez/internal/usage/watch.go) contains `stripANSI`, `visLen`, `truncateVisible`, a wide measurement pass, and natural-width panel planning; [internal/uix/uix.go](../../harnez/internal/uix/uix.go) contains min/preferred/max widths, wrapping, gaps, and stretch allocation. Its helper counts runes after ANSI stripping, so it is not a complete Unicode cell-width oracle.
+- Voxi revision `7a64d8ef6642ee52b5472c03453dbedaa013ffcf`: [internal/monitor/render.go](../../voxi/internal/monitor/render.go) contains `RuneDisplayWidth`, `StringDisplayWidth`, ANSI-preserving `TruncateLineANSI`, and bordered-box sizing; [internal/monitor/monitor_test.go](../../voxi/internal/monitor/monitor_test.go) covers ANSI, emoji, truncation, and exact line widths. These are behavioral references, not packages to import.
+- Loom already has `RuneWidth`/`StringWidth`, ANSI-aware cluster truncation, graph width padding, and frame breakpoint tests. The implementation must consolidate or delegate these behaviors rather than create a second incompatible width policy.
 
 ## 2. Technical Specification / Findings
 
-Read-only inspection found two useful precedents:
+### Phase A: measurement and content sizing
 
-- Harnez `internal/uix/uix.go` provides a compact `Box` model with
-  `MinWidth`, `PrefWidth`, `MaxWidth`, `Stretch`, `Priority`, and `Order`;
-  `Layout` filters disabled boxes, wraps them into rows, and distributes extra
-  width across stretchable boxes. Its `renderBox` is ASCII and rune-count
-  based, so its planner is reusable but its renderer is not sufficient for
-  Loom's ANSI/cell contract.
-- Voxi `internal/monitor/render.go` provides terminal-cell measurement through
-  `RuneDisplayWidth` and `StringDisplayWidth`, ignores ANSI sequences, and
-  preserves ANSI styling while truncating visible content with
-  `TruncateLineANSI`. `RenderBoxLines` derives content width from the outer box,
-  pads measured lines, and keeps borders intact. Its monitor-specific box
-  assembly and color/domain code should remain outside Loom.
+- Add a stable exported package/API under a Loom library boundary (for example `measure` or `layout`; choose one and document it) exposing visible cell width, ANSI-aware fit/truncation/padding, and content-to-size measurement for one or more lines.
+- Specify the terminal-text policy: ANSI controls consume no cells; combining marks are zero-width; supported wide glyphs consume two cells; truncation never splits a display cluster or leaves unterminated styling. Do not claim exhaustive terminal/Unicode conformance without an independent oracle.
+- Define empty content, zero/negative constraints, borders/padding/chrome, minimum/maximum dimensions, and height-from-content semantics. Results are deterministic and non-negative.
+- Keep the API independent of renderer, YAML spec, producer, and terminal driver so `loom/graph`, rows, tables, and text widgets can consume it.
 
-The Loom extraction must preserve combining/wide-rune and ANSI-aware geometry,
-minimum border/padding sizes, and deterministic rendering. It must not make
-collectors, widgets, or application labels responsible for coordinates.
+### Phase B: dynamic box sizing/layout
 
-## 3. Implementation & Verification Plan
+- Replace the assumption that every box supplies fixed dimensions with layout inputs containing minimum, preferred/content, maximum, stretch/shrink policy, visibility, and order. Preserve an explicit fixed-size compatibility option.
+- Allocate width/height, gaps, borders, padding, and frame chrome deterministically. Prefer content-sized boxes, shrink or wrap at declared floors, and make tiny-terminal behavior explicit; never produce negative, overlapping, or border-drifting rectangles.
+- Generalize `Frame.Layout`/`HeightForWidth` only after Phase A can calculate the same result independently. Preserve declaration order, breakpoint stacking, visibility actions, graph exact-width guarantees, and existing `Stack`/`Grid` consumers unless a migration is documented.
+- Keep coordinate arithmetic in library layout code, not the monitor example or data collectors.
 
-1. Add a Loom measurement package or bounded public helpers with explicit cell
-   width semantics, ANSI handling, and tests derived from the existing canvas
-   contract. Record provenance and intentional differences from Harnez/Voxi.
-2. Add a pure layout planner with min/preferred/max size, fixed and flexible
-   sizing, visibility, gaps, wrapping/stacking, and deterministic remainder
-   distribution. Keep it independent of terminal I/O and data collection.
-3. Adapt `Frame`/`Box` to consume planned rectangles, including content-aware
-   height for rows and plain footers, while retaining compatibility with the
-   current fixed declarations.
-4. Extend the validated YAML vocabulary only for consumed size policies;
-   preserve fixed-width documents and reject invalid or undersized policies.
-5. Migrate the monitor example to exercise dynamic sizing at 80-, 64-, 40-,
-   and tiny-column widths, with changing and long content.
+## 3. Acceptance Criteria
 
-### Acceptance criteria
+- [ ] A documented Loom library package provides reusable visible-cell measurement, ANSI-aware fit/truncation/padding, and content sizing; existing duplicate helpers are removed, delegated, or explicitly justified.
+- [ ] Tests cover ASCII, ANSI SGR/control sequences, combining marks, representative wide glyphs, graph glyphs, empty/short/long content, exact-width padding, truncation boundaries, and malformed/unterminated ANSI without panics.
+- [ ] Independent geometry checks verify measured and rendered lines agree at known terminal columns, including a negative control catching rune-count/byte-count drift.
+- [ ] Dynamic box layout allocates content/preferred widths and heights with min/max/fixed constraints, gaps, chrome, and padding; it wraps or stacks predictably and never emits invalid or overlapping rectangles.
+- [ ] Existing fixed boxes, breakpoint stacking, visibility, rows/table alignment, and `loom/graph` exact-width behavior remain compatible, with migration tests for current fixtures.
+- [ ] Public API and Unicode/ANSI policy are documented; provenance and adaptation notes identify the sibling evidence without copying internal sibling packages or inventing attribution.
 
-- [ ] Reusable Loom measurement helpers report terminal cell width correctly
-  for plain, ANSI-styled, combining, and wide-rune text.
-- [ ] A pure planner supports fixed plus flexible boxes with minimum and
-  maximum bounds, hidden boxes, gaps, stacking/wrapping, and stable remainder
-  allocation.
-- [ ] Box borders, padding, rows, footers, truncation, and ANSI styling remain
-  geometrically valid at wide, narrow, tiny, and content-changing sizes.
-- [ ] Existing fixed-layout YAML documents remain compatible; new sizing
-  fields are schema-validated and consumed without duplicated defaults.
-- [ ] The monitor demonstrates dynamic box sizing without collector/rendering
-  coupling, and independent geometry tests cover the resulting layouts.
-- [ ] Copied/adapted code has source commit/path provenance and Loom-specific
-  differences are documented; no sibling repository is modified.
+## 4. Implementation & Verification Plan
 
-## Verification
+1. Inventory Loom width/truncation/size call sites and record the API decision. Establish a known-column canary before changing behavior.
+2. Extract/consolidate measurement and text-fit primitives against the existing Canvas/cell contract; add focused table tests and independent expected widths.
+3. Add content-sizing contracts and adapters for representative Frame, Rows, Table, and graph consumers. Verify empty, tiny, wide, combining, wide-glyph, and styled content.
+4. Implement dynamic box allocation on those contracts. Test preferred packing, min-floor shrink, max/stretch, gaps/chrome, breakpoint fallback, hidden boxes, and repeated resize in headless and PTY-compatible fixtures.
+5. Run `gofmt` on changed Go files, `go vet ./...`, `go test ./...`, `go test -race ./...`, `make test`, and existing geometry/replay checks. Record dimensions, commands, and unattended visual limitations in delivery evidence.
 
-Run measurement unit tests, planner table tests, schema negative controls,
-wide/slim/tiny geometry replay, `GOWORK=off go vet ./...`,
-`GOWORK=off go test ./...`, race tests, and the monitor PTY smoke test. Compare
-visible cell positions independently of ANSI replay. Include long labels,
-combining marks, wide glyphs, hidden/restored boxes, and changing footer/row
-content.
+## 5. Scope Limits
 
-## Scope limits
-
-No general reactive layout engine, animation, terminal theme discovery,
-collector implementation, external eventing, sibling mutation, or wholesale
-copy of Harnez/Voxi monitor code. This ticket establishes measurement and
-layout primitives; source parsing and declarative collection remain separate
-issues.
+- This filing changes ticket/index files only; no Loom source code is authorized in this request.
+- No CSS/flexbox/general UI engine, constraint solver, animation, terminal emulator, raster screenshot stack, or exhaustive Unicode conformance suite.
+- No new collectors, producer adapters, graph renderer redesign, color/palette framework, or sibling-repository changes. Graph integration is limited to consuming the measurement contract and preserving graph width semantics.
+- No silent breaking public API change: compatibility shims or a separately reviewed migration are required where exported behavior is affected.
