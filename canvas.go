@@ -6,7 +6,8 @@ package loom
 import (
 	"fmt"
 	"strings"
-	"unicode"
+
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 // Rect describes a rectangular region within the canvas (0-based, top-left origin).
@@ -206,80 +207,23 @@ func (c *Canvas) Clear() {
 
 // RuneWidth returns the visual column width of a single rune.
 func RuneWidth(r rune) int {
-	if unicode.IsControl(r) || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || unicode.Is(unicode.Cf, r) {
-		return 0
-	}
-	if r >= 0x1100 && r <= 0x115f || r >= 0x2e80 && r <= 0xa4cf && r != 0x303f || r >= 0xac00 && r <= 0xd7a3 || r >= 0xf900 && r <= 0xfaff || r >= 0xfe10 && r <= 0xfe19 || r >= 0xfe30 && r <= 0xfe6f || r >= 0xff01 && r <= 0xff60 || r >= 0xffe0 && r <= 0xffe6 || r >= 0x20000 && r <= 0x3fffd {
-		return 2
-	}
-	if r >= 0x1f000 && r <= 0x1faff {
-		return 2
-	}
-	return 1
+	return measure.RuneWidth(r)
 }
 
 // StringWidth returns the visual column width of a string.
 func StringWidth(s string) int {
-	w := 0
-	for _, r := range plainTerminalText(s) {
-		w += RuneWidth(r)
-	}
-	return w
+	return measure.StringWidth(s)
 }
 
 // plainTerminalText removes terminal instructions from untrusted text. Styles
 // are supplied through Style, not embedded control sequences. Unterminated
 // control strings consume the remainder rather than leaking terminal commands.
 func plainTerminalText(s string) string {
-	var b strings.Builder
-	runes := []rune(s)
-	for i := 0; i < len(runes); i++ {
-		r := runes[i]
-		if r == 27 {
-			i++
-			if i >= len(runes) {
-				break
-			}
-			switch runes[i] {
-			case '[':
-				for i++; i < len(runes); i++ {
-					if runes[i] >= '@' && runes[i] <= '~' {
-						break
-					}
-				}
-			case ']', 'P', '^', '_':
-				for i++; i < len(runes); i++ {
-					if runes[i] == 7 {
-						break
-					}
-					if runes[i] == 27 && i+1 < len(runes) && runes[i+1] == '\\' {
-						i++
-						break
-					}
-				}
-			}
-			continue
-		}
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
-			continue
-		}
-		b.WriteRune(r)
-	}
-	return b.String()
+	return strings.Join(measure.Clusters(s), "")
 }
 
 // textClusters supports base runes with combining marks, not emoji ZWJ clusters.
 // Leading combining marks are dropped: they must not attach outside the region.
 func textClusters(text string) []string {
-	var result []string
-	for _, r := range plainTerminalText(text) {
-		if RuneWidth(r) == 0 {
-			if len(result) > 0 {
-				result[len(result)-1] += string(r)
-			}
-		} else {
-			result = append(result, string(r))
-		}
-	}
-	return result
+	return measure.Clusters(text)
 }

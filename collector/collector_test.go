@@ -108,4 +108,8 @@ func TestHistorySupportsConcurrentPublicationAndSnapshots(t *testing.T) {
 		}()
 	}
 	done.Wait()
+	records := history.Snapshot()
+	if len(records) == 0 || string(records[len(records)-1].Data) != "ok" {
+		t.Fatalf("concurrent publication lost records: %+v", records)
+	}
 }

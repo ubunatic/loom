@@ -33,6 +33,14 @@ func TestLinesMeasuresVisibleBounds(t *testing.T) {
 	}
 }
 
+func TestLinesKeepsControlStateAcrossNewlines(t *testing.T) {
+	got := Lines("\x1b]title\nhidden\x07X\nY")
+	want := Size{Width: 1, Height: 2}
+	if got != want {
+		t.Fatalf("Lines()=%+v, want %+v", got, want)
+	}
+}
+
 func TestTruncatePreservesCellBudget(t *testing.T) {
 	got := Truncate("12界34", 5, "…")
 	if got != "12界…" {
