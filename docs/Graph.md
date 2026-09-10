@@ -7,6 +7,11 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 Loom provides dependency-free, fixed-width terminal graph rendering primitives under package `codeberg.org/ubunatic/loom/graph` ([`graph/`](../graph/)). These primitives render determinate progress bars and absolute/relative rolling sparklines designed specifically for terminal dashboards and box layouts.
 
+Graph glyphs and padding glyphs are required to occupy one terminal cell. A
+custom glyph with another measured width is replaced by a one-cell fallback so
+exact-width output remains true. This is a bounded cell policy, not a claim of
+full grapheme-cluster or terminal-emulator conformance.
+
 The implementations are ported and adapted from Harnez's `internal/rograph` (see [`graph/PROVENANCE.md`](../graph/PROVENANCE.md)).
 
 ---

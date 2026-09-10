@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 028 — Add reusable measurement and dynamic box layout primitives
 
-**Status**: Open
+**Status**: Closed — resolved in 5e8cac5
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture
@@ -46,12 +46,12 @@ The request was informed by read-only sibling inspection; neither sibling is to 
 
 ## 3. Acceptance Criteria
 
-- [ ] A documented Loom library package provides reusable visible-cell measurement, ANSI-aware fit/truncation/padding, and content sizing; existing duplicate helpers are removed, delegated, or explicitly justified.
-- [ ] Tests cover ASCII, ANSI SGR/control sequences, combining marks, representative wide glyphs, graph glyphs, empty/short/long content, exact-width padding, truncation boundaries, and malformed/unterminated ANSI without panics.
-- [ ] Independent geometry checks verify measured and rendered lines agree at known terminal columns, including a negative control catching rune-count/byte-count drift.
-- [ ] Dynamic box layout allocates content/preferred widths and heights with min/max/fixed constraints, gaps, chrome, and padding; it wraps or stacks predictably and never emits invalid or overlapping rectangles.
-- [ ] Existing fixed boxes, breakpoint stacking, visibility, rows/table alignment, and `loom/graph` exact-width behavior remain compatible, with migration tests for current fixtures.
-- [ ] Public API and Unicode/ANSI policy are documented; provenance and adaptation notes identify the sibling evidence without copying internal sibling packages or inventing attribution.
+- [x] A documented Loom library package provides reusable visible-cell measurement, ANSI-aware fit/truncation/padding, and content sizing; existing duplicate helpers are removed, delegated, or explicitly justified.
+- [x] Tests cover ASCII, ANSI SGR/control sequences, combining marks, representative wide glyphs, graph glyphs, empty/short/long content, exact-width padding, truncation boundaries, and malformed/unterminated ANSI without panics.
+- [x] Independent geometry checks verify measured and rendered lines agree at known terminal columns, including a negative control catching rune-count/byte-count drift.
+- [x] Dynamic box layout allocates content/preferred widths and heights with min/max/fixed constraints, gaps, chrome, and padding; it wraps or stacks predictably and never emits invalid or overlapping rectangles.
+- [x] Existing fixed boxes, breakpoint stacking, visibility, rows/table alignment, and `loom/graph` exact-width behavior remain compatible, with migration tests for current fixtures.
+- [x] Public API and Unicode/ANSI policy are documented; provenance and adaptation notes identify the sibling evidence without copying internal sibling packages or inventing attribution.
 
 ## 4. Implementation & Verification Plan
 
@@ -63,30 +63,29 @@ The request was informed by read-only sibling inspection; neither sibling is to 
 
 ## Audit — 2026-09-10
 
-Remains Open, with Phase A partially shipped in `fc1bbeb` and `3ed92c7`:
-[measure](../measure/measure.go) now exports `RuneWidth`, `StringWidth`,
-`Clusters`, `Lines`, `Truncate` and `TruncateLeft`, using only the standard
-library. Canvas delegates its cell/cluster policy to it. Package comments
-document ANSI stripping, base/combining clusters and the lack of emoji-ZWJ
-cluster support. Focused tests cover ASCII, SGR, combining/wide/graph glyphs,
-multiline content, OSC state across newlines and left/right truncation.
+Issue 028 is complete in the bounded scope defined above. The `measure` package
+owns cell-aware width, fit, padding, truncation, wrapping, insets, and validated
+content sizing; root compatibility helpers delegate to it. The `layout` package
+provides deterministic min/preferred/max allocation with gaps, hidden items,
+shrink floors, capped stretch, unused capped space, and overflow checks.
 
-This does not finish Phase A: exact-width fit/padding is absent, root
-`truncate.go` still duplicates fitting algorithms, and line bounds are not a
-border/padding/min/max content-sizing contract. Existing independent Canvas
-geometry checks pass, but dedicated measure/render agreement and the full
-edge-case/negative-control matrix remain. Phase B is unimplemented:
-`Frame.Layout` still clips declared `Box.Width`/`Height` and switches at a
-breakpoint; no content-sized allocator or min/max/stretch declarations exist.
-Public policy/provenance documentation and migration evidence also remain.
+`Stack.Measured` and `Box.Dynamic` consume these policies without changing
+legacy fixed/equal-share behavior. Dynamic boxes can derive preferred dimensions
+from rows, title/footer, border and padding; the monitor schema accepts either
+fixed dimensions or an explicit dynamic declaration. Geometry, visibility,
+resize, malformed ANSI, graph one-cell glyph, schema, race and replay evidence
+passes.
+
+The Unicode policy remains intentionally bounded: emoji ZWJ, variation-selector
+presentation, flags, and terminal-specific ambiguous-width modes are not
+guaranteed. Human visual confirmation is still not recorded; automated ANSI
+replay is the accepted unattended evidence.
 
 Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
 `GOWORK=off make watch-pty` pass, including existing fixed-layout regressions.
 Continue from the shared policy instead of extracting a second width API.
 
-### Sprint progress — 2026-09-10
-
-Issue remains Open. The following slices are now implemented and tested:
+### Sprint delivery — 2026-09-10
 
 - `bd395b0`: renderer-independent exact cell fitting/padding; root truncation
   delegates to `measure`, and Table clipping is cluster/cell safe.
@@ -97,11 +96,6 @@ Issue remains Open. The following slices are now implemented and tested:
 - `3690af1`, `8945149`: dynamic Box sizing/integration, schema declarations,
   overflow checks, and consistent measured height reporting.
 
-The remaining closure work is independent geometry/render evidence, broader
-malformed-control and constraint tests, graph custom-glyph policy, full dynamic
-visibility/resize coverage, and documentation/index verification. Content
-measurement is now consumed by dynamic Boxes, but monitor migration and full
-Frame/Stack measured composition remain deliberately bounded.
 
 ## 5. Scope Limits
 

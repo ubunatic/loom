@@ -139,24 +139,21 @@ table records why none can close; detailed audit notes accompany 004, 012,
 
 ### Ticket sequencing
 
-The immediate sequence is **finish 028 measurement → 028 dynamic layout → remaining
-013 timing contract → 027 displayed file-data proof**, with 012's verified
-acceptance gaps resolved alongside 028. 028 does not depend on unfinished collectors;
-013's timing evidence supports finishing 027. These are bounded increments,
-not a requirement to build a general layout or source framework first.
+The immediate sequence is **012 graph fidelity → 013 timing contract → 027
+displayed file-data proof**. 028 is now shipped and does not depend on unfinished
+collectors; 013's timing evidence supports finishing 027. These are bounded
+increments, not a requirement to build a general layout or source framework first.
 
-**Now — reusable sizing and trustworthy live data.** Retain
-[028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md)
-because the footer/spacer work exposed repeated manual dimension tuning.
-Finish fit/padding, truncation consolidation and constrained content sizing
-on the shipped `measure` policy, then add a pure
-deterministic allocator and Frame/Box adapters. Migrate the monitor through
-validated declarations, including rows, plain text, spacer, border and padding
-in its measured height; preserve fixed-size compatibility and graph widths.
-This directly improves every application composing Loom widgets.
+**Now — trustworthy live data and target fidelity.** Finish
+[012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md)
+alongside [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md)
+and [027](../issues/027-introduce-first-spec-driven-collector-prototype.md): close
+the paired graph/provenance gaps, prove independent simulated cadence, then parse
+changing file data into displayed snapshots with explicit stale/error semantics.
+The shipped 028 measurement/layout primitives now provide the sizing foundation
+for this work.
 
-Keep [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md)
-in Now: finish independent slow/fast simulated producers, bounded histories,
+Keep independent slow/fast simulated producers, bounded histories,
 timestamps, shutdown and mismatched redraw-rate tests. Complete
 [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) with a
 changing numeric file fixture feeding safely published display snapshots,
@@ -204,7 +201,7 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 | Hygiene & Fixes (Shipped) | [021](../issues/021-cmd-help-tty-blocking-in-tests.md), [022](../issues/022-decouple-static-shell-golden-from-evolving-monitor-spec.md), [023](../issues/023-rows-schema-validation-and-negative-controls.md), [026](../issues/026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) |
 | 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done); parent [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) (now; acceptance gaps) |
 | 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) (now) |
-| Reusable measurement and dynamic layout | [028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md) (now; extends shipped Stage 3) |
+| Reusable measurement and dynamic layout (Shipped) | [028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md) (closed; bounded measurement, planner and dynamic Box/Stack integration) |
 | Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (now; partial slice pulled forward from Stages 10–11) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
@@ -213,9 +210,9 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 
 ### Verification gates for the next increments
 
-028 extends existing known-column canaries with measurement/fit tests, then tests
-content height, min/preferred/max allocation, fixed sizing, visibility, wrapping,
-tiny terminals and ANSI geometry independently of its own measurement helper.
+The shipped 028 measurement/layout foundation is covered by known-column
+canaries, content-height, min/preferred/max allocation, fixed sizing, visibility,
+wrapping, tiny-terminal and ANSI geometry tests.
 013/027 require deterministic sample-count/timestamp matrices with slower and
 faster redraw, changing file fixtures, stale/error cases, bounded retention and
 joined shutdown. Retain `make test`, relevant race checks and `make watch-pty`
@@ -228,8 +225,8 @@ resize, toggles and terminal restoration), and the no-controlling-TTY canary.
 `harnez status` reports all 28 tracker entries consistent. `harnez index` and
 `harnez index --check` pass after converting the existing studies list in
 [`docs/README.md`](README.md) to the required anchored table. The issue index
-needed no row changes because all statuses and paths remain unchanged. Existing checks
-validate implemented slices, not the absent acceptance matrices above;
+was regenerated for the 028 closure. Existing checks validate the bounded
+implementation and its acceptance matrix;
 visual verification was automated, with no human screenshot review.
 
 The stage descriptions below retain the original scope as historical acceptance

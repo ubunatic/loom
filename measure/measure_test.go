@@ -109,3 +109,14 @@ func TestMeasureTextRejectsUnsatisfiableParentWidth(t *testing.T) {
 		t.Fatal("expected parent-width constraint error")
 	}
 }
+
+func TestMalformedANSIIsSafeAndConsumesNoCells(t *testing.T) {
+	for _, text := range []string{"\x1b[31", "\x1b]title", "\x1bPpayload"} {
+		if got := StringWidth(text); got != 0 {
+			t.Fatalf("StringWidth(%q)=%d, want 0", text, got)
+		}
+		if got := Truncate(text, 4, "…"); got != "" {
+			t.Fatalf("Truncate(%q)=%q, want empty", text, got)
+		}
+	}
+}

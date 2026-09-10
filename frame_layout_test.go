@@ -111,6 +111,19 @@ func TestDynamicFrameRendersWithinMeasuredRectangles(t *testing.T) {
 	}
 }
 
+func TestDynamicFrameReflowsAfterVisibilityChange(t *testing.T) {
+	f := Frame{Gap: 1, Boxes: []Box{
+		{ID: "a", Width: 4, Height: 4, Dynamic: true, MinWidth: 2},
+		{ID: "b", Width: 4, Height: 4, Dynamic: true, MinWidth: 2},
+	}}
+	wide := f.Layout(12, 8)
+	f.Boxes[0].Hidden = true
+	hidden := f.Layout(12, 8)
+	if wide[0].W == 0 || wide[1].W == 0 || hidden[0] != (Rect{}) || hidden[1].W == 0 || hidden[1].X != 0 {
+		t.Fatalf("visibility reflow wide=%v hidden=%v", wide, hidden)
+	}
+}
+
 func TestResponsiveRenderPreservesState(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {
