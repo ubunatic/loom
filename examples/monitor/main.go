@@ -15,6 +15,7 @@ import (
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/graph"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 //go:embed spec/*.yaml
@@ -35,7 +36,7 @@ func runWidth(out io.Writer, width int) error {
 		return err
 	}
 	if width == 0 {
-		width = cfg.MaxWidth()
+		width = outputWidth(out, cfg.MaxWidth())
 	}
 	applySnapshot(root, staticSnapshot)
 	height := cfg.Height(0)
@@ -50,6 +51,18 @@ func runWidth(out io.Writer, width int) error {
 		}
 	}
 	return nil
+}
+
+func outputWidth(out io.Writer, fallback int) int {
+	file, ok := out.(*os.File)
+	if !ok || !term.IsTerminal(int(file.Fd())) {
+		return fallback
+	}
+	cols, _, _ := term.GetSize(int(file.Fd()))
+	if cols < 1 {
+		return fallback
+	}
+	return min(cols, fallback)
 }
 
 // monitorSnapshot is application data: the declaration owns the row layout,

@@ -9,9 +9,9 @@ go run ./examples/monitor --help
 go run ./examples/monitor --width 40
 ```
 
-This prints a 64-column, ten-row monochrome frame and exits. It works with
-redirected stdin/stdout and does not open a terminal, wait for keys, or change
-terminal modes. Dimensions come from the document, not terminal detection.
+With no `--width`, show-once mode uses the current terminal width up to the
+declared 64-column maximum. Redirected output keeps the deterministic 64-column
+fallback and does not open a terminal, wait for keys, or change terminal modes.
 
 The status line labels the graph values as simulated. The watch declaration
 also labels the CPU file source as real; its raw records are collected but the
