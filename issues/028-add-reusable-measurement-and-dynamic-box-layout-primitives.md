@@ -84,6 +84,25 @@ Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
 `GOWORK=off make watch-pty` pass, including existing fixed-layout regressions.
 Continue from the shared policy instead of extracting a second width API.
 
+### Sprint progress — 2026-09-10
+
+Issue remains Open. The following slices are now implemented and tested:
+
+- `bd395b0`: renderer-independent exact cell fitting/padding; root truncation
+  delegates to `measure`, and Table clipping is cluster/cell safe.
+- `29e32d7`: constrained text sizing with cell-aware wrapping, insets, and
+  validated min/preferred/max dimensions.
+- `d145846`: deterministic renderer-independent allocation planner.
+- `47fd3f3`: opt-in measured Stack allocation while preserving legacy behavior.
+- `3690af1`, `8945149`: dynamic Box sizing/integration, schema declarations,
+  overflow checks, and consistent measured height reporting.
+
+The remaining closure work is independent geometry/render evidence, broader
+malformed-control and constraint tests, graph custom-glyph policy, full dynamic
+visibility/resize coverage, and documentation/index verification. Content
+measurement is now consumed by dynamic Boxes, but monitor migration and full
+Frame/Stack measured composition remain deliberately bounded.
+
 ## 5. Scope Limits
 
 - This filing changes ticket/index files only; no Loom source code is authorized in this request.
