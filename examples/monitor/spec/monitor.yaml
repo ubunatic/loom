@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=../../../spec/schemas/monitor.schema.json
 app:
-  height: 10
+  height: 11
   max_width: 80
 view:
   name: main
@@ -34,9 +34,9 @@ view:
         key: ctrl-c
     boxes:
       - id: usage
-        title: 'All Usage [sim graphs]'
+        title: All Usage
         width: 31
-        height: 8
+        height: 9
         padding: 1
         rows:
           gap: 1
@@ -51,10 +51,11 @@ view:
             - ['Gemini', '[⣿⣿⣿⡇]', '95%', '[    ]']
             - ['Claude/G', '[⣿⣿⣿⡇]', '99%', '[    ]']
             - ['OpenAI', '[⣿⡇  ]', '41%', '[    ]']
+            - ['sim', 'graphs sim', '', '']
       - id: load
-        title: 'Load [CPU real]'
+        title: Load
         width: 31
-        height: 8
+        height: 9
         padding: 1
         rows:
           gap: 1
@@ -68,3 +69,4 @@ view:
             - ['ram (45G)', '[⣤⣤⣤⣤⣤⣤⣤⣤⣤⣤]', '36%']
             - ['gpu (Phx)', '[⣀⣀⣀⣀⣀⣀⣀⣀⣀⣀]', '0%']
             - ['vram/gtt', '[⣿⣿⣿⣿][⣀⣀⣀⣀]', '6%']
+            - ['CPU real', 'graphs sim', '']

@@ -40,9 +40,9 @@ func TestDeclaredDummyRowsGeometry(t *testing.T) {
 	}
 	f := root.(*Frame)
 	for _, width := range []int{64, 40, 8} {
-		boxes := []Rect{{0, 1, 31, 8}, {33, 1, 31, 8}}
+		boxes := []Rect{{0, 1, 31, 9}, {33, 1, 31, 9}}
 		if width < 64 {
-			boxes[1] = Rect{0, 11, 31, 8}
+			boxes[1] = Rect{0, 12, 31, 9}
 		}
 		if width == 8 {
 			boxes[0].W = 8
@@ -52,7 +52,7 @@ func TestDeclaredDummyRowsGeometry(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if !strings.Contains(strings.Join(Render(f, 64, 10), "\n"), "Claude") {
+	if !strings.Contains(strings.Join(Render(f, 64, 11), "\n"), "Claude") {
 		t.Fatal("dummy values missing")
 	}
 	for _, tc := range []struct{ old, new string }{
@@ -78,7 +78,7 @@ func TestRowsSetValuesDynamicBinding(t *testing.T) {
 
 	// Verify GetValues returns initial values
 	initial := usageBox.Rows.GetValues()
-	if len(initial) != 4 || initial[0][0] != "Claude" {
+	if len(initial) != 5 || initial[0][0] != "Claude" {
 		t.Fatalf("unexpected initial values: %v", initial)
 	}
 
@@ -89,7 +89,7 @@ func TestRowsSetValuesDynamicBinding(t *testing.T) {
 	}
 	f.Box("usage").SetRowsValues(dynamicValues)
 
-	rendered := strings.Join(Render(f, 64, 10), "\n")
+	rendered := strings.Join(Render(f, 64, 11), "\n")
 	if !strings.Contains(rendered, "Updated") || !strings.Contains(rendered, "100%") {
 		t.Fatalf("rendered output did not reflect dynamic values:\n%s", rendered)
 	}

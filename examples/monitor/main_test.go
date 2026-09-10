@@ -22,8 +22,8 @@ func TestShowOnce(t *testing.T) {
 		t.Fatal("plain output contains terminal controls")
 	}
 	rows := strings.Split(strings.TrimSuffix(out.String(), "\n"), "\n")
-	if len(rows) != 10 {
-		t.Fatalf("got %d rows, want 10", len(rows))
+	if len(rows) != 11 {
+		t.Fatalf("got %d rows, want 11", len(rows))
 	}
 	for i, row := range rows {
 		if len([]rune(row)) != 80 {
@@ -33,8 +33,8 @@ func TestShowOnce(t *testing.T) {
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
 	}
-	if !strings.Contains(rows[1], "sim graphs") || !strings.Contains(rows[1], "CPU real") {
-		t.Fatalf("box provenance hints missing: %q", rows[1])
+	if !strings.Contains(strings.Join(rows, "\n"), "sim") || !strings.Contains(strings.Join(rows, "\n"), "CPU real") {
+		t.Fatalf("box provenance hints missing:\n%s", strings.Join(rows, "\n"))
 	}
 	content := out.String()
 	for _, expected := range []string{
