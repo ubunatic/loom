@@ -35,8 +35,18 @@ func runWidth(out io.Writer, width int) error {
 	if err != nil {
 		return err
 	}
+	observed := terminalWidth(out)
 	if width == 0 {
 		width = outputWidth(out, cfg.MaxWidth())
+	} else {
+		width = min(width, cfg.MaxWidth())
+	}
+	if frame, ok := root.(*loom.Frame); ok {
+		observedText := "n/a"
+		if observed > 0 {
+			observedText = fmt.Sprintf("%d", observed)
+		}
+		frame.Title = fmt.Sprintf("%s (observed: %s, effective: %d)", frame.Title, observedText, width)
 	}
 	applySnapshot(root, staticSnapshot)
 	height := cfg.Height(0)
@@ -54,15 +64,25 @@ func runWidth(out io.Writer, width int) error {
 }
 
 func outputWidth(out io.Writer, fallback int) int {
+	if cols := terminalWidth(out); cols > 0 {
+		return min(cols, fallback)
+	}
+	return fallback
+}
+
+func terminalWidth(out io.Writer) int {
 	file, ok := out.(*os.File)
 	if !ok || !term.IsTerminal(int(file.Fd())) {
-		return fallback
+		return 0
 	}
-	cols, _, _ := term.GetSize(int(file.Fd()))
+	cols, _, err := term.GetSize(int(file.Fd()))
+	if err != nil {
+		return 0
+	}
 	if cols < 1 {
-		return fallback
+		return 0
 	}
-	return min(cols, fallback)
+	return cols
 }
 
 // monitorSnapshot is application data: the declaration owns the row layout,

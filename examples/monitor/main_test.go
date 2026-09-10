@@ -33,6 +33,9 @@ func TestShowOnce(t *testing.T) {
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
 	}
+	if !strings.Contains(rows[0], "Loom monitor (observed: n/a, effective: 80)") {
+		t.Fatalf("width title missing: %q", rows[0])
+	}
 	if !strings.Contains(strings.Join(rows, "\n"), "(simulated data)") || !strings.Contains(strings.Join(rows, "\n"), "(real collector data)") {
 		t.Fatalf("box provenance hints missing:\n%s", strings.Join(rows, "\n"))
 	}
@@ -92,6 +95,7 @@ func TestCommand(t *testing.T) {
 		{"help", []string{"-h"}, "--watch", 0, false},
 		{"once", nil, "All Usage", 0, false},
 		{"short width", []string{"-w", "40"}, "All Usage", 40, false},
+		{"width capped by spec", []string{"-w", "100"}, "effective: 80", 80, false},
 		{"unknown", []string{"--watc"}, "", 0, true},
 		{"argument", []string{"extra"}, "", 0, true},
 	} {
