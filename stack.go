@@ -3,6 +3,8 @@
 
 package loom
 
+import "codeberg.org/ubunatic/loom/layout"
+
 // StackDir controls the direction a Stack arranges its children.
 type StackDir int
 
@@ -18,7 +20,12 @@ const (
 type Stack struct {
 	Dir      StackDir
 	Children []Widget
-	focus    int // index of focused child
+	// Measured enables constraint-based allocation for this stack. When false,
+	// the historical equal-share behavior is preserved.
+	Measured    bool
+	Constraints []layout.Constraint
+	Gap         int
+	focus       int // index of focused child
 }
 
 // NewStack creates a Stack with the given children and direction.
@@ -46,6 +53,24 @@ func (s *Stack) Draw(c *Canvas, r Rect) {
 
 // childRect computes the Rect for child i of n within the parent Rect r.
 func (s *Stack) childRect(r Rect, i, n int) Rect {
+	if s.Measured && len(s.Constraints) == n && s.Gap >= 0 {
+		items := make([]layout.Item, n)
+		for j, constraint := range s.Constraints {
+			items[j] = layout.Item{Constraint: constraint, Visible: true}
+		}
+		total := r.W
+		if s.Dir == Vertical {
+			total = r.H
+		}
+		allocations, err := layout.Plan(total, s.Gap, items)
+		if err == nil {
+			a := allocations[i]
+			if s.Dir == Horizontal {
+				return Rect{X: r.X + a.Offset, Y: r.Y, W: a.Size, H: r.H}
+			}
+			return Rect{X: r.X, Y: r.Y + a.Offset, W: r.W, H: a.Size}
+		}
+	}
 	if s.Dir == Horizontal {
 		unit := r.W / n
 		x := r.X + i*unit
