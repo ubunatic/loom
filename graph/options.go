@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"math"
 	"strings"
+
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 // DefaultBackgroundANSI is the SGR code RenderBar and RenderSparkline fall
@@ -162,10 +164,12 @@ func RenderBar(value float64, opts BarOptions) string {
 	if fill == 0 {
 		fill = '█'
 	}
+	fill = oneCellGlyph(fill, '█')
 	empty := opts.Empty
 	if empty == 0 {
 		empty = '░'
 	}
+	empty = oneCellGlyph(empty, '░')
 	left, right := opts.Left, opts.Right
 	if !opts.NoWrapper && left == "" && right == "" {
 		left = "["
@@ -178,6 +182,7 @@ func RenderBar(value float64, opts BarOptions) string {
 		if len(partial) == 0 {
 			partial = eighthBlockGlyphs
 		}
+		partial = oneCellGlyphs(partial, eighthBlockGlyphs)
 		emptyRune := empty
 		if opts.ANSI {
 			// The background wrap below already covers the whole glyph
@@ -265,6 +270,7 @@ func RenderSparkline(values []float64, opts SparklineOptions) string {
 		if padRune == 0 {
 			padRune = idleSparkGlyph(minimum, maximum, flat, opts)
 		}
+		padRune = oneCellGlyph(padRune, ' ')
 		padded := make([]rune, width)
 		for i := 0; i < padCount; i++ {
 			padded[i] = padRune
@@ -436,6 +442,21 @@ func optionWidth(width int) int {
 	default:
 		return width
 	}
+}
+
+func oneCellGlyph(glyph, fallback rune) rune {
+	if measure.RuneWidth(glyph) != 1 {
+		return fallback
+	}
+	return glyph
+}
+
+func oneCellGlyphs(glyphs, fallback []rune) []rune {
+	result := make([]rune, len(glyphs))
+	for i, glyph := range glyphs {
+		result[i] = oneCellGlyph(glyph, fallback[min(i, len(fallback)-1)])
+	}
+	return result
 }
 
 func barRange(minimum, maximum float64) (float64, float64) {

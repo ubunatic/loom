@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 func stripAnsi(s string) string {
@@ -244,6 +246,17 @@ func TestRenderSparklineExactWidthPadding(t *testing.T) {
 				t.Errorf("RenderSparkline() rune count = %d, want %d (output: %q)", runes, tt.wantRunes, got)
 			}
 		})
+	}
+}
+
+func TestGraphNormalizesWideCustomGlyphsToOneCell(t *testing.T) {
+	bar := RenderBar(50, BarOptions{Width: 4, Fill: '界', Empty: '界'})
+	if got := measure.StringWidth(bar); got != 6 {
+		t.Fatalf("bar width=%d, want wrapper plus four cells", got)
+	}
+	spark := RenderSparkline([]float64{50}, SparklineOptions{Width: 3, PadRune: '界'})
+	if got := measure.StringWidth(spark); got != 3 {
+		t.Fatalf("spark width=%d, want 3", got)
 	}
 }
 
