@@ -118,7 +118,7 @@ func Truncate(text string, width int, marker string) string {
 		return strings.Join(clusters, "")
 	}
 	end := fitClusters(Clusters(marker), width)
-	return fitClusters(clusters, width-StringWidth(end)) + end
+	return Fit(strings.Join(clusters, ""), width-StringWidth(end)) + end
 }
 
 // TruncateLeft fits text to a terminal-cell budget while keeping its trailing
@@ -132,7 +132,7 @@ func TruncateLeft(text string, width int, marker string) string {
 	if StringWidth(plain) <= width {
 		return plain
 	}
-	start := fitClusters(Clusters(marker), width)
+	start := Fit(marker, width)
 	remain := width - StringWidth(start)
 	if remain <= 0 {
 		return start
@@ -148,6 +148,31 @@ func TruncateLeft(text string, width int, marker string) string {
 		used += w
 	}
 	return start + strings.Join(trailing, "")
+}
+
+// Fit keeps the longest prefix of text that fits within width terminal cells.
+// It strips terminal controls and never splits a combining cluster or a wide
+// glyph. A non-positive width returns an empty string.
+func Fit(text string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	return fitClusters(Clusters(text), width)
+}
+
+// Pad fits text to at most width terminal cells and pads the remaining cells.
+// When right is true, padding is placed before the text. Text is normalized by
+// the same terminal-cell policy as Fit.
+func Pad(text string, width int, right bool) string {
+	if width <= 0 {
+		return ""
+	}
+	text = Fit(text, width)
+	padding := strings.Repeat(" ", width-StringWidth(text))
+	if right {
+		return padding + text
+	}
+	return text + padding
 }
 
 func fitClusters(clusters []string, width int) string {

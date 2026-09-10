@@ -6,13 +6,15 @@ package loom
 import (
 	"fmt"
 	"strings"
+
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 // Align controls text alignment within a column.
 type Align int
 
 const (
-	AlignLeft  Align = iota
+	AlignLeft Align = iota
 	AlignRight
 )
 
@@ -27,7 +29,7 @@ type Row struct {
 // Column defines one column in a Table.
 type Column struct {
 	Header string
-	Width  int   // 0 = auto (max of header and all cell widths)
+	Width  int // 0 = auto (max of header and all cell widths)
 	Align  Align
 }
 
@@ -376,17 +378,5 @@ func (t *Table) cycleSortNext() {
 
 // padCol pads or truncates s to exactly w visual columns with the given alignment.
 func padCol(s string, w int, align Align) string {
-	sw := StringWidth(s)
-	if sw >= w {
-		runes := []rune(s)
-		for len(runes) > 0 && StringWidth(string(runes)) > w {
-			runes = runes[:len(runes)-1]
-		}
-		return string(runes)
-	}
-	padding := strings.Repeat(" ", w-sw)
-	if align == AlignRight {
-		return padding + s
-	}
-	return s + padding
+	return measure.Pad(s, w, align == AlignRight)
 }

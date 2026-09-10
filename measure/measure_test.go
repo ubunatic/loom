@@ -57,3 +57,18 @@ func TestTruncateLeftKeepsTail(t *testing.T) {
 		t.Fatalf("TruncateLeft()=%q, want %q", got, "…def")
 	}
 }
+
+func TestFitAndPadUseTerminalCells(t *testing.T) {
+	if got := Fit("中中", 3); got != "中" {
+		t.Fatalf("Fit()=%q, want %q", got, "中")
+	}
+	if got := Pad("中", 3, false); got != "中 " {
+		t.Fatalf("Pad(left)=%q, want %q", got, "中 ")
+	}
+	if got := Pad("中", 3, true); got != " 中" {
+		t.Fatalf("Pad(right)=%q, want %q", got, " 中")
+	}
+	if got := StringWidth(Pad("中", 3, false)); got != 3 {
+		t.Fatalf("padded width=%d, want 3", got)
+	}
+}
