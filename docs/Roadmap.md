@@ -11,7 +11,7 @@ tracked in the [issue index](../issues/README.md). Stage numbers preserve the
 original plan; the Now/Next/Later sequence below reflects current priorities.
 
 Loom's value is reusable, dependency-light inline terminal UI: applications
-such as uzu, and the Harnez/Voxi reference dashboards, should share widgets
+such as the Harnez/Voxi reference dashboards, should share widgets
 without taking over the full terminal. An application should declare its UI
 structure and presentation, while Go supplies behavior and changing data. The
 UI should be easy to maintain, responsive to terminal size, testable without a live
@@ -23,9 +23,10 @@ dashboard and the Voxi monitor.
 
 ## Assessment against code and backlog
 
-Reconciled 2026-09-10 against all 11 open tickets returned by
+Reconciled 2026-09-10 against the open tickets returned by
 `harnez find -d . issues status:open`, code/tests at `6b80ced`, and recent commits.
-All 11 remain open after acceptance review; no complete issue was verified.
+Issue 004 is closed as invalid because uzu is deprecated and was never an active
+downstream consumer; no other complete issue was verified.
 The initial 2026-09-09 assessment and sequence in
 [`RoadmapContext.md`](RoadmapContext.md) remain historical context; statements
 there and in the root README about missing schemas/watch support predate the
@@ -106,7 +107,7 @@ table records why none can close; detailed audit notes accompany 004, 012,
 
 | Issue | Evidence and remaining acceptance |
 |---|---|
-| 004 | Expected sibling uzu checkout is absent; dependency/import/copy removal, `RunPane` cutover and downstream checks remain unverified. |
+| 004 | Closed as invalid: uzu is deprecated and was never an active downstream consumer. |
 | 012 | `applySnapshot` updates one usage bar; the second is literal YAML. Graph port/tests exist, but paired target coverage and accurate source-license/authorization evidence remain. |
 | 013 | `monitorState.Sample` advances all series together without timestamps. One-producer cadence tests do not prove independent slow/fast simulations. |
 | 014 | `graph/options.go` offers Go colors/glyphs; monitor schema has no declared palettes/ranges/glyph contract or two-palette target matrix. |
@@ -120,9 +121,9 @@ table records why none can close; detailed audit notes accompany 004, 012,
 
 ### Close / Park
 
-- [004 — uzu migration](../issues/004-migrate-uzu-to-shared-loom.md): park pending
-  a downstream checkout or equivalent verifiable evidence. README consumption
-  claims cannot establish its acceptance criteria; it need not block UI work.
+- [004 — uzu migration](../issues/004-migrate-uzu-to-shared-loom.md): closed as
+  invalid because uzu is deprecated and was never an active downstream
+  consumer.
 - [012 — graph parent](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md)
   is no longer a closure candidate: the audit found concrete paired-bar,
   provenance and target-geometry work. Move that bounded remainder into Now

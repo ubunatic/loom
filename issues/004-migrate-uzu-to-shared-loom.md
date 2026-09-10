@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 004 — Migrate uzu to depend on the shared loom module
 
-**Status:** Open
+**Status:** Closed — invalid
 
 **Priority:** P2 — can land right after the v0.1.0 tag (001)
 
@@ -29,16 +29,18 @@ the extraction round-trips.
 
 ### Audit — 2026-09-10
 
-Remains Open. Loom's README reports downstream consumption, but the expected
-`/home/uwe/projects/uzu` checkout is absent. Imports, removal of the private
-copy, dependency version, `RunPane` migration and downstream build/test results
-cannot be verified here. No task checkbox is completed from the README claim.
+This migration is obsolete: uzu is deprecated and was never used as an active
+downstream consumer of Loom. There is no live migration to verify or complete.
+The earlier open-status assessment below is superseded by this finding.
 
-- **Do not** delete `uzu/loom` until the tag exists and uzu builds against it —
-  otherwise uzu is broken in the interim. Sequence: tag loom → point uzu at it →
-  verify → delete the copy.
-- uzu and loom drift: any local uzu edits to loom made after this extraction
-  must be ported here first, or they are lost on deletion. As of extraction the
-  two are byte-identical except import paths.
+The former `/home/uwe/projects/uzu` checkout is absent, but that absence is no
+longer a blocker because the downstream application itself is deprecated.
+
+The remaining migration and drift notes below are historical context only; they
+do not describe active work while uzu is deprecated.
+
+- Historical sequencing was: tag loom → point uzu at it → verify → delete the
+  copy.
+- At extraction time, uzu and loom were byte-identical except import paths.
 - This issue is the mirror of **uman issue 005** (uman adopting the same shared
   module).

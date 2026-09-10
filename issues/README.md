@@ -15,7 +15,7 @@ upkeep.
 | 001 | [001-first-release-v0.1.0.md](001-first-release-v0.1.0.md) | Cut the first release (v0.1.0) | Done — v0.1.0 tagged and pushed; README refreshed 2026-08-04 |
 | 002 | [002-pane-driver-helper.md](002-pane-driver-helper.md) | Ship an exported pane-driver helper | Done in loom (2026-07-04) — consumer cutover tracked in 004 |
 | 003 | [003-public-api-audit.md](003-public-api-audit.md) | Audit and document the public API surface | Done (2026-07-04) |
-| 004 | [004-migrate-uzu-to-shared-loom.md](004-migrate-uzu-to-shared-loom.md) | Migrate uzu to depend on the shared loom module | Open |
+| 004 | [004-migrate-uzu-to-shared-loom.md](004-migrate-uzu-to-shared-loom.md) | Migrate uzu to depend on the shared loom module | Closed — invalid |
 | 005 | [005-license-clarification.md](005-license-clarification.md) | Confirm AGPL is the intended license for a shared library | Resolved — keep AGPL-3.0-or-later (2026-07-04) |
 | 006 | [006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md](006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md) | Static declarative monitor shell with a minimal validated contract | Closed — static declarative shell implemented and verified |
 | 007 | [007-clock-watch-mode-with-independent-collection-and-redraw.md](007-clock-watch-mode-with-independent-collection-and-redraw.md) | Clock watch mode with independent collection and redraw | Closed — watch clock with independent cadence and verified terminal restoration |
