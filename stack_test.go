@@ -33,3 +33,13 @@ func TestStackDefaultAllocationRemainsEqualShare(t *testing.T) {
 		t.Fatalf("legacy rects=%v, want %v", got, want)
 	}
 }
+
+func TestMeasuredStackContentHeightIncludesGap(t *testing.T) {
+	s := NewStack(Vertical, NewView([]string{"a"}), NewView([]string{"b"}))
+	s.Measured = true
+	s.Gap = 1
+	s.Constraints = []layout.Constraint{{Min: 2}, {Min: 2}}
+	if got := s.ContentHeight(); got != 5 {
+		t.Fatalf("content height=%d, want 5", got)
+	}
+}

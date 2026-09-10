@@ -63,6 +63,9 @@ func Plan(total, gap int, items []Item) ([]Allocation, error) {
 			preferred = items[index].Constraint.Min
 		}
 		result[index].Size = preferred
+		if preferred > int(^uint(0)>>1)-used {
+			return nil, fmt.Errorf("layout: preferred sizes overflow")
+		}
 		used += preferred
 	}
 	if used > available {

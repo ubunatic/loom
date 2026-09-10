@@ -117,6 +117,24 @@ func (s *Stack) ContentHeight() int {
 	if len(s.Children) == 0 {
 		return 0
 	}
+	if s.Measured && len(s.Constraints) == len(s.Children) {
+		height := 0
+		for _, constraint := range s.Constraints {
+			preferred := constraint.Preferred
+			if preferred == 0 {
+				preferred = constraint.Min
+			}
+			if s.Dir == Vertical {
+				height += preferred
+			} else {
+				height = max(height, preferred)
+			}
+		}
+		if s.Dir == Vertical && len(s.Children) > 1 {
+			height += s.Gap * (len(s.Children) - 1)
+		}
+		return height
+	}
 	if s.Dir == Horizontal {
 		maxH := 0
 		for _, child := range s.Children {
