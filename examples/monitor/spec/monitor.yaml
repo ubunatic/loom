@@ -6,7 +6,7 @@ view:
   name: main
   frame:
     title: Loom monitor
-    status: Show once
+    status: 'Show once | graphs: simulated'
     gap: 2
     breakpoint: 64
     control_separator: '  '

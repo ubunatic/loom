@@ -33,6 +33,9 @@ func TestShowOnce(t *testing.T) {
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
 	}
+	if !strings.Contains(rows[len(rows)-1], "graphs: simulated") {
+		t.Fatalf("data provenance hint missing: %q", rows[len(rows)-1])
+	}
 	content := out.String()
 	for _, expected := range []string{
 		"Claude",

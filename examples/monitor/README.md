@@ -13,8 +13,10 @@ This prints a 64-column, ten-row monochrome frame and exits. It works with
 redirected stdin/stdout and does not open a terminal, wait for keys, or change
 terminal modes. Dimensions come from the document, not terminal detection.
 
-The boxes now contain fixed dummy usage and CPU/RAM/GPU rows. These are not real
-measurements. Edit each box's `rows` in `spec/monitor.yaml` to change the values,
+The status line labels the graph values as simulated. The watch declaration
+also labels the CPU file source as real; its raw records are collected but the
+displayed CPU/RAM/GPU graph values remain deterministic simulated data for now.
+Edit each box's `rows` in `spec/monitor.yaml` to change the values,
 column widths, alignment, gap or ellipsis. Column positions do not depend on value
 length; on narrow layouts, left columns take priority and later columns clip.
 The empty-shell illustration below documents the original geometry only.
