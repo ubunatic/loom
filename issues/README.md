@@ -37,4 +37,4 @@ upkeep.
 | 023 | [023-rows-schema-validation-and-negative-controls.md](023-rows-schema-validation-and-negative-controls.md) | Add negative schema controls and column-value validation for box rows | Closed — added comprehensive negative schema controls for rows in validate-spec.py |
 | 024 | [024-port-harnez-rograph-primitives-with-provenance.md](024-port-harnez-rograph-primitives-with-provenance.md) | Port Harnez rograph primitives with provenance | Closed |
 | 025 | [025-integrate-graph-renderers-into-declarative-monitor.md](025-integrate-graph-renderers-into-declarative-monitor.md) | Integrate graph renderers into declarative monitor | Open |
-| 026 | [026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md](026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) | Investigate monitor PTY smoke-test idle redraw regression | Open |
+| 026 | [026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md](026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) | Investigate monitor PTY smoke-test idle redraw regression | Closed — resolved in watch-pty verification target |

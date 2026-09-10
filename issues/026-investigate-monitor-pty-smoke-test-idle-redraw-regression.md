@@ -1,6 +1,6 @@
 # 026 — Investigate monitor PTY smoke-test idle redraw regression
 
-**Status**: Open
+**Status**: Closed — resolved in watch-pty verification target
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -90,5 +90,12 @@ new evidence.
   deadlines at process launch, so cold `go run` compilation could independently
   consume the observation window. Prefer the documented prebuilt-binary workflow;
   readiness-relative timing is a possible follow-up only if that flake reproduces.
-  No implementation changed or full regression suite run; leave the issue Open
-  pending the planned verification and resolution.
+  No implementation changed or full regression suite run at the time of this
+  investigation.
+
+## 5. Resolution — 2026-09-10
+
+- Added `make watch-pty`, which builds the monitor with `GOWORK=off` and invokes
+  `scripts/check-watch-pty.py` with `--watch`, plus responsive and toggle coverage.
+- This makes the corrected watch-mode invocation reproducible and avoids charging
+  cold `go run` compilation time against the PTY checker deadlines.
