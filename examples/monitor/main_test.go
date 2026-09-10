@@ -9,6 +9,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"codeberg.org/ubunatic/loom/graph"
 )
 
 func TestShowOnce(t *testing.T) {
@@ -32,10 +34,28 @@ func TestShowOnce(t *testing.T) {
 		t.Fatal("embedded declaration not rendered")
 	}
 	content := out.String()
-	for _, expected := range []string{"Claude", "[⣿⣿  ]", "Gemini", "cpu (16c)", "[⣿⣿⣿⣿][⣀⣀⣀⣀]"} {
+	for _, expected := range []string{
+		"Claude",
+		graph.RenderBar(60, graph.BarOptions{Width: 4, SubChar: true}),
+		"Gemini",
+		"cpu (16c)",
+		splitTimeline(staticSnapshot.vram, staticSnapshot.gtt),
+	} {
 		if !strings.Contains(content, expected) {
 			t.Errorf("monitor output missing %q:\n%s", expected, content)
 		}
+	}
+}
+
+func TestMonitorGraphWidths(t *testing.T) {
+	if got := timeline(nil, 10); got != "[▁▁▁▁▁▁▁▁▁▁]" {
+		t.Fatalf("empty timeline = %q", got)
+	}
+	if got := timeline([]float64{50}, 10); len([]rune(got)) != 12 {
+		t.Fatalf("short timeline width = %d, want 12", len([]rune(got)))
+	}
+	if got := splitTimeline(nil, nil); len([]rune(got)) != 12 {
+		t.Fatalf("empty split timeline width = %d, want 12", len([]rune(got)))
 	}
 }
 
