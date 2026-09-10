@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strings"
 
+	"codeberg.org/ubunatic/loom/layout"
 	"gopkg.in/yaml.v3"
 )
 
@@ -31,16 +32,21 @@ type BoxBorder struct {
 // Width and Height are preferred outer dimensions used by Frame.
 // YAML frames load Border from Loom's embedded spec; Go callers supply it.
 type Box struct {
-	ID      string    `yaml:"id"`
-	Title   string    `yaml:"title"`
-	Width   int       `yaml:"width"`
-	Height  int       `yaml:"height"`
-	Padding int       `yaml:"padding"`
-	Border  BoxBorder `yaml:"-"`
-	Child   Widget    `yaml:"-"`
-	Hidden  bool      `yaml:"hidden"`
-	Footer  string    `yaml:"footer"`
-	Rows    *Rows     `yaml:"rows"`
+	ID        string    `yaml:"id"`
+	Title     string    `yaml:"title"`
+	Width     int       `yaml:"width"`
+	Height    int       `yaml:"height"`
+	Dynamic   bool      `yaml:"dynamic"`
+	MinWidth  int       `yaml:"min_width"`
+	MaxWidth  int       `yaml:"max_width"`
+	MinHeight int       `yaml:"min_height"`
+	MaxHeight int       `yaml:"max_height"`
+	Padding   int       `yaml:"padding"`
+	Border    BoxBorder `yaml:"-"`
+	Child     Widget    `yaml:"-"`
+	Hidden    bool      `yaml:"hidden"`
+	Footer    string    `yaml:"footer"`
+	Rows      *Rows     `yaml:"rows"`
 }
 
 // SetRowsValues updates the box's rows values dynamically if rows are present.
@@ -165,6 +171,59 @@ func (f *Frame) Layout(width, height int) []Rect {
 	}
 	x, y, bottom := 0, 1, height-1
 	stacked := f.Breakpoint > 0 && width < f.Breakpoint
+	visible := make([]int, 0, len(f.Boxes))
+	for i, b := range f.Boxes {
+		if !b.Hidden {
+			visible = append(visible, i)
+		}
+	}
+	if len(visible) == 0 {
+		return result
+	}
+	if stacked {
+		items := make([]layout.Item, len(visible))
+		for i, index := range visible {
+			items[i] = layout.Item{Visible: true, Constraint: f.boxConstraint(f.Boxes[index], false)}
+		}
+		if allocations, err := layout.Plan(height-2, f.Gap, items); err == nil {
+			for i, index := range visible {
+				allocation := allocations[i]
+				box := f.Boxes[index]
+				w := min(width, max(0, box.Width))
+				if box.Dynamic {
+					w = width
+				}
+				if w >= 2 && allocation.Size >= 2 {
+					result[index] = Rect{X: 0, Y: 1 + allocation.Offset, W: w, H: allocation.Size}
+				}
+			}
+			return result
+		}
+	}
+	if !stacked {
+		items := make([]layout.Item, len(visible))
+		allDynamic := false
+		for i, index := range visible {
+			items[i] = layout.Item{Visible: true, Constraint: f.boxConstraint(f.Boxes[index], true)}
+			allDynamic = allDynamic || f.Boxes[index].Dynamic
+		}
+		if allDynamic {
+			if allocations, err := layout.Plan(width, f.Gap, items); err == nil {
+				for i, index := range visible {
+					allocation := allocations[i]
+					box := f.Boxes[index]
+					h := min(height-2, max(0, box.Height))
+					if box.Dynamic {
+						h = clampBox(box.Height, box.MinHeight, box.MaxHeight, height-2)
+					}
+					if allocation.Size >= 2 && h >= 2 {
+						result[index] = Rect{X: allocation.Offset, Y: 1, W: allocation.Size, H: h}
+					}
+				}
+				return result
+			}
+		}
+	}
 	for i, b := range f.Boxes {
 		if b.Hidden {
 			continue
@@ -183,6 +242,40 @@ func (f *Frame) Layout(width, height int) []Rect {
 		}
 	}
 	return result
+}
+
+func (f *Frame) boxConstraint(b Box, horizontal bool) layout.Constraint {
+	if !b.Dynamic {
+		value := b.Width
+		if !horizontal {
+			value = b.Height
+		}
+		return layout.Constraint{Min: value, Preferred: value, Max: value, HasMax: true}
+	}
+	minValue, preferred, maxValue := b.MinWidth, b.Width, b.MaxWidth
+	if !horizontal {
+		minValue, preferred, maxValue = b.MinHeight, b.Height, b.MaxHeight
+	}
+	if minValue < 2 {
+		minValue = 2
+	}
+	if preferred < minValue {
+		preferred = minValue
+	}
+	return layout.Constraint{Min: minValue, Preferred: preferred, Max: maxValue, HasMax: maxValue > 0}
+}
+
+func clampBox(preferred, minimum, maximum, available int) int {
+	if minimum < 2 {
+		minimum = 2
+	}
+	if preferred < minimum {
+		preferred = minimum
+	}
+	if maximum > 0 && preferred > maximum {
+		preferred = maximum
+	}
+	return min(available, preferred)
 }
 
 // HeightForWidth reports the preferred height, including chrome and stack gaps.
@@ -292,7 +385,7 @@ func (f *Frame) validate() error {
 		if !shellText(b.Title) {
 			return fmt.Errorf("frame.boxes[%d].title: expected printable ASCII", i)
 		}
-		if b.Width < 2 || b.Height < 2 || b.Padding < 0 || b.Padding > (b.Width-2)/2 || b.Padding > (b.Height-2)/2 {
+		if b.Width < 2 || b.Height < 2 || b.MinWidth < 0 || b.MaxWidth < 0 || b.MinHeight < 0 || b.MaxHeight < 0 || b.MinWidth > b.Width || b.MinHeight > b.Height || b.MaxWidth > 0 && b.MaxWidth < b.Width || b.MaxHeight > 0 && b.MaxHeight < b.Height || b.Padding < 0 || b.Padding > (b.Width-2)/2 || b.Padding > (b.Height-2)/2 {
 			return fmt.Errorf("frame.boxes[%d]: width/height must fit border and nonnegative padding", i)
 		}
 		b.Border = border

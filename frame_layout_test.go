@@ -41,6 +41,30 @@ func TestResponsiveFrameLayout(t *testing.T) {
 	}
 }
 
+func TestDynamicFrameLayoutAllocatesPreferredAndRemainingWidth(t *testing.T) {
+	f := Frame{Gap: 1, Boxes: []Box{
+		{ID: "a", Width: 4, Height: 4, Dynamic: true, MinWidth: 2, MaxWidth: 6},
+		{ID: "b", Width: 3, Height: 4, Dynamic: true, MinWidth: 2},
+	}}
+	got := f.Layout(12, 8)
+	want := []Rect{{X: 0, Y: 1, W: 6, H: 4}, {X: 7, Y: 1, W: 5, H: 4}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("dynamic layout=%v, want %v", got, want)
+	}
+}
+
+func TestDynamicFrameLayoutStacksAtBreakpoint(t *testing.T) {
+	f := Frame{Gap: 1, Breakpoint: 80, Boxes: []Box{
+		{ID: "a", Width: 4, Height: 3, Dynamic: true, MinHeight: 2, MaxHeight: 4},
+		{ID: "b", Width: 4, Height: 3, Dynamic: true, MinHeight: 2, MaxHeight: 4},
+	}}
+	got := f.Layout(40, 10)
+	want := []Rect{{X: 0, Y: 1, W: 40, H: 4}, {X: 0, Y: 6, W: 40, H: 3}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("stacked dynamic layout=%v, want %v", got, want)
+	}
+}
+
 func TestResponsiveRenderPreservesState(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {
