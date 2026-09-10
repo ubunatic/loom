@@ -20,6 +20,8 @@ type Type string
 const (
 	// TypeFile reads a bounded file at the caller's cadence.
 	TypeFile Type = "file"
+	// DefaultRetention is the in-memory history window when a spec omits one.
+	DefaultRetention = 15 * time.Minute
 )
 
 // Record is one immutable collection result. Data is owned by the record and
@@ -40,11 +42,12 @@ type Collector interface {
 // Rate is a duration string such as "1s"; source-specific parsing remains
 // outside this package.
 type Spec struct {
-	ID       string `yaml:"id"`
-	Type     Type   `yaml:"type"`
-	Path     string `yaml:"path"`
-	Rate     string `yaml:"rate"`
-	MaxBytes int64  `yaml:"max_bytes"`
+	ID        string `yaml:"id"`
+	Type      Type   `yaml:"type"`
+	Path      string `yaml:"path"`
+	Rate      string `yaml:"rate"`
+	Retention string `yaml:"retention"`
+	MaxBytes  int64  `yaml:"max_bytes"`
 }
 
 // Validate checks the bounded prototype declaration.
@@ -59,6 +62,9 @@ func (s Spec) Validate() error {
 	if err != nil || interval <= 0 {
 		return fmt.Errorf("collector spec: rate must be a positive duration")
 	}
+	if _, err := s.RetentionDuration(); err != nil {
+		return err
+	}
 	if s.MaxBytes < 0 {
 		return fmt.Errorf("collector spec: max_bytes cannot be negative")
 	}
@@ -66,12 +72,70 @@ func (s Spec) Validate() error {
 }
 
 // Build creates the typed collector described by the declaration.
-func (s Spec) Build() (Collector, time.Duration, error) {
+func (s Spec) Build() (Collector, time.Duration, time.Duration, error) {
 	if err := s.Validate(); err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	interval, _ := time.ParseDuration(s.Rate)
-	return FileCollector{Path: s.Path, MaxBytes: s.MaxBytes}, interval, nil
+	retention, _ := s.RetentionDuration()
+	return FileCollector{Path: s.Path, MaxBytes: s.MaxBytes}, interval, retention, nil
+}
+
+// RetentionDuration resolves the in-memory history window. An omitted value
+// uses DefaultRetention; no collector state is persisted to disk.
+func (s Spec) RetentionDuration() (time.Duration, error) {
+	if s.Retention == "" {
+		return DefaultRetention, nil
+	}
+	retention, err := time.ParseDuration(s.Retention)
+	if err != nil || retention <= 0 {
+		return 0, fmt.Errorf("collector spec: retention must be a positive duration")
+	}
+	return retention, nil
+}
+
+// History retains timestamped records only within a live in-memory window.
+type History struct {
+	retention time.Duration
+	records   []Record
+}
+
+// NewHistory creates a live history with the requested retention window.
+func NewHistory(retention time.Duration) (*History, error) {
+	if retention <= 0 {
+		return nil, fmt.Errorf("collector history: retention must be positive")
+	}
+	return &History{retention: retention}, nil
+}
+
+// Append publishes a record and removes samples older than the retention
+// window relative to the appended record timestamp.
+func (h *History) Append(record Record) {
+	if h == nil {
+		return
+	}
+	record.Data = append([]byte(nil), record.Data...)
+	h.records = append(h.records, record)
+	cutoff := record.At.Add(-h.retention)
+	first := 0
+	for first < len(h.records) && h.records[first].At.Before(cutoff) {
+		first++
+	}
+	if first > 0 {
+		h.records = h.records[first:]
+	}
+}
+
+// Snapshot returns a copy of the live records in chronological order.
+func (h *History) Snapshot() []Record {
+	if h == nil {
+		return nil
+	}
+	result := make([]Record, len(h.records))
+	for i, record := range h.records {
+		result[i] = Record{At: record.At, Data: append([]byte(nil), record.Data...)}
+	}
+	return result
 }
 
 // Run collects immediately and then at interval until cancellation. The sink

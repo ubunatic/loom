@@ -44,20 +44,39 @@ func TestFileCollectorRejectsOversizedAndCancelledReads(t *testing.T) {
 
 func TestSpecBuildsTypedFileCollector(t *testing.T) {
 	spec := Spec{ID: "cpu", Type: TypeFile, Path: "/proc/stat", Rate: "1s"}
-	c, interval, err := spec.Build()
+	c, interval, retention, err := spec.Build()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Type() != TypeFile || interval != time.Second {
-		t.Fatalf("collector = %v, interval = %s", c.Type(), interval)
+	if c.Type() != TypeFile || interval != time.Second || retention != DefaultRetention {
+		t.Fatalf("collector = %v, interval = %s, retention = %s", c.Type(), interval, retention)
 	}
 	for _, bad := range []Spec{
 		{ID: "cpu", Type: "socket", Path: "/proc/stat", Rate: "1s"},
 		{ID: "cpu", Type: TypeFile, Path: "/proc/stat", Rate: "0s"},
 		{ID: "cpu", Type: TypeFile, Path: "/proc/stat", Rate: "1s", MaxBytes: -1},
 	} {
-		if _, _, err := bad.Build(); err == nil {
+		if _, _, _, err := bad.Build(); err == nil {
 			t.Fatalf("accepted invalid spec %+v", bad)
 		}
+	}
+}
+
+func TestHistoryRetainsOnlyLiveWindow(t *testing.T) {
+	history, err := NewHistory(15 * time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := time.Unix(1000, 0)
+	history.Append(Record{At: base, Data: []byte("old")})
+	history.Append(Record{At: base.Add(14 * time.Minute), Data: []byte("live")})
+	history.Append(Record{At: base.Add(15*time.Minute + time.Nanosecond), Data: []byte("new")})
+	records := history.Snapshot()
+	if len(records) != 2 || string(records[0].Data) != "live" || string(records[1].Data) != "new" {
+		t.Fatalf("retained records = %+v", records)
+	}
+	records[0].Data[0] = 'X'
+	if string(history.Snapshot()[0].Data) != "live" {
+		t.Fatal("history snapshot shares record data")
 	}
 }
