@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../spec/schemas/monitor.schema.json
 app:
   height: 10
-  max_width: 64
+  max_width: 80
 view:
   name: main
   frame:

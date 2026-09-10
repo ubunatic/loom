@@ -26,8 +26,8 @@ func TestShowOnce(t *testing.T) {
 		t.Fatalf("got %d rows, want 10", len(rows))
 	}
 	for i, row := range rows {
-		if len([]rune(row)) != 64 {
-			t.Errorf("row %d is not 64 cells: %q", i, row)
+		if len([]rune(row)) != 80 {
+			t.Errorf("row %d is not 80 cells: %q", i, row)
 		}
 	}
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
