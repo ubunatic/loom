@@ -39,3 +39,4 @@ upkeep.
 | 025 | [025-integrate-graph-renderers-into-declarative-monitor.md](025-integrate-graph-renderers-into-declarative-monitor.md) | Integrate graph renderers into declarative monitor | Closed — resolved in e944324 |
 | 026 | [026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md](026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) | Investigate monitor PTY smoke-test idle redraw regression | Closed — resolved in watch-pty verification target |
 | 027 | [027-introduce-first-spec-driven-collector-prototype.md](027-introduce-first-spec-driven-collector-prototype.md) | Introduce first spec-driven collector prototype | Open |
+| 028 | [028-add-reusable-measurement-and-dynamic-box-layout-primitives.md](028-add-reusable-measurement-and-dynamic-box-layout-primitives.md) | Add reusable measurement and dynamic box layout primitives | Open |
