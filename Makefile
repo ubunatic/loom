@@ -23,6 +23,10 @@ validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Python jsonsc
 geometry-replay: ⚙️  ## verify saved ANSI replay bytes against geometry goldens
 	python3 scripts/check-geometry-replay.py
 
+watch-pty: ⚙️  ## verify monitor watch mode through a Linux PTY
+	GOWORK=off go build -o /tmp/loom-monitor-pty ./examples/monitor
+	LOOM_TEST_RESPONSIVE=1 LOOM_TEST_TOGGLES=1 python3 scripts/check-watch-pty.py /tmp/loom-monitor-pty --watch
+
 tidy: ⚙️  ## sync go.mod/go.sum
 	go mod tidy
 
