@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 025 — Integrate graph renderers into declarative monitor
 
-**Status**: Open
+**Status**: Closed — resolved in e944324
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -32,6 +32,14 @@ To complete the Stage 6 graph milestone:
 ## Verification
 
 Run `go test ./...`, `make test`, and execute `go run ./examples/monitor` to verify live rendered graphs.
+
+## Resolution
+
+The monitor now applies a deterministic numerical snapshot after loading its
+YAML declaration. Usage bars, CPU/RAM/GPU timelines, and independent VRAM/GTT
+timelines are rendered through `graph.RenderBar` and `graph.RenderSparkline`.
+Focused tests cover dynamic output and exact empty/short/split widths; `make
+test` and the PTY watch check pass.
 
 ## Scope limits
 
