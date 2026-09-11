@@ -91,31 +91,38 @@ Init Start ──► Fetch Providers (parallel/sequential) ──► Complete �
 3. **Completion & Dismissal**: When all providers finish (or the user presses
    `Esc`), the splash view transitions cleanly to the main dashboard view.
 
-## Planned Loom example
+## Shipped Loom implementation
 
-The splash screen example should be part of the Harnez target demo:
+The splash target is implemented in the Loom library core and demonstrated in `examples/splash/`:
+
+- **Layout & Centering**: [`loom.AlignBox`](../align.go), [`loom.NewCenter`](../align.go), [`layout.AlignOffset`](../layout/layout.go)
+- **Animation & Graphs**: [`graph.SpinnerGlyph`](../graph/spinner.go), [`graph.RenderBracketedBar`](../graph/bracketed.go)
+- **Status Badges**: [`loom.ProviderPill`](../pill.go), [`loom.PillCluster`](../pill.go)
+- **Lifecycle Coordination**: [`loom.SplashController`](../splash.go)
+- **View Widget**: [`loom.SplashView`](../splash_view.go)
+- **Specced Defaults**: [`spec/defaults.yaml`](../spec/defaults.yaml), [`loom.SpeccedDefaults`](../defaults.go)
+- **Runnable Demo**: [`examples/splash/main.go`](../examples/splash/main.go)
+- **Case Study**: [`studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md`](studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md)
 
 ```text
-examples/harnez-target/
-├── go.mod
-├── main.go                 # startup state machine and screen switching
-├── splash.loom.yaml        # declarative splash layout and styles
-├── dashboard.loom.yaml     # main dashboard layout
-├── splash_data.go          # provider init simulation and events
-└── splash_test.go          # deterministic layout and state rendering tests
+examples/splash/
+├── main.go        # interactive CLI with --watch, --width, --height
+├── main_test.go   # CLI argument and show-once golden tests
+└── README.md      # usage guide
 ```
 
-## Acceptance examples
+## Acceptance verification
 
-The Loom splash screen implementation should verify:
+The Loom splash screen implementation is verified by automated tests:
 
 1. **Centering**: The splash cluster remains centered both vertically and
-   horizontally across changing terminal dimensions.
+   horizontally across changing terminal dimensions (`TestSplashViewCenteringDimensions`).
 2. **Braille & Unicode Safety**: Braille glyphs and unicode symbols (`⠙`, `⣿`, `●`,
-   `✳`, `֍`, `Λ`) do not cause layout skew or ANSI column calculation bugs.
+   `✳`, `֍`, `Λ`) do not cause layout skew or ANSI column calculation bugs (`TestPillDimensions`, `TestSpinnerFrames`).
 3. **Width Stability**: Step message updates (e.g. transitioning from `fetching claude...`
-   to `agy done`) do not alter the bar width or horizontal center.
-4. **Key Dismissal**: Pressing `Esc` immediately triggers the exit / transition
-   handler.
-5. **Decoupled Animation**: Spinner ticks do not block or lag background
-   provider initialization routines.
+   to `agy done`) do not alter the bar width or horizontal center (`TestSplashViewGoldenInProgress`, `TestSplashViewGoldenCompleted`).
+4. **Key Dismissal**: Pressing `Esc`, `q`, `Enter`, or `Ctrl-C` immediately dismisses the
+   splash screen via controller delegation and library-level driver safeguards (`TestSplashViewKeyHandling`, `TestPaneHandleKeyFallback`).
+5. **Decoupled Animation**: Spinner ticks and background provider initialization
+   routines execute independently without blocking or starvation (`TestSplashControllerProgression`).
+

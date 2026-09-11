@@ -1,6 +1,6 @@
 # 030 — Braille Activity Spinner and Bracketed Progress Bar Primitives
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -28,7 +28,8 @@ These primitives must render deterministically with sub-cell precision and corre
 
 ## 3. Implementation & Verification Plan
 
-- [ ] Implement braille spinner frame cycle in graph/widget package.
-- [ ] Implement bracketed bar rendering with braille/dot-matrix fills.
-- [ ] Unit tests for visual column width stability across 0%, 50%, 100% and pulse steps.
-- [ ] Golden text tests verifying ANSI/Unicode width consistency.
+- [x] Implement braille spinner frame cycle in graph/widget package.
+- [x] Implement bracketed bar rendering with braille/dot-matrix fills.
+- [x] Unit tests for visual column width stability across 0%, 50%, 100% and pulse steps.
+- [x] Golden text tests verifying ANSI/Unicode width consistency.
+

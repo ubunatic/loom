@@ -41,3 +41,46 @@ func TestWinchBounds(t *testing.T) {
 		})
 	}
 }
+
+func TestPaneHandleKeyFallback(t *testing.T) {
+	p := &Pane{}
+
+	// Default fallback exits on Esc, Ctrl-C, Ctrl-Q, Ctrl-D, and 'q'
+	exitKeys := []KeyEvent{
+		{Key: "esc"},
+		{Key: "ctrl-c"},
+		{Key: "ctrl-q"},
+		{Key: "ctrl-d"},
+		{Text: "q"},
+	}
+
+	for _, ke := range exitKeys {
+		if !p.handleKeyFallback(ke) {
+			t.Errorf("expected handleKeyFallback(%+v) = true", ke)
+		}
+	}
+
+	// Non-exit keys do not quit
+	nonExitKeys := []KeyEvent{
+		{Key: "enter"},
+		{Key: "up"},
+		{Key: "down"},
+		{Text: "a"},
+		{Text: "x"},
+	}
+
+	for _, ke := range nonExitKeys {
+		if p.handleKeyFallback(ke) {
+			t.Errorf("expected handleKeyFallback(%+v) = false", ke)
+		}
+	}
+
+	// When DisableDefaultQuit is set, no fallback exit occurs
+	p.DisableDefaultQuit = true
+	for _, ke := range exitKeys {
+		if p.handleKeyFallback(ke) {
+			t.Errorf("expected handleKeyFallback(%+v) = false when DisableDefaultQuit is true", ke)
+		}
+	}
+}
+

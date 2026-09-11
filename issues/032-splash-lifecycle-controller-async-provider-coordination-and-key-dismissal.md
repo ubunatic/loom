@@ -1,6 +1,6 @@
 # 032 — Splash Lifecycle Controller, Async Provider Coordination, and Key Dismissal
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -27,7 +27,8 @@ The splash screen orchestrates asynchronous background tasks (fetching status fr
 
 ## 3. Implementation & Verification Plan
 
-- [ ] Implement splash lifecycle controller with channel-based event handling.
-- [ ] Connect input listener for `Esc` key skip.
-- [ ] Concurrency tests: verify mock provider completions trigger smooth state progression.
-- [ ] Ensure redraw loop remains responsive during heavy task simulation.
+- [x] Implement splash lifecycle controller with channel-based event handling.
+- [x] Connect input listener for `Esc` key skip.
+- [x] Concurrency tests: verify mock provider completions trigger smooth state progression.
+- [x] Ensure redraw loop remains responsive during heavy task simulation.
+

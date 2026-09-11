@@ -135,9 +135,10 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 | Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (done) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
-| 10 — Splash & startup screen | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) |
+| 10 — Splash & startup screen (Shipped) | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md) (done), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md) (done), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md) (done), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md) (done), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) (done) |
 | 11 — External sources | [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md) |
 | 12 — Wider declarative source/action evaluation | [019](../issues/019-evaluate-declarative-source-and-action-wiring.md) (parked beyond 027's file prototype) |
+
 
 ### Verification gates for the next increments
 

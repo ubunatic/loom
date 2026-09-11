@@ -1,6 +1,6 @@
 # 033 — Harnez Target Splash Screen Integration and Golden Tests
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -25,7 +25,8 @@ With centering layout, spinner/bar widgets, status pills, and the lifecycle cont
 
 ## 3. Implementation & Verification Plan
 
-- [ ] Assemble splash screen view in example application.
-- [ ] Golden output unit tests for initial, mid-flight, and finished splash frames.
-- [ ] Viewport resize tests ensuring center alignment is maintained across dimensions.
-- [ ] Document execution in example README.
+- [x] Assemble splash screen view in example application.
+- [x] Golden output unit tests for initial, mid-flight, and finished splash frames.
+- [x] Viewport resize tests ensuring center alignment is maintained across dimensions.
+- [x] Document execution in example README.
+

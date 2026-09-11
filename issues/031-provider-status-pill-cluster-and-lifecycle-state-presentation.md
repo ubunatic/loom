@@ -1,6 +1,6 @@
 # 031 — Provider Status Pill Cluster and Lifecycle State Presentation
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -28,7 +28,8 @@ Each provider item pairs a distinct unicode symbol with a provider name and stat
 
 ## 3. Implementation & Verification Plan
 
-- [ ] Implement `StatusPill` / `PillCluster` widget/renderer.
-- [ ] Add state-to-style color mapping functions.
-- [ ] Tests for width calculation and ANSI sequence safety when states change.
-- [ ] Render tests matching target layout spacing.
+- [x] Implement `StatusPill` / `PillCluster` widget/renderer.
+- [x] Add state-to-style color mapping functions.
+- [x] Tests for width calculation and ANSI sequence safety when states change.
+- [x] Render tests matching target layout spacing.
+

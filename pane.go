@@ -37,9 +37,9 @@ import (
 	"golang.org/x/term"
 )
 
-// DefaultMaxCols is the default maximum canvas width. Keeps the inline pane
-// narrow enough to feel like a popup rather than a full-screen takeover.
-const DefaultMaxCols = 50
+// DefaultMaxCols is the default maximum canvas width loaded from SpeccedDefaults.
+var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
+
 
 // Pane manages an inline terminal region and drives the widget event loop.
 type Pane struct {
@@ -56,6 +56,11 @@ type Pane struct {
 	// mouse tracking is enabled with EnableMouse.
 	mouse      bool
 	Resizeable bool
+
+	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
+	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
+	DisableDefaultQuit bool
+
 
 	// winch carries SIGWINCH notifications so the Run loop reflows on a
 	// terminal window resize. Buffered (cap 1) to coalesce resize bursts.
@@ -504,12 +509,36 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 
 			ke := DecodeKey(raw)
-			if root.HandleKey(ke) {
+			if root.HandleKey(ke) || p.handleKeyFallback(ke) {
 				return nil
 			}
 		}
 	}
 }
+
+var defaultQuitKeyMap = func() map[string]bool {
+	m := make(map[string]bool, len(SpeccedDefaults.FallbackQuitKeys))
+	for _, k := range SpeccedDefaults.FallbackQuitKeys {
+		m[k] = true
+	}
+	return m
+}()
+
+
+// handleKeyFallback reports whether an unhandled key should trigger a default
+// safeguard exit based on embedded spec/defaults.yaml.
+func (p *Pane) handleKeyFallback(ke KeyEvent) bool {
+	if p.DisableDefaultQuit {
+		return false
+	}
+	key := ke.Key
+	if key == "" {
+		key = ke.Text
+	}
+	return defaultQuitKeyMap[key]
+}
+
+
 
 // Close tears down the pane: clears the reserved region, restores terminal
 // state, and closes /dev/tty. Safe to call multiple times.

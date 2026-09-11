@@ -134,3 +134,32 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// Align controls horizontal or vertical placement inside available space.
+type Align int
+
+const (
+	// AlignStart aligns content to the leading edge (left or top).
+	AlignStart Align = iota
+	// AlignCenter centers content in the available space.
+	AlignCenter
+	// AlignEnd aligns content to the trailing edge (right or bottom).
+	AlignEnd
+)
+
+// AlignOffset computes the offset of an element of size within total available
+// cells according to align. It returns 0 when available <= size or size <= 0.
+func AlignOffset(available, size int, align Align) int {
+	if available <= size || size <= 0 {
+		return 0
+	}
+	switch align {
+	case AlignCenter:
+		return (available - size) / 2
+	case AlignEnd:
+		return available - size
+	default:
+		return 0
+	}
+}
+

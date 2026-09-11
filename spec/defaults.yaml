@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=schemas/defaults.schema.json
+fallback_quit_keys:
+  - esc
+  - ctrl-c
+  - ctrl-q
+  - ctrl-d
+  - q
+
+pane:
+  max_cols: 50
+
+splash:
+  bracket_width: 24
+  pill_gap: 2
+  footer_text: "Esc to skip"
+  step_text: "initializing..."
+  tick_interval: 80ms
+  hold_duration: 400ms

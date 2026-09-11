@@ -23,11 +23,13 @@ type specPair struct {
 }
 
 var specPairs = []specPair{
+	{document: "spec/defaults.yaml", schema: "spec/schemas/defaults.schema.json"},
 	{document: "spec/box.yaml", schema: "spec/schemas/box.schema.json"},
 	{document: "examples/monitor/spec/watch.yaml", schema: "spec/schemas/watch.schema.json"},
 	{document: "examples/monitor/spec/monitor.yaml", schema: "spec/schemas/monitor.schema.json"},
 	{document: "testdata/fixtures/empty-shell.yaml", schema: "spec/schemas/monitor.schema.json"},
 }
+
 
 func main() {
 	root, err := os.Getwd()

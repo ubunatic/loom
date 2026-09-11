@@ -1,6 +1,6 @@
 # 029 — Declarative Centered Layout and Viewport Alignment Primitives
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -25,7 +25,8 @@ The splash screen target requires a content block (title, bar, status text, prov
 
 ## 3. Implementation & Verification Plan
 
-- [ ] Add vertical and horizontal centering calculation helpers in layout/canvas package.
-- [ ] Support centering in the declarative layout engine / view renderer.
-- [ ] Unit tests verifying centered coordinates across odd/even viewport widths and heights.
-- [ ] Zero-allocation / safe boundary checks for small viewports.
+- [x] Add vertical and horizontal centering calculation helpers in layout/canvas package.
+- [x] Support centering in the declarative layout engine / view renderer.
+- [x] Unit tests verifying centered coordinates across odd/even viewport widths and heights.
+- [x] Zero-allocation / safe boundary checks for small viewports.
+

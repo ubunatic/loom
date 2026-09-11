@@ -76,3 +76,29 @@ func TestPlanLeavesCappedSpaceUnused(t *testing.T) {
 		t.Fatalf("capped allocations=%v", got)
 	}
 }
+
+func TestAlignOffset(t *testing.T) {
+	tests := []struct {
+		available int
+		size      int
+		align     Align
+		want      int
+	}{
+		{available: 80, size: 20, align: AlignStart, want: 0},
+		{available: 80, size: 20, align: AlignCenter, want: 30},
+		{available: 80, size: 20, align: AlignEnd, want: 60},
+		{available: 81, size: 20, align: AlignCenter, want: 30}, // odd available
+		{available: 80, size: 21, align: AlignCenter, want: 29}, // odd size
+		{available: 10, size: 20, align: AlignCenter, want: 0},  // overflow / insufficient space
+		{available: 10, size: 10, align: AlignCenter, want: 0},  // exact fit
+		{available: 10, size: 0, align: AlignCenter, want: 0},   // zero size
+		{available: 0, size: 10, align: AlignCenter, want: 0},   // zero available
+	}
+
+	for _, tt := range tests {
+		if got := AlignOffset(tt.available, tt.size, tt.align); got != tt.want {
+			t.Errorf("AlignOffset(%d, %d, %v) = %d, want %d", tt.available, tt.size, tt.align, got, tt.want)
+		}
+	}
+}
+
