@@ -11,4 +11,5 @@ import "codeberg.org/ubunatic/loom"
 var (
 	_ loom.Paneable = (*loom.Choice)(nil)
 	_ loom.Paneable = (*loom.Table)(nil)
+	_ loom.Paneable = (*loom.View)(nil)
 )

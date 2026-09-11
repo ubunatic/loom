@@ -70,15 +70,15 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 		maxScroll = 0
 	}
 	switch e.Key {
-	case "up":
+	case "up", "k":
 		if v.Scroll > 0 {
 			v.Scroll--
 		}
-	case "down":
+	case "down", "j":
 		if v.Scroll < maxScroll {
 			v.Scroll++
 		}
-	case "esc", "ctrl-c":
+	case "esc", "ctrl-c", "q":
 		return true
 	}
 	return false
@@ -130,3 +130,14 @@ func stripANSI(s string) string {
 func (v *View) ContentHeight() int {
 	return len(v.Lines)
 }
+
+// Selected satisfies Paneable; View is read-only and yields no selection.
+func (v *View) Selected() (Item, bool) {
+	return Item{}, false
+}
+
+// Nav satisfies Paneable; View generates no navigation signals.
+func (v *View) Nav() Nav {
+	return NavNone
+}
+
