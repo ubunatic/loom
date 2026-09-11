@@ -4,3 +4,7 @@ dist/
 # loom screenshot output
 .loom/
 *.lock
+
+# local Go workspace (untracked; see go.work.example)
+/go.work
+/go.work.sum

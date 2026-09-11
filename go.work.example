@@ -1,0 +1,6 @@
+// harnez:managed
+// Example Go workspace for loom.
+// Symlinked or copied to go.work locally (untracked).
+go 1.26.5
+
+use .
