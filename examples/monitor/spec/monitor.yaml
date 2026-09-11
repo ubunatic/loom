@@ -54,7 +54,7 @@ view:
             - ['OpenAI', '[⣿⡇  ]', '41%', '[    ]']
       - id: load
         title: Load
-        footer: (real collector data)
+        footer: (simulated data)
         width: 31
         height: 10
         padding: 1

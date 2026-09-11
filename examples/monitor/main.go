@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/graph"
@@ -88,14 +89,17 @@ func terminalWidth(out io.Writer) int {
 // monitorSnapshot is application data: the declaration owns the row layout,
 // while the example owns the numerical values that populate graph columns.
 type monitorSnapshot struct {
-	usage []float64
-	load  map[string][]float64
-	vram  []float64
-	gtt   []float64
+	timestamp time.Time
+	usage     []float64
+	usage2    []float64
+	load      map[string][]float64
+	vram      []float64
+	gtt       []float64
 }
 
 var staticSnapshot = monitorSnapshot{
-	usage: []float64{60, 95, 99, 41},
+	usage:  []float64{60, 95, 99, 41},
+	usage2: []float64{3, 0, 0, 1},
 	load: map[string][]float64{
 		"cpu (16c)": {1, 4, 8, 12, 9, 14, 11, 7, 5, 3, 1, 2, 4, 6, 8, 10, 12, 10, 8, 6},
 		"ram (45G)": {32, 34, 35, 36, 36, 37, 36, 36, 35, 36, 36, 37, 36, 36, 36, 36, 36, 36, 36, 36},
@@ -118,6 +122,9 @@ func applySnapshot(root loom.Widget, snapshot monitorSnapshot) {
 			for row := range values {
 				if row < len(snapshot.usage) && len(values[row]) > 1 {
 					values[row][1] = graph.RenderBar(snapshot.usage[row], graph.BarOptions{Width: 4, SubChar: true})
+				}
+				if row < len(snapshot.usage2) && len(values[row]) > 3 {
+					values[row][3] = graph.RenderBar(snapshot.usage2[row], graph.BarOptions{Width: 4, SubChar: true})
 				}
 			}
 			box.SetRowsValues(values)

@@ -11,7 +11,10 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 - **Source Revision**: `01e59b331c9d85699e55fbbb946c579e19901083`
 - **Original Path**: `internal/rograph/`
 - **Author**: Uwe Jugel
-- **License**: GNU Affero General Public License v3.0 or later (`AGPL-3.0-or-later`)
+- **Authorization & Metadata Findings**:
+  - The user explicitly authorized copying Harnez rograph into Loom while retaining it in Harnez; no renewed copy permission is needed.
+  - Inspection of upstream Harnez at revision `01e59b331c9d85699e55fbbb946c579e19901083` confirmed no root `LICENSE` or `REUSE.toml` file and no in-file license notices or SPDX tags in `internal/rograph/{bar,sparkline,options}.go`. Upstream git commit history identifies Uwe Jugel as author.
+  - Ported files are licensed under `AGPL-3.0-or-later` in Loom consistent with repository licensing ([REUSE.toml](../REUSE.toml)).
 
 ## Ported Files
 

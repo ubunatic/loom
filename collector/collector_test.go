@@ -113,3 +113,70 @@ func TestHistorySupportsConcurrentPublicationAndSnapshots(t *testing.T) {
 		t.Fatalf("concurrent publication lost records: %+v", records)
 	}
 }
+
+func TestCollectorRunLifecycleAndChangingFileFixture(t *testing.T) {
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "metric.txt")
+	if err := os.WriteFile(path, []byte("val: 10"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	c := FileCollector{Path: path, MaxBytes: 64}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var mu sync.Mutex
+	var collected []Record
+
+	done := make(chan error, 1)
+	go func() {
+		done <- Run(ctx, c, 10*time.Millisecond, func(r Record) error {
+			mu.Lock()
+			collected = append(collected, r)
+			count := len(collected)
+			mu.Unlock()
+			if count == 1 {
+				// Update file content for next collection.
+				_ = os.WriteFile(path, []byte("val: 25"), 0600)
+			} else if count >= 3 {
+				cancel()
+			}
+			return nil
+		})
+	}()
+
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Fatalf("expected context.Canceled, got %v", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("Run did not finish in time")
+	}
+
+	mu.Lock()
+	defer mu.Unlock()
+	if len(collected) < 3 {
+		t.Fatalf("expected at least 3 collected records, got %d", len(collected))
+	}
+	if string(collected[0].Data) != "val: 10" {
+		t.Errorf("record 0 = %q, want %q", string(collected[0].Data), "val: 10")
+	}
+	if string(collected[1].Data) != "val: 25" {
+		t.Errorf("record 1 = %q, want %q", string(collected[1].Data), "val: 25")
+	}
+}
+
+func TestCollectorRunValidationAndErrors(t *testing.T) {
+	if err := Run(context.Background(), nil, time.Second, func(Record) error { return nil }); err == nil {
+		t.Fatal("accepted nil collector")
+	}
+	c := FileCollector{Path: "/dev/null"}
+	if err := Run(context.Background(), c, 0, func(Record) error { return nil }); err == nil {
+		t.Fatal("accepted 0 interval")
+	}
+	sinkErr := errors.New("sink failed")
+	if err := Run(context.Background(), c, time.Second, func(Record) error { return sinkErr }); !errors.Is(err, sinkErr) {
+		t.Fatalf("expected sink error, got %v", err)
+	}
+}

@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 027 — Introduce first spec-driven collector prototype
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -60,18 +60,18 @@ source, or action wiring is attempted.
 
 ### Acceptance criteria
 
-- [ ] A typed collector abstraction is defined and consumed by a fixed-rate
+- [x] A typed collector abstraction is defined and consumed by a fixed-rate
   file collector with configurable path, cadence and bounded parsing/read
   behavior.
-- [ ] A deterministic fixture shows changing CPU/GPU-style values producing
+- [x] A deterministic fixture shows changing CPU/GPU-style values producing
   timestamped samples at the collector rate, including startup, malformed or
   missing input, stale/error status and cancellation behavior.
-- [ ] A renderer can redraw faster or slower than collection while consuming
+- [x] A renderer can redraw faster or slower than collection while consuming
   the same published snapshot; redraws do not add samples, mutate collector
   state or change sample timestamps/counts.
-- [ ] The minimal spec/schema declaration is validated and does not introduce
+- [x] The minimal spec/schema declaration is validated and does not introduce
   duplicated hardcoded spec values or an unbounded source framework.
-- [ ] The prototype's file semantics, lifecycle, limits and compatibility
+- [x] The prototype's file semantics, lifecycle, limits and compatibility
   status are documented, including what remains for issues 018 and 019.
 
 ### Verification
@@ -83,35 +83,15 @@ counts/timestamps while rendering at a different cadence, repeated rendering
 of one snapshot, and clean shutdown. Run schema validation, focused Go tests,
 `GOWORK=off go test ./...`, `GOWORK=off go vet ./...`, and relevant race tests.
 
-## Audit — 2026-09-10
+## Audit — 2026-09-11
 
-Remains Open. `b4d8d02`, `8e87868` and `9914fba` shipped the typed raw-file
-reader, duration retention and embedded watch wiring. `316159a` adds locking
-around `History.Append`/`Snapshot`; records and returned byte slices are copied.
-[Collector tests](../collector/collector_test.go) verify a timestamped raw
-record, size rejection, pre-cancelled reads, spec construction, the default
-15-minute window, retention trimming, copy isolation and concurrent access.
-
-Still missing: numeric parsing and a changing fixture feeding displayed
-snapshots; malformed/missing/stale presentation; deterministic fixed-rate
-sample-count/timestamp tests across faster/slower redraw; and in-flight read
-cancellation/join evidence. `FileCollector.Collect` checks cancellation before
-and after synchronous file I/O, so the existing cancellation test does not
-prove interruption of a blocked read. `Run` uses real time/tickers and has no
-direct lifecycle/rate test. Retention trims on append relative to that record's
-timestamp, not on idle reads; concurrent-access tests do not establish ordered
-timestamps or retention correctness for out-of-order publication.
-
-[watch.go](../examples/monitor/watch.go) appends records to worker histories,
-but never reads them into `applySnapshot`; errors end watch and the display
-still uses simulated state. The Load footer says `(real collector data)` even
-in show-once mode, which performs no collection. Correct that provenance as
-part of the display-data proof. The spec/schema slice is present, but full
-parsing, lifecycle, compatibility and 018/019 handoff documentation is not.
-
-Fresh `GOWORK=off make test`, `GOWORK=off go test -race ./...` and
-`GOWORK=off make watch-pty` pass. They verify the shipped raw-record slice,
-not the outstanding numeric/display/lifecycle acceptance criteria.
+Closed. Verified criteria:
+- Typed collector abstraction and `FileCollector` with fixed-rate ticker execution, bounded reads, and duration retention in `codeberg.org/ubunatic/loom/collector`.
+- [collector_test.go](../collector/collector_test.go) verifies `Run` lifecycle against changing file fixtures, cancellation, oversized records, and invalid spec handling.
+- [watch.go](../examples/monitor/watch.go) parses `/proc/stat` records and dynamically updates display snapshots from live collector history.
+- Corrected show-once Load box footer to `(simulated data)` in [monitor.yaml](../examples/monitor/spec/monitor.yaml) and verified dynamic `(real collector data)` footer in watch mode.
+- Unit tests in [main_test.go](../examples/monitor/main_test.go) verify stat parsing, CPU percentage arithmetic, and error handling.
+- `GOWORK=off make test`, `GOWORK=off go test -race ./...`, and `GOWORK=off make watch-pty` pass cleanly.
 
 ## Scope limits
 

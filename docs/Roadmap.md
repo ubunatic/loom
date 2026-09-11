@@ -24,61 +24,28 @@ screen).
 
 ## Assessment against code and backlog
 
-Reconciled 2026-09-10 against the open tickets returned by
-`harnez find -d . issues status:open`, code/tests at `6b80ced`, and recent commits.
+Reconciled 2026-09-11 against the open tickets returned by
+`harnez find -d . issues status:open` and current code/tests.
 Issue 004 is closed as invalid because uzu is deprecated and was never an active
-downstream consumer; no other complete issue was verified.
-The initial 2026-09-09 assessment and sequence in
-[`RoadmapContext.md`](RoadmapContext.md) remain historical context; statements
-there and in the root README about missing schemas/watch support predate the
-implementation below.
+downstream consumer.
 
-- The monitor now has embedded YAML and consumed schemas, title/status chrome,
+- The monitor has embedded YAML and consumed schemas, title/status chrome,
   bounded child rendering, breakpoint stacking, visibility actions, independent
-  collection/redraw scheduling, and deterministic geometry checks. Existing
-  `Stack`/`Grid` behavior and legacy YAML fields do not establish a general
-  content-measurement or data-binding API.
-- [`graph/`](../graph/) contains the adapted Harnez renderers and provenance.
-  Numerical snapshots drive bars, CPU/RAM/GPU timelines, and separate VRAM/GTT
-  timelines. [`state.go`](../examples/monitor/state.go) supplies copied,
-  bounded simulated histories; all simulated series currently advance together.
-  Independent slow/fast source rates and timestamp/count coverage still belong
-  to 013.
-- [`collector/`](../collector/) now provides `Collector`, explicit `type: file`,
-  bounded whole-file reads, immediate/periodic sampling, and in-memory history
-  with a default 15-minute retention window. The monitor loads its embedded
-  [`watch.yaml`](../examples/monitor/spec/watch.yaml) and starts a real
-  `/proc/stat` source at 1 Hz on worker goroutines, separate from redraw.
-  This loads YAML embedded in the binary; it does not add runtime config-file
-  discovery or reload.
-- Collector records are still raw bytes retained by the worker; they do not
-  feed displayed metrics. Show-once uses a static numerical snapshot; watch
-  graphs remain simulated. Source errors currently end watch, and retention
-  trims relative to appended timestamps. `316159a` shipped synchronized
-  `History.Append`/`Snapshot` with copied byte slices and concurrent-access
-  tests. Parsed numeric snapshots, wiring those snapshots to the UI,
-  stale/error presentation, and lifecycle/rate tests remain acceptance work
-  for 027. No disk persistence or GPU collector shipped. The Load footer's
-  `(real collector data)` currently mislabels simulated graphs, including
-  show-once output where no source runs; correct it in 027's display proof.
-- Show-once uses terminal width up to the declared 80-column cap, with an
-  80-column fallback for redirected output. Plain provenance footers and a
-  spacer now appear inside boxes. These improvements still rely on fixed
-  declared box dimensions: [`frame.go`](../frame.go) clips preferred rectangles
-  and switches at a breakpoint; it does not measure content or distribute
-  min/preferred/max sizes. The footer is a special box field, not a general
-  measured vertical stack.
-- 028's first measurement slice shipped in `fc1bbeb` and `3ed92c7`:
-  [`measure/`](../measure/) exports renderer-independent cell widths, clusters,
-  multiline bounds and left/right truncation; Canvas delegates its width policy.
-  ANSI is stripped and emoji-ZWJ clusters are explicitly unsupported. Exact
-  fit/padding, root truncation deduplication, constrained content sizing and
-  dynamic allocation remain open. Its sibling findings identify Harnez's `internal/uix` min/pref/max,
-  wrap/stretch planner and usage measurement pass, plus Voxi's visible-width,
-  ANSI-preserving truncation and box sizing. Consolidate Loom's existing width
-  helpers against an explicit cell policy; rune-counting sibling code is not
-  a Unicode oracle. Keep domain assembly outside the library and record reuse
-  provenance without changing either sibling.
+  collection/redraw scheduling, and deterministic geometry checks.
+- [`graph/`](../graph/) contains the adapted Harnez renderers and verified
+  provenance. Numerical snapshots drive paired bars, CPU/RAM/GPU timelines,
+  and separate VRAM/GTT timelines. [`state.go`](../examples/monitor/state.go)
+  supplies copied, bounded simulated histories with independent slow hardware
+  and fast meter sampling cadences and timestamps (012, 013 closed).
+- [`collector/`](../collector/) provides `Collector`, explicit `type: file`,
+  bounded whole-file reads, immediate/periodic sampling via `Run`, duration-based
+  retention, and safe history publication. The monitor loads its embedded
+  [`watch.yaml`](../examples/monitor/spec/watch.yaml) and runs a real
+  `/proc/stat` source at 1 Hz on worker goroutines, parsing CPU percentage into
+  live display snapshots with correct simulated vs real provenance footers (027 closed).
+- [`measure/`](../measure/) and [`layout/`](../layout/) export renderer-independent
+  cell widths, clusters, multiline bounds, left/right truncation, and min/pref/max
+  space allocation for responsive and dynamic boxes (028 closed).
 
 ### Shipped and partial progress
 
@@ -86,49 +53,36 @@ implementation below.
 - Stages 1–5: 006–010 closed, covering shell, schemas, watch, responsive
   placement, controls and the geometry gate.
 - Stage 6: rows/review 011 and 020 closed; graph primitives 024 and numerical
-  monitor integration 025 closed. Parent 012 remains incomplete: the second
-  usage bar is a literal placeholder, provenance omits the verified metadata
-  gap, and full paired-graph target geometry is not established.
+  monitor integration 025 closed; parent 012 closed with verified provenance,
+  paired usage bars, and tiny-terminal graph rendering tests.
 - Test/schema hygiene: 021–023 closed. Newly reconciled 026 is closed:
   `make watch-pty` builds the monitor and supplies `--watch`, fixing the smoke
   invocation rather than changing the scheduler.
-- Since the previous roadmap pass: 027's typed file reader, duration retention
-  and YAML-to-watch wiring landed (`b4d8d02`, `8e87868`, `9914fba`); terminal
-  sizing, the 80-column limit, and plain footers/spacer landed through `2c2b782`.
-  These are shipped slices of open work, not closure of 027 or 028.
-- 013's first deterministic sampling slice (`b376e0a`) remains partial.
-  Since the previous roadmap pass, 028's shared measurement policy and 027's
-  synchronized history publication shipped. Neither completes its ticket.
+- Stage 7: deterministic live snapshots, independent slow/fast producer sampling, and decoupled redraw timing 013 closed.
+- Typed fixed-rate file prototype: 027 closed with validated collector spec, bounded file reader, lifecycle and changing-fixture tests, `/proc/stat` parsing, and live snapshot feeding.
+- Reusable measurement and dynamic layout: 028 closed with shared cell policy, line bounds, and min/preferred/max dynamic layout.
 
 ### Verified backlog gaps
 
 Every open ticket was read against the implemented surface and tests. This
-table records why none can close; detailed audit notes accompany 004, 012,
-013, 016, 027 and 028. Unfinished acceptance checkboxes remain unchecked.
+table records why none can close; detailed audit notes accompany 004, 016,
+and 028. Unfinished acceptance checkboxes remain unchecked.
 
 | Issue | Evidence and remaining acceptance |
 |---|---|
 | 004 | Closed as invalid: uzu is deprecated and was never an active downstream consumer. |
-| 012 | `applySnapshot` updates one usage bar; the second is literal YAML. Graph port/tests exist, but paired target coverage and accurate source-license/authorization evidence remain. |
-| 013 | `monitorState.Sample` advances all series together without timestamps. One-producer cadence tests do not prove independent slow/fast simulations. |
 | 014 | `graph/options.go` offers Go colors/glyphs; monitor schema has no declared palettes/ranges/glyph contract or two-palette target matrix. |
 | 015 | Only the usage/load monitor example exists; no Voxi declaration, bounded transcript events or daemon-state simulation. |
 | 016 | Both target implementations and the combined colored/show-once/watch matrix are incomplete. Only 027 is excepted from its broader-source gate. |
 | 017 | The raw file reader has unit fixtures, but no separate-process file/socket producers, reconnect/framing or partial-write lifecycle evidence. |
 | 018 | `/proc/stat` is read as bytes; no metric parsing/units or daemon-source probe/adapter and no evidence-backed go/no-go report. |
 | 019 | Typed file/cadence YAML is consumed; socket/value mapping, named event handlers, comparison with Go and adopt/narrow/reject decision are absent. |
-| 027 | Raw history publication is synchronized; numeric display integration, error/stale state and rate/in-flight cancellation tests remain. |
-| 028 | Shared cell policy and line bounds exist; fit/padding, constrained content sizing, dynamic layout and full policy/migration evidence remain. |
 
 ### Close / Park
 
 - [004 — uzu migration](../issues/004-migrate-uzu-to-shared-loom.md): closed as
   invalid because uzu is deprecated and was never an active downstream
   consumer.
-- [012 — graph parent](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md)
-  is no longer a closure candidate: the audit found concrete paired-bar,
-  provenance and target-geometry work. Move that bounded remainder into Now
-  alongside 028, before dependent 013 acceptance; retain the existing graph port.
 - [019 — wider declarative wiring](../issues/019-evaluate-declarative-source-and-action-wiring.md):
   park its socket/event/action and comparative feasibility work until 017/018
   supply proven boundaries. Its narrow file/cadence declaration is already
@@ -140,31 +94,10 @@ table records why none can close; detailed audit notes accompany 004, 012,
 
 ### Ticket sequencing
 
-The immediate sequence is **012 graph fidelity → 013 timing contract → 027
-displayed file-data proof**. 028 is now shipped and does not depend on unfinished
-collectors; 013's timing evidence supports finishing 027. These are bounded
-increments, not a requirement to build a general layout or source framework first.
+The immediate sequence is **014 configurable colors/glyphs → 015 Voxi panels → 016 complete simulated target milestone**, alongside the Harnez splash sequence (**029 centered layout → 030 braille spinner/bar → 031 status pills → 032 lifecycle coordinator → 033 integration**).
+012, 013, 027, and 028 are shipped and provide stable graph, timing, measurement, and collector foundations.
 
-**Now — trustworthy live data and target fidelity.** Finish
-[012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md)
-alongside [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md)
-and [027](../issues/027-introduce-first-spec-driven-collector-prototype.md): close
-the paired graph/provenance gaps, prove independent simulated cadence, then parse
-changing file data into displayed snapshots with explicit stale/error semantics.
-The shipped 028 measurement/layout primitives now provide the sizing foundation
-for this work.
-
-Keep independent slow/fast simulated producers, bounded histories,
-timestamps, shutdown and mismatched redraw-rate tests. Complete
-[027](../issues/027-introduce-first-spec-driven-collector-prototype.md) with a
-changing numeric file fixture feeding safely published display snapshots,
-explicit parsing/error/stale semantics, and retention/cancellation evidence.
-Document raw whole-file polling as the initial source contract; no external
-event notification is required. Check provenance text against actual displayed
-values so the real-source label cannot imply that simulated graphs are real.
-Preserve the 15-minute live-only default and keep parsing outside Draw.
-
-**Next — expressive, proven target UIs & splash startup.** Continue
+**Now — expressive target UIs & splash startup.** Continue
 [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) →
 [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) →
 [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md): declared
@@ -190,25 +123,16 @@ formats still need source-specific evidence under 018. Revisit parked 019 only
 after these boundaries justify wider declarations. Deferral preserves attention
 for reusable UI value while host-specific integration remains uncertain.
 
-**Ordering change:** the user explicitly pulled the narrow fixed-rate file
-prototype forward via 027, ahead of the original 016 → 017 → 018 → 019 gate.
-That is the scoped exception now reflected here; 016 remains the complete
-simulated-target milestone and the gate for broader file/socket/system work.
-016 now records this exception explicitly; the context document retains the
-historical original ordering. This audit changes no issue status or priority.
-012 moves from speculative closure to concrete Now work because its acceptance
-audit found unfinished requirements; the other buckets retain their value order.
-
 Each stage should leave a runnable example and deterministic checks. Keep examples in the root module so root test discovery includes them; the target document's nested `go.mod` is illustrative, not a requirement.
 
 | Stage | Tickets |
 |---|---|
 | 1–5 — Shipped Foundation | [006](../issues/006-static-declarative-monitor-shell-with-a-minimal-validated-contract.md), [007](../issues/007-clock-watch-mode-with-independent-collection-and-redraw.md), [008](../issues/008-responsive-declared-box-layout.md), [009](../issues/009-declarative-box-visibility-controls.md), [010](../issues/010-geometry-and-visual-evidence-milestone-before-rich-content.md) |
 | Hygiene & Fixes (Shipped) | [021](../issues/021-cmd-help-tty-blocking-in-tests.md), [022](../issues/022-decouple-static-shell-golden-from-evolving-monitor-spec.md), [023](../issues/023-rows-schema-validation-and-negative-controls.md), [026](../issues/026-investigate-monitor-pty-smoke-test-idle-redraw-regression.md) |
-| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done); parent [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) (now; acceptance gaps) |
-| 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) (now) |
+| 6 — Rows & Graphs | [011](../issues/011-aligned-dashboard-rows-and-ansi-safe-truncation.md) (done), [020](../issues/020-review-ticket-011-rows-and-target-state-alignment.md) (done), [024](../issues/024-port-harnez-rograph-primitives-with-provenance.md) (done), [025](../issues/025-integrate-graph-renderers-into-declarative-monitor.md) (done), [012](../issues/012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) (done) |
+| 7 — Simulated live data | [013](../issues/013-deterministic-live-snapshots-and-independent-rolling-histories.md) (done) |
 | Reusable measurement and dynamic layout (Shipped) | [028](../issues/028-add-reusable-measurement-and-dynamic-box-layout-primitives.md) (closed; bounded measurement, planner and dynamic Box/Stack integration) |
-| Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (now; partial slice pulled forward from Stages 10–11) |
+| Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (done) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
 | 10 — Splash & startup screen | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) |
