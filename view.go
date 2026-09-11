@@ -11,6 +11,7 @@ import "strings"
 type View struct {
 	Lines  []string
 	Scroll int   // first visible line index
+	Height int   // preferred visible height cap; 0 = len(Lines)
 	Style  Style // base style for all lines
 	lastH  int   // height from last Draw; gates scroll in HandleKey
 }
@@ -128,6 +129,9 @@ func stripANSI(s string) string {
 
 // ContentHeight estimates the required height for this view.
 func (v *View) ContentHeight() int {
+	if v.Height > 0 && v.Height < len(v.Lines) {
+		return v.Height
+	}
 	return len(v.Lines)
 }
 
