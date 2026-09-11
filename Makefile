@@ -17,8 +17,8 @@ test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the t
 	go vet ./...
 	go test ./...
 
-validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Python jsonschema + PyYAML)
-	python3 scripts/validate-spec.py
+validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Go jsonschema-go + yaml.v3)
+	go run ./cmd/validate-spec
 
 geometry-replay: ⚙️  ## verify saved ANSI replay bytes against geometry goldens
 	python3 scripts/check-geometry-replay.py

@@ -98,9 +98,8 @@ sh scripts/check-no-tty.sh
 setsid --wait env GOWORK=off go run ./examples/monitor </dev/null
 ```
 
-`make test` validates schemas with Python 3, PyYAML, and jsonschema, then runs Go
-vet and tests. Both validator packages were available in the development
-environment. `GOWORK=off` isolates Loom from a parent workspace that excludes it.
+`make test` validates schemas with Go, `jsonschema-go`, and `yaml.v3`, then runs
+Go vet and tests. `GOWORK=off` isolates Loom from a parent workspace that excludes it.
 The standalone canary checks that `setsid` removes the controlling terminal
 before the same mechanism is used to smoke-test the example.
 
