@@ -18,8 +18,9 @@ UI should be easy to maintain, responsive to terminal size, testable without a l
 terminal, and free from application-specific coordinate/layout code.
 
 The primary reference targets are documented in
-[`HarnezUsageTarget.md`](HarnezUsageTarget.md), including the Harnez usage
-dashboard and the Voxi monitor.
+[`HarnezUsageTarget.md`](HarnezUsageTarget.md) (usage dashboard and Voxi monitor)
+and [`HarnezSplashTarget.md`](HarnezSplashTarget.md) (startup loading and splash
+screen).
 
 ## Assessment against code and backlog
 
@@ -163,13 +164,18 @@ event notification is required. Check provenance text against actual displayed
 values so the real-source label cannot imply that simulated graphs are real.
 Preserve the 15-minute live-only default and keep parsing outside Draw.
 
-**Next — expressive, proven target UIs.** Continue
+**Next — expressive, proven target UIs & splash startup.** Continue
 [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) →
 [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) →
 [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md): declared
 colors/glyphs, bounded transcript and daemon panels, then the complete two-target
-matrix. This sequence remains valuable: it proves reusable composition across
-metrics, text and status instead of equating a two-box demo with both targets.
+matrix. In parallel or following these, implement the Harnez splash screen target
+sequence ([029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md) →
+[030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md) →
+[031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md) →
+[032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md) →
+[033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md)) to prove
+centered viewport layouts, braille spinner/bar animations, and view transition lifecycles.
 028 now precedes these because shared measurement reduces sizing and ANSI drift
 as richer content arrives; 013 remains 014's declared prerequisite.
 
@@ -205,8 +211,9 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 | Typed fixed-rate file prototype | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) (now; partial slice pulled forward from Stages 10–11) |
 | 8 — Color and glyphs | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) |
 | 9 — Complete simulated targets | [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) |
-| 10 — External sources | [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md) |
-| 11 — Wider declarative source/action evaluation | [019](../issues/019-evaluate-declarative-source-and-action-wiring.md) (parked beyond 027's file prototype) |
+| 10 — Splash & startup screen | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) |
+| 11 — External sources | [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md) |
+| 12 — Wider declarative source/action evaluation | [019](../issues/019-evaluate-declarative-source-and-action-wiring.md) (parked beyond 027's file prototype) |
 
 ### Verification gates for the next increments
 
@@ -377,7 +384,21 @@ seek visual confirmation when available, with automated geometry/golden checks
 as the gate otherwise. This remains the complete simulated UI gate before
 broader external adapters, with the scoped 027 file prototype exception above.
 
-## Stage 10 — Real external data sources
+## Stage 10 — Splash & startup loading target
+
+Demonstrate the Harnez splash and startup loading screen target
+([`HarnezSplashTarget.md`](HarnezSplashTarget.md)) in the example app suite.
+
+- Implement declarative vertical and horizontal viewport centering (029).
+- Add braille animation spinners and bracketed dot-matrix progress bars (030).
+- Render multi-state provider status pill clusters (`● mic`, `✳ claude`, `֍ codex`, `Λ agy`) with stable spacing and ANSI styling (031).
+- Orchestrate asynchronous provider startup tasks, step messaging (`fetching claude...` → `agy done`), and interactive `Esc` skip (032).
+- Assemble the integrated example with deterministic golden frame tests (033).
+
+This proves centered viewport composition, interactive early exit, and
+smooth transition lifecycles from startup screens into main dashboard views.
+
+## Stage 11 — Real external data sources
 
 027 has pulled forward raw fixed-rate file reads and live retention. The
 separate-process file/socket and source-specific work in 017/018 remains later.
@@ -392,7 +413,7 @@ the real environment.
 The UI must continue to consume snapshots/events rather than knowing how the
 data was collected.
 
-## Stage 11 — Declarative data-source and action prototype
+## Stage 12 — Declarative data-source and action prototype
 
 027 already consumes embedded typed file/cadence declarations. The remaining
 019 evaluation covers wider source mappings and named actions after 017/018;
