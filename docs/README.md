@@ -2,7 +2,8 @@
 
 - [Roadmap](Roadmap.md): assessed stages and implementation tickets.
 - [Roadmap context](RoadmapContext.md): product vision and session summary.
-- [UI targets](HarnezUsageTarget.md): Harnez and Voxi reference layouts.
+- [UI targets (Usage Dashboard)](HarnezUsageTarget.md): Harnez and Voxi reference layouts (tables, boxes, sparklines).
+- [UI targets (Splash Screen)](HarnezSplashTarget.md): Harnez startup splash & loading screen reference.
 - [Graph primitives](Graph.md): determinate bars, rolling sparklines, and width padding invariants.
 - [Monitor example](../examples/monitor/README.md): show-once/watch, responsive boxes and controls.
 - [Geometry gate](Geometry.md): supported text policy, independent checks and ANSI replay evidence.
