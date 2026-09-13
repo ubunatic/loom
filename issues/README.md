@@ -45,3 +45,5 @@ upkeep.
 | 031 | [031-provider-status-pill-cluster-and-lifecycle-state-presentation.md](031-provider-status-pill-cluster-and-lifecycle-state-presentation.md) | Provider Status Pill Cluster and Lifecycle State Presentation | Closed |
 | 032 | [032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md](032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md) | Splash Lifecycle Controller, Async Provider Coordination, and Key Dismissal | Closed |
 | 033 | [033-harnez-target-splash-screen-integration-and-golden-tests.md](033-harnez-target-splash-screen-integration-and-golden-tests.md) | Harnez Target Splash Screen Integration and Golden Tests | Closed |
+| 034 | [034-ansi-sgr-escape-sequence-parsing-and-writeansi-canvas-helper.md](034-ansi-sgr-escape-sequence-parsing-and-writeansi-canvas-helper.md) | ANSI SGR Escape Sequence Parsing and WriteANSI Canvas Helper | Open |
+| 035 | [035-extend-loom-view-navigation-keybindings-and-export-terminalsize-helper.md](035-extend-loom-view-navigation-keybindings-and-export-terminalsize-helper.md) | Extend loom.View Navigation Keybindings and Export TerminalSize Helper | Open |
