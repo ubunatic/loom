@@ -85,7 +85,7 @@ func DecodeKey(b []byte) KeyEvent {
 				return KeyEvent{Key: "end"}
 			}
 			// Numeric tilde sequences: \x1b[1~ home, \x1b[3~ delete, \x1b[4~ end,
-			// \x1b[7~ home, \x1b[8~ end (xterm/linux console variants).
+			// \x1b[5~ pgup, \x1b[6~ pgdown, \x1b[7~ home, \x1b[8~ end (xterm/linux console variants).
 			if len(b) >= 4 && b[len(b)-1] == '~' {
 				switch b[2] {
 				case '1', '7':
@@ -94,6 +94,10 @@ func DecodeKey(b []byte) KeyEvent {
 					return KeyEvent{Key: "delete"}
 				case '4', '8':
 					return KeyEvent{Key: "end"}
+				case '5':
+					return KeyEvent{Key: "pgup"}
+				case '6':
+					return KeyEvent{Key: "pgdown"}
 				}
 			}
 		}
