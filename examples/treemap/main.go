@@ -263,32 +263,23 @@ func clampDimensions(width, height, cols, rows int) (w, h int, widthClamped, hei
 // treemapTheme maps the user-facing --theme flag (1 or 2) to
 // graph.TreemapTheme; validated by parseTheme before reaching here.
 func treemapTheme(theme int) graph.TreemapTheme {
-	switch theme {
-	case 2:
-		return graph.TreemapThemeBlocks
-	case 3:
+	if theme == 2 {
 		return graph.TreemapThemeNumbered
-	case 4:
-		return graph.TreemapThemeNumberedFilled
-	default:
-		return graph.TreemapThemeClassic
 	}
+	return graph.TreemapThemeClassic
 }
 
-// parseTheme validates the --theme flag, matching graph's four themes: 1
-// (TreemapThemeClassic, the default box-drawing style), 2
-// (TreemapThemeBlocks, half-block boundary glyphs), 3 (TreemapThemeNumbered,
-// seven-eighths-block boundary glyphs plus a corner number on every box,
-// floating over the ambient background), and 4 (TreemapThemeNumberedFilled,
-// same as 3 but the corner number is filled solid like ordinary label text)
-// -- see issue 040. Themes 2-4 all require --ansi, since none of them have
-// any color to render their edge glyphs with otherwise.
+// parseTheme validates the --theme flag, matching graph's two themes: 1
+// (TreemapThemeClassic, the default box-drawing style) and 2
+// (TreemapThemeNumbered, seven-eighths-block boundary glyphs plus a corner
+// number on every box) -- see issue 040. Theme 2 requires --ansi, since it
+// has no color to render its edge glyphs with otherwise.
 func parseTheme(theme int, ansi bool) error {
-	if theme < 1 || theme > 4 {
-		return fmt.Errorf("treemap: --theme must be 1, 2, 3, or 4, got %d", theme)
+	if theme != 1 && theme != 2 {
+		return fmt.Errorf("treemap: --theme must be 1 or 2, got %d", theme)
 	}
-	if theme != 1 && !ansi {
-		return fmt.Errorf("treemap: --theme %d requires --ansi (it has no color to render its edges with)", theme)
+	if theme == 2 && !ansi {
+		return fmt.Errorf("treemap: --theme 2 requires --ansi (it has no color to render its edges with)")
 	}
 	return nil
 }
@@ -410,7 +401,7 @@ func main() {
 	cmd.Flags().BoolVar(&showValues, "values", true, "append each segment's %CPU to its label")
 	cmd.Flags().BoolVar(&watch, "watch", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
 	cmd.Flags().DurationVar(&interval, "interval", 2*time.Second, "redraw interval in --watch mode")
-	cmd.Flags().IntVar(&theme, "theme", 1, "visual style: 1 (bordered boxes), 2 (half-block edges), 3 (thin edges + corner numbers on ambient bg), or 4 (thin edges + corner numbers on node bg) -- 2-4 require --ansi")
+	cmd.Flags().IntVar(&theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (thin edges + a corner number on every box, requires --ansi)")
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

@@ -73,39 +73,33 @@ func TestClampDimensionsDefaultsLeaveRoomForPrompt(t *testing.T) {
 // duplicated locally in this example -- run() and runWatch() just call
 // loom.OpenRawScreen(os.Stdout).Draw(rows).
 
-func TestParseThemeAcceptsOneThroughFour(t *testing.T) {
+func TestParseThemeAcceptsOneAndTwo(t *testing.T) {
 	if err := parseTheme(1, false); err != nil {
 		t.Errorf("parseTheme(1, false) = %v, want nil", err)
 	}
-	for _, theme := range []int{2, 3, 4} {
-		if err := parseTheme(theme, true); err != nil {
-			t.Errorf("parseTheme(%d, true) = %v, want nil", theme, err)
-		}
+	if err := parseTheme(2, true); err != nil {
+		t.Errorf("parseTheme(2, true) = %v, want nil", err)
 	}
 }
 
 func TestParseThemeRejectsUnknownValues(t *testing.T) {
-	for _, theme := range []int{0, 5, -1} {
+	for _, theme := range []int{0, 3, -1} {
 		if err := parseTheme(theme, true); err == nil {
 			t.Errorf("parseTheme(%d, true) = nil, want an error", theme)
 		}
 	}
 }
 
-func TestParseThemeTwoThroughFourRequireANSI(t *testing.T) {
-	for _, theme := range []int{2, 3, 4} {
-		if err := parseTheme(theme, false); err == nil {
-			t.Errorf("parseTheme(%d, false) = nil, want an error (no color to render edges with without --ansi)", theme)
-		}
+func TestParseThemeTwoRequiresANSI(t *testing.T) {
+	if err := parseTheme(2, false); err == nil {
+		t.Error("parseTheme(2, false) = nil, want an error (theme 2 has no color to render edges with without --ansi)")
 	}
 }
 
 func TestTreemapThemeMapsFlagValuesToGraphThemes(t *testing.T) {
 	cases := map[int]graph.TreemapTheme{
 		1: graph.TreemapThemeClassic,
-		2: graph.TreemapThemeBlocks,
-		3: graph.TreemapThemeNumbered,
-		4: graph.TreemapThemeNumberedFilled,
+		2: graph.TreemapThemeNumbered,
 	}
 	for flag, want := range cases {
 		if got := treemapTheme(flag); got != want {

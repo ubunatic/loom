@@ -28,58 +28,39 @@ const (
 	// TreemapOptions{} literal (and every test written before theming
 	// existed) renders exactly as before.
 	TreemapThemeClassic TreemapTheme = iota
-	// TreemapThemeBlocks renders every box full-bleed -- no border cell is
-	// reserved, so labels get the box's entire area -- and softens its own
-	// right and bottom edges with a half-block/quadrant glyph (▌▀▘) instead
-	// of the hard one-cell-wide border line TreemapThemeClassic draws.
-	// Unlike a border, these glyphs don't fill their cell solid: only the
-	// half (or, at the box's own bottom-right corner, quadrant) that faces
-	// this box's own interior carries its color -- the other half/quadrant
-	// gets no background SGR at all, so the ambient terminal background
-	// shows straight through it. See drawTreemapBlockBox's doc comment for
-	// the exact per-cell rule; it is purely local to each box's own
-	// rectangle (its rightmost column and bottommost row), not dependent
-	// on what segment (if any) sits past that edge -- so two adjoining
-	// boxes never both try to render their shared seam.
+	// TreemapThemeNumbered renders every box full-bleed -- no border cell
+	// is reserved, so labels get the box's entire area -- and softens its
+	// own TOP row and RIGHT column with a seven-eighths block glyph ('▇'
+	// top, '▉' right, U+2587/U+2589) instead of the hard one-cell-wide
+	// border line TreemapThemeClassic draws. Unlike a border, these glyphs
+	// don't fill their cell solid: only the majority (7/8) that faces this
+	// box's own interior carries its color -- a thin sliver gets no
+	// background SGR at all, so the ambient terminal background shows
+	// straight through it. This is purely local to each box's own
+	// rectangle (its topmost row and rightmost column), not dependent on
+	// what segment (if any) sits past that edge -- so two adjoining boxes
+	// never both try to render their shared seam.
+	//
+	// Every box with positive area also gets a superscript corner marker
+	// (see superscriptNumber), unconditionally, stamped into its own
+	// top-right corner cell -- ranked by value descending across ALL
+	// boxes, not just the ones whose full label doesn't fit. A box that
+	// also has room for its full label shows both: the label centered as
+	// usual, plus its corner number. The legend row below the grid still
+	// lists only the boxes that needed a number in place of their label
+	// (the same criterion TreemapThemeClassic uses) -- a labeled box's
+	// corner number isn't explained there, since the box's own visible
+	// name already identifies it. The corner marker's own cell uses the
+	// same foreground-only style as the rest of its row/column: it floats
+	// over the ambient terminal background, not a filled swatch.
 	//
 	// Requires opts.ANSI and opts.BackgroundANSI (there is no color to
-	// paint the glyph with otherwise); without either, TreemapThemeBlocks
-	// falls back to the identical solid-glyph full-bleed fill
-	// TreemapThemeClassic uses when NoBorder is set.
-	TreemapThemeBlocks
-	// TreemapThemeNumbered is TreemapThemeBlocks' full-bleed style applied
-	// to a box's TOP row and RIGHT column instead of its bottom/right, using
-	// the subtler seven-eighths block glyphs ('▇' top, '▉' right, U+2587/
-	// U+2589) rather than half-blocks -- only a thin sliver of the cell is
-	// left unstyled, not half of it.
-	//
-	// Unlike TreemapThemeBlocks, every box with positive area gets a
-	// superscript corner marker (see superscriptNumber), unconditionally,
-	// stamped into its own top-right corner cell -- ranked by value
-	// descending across ALL boxes, not just the ones whose full label
-	// doesn't fit. A box that also has room for its full label shows both:
-	// the label centered as usual, plus its corner number. The legend row
-	// below the grid still lists only the boxes that needed a number in
-	// place of their label (the same criterion TreemapThemeBlocks/Classic
-	// use) -- a labeled box's corner number isn't explained there, since
-	// the box's own visible name already identifies it.
-	//
-	// The corner marker's own cell uses a foreground-only style, the same
-	// as every other cell on its top row/right column: it visually floats
-	// against the ambient terminal background, not a filled swatch.
-	//
-	// Requires opts.ANSI and opts.BackgroundANSI; without either, falls
-	// back to the identical solid-glyph full-bleed fill TreemapThemeClassic
-	// uses when NoBorder is set, and to TreemapThemeBlocks/Classic's
-	// only-unlabelled-boxes marker/legend behavior.
+	// paint the glyph/marker with otherwise); without either,
+	// TreemapThemeNumbered falls back to the identical solid-glyph
+	// full-bleed fill TreemapThemeClassic uses when NoBorder is set, and
+	// to TreemapThemeClassic's only-unlabelled-boxes marker/legend
+	// behavior.
 	TreemapThemeNumbered
-	// TreemapThemeNumberedFilled is TreemapThemeNumbered with one
-	// difference: each box's corner marker cell is filled solid with the
-	// box's own background color (the same style its label text uses),
-	// instead of floating over the ambient terminal background -- so it
-	// reads as an ordinary in-box label character rather than a badge
-	// overlaid on the edge treatment.
-	TreemapThemeNumberedFilled
 )
 
 // TreemapOptions configures RenderTreemap.
@@ -215,9 +196,9 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 	}
 	glyphs = oneCellGlyphs(glyphs, defaultTreemapGlyphs)
 
-	markers := make([]string, len(segments))       // interior fallback marker (Classic/Blocks only)
-	cornerMarkers := make([]string, len(segments)) // corner marker (Numbered/NumberedFilled only)
-	hideLabel := make([]bool, len(segments))       // Numbered/NumberedFilled: label doesn't fit, corner marker alone identifies it
+	markers := make([]string, len(segments))       // interior fallback marker (Classic only)
+	cornerMarkers := make([]string, len(segments)) // corner marker (Numbered only)
+	hideLabel := make([]bool, len(segments))       // Numbered: label doesn't fit, corner marker alone identifies it
 	var legend []treemapLegendEntry
 	if !opts.NoLabels {
 		labels := make([]string, len(segments))
@@ -236,7 +217,7 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 			}
 			needsNumber = append(needsNumber, i)
 		}
-		if treemapNumbersEveryBox(opts) {
+		if treemapUsesNumbered(opts) {
 			// Every positive-area box gets a corner marker, ranked by value
 			// across ALL of them -- not just the ones needing a number in
 			// place of their label. The legend still only lists the latter
@@ -262,11 +243,11 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 					// This box's full label doesn't fit. Its corner marker
 					// already identifies it (see the doc comment on
 					// TreemapThemeNumbered) -- drawTreemapBox must not also
-					// attempt to place the label text, or truncateLabel
-					// would cut it into an ugly, hard-to-read fragment
-					// ("fir…", "v………"). "Full label or a number, never a
-					// fragment" is the same rule TreemapThemeClassic/Blocks
-					// enforce via their own marker fallback.
+					// attempt to place the label text, or it would show as
+					// an ugly, hard-to-read fragment ("fir…", "v………"). "Full
+					// label or a number, never a fragment" is the same rule
+					// TreemapThemeClassic enforces via its own marker
+					// fallback.
 					hideLabel[i] = true
 				}
 			}
@@ -462,46 +443,23 @@ func treemapFullLabel(seg TreemapSegment, opts TreemapOptions) string {
 }
 
 // treemapHasBorder reports whether r draws a TreemapThemeClassic box-drawing
-// border: never under a full-bleed theme (TreemapThemeBlocks and the
-// TreemapThemeNumbered variants -- their boundary softening happens
-// per-cell, not via a reserved border cell), otherwise the existing
-// size/NoBorder rule.
+// border: never under TreemapThemeNumbered (full-bleed -- its boundary
+// softening happens per-cell, not via a reserved border cell), otherwise the
+// existing size/NoBorder rule.
 func treemapHasBorder(r treemapRect, opts TreemapOptions) bool {
-	return !treemapIsFullBleed(opts.Theme) && !opts.NoBorder && r.W >= 3 && r.H >= 2
+	return opts.Theme != TreemapThemeNumbered && !opts.NoBorder && r.W >= 3 && r.H >= 2
 }
 
-func treemapIsFullBleed(theme TreemapTheme) bool {
-	return theme == TreemapThemeBlocks || theme == TreemapThemeNumbered || theme == TreemapThemeNumberedFilled
-}
-
-// treemapHasColor reports whether opts has an ANSI background palette to
-// paint a full-bleed theme's glyphs and corner markers with -- without one,
-// TreemapThemeBlocks/TreemapThemeNumbered/TreemapThemeNumberedFilled all
-// fall back to the same solid-glyph full-bleed fill TreemapThemeClassic
-// uses when NoBorder is set (the non-border branch of drawTreemapBox,
-// shared code), and to TreemapThemeClassic's only-unlabelled-boxes
-// marker/legend behavior.
-func treemapHasColor(opts TreemapOptions) bool {
-	return opts.ANSI && len(opts.BackgroundANSI) > 0
-}
-
-// treemapUsesBlocks reports whether r should render via drawTreemapBlockBox.
-func treemapUsesBlocks(opts TreemapOptions) bool {
-	return opts.Theme == TreemapThemeBlocks && treemapHasColor(opts)
-}
-
-// treemapUsesThinEdges reports whether r should render via
-// drawTreemapThinBox (TreemapThemeNumbered or TreemapThemeNumberedFilled).
-func treemapUsesThinEdges(opts TreemapOptions) bool {
-	return (opts.Theme == TreemapThemeNumbered || opts.Theme == TreemapThemeNumberedFilled) && treemapHasColor(opts)
-}
-
-// treemapNumbersEveryBox reports whether RenderTreemap's label pre-pass
-// should assign every positive-area box a corner marker (ranked by value
-// across ALL boxes), rather than only the boxes whose full label doesn't
-// fit (TreemapThemeClassic/TreemapThemeBlocks' behavior).
-func treemapNumbersEveryBox(opts TreemapOptions) bool {
-	return (opts.Theme == TreemapThemeNumbered || opts.Theme == TreemapThemeNumberedFilled) && treemapHasColor(opts)
+// treemapUsesNumbered reports whether opts should render via
+// drawTreemapThinBox and RenderTreemap's every-box corner-marker pre-pass:
+// TreemapThemeNumbered needs opts.ANSI and a background palette to have any
+// color to render its edge glyphs and corner markers with -- without
+// either, it falls back to the same solid-glyph full-bleed fill
+// TreemapThemeClassic uses when NoBorder is set (the non-border branch of
+// drawTreemapBox, shared code), and to TreemapThemeClassic's
+// only-unlabelled-boxes marker/legend behavior.
+func treemapUsesNumbered(opts TreemapOptions) bool {
+	return opts.Theme == TreemapThemeNumbered && opts.ANSI && len(opts.BackgroundANSI) > 0
 }
 
 // treemapInner returns a box's label-safe interior: the full rect when
@@ -526,39 +484,28 @@ func superscriptNumber(n int) string {
 	return string(runes)
 }
 
-// drawTreemapBox paints one segment's box into grid/style: TreemapThemeBlocks
-// or TreemapThemeNumbered(Filled) boundary-softened full-bleed fill, a
-// TreemapThemeClassic bordered box (when it fits and !opts.NoBorder), or a
-// solid fill, plus a label or numbered marker when it fits and
-// !opts.NoLabels. marker is "" when the segment's full label fits directly
-// (computed by RenderTreemap's pre-pass); otherwise it is the superscript
-// index to place instead. cornerMarker is only set under
-// TreemapThemeNumbered/TreemapThemeNumberedFilled (every positive-area box
-// gets one, regardless of marker) -- see RenderTreemap's pre-pass.
+// drawTreemapBox paints one segment's box into grid/style: TreemapThemeNumbered's
+// boundary-softened full-bleed fill, a TreemapThemeClassic bordered box
+// (when it fits and !opts.NoBorder), or a solid fill, plus a label or
+// numbered marker when it fits and !opts.NoLabels. marker is "" when the
+// segment's full label fits directly (computed by RenderTreemap's
+// pre-pass); otherwise it is the superscript index to place instead.
+// cornerMarker is only set under TreemapThemeNumbered (every positive-area
+// box gets one, regardless of marker) -- see RenderTreemap's pre-pass.
 func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker, cornerMarker string, hideLabel bool) {
 	code := treemapSegmentCode(index, opts)
 
 	// textCode is the style for a label/marker character at (x, y): on the
-	// edge cells a full-bleed theme softens (TreemapThemeBlocks: right
-	// column/bottom row; TreemapThemeNumbered(Filled): top row/right
-	// column), that theme's box-drawing function deliberately writes NO
-	// background there (see its doc comment) -- so stamping the combined
-	// bg;fg code over it anyway would show up as a solid colored patch
-	// poking out of the otherwise thin, unfilled seam around it. Use the
-	// same foreground-only style that function itself uses on that edge
+	// edge cells TreemapThemeNumbered softens (its own top row/right
+	// column), drawTreemapThinBox deliberately writes NO background there
+	// (see its doc comment) -- so stamping the combined bg;fg code over it
+	// anyway would show up as a solid colored patch poking out of the
+	// otherwise thin, unfilled seam around it. Use the same
+	// foreground-only style that function itself uses on that edge
 	// instead. Everywhere else (the overwhelming majority of the box, and
 	// every cell under TreemapThemeClassic), it's the normal filled code.
 	textCode := func(x, y int) string { return code }
-	switch {
-	case treemapUsesBlocks(opts):
-		edgeCode := treemapBackgroundToForeground(opts.BackgroundANSI[index%len(opts.BackgroundANSI)])
-		textCode = func(x, y int) string {
-			if x == r.X+r.W-1 || y == r.Y+r.H-1 {
-				return edgeCode
-			}
-			return code
-		}
-	case treemapUsesThinEdges(opts):
+	if treemapUsesNumbered(opts) {
 		edgeCode := treemapBackgroundToForeground(opts.BackgroundANSI[index%len(opts.BackgroundANSI)])
 		textCode = func(x, y int) string {
 			if x == r.X+r.W-1 || y == r.Y {
@@ -575,9 +522,7 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 	}
 
 	switch {
-	case treemapUsesBlocks(opts):
-		drawTreemapBlockBox(grid, style, r, index, opts)
-	case treemapUsesThinEdges(opts):
+	case treemapUsesNumbered(opts):
 		drawTreemapThinBox(grid, style, r, index, opts, cornerMarker)
 	case !border:
 		for y := r.Y; y < r.Y+r.H; y++ {
@@ -629,9 +574,9 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 	}
 
 	if hideLabel {
-		// TreemapThemeNumbered/NumberedFilled: this box's full label
-		// doesn't fit, and its corner marker (already placed) is its only
-		// identification -- never show a truncated fragment instead.
+		// TreemapThemeNumbered: this box's full label doesn't fit, and its
+		// corner marker (already placed) is its only identification --
+		// never show a truncated fragment instead.
 		return
 	}
 
@@ -652,75 +597,35 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 	}
 }
 
-// drawTreemapBlockBox paints one box under TreemapThemeBlocks: a purely
+// drawTreemapThinBox paints one box under TreemapThemeNumbered: a purely
 // local rule based only on this box's own rectangle, no neighbor lookup at
-// all -- every box always renders its own rightmost column and bottommost
-// row this way, whether or not another box (or just the outer grid edge)
+// all -- every box always renders its own topmost row and rightmost column
+// this way, whether or not another box (or just the outer grid edge)
 // happens to sit past it:
-//
-//   - bottom-right corner cell (both the box's rightmost column AND its
-//     bottommost row): '▘' -- only the upper-left quadrant carries this
-//     box's color; the other three quadrants are left unstyled.
-//   - rightmost column (not also the bottom row): '▌' -- only the left
-//     half carries this box's color; the right half is left unstyled.
-//   - bottommost row (not also the rightmost column): '▀' -- only the top
-//     half carries this box's color; the bottom half is left unstyled.
-//   - every other cell: a plain filled cell (this box's solid color, same
-//     as the classic NoBorder fill) -- this is the overwhelming majority
-//     of the box, including its own top and left edges, so there is
-//     plenty of room to write a label without touching a glyph cell.
-//
-// "Left unstyled" is the point: no background SGR code is written for
-// that portion at all, so it is whatever the terminal already shows there
-// -- the ambient terminal background reads straight through the glyph's
-// empty half/quadrant, rather than this function guessing at and
-// reproducing some other color. This also means adjoining boxes never
-// fight over how to render their shared seam: only the box on the
-// right/bottom side of a split ever draws anything into it.
-func drawTreemapBlockBox(grid [][]rune, style [][]string, r treemapRect, index int, opts TreemapOptions) {
-	ownBG := opts.BackgroundANSI[index%len(opts.BackgroundANSI)]
-	ownFG := treemapBackgroundToForeground(ownBG)
-
-	for y := r.Y; y < r.Y+r.H; y++ {
-		for x := r.X; x < r.X+r.W; x++ {
-			right := x == r.X+r.W-1
-			bottom := y == r.Y+r.H-1
-			glyph, code := ' ', ownBG
-			switch {
-			case right && bottom:
-				glyph, code = '▘', ownFG
-			case right:
-				glyph, code = '▌', ownFG
-			case bottom:
-				glyph, code = '▀', ownFG
-			}
-			grid[y][x] = glyph
-			style[y][x] = code
-		}
-	}
-}
-
-// drawTreemapThinBox paints one box under TreemapThemeNumbered/
-// TreemapThemeNumberedFilled: the same purely-local, no-neighbor-lookup
-// rule as drawTreemapBlockBox, but softening this box's own TOP row and
-// RIGHT column instead of its bottom/right, with the subtler seven-eighths
-// block glyphs ('▇' U+2587, '▉' U+2589) instead of half-blocks -- only a
-// thin thin sliver of the cell is left unstyled, not half of it:
 //
 //   - top-right corner cell: reserved for cornerMarker (right-aligned
 //     within the top row, ending at this cell) when it's set and fits
 //     within the box's own width; otherwise '▝' (quadrant upper-right) as
 //     a fallback glyph.
-//   - top row (not also the right column): '▇'.
-//   - right column (not also the top row): '▉'.
-//   - every other cell: a plain filled cell, exactly like
-//     drawTreemapBlockBox's interior cells.
+//   - top row (not also the right column): '▇' (seven-eighths block,
+//     U+2587) -- only the bottom 7/8 (facing this box's own interior)
+//     carries its color; a thin sliver at the very top is left unstyled.
+//   - right column (not also the top row): '▉' (U+2589) -- only the left
+//     7/8 carries this box's color; a thin sliver at the right is left
+//     unstyled.
+//   - every other cell: a plain filled cell (this box's solid color, same
+//     as the classic NoBorder fill) -- this is the overwhelming majority
+//     of the box, including its own bottom and left edges, so there is
+//     plenty of room to write a label without touching a glyph cell.
 //
-// cornerMarker's own cells use a foreground-only style under
-// TreemapThemeNumbered (floats over the ambient terminal background, like
-// the rest of the top row/right column), or the normal combined bg;fg code
-// under TreemapThemeNumberedFilled (reads as an ordinary in-box label
-// character instead).
+// "Left unstyled" is the point: no background SGR code is written for
+// that thin sliver at all, so it is whatever the terminal already shows
+// there -- the ambient terminal background reads straight through the
+// glyph's empty portion, rather than this function guessing at and
+// reproducing some other color. This also means adjoining boxes never
+// fight over how to render their shared seam: only the box on the
+// top/right side of a split ever draws anything into it. cornerMarker's
+// own cells use the same foreground-only style as the rest of its row.
 func drawTreemapThinBox(grid [][]rune, style [][]string, r treemapRect, index int, opts TreemapOptions, cornerMarker string) {
 	ownBG := opts.BackgroundANSI[index%len(opts.BackgroundANSI)]
 	ownFG := treemapBackgroundToForeground(ownBG)
@@ -751,14 +656,10 @@ func drawTreemapThinBox(grid [][]rune, style [][]string, r treemapRect, index in
 	if markerW > r.W {
 		return // doesn't fit even the box's full width; leave the corner glyph
 	}
-	numberCode := ownFG
-	if opts.Theme == TreemapThemeNumberedFilled {
-		numberCode = treemapSegmentCode(index, opts)
-	}
 	x := r.X + r.W - markerW
 	for i, ch := range markerRunes {
 		grid[r.Y][x+i] = ch
-		style[r.Y][x+i] = numberCode
+		style[r.Y][x+i] = ownFG
 	}
 }
 
@@ -767,7 +668,7 @@ func drawTreemapThinBox(grid [][]rune, style [][]string, r treemapRect, index in
 // overlaid on the top border (only possible when the box has one), else
 // omitted (still listed on the legend row regardless). textCode resolves
 // the style for each character's exact cell (see drawTreemapBox's textCode
-// for why this can't be a single flat code under TreemapThemeBlocks).
+// for why this can't be a single flat code under TreemapThemeNumbered).
 func drawTreemapMarker(grid [][]rune, style [][]string, r treemapRect, innerX, innerY, innerW, innerH int, border bool, marker string, textCode func(x, y int) string) {
 	markerRunes := []rune(marker)
 	markerW := len(markerRunes) // superscript digits are always one cell wide
