@@ -1,6 +1,6 @@
 # 035 — Extend loom.View Navigation Keybindings and Export TerminalSize Helper
 
-**Status**: Open
+**Status**: Closed — implemented and verified in fec5aa7
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
