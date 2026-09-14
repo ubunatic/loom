@@ -6,7 +6,7 @@ package loom
 import "strings"
 
 // View is a scrollable list of text lines rendered into a Rect.
-// When content exceeds the visible area a "▐" scroll indicator appears on the
+// When content exceeds the visible area a specced scroll indicator appears on the
 // right edge, proportional to the current scroll position.
 type View struct {
 	Lines    []string
@@ -69,9 +69,9 @@ func (v *View) Draw(c *Canvas, r Rect) {
 // scrollbarCell uses a light track and a solid thumb in the clickable column.
 func scrollbarCell(thumb bool) Cell {
 	if thumb {
-		return Cell{Text: "▐", Style: Style{Bold: true}}
+		return Cell{Text: SpeccedDefaults.Scrollbar.ForegroundChar, Style: Style{Bold: true}}
 	}
-	return Cell{Text: "░", Style: Style{Dim: true}}
+	return Cell{Text: SpeccedDefaults.Scrollbar.BackgroundChar, Style: Style{Dim: true}}
 }
 
 // HandleKey supports line, half-page, page, and boundary navigation.

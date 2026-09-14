@@ -9,6 +9,10 @@ fallback_quit_keys:
 pane:
   max_cols: 50
 
+scrollbar:
+  foreground_char: "▓" # position marker (thumb)
+  background_char: "░" # clickable track
+
 splash:
   bracket_width: 24
   pill_gap: 2

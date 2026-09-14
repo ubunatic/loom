@@ -51,11 +51,11 @@ func TestCanvasFlushNoCursorWhenHidden(t *testing.T) {
 
 // ── A5: View scroll-indicator visual math ─────────────────────────────────────
 
-// indicatorCol reports whether the rightmost column of any row holds "▐".
+// hasIndicator reports whether the rightmost column holds the specced thumb.
 func hasIndicator(c *loom.Canvas) (row int, ok bool) {
 	x := c.Cols() - 1
 	for y := 0; y < c.Rows(); y++ {
-		if c.Get(x, y).Text == "▐" {
+		if c.Get(x, y).Text == loom.SpeccedDefaults.Scrollbar.ForegroundChar {
 			return y, true
 		}
 	}
@@ -103,9 +103,9 @@ func TestViewContentTruncatedToReserveIndicatorColumn(t *testing.T) {
 	c := loom.NewCanvas(6, 3) // scrollable → content width is 5 (W-1)
 	v.Draw(c, c.Bounds())
 
-	// Rightmost column on the indicator row holds "▐", not content.
-	if got := c.Get(5, 0).Text; got != "▐" {
-		t.Errorf("rightmost col on indicator row = %q, want ▐", got)
+	// Rightmost column on the indicator row holds the thumb, not content.
+	if got := c.Get(5, 0).Text; got != loom.SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Errorf("rightmost col on indicator row = %q, want %q", got, loom.SpeccedDefaults.Scrollbar.ForegroundChar)
 	}
 	// Column W-2 still holds content.
 	if got := c.Get(4, 0).Text; got != "X" {

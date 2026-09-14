@@ -52,13 +52,15 @@ func TestViewScrollbarTrackClick(t *testing.T) {
 }
 
 func TestViewDrawsScrollbarTrack(t *testing.T) {
+	thumb := SpeccedDefaults.Scrollbar.ForegroundChar
+	track := SpeccedDefaults.Scrollbar.BackgroundChar
 	v := NewView(make([]string, 20))
 	canvas := NewCanvas(10, 4)
 	v.Draw(canvas, Rect{W: 10, H: 4})
 	for y := 0; y < 4; y++ {
-		want := "░"
+		want := track
 		if y == 0 {
-			want = "▐"
+			want = thumb
 		}
 		if got := canvas.Get(9, y).Text; got != want {
 			t.Fatalf("track row %d = %q, want %q", y, got, want)
@@ -66,7 +68,7 @@ func TestViewDrawsScrollbarTrack(t *testing.T) {
 	}
 	v.Scroll = 16
 	v.Draw(canvas, Rect{W: 10, H: 4})
-	if canvas.Get(9, 0).Text != "░" || canvas.Get(9, 3).Text != "▐" {
+	if canvas.Get(9, 0).Text != track || canvas.Get(9, 3).Text != thumb {
 		t.Fatal("thumb did not move over the visible track")
 	}
 }

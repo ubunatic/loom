@@ -125,15 +125,17 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 }
 
 func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
+	thumb := SpeccedDefaults.Scrollbar.ForegroundChar
+	track := SpeccedDefaults.Scrollbar.BackgroundChar
 	c := makeChoice(20)
 	canvas := NewCanvas(10, 5)
 	c.Draw(canvas, Rect{W: 10, H: 5})
-	if canvas.Get(9, 0).Text != "▐" {
+	if canvas.Get(9, 0).Text != thumb {
 		t.Fatal("top thumb missing")
 	}
 	for y := 1; y < 4; y++ {
-		if got := canvas.Get(9, y).Text; got != "░" {
-			t.Fatalf("track row %d = %q, want ░", y, got)
+		if got := canvas.Get(9, y).Text; got != track {
+			t.Fatalf("track row %d = %q, want %q", y, got, track)
 		}
 	}
 	if got := canvas.Get(9, 4).Text; got != " " {
@@ -141,7 +143,7 @@ func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
 	}
 	c = makeChoice(2)
 	c.Draw(canvas, Rect{W: 10, H: 5})
-	if got := canvas.Get(9, 0).Text; got == "░" || got == "▐" {
+	if got := canvas.Get(9, 0).Text; got == track || got == thumb {
 		t.Fatalf("non-scrollable choice has track %q", got)
 	}
 }
