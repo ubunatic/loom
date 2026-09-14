@@ -260,9 +260,33 @@ func clampDimensions(width, height, cols, rows int) (w, h int, widthClamped, hei
 	return w, h, widthClamped, heightClamped
 }
 
-func buildOptions(width, height int, ansi, showValues bool) graph.TreemapOptions {
+// treemapTheme maps the user-facing --theme flag (1 or 2) to
+// graph.TreemapTheme; validated by parseTheme before reaching here.
+func treemapTheme(theme int) graph.TreemapTheme {
+	if theme == 2 {
+		return graph.TreemapThemeBlocks
+	}
+	return graph.TreemapThemeClassic
+}
+
+// parseTheme validates the --theme flag, matching graph's two themes: 1
+// (TreemapThemeClassic, the default box-drawing style) and 2
+// (TreemapThemeBlocks, half-block-blended full-bleed boxes -- see issue
+// 040). Theme 2 requires --ansi, since it has no color to blend without one.
+func parseTheme(theme int, ansi bool) error {
+	if theme != 1 && theme != 2 {
+		return fmt.Errorf("treemap: --theme must be 1 or 2, got %d", theme)
+	}
+	if theme == 2 && !ansi {
+		return fmt.Errorf("treemap: --theme 2 requires --ansi (it has no color to blend without it)")
+	}
+	return nil
+}
+
+func buildOptions(width, height, theme int, ansi, showValues bool) graph.TreemapOptions {
 	opts := graph.TreemapOptions{
 		Width: width, Height: height,
+		Theme:      treemapTheme(theme),
 		ShowValues: showValues, ValuePrecision: 0, ValueSuffix: "%",
 		ANSI: ansi,
 	}
@@ -276,33 +300,41 @@ func buildOptions(width, height int, ansi, showValues bool) graph.TreemapOptions
 // renderOnce reads a fresh process tree and renders it. Width/height are
 // re-resolved against the current terminal size on every call, so watch
 // mode picks up terminal resizes between redraws.
-func renderOnce(ctx context.Context, width, height, maxNodes int, ansi, showValues bool) ([]string, error) {
+func renderOnce(ctx context.Context, width, height, maxNodes, theme int, ansi, showValues bool) ([]string, error) {
 	root, err := readProcTree(ctx)
 	if err != nil {
 		return nil, err
 	}
 	w, h := resolveDimensions(width, height)
 	segments := graph.AggregateTreemap(root, maxNodes)
-	return graph.RenderTreemap(segments, buildOptions(w, h, ansi, showValues)), nil
+	return graph.RenderTreemap(segments, buildOptions(w, h, theme, ansi, showValues)), nil
 }
 
-func run(width, height, maxNodes int, ansi, showValues bool) error {
-	rows, err := renderOnce(context.Background(), width, height, maxNodes, ansi, showValues)
+// run prints the current process tree once and exits. It uses loom.WriteRows
+// (plain, sequential, cursor-position-agnostic output), not loom.RawScreen:
+// this is a one-shot "print and exit" command and must never touch cursor
+// position or clear the screen -- that would clobber whatever the shell
+// already has on screen above it. See loom.RawScreen's doc comment for why
+// that distinction matters (it was a real regression here, caught by PTY
+// testing).
+func run(width, height, maxNodes, theme int, ansi, showValues bool) error {
+	rows, err := renderOnce(context.Background(), width, height, maxNodes, theme, ansi, showValues)
 	if err != nil {
 		return err
 	}
-	for _, row := range rows {
-		fmt.Println(row)
-	}
-	return nil
+	return loom.WriteRows(os.Stdout, rows)
 }
 
-// runWatch redraws in place (full-screen clear, cursor home) on interval
-// until ctx is cancelled (SIGINT/SIGTERM), like a colored `watch ps`. It
-// prints raw ANSI directly rather than going through a loom.Pane/View,
-// because loom.View strips inline ANSI from its lines in favor of a single
-// uniform Style -- which would silently drop --ansi coloring.
-func runWatch(ctx context.Context, width, height, maxNodes int, ansi, showValues bool, interval time.Duration) error {
+// runWatch redraws in place on interval until ctx is cancelled (SIGINT/
+// SIGTERM), like a colored `watch ps`. It draws via loom.RawScreen rather
+// than a loom.Pane/View, because loom.View strips inline ANSI from its
+// lines in favor of a single uniform Style -- which would silently drop
+// --ansi coloring. RawScreen is loom's "final render loop" for exactly this
+// case: it clips every row to the terminal's live width and disables
+// auto-wrap so an over-wide or stale-sized row can never wrap and cascade
+// into a whole-screen scramble, and it positions each row absolutely so a
+// bad row can only ever corrupt its own line. See rawscreen.go.
+func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, showValues bool, interval time.Duration) error {
 	if interval <= 0 {
 		return fmt.Errorf("treemap: --interval must be positive")
 	}
@@ -311,20 +343,15 @@ func runWatch(ctx context.Context, width, height, maxNodes int, ansi, showValues
 	cleanupQuitKey := watchForQuitKey(cancel)
 	defer cleanupQuitKey()
 
-	out := os.Stdout
-	fmt.Fprint(out, "\x1b[?25l") // hide cursor while redrawing
-	defer fmt.Fprint(out, "\x1b[?25h\n")
+	screen := loom.OpenRawScreen(os.Stdout)
+	defer screen.Close()
 
 	draw := func() error {
-		rows, err := renderOnce(ctx, width, height, maxNodes, ansi, showValues)
+		rows, err := renderOnce(ctx, width, height, maxNodes, theme, ansi, showValues)
 		if err != nil {
 			return err
 		}
-		fmt.Fprint(out, "\x1b[H\x1b[2J") // cursor home, clear screen
-		for _, row := range rows {
-			fmt.Fprintln(out, row)
-		}
-		return nil
+		return screen.Draw(rows)
 	}
 	if err := draw(); err != nil {
 		return err
@@ -345,7 +372,7 @@ func runWatch(ctx context.Context, width, height, maxNodes int, ansi, showValues
 }
 
 func main() {
-	var width, height, maxNodes int
+	var width, height, maxNodes, theme int
 	var ansi, showValues, watch bool
 	var interval time.Duration
 	cmd := &cobra.Command{
@@ -355,12 +382,15 @@ func main() {
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
+			if err := parseTheme(theme, ansi); err != nil {
+				return err
+			}
 			if !watch {
-				return run(width, height, maxNodes, ansi, showValues)
+				return run(width, height, maxNodes, theme, ansi, showValues)
 			}
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
-			return runWatch(ctx, width, height, maxNodes, ansi, showValues, interval)
+			return runWatch(ctx, width, height, maxNodes, theme, ansi, showValues, interval)
 		},
 	}
 	cmd.Flags().IntVar(&width, "width", 0, "grid width in columns (default: terminal width)")
@@ -370,6 +400,7 @@ func main() {
 	cmd.Flags().BoolVar(&showValues, "values", true, "append each segment's %CPU to its label")
 	cmd.Flags().BoolVar(&watch, "watch", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
 	cmd.Flags().DurationVar(&interval, "interval", 2*time.Second, "redraw interval in --watch mode")
+	cmd.Flags().IntVar(&theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (half-block-blended full-bleed boxes, requires --ansi)")
 	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

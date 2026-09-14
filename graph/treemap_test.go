@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"unicode/utf8"
+
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 func TestLayoutTreemapTilesExactlyNoOverlap(t *testing.T) {
@@ -453,4 +455,194 @@ func TestRenderTreemapRealProcSnapshot(t *testing.T) {
 		}
 	}
 	t.Logf("treemap:\n%s", strings.Join(rows, "\n"))
+}
+
+func TestTreemapThemeClassicIsZeroValue(t *testing.T) {
+	var theme TreemapTheme
+	if theme != TreemapThemeClassic {
+		t.Errorf("zero value of TreemapTheme = %v, want TreemapThemeClassic", theme)
+	}
+}
+
+func blocksOptions(width, height int) TreemapOptions {
+	return TreemapOptions{
+		Width: width, Height: height, Theme: TreemapThemeBlocks, ANSI: true,
+		BackgroundANSI: []string{"41", "42", "43", "44"},
+	}
+}
+
+func TestRenderTreemapBlocksDimensions(t *testing.T) {
+	segments := []TreemapSegment{{Name: "A", Value: 3}, {Name: "B", Value: 1}}
+	rows := RenderTreemap(segments, blocksOptions(20, 6))
+	if len(rows) != 6 {
+		t.Fatalf("len(rows) = %d, want 6 (no legend needed)", len(rows))
+	}
+	for i, row := range rows {
+		if w := measure.StringWidth(row); w != 20 {
+			t.Errorf("row %d width = %d, want 20", i, w)
+		}
+	}
+}
+
+func TestRenderTreemapBlocksNeverDrawsClassicBorderGlyphs(t *testing.T) {
+	// TreemapThemeBlocks is always full-bleed -- no reserved border cell,
+	// so none of the box-drawing glyphs TreemapThemeClassic uses should
+	// ever appear.
+	segments := []TreemapSegment{{Name: "A", Value: 3}, {Name: "B", Value: 1}, {Name: "C", Value: 1}}
+	rows := RenderTreemap(segments, blocksOptions(20, 8))
+	joined := strings.Join(rows, "\n")
+	if strings.ContainsAny(joined, "┌┐└┘│─") {
+		t.Errorf("TreemapThemeBlocks must never draw a classic border glyph, got:\n%s", joined)
+	}
+}
+
+func TestRenderTreemapBlocksBoundaryCellsUseHalfBlockGlyphs(t *testing.T) {
+	// Two adjacent, differently-sized segments guarantee at least one box
+	// whose own right/bottom edge is exercised.
+	segments := []TreemapSegment{{Name: "A", Value: 3}, {Name: "B", Value: 1}}
+	rows := RenderTreemap(segments, blocksOptions(20, 6))
+	joined := strings.Join(rows, "\n")
+	if !strings.ContainsAny(joined, "▌▀▘") {
+		t.Errorf("expected at least one edge/corner glyph (▌▀▘), got:\n%s", joined)
+	}
+}
+
+func TestRenderTreemapBlocksEdgeAndCornerGlyphsAreLocalToOwnBox(t *testing.T) {
+	// Two equal segments in a 10x2 grid: landscape bias (W=10 >= H=2*3)
+	// picks a width split, giving box A rect{X:0, W:5, H:2} -- its own
+	// rightmost column is col 4, its own bottommost row is row 1.
+	segments := []TreemapSegment{{Name: "A", Value: 1}, {Name: "B", Value: 1}}
+	rows := RenderTreemap(segments, TreemapOptions{
+		Width: 10, Height: 2, Theme: TreemapThemeBlocks, ANSI: true, NoLabels: true,
+		BackgroundANSI: []string{"41", "42"},
+	})
+	if len(rows) != 2 {
+		t.Fatalf("len(rows) = %d, want 2", len(rows))
+	}
+	// row 0, col 4: right-edge-only cell -> '▌', foreground-only "31" (41
+	// converted to foreground), regardless of B (the box past this edge).
+	if !strings.Contains(rows[0], "\x1b[31m▌\x1b[0m") {
+		t.Errorf("expected a foreground-only-styled '▌' on box A's right edge, row0=%q", rows[0])
+	}
+	// row 1 (bottom row): interior bottom-only cells -> '▀', the corner
+	// cell (col 4, also the right edge) -> '▘'. Both use the same
+	// foreground-only "31" code, so they render as one unbroken style run
+	// (no code re-emitted mid-run) ending "...▀▘".
+	if !strings.Contains(rows[1], "\x1b[31m▀▀▀▀▘\x1b[0m") {
+		t.Errorf("expected box A's bottom row to read '▀▀▀▀▘' under one foreground-only \"31\" run, row1=%q", rows[1])
+	}
+}
+
+func TestRenderTreemapBlocksGlyphCellsLeaveBackgroundUnset(t *testing.T) {
+	// The whole point: a glyph cell's unfilled half/quadrant has no
+	// background SGR at all, so the ambient terminal background shows
+	// through it -- never a color this code makes up or borrows from a
+	// neighbor.
+	segments := []TreemapSegment{{Name: "A", Value: 1}}
+	rows := RenderTreemap(segments, TreemapOptions{
+		Width: 6, Height: 3, Theme: TreemapThemeBlocks, ANSI: true, NoLabels: true,
+		BackgroundANSI: []string{"41"},
+	})
+	joined := strings.Join(rows, "\n")
+	if strings.Contains(joined, "\x1b[41;31m") || strings.Contains(joined, "\x1b[31;41m") {
+		t.Errorf("glyph cells must never combine this box's color with a background code, got:\n%q", joined)
+	}
+	if !strings.Contains(joined, "\x1b[41m") {
+		t.Errorf("interior cells should still use the plain background fill \"41\", got:\n%q", joined)
+	}
+}
+
+func TestRenderTreemapBlocksWithoutBackgroundPaletteFallsBackToSolidFill(t *testing.T) {
+	// ANSI is on, but no BackgroundANSI palette: there's no color to blend,
+	// so this must render identically to the shared classic NoBorder+ANSI
+	// fill path (blank cells styled by treemapSegmentCode), not attempt to
+	// blend with an empty palette (which would panic on modulo-by-zero).
+	segments := []TreemapSegment{{Name: "A", Value: 3}, {Name: "B", Value: 1}}
+	blocks := RenderTreemap(segments, TreemapOptions{
+		Width: 20, Height: 6, Theme: TreemapThemeBlocks, ANSI: true, ForegroundANSI: []string{"97"},
+	})
+	classic := RenderTreemap(segments, TreemapOptions{
+		Width: 20, Height: 6, NoBorder: true, ANSI: true, ForegroundANSI: []string{"97"},
+	})
+	if strings.Join(blocks, "\n") != strings.Join(classic, "\n") {
+		t.Errorf("TreemapThemeBlocks without a background palette should match classic NoBorder+ANSI fill exactly:\nblocks:  %q\nclassic: %q", blocks, classic)
+	}
+}
+
+func TestRenderTreemapBlocksWithoutANSIFallsBackToSolidGlyphFill(t *testing.T) {
+	// Without ANSI at all, there's no color to blend either: must match the
+	// shared classic NoBorder glyph-fill path exactly.
+	segments := []TreemapSegment{{Name: "A", Value: 3}, {Name: "B", Value: 1}}
+	glyphs := []rune("AB")
+	blocks := RenderTreemap(segments, TreemapOptions{
+		Width: 20, Height: 6, Theme: TreemapThemeBlocks, Glyphs: glyphs,
+	})
+	classic := RenderTreemap(segments, TreemapOptions{
+		Width: 20, Height: 6, NoBorder: true, Glyphs: glyphs,
+	})
+	if strings.Join(blocks, "\n") != strings.Join(classic, "\n") {
+		t.Errorf("TreemapThemeBlocks without ANSI should match classic NoBorder glyph fill exactly:\nblocks:  %q\nclassic: %q", blocks, classic)
+	}
+}
+
+func TestRenderTreemapBlocksLabelsUseFullBoxAreaNoInset(t *testing.T) {
+	// No border cell is reserved under TreemapThemeBlocks, so a label can
+	// start right at a box's edge column -- verify a single, full-width
+	// box's label starts at column 0, not column 1 (which a classic
+	// bordered box would require). Plain (non-ANSI) so the row is content
+	// only, no escape codes to skip over.
+	segments := []TreemapSegment{{Name: "hi", Value: 1}}
+	rows := RenderTreemap(segments, TreemapOptions{Width: 10, Height: 3, Theme: TreemapThemeBlocks})
+	middle := []rune(rows[1])
+	if middle[0] != 'h' {
+		t.Errorf("expected label to start at column 0 (full-bleed, no border inset), row = %q", rows[1])
+	}
+}
+
+func TestRenderTreemapBlocksMarkerLegendStillWorks(t *testing.T) {
+	// Six same-value segments subdivide the grid small enough that none of
+	// their full names fit, forcing the marker/legend fallback.
+	var segments []TreemapSegment
+	for _, name := range []string{
+		"alpha-process", "bravo-process", "charlie-process",
+		"delta-process", "echo-process", "foxtrot-process",
+	} {
+		segments = append(segments, TreemapSegment{Name: name, Value: 1})
+	}
+	rows := RenderTreemap(segments, blocksOptions(60, 6))
+	joined := strings.Join(rows, "\n")
+	if !strings.Contains(joined, "¹") {
+		t.Errorf("expected marker fallback to still work under TreemapThemeBlocks, got:\n%s", joined)
+	}
+	legend := rows[len(rows)-1]
+	if !strings.Contains(legend, "¹alpha-process") {
+		t.Errorf("expected legend entry for the numbered box, got %q", legend)
+	}
+}
+
+func TestRenderTreemapBlocksNeverPanics(t *testing.T) {
+	segmentSets := [][]TreemapSegment{
+		nil,
+		{},
+		{{Name: "", Value: 0}},
+		{{Name: "x", Value: math.NaN()}},
+		{{Name: "x", Value: math.Inf(1)}},
+		{{Name: "x", Value: -5}},
+	}
+	for i := 0; i < 10; i++ {
+		segmentSets = append(segmentSets, []TreemapSegment{{Name: "s", Value: float64(i + 1)}})
+	}
+	var many []TreemapSegment
+	for i := 0; i < 30; i++ {
+		many = append(many, TreemapSegment{Name: "p", Value: float64(i + 1)})
+	}
+	segmentSets = append(segmentSets, many)
+
+	for _, segments := range segmentSets {
+		for _, dim := range []int{-1, 0, 1, 2, 3, 40} {
+			_ = RenderTreemap(segments, TreemapOptions{Width: dim, Height: dim, Theme: TreemapThemeBlocks})
+			_ = RenderTreemap(segments, blocksOptions(dim, dim))
+			_ = RenderTreemap(segments, TreemapOptions{Width: dim, Height: dim, Theme: TreemapThemeBlocks, ANSI: true})
+		}
+	}
 }

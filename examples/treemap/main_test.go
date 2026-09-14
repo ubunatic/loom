@@ -62,3 +62,32 @@ func TestClampDimensionsDefaultsLeaveRoomForPrompt(t *testing.T) {
 		t.Errorf("auto (0,0) dimensions should never report as clamped, got widthClamped=%v heightClamped=%v", widthClamped, heightClamped)
 	}
 }
+
+// Row-clipping and terminal-safety behavior (auto-wrap suppression, per-row
+// clipping, absolute positioning) now lives in loom.RawScreen/loom.ClipRow
+// (see ../../rawscreen.go and ../../rawscreen_test.go) rather than being
+// duplicated locally in this example -- run() and runWatch() just call
+// loom.OpenRawScreen(os.Stdout).Draw(rows).
+
+func TestParseThemeAcceptsOneAndTwo(t *testing.T) {
+	if err := parseTheme(1, false); err != nil {
+		t.Errorf("parseTheme(1, false) = %v, want nil", err)
+	}
+	if err := parseTheme(2, true); err != nil {
+		t.Errorf("parseTheme(2, true) = %v, want nil", err)
+	}
+}
+
+func TestParseThemeRejectsUnknownValues(t *testing.T) {
+	for _, theme := range []int{0, 3, -1} {
+		if err := parseTheme(theme, true); err == nil {
+			t.Errorf("parseTheme(%d, true) = nil, want an error", theme)
+		}
+	}
+}
+
+func TestParseThemeTwoRequiresANSI(t *testing.T) {
+	if err := parseTheme(2, false); err == nil {
+		t.Error("parseTheme(2, false) = nil, want an error (theme 2 has no color to blend without --ansi)")
+	}
+}

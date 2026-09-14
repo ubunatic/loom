@@ -18,12 +18,45 @@ import (
 // than glyphs.
 var defaultTreemapGlyphs = []rune("█▓▒░")
 
+// TreemapTheme selects RenderTreemap's visual style. See issue 040.
+type TreemapTheme int
+
+const (
+	// TreemapThemeClassic is the original box-drawing style: a bordered box
+	// (┌─┐│└─┘) when it fits (opts.NoBorder unset, at least 3x2 cells), else
+	// a solid glyph/ANSI-background fill. The zero value, so every existing
+	// TreemapOptions{} literal (and every test written before theming
+	// existed) renders exactly as before.
+	TreemapThemeClassic TreemapTheme = iota
+	// TreemapThemeBlocks renders every box full-bleed -- no border cell is
+	// reserved, so labels get the box's entire area -- and softens its own
+	// right and bottom edges with a half-block/quadrant glyph (▌▀▘) instead
+	// of the hard one-cell-wide border line TreemapThemeClassic draws.
+	// Unlike a border, these glyphs don't fill their cell solid: only the
+	// half (or, at the box's own bottom-right corner, quadrant) that faces
+	// this box's own interior carries its color -- the other half/quadrant
+	// gets no background SGR at all, so the ambient terminal background
+	// shows straight through it. See drawTreemapBlockBox's doc comment for
+	// the exact per-cell rule; it is purely local to each box's own
+	// rectangle (its rightmost column and bottommost row), not dependent
+	// on what segment (if any) sits past that edge -- so two adjoining
+	// boxes never both try to render their shared seam.
+	//
+	// Requires opts.ANSI and opts.BackgroundANSI (there is no color to
+	// paint the glyph with otherwise); without either, TreemapThemeBlocks
+	// falls back to the identical solid-glyph full-bleed fill
+	// TreemapThemeClassic uses when NoBorder is set.
+	TreemapThemeBlocks
+)
+
 // TreemapOptions configures RenderTreemap.
 type TreemapOptions struct {
 	// Width and Height are the total character grid in columns and rows.
 	// Zero/negative values clamp to 1.
 	Width  int
 	Height int
+	// Theme selects the visual style; the zero value is TreemapThemeClassic.
+	Theme TreemapTheme
 	// NoLabels suppresses per-box labeling entirely: no name/value text, no
 	// numbered fallback marker, and no legend row.
 	NoLabels bool
@@ -159,7 +192,7 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 			if r.W <= 0 || r.H <= 0 {
 				continue
 			}
-			border := !opts.NoBorder && r.W >= 3 && r.H >= 2
+			border := treemapHasBorder(r, opts)
 			_, _, innerW, innerH := treemapInner(r, border)
 			label := treemapFullLabel(seg, opts)
 			labels[i] = label
@@ -357,6 +390,23 @@ func treemapFullLabel(seg TreemapSegment, opts TreemapOptions) string {
 	return label
 }
 
+// treemapHasBorder reports whether r draws a TreemapThemeClassic box-drawing
+// border: never under TreemapThemeBlocks (which is always full-bleed --
+// its boundary softening happens per-cell, not via a reserved border cell),
+// otherwise the existing size/NoBorder rule.
+func treemapHasBorder(r treemapRect, opts TreemapOptions) bool {
+	return opts.Theme != TreemapThemeBlocks && !opts.NoBorder && r.W >= 3 && r.H >= 2
+}
+
+// treemapUsesBlocks reports whether r should render via drawTreemapBlockBox:
+// TreemapThemeBlocks needs opts.ANSI and a background palette to have any
+// color to blend -- without either, it falls back to the same solid-glyph
+// full-bleed fill TreemapThemeClassic uses when NoBorder is set (the
+// non-border branch of drawTreemapBox, shared code).
+func treemapUsesBlocks(opts TreemapOptions) bool {
+	return opts.Theme == TreemapThemeBlocks && opts.ANSI && len(opts.BackgroundANSI) > 0
+}
+
 // treemapInner returns a box's label-safe interior: the full rect when
 // unbordered, or the rect inset by one cell on each side when bordered.
 func treemapInner(r treemapRect, border bool) (x, y, w, h int) {
@@ -379,21 +429,25 @@ func superscriptNumber(n int) string {
 	return string(runes)
 }
 
-// drawTreemapBox paints one segment's box into grid/style: a bordered box
-// (when it fits and !opts.NoBorder) or a solid fill, plus a label or
-// numbered marker when it fits and !opts.NoLabels. marker is "" when the
-// segment's full label fits directly (computed by RenderTreemap's
-// pre-pass); otherwise it is the superscript index to place instead.
+// drawTreemapBox paints one segment's box into grid/style: TreemapThemeBlocks
+// boundary-blended full-bleed fill, a TreemapThemeClassic bordered box (when
+// it fits and !opts.NoBorder), or a solid fill, plus a label or numbered
+// marker when it fits and !opts.NoLabels. marker is "" when the segment's
+// full label fits directly (computed by RenderTreemap's pre-pass); otherwise
+// it is the superscript index to place instead.
 func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker string) {
 	code := treemapSegmentCode(index, opts)
 
-	border := !opts.NoBorder && r.W >= 3 && r.H >= 2
+	border := treemapHasBorder(r, opts)
 	setCell := func(x, y int, ch rune) {
 		grid[y][x] = ch
 		style[y][x] = code
 	}
 
-	if !border {
+	switch {
+	case treemapUsesBlocks(opts):
+		drawTreemapBlockBox(grid, style, r, index, opts)
+	case !border:
 		for y := r.Y; y < r.Y+r.H; y++ {
 			for x := r.X; x < r.X+r.W; x++ {
 				if opts.ANSI {
@@ -403,7 +457,7 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 				}
 			}
 		}
-	} else {
+	default:
 		for y := r.Y; y < r.Y+r.H; y++ {
 			for x := r.X; x < r.X+r.W; x++ {
 				top, bottom := y == r.Y, y == r.Y+r.H-1
@@ -454,6 +508,54 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 	for i, ch := range labelRunes {
 		grid[labelY][innerX+i] = ch
 		style[labelY][innerX+i] = code
+	}
+}
+
+// drawTreemapBlockBox paints one box under TreemapThemeBlocks: a purely
+// local rule based only on this box's own rectangle, no neighbor lookup at
+// all -- every box always renders its own rightmost column and bottommost
+// row this way, whether or not another box (or just the outer grid edge)
+// happens to sit past it:
+//
+//   - bottom-right corner cell (both the box's rightmost column AND its
+//     bottommost row): '▘' -- only the upper-left quadrant carries this
+//     box's color; the other three quadrants are left unstyled.
+//   - rightmost column (not also the bottom row): '▌' -- only the left
+//     half carries this box's color; the right half is left unstyled.
+//   - bottommost row (not also the rightmost column): '▀' -- only the top
+//     half carries this box's color; the bottom half is left unstyled.
+//   - every other cell: a plain filled cell (this box's solid color, same
+//     as the classic NoBorder fill) -- this is the overwhelming majority
+//     of the box, including its own top and left edges, so there is
+//     plenty of room to write a label without touching a glyph cell.
+//
+// "Left unstyled" is the point: no background SGR code is written for
+// that portion at all, so it is whatever the terminal already shows there
+// -- the ambient terminal background reads straight through the glyph's
+// empty half/quadrant, rather than this function guessing at and
+// reproducing some other color. This also means adjoining boxes never
+// fight over how to render their shared seam: only the box on the
+// right/bottom side of a split ever draws anything into it.
+func drawTreemapBlockBox(grid [][]rune, style [][]string, r treemapRect, index int, opts TreemapOptions) {
+	ownBG := opts.BackgroundANSI[index%len(opts.BackgroundANSI)]
+	ownFG := treemapBackgroundToForeground(ownBG)
+
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			right := x == r.X+r.W-1
+			bottom := y == r.Y+r.H-1
+			glyph, code := ' ', ownBG
+			switch {
+			case right && bottom:
+				glyph, code = '▘', ownFG
+			case right:
+				glyph, code = '▌', ownFG
+			case bottom:
+				glyph, code = '▀', ownFG
+			}
+			grid[y][x] = glyph
+			style[y][x] = code
+		}
 	}
 }
 
