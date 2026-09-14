@@ -229,8 +229,8 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			}
 			cv.Write(r.X, y, line, style)
 		}
-		if scrollable && row == indicatorRow {
-			cv.Set(r.X+r.W-1, y, Cell{Text: "▐", Style: Style{Dim: true}})
+		if scrollable {
+			cv.Set(r.X+r.W-1, y, scrollbarCell(row == indicatorRow))
 		}
 	}
 

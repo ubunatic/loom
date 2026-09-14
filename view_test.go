@@ -50,3 +50,23 @@ func TestViewScrollbarTrackClick(t *testing.T) {
 		t.Fatal("right click moved scrollbar")
 	}
 }
+
+func TestViewDrawsScrollbarTrack(t *testing.T) {
+	v := NewView(make([]string, 20))
+	canvas := NewCanvas(10, 4)
+	v.Draw(canvas, Rect{W: 10, H: 4})
+	for y := 0; y < 4; y++ {
+		want := "░"
+		if y == 0 {
+			want = "▐"
+		}
+		if got := canvas.Get(9, y).Text; got != want {
+			t.Fatalf("track row %d = %q, want %q", y, got, want)
+		}
+	}
+	v.Scroll = 16
+	v.Draw(canvas, Rect{W: 10, H: 4})
+	if canvas.Get(9, 0).Text != "░" || canvas.Get(9, 3).Text != "▐" {
+		t.Fatal("thumb did not move over the visible track")
+	}
+}

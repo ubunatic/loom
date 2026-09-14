@@ -60,10 +60,18 @@ func (v *View) Draw(c *Canvas, r Rect) {
 			}
 			c.Write(r.X, y, plain, v.Style)
 		}
-		if scrollable && row == indicatorRow {
-			c.Set(r.X+r.W-1, y, Cell{Text: "▐", Style: Style{Dim: true}})
+		if scrollable {
+			c.Set(r.X+r.W-1, y, scrollbarCell(row == indicatorRow))
 		}
 	}
+}
+
+// scrollbarCell uses a light track and a solid thumb in the clickable column.
+func scrollbarCell(thumb bool) Cell {
+	if thumb {
+		return Cell{Text: "▐", Style: Style{Bold: true}}
+	}
+	return Cell{Text: "░", Style: Style{Dim: true}}
 }
 
 // HandleKey supports line, half-page, page, and boundary navigation.

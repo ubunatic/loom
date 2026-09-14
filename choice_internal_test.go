@@ -124,6 +124,28 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	}
 }
 
+func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
+	c := makeChoice(20)
+	canvas := NewCanvas(10, 5)
+	c.Draw(canvas, Rect{W: 10, H: 5})
+	if canvas.Get(9, 0).Text != "▐" {
+		t.Fatal("top thumb missing")
+	}
+	for y := 1; y < 4; y++ {
+		if got := canvas.Get(9, y).Text; got != "░" {
+			t.Fatalf("track row %d = %q, want ░", y, got)
+		}
+	}
+	if got := canvas.Get(9, 4).Text; got != " " {
+		t.Fatalf("prompt row got scrollbar track %q", got)
+	}
+	c = makeChoice(2)
+	c.Draw(canvas, Rect{W: 10, H: 5})
+	if got := canvas.Get(9, 0).Text; got == "░" || got == "▐" {
+		t.Fatalf("non-scrollable choice has track %q", got)
+	}
+}
+
 // TestBackspaceEmptyQueryLeavesView verifies that pressing backspace with no
 // filter text dismisses the view (aborts), mirroring Esc/`:back`, while
 // backspace with a non-empty query only trims the filter.
