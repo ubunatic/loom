@@ -69,6 +69,39 @@ func TestHandleMouseClickSelects(t *testing.T) {
 	}
 }
 
+func TestChoiceMouseWheelAndPromptHitTest(t *testing.T) {
+	c := makeChoice(8)
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	c.HandleMouse(MouseEvent{Action: MouseScrollDown, Y: 1})
+	if c.sel != 1 {
+		t.Fatalf("wheel down selected %d, want 1", c.sel)
+	}
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 4}) // prompt row
+	if c.sel != 1 || c.done {
+		t.Fatal("clicking the prompt selected a file")
+	}
+	c.HandleMouse(MouseEvent{Action: MouseScrollUp, Y: 1})
+	if c.sel != 0 {
+		t.Fatalf("wheel up selected %d, want 0", c.sel)
+	}
+}
+
+func TestChoiceSelectOnlyOnClick(t *testing.T) {
+	c := makeChoice(3)
+	c.SelectOnlyOnClick = true
+	selected := false
+	c.OnSelect = func(Item) { selected = true }
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 2})
+	if c.sel != 1 || selected {
+		t.Fatalf("click selected index %d, invoked callback %v", c.sel, selected)
+	}
+	c.HandleKey(KeyEvent{Key: "enter"})
+	if !selected {
+		t.Fatal("Enter did not invoke OnSelect after click")
+	}
+}
+
 // TestBackspaceEmptyQueryLeavesView verifies that pressing backspace with no
 // filter text dismisses the view (aborts), mirroring Esc/`:back`, while
 // backspace with a non-empty query only trims the filter.

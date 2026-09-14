@@ -146,6 +146,7 @@ type Frame struct {
 	FocusPrevKey     string        `yaml:"focus_prev_key"` // default: shift-tab
 	focused          int
 	focusSet         bool
+	lastRect         Rect
 }
 
 // FrameAction declares a bounded toggle or quit binding and its displayed hints.
@@ -183,6 +184,7 @@ func (f *Frame) StatusText() string {
 // Draw reserves the first and last rows for chrome. At one row only title fits.
 func (f *Frame) Draw(c *Canvas, r Rect) {
 	f.syncFocus()
+	f.lastRect = r
 	paintClipped(c, r, func(local *Canvas) {
 		w, h := local.Cols(), local.Rows()
 		writeBounded(local, 0, 0, w, f.Title)
@@ -449,8 +451,29 @@ func (f *Frame) HandleKey(k KeyEvent) bool {
 	return false
 }
 
-// HandleMouse leaves show-once frames inert.
-func (f *Frame) HandleMouse(MouseEvent) bool { return false }
+// HandleMouse focuses clicked boxes and forwards events inside a child's bounds.
+func (f *Frame) HandleMouse(e MouseEvent) bool {
+	x, y := e.X-1-f.lastRect.X, e.Y-1-f.lastRect.Y
+	for i, rect := range f.Layout(f.lastRect.W, f.lastRect.H) {
+		if rect.W < 2 || rect.H < 2 || x < rect.X || x >= rect.X+rect.W || y < rect.Y || y >= rect.Y+rect.H {
+			continue
+		}
+		if e.Action == MousePress {
+			f.focused, f.focusSet = i, true
+			f.applyFocus()
+		}
+		box := &f.Boxes[i]
+		padding := max(0, box.Padding)
+		inner := Rect{X: rect.X + 1 + padding, Y: rect.Y + 1 + padding,
+			W: rect.W - 2 - 2*padding, H: rect.H - 2 - 2*padding}
+		if box.Child == nil || inner.W <= 0 || inner.H <= 0 || x < inner.X || x >= inner.X+inner.W || y < inner.Y || y >= inner.Y+inner.H {
+			return false
+		}
+		e.X, e.Y = x-inner.X+1, y-inner.Y+1
+		return box.Child.HandleMouse(e)
+	}
+	return false
+}
 
 // Box returns a pointer to the box with matching ID, or nil if not found.
 func (f *Frame) Box(id string) *Box {

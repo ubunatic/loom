@@ -86,6 +86,7 @@ func (b *browser) open(dir string) error {
 		paths[name] = filepath.Join(dir, entry.Name())
 	}
 	list := loom.NewChoice(items)
+	list.SelectOnlyOnClick = true
 	list.Prompt = "filter> "
 	list.Placeholder = "type to filter"
 	list.OnSelect = func(item loom.Item) {
@@ -217,5 +218,7 @@ func (b *browser) HandleKey(k loom.KeyEvent) bool {
 }
 
 func (b *browser) HandleMouse(k loom.MouseEvent) bool {
-	return b.frame.HandleMouse(k)
+	quit := b.frame.HandleMouse(k)
+	b.updateDetails()
+	return quit
 }

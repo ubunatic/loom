@@ -126,3 +126,27 @@ func TestLaunchFileReportsMissingXDGOpen(t *testing.T) {
 		t.Fatalf("launchFile error = %v, want executable not found", err)
 	}
 }
+
+func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "sample.txt")
+	if err := os.WriteFile(path, []byte("sample"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var opened string
+	b.openFile = func(path string) error { opened = path; return nil }
+	b.Draw(loom.NewCanvas(80, 20), loom.Rect{W: 80, H: 20})
+	rect := b.frame.Layout(80, 20)[0]
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + 2, Y: rect.Y + 3})
+	if opened != "" || b.list.FilteredSel() != 1 {
+		t.Fatalf("click opened %q or selected index %d, want selection only", opened, b.list.FilteredSel())
+	}
+	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	if opened != path {
+		t.Fatalf("Enter opened %q, want %q", opened, path)
+	}
+}

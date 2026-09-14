@@ -29,7 +29,9 @@ type Choice struct {
 	Prompt    string          // default "> "
 	focused   bool            // dims the border when false so focus is visually clear
 	PromptTop bool            // place prompt on first row instead of last row
-	OnSelect  func(item Item) // called on Enter; if nil, quit is returned instead
+	OnSelect  func(item Item) // called on Enter or a confirming click; if nil, Enter quits
+	// SelectOnlyOnClick keeps a click from confirming; Enter still invokes OnSelect.
+	SelectOnlyOnClick bool
 
 	// Input customization
 	CursorAlign string // "start" or "end", default "start"
@@ -47,6 +49,8 @@ type Choice struct {
 	query      string
 	sel        int
 	viewOffset int // first visible item index (virtual scrolling)
+	itemRows   int // item rows from the last Draw; excludes the prompt
+	drawn      bool
 	aborted    bool
 	done       bool
 	filtered   []Item
@@ -162,6 +166,8 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	if itemRows < 0 {
 		itemRows = 0
 	}
+	c.itemRows = itemRows
+	c.drawn = true
 
 	c.clampView(itemRows)
 
@@ -345,11 +351,29 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 }
 
 // HandleMouse updates selection on hover and confirms on left-click.
-// e.Y is the 1-based pane-relative row, so e.Y-1 is the visible item row;
+// e.Y is the 1-based widget-relative row, so e.Y-1 is the visible item row;
 // viewOffset maps that back to a filtered index (mirrors Draw's fi mapping)
 // so hit-tests stay correct once the list has been scrolled.
 func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
+	switch e.Action {
+	case MouseScrollUp:
+		if c.sel > 0 {
+			c.sel--
+		}
+		return false
+	case MouseScrollDown:
+		if c.sel < len(c.filtered)-1 {
+			c.sel++
+		}
+		return false
+	}
+	if c.PromptTop {
+		e.Y--
+	}
 	if e.Y <= 0 {
+		return false
+	}
+	if c.drawn && e.Y > c.itemRows {
 		return false
 	}
 	fi := c.viewOffset + e.Y - 1
@@ -362,6 +386,9 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			c.sel = fi
 			if c.MultiSelect {
 				c.toggleChecked() // click toggles the checkbox, never confirms
+				return false
+			}
+			if c.SelectOnlyOnClick {
 				return false
 			}
 			if c.OnSelect != nil {

@@ -9,7 +9,7 @@ import (
 	"codeberg.org/ubunatic/loom"
 )
 
-func main() {
+func run() error {
 	flag.Parse()
 	dir := "."
 	if flag.NArg() > 0 {
@@ -17,17 +17,20 @@ func main() {
 	}
 	app, err := newBrowser(dir)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 	pane, err := loom.New(20)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		return err
 	}
 	defer pane.Close()
 	configurePane(pane)
-	if err := pane.Run(app); err != nil {
+	pane.EnableMouseClicks()
+	return pane.Run(app)
+}
+
+func main() {
+	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}

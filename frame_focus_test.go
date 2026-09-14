@@ -5,11 +5,15 @@ import "testing"
 type focusProbe struct {
 	focused bool
 	keys    []KeyEvent
+	mice    []MouseEvent
 	quit    bool
 }
 
-func (*focusProbe) Draw(*Canvas, Rect)          {}
-func (*focusProbe) HandleMouse(MouseEvent) bool { return false }
+func (*focusProbe) Draw(*Canvas, Rect) {}
+func (p *focusProbe) HandleMouse(e MouseEvent) bool {
+	p.mice = append(p.mice, e)
+	return p.quit
+}
 func (p *focusProbe) HandleKey(k KeyEvent) bool { p.keys = append(p.keys, k); return p.quit }
 func (p *focusProbe) Focused() bool             { return p.focused }
 func (p *focusProbe) SetFocus(focused bool)     { p.focused = focused }
@@ -68,5 +72,32 @@ func TestFrameCustomFocusKeysAndBoxForwarding(t *testing.T) {
 	}
 	if (&Box{}).HandleKey(KeyEvent{}) {
 		t.Fatal("empty box quit")
+	}
+}
+
+func TestFrameMouseRoutesToVisibleChildAndFocusesClick(t *testing.T) {
+	left, right := &focusProbe{}, &focusProbe{}
+	f := &Frame{Gap: 1, Boxes: []Box{
+		{ID: "left", Width: 20, Height: 10, Child: left},
+		{ID: "right", Width: 20, Height: 10, Child: right},
+	}}
+	f.Draw(NewCanvas(50, 12), Rect{W: 50, H: 12})
+	rects := f.Layout(50, 12)
+	click := MouseEvent{Action: MousePress, Button: MouseLeft, X: rects[1].X + 2, Y: rects[1].Y + 2}
+	if f.HandleMouse(click) || f.FocusedBox().ID != "right" || len(left.mice) != 0 || len(right.mice) != 1 {
+		t.Fatalf("right click not isolated: focus=%s left=%d right=%d", f.FocusedBox().ID, len(left.mice), len(right.mice))
+	}
+	if right.mice[0].X != 1 || right.mice[0].Y != 1 {
+		t.Fatalf("child coordinates = %+v, want 1,1", right.mice[0])
+	}
+	wheel := MouseEvent{Action: MouseScrollDown, X: rects[0].X + 2, Y: rects[0].Y + 2}
+	f.HandleMouse(wheel)
+	if len(left.mice) != 1 || f.FocusedBox().ID != "right" {
+		t.Fatal("wheel should reach hovered child without changing focus")
+	}
+	f.Boxes[0].Hidden = true
+	f.HandleMouse(wheel)
+	if len(left.mice) != 1 {
+		t.Fatal("hidden child received mouse event")
 	}
 }

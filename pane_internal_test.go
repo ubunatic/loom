@@ -3,7 +3,38 @@
 
 package loom
 
-import "testing"
+import (
+	"io"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestPaneClickTrackingIsDisabledOnTeardown(t *testing.T) {
+	out, err := os.Create(filepath.Join(t.TempDir(), "mouse-sequences"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer out.Close()
+	p := &Pane{tty: out}
+	p.EnableMouseClicks()
+	p.disableMouse()
+	p.disableMouse()
+	if p.mouse || p.mouseMode != 0 {
+		t.Fatal("mouse tracking remained enabled")
+	}
+	if _, err := out.Seek(0, 0); err != nil {
+		t.Fatal(err)
+	}
+	got, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "\x1b[?1000h\x1b[?1006h\x1b[?1000l\x1b[?1006l"
+	if string(got) != want {
+		t.Fatalf("mouse sequences = %q, want %q", got, want)
+	}
+}
 
 // TestWinchBounds covers the pane-placement math used when the terminal window
 // is resized: height is clamped to leave the prompt line, and the top row is
@@ -83,4 +114,3 @@ func TestPaneHandleKeyFallback(t *testing.T) {
 		}
 	}
 }
-

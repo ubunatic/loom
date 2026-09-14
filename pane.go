@@ -53,6 +53,7 @@ type Pane struct {
 
 	// mouse tracking is enabled with EnableMouse.
 	mouse      bool
+	mouseMode  int
 	Resizeable bool
 
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
@@ -206,8 +207,29 @@ func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
 // Must be called before Run. Mouse events are delivered to the root Widget's
 // HandleMouse method.
 func (p *Pane) EnableMouse() {
-	p.mouse = true
-	p.tty.WriteString("\x1b[?1003h\x1b[?1006h") //nolint:errcheck
+	p.setMouseMode(1003)
+}
+
+// EnableMouseClicks tracks clicks and wheel events without any-motion reports.
+// Call it before Run; Close restores the terminal's normal mouse behavior.
+func (p *Pane) EnableMouseClicks() {
+	p.setMouseMode(1000)
+}
+
+func (p *Pane) setMouseMode(mode int) {
+	if p.mouseMode != 0 {
+		p.tty.WriteString(fmt.Sprintf("\x1b[?%dl", p.mouseMode)) //nolint:errcheck
+	}
+	p.mouse, p.mouseMode = true, mode
+	p.tty.WriteString(fmt.Sprintf("\x1b[?%dh\x1b[?1006h", mode)) //nolint:errcheck
+}
+
+func (p *Pane) disableMouse() {
+	if p.mouseMode == 0 {
+		return
+	}
+	p.tty.WriteString(fmt.Sprintf("\x1b[?%dl\x1b[?1006l", p.mouseMode)) //nolint:errcheck
+	p.mouse, p.mouseMode = false, 0
 }
 
 // Resize adjusts the pane height dynamically.
@@ -551,9 +573,7 @@ func (p *Pane) close() {
 		signal.Stop(p.interrupts)
 	}
 
-	if p.mouse {
-		p.tty.WriteString("\x1b[?1003l\x1b[?1006l") //nolint:errcheck
-	}
+	p.disableMouse()
 
 	// Clear reserved region.
 	var b strings.Builder
