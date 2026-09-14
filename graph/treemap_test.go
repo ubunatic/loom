@@ -737,6 +737,31 @@ func TestRenderTreemapNumberedEveryBoxGetsACornerNumber(t *testing.T) {
 	}
 }
 
+func TestRenderTreemapNumberedNeverShowsATruncatedFragment(t *testing.T) {
+	// Regression: TreemapThemeNumbered's own pre-pass never populated the
+	// interior-fallback `markers` slice (that's TreemapThemeClassic/Blocks'
+	// mechanism), so drawTreemapBox always fell through to the "place the
+	// label" branch regardless of fit -- truncating names that didn't fit
+	// into ugly fragments ("fir…", "v………") instead of relying on the
+	// corner marker every box already gets. Long names in a narrow grid
+	// force several boxes too small for their full label.
+	var segments []TreemapSegment
+	for _, name := range []string{
+		"alpha-process", "bravo-process", "charlie-process",
+		"delta-process", "echo-process", "foxtrot-process", "golf-process",
+	} {
+		segments = append(segments, TreemapSegment{Name: name, Value: 1})
+	}
+	rows := RenderTreemap(segments, numberedOptions(30, 8, false))
+	grid := strings.Join(rows[:8], "\n") // exclude any trailing legend row, which may legitimately end in "…"
+	if strings.Contains(grid, "…") {
+		t.Errorf("expected no truncated fragment inside the grid (corner markers alone should identify undersized boxes), got:\n%s", grid)
+	}
+	if !strings.ContainsAny(grid, "¹²³⁴⁵⁶⁷") {
+		t.Errorf("expected corner markers to still be present, got:\n%s", grid)
+	}
+}
+
 func TestRenderTreemapNumberedLegendSkipsLabeledBoxes(t *testing.T) {
 	// One big, fully-labeled box (rank 1, corner "¹") plus several small
 	// unlabeled ones. The legend must explain the small ones but not "¹",

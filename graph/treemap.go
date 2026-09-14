@@ -217,6 +217,7 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 
 	markers := make([]string, len(segments))       // interior fallback marker (Classic/Blocks only)
 	cornerMarkers := make([]string, len(segments)) // corner marker (Numbered/NumberedFilled only)
+	hideLabel := make([]bool, len(segments))       // Numbered/NumberedFilled: label doesn't fit, corner marker alone identifies it
 	var legend []treemapLegendEntry
 	if !opts.NoLabels {
 		labels := make([]string, len(segments))
@@ -258,6 +259,15 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 				cornerMarkers[i] = marker
 				if needsLegend[i] {
 					legend = append(legend, treemapLegendEntry{marker: marker, label: labels[i], code: treemapLegendCode(i, opts)})
+					// This box's full label doesn't fit. Its corner marker
+					// already identifies it (see the doc comment on
+					// TreemapThemeNumbered) -- drawTreemapBox must not also
+					// attempt to place the label text, or truncateLabel
+					// would cut it into an ugly, hard-to-read fragment
+					// ("fir…", "v………"). "Full label or a number, never a
+					// fragment" is the same rule TreemapThemeClassic/Blocks
+					// enforce via their own marker fallback.
+					hideLabel[i] = true
 				}
 			}
 		} else {
@@ -279,7 +289,7 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 		if r.W <= 0 || r.H <= 0 {
 			continue
 		}
-		drawTreemapBox(grid, style, r, segments[i], glyphs[i%len(glyphs)], i, opts, markers[i], cornerMarkers[i])
+		drawTreemapBox(grid, style, r, segments[i], glyphs[i%len(glyphs)], i, opts, markers[i], cornerMarkers[i], hideLabel[i])
 	}
 
 	rows := make([]string, height)
@@ -525,7 +535,7 @@ func superscriptNumber(n int) string {
 // index to place instead. cornerMarker is only set under
 // TreemapThemeNumbered/TreemapThemeNumberedFilled (every positive-area box
 // gets one, regardless of marker) -- see RenderTreemap's pre-pass.
-func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker, cornerMarker string) {
+func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker, cornerMarker string, hideLabel bool) {
 	code := treemapSegmentCode(index, opts)
 
 	// textCode is the style for a label/marker character at (x, y): on the
@@ -618,14 +628,22 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 		return
 	}
 
+	if hideLabel {
+		// TreemapThemeNumbered/NumberedFilled: this box's full label
+		// doesn't fit, and its corner marker (already placed) is its only
+		// identification -- never show a truncated fragment instead.
+		return
+	}
+
 	if innerW < 1 || innerH < 1 {
 		return
 	}
 	label := treemapFullLabel(seg, opts)
-	labelRunes := truncateLabel(label, innerW)
-	if len(labelRunes) == 0 {
+	if measure.StringWidth(label) > innerW {
+		// Doesn't fit: full label or nothing, never a truncated fragment.
 		return
 	}
+	labelRunes := []rune(label)
 	labelY := innerY + innerH/2
 	for i, ch := range labelRunes {
 		x := innerX + i
@@ -774,32 +792,6 @@ func drawTreemapMarker(grid [][]rune, style [][]string, r treemapRect, innerX, i
 		}
 		place(x, r.Y)
 	}
-}
-
-// truncateLabel trims label to at most maxWidth display columns, appending
-// an ellipsis when it was cut. Returns nil for maxWidth < 1.
-func truncateLabel(label string, maxWidth int) []rune {
-	if maxWidth < 1 {
-		return nil
-	}
-	runes := []rune(label)
-	if measure.StringWidth(label) <= maxWidth {
-		return runes
-	}
-	if maxWidth == 1 {
-		return []rune{'…'}
-	}
-	kept := runes[:0]
-	width := 1 // reserve for the ellipsis
-	for _, r := range runes {
-		w := measure.RuneWidth(r)
-		if width+w > maxWidth {
-			break
-		}
-		kept = append(kept, r)
-		width += w
-	}
-	return append(append([]rune(nil), kept...), '…')
 }
 
 // layoutTreemap recursively partitions values into non-overlapping,
