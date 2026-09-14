@@ -600,6 +600,24 @@ func (p *Pane) installSignalHandler() {
 	signal.Notify(p.winch, syscall.SIGWINCH)
 }
 
+// TerminalSize returns the dimensions of the controlling terminal.
+// It returns an error when /dev/tty is unavailable or its size cannot be read.
+func TerminalSize() (cols, rows int, err error) {
+	tty, err := os.Open("/dev/tty")
+	if err != nil {
+		return 0, 0, fmt.Errorf("loom: open /dev/tty: %w", err)
+	}
+	defer tty.Close()
+	cols, rows, err = term.GetSize(int(tty.Fd()))
+	if err != nil {
+		return 0, 0, fmt.Errorf("loom: terminal size: %w", err)
+	}
+	if cols < 1 || rows < 1 {
+		return 0, 0, fmt.Errorf("loom: invalid terminal size %dx%d", cols, rows)
+	}
+	return cols, rows, nil
+}
+
 // termSize returns the terminal dimensions via x/term (TIOCGWINSZ under the
 // hood on Unix), falling back to a conventional 80x24 on error -- this used
 // to hand-roll its own syscall.Syscall(SYS_IOCTL, TIOCGWINSZ, ...) call

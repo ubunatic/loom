@@ -7,7 +7,8 @@ package loom
 // Key names match common terminal conventions; Text carries printable input.
 type KeyEvent struct {
 	Key string // "up","down","left","right","home","end","delete","enter","esc",
-	//            "backspace","tab","ctrl-c","ctrl-d","ctrl-q","ctrl-w",
+	//            "backspace","tab","shift-tab","ctrl-b","ctrl-c","ctrl-d",
+	//            "ctrl-f","ctrl-q","ctrl-u","ctrl-w",
 	//            or "" for plain text
 	Text string // typed printable text (Key == "" when Text != "")
 }
@@ -52,14 +53,20 @@ func DecodeKey(b []byte) KeyEvent {
 	switch {
 	case b[0] == 3:
 		return KeyEvent{Key: "ctrl-c"}
+	case b[0] == 2:
+		return KeyEvent{Key: "ctrl-b"}
 	case b[0] == 4:
 		return KeyEvent{Key: "ctrl-d"}
+	case b[0] == 6:
+		return KeyEvent{Key: "ctrl-f"}
 	case b[0] == 9:
 		return KeyEvent{Key: "tab"}
 	case b[0] == 10 || b[0] == 13:
 		return KeyEvent{Key: "enter"}
 	case b[0] == 17:
 		return KeyEvent{Key: "ctrl-q"}
+	case b[0] == 21:
+		return KeyEvent{Key: "ctrl-u"}
 	case b[0] == 23:
 		return KeyEvent{Key: "ctrl-w"}
 	case b[0] == 127 || b[0] == 8:
@@ -71,6 +78,8 @@ func DecodeKey(b []byte) KeyEvent {
 		// \x1b[ (CSI) and \x1bO (application cursor) share the same final byte.
 		if len(b) >= 3 && (b[1] == '[' || b[1] == 'O') {
 			switch b[2] {
+			case 'Z':
+				return KeyEvent{Key: "shift-tab"}
 			case 'A':
 				return KeyEvent{Key: "up"}
 			case 'B':

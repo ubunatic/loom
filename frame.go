@@ -124,8 +124,10 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 	})
 }
 
-// HandleKey leaves static boxes inert.
-func (b *Box) HandleKey(KeyEvent) bool { return false }
+// HandleKey forwards input to the child, if present.
+func (b *Box) HandleKey(k KeyEvent) bool {
+	return b.Child != nil && b.Child.HandleKey(k)
+}
 
 // HandleMouse leaves static boxes inert.
 func (b *Box) HandleMouse(MouseEvent) bool { return false }
@@ -140,6 +142,10 @@ type Frame struct {
 	Boxes            []Box         `yaml:"boxes"`
 	Actions          []FrameAction `yaml:"actions"`
 	ControlSeparator string        `yaml:"control_separator"`
+	FocusNextKey     string        `yaml:"focus_next_key"` // default: tab
+	FocusPrevKey     string        `yaml:"focus_prev_key"` // default: shift-tab
+	focused          int
+	focusSet         bool
 }
 
 // FrameAction declares a bounded toggle or quit binding and its displayed hints.
@@ -176,6 +182,7 @@ func (f *Frame) StatusText() string {
 
 // Draw reserves the first and last rows for chrome. At one row only title fits.
 func (f *Frame) Draw(c *Canvas, r Rect) {
+	f.syncFocus()
 	paintClipped(c, r, func(local *Canvas) {
 		w, h := local.Cols(), local.Rows()
 		writeBounded(local, 0, 0, w, f.Title)
@@ -345,8 +352,61 @@ func (f *Frame) ContentHeight() int {
 	return h + 2
 }
 
-// HandleKey dispatches declared actions. Hidden children never receive input.
+// FocusedBox returns the visible box receiving keyboard input, or nil.
+func (f *Frame) FocusedBox() *Box {
+	f.syncFocus()
+	if !f.focusSet {
+		return nil
+	}
+	return &f.Boxes[f.focused]
+}
+
+func (f *Frame) syncFocus() {
+	if f.focusSet && f.focused >= 0 && f.focused < len(f.Boxes) && !f.Boxes[f.focused].Hidden {
+		f.applyFocus()
+		return
+	}
+	start := -1
+	if f.focusSet {
+		start = f.focused
+	}
+	f.focusSet = false
+	for step := 1; step <= len(f.Boxes); step++ {
+		i := (start + step) % len(f.Boxes)
+		if i >= 0 && !f.Boxes[i].Hidden {
+			f.focused, f.focusSet = i, true
+			break
+		}
+	}
+	f.applyFocus()
+}
+
+func (f *Frame) applyFocus() {
+	for i := range f.Boxes {
+		if child, ok := f.Boxes[i].Child.(Focusable); ok {
+			child.SetFocus(f.focusSet && i == f.focused && !f.Boxes[i].Hidden)
+		}
+	}
+}
+
+func (f *Frame) cycleFocus(direction int) {
+	f.syncFocus()
+	if !f.focusSet {
+		return
+	}
+	for step := 1; step <= len(f.Boxes); step++ {
+		i := (f.focused + direction*step + len(f.Boxes)*step) % len(f.Boxes)
+		if !f.Boxes[i].Hidden {
+			f.focused = i
+			f.applyFocus()
+			return
+		}
+	}
+}
+
+// HandleKey dispatches declared actions, focus keys, then the focused child.
 func (f *Frame) HandleKey(k KeyEvent) bool {
+	f.syncFocus()
 	key := k.Key
 	if key == "" {
 		key = k.Text
@@ -362,10 +422,29 @@ func (f *Frame) HandleKey(k KeyEvent) bool {
 			for i := range f.Boxes {
 				if f.Boxes[i].ID == a.Target {
 					f.Boxes[i].Hidden = !f.Boxes[i].Hidden
+					f.syncFocus()
 					return false
 				}
 			}
 		}
+	}
+	next, prev := f.FocusNextKey, f.FocusPrevKey
+	if next == "" {
+		next = "tab"
+	}
+	if prev == "" {
+		prev = "shift-tab"
+	}
+	switch key {
+	case next:
+		f.cycleFocus(1)
+		return false
+	case prev:
+		f.cycleFocus(-1)
+		return false
+	}
+	if box := f.FocusedBox(); box != nil {
+		return box.HandleKey(k)
 	}
 	return false
 }

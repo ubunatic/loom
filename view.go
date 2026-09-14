@@ -64,13 +64,19 @@ func (v *View) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey supports up/down scroll.
+// HandleKey supports line, half-page, page, and boundary navigation.
 func (v *View) HandleKey(e KeyEvent) (quit bool) {
 	maxScroll := len(v.Lines) - v.lastH
 	if maxScroll < 0 {
 		maxScroll = 0
 	}
-	switch e.Key {
+	key := e.Key
+	if key == "" {
+		key = e.Text
+	}
+	page := max(1, v.lastH)
+	halfPage := max(1, page/2)
+	switch key {
 	case "up", "k":
 		if v.Scroll > 0 {
 			v.Scroll--
@@ -79,6 +85,18 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 		if v.Scroll < maxScroll {
 			v.Scroll++
 		}
+	case "pgdown", "ctrl-f", " ":
+		v.Scroll = min(maxScroll, v.Scroll+page)
+	case "pgup", "ctrl-b", "b":
+		v.Scroll = max(0, v.Scroll-page)
+	case "ctrl-d":
+		v.Scroll = min(maxScroll, v.Scroll+halfPage)
+	case "ctrl-u":
+		v.Scroll = max(0, v.Scroll-halfPage)
+	case "home", "g":
+		v.Scroll = 0
+	case "end", "G":
+		v.Scroll = maxScroll
 	case "esc", "ctrl-c", "q":
 		return true
 	}
@@ -144,4 +162,3 @@ func (v *View) Selected() (Item, bool) {
 func (v *View) Nav() Nav {
 	return NavNone
 }
-
