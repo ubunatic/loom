@@ -1,0 +1,193 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"time"
+	"unicode"
+
+	"codeberg.org/ubunatic/loom"
+)
+
+type browser struct {
+	frame   *loom.Frame
+	list    *loom.Choice
+	details *detailView
+	dir     string
+	paths   map[string]string
+	notice  string
+}
+
+type detailView struct {
+	*loom.View
+	focused bool
+}
+
+func (v *detailView) Focused() bool         { return v.focused }
+func (v *detailView) SetFocus(focused bool) { v.focused = focused }
+
+func newBrowser(path string) (*browser, error) {
+	dir, err := filepath.Abs(path)
+	if err != nil {
+		return nil, err
+	}
+	info, err := os.Stat(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !info.IsDir() {
+		return nil, fmt.Errorf("%s is not a directory", dir)
+	}
+	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}}
+	b.frame = &loom.Frame{
+		Gap: 1, Breakpoint: 65,
+		Status: "Tab: focus  •  ↑/↓: select  •  Enter: open directory (.. for parent)  •  PgUp/PgDn: scroll details  •  Ctrl-Q: quit",
+		Boxes: []loom.Box{
+			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16},
+			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Child: b.details},
+		},
+		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "ctrl-q"}},
+	}
+	if err := b.open(dir); err != nil {
+		return nil, err
+	}
+	return b, nil
+}
+
+func (b *browser) open(dir string) error {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	items := make([]loom.Item, 0, len(entries)+1)
+	paths := make(map[string]string, len(entries)+1)
+	if parent := filepath.Dir(dir); parent != dir {
+		items = append(items, loom.Item{Name: "..", Desc: "parent directory"})
+		paths[".."] = parent
+	}
+	for _, entry := range entries {
+		name := displayName(entry.Name())
+		desc := ""
+		if entry.IsDir() {
+			desc = "<dir>"
+		} else if entry.Type()&os.ModeSymlink != 0 {
+			desc = "<link>"
+		}
+		items = append(items, loom.Item{Name: name, Desc: desc})
+		paths[name] = filepath.Join(dir, entry.Name())
+	}
+	list := loom.NewChoice(items)
+	list.Prompt = "filter> "
+	list.Placeholder = "type to filter"
+	list.OnSelect = func(item loom.Item) {
+		path := paths[item.Name]
+		info, err := os.Stat(path)
+		if err != nil {
+			b.notice = err.Error()
+			return
+		}
+		if info.IsDir() {
+			if err := b.open(path); err != nil {
+				b.notice = err.Error()
+			}
+		}
+	}
+	b.dir, b.paths, b.list, b.notice = dir, paths, list, ""
+	b.frame.Boxes[0].Child = list
+	b.updateDetails()
+	return nil
+}
+
+func (b *browser) updateDetails() {
+	item, ok := b.list.Selected()
+	if !ok {
+		b.details.Lines = []string{"No matching file"}
+		b.details.Scroll = 0
+		return
+	}
+	path := b.paths[item.Name]
+	lines := metadata(path)
+	if b.notice != "" {
+		lines = append([]string{"Error: " + b.notice, ""}, lines...)
+	}
+	if !equalLines(lines, b.details.Lines) {
+		b.details.Lines = lines
+		b.details.Scroll = 0
+	}
+}
+
+func equalLines(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func metadata(path string) []string {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return []string{"Error: " + err.Error()}
+	}
+	kind := "file"
+	if info.IsDir() {
+		kind = "directory"
+	} else if info.Mode()&os.ModeSymlink != 0 {
+		kind = "symbolic link"
+	} else if !info.Mode().IsRegular() {
+		kind = "special file"
+	}
+	lines := []string{
+		"Name: " + displayName(info.Name()),
+		"Path: " + displayName(path),
+		"Type: " + kind,
+		fmt.Sprintf("Size: %d bytes", info.Size()),
+		"Mode: " + info.Mode().String(),
+		"Modified: " + info.ModTime().Format(time.RFC3339),
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		if target, err := os.Readlink(path); err == nil {
+			lines = append(lines, "Target: "+displayName(target))
+		}
+	}
+	return lines
+}
+
+func displayName(value string) string {
+	for _, r := range value {
+		if !unicode.IsPrint(r) {
+			return strconv.QuoteToASCII(value)
+		}
+	}
+	return value
+}
+
+func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
+	b.frame.Title = "Browse " + b.dir
+	b.frame.Boxes[0].Title = "Files"
+	b.frame.Boxes[1].Title = "Metadata"
+	if focused := b.frame.FocusedBox(); focused != nil {
+		if focused.ID == "files" {
+			b.frame.Boxes[0].Title = "▶ Files"
+		} else {
+			b.frame.Boxes[1].Title = "▶ Metadata"
+		}
+	}
+	b.frame.Draw(c, r)
+}
+
+func (b *browser) HandleKey(k loom.KeyEvent) bool {
+	quit := b.frame.HandleKey(k)
+	b.updateDetails()
+	return quit
+}
+
+func (b *browser) HandleMouse(k loom.MouseEvent) bool {
+	return b.frame.HandleMouse(k)
+}
