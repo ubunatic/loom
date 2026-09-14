@@ -1,7 +1,9 @@
 package main
 
 import (
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -85,5 +87,42 @@ func TestBrowserShowsSideBySidePanes(t *testing.T) {
 	}
 	if b.frame.Boxes[0].Border.Vertical == "" || b.frame.Boxes[1].Border.Vertical == "" {
 		t.Fatal("pane borders are invisible")
+	}
+}
+
+func TestBrowserEnterOpensSelectedFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "a file.txt")
+	if err := os.WriteFile(path, []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var opened string
+	b.openFile = func(path string) error {
+		opened = path
+		return nil
+	}
+	b.HandleKey(loom.KeyEvent{Key: "down"})
+	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	if opened != path || b.dir != dir {
+		t.Fatalf("opened %q, browsing %q; want %q and %q", opened, b.dir, path, dir)
+	}
+	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Opening with xdg-open") {
+		t.Fatalf("missing open notice: %v", b.details.Lines)
+	}
+	b.openFile = func(string) error { return errors.New("no opener") }
+	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Open failed: no opener") {
+		t.Fatalf("missing launch error: %v", b.details.Lines)
+	}
+}
+
+func TestLaunchFileReportsMissingXDGOpen(t *testing.T) {
+	t.Setenv("PATH", t.TempDir())
+	if err := launchFile(filepath.Join(t.TempDir(), "file.txt")); !errors.Is(err, exec.ErrNotFound) {
+		t.Fatalf("launchFile error = %v, want executable not found", err)
 	}
 }

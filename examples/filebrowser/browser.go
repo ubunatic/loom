@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -12,12 +14,13 @@ import (
 )
 
 type browser struct {
-	frame   *loom.Frame
-	list    *loom.Choice
-	details *detailView
-	dir     string
-	paths   map[string]string
-	notice  string
+	frame    *loom.Frame
+	list     *loom.Choice
+	details  *detailView
+	dir      string
+	paths    map[string]string
+	notice   string
+	openFile func(string) error
 }
 
 type detailView struct {
@@ -40,14 +43,14 @@ func newBrowser(path string) (*browser, error) {
 	if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
-	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}}
+	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}, openFile: launchFile}
 	border := loom.BoxBorder{
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
 	}
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
-		Status: "Tab: focus  •  ↑/↓: select  •  Enter: open directory (.. for parent)  •  PgUp/PgDn: scroll details  •  Ctrl-Q: quit",
+		Status: "Tab: focus  •  ↑/↓: select  •  Enter: open file/directory (.. for parent)  •  PgUp/PgDn: scroll details  •  Ctrl-Q: quit",
 		Boxes: []loom.Box{
 			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16, Border: border},
 			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Border: border, Child: b.details},
@@ -89,13 +92,21 @@ func (b *browser) open(dir string) error {
 		path := paths[item.Name]
 		info, err := os.Stat(path)
 		if err != nil {
-			b.notice = err.Error()
+			b.notice = "Error: " + err.Error()
 			return
 		}
 		if info.IsDir() {
 			if err := b.open(path); err != nil {
-				b.notice = err.Error()
+				b.notice = "Error: " + err.Error()
 			}
+		} else if info.Mode().IsRegular() {
+			if err := b.openFile(path); err != nil {
+				b.notice = "Open failed: " + err.Error()
+			} else {
+				b.notice = "Opening with xdg-open"
+			}
+		} else {
+			b.notice = "Cannot open this file type"
 		}
 	}
 	b.dir, b.paths, b.list, b.notice = dir, paths, list, ""
@@ -114,12 +125,25 @@ func (b *browser) updateDetails() {
 	path := b.paths[item.Name]
 	lines := metadata(path)
 	if b.notice != "" {
-		lines = append([]string{"Error: " + b.notice, ""}, lines...)
+		lines = append([]string{b.notice, ""}, lines...)
 	}
 	if !equalLines(lines, b.details.Lines) {
 		b.details.Lines = lines
 		b.details.Scroll = 0
 	}
+}
+
+// launchFile lets the desktop choose a viewer without holding up the TUI.
+func launchFile(path string) error {
+	cmd := exec.Command("xdg-open", path)
+	cmd.Stdin = nil
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	go func() { _ = cmd.Wait() }()
+	return nil
 }
 
 func equalLines(a, b []string) bool {
