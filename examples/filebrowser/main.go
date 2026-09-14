@@ -27,6 +27,7 @@ func main() {
 	}
 	defer pane.Close()
 	pane.Resizeable = true
+	pane.MaxCols = 0               // Use the terminal width; Loom's default cap is 50 columns.
 	pane.DisableDefaultQuit = true // q remains available as a file-list filter.
 	if err := pane.Run(app); err != nil {
 		fmt.Fprintln(os.Stderr, err)

@@ -41,12 +41,16 @@ func newBrowser(path string) (*browser, error) {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
 	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}}
+	border := loom.BoxBorder{
+		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
+		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
+	}
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
 		Status: "Tab: focus  •  ↑/↓: select  •  Enter: open directory (.. for parent)  •  PgUp/PgDn: scroll details  •  Ctrl-Q: quit",
 		Boxes: []loom.Box{
-			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16},
-			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Child: b.details},
+			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16, Border: border},
+			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Border: border, Child: b.details},
 		},
 		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "ctrl-q"}},
 	}

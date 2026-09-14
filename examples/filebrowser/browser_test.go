@@ -67,3 +67,17 @@ func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 		t.Fatal("Ctrl-Q did not quit")
 	}
 }
+
+func TestBrowserShowsSideBySidePanes(t *testing.T) {
+	b, err := newBrowser(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	rects := b.frame.Layout(80, 20)
+	if rects[0].W < 20 || rects[1].W < 25 || rects[1].X <= rects[0].X+rects[0].W {
+		t.Fatalf("expected two side-by-side panes at 80 columns, got %+v", rects)
+	}
+	if b.frame.Boxes[0].Border.Vertical == "" || b.frame.Boxes[1].Border.Vertical == "" {
+		t.Fatal("pane borders are invisible")
+	}
+}
