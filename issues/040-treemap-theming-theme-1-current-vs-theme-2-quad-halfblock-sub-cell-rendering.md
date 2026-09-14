@@ -1,6 +1,6 @@
 # 040 — Treemap theming: theme 1 (current) vs. theme 2 (quad/halfblock sub-cell rendering)
 
-**Status**: Open
+**Status**: Closed — implemented theme 2 (half-block boundary blending), --theme flag, tests, verified
 **Priority**: P3 (Low)
 **Severity**: Enhancement
 **Category**: Feature
@@ -87,3 +87,44 @@ selectable visual theme.
 - Confirm with the requester whether theme 2 should also drop labels/
   numbered markers in very small boxes differently than theme 1, given the
   denser visual style, or keep the existing fallback behavior verbatim.
+
+## 6. Implementation Notes (2026-09-14)
+
+- `TreemapOptions` gained a `Theme TreemapTheme` field; `TreemapThemeClassic`
+  (the original renderer, byte-for-byte unchanged) is the zero value, and
+  `TreemapThemeBlocks` is the new style.
+- Resolved edge-rendering algorithm (half-block only, no quadrant glyphs
+  used): every box renders full-bleed (no reserved border cell, so labels
+  get the box's entire area -- resolves the second open question above:
+  the existing full-label/number/legend fallback logic is unchanged,
+  `treemapInner` just always returns the full rect since `border` is now
+  always false under this theme). Each box's own outermost cells are
+  checked against an `owner` grid (segment index per cell, built once in
+  `RenderTreemap`) for a differently-owned neighbor on that side; when one
+  exists, the cell renders as a half-block glyph (`▌▐▀▄`) whose foreground
+  half is this box's own color (its `BackgroundANSI` converted to a
+  foreground code via the existing `treemapBackgroundToForeground`) and
+  whose background half is the neighbor's `BackgroundANSI` as-is -- the
+  filled half always points toward the box's own interior. A cell
+  qualifying on more than one side (a corner) blends only one, in priority
+  order right > left > bottom > top, since one SGR foreground/background
+  pair cannot represent three or more colors in a single cell. Quadrant
+  glyphs (▘▝▖▗▚▞▙▟▛▜) were not needed to satisfy the ticket's acceptance
+  criteria and were left unused, in the interest of a simpler, single,
+  deterministic per-cell rule.
+- Requires `opts.ANSI` and a non-empty `opts.BackgroundANSI`; without
+  either there is no color to blend, so it falls back to exactly the same
+  code path `TreemapThemeClassic` + `NoBorder` uses (verified
+  byte-identical by test).
+- `examples/treemap` gained `--theme 1|2` (default 1); theme 2 requires
+  `--ansi` and errors clearly if it's missing.
+- Tests: `graph/treemap_test.go` (dimensions, no classic border glyphs ever
+  drawn, at least one half-block boundary glyph present, blend SGR code
+  correctness, ANSI/no-palette and no-ANSI fallback byte-equality against
+  classic, full-bleed no-inset labels, marker/legend fallback, never-panics
+  across the same fuzz matrix as theme 1) plus `TestTreemapThemeClassicIsZeroValue`.
+  `examples/treemap/main_test.go` covers `--theme` flag validation.
+- Manually verified against a live process-tree snapshot via
+  `go run ./examples/treemap --ansi --theme 2` compared side-by-side with
+  `--theme 1` -- half-block boundaries render correctly, labels/markers/
+  legend still work, `go build/vet/test ./...` all clean.
