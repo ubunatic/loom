@@ -37,7 +37,8 @@ type TreemapSegment struct {
 // (repeated browser-tab renderer processes, for example) collapse into one
 // segment instead of each counting separately toward the node budget.
 //
-// Detail is prioritized by weight: starting from root's (merged) children,
+// Detail is prioritized by weight: starting from root's (merged) children
+// and a synthetic contribution for root.Value when nonzero,
 // the heaviest node that still has children to reveal is repeatedly
 // replaced by its own merged children -- including a synthetic child
 // carrying the node's own value, so expanding a node never silently drops
@@ -60,7 +61,11 @@ func AggregateTreemap(root TreemapNode, maxNodes int) []TreemapSegment {
 	if maxNodes <= 0 {
 		maxNodes = 1
 	}
-	frontier := capTreemapNodes(mergeTreemapNodes(root.Children), maxNodes)
+	initial := append([]TreemapNode(nil), root.Children...)
+	if root.Value != 0 {
+		initial = append(initial, TreemapNode{Name: root.Name, Value: root.Value})
+	}
+	frontier := capTreemapNodes(mergeTreemapNodes(initial), maxNodes)
 
 	for len(frontier) < maxNodes {
 		best := -1

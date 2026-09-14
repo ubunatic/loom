@@ -46,7 +46,7 @@ const (
 	// top-right corner cell -- ranked by value descending across ALL
 	// boxes, not just the ones whose full label doesn't fit. A box that
 	// also has room for its full label shows both: the label centered as
-	// usual, plus its corner number. The legend row below the grid still
+	// usual, plus its corner number. The legend still
 	// lists only the boxes that needed a number in place of their label
 	// (the same criterion TreemapThemeClassic uses) -- a labeled box's
 	// corner number isn't explained there, since the box's own visible
@@ -63,12 +63,35 @@ const (
 	TreemapThemeNumbered
 )
 
+// TreemapLegendPosition selects where numbered-box explanations appear.
+type TreemapLegendPosition int
+
+const (
+	// TreemapLegendBottom places the legend below the grid (the default).
+	TreemapLegendBottom TreemapLegendPosition = iota
+	// TreemapLegendRight places the legend beside the grid, within Width.
+	TreemapLegendRight
+)
+
 // TreemapOptions configures RenderTreemap.
 type TreemapOptions struct {
-	// Width and Height are the total character grid in columns and rows.
+	// Width is the total output width, including a right legend when set;
+	// Height is the total output height, including a bottom legend when set.
 	// Zero/negative values clamp to 1.
 	Width  int
 	Height int
+	// LegendPosition chooses bottom or right placement. Right placement
+	// reserves columns from Width, leaving the rest for the treemap.
+	LegendPosition TreemapLegendPosition
+	// LegendWidth is the right legend's column width, excluding its one-cell
+	// gap. Zero uses one third of Width. Ignored for bottom placement.
+	LegendWidth int
+	// LegendRows limits bottom legend rows. Zero uses two rows; a negative
+	// value uses all available rows. Ignored on right, which uses up to Height rows.
+	LegendRows int
+	// LegendMinValue omits boxes with values below this threshold from the
+	// legend. Their boxes and markers remain visible. Zero disables filtering.
+	LegendMinValue float64
 	// Theme selects the visual style; the zero value is TreemapThemeClassic.
 	Theme TreemapTheme
 	// NoLabels suppresses per-box labeling entirely: no name/value text, no
@@ -109,9 +132,9 @@ type treemapRect struct {
 }
 
 // RenderTreemap lays out segments as a 2D treemap: rectangular boxes tiling
-// a Width x Height character grid, each box's area proportional to its
-// segment's value. Returns one string per row, plus one trailing legend row
-// when any box needed one (see below); callers join with "\n" or feed the
+// a character grid within Width x Height, each box's area proportional to its
+// segment's value. Returns exactly Height rows, with bottom legend rows
+// sharing that canvas when boxes need them (see below); callers join with "\n" or feed the
 // rows directly into a larger layout.
 //
 // Layout is a recursive binary split: segments are sorted by value
@@ -132,12 +155,12 @@ type treemapRect struct {
 // superscript index number (¹, ², ³, ...), centered in the interior or, if
 // even that has no room, overlaid on the top border. Every numbered box is
 // listed, ranked biggest value first (independent of box layout order), on
-// one legend row appended below the grid: "¹name ²name ...", each entry
+// legend rows below or beside the grid: "¹name ²name ...", each entry
 // with its text colored to match that box's identifying color when
 // opts.ANSI is set (never a filled background -- see treemapLegendCode),
-// hard-truncated (whole entries only, never a mid-name fragment) with a
-// trailing "…" the moment the next entry would exceed the grid's width --
-// later entries may simply not fit and are omitted.
+// kept whole in the bottom legend, which uses up to two rows by default or
+// opts.LegendRows rows when configured. Right placement wraps long entries
+// across up to Height rows. A bounded legend ends with "…" when entries remain.
 //
 // Zero, negative, NaN, and infinite values are treated as zero and receive
 // no box (zero-area). Empty or all-zero input renders a blank grid.
@@ -169,26 +192,66 @@ type treemapRect struct {
 // skipping it fails silently and confusingly rather than with a clear
 // error.
 func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
+	height := optionWidth(opts.Height)
+	rows := renderTreemapRows(segments, opts)
+	if (opts.LegendPosition == TreemapLegendRight && optionWidth(opts.Width) >= 3) || len(rows) <= height {
+		return rows
+	}
+	legendRows := len(rows) - height
+	if legendRows >= height {
+		legendRows = height - 1
+	}
+	if legendRows == 0 {
+		return rows[:height]
+	}
+	adjusted := opts
+	adjusted.Height = height - legendRows
+	adjusted.LegendRows = legendRows
+	rows = renderTreemapRows(segments, adjusted)
+	if len(rows) > height {
+		rows = rows[:height]
+	}
+	for len(rows) < height {
+		rows = append(rows, strings.Repeat(" ", optionWidth(opts.Width)))
+	}
+	return rows
+}
+
+func renderTreemapRows(segments []TreemapSegment, opts TreemapOptions) []string {
 	width := optionWidth(opts.Width)
 	height := optionWidth(opts.Height)
+	gridWidth := width
+	legendWidth := 0
+	if opts.LegendPosition == TreemapLegendRight && width >= 3 {
+		legendWidth = opts.LegendWidth
+		if legendWidth <= 0 {
+			legendWidth = width / 3
+		}
+		if legendWidth > width-2 {
+			legendWidth = width - 2
+		}
+		gridWidth = width - legendWidth - 1
+	}
 
 	grid := make([][]rune, height)
 	for y := range grid {
-		grid[y] = make([]rune, width)
+		grid[y] = make([]rune, gridWidth)
 		for x := range grid[y] {
 			grid[y][x] = ' '
 		}
 	}
 	style := make([][]string, height)
+	labelText := make([][]string, height)
 	for y := range style {
-		style[y] = make([]string, width)
+		style[y] = make([]string, gridWidth)
+		labelText[y] = make([]string, gridWidth)
 	}
 
 	values := make([]float64, len(segments))
 	for i, s := range segments {
 		values[i] = s.Value
 	}
-	rects := layoutTreemap(values, treemapRect{0, 0, width, height})
+	rects := layoutTreemap(values, treemapRect{0, 0, gridWidth, height})
 
 	glyphs := opts.Glyphs
 	if len(glyphs) == 0 {
@@ -239,7 +302,9 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 				marker := superscriptNumber(rank + 1)
 				cornerMarkers[i] = marker
 				if needsLegend[i] {
-					legend = append(legend, treemapLegendEntry{marker: marker, label: labels[i], code: treemapLegendCode(i, opts)})
+					if segments[i].Value >= opts.LegendMinValue {
+						legend = append(legend, treemapLegendEntry{marker: marker, label: labels[i], code: treemapLegendCode(i, opts)})
+					}
 					// This box's full label doesn't fit. Its corner marker
 					// already identifies it (see the doc comment on
 					// TreemapThemeNumbered) -- drawTreemapBox must not also
@@ -261,7 +326,9 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 			for rank, i := range needsNumber {
 				marker := superscriptNumber(rank + 1)
 				markers[i] = marker
-				legend = append(legend, treemapLegendEntry{marker: marker, label: labels[i], code: treemapLegendCode(i, opts)})
+				if segments[i].Value >= opts.LegendMinValue {
+					legend = append(legend, treemapLegendEntry{marker: marker, label: labels[i], code: treemapLegendCode(i, opts)})
+				}
 			}
 		}
 	}
@@ -270,18 +337,31 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 		if r.W <= 0 || r.H <= 0 {
 			continue
 		}
-		drawTreemapBox(grid, style, r, segments[i], glyphs[i%len(glyphs)], i, opts, markers[i], cornerMarkers[i], hideLabel[i])
+		drawTreemapBox(grid, style, labelText, r, segments[i], glyphs[i%len(glyphs)], i, opts, markers[i], cornerMarkers[i], hideLabel[i])
 	}
 
 	rows := make([]string, height)
 	for y := range grid {
 		if !opts.ANSI {
-			rows[y] = string(grid[y])
+			var b strings.Builder
+			for x, ch := range grid[y] {
+				switch labelText[y][x] {
+				case "":
+					b.WriteRune(ch)
+				case "\x00": // second cell of a wide label cluster
+				default:
+					b.WriteString(labelText[y][x])
+				}
+			}
+			rows[y] = b.String()
 			continue
 		}
 		var b strings.Builder
 		var open string
 		for x, ch := range grid[y] {
+			if labelText[y][x] == "\x00" {
+				continue
+			}
 			code := style[y][x]
 			if code != open {
 				if open != "" {
@@ -292,7 +372,11 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 				}
 				open = code
 			}
-			b.WriteRune(ch)
+			if labelText[y][x] != "" {
+				b.WriteString(labelText[y][x])
+			} else {
+				b.WriteRune(ch)
+			}
 		}
 		if open != "" {
 			b.WriteString("\x1b[0m")
@@ -300,7 +384,28 @@ func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string {
 		rows[y] = b.String()
 	}
 	if len(legend) > 0 {
-		rows = append(rows, buildTreemapLegend(legend, width))
+		if legendWidth > 0 {
+			legendRows := buildTreemapRightLegend(legend, legendWidth, height)
+			for y := range rows {
+				if y < len(legendRows) {
+					rows[y] += " " + legendRows[y]
+				} else {
+					rows[y] += strings.Repeat(" ", legendWidth+1)
+				}
+			}
+		} else {
+			maxRows := opts.LegendRows
+			if maxRows == 0 {
+				maxRows = 2
+			} else if maxRows < 0 {
+				maxRows = 0
+			}
+			rows = append(rows, buildTreemapLegendRows(legend, width, maxRows)...)
+		}
+	} else if legendWidth > 0 {
+		for y := range rows {
+			rows[y] += strings.Repeat(" ", legendWidth+1)
+		}
 	}
 	return rows
 }
@@ -312,59 +417,136 @@ type treemapLegendEntry struct {
 	code   string // ANSI SGR code to style this entry with, or "" for none
 }
 
-// buildTreemapLegend renders entries as "marker label marker label ..." on
-// one row padded/truncated to exactly width columns, each entry styled in
-// its code (when set), with a trailing "…" the moment the next whole entry
-// would not fit -- entries are never cut mid-name.
-func buildTreemapLegend(entries []treemapLegendEntry, width int) string {
-	if width < 1 {
-		return ""
+// buildTreemapLegendRows packs whole entries into exact-width rows. maxRows
+// zero means unlimited. Oversized entries are skipped so later ones can fit;
+// an ellipsis reports omitted entries or a row limit.
+func buildTreemapLegendRows(entries []treemapLegendEntry, width, maxRows int) []string {
+	if width < 1 || len(entries) == 0 {
+		return nil
 	}
-
-	// Pass 1: how many whole entries fit, by plain (unstyled) width --
-	// ANSI color codes never affect displayed width.
-	plainToken := func(i int) string {
-		token := entries[i].marker + entries[i].label
-		if i > 0 {
-			token = " " + token
+	var packed [][]int
+	next, omitted := 0, false
+	for next < len(entries) && (maxRows == 0 || len(packed) < maxRows) {
+		var row []int
+		used := 0
+		for next < len(entries) {
+			w := measure.StringWidth(entries[next].marker + entries[next].label)
+			if w > width {
+				omitted = true
+				next++
+				continue
+			}
+			gap := 0
+			if len(row) > 0 {
+				gap = 1
+			}
+			if used+gap+w > width {
+				break
+			}
+			row = append(row, next)
+			used += gap + w
+			next++
 		}
-		return token
+		if len(row) > 0 || len(packed) == 0 {
+			packed = append(packed, row)
+		}
 	}
-	used, shown := 0, 0
-	for shown < len(entries) {
-		w := measure.StringWidth(plainToken(shown))
-		if used+w > width {
+	omitted = omitted || next < len(entries)
+	if omitted {
+		last := len(packed) - 1
+		for len(packed[last]) > 0 && treemapLegendRowWidth(entries, packed[last])+1 > width {
+			packed[last] = packed[last][:len(packed[last])-1]
+		}
+	}
+	rows := make([]string, len(packed))
+	for i, indexes := range packed {
+		var b strings.Builder
+		for j, index := range indexes {
+			if j > 0 {
+				b.WriteByte(' ')
+			}
+			token := entries[index].marker + entries[index].label
+			if entries[index].code != "" {
+				b.WriteString("\x1b[" + entries[index].code + "m" + token + "\x1b[0m")
+			} else {
+				b.WriteString(token)
+			}
+		}
+		used := treemapLegendRowWidth(entries, indexes)
+		if omitted && i == len(packed)-1 {
+			b.WriteRune('…')
+			used++
+		}
+		rows[i] = b.String() + strings.Repeat(" ", width-used)
+	}
+	return rows
+}
+
+func treemapLegendRowWidth(entries []treemapLegendEntry, indexes []int) int {
+	width := 0
+	for i, index := range indexes {
+		if i > 0 {
+			width++
+		}
+		width += measure.StringWidth(entries[index].marker + entries[index].label)
+	}
+	return width
+}
+
+// buildTreemapRightLegend gives each entry its own line and wraps an entry
+// across later lines when the side column is narrower than its text.
+func buildTreemapRightLegend(entries []treemapLegendEntry, width, height int) []string {
+	if width < 1 || height < 1 {
+		return nil
+	}
+	type line struct {
+		text, code string
+	}
+	var lines []line
+	more := false
+	for _, entry := range entries {
+		clusters := measure.Clusters(entry.marker + entry.label)
+		for len(clusters) > 0 {
+			if len(lines) == height {
+				more = true
+				break
+			}
+			var b strings.Builder
+			used := 0
+			for len(clusters) > 0 {
+				w := measure.StringWidth(clusters[0])
+				if used+w > width {
+					break
+				}
+				b.WriteString(clusters[0])
+				used += w
+				clusters = clusters[1:]
+			}
+			if used == 0 {
+				// A wide glyph cannot fit a one-column legend.
+				clusters = clusters[1:]
+				continue
+			}
+			lines = append(lines, line{text: b.String(), code: entry.code})
+		}
+		if more {
 			break
 		}
-		used += w
-		shown++
 	}
-	truncated := shown < len(entries)
-	if truncated {
-		// Reserve room for the trailing ellipsis by dropping whole fitted
-		// entries from the end -- never a partial, mid-name fragment --
-		// until there is space for it.
-		for shown > 0 && used+1 > width {
-			shown--
-			used -= measure.StringWidth(plainToken(shown))
-		}
+	if more && len(lines) > 0 {
+		last := &lines[len(lines)-1]
+		last.text = measure.Fit(last.text, width-1) + "…"
 	}
-
-	// Pass 2: re-render exactly those `shown` entries, now styled.
-	var b strings.Builder
-	for i := 0; i < shown; i++ {
-		token := plainToken(i)
-		if entries[i].code != "" {
-			b.WriteString("\x1b[" + entries[i].code + "m" + token + "\x1b[0m")
+	rows := make([]string, len(lines))
+	for i, item := range lines {
+		if item.code != "" {
+			rows[i] = "\x1b[" + item.code + "m" + item.text + "\x1b[0m"
 		} else {
-			b.WriteString(token)
+			rows[i] = item.text
 		}
+		rows[i] += strings.Repeat(" ", width-measure.StringWidth(item.text))
 	}
-	if truncated {
-		b.WriteString("…")
-		used++
-	}
-	return b.String() + strings.Repeat(" ", width-used)
+	return rows
 }
 
 // treemapLegendCode returns the ANSI code the legend uses to color segment
@@ -390,9 +572,24 @@ func treemapLegendCode(index int, opts TreemapOptions) string {
 
 // treemapBackgroundToForeground converts a single-code ANSI SGR background
 // color (40-47 normal, 100-107 bright) to its foreground equivalent (30-37,
-// 90-97). Codes it doesn't recognize -- already a foreground code, a
-// compound "1;41"-style code, non-numeric -- are returned unchanged.
+// 90-97), and extended 48;5;n / 48;2;r;g;b backgrounds to their 38
+// foreground forms. Codes it doesn't recognize are returned unchanged.
 func treemapBackgroundToForeground(code string) string {
+	parts := strings.Split(code, ";")
+	if len(parts) == 3 && parts[0] == "48" && parts[1] == "5" {
+		if n, err := strconv.Atoi(parts[2]); err == nil && n >= 0 && n <= 255 {
+			return "38;5;" + parts[2]
+		}
+	}
+	if len(parts) == 5 && parts[0] == "48" && parts[1] == "2" {
+		for _, part := range parts[2:] {
+			n, err := strconv.Atoi(part)
+			if err != nil || n < 0 || n > 255 {
+				return code
+			}
+		}
+		return "38;2;" + strings.Join(parts[2:], ";")
+	}
 	n, err := strconv.Atoi(code)
 	if err != nil {
 		return code
@@ -439,7 +636,7 @@ func treemapFullLabel(seg TreemapSegment, opts TreemapOptions) string {
 		}
 		label += fmt.Sprintf(" %.*f%s", precision, seg.Value, opts.ValueSuffix)
 	}
-	return label
+	return strings.Join(measure.Clusters(label), "")
 }
 
 // treemapHasBorder reports whether r draws a TreemapThemeClassic box-drawing
@@ -492,7 +689,7 @@ func superscriptNumber(n int) string {
 // pre-pass); otherwise it is the superscript index to place instead.
 // cornerMarker is only set under TreemapThemeNumbered (every positive-area
 // box gets one, regardless of marker) -- see RenderTreemap's pre-pass.
-func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker, cornerMarker string, hideLabel bool) {
+func drawTreemapBox(grid [][]rune, style, labelText [][]string, r treemapRect, seg TreemapSegment, fill rune, index int, opts TreemapOptions, marker, cornerMarker string, hideLabel bool) {
 	code := treemapSegmentCode(index, opts)
 
 	// textCode is the style for a label/marker character at (x, y): on the
@@ -588,12 +785,16 @@ func drawTreemapBox(grid [][]rune, style [][]string, r treemapRect, seg TreemapS
 		// Doesn't fit: full label or nothing, never a truncated fragment.
 		return
 	}
-	labelRunes := []rune(label)
 	labelY := innerY + innerH/2
-	for i, ch := range labelRunes {
-		x := innerX + i
-		grid[labelY][x] = ch
+	x := innerX
+	for _, cluster := range measure.Clusters(label) {
+		w := measure.StringWidth(cluster)
+		labelText[labelY][x] = cluster
 		style[labelY][x] = textCode(x, labelY)
+		for cell := 1; cell < w; cell++ {
+			labelText[labelY][x+cell] = "\x00"
+		}
+		x += w
 	}
 }
 

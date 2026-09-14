@@ -138,6 +138,39 @@ func TestRenderTreemapDimensions(t *testing.T) {
 	}
 }
 
+func TestRenderTreemapUnicodeLabelsPreserveCellWidth(t *testing.T) {
+	cases := []struct {
+		name  string
+		width int
+	}{
+		{"e\u0301", 1},
+		{"界", 2},
+		{"😀", 2},
+		{"a\x1b[31mb", 2},
+	}
+	for _, tc := range cases {
+		for _, ansi := range []bool{false, true} {
+			rows := RenderTreemap([]TreemapSegment{{Name: tc.name, Value: 1}}, TreemapOptions{
+				Width: tc.width, Height: 1, NoBorder: true, ANSI: ansi,
+				BackgroundANSI: []string{"41"},
+			})
+			if len(rows) != 1 || measure.StringWidth(rows[0]) != tc.width {
+				t.Errorf("label %q ANSI=%v: rows=%q, want one row of width %d", tc.name, ansi, rows, tc.width)
+			}
+		}
+	}
+}
+
+func TestRenderTreemapSanitizesValueSuffix(t *testing.T) {
+	rows := RenderTreemap([]TreemapSegment{{Name: "cpu", Value: 3}}, TreemapOptions{
+		Width: 20, Height: 3, ShowValues: true, ValueSuffix: "\x1b[31m%\n",
+	})
+	joined := strings.Join(rows, "\n")
+	if !strings.Contains(joined, "cpu 3%") || strings.Contains(joined, "\x1b[31m") || strings.Count(joined, "\n") != 2 {
+		t.Errorf("value suffix leaked terminal control text: %q", rows)
+	}
+}
+
 func TestRenderTreemapDrawsBorderAndLabel(t *testing.T) {
 	segments := []TreemapSegment{{Name: "A", Value: 1}}
 	rows := RenderTreemap(segments, TreemapOptions{Width: 10, Height: 4})
@@ -161,8 +194,8 @@ func TestRenderTreemapSmallBoxSkipsBorder(t *testing.T) {
 	// single cell IS big enough for a one-digit marker.
 	segments := []TreemapSegment{{Name: "solo", Value: 1}}
 	rows := RenderTreemap(segments, TreemapOptions{Width: 1, Height: 1})
-	if len(rows) != 2 { // grid row + legend row
-		t.Fatalf("len(rows) = %d, want 2 (grid + legend): %q", len(rows), rows)
+	if len(rows) != 1 { // the marker takes priority in a one-row canvas
+		t.Fatalf("len(rows) = %d, want 1 canvas row: %q", len(rows), rows)
 	}
 	if utf8.RuneCountInString(rows[0]) != 1 {
 		t.Fatalf("unexpected grid row: %q", rows)
@@ -175,9 +208,7 @@ func TestRenderTreemapSmallBoxSkipsBorder(t *testing.T) {
 	}
 	// The legend itself is also only 1 column wide here, too narrow to
 	// show "¹solo", so it degrades to a bare ellipsis rather than nothing.
-	if rows[1] != "…" {
-		t.Errorf("1-wide legend should be a bare ellipsis, got %q", rows[1])
-	}
+	// There is no spare canvas row for a legend at height one.
 }
 
 func TestRenderTreemapNoBorderOption(t *testing.T) {
@@ -236,8 +267,8 @@ func TestRenderTreemapMarkersAreSequentialAndLegendMatches(t *testing.T) {
 	} {
 		segments = append(segments, TreemapSegment{Name: name, Value: 1})
 	}
-	rows := RenderTreemap(segments, TreemapOptions{Width: 60, Height: 6})
-	legend := rows[len(rows)-1]
+	rows := renderTreemapRows(segments, TreemapOptions{Width: 60, Height: 6})
+	legend := strings.Join(rows[6:], "\n")
 	for i, want := range []string{"¹alpha-process", "²bravo-process", "³charlie-process"} {
 		if !strings.Contains(legend, want) {
 			t.Errorf("legend missing entry %d (%q), got legend=%q", i+1, want, legend)
@@ -256,8 +287,8 @@ func TestRenderTreemapMarkersRankByValueNotLayoutOrder(t *testing.T) {
 		{Name: "firefox", Value: 13.0},
 		{Name: "conmon", Value: 6.4},
 	}
-	rows := RenderTreemap(segments, TreemapOptions{Width: 60, Height: 3, ShowValues: true, ValuePrecision: 1, ValueSuffix: "%"})
-	legend := rows[len(rows)-1]
+	rows := renderTreemapRows(segments, TreemapOptions{Width: 60, Height: 3, ShowValues: true, ValuePrecision: 1, ValueSuffix: "%"})
+	legend := strings.Join(rows[3:], "\n")
 	idx := map[string]int{}
 	for rank, name := range []string{"firefox", "other", "conmon", "tilix"} {
 		want := fmt.Sprintf("%s%s %.1f%%", superscriptNumber(rank+1), name, valueOf(segments, name))
@@ -306,6 +337,171 @@ func TestRenderTreemapLegendTruncatesWithEllipsis(t *testing.T) {
 	}
 }
 
+func TestTreemapBottomLegendSkipsOversizedEntry(t *testing.T) {
+	entries := []treemapLegendEntry{
+		{marker: "¹", label: "an-entry-too-long-for-the-row"},
+		{marker: "²", label: "short"},
+		{marker: "³", label: "tiny"},
+	}
+	rows := buildTreemapLegendRows(entries, 20, 2)
+	joined := strings.Join(rows, "\n")
+	if !strings.Contains(joined, "²short") || !strings.Contains(joined, "³tiny") {
+		t.Errorf("short entries after oversized entry were lost: %q", rows)
+	}
+	if !strings.Contains(joined, "…") || strings.Contains(joined, "an-entry-too-long") {
+		t.Errorf("omission should be indicated without cutting the long name: %q", rows)
+	}
+}
+
+func TestRenderTreemapLegendWrapsAcrossRows(t *testing.T) {
+	segments := make([]TreemapSegment, 6)
+	for i := range segments {
+		segments[i] = TreemapSegment{Name: fmt.Sprintf("process-%d", i), Value: 1}
+	}
+	rows := renderTreemapRows(segments, TreemapOptions{Width: 24, Height: 4, LegendRows: -1})
+	if len(rows) <= 5 {
+		t.Fatalf("got %d rows; expected multiple legend rows", len(rows))
+	}
+	legend := strings.Join(rows[4:], "\n")
+	for i := range segments {
+		want := superscriptNumber(i+1) + segments[i].Name
+		if !strings.Contains(legend, want) {
+			t.Errorf("missing whole legend entry %q in %q", want, legend)
+		}
+	}
+	for _, row := range rows {
+		if got := measure.StringWidth(row); got != 24 {
+			t.Errorf("row width = %d, want 24: %q", got, row)
+		}
+	}
+}
+
+func TestRenderTreemapLegendRightFitsRequestedWidth(t *testing.T) {
+	segments := make([]TreemapSegment, 5)
+	for i := range segments {
+		segments[i] = TreemapSegment{Name: fmt.Sprintf("long-process-%d", i), Value: 1}
+	}
+	rows := RenderTreemap(segments, TreemapOptions{
+		Width: 40, Height: 5, LegendPosition: TreemapLegendRight, LegendWidth: 18,
+		ANSI: true, BackgroundANSI: []string{"41", "42", "43", "44", "45"},
+	})
+	if len(rows) != 5 {
+		t.Fatalf("got %d rows, want exactly grid height 5", len(rows))
+	}
+	joined := strings.Join(rows, "\n")
+	for i := range segments {
+		if want := superscriptNumber(i+1) + segments[i].Name; !strings.Contains(joined, want) {
+			t.Errorf("missing legend entry %q", want)
+		}
+	}
+	for _, row := range rows {
+		if got := measure.StringWidth(row); got != 40 {
+			t.Errorf("row width = %d, want 40: %q", got, row)
+		}
+	}
+}
+
+func TestRenderTreemapLegendMinValueKeepsMarkers(t *testing.T) {
+	segments := []TreemapSegment{
+		{Name: "first-long-process", Value: 10},
+		{Name: "second-long-process", Value: 5},
+		{Name: "third-long-process", Value: 1},
+	}
+	for _, theme := range []TreemapTheme{TreemapThemeClassic, TreemapThemeNumbered} {
+		opts := TreemapOptions{
+			Width: 24, Height: 3, Theme: theme, ANSI: true,
+			BackgroundANSI: []string{"41", "42", "43"},
+			LegendRows:     -1, LegendMinValue: 2,
+		}
+		rows := renderTreemapRows(segments, opts)
+		grid := strings.Join(rows[:3], "\n")
+		legend := strings.Join(rows[3:], "\n")
+		if !strings.Contains(legend, "first-long-process") || !strings.Contains(legend, "second-long-process") {
+			t.Errorf("theme %v: expected larger entries in legend: %q", theme, legend)
+		}
+		if strings.Contains(legend, "third-long-process") {
+			t.Errorf("theme %v: small entry appeared in legend: %q", theme, legend)
+		}
+		if !strings.Contains(grid, "³") {
+			t.Errorf("theme %v: filtered entry lost its marker: %q", theme, grid)
+		}
+	}
+}
+
+func TestRenderTreemapDefaultBottomLegendHasAtMostTwoRows(t *testing.T) {
+	segments := make([]TreemapSegment, 8)
+	for i := range segments {
+		segments[i] = TreemapSegment{Name: fmt.Sprintf("long-process-%d", i), Value: 1}
+	}
+	rows := RenderTreemap(segments, TreemapOptions{Width: 24, Height: 4})
+	if len(rows) != 4 {
+		t.Fatalf("got %d rows, want four total canvas rows", len(rows))
+	}
+	if !strings.Contains(rows[3], "…") {
+		t.Errorf("bounded legend should indicate omitted entries: %q", rows[3])
+	}
+}
+
+func TestRenderTreemapBottomLegendFitsCanvas(t *testing.T) {
+	segments := make([]TreemapSegment, 8)
+	for i := range segments {
+		segments[i] = TreemapSegment{Name: fmt.Sprintf("long-process-%d", i), Value: 1}
+	}
+	for _, opts := range []TreemapOptions{
+		{Width: 24, Height: 6, LegendRows: -1},
+		{Width: 24, Height: 6, LegendRows: 1, ANSI: true, BackgroundANSI: []string{"41", "42"}},
+		{Width: 1, Height: 1},
+	} {
+		rows := RenderTreemap(segments, opts)
+		if got := len(rows); got != opts.Height {
+			t.Errorf("canvas height = %d, want %d", got, opts.Height)
+		}
+		for _, row := range rows {
+			if got := measure.StringWidth(row); got != opts.Width {
+				t.Errorf("canvas row width = %d, want %d: %q", got, opts.Width, row)
+			}
+		}
+	}
+}
+
+func TestRenderTreemapRightLegendUsesFullChartHeight(t *testing.T) {
+	segments := make([]TreemapSegment, 4)
+	for i := range segments {
+		segments[i] = TreemapSegment{Name: fmt.Sprintf("long-process-%d", i), Value: 1}
+	}
+	rows := RenderTreemap(segments, TreemapOptions{
+		Width: 40, Height: 4, LegendPosition: TreemapLegendRight, LegendWidth: 18,
+	})
+	if len(rows) != 4 {
+		t.Fatalf("got %d rows, want chart height 4", len(rows))
+	}
+	for i, row := range rows {
+		if want := superscriptNumber(i+1) + segments[i].Name; !strings.Contains(row, want) {
+			t.Errorf("right legend row %d missing %q: %q", i, want, row)
+		}
+	}
+}
+
+func TestTreemapRightLegendWrapsWideEntryAndContinues(t *testing.T) {
+	entries := []treemapLegendEntry{
+		{marker: "¹", label: "tilix 14%", code: "31"},
+		{marker: "²", label: "gnome-shell 12%", code: "32"},
+		{marker: "³", label: "other 5%", code: "33"},
+	}
+	rows := buildTreemapRightLegend(entries, 13, 6)
+	if len(rows) != 4 {
+		t.Fatalf("got %d rows, want four after wrapping wide entry: %q", len(rows), rows)
+	}
+	if !strings.Contains(rows[0], "¹tilix 14%") || !strings.Contains(rows[1], "²gnome-shell") || !strings.Contains(rows[2], "12%") || !strings.Contains(rows[3], "³other 5%") {
+		t.Errorf("wide entry should wrap and later entries should remain: %q", rows)
+	}
+	for _, row := range rows {
+		if got := measure.StringWidth(row); got != 13 {
+			t.Errorf("row width = %d, want 13: %q", got, row)
+		}
+	}
+}
+
 func TestRenderTreemapNoLabelsOption(t *testing.T) {
 	segments := []TreemapSegment{{Name: "visible-name", Value: 1}}
 	rows := RenderTreemap(segments, TreemapOptions{Width: 20, Height: 6, NoLabels: true})
@@ -349,11 +545,11 @@ func TestRenderTreemapLegendIsColoredUnderANSI(t *testing.T) {
 	} {
 		segments = append(segments, TreemapSegment{Name: name, Value: 1})
 	}
-	rows := RenderTreemap(segments, TreemapOptions{
+	rows := renderTreemapRows(segments, TreemapOptions{
 		Width: 60, Height: 6, ANSI: true,
 		BackgroundANSI: []string{"41", "42", "43", "44", "45", "46"},
 	})
-	legend := rows[len(rows)-1]
+	legend := strings.Join(rows[6:], "\n")
 	// "41" (red background) converts to "31" (red text) -- the legend
 	// colors text, never a filled background (that would read as another
 	// treemap box rather than a legend entry).
@@ -369,15 +565,32 @@ func TestTreemapBackgroundToForeground(t *testing.T) {
 	cases := map[string]string{
 		"40": "30", "41": "31", "47": "37", // normal background range
 		"100": "90", "107": "97", // bright background range
-		"31":   "31",   // already foreground: unchanged
-		"1;41": "1;41", // compound code: unchanged (not a plain integer)
-		"none": "none", // non-numeric: unchanged
-		"":     "",     // empty: unchanged
+		"48;5;42":    "38;5;42",
+		"48;2;1;2;3": "38;2;1;2;3",
+		"48;5;999":   "48;5;999",
+		"31":         "31",   // already foreground: unchanged
+		"1;41":       "1;41", // compound code: unchanged (not a plain integer)
+		"none":       "none", // non-numeric: unchanged
+		"":           "",     // empty: unchanged
 	}
 	for in, want := range cases {
 		if got := treemapBackgroundToForeground(in); got != want {
 			t.Errorf("treemapBackgroundToForeground(%q) = %q, want %q", in, got, want)
 		}
+	}
+}
+
+func TestRenderTreemapNumberedExtendedColorLegendAndEdge(t *testing.T) {
+	rows := RenderTreemap([]TreemapSegment{{Name: "long-process-name", Value: 1}}, TreemapOptions{
+		Width: 40, Height: 4, Theme: TreemapThemeNumbered, ANSI: true,
+		LegendPosition: TreemapLegendRight, LegendWidth: 23,
+		BackgroundANSI: []string{"48;5;42"},
+	})
+	if !strings.Contains(rows[0], "\x1b[38;5;42m▇") {
+		t.Errorf("numbered edge should use foreground color: %q", rows[0])
+	}
+	if !strings.Contains(strings.Join(rows, "\n"), "\x1b[38;5;42m¹long-process-name") {
+		t.Errorf("legend should use foreground color: %q", rows)
 	}
 }
 
@@ -446,8 +659,8 @@ func TestRenderTreemapRealProcSnapshot(t *testing.T) {
 	rows := RenderTreemap(segments, TreemapOptions{
 		Width: 60, Height: 15, ShowValues: true, ValuePrecision: 1,
 	})
-	if len(rows) != 15 && len(rows) != 16 { // grid rows, plus an optional legend row
-		t.Fatalf("len(rows) = %d, want 15 or 16", len(rows))
+	if len(rows) < 15 || len(rows) > 17 { // grid rows, plus up to two legend rows
+		t.Fatalf("len(rows) = %d, want 15 through 17", len(rows))
 	}
 	for i, row := range rows {
 		if got := utf8.RuneCountInString(row); got != 60 {
@@ -523,7 +736,7 @@ func TestRenderTreemapNumberedNeverShowsATruncatedFragment(t *testing.T) {
 	} {
 		segments = append(segments, TreemapSegment{Name: name, Value: 1})
 	}
-	rows := RenderTreemap(segments, numberedOptions(30, 8))
+	rows := renderTreemapRows(segments, numberedOptions(30, 8))
 	grid := strings.Join(rows[:8], "\n") // exclude any trailing legend row, which may legitimately end in "…"
 	if strings.Contains(grid, "…") {
 		t.Errorf("expected no truncated fragment inside the grid (corner markers alone should identify undersized boxes), got:\n%s", grid)

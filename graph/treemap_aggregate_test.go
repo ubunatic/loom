@@ -110,6 +110,25 @@ func TestAggregateTreemapPreservesTotal(t *testing.T) {
 	}
 }
 
+func TestAggregateTreemapPreservesRootValue(t *testing.T) {
+	leaf := TreemapNode{Name: "root", Value: 7}
+	if got := AggregateTreemap(leaf, 3); len(got) != 1 || got[0].Name != "root" || got[0].Value != 7 {
+		t.Errorf("leaf root = %+v, want one root segment worth 7", got)
+	}
+	root := TreemapNode{Name: "root", Value: 7, Children: []TreemapNode{
+		{Name: "a", Value: 3}, {Name: "b", Value: 5},
+	}}
+	for _, max := range []int{1, 2, 3, 10} {
+		var total float64
+		for _, segment := range AggregateTreemap(root, max) {
+			total += segment.Value
+		}
+		if total != 15 {
+			t.Errorf("maxNodes=%d: total = %v, want 15", max, total)
+		}
+	}
+}
+
 func TestAggregateTreemapExpandsHeaviestFirst(t *testing.T) {
 	root := TreemapNode{
 		Name: "root",

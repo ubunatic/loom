@@ -107,3 +107,77 @@ func TestTreemapThemeMapsFlagValuesToGraphThemes(t *testing.T) {
 		}
 	}
 }
+
+func TestTreemapPaletteUsesDarkTextOnLightBackgrounds(t *testing.T) {
+	opts := buildOptions(80, 20, 1, true, true)
+	want := []struct{ bg, fg string }{
+		{"41", "97"}, {"42", "30"}, {"43", "30"}, {"44", "97"},
+		{"45", "97"}, {"46", "30"}, {"100", "97"}, {"47", "30"},
+	}
+	if len(opts.BackgroundANSI) != len(want) || len(opts.ForegroundANSI) != len(want) {
+		t.Fatalf("palette lengths = %d backgrounds, %d foregrounds; want %d each", len(opts.BackgroundANSI), len(opts.ForegroundANSI), len(want))
+	}
+	for i, pair := range want {
+		if opts.BackgroundANSI[i] != pair.bg || opts.ForegroundANSI[i] != pair.fg {
+			t.Errorf("palette[%d] = background %q, foreground %q; want %q, %q", i, opts.BackgroundANSI[i], opts.ForegroundANSI[i], pair.bg, pair.fg)
+		}
+	}
+}
+
+func TestBuildProcTreeExcludesSelfAndDescendants(t *testing.T) {
+	psOutput := "10 1 0.1 shell\n20 10 2.0 treemap\n21 20 9.0 ps\n30 10 3.0 firefox\n"
+	all := buildProcTree(psOutput, 0)
+	filtered := buildProcTree(psOutput, 20)
+	names := func(root graph.TreemapNode) map[string]bool {
+		seen := map[string]bool{}
+		var visit func(graph.TreemapNode)
+		visit = func(node graph.TreemapNode) {
+			seen[node.Name] = true
+			for _, child := range node.Children {
+				visit(child)
+			}
+		}
+		visit(root)
+		return seen
+	}
+	if !names(all)["treemap"] || !names(all)["ps"] {
+		t.Fatalf("unfiltered tree lost treemap or its ps child: %+v", all)
+	}
+	got := names(filtered)
+	if got["treemap"] || got["ps"] {
+		t.Errorf("excluded process or child remained: %+v", filtered)
+	}
+	if !got["shell"] || !got["firefox"] {
+		t.Errorf("unrelated processes were lost: %+v", filtered)
+	}
+}
+
+func TestIsTreemapGoRun(t *testing.T) {
+	cases := []struct {
+		command string
+		want    bool
+	}{
+		{"/usr/local/go/bin/go run ./examples/treemap --exclude-self", true},
+		{"go run ./examples/treemap/main.go --exclude-self", true},
+		{"go run ./examples/monitor", false},
+		{"/bin/zsh -c go run ./examples/treemap", false},
+		{"/tmp/treemap --exclude-self", false},
+	}
+	for _, tc := range cases {
+		if got := isTreemapGoRun(tc.command); got != tc.want {
+			t.Errorf("isTreemapGoRun(%q) = %v, want %v", tc.command, got, tc.want)
+		}
+	}
+}
+
+func TestBuildProcTreeExcludesGoRunLauncherSubtree(t *testing.T) {
+	psOutput := "10 1 0.1 shell\n20 10 250.0 go\n21 20 2.0 treemap\n22 21 9.0 ps\n30 10 3.0 firefox\n"
+	root := buildProcTree(psOutput, 20)
+	if len(root.Children) != 1 || root.Children[0].Name != "shell" {
+		t.Fatalf("unexpected roots after launcher exclusion: %+v", root)
+	}
+	children := root.Children[0].Children
+	if len(children) != 1 || children[0].Name != "firefox" {
+		t.Errorf("launcher subtree should be gone, unrelated sibling retained: %+v", children)
+	}
+}
