@@ -9,11 +9,12 @@ import "strings"
 // When content exceeds the visible area a "▐" scroll indicator appears on the
 // right edge, proportional to the current scroll position.
 type View struct {
-	Lines  []string
-	Scroll int   // first visible line index
-	Height int   // preferred visible height cap; 0 = len(Lines)
-	Style  Style // base style for all lines
-	lastH  int   // height from last Draw; gates scroll in HandleKey
+	Lines    []string
+	Scroll   int   // first visible line index
+	Height   int   // preferred visible height cap; 0 = len(Lines)
+	Style    Style // base style for all lines
+	lastH    int   // height from last Draw; gates scroll in HandleKey
+	lastRect Rect
 }
 
 // NewView creates a View from a slice of pre-formatted lines.
@@ -23,6 +24,7 @@ func NewView(lines []string) *View { return &View{Lines: lines} }
 // reserved for the scroll indicator and content is truncated one column shorter.
 func (v *View) Draw(c *Canvas, r Rect) {
 	v.lastH = r.H
+	v.lastRect = r
 	total := len(v.Lines)
 	scrollable := total > r.H
 
@@ -103,7 +105,7 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 	return false
 }
 
-// HandleMouse supports scroll-wheel navigation.
+// HandleMouse supports wheel navigation and clicks in the scrollbar track.
 func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 	maxScroll := len(v.Lines) - v.lastH
 	if maxScroll < 0 {
@@ -118,8 +120,22 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 		if v.Scroll < maxScroll {
 			v.Scroll++
 		}
+	case MousePress:
+		if e.Button == MouseLeft && maxScroll > 0 && v.lastRect.W > 0 &&
+			e.X == v.lastRect.X+v.lastRect.W &&
+			e.Y > v.lastRect.Y && e.Y <= v.lastRect.Y+v.lastRect.H {
+			v.Scroll = scrollTrackPosition(e.Y-v.lastRect.Y-1, v.lastRect.H, maxScroll)
+		}
 	}
 	return false
+}
+
+// scrollTrackPosition maps a clicked track row to the viewport's first item.
+func scrollTrackPosition(row, rows, maxOffset int) int {
+	if rows < 2 || maxOffset <= 0 {
+		return 0
+	}
+	return row * maxOffset / (rows - 1)
 }
 
 // stripANSI removes escape sequences from s, returning plain text.

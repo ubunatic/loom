@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -148,5 +149,29 @@ func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
 	b.HandleKey(loom.KeyEvent{Key: "enter"})
 	if opened != path {
 		t.Fatalf("Enter opened %q, want %q", opened, path)
+	}
+}
+
+func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
+	dir := t.TempDir()
+	for i := 0; i < 40; i++ {
+		name := fmt.Sprintf("file-%02d", i)
+		if err := os.WriteFile(filepath.Join(dir, name), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b.Draw(loom.NewCanvas(80, 20), loom.Rect{W: 80, H: 20})
+	rect := b.frame.Layout(80, 20)[0]
+	// Child scrollbar is the last column inside the box border. Its final
+	// item row is immediately above Choice's filter prompt.
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft,
+		X: rect.X + rect.W - 1, Y: rect.Y + rect.H - 2})
+	item, ok := b.list.Selected()
+	if !ok || item.Name != "file-27" {
+		t.Fatalf("bottom track click selected %+v, ok=%v; want file-27", item, ok)
 	}
 }

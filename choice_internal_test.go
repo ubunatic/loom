@@ -102,6 +102,28 @@ func TestChoiceSelectOnlyOnClick(t *testing.T) {
 	}
 }
 
+func TestChoiceScrollbarTrackClick(t *testing.T) {
+	c := makeChoice(30)
+	c.SelectOnlyOnClick = true
+	c.Draw(NewCanvas(25, 8), Rect{X: 2, Y: 1, W: 20, H: 6})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 6})
+	if c.viewOffset != 25 || c.sel != 25 {
+		t.Fatalf("bottom track click: offset=%d sel=%d, want 25", c.viewOffset, c.sel)
+	}
+	c.Draw(NewCanvas(25, 8), Rect{X: 2, Y: 1, W: 20, H: 6})
+	if c.viewOffset != 25 {
+		t.Fatalf("redraw snapped viewport to %d", c.viewOffset)
+	}
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 2})
+	if c.viewOffset != 0 || c.sel != 4 {
+		t.Fatalf("top track click: offset=%d sel=%d, want 0 and 4", c.viewOffset, c.sel)
+	}
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 7}) // prompt
+	if c.viewOffset != 0 || c.sel != 4 {
+		t.Fatal("prompt-row click moved scrollbar")
+	}
+}
+
 // TestBackspaceEmptyQueryLeavesView verifies that pressing backspace with no
 // filter text dismisses the view (aborts), mirroring Esc/`:back`, while
 // backspace with a non-empty query only trims the filter.

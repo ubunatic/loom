@@ -51,6 +51,7 @@ type Choice struct {
 	viewOffset int // first visible item index (virtual scrolling)
 	itemRows   int // item rows from the last Draw; excludes the prompt
 	drawn      bool
+	lastRect   Rect
 	aborted    bool
 	done       bool
 	filtered   []Item
@@ -168,6 +169,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	}
 	c.itemRows = itemRows
 	c.drawn = true
+	c.lastRect = r
 
 	c.clampView(itemRows)
 
@@ -350,11 +352,25 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 	return false
 }
 
-// HandleMouse updates selection on hover and confirms on left-click.
+// HandleMouse updates selection on hover or wheel, confirms on left-click,
+// and jumps the viewport when the scrollbar track is clicked.
 // e.Y is the 1-based widget-relative row, so e.Y-1 is the visible item row;
 // viewOffset maps that back to a filtered index (mirrors Draw's fi mapping)
 // so hit-tests stay correct once the list has been scrolled.
 func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
+	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
+		c.lastRect.W > 0 && c.itemRows > 0 &&
+		e.X == c.lastRect.X+c.lastRect.W && len(c.filtered) > c.itemRows {
+		row := e.Y - c.lastRect.Y - 1
+		if c.PromptTop {
+			row--
+		}
+		if row >= 0 && row < c.itemRows {
+			c.viewOffset = scrollTrackPosition(row, c.itemRows, len(c.filtered)-c.itemRows)
+			c.sel = max(c.viewOffset, min(c.sel, c.viewOffset+c.itemRows-1))
+		}
+		return false
+	}
 	switch e.Action {
 	case MouseScrollUp:
 		if c.sel > 0 {
@@ -366,6 +382,9 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			c.sel++
 		}
 		return false
+	}
+	if c.drawn {
+		e.Y -= c.lastRect.Y
 	}
 	if c.PromptTop {
 		e.Y--
