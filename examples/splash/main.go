@@ -49,8 +49,16 @@ func runShowOnce(out io.Writer, width, height int) error {
 	view.Progress = 18.75
 	view.StepText = "fetching claude..."
 
+	cols := terminalWidth(out)
 	for _, row := range loom.Render(view, width, height) {
-		if _, err := fmt.Fprintln(out, strings.TrimSuffix(row, "\x1b[0m")); err != nil {
+		row = strings.TrimSuffix(row, "\x1b[0m")
+		// Belt-and-suspenders against a stale/wrong terminal-width detection
+		// (see loom.RawScreen's doc comment); plain sequential output, no
+		// cursor control, since this is a one-shot "print once" path.
+		if cols > 0 {
+			row = loom.ClipRow(row, cols)
+		}
+		if _, err := fmt.Fprintln(out, row); err != nil {
 			return err
 		}
 	}
@@ -107,7 +115,6 @@ func runWatch(ctx context.Context, out io.Writer) error {
 	}
 	return err
 }
-
 
 func terminalWidth(out io.Writer) int {
 	file, ok := out.(*os.File)

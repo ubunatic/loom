@@ -54,10 +54,22 @@ func runWidth(out io.Writer, width int) error {
 	if responsive, ok := root.(loom.WidthHeighter); ok {
 		height = responsive.HeightForWidth(width)
 	}
+	cols := terminalWidth(out)
 	for _, row := range loom.Render(root, width, height) {
 		// This monochrome shell has no styles; omit Render's row reset so
 		// redirected output is plain terminal text, with no cursor controls.
-		if _, err := fmt.Fprintln(out, strings.TrimSuffix(row, "\x1b[0m")); err != nil {
+		row = strings.TrimSuffix(row, "\x1b[0m")
+		// Belt-and-suspenders against a stale/wrong terminal-width detection
+		// (see loom.RawScreen's doc comment for the failure mode this
+		// guards): row should already be exactly `width` columns since width
+		// was computed from the same terminal query above, but this is the
+		// one place that safety belongs -- not in loom.Render/the widget
+		// tree itself. Plain sequential output, no cursor control: this is a
+		// one-shot "print once" path, not a redraw loop.
+		if cols > 0 {
+			row = loom.ClipRow(row, cols)
+		}
+		if _, err := fmt.Fprintln(out, row); err != nil {
 			return err
 		}
 	}
