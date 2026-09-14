@@ -73,9 +73,15 @@ func TestBrowserShowsSideBySidePanes(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rects := b.frame.Layout(80, 20)
+	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
+	configurePane(pane)
+	cols := 80
+	if pane.MaxCols > 0 && cols > pane.MaxCols {
+		cols = pane.MaxCols
+	}
+	rects := b.frame.Layout(cols, 20)
 	if rects[0].W < 20 || rects[1].W < 25 || rects[1].X <= rects[0].X+rects[0].W {
-		t.Fatalf("expected two side-by-side panes at 80 columns, got %+v", rects)
+		t.Fatalf("expected two side-by-side panes at terminal width 80 (canvas %d), got %+v", cols, rects)
 	}
 	if b.frame.Boxes[0].Border.Vertical == "" || b.frame.Boxes[1].Border.Vertical == "" {
 		t.Fatal("pane borders are invisible")
