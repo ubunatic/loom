@@ -50,7 +50,7 @@ func newBrowser(path string) (*browser, error) {
 	}
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
-		Status: "Tab: focus  •  ↑/↓: select  •  Enter: open file/directory (.. for parent)  •  PgUp/PgDn: scroll details  •  Ctrl-Q: quit",
+		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  ^Q quit",
 		Boxes: []loom.Box{
 			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16, Border: border},
 			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Border: border, Child: b.details},
