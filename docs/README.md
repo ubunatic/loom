@@ -17,5 +17,6 @@
 | [studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md](studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md) | From Monitor Screenshots to a Declarative UI Backlog |
 | [studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md](studies/2026-09-10-agentic-sprint-from-mid-flight-rows-to-stable-graph-milestone.md) | Agentic Sprint from Mid-Flight Rows to Stable Graph Milestone |
 | [studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md](studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md) | Splash Screen Architecture and Runtime Safeguards |
+| [studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md](studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md) | x/term Coverage Gap in Pane.termSize |
 
 Study files are the source of truth for this table.
