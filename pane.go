@@ -31,7 +31,6 @@ import (
 	"strings"
 	"syscall"
 	"time"
-	"unsafe"
 
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
@@ -39,7 +38,6 @@ import (
 
 // DefaultMaxCols is the default maximum canvas width loaded from SpeccedDefaults.
 var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
-
 
 // Pane manages an inline terminal region and drives the widget event loop.
 type Pane struct {
@@ -60,7 +58,6 @@ type Pane struct {
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
 	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
 	DisableDefaultQuit bool
-
 
 	// winch carries SIGWINCH notifications so the Run loop reflows on a
 	// terminal window resize. Buffered (cap 1) to coalesce resize bursts.
@@ -524,7 +521,6 @@ var defaultQuitKeyMap = func() map[string]bool {
 	return m
 }()
 
-
 // handleKeyFallback reports whether an unhandled key should trigger a default
 // safeguard exit based on embedded spec/defaults.yaml.
 func (p *Pane) handleKeyFallback(ke KeyEvent) bool {
@@ -537,8 +533,6 @@ func (p *Pane) handleKeyFallback(ke KeyEvent) bool {
 	}
 	return defaultQuitKeyMap[key]
 }
-
-
 
 // Close tears down the pane: clears the reserved region, restores terminal
 // state, and closes /dev/tty. Safe to call multiple times.
@@ -606,13 +600,15 @@ func (p *Pane) installSignalHandler() {
 	signal.Notify(p.winch, syscall.SIGWINCH)
 }
 
-// termSize returns the terminal dimensions via TIOCGWINSZ.
+// termSize returns the terminal dimensions via x/term (TIOCGWINSZ under the
+// hood on Unix), falling back to a conventional 80x24 on error -- this used
+// to hand-roll its own syscall.Syscall(SYS_IOCTL, TIOCGWINSZ, ...) call
+// even though term.GetSize (already imported in this file for MakeRaw/
+// Restore) does the same thing more portably.
 func termSize(fd int) (cols, rows int) {
-	var ws struct{ Row, Col, X, Y uint16 }
-	_, _, errno := syscall.Syscall(syscall.SYS_IOCTL, uintptr(fd),
-		uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&ws)))
-	if errno != 0 {
+	cols, rows, err := term.GetSize(fd)
+	if err != nil || cols < 1 || rows < 1 {
 		return 80, 24
 	}
-	return int(ws.Col), int(ws.Row)
+	return cols, rows
 }
