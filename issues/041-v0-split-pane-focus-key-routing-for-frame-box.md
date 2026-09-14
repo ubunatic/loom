@@ -1,6 +1,6 @@
 # 041 — v0 split-pane focus + key routing for Frame/Box
 
-**Status**: Open
+**Status**: Closed — implemented and verified in fec5aa7
 **Priority**: P2 (Medium)
 **Severity**: Enhancement
 **Category**: Feature
@@ -115,17 +115,17 @@ right) rather than step 1–3 (which are mechanical). No changes needed to
 
 ## 4. Acceptance Criteria
 
-- [ ] `Frame` tracks a focused box among visible boxes; a configurable key
+- [x] `Frame` tracks a focused box among visible boxes; a configurable key
       (default Tab) cycles focus forward, wrapping; Shift-Tab (or a second
       configurable key) cycles backward.
-- [ ] Unhandled keys route to the focused box's `Child.HandleKey`; keys
+- [x] Unhandled keys route to the focused box's `Child.HandleKey`; keys
       matched by a declared `FrameAction` are never forwarded.
-- [ ] Hidden boxes are never focus targets and never receive key events;
+- [x] Hidden boxes are never focus targets and never receive key events;
       toggling the focused box hidden moves focus to the next visible box
       (or clears focus if none remain).
-- [ ] `Box.HandleKey` forwards to `Child.HandleKey` when `Child != nil`.
-- [ ] New tests pass; existing `frame_test.go`, `frame_actions_test.go`,
+- [x] `Box.HandleKey` forwards to `Child.HandleKey` when `Child != nil`.
+- [x] New tests pass; existing `frame_test.go`, `frame_actions_test.go`,
       `frame_layout_test.go` still pass unchanged (no behavior change for
       single-box or non-interactive Frames).
-- [ ] One example demonstrates two focusable panes with Tab-driven focus
+- [x] One example demonstrates two focusable panes with Tab-driven focus
       switching and per-pane scrolling.
