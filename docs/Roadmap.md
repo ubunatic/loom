@@ -94,23 +94,73 @@ and 028. Unfinished acceptance checkboxes remain unchecked.
 
 ### Ticket sequencing
 
-The immediate sequence is **014 configurable colors/glyphs → 015 Voxi panels → 016 complete simulated target milestone**, alongside the Harnez splash sequence (**029 centered layout → 030 braille spinner/bar → 031 status pills → 032 lifecycle coordinator → 033 integration**).
+Reconciled 2026-09-15: splash (029–033) and the earlier stages are shipped.
+Priority now shifts to concrete correctness and missing-capability tickets
+surfaced by real consumers (Harnez, Voxi, `examples/filebrowser`) — key
+handling, TUI rendering bugs, and layout gaps — over further styling/theme
+and simulated-target work that no concrete app has asked for yet. See
+"Current focus" below for the reprioritized sequence; the color/glyph/Voxi
+sequence described in this subsection is demoted to Later/Park.
+
 012, 013, 027, and 028 are shipped and provide stable graph, timing, measurement, and collector foundations.
 
-**Now — expressive target UIs & splash startup.** Continue
+**Later — expressive target UIs (demoted).**
 [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) →
 [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) →
 [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md): declared
 colors/glyphs, bounded transcript and daemon panels, then the complete two-target
-matrix. In parallel or following these, implement the Harnez splash screen target
-sequence ([029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md) →
-[030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md) →
-[031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md) →
-[032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md) →
-[033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md)) to prove
-centered viewport layouts, braille spinner/bar animations, and view transition lifecycles.
-028 now precedes these because shared measurement reduces sizing and ANSI drift
-as richer content arrives; 013 remains 014's declared prerequisite.
+matrix. No concrete downstream app currently blocks on these — revisit once a
+real consumer needs configurable palettes/glyphs or Voxi panels, rather than
+building them speculatively ahead of demand.
+
+### Current focus (2026-09-15) — bugs, key handling, missing features
+
+Reprioritized against the open tickets returned by
+`harnez find -d . issues status:open`. The bar for "Now" is: a concrete bug
+a real app can hit, a missing feature a concrete example already needs, or
+input/key-handling correctness — not additional styling/theme surface or
+simulated-target polish nobody has asked for.
+
+**Now — input handling and rendering-correctness bugs.**
+- [053](../issues/053-pane-run-key-decoding-drops-multi-key-reads-and-splits-escape-sequences-across-tty-reads.md)
+  (P2): `Pane.run` drops extra key events coalesced into one tty read and has
+  no carry-over buffer for escape sequences split across reads — can corrupt
+  F-keys and navigation input under real terminal timing. Highest-value fix:
+  it is a correctness bug in the core input path every app depends on.
+- [038](../issues/038-fix-multi-byte-utf-8-string-truncation-in-popup-title-and-borders.md)
+  (P1): multi-byte UTF-8 truncation bug in popup title/borders — a rendering
+  correctness bug affecting any app with non-ASCII text.
+- [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md)
+  (P2): emoji rune-width discrepancy causes horizontal border drift — another
+  concrete rendering-correctness bug, not a styling preference.
+
+**Next — missing features concrete examples already need.**
+- [051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md)
+  (P2): Frame boxes cannot fill available content height; blocks
+  `examples/filebrowser` from a natural layout. A missing capability with a
+  concrete caller, not speculative.
+- [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md)
+  (P3): `docs/TuiInput.md` is referenced by 5 code comments (`pane.go`,
+  `event.go`, `loom_test.go`) but does not exist. Cheap to fix and directly
+  documents the key-handling path 053 touches — bundle with 053 if convenient.
+
+**Later/Park — styling, theming, and advanced features without a concrete caller.**
+- [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md)
+  (P3, cosmetic): visible seam in `SubChar` glyph rendering without ANSI
+  background styling — cosmetic, no known consumer regression.
+- [044](../issues/044-add-julia256-theme.md) (P3): add another bundled theme —
+  pure styling addition, no app currently requests it.
+- [050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) (P2 but
+  styling): truecolor RGB theme support — defer until a concrete app needs
+  colors beyond the existing palette.
+- [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2 but
+  refactor/styling): unused `ChoiceStyle.Border` contract cleanup — no
+  functional bug, park behind correctness work.
+- [047](../issues/047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md)
+  (P3): remove deprecated uzu branding from `loom.cmdBar` — cleanup, no
+  functional impact; low priority relative to bugs/missing features above.
+- 014/015/016 (Voxi colors/glyphs/panels): see "Ticket sequencing" above —
+  demoted pending a real consumer request.
 
 **Later — broader external boundaries and binding decisions.** Retain
 [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md)
