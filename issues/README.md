@@ -55,3 +55,4 @@ upkeep.
 | 041 | [041-v0-split-pane-focus-key-routing-for-frame-box.md](041-v0-split-pane-focus-key-routing-for-frame-box.md) | v0 split-pane focus + key routing for Frame/Box | Closed — implemented and verified in fec5aa7 |
 | 042 | [042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md](042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md) | `docs/TuiInput.md` referenced by 5 code comments but does not exist | Open |
 | 043 | [043-widget-color-themes-plain-and-mc-midnight-commander.md](043-widget-color-themes-plain-and-mc-midnight-commander.md) | Widget Color Themes: `plain` and `mc` (Midnight Commander) | Closed |
+| 044 | [044-add-julia256-theme.md](044-add-julia256-theme.md) | Add `julia256` Theme | Open |
