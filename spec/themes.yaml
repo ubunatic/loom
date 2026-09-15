@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=schemas/themes.schema.json
+# Loom widget color themes.
+#
+# Each theme defines named color roles used by widget style structs
+# (ChoiceStyle, TableStyle, etc.).  Only 256-color palette indices are used
+# here; true-color (RGB) overrides are left for application code.
+#
+# Color index 0 is a sentinel for "terminal default" (reset).  Use a non-zero
+# index to force a specific palette entry.
+
+themes:
+  # plain — terminal-default colors; visually identical to the current
+  # hard-coded DefaultChoiceStyle / DefaultTableStyle behavior.
+  plain:
+    normal_fg:        0   # terminal default
+    normal_bg:        0   # terminal default
+    selected_fg:      0   # terminal default (bold carries the highlight)
+    selected_bg:      0   # terminal default
+    selected_bold:    true
+    header_fg:        0
+    header_bg:        0
+    header_bold:      true
+    prompt_fg:        0
+    prompt_bg:        0
+    border_fg:        0
+    border_bg:        0
+    focus_bg:         238 # dark grey cell highlight (Grid focus, matches NewGrid default)
+
+  # mc — Midnight Commander classic blue-panel palette.
+  # Panel body: white text on bright blue (index 27 / #005fd7).
+  # Selected row: black on cyan (index 51 / #00ffff).
+  # Header row: yellow on blue (bold).
+  # Prompt / command line: black on cyan.
+  # Border / title bar: white on blue.
+  mc:
+    normal_fg:        15  # bright white
+    normal_bg:        27  # blue  (#005fd7)
+    selected_fg:      0   # black
+    selected_bg:      51  # cyan  (#00ffff)
+    selected_bold:    false
+    header_fg:        226 # bright yellow
+    header_bg:        27  # blue
+    header_bold:      true
+    prompt_fg:        0   # black
+    prompt_bg:        51  # cyan
+    border_fg:        15  # bright white
+    border_bg:        27  # blue
+    focus_bg:         33  # slightly lighter blue for focused grid cells
