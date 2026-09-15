@@ -1,6 +1,6 @@
 # 043 — Widget Color Themes: `plain` and `mc` (Midnight Commander)
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
