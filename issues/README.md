@@ -62,3 +62,4 @@ upkeep.
 | 048 | [048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md](048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) | Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles | Open |
 | 049 | [049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md](049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md) | Add PgUp / PgDn and Home / End support to loom.Choice | Closed — resolved |
 | 050 | [050-support-truecolor-rgb-values-in-theme-specs.md](050-support-truecolor-rgb-values-in-theme-specs.md) | Support truecolor RGB values in theme specs | Open |
+| 051 | [051-allow-frame-boxes-to-fill-available-content-height.md](051-allow-frame-boxes-to-fill-available-content-height.md) | Allow Frame boxes to fill available content height | Open |
