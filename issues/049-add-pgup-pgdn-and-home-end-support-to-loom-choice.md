@@ -1,10 +1,10 @@
 # 049 — Add PgUp / PgDn and Home / End support to loom.Choice
 
-**Status**: Closed
+**Status**: Closed — resolved
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: `choice.go`, `choice_test.go`, `event.go`
+**Related**: `choice.go`, `choice_internal_test.go`, `event.go`, `288230f`
 
 ---
 
@@ -32,12 +32,12 @@ In addition, `loom.DecodeKey` emits `pgdown` for CSI `\x1b[6~`, while widgets an
      - `case "pgdown", "pgdn", "pagedown":` step `sel` forwards by `max(1, c.itemRows-1)` (clamped to `len(c.filtered)-1`).
      - `case "home":` `c.sel = 0`.
      - `case "end":` `c.sel = max(0, len(c.filtered)-1)`.
-2. **`choice_test.go`**:
+2. **`choice_internal_test.go`**:
    - Add unit tests verifying `pgup`, `pgdown`, `home`, and `end` jump `sel` correctly.
 
 ---
 
 ## 3. Verification & Resolution
 
-- Run `go test ./...` in `loom`.
-- Verify in `imgbrowser` that PgUp / PgDn jumps by a page in the files list and preview pane.
+- Verified with `go test ./...` in `loom`.
+- Verified the navigation behavior through the filebrowser example tests.

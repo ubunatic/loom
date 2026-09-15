@@ -1,10 +1,11 @@
 # 046 — Decode function keys F1 to F12
 
-**Status**: Closed
+**Status**: Closed — resolved
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: `event.go`, `event_test.go`, `issues/045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md`
+**Related**: `event.go`, `event_test.go`,
+[issue 045](045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md), `288230f`
 
 ---
 

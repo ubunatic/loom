@@ -1,10 +1,10 @@
 # 045 — Decode modified cursor keys: shift-, ctrl-, alt- arrows
 
-**Status**: Closed
+**Status**: Closed — resolved
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: `event.go`, `event_test.go`, `pane.go`
+**Related**: `event.go`, `event_test.go`, `pane.go`, `288230f`
 
 ---
 

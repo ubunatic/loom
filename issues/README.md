@@ -56,9 +56,9 @@ upkeep.
 | 042 | [042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md](042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md) | `docs/TuiInput.md` referenced by 5 code comments but does not exist | Open |
 | 043 | [043-widget-color-themes-plain-and-mc-midnight-commander.md](043-widget-color-themes-plain-and-mc-midnight-commander.md) | Widget Color Themes: `plain` and `mc` (Midnight Commander) | Closed |
 | 044 | [044-add-julia256-theme.md](044-add-julia256-theme.md) | Add `julia256` Theme | Open |
-| 045 | [045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md](045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md) | Decode modified cursor keys: shift-, ctrl-, alt- arrows | Closed |
-| 046 | [046-decode-function-keys-f1-to-f12.md](046-decode-function-keys-f1-to-f12.md) | Decode function keys F1 to F12 | Closed |
+| 045 | [045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md](045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md) | Decode modified cursor keys: shift-, ctrl-, alt- arrows | Closed — resolved |
+| 046 | [046-decode-function-keys-f1-to-f12.md](046-decode-function-keys-f1-to-f12.md) | Decode function keys F1 to F12 | Closed — resolved |
 | 047 | [047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md](047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md) | Remove deprecated uzu brand and default global commands from loom.cmdBar | Open |
 | 048 | [048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md](048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) | Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles | Open |
-| 049 | [049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md](049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md) | Add PgUp / PgDn and Home / End support to loom.Choice | Closed |
+| 049 | [049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md](049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md) | Add PgUp / PgDn and Home / End support to loom.Choice | Closed — resolved |
 | 050 | [050-support-truecolor-rgb-values-in-theme-specs.md](050-support-truecolor-rgb-values-in-theme-specs.md) | Support truecolor RGB values in theme specs | Open |
