@@ -268,6 +268,99 @@ func scanMouse(b []byte) (MouseEvent, int, bool) {
 	return ev, end + 1, true
 }
 
+// scanKey extracts the leading key event from b, the non-mouse counterpart to
+// scanMouse: a single tty read (or several coalesced reads) can carry more
+// than one complete key sequence, and a fast terminal can split one escape
+// sequence across two reads. ok is false when b ends with bytes that could
+// still be the unfinished prefix of a longer escape sequence (e.g. a lone
+// "\x1b" or "\x1b[1") — the caller should hold those bytes as pending and
+// wait for more data (or time out and treat a standalone ESC as a plain
+// "esc" keypress; see Pane.run) instead of dispatching a wrong decode. When
+// ok is true, used is the number of bytes consumed for the returned event.
+func scanKey(b []byte) (KeyEvent, int, bool) {
+	if len(b) == 0 {
+		return KeyEvent{}, 0, true
+	}
+	switch b[0] {
+	case 3, 2, 4, 6, 9, 10, 13, 17, 21, 23, 127, 8:
+		return DecodeKey(b[:1]), 1, true
+	case 27:
+		return scanEscapeKey(b)
+	default:
+		// A run of plain text/UTF-8 bytes up to the next control byte or ESC,
+		// decoded together as DecodeKey's default branch already does.
+		end := 1
+		for end < len(b) && !isKeyControlByte(b[end]) {
+			end++
+		}
+		return DecodeKey(b[:end]), end, true
+	}
+}
+
+// isKeyControlByte reports whether c is one of the single-byte control keys
+// or ESC that scanKey/DecodeKey special-case, i.e. a byte that must not be
+// folded into a plain-text run.
+func isKeyControlByte(c byte) bool {
+	switch c {
+	case 3, 2, 4, 6, 9, 10, 13, 17, 21, 23, 127, 8, 27:
+		return true
+	default:
+		return false
+	}
+}
+
+// scanEscapeKey handles the b[0] == 27 (ESC) case for scanKey, mirroring the
+// escape-sequence forms DecodeKey recognizes so it can report how many bytes
+// each one consumes (or that more bytes are needed to tell).
+func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
+	if len(b) == 1 {
+		return KeyEvent{}, 0, false // could be a standalone ESC, or the start of a sequence
+	}
+	if b[1] != '[' && b[1] != 'O' {
+		// ESC followed by a byte DecodeKey does not treat as CSI/SS3; consume
+		// just the two bytes so we still make forward progress.
+		return DecodeKey(b[:2]), 2, true
+	}
+	if len(b) == 2 {
+		return KeyEvent{}, 0, false
+	}
+	if b[1] == '[' && b[2] == '1' {
+		if len(b) == 3 {
+			return KeyEvent{}, 0, false
+		}
+		if b[3] == ';' {
+			// Modified cursor: ESC [ 1 ; <mod> <letter>
+			if len(b) < 6 {
+				return KeyEvent{}, 0, false
+			}
+			return DecodeKey(b[:6]), 6, true
+		}
+		// Not modified-cursor; falls through to the tilde-number scan below
+		// (e.g. "\x1b[15~").
+	}
+	switch b[2] {
+	case 'Z', 'A', 'B', 'C', 'D', 'a', 'b', 'c', 'd', 'P', 'Q', 'R', 'S', 'H', 'F':
+		return DecodeKey(b[:3]), 3, true
+	}
+	if b[2] >= '0' && b[2] <= '9' {
+		i := 2
+		for i < len(b) && b[i] >= '0' && b[i] <= '9' {
+			i++
+		}
+		if i == len(b) {
+			return KeyEvent{}, 0, false // digits ran out; a '~' may still follow
+		}
+		if b[i] == '~' {
+			return DecodeKey(b[:i+1]), i + 1, true
+		}
+		// Not a tilde sequence after all; consume what was scanned so an
+		// unrecognized form cannot stall the loop.
+		return KeyEvent{}, i, true
+	}
+	// Unrecognized CSI/SS3 form; consume the 3 bytes seen so far.
+	return KeyEvent{}, 3, true
+}
+
 // parseInts parses semicolon-separated ints into dst, returning how many were filled.
 func parseInts(s string, dst ...*int) (int, error) {
 	n := 0

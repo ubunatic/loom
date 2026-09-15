@@ -452,6 +452,17 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		canvas.Flush(p.tty, p.startRow)
 	}
 
+	// pending carries over bytes left from a previous reads result that could
+	// not yet be decoded as a complete key event — either a lone ESC that
+	// might be the start of a longer escape sequence, or a CSI/SS3 prefix cut
+	// short by a read boundary. pendingC fires escKeyTimeout after such bytes
+	// arrive with nothing more following, so a standalone ESC keypress still
+	// resolves promptly instead of waiting forever for bytes that will never
+	// come.
+	const escKeyTimeout = 50 * time.Millisecond
+	var pending []byte
+	var pendingC <-chan time.Time
+
 	dirty := true
 	for {
 		if p.Resizeable {
@@ -489,6 +500,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			canvas = NewCanvas(cols, p.rows)
 			dirty = true
 			continue
+		case <-pendingC:
+			// No further bytes arrived in time to complete the pending prefix;
+			// resolve it now (a lone ESC decodes as a plain "esc" keypress).
+			ke := DecodeKey(pending)
+			pending = nil
+			pendingC = nil
+			dirty = true
+			if root.HandleKey(ke) || p.handleKeyFallback(ke) {
+				return nil
+			}
 		case rr := <-reads:
 			if rr.err != nil {
 				return fmt.Errorf("loom: input: %w", rr.err)
@@ -498,6 +519,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 			dirty = true
 			raw := rr.data
+			if len(pending) > 0 {
+				raw = append(pending, raw...)
+			}
+			pending = nil
+			pendingC = nil
 
 			// Try mouse first (SGR: \x1b[<…M/m). A single read may carry several
 			// reports (1003 any-motion tracking floods them), so drain the whole
@@ -527,8 +553,32 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				continue
 			}
 
-			ke := DecodeKey(raw)
-			if root.HandleKey(ke) || p.handleKeyFallback(ke) {
+			// Drain every complete key event out of raw (mirroring the mouse
+			// loop above) instead of decoding only the first one, so several
+			// key sequences coalesced into one read are all dispatched, in
+			// order. A trailing prefix that could still be the start of a
+			// longer escape sequence is held as pending rather than decoded
+			// wrong.
+			quit := false
+			for len(raw) > 0 {
+				ke, used, ok := scanKey(raw)
+				if !ok {
+					pending = append([]byte(nil), raw...)
+					pendingC = time.After(escKeyTimeout)
+					raw = nil
+					break
+				}
+				raw = raw[used:]
+				if used == 0 {
+					// scanKey must always make progress; guard against a stall.
+					break
+				}
+				if root.HandleKey(ke) || p.handleKeyFallback(ke) {
+					quit = true
+					break
+				}
+			}
+			if quit {
 				return nil
 			}
 		}

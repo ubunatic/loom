@@ -1,6 +1,6 @@
 # 053 — Pane.Run key decoding drops multi-key reads and splits escape sequences across tty reads
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -72,3 +72,21 @@ only reproduce against a real or PTY-simulated tty under bursty input.
   calls with a small delay between them and asserts it decodes as the single
   intended key event, not as a lone `esc` plus garbage.
 - Existing `DecodeKey`/`scanMouse` unit tests continue to pass unchanged.
+
+## 4. Resolution
+
+Implemented as proposed: added `scanKey`/`scanEscapeKey` in `event.go`
+(the key-path analogue of `scanMouse`) and a `pending`/`pendingC`
+(50ms `time.After` timeout) carry-over buffer in `Pane.run` (`pane.go`).
+The `reads` case now prepends any pending bytes, then drains every complete
+key event out of `raw` in a loop (mirroring the existing mouse-report drain),
+holding back a trailing incomplete-escape prefix as `pending` instead of
+mis-decoding it; a `<-pendingC` timeout resolves a genuinely standalone ESC
+to a plain `esc` key. `DecodeKey`/`scanMouse` are unchanged.
+
+New PTY-based tests in `pane_pty_test.go`:
+`TestPaneRunDecodesMultipleKeysFromOneRead`,
+`TestPaneRunReassemblesSplitEscapeSequence`,
+`TestPaneRunStandaloneEscTimesOut` — confirmed failing (timeout) against the
+pre-fix code and passing after the fix. `GOWORK=off go test ./...` and
+`-race` pass across all packages.
