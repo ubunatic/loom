@@ -112,6 +112,42 @@ func TestBoxPaddingAndIsolation(t *testing.T) {
 	}
 }
 
+func TestFrameAndBoxStyles(t *testing.T) {
+	border := BoxBorder{TopLeft: "+", TopRight: "+", BottomLeft: "+", BottomRight: "+", Horizontal: "-", Vertical: "|"}
+	frameStyle := FrameStyle{
+		Background: Style{BG: ColorIndex(27)},
+		Title:      Style{FG: ColorIndex(15), BG: ColorIndex(27)},
+		Status:     Style{FG: ColorIndex(0), BG: ColorIndex(51)},
+	}
+	boxStyle := BoxStyle{
+		Background: Style{BG: ColorIndex(27)},
+		Border:     Style{FG: ColorIndex(15), BG: ColorIndex(27)},
+		Title:      Style{FG: ColorIndex(226), BG: ColorIndex(27)},
+	}
+	f := Frame{Title: "Frame", Status: "Status", Style: frameStyle, Boxes: []Box{{Title: "Box", Width: 8, Height: 4, Border: border, Style: boxStyle}}}
+	canvas := NewCanvas(10, 6)
+	f.Draw(canvas, canvas.Bounds())
+
+	checks := []struct {
+		name  string
+		x, y  int
+		style Style
+	}{
+		{name: "frame title", x: 0, y: 0, style: frameStyle.Title},
+		{name: "frame background", x: 9, y: 0, style: frameStyle.Background},
+		{name: "box border", x: 0, y: 1, style: boxStyle.Border},
+		{name: "box title", x: 1, y: 1, style: boxStyle.Title},
+		{name: "box background", x: 1, y: 2, style: boxStyle.Background},
+		{name: "status", x: 0, y: 5, style: frameStyle.Status},
+		{name: "status fill", x: 9, y: 5, style: frameStyle.Status},
+	}
+	for _, check := range checks {
+		if got := canvas.Get(check.x, check.y).Style; got != check.style {
+			t.Errorf("%s style = %+v, want %+v", check.name, got, check.style)
+		}
+	}
+}
+
 func TestFrameTinyBounds(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {

@@ -7,16 +7,18 @@ import "strings"
 
 // ChoiceStyle controls the visual appearance of a Choice widget.
 type ChoiceStyle struct {
-	Normal   Style
-	Selected Style
-	Prompt   Style
-	Border   Style
+	Normal      Style
+	Selected    Style
+	Prompt      Style
+	Placeholder Style
+	Scrollbar   ScrollbarStyle
+	Border      Style
 }
 
 // DefaultChoiceStyle returns a minimal monochrome style.
 func DefaultChoiceStyle() ChoiceStyle {
 	sel := Style{Bold: true}
-	return ChoiceStyle{Normal: Reset, Selected: sel, Prompt: Reset, Border: Reset}
+	return ChoiceStyle{Normal: Reset, Selected: sel, Prompt: Reset, Placeholder: Style{Dim: true}, Scrollbar: DefaultScrollbarStyle(), Border: Reset}
 }
 
 // Choice is a filterable, keyboard-navigable list of Items.
@@ -230,7 +232,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			cv.Write(r.X, y, line, style)
 		}
 		if scrollable {
-			cv.Set(r.X+r.W-1, y, scrollbarCell(row == indicatorRow))
+			cv.Set(r.X+r.W-1, y, scrollbarCell(c.Style.Scrollbar, row == indicatorRow))
 		}
 	}
 
@@ -254,13 +256,12 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 		}
 	} else {
 		// Normal mode: base prompt + filter query (or placeholder)
-		promptText := c.Prompt + c.query
-		style := c.Style.Prompt
 		if c.query == "" && c.Placeholder != "" {
-			promptText = c.Prompt + c.Placeholder
-			style.Dim = true
+			n := cv.Write(r.X, promptY, c.Prompt, c.Style.Prompt)
+			cv.Write(r.X+n, promptY, c.Placeholder, c.Style.Placeholder)
+		} else {
+			cv.Write(r.X, promptY, c.Prompt+c.query, c.Style.Prompt)
 		}
-		cv.Write(r.X, promptY, promptText, style)
 
 		if c.Controls != "" {
 			ctrlW := len([]rune(c.Controls))
@@ -328,6 +329,22 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 		} else {
 			c.sel = 0
 		}
+	case "pgup", "pageup":
+		step := max(1, c.itemRows-1)
+		c.sel -= step
+		if c.sel < 0 {
+			c.sel = 0
+		}
+	case "pgdown", "pgdn", "pagedown":
+		step := max(1, c.itemRows-1)
+		c.sel += step
+		if c.sel >= len(c.filtered) {
+			c.sel = max(0, len(c.filtered)-1)
+		}
+	case "home":
+		c.sel = 0
+	case "end":
+		c.sel = max(0, len(c.filtered)-1)
 	case "backspace":
 		if len(c.query) > 0 {
 			runes := []rune(c.query)

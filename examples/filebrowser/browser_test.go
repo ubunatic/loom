@@ -20,7 +20,7 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	b, err := newBrowser(dir)
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,12 +45,110 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	}
 }
 
+func TestBrowserThemePersistsAcrossNavigation(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	theme := loom.Theme("mc")
+	b, err := newBrowser(dir, "mc", theme)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := theme.ChoiceStyle()
+	if b.list.Style != want {
+		t.Fatalf("initial list style = %+v, want %+v", b.list.Style, want)
+	}
+	if b.details.Style != want.Normal {
+		t.Fatalf("metadata style = %+v, want %+v", b.details.Style, want.Normal)
+	}
+	if b.details.Scrollbar != theme.ScrollbarStyle() {
+		t.Fatalf("metadata scrollbar = %+v, want %+v", b.details.Scrollbar, theme.ScrollbarStyle())
+	}
+	if b.frame.Style != theme.FrameStyle() {
+		t.Fatalf("frame style = %+v, want %+v", b.frame.Style, theme.FrameStyle())
+	}
+	for i, box := range b.frame.Boxes {
+		if box.Style != theme.BoxStyle() {
+			t.Fatalf("box %d style = %+v, want %+v", i, box.Style, theme.BoxStyle())
+		}
+	}
+
+	b.HandleKey(loom.KeyEvent{Key: "down"})
+	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	if b.dir != filepath.Join(dir, "sub") {
+		t.Fatalf("directory navigation returned %q", b.dir)
+	}
+	if b.list.Style != want {
+		t.Fatalf("navigated list style = %+v, want %+v", b.list.Style, want)
+	}
+}
+
+func TestBrowserCyclesSpeccedThemes(t *testing.T) {
+	b, err := newBrowser(t.TempDir(), "mc", loom.Theme("mc"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	names := themeNames()
+	start := 0
+	for i, name := range names {
+		if name == "mc" {
+			start = i
+			break
+		}
+	}
+	for step := 1; step <= len(names); step++ {
+		if b.HandleKey(loom.KeyEvent{Key: "f9"}) {
+			t.Fatal("F9 quit while cycling themes")
+		}
+		wantName := names[(start+step)%len(names)]
+		wantTheme := loom.Theme(wantName)
+		if b.themeName != wantName || b.theme != wantTheme {
+			t.Fatalf("cycle %d selected %q/%+v, want %q/%+v", step, b.themeName, b.theme, wantName, wantTheme)
+		}
+		if b.list.Style != wantTheme.ChoiceStyle() || b.frame.Style != wantTheme.FrameStyle() {
+			t.Fatalf("cycle %d did not apply %q to list and frame", step, wantName)
+		}
+	}
+}
+
+func TestResolveTheme(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    loom.ThemeColors
+		wantErr string
+	}{
+		{name: "plain", want: loom.Theme("plain")},
+		{name: "mc", want: loom.Theme("mc")},
+		{name: "mc-classic", want: loom.Theme("mc-classic")},
+		{name: "mc-dark", want: loom.Theme("mc-dark")},
+		{name: "missing", wantErr: `filebrowser: unknown theme "missing" (available: mc, mc-classic, mc-dark, plain)`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := resolveTheme(test.name)
+			if test.wantErr != "" {
+				if err == nil || err.Error() != test.wantErr {
+					t.Fatalf("resolveTheme() error = %v, want %q", err, test.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got != test.want {
+				t.Fatalf("resolveTheme() = %+v, want %+v", got, test.want)
+			}
+		})
+	}
+}
+
 func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "q.txt"), []byte("data"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	b, err := newBrowser(dir)
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,10 +167,13 @@ func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 	if !b.HandleKey(loom.KeyEvent{Key: "ctrl-q"}) {
 		t.Fatal("Ctrl-Q did not quit")
 	}
+	if !b.HandleKey(loom.KeyEvent{Key: "f10"}) {
+		t.Fatal("F10 did not quit")
+	}
 }
 
 func TestBrowserShowsSideBySidePanes(t *testing.T) {
-	b, err := newBrowser(t.TempDir())
+	b, err := newBrowser(t.TempDir(), "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -86,6 +187,9 @@ func TestBrowserShowsSideBySidePanes(t *testing.T) {
 	if rects[0].W < 20 || rects[1].W < 25 || rects[1].X <= rects[0].X+rects[0].W {
 		t.Fatalf("expected two side-by-side panes at terminal width 80 (canvas %d), got %+v", cols, rects)
 	}
+	if rects[0].Y+rects[0].H != 19 || rects[1].Y+rects[1].H != 19 {
+		t.Fatalf("panes do not meet the status row: %+v", rects)
+	}
 	if b.frame.Boxes[0].Border.Vertical == "" || b.frame.Boxes[1].Border.Vertical == "" {
 		t.Fatal("pane borders are invisible")
 	}
@@ -97,7 +201,7 @@ func TestBrowserEnterOpensSelectedFile(t *testing.T) {
 	if err := os.WriteFile(path, []byte("hello"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	b, err := newBrowser(dir)
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +238,7 @@ func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
 	if err := os.WriteFile(path, []byte("sample"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	b, err := newBrowser(dir)
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -160,7 +264,7 @@ func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	b, err := newBrowser(dir)
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -171,7 +275,7 @@ func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
 	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft,
 		X: rect.X + rect.W - 1, Y: rect.Y + rect.H - 2})
 	item, ok := b.list.Selected()
-	if !ok || item.Name != "file-27" {
-		t.Fatalf("bottom track click selected %+v, ok=%v; want file-27", item, ok)
+	if !ok || item.Name != "file-25" {
+		t.Fatalf("bottom track click selected %+v, ok=%v; want file-25", item, ok)
 	}
 }

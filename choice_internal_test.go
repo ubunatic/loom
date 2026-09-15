@@ -128,14 +128,24 @@ func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
 	thumb := SpeccedDefaults.Scrollbar.ForegroundChar
 	track := SpeccedDefaults.Scrollbar.BackgroundChar
 	c := makeChoice(20)
+	c.Style.Scrollbar = ScrollbarStyle{
+		Track: Style{FG: ColorIndex(33), BG: ColorIndex(27)},
+		Thumb: Style{FG: ColorIndex(51), BG: ColorIndex(27)},
+	}
 	canvas := NewCanvas(10, 5)
 	c.Draw(canvas, Rect{W: 10, H: 5})
 	if canvas.Get(9, 0).Text != thumb {
 		t.Fatal("top thumb missing")
 	}
+	if got := canvas.Get(9, 0).Style; got != c.Style.Scrollbar.Thumb {
+		t.Fatalf("thumb style = %+v, want %+v", got, c.Style.Scrollbar.Thumb)
+	}
 	for y := 1; y < 4; y++ {
 		if got := canvas.Get(9, y).Text; got != track {
 			t.Fatalf("track row %d = %q, want %q", y, got, track)
+		}
+		if got := canvas.Get(9, y).Style; got != c.Style.Scrollbar.Track {
+			t.Fatalf("track row %d style = %+v, want %+v", y, got, c.Style.Scrollbar.Track)
 		}
 	}
 	if got := canvas.Get(9, 4).Text; got != " " {
@@ -145,6 +155,27 @@ func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
 	c.Draw(canvas, Rect{W: 10, H: 5})
 	if got := canvas.Get(9, 0).Text; got == track || got == thumb {
 		t.Fatalf("non-scrollable choice has track %q", got)
+	}
+}
+
+func TestChoiceUsesPlaceholderStyleOnlyForPlaceholder(t *testing.T) {
+	c := makeChoice(1)
+	c.Prompt = "filter> "
+	c.Placeholder = "type"
+	c.Style.Prompt = Style{FG: ColorIndex(0), BG: ColorIndex(51)}
+	c.Style.Placeholder = Style{FG: ColorIndex(240), BG: ColorIndex(51)}
+	canvas := NewCanvas(20, 2)
+	c.Draw(canvas, canvas.Bounds())
+
+	promptY := canvas.Rows() - 1
+	if got := canvas.Get(0, promptY).Style; got != c.Style.Prompt {
+		t.Fatalf("prompt style = %+v, want %+v", got, c.Style.Prompt)
+	}
+	if got := canvas.Get(StringWidth(c.Prompt), promptY).Style; got != c.Style.Placeholder {
+		t.Fatalf("placeholder style = %+v, want %+v", got, c.Style.Placeholder)
+	}
+	if got := canvas.Get(StringWidth(c.Prompt)+StringWidth(c.Placeholder), promptY).Style; got != c.Style.Prompt {
+		t.Fatalf("prompt-row fill style = %+v, want %+v", got, c.Style.Prompt)
 	}
 }
 
@@ -177,6 +208,43 @@ func TestBackspaceEmptyQueryLeavesView(t *testing.T) {
 	}
 	if !c.Aborted() {
 		t.Error("leaving via backspace should mark the choice aborted")
+	}
+}
+
+// TestChoicePgUpPgDnAndHomeEnd verifies that PgUp, PgDn, Home, and End navigate
+// the list by page or boundary steps.
+func TestChoicePgUpPgDnAndHomeEnd(t *testing.T) {
+	c := makeChoice(30)
+	c.itemRows = 10
+
+	// Home / End
+	c.HandleKey(KeyEvent{Key: "end"})
+	if c.sel != 29 {
+		t.Fatalf("End: sel = %d, want 29", c.sel)
+	}
+	c.HandleKey(KeyEvent{Key: "home"})
+	if c.sel != 0 {
+		t.Fatalf("Home: sel = %d, want 0", c.sel)
+	}
+
+	// PgDown jumps by max(1, itemRows-1) = 9
+	c.HandleKey(KeyEvent{Key: "pgdown"})
+	if c.sel != 9 {
+		t.Fatalf("PgDown: sel = %d, want 9", c.sel)
+	}
+	c.HandleKey(KeyEvent{Key: "pgdn"})
+	if c.sel != 18 {
+		t.Fatalf("PgDn: sel = %d, want 18", c.sel)
+	}
+
+	// PgUp jumps back
+	c.HandleKey(KeyEvent{Key: "pgup"})
+	if c.sel != 9 {
+		t.Fatalf("PgUp: sel = %d, want 9", c.sel)
+	}
+	c.HandleKey(KeyEvent{Key: "pageup"})
+	if c.sel != 0 {
+		t.Fatalf("PageUp: sel = %d, want 0", c.sel)
 	}
 }
 

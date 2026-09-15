@@ -29,6 +29,14 @@ type BoxBorder struct {
 	TitleSuffix string `yaml:"title_suffix"`
 }
 
+// BoxStyle controls a box's background, border, title, and footer.
+type BoxStyle struct {
+	Background Style
+	Border     Style
+	Title      Style
+	Footer     Style
+}
+
 // Box is a titled border with padding and an optional isolated child.
 // Width and Height are preferred outer dimensions used by Frame.
 // YAML frames load Border from Loom's embedded spec; Go callers supply it.
@@ -44,6 +52,7 @@ type Box struct {
 	MaxHeight int       `yaml:"max_height"`
 	Padding   int       `yaml:"padding"`
 	Border    BoxBorder `yaml:"-"`
+	Style     BoxStyle  `yaml:"-"`
 	Child     Widget    `yaml:"-"`
 	Hidden    bool      `yaml:"hidden"`
 	Footer    string    `yaml:"footer"`
@@ -97,20 +106,21 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		if w < 2 || h < 2 {
 			return
 		}
+		local.Fill(local.Bounds(), Cell{Text: " ", Style: b.Style.Background})
 		for x := 1; x < w-1; x++ {
-			local.Set(x, 0, Cell{Text: b.Border.Horizontal})
-			local.Set(x, h-1, Cell{Text: b.Border.Horizontal})
+			local.Set(x, 0, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
+			local.Set(x, h-1, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
 		}
 		for y := 1; y < h-1; y++ {
-			local.Set(0, y, Cell{Text: b.Border.Vertical})
-			local.Set(w-1, y, Cell{Text: b.Border.Vertical})
+			local.Set(0, y, Cell{Text: b.Border.Vertical, Style: b.Style.Border})
+			local.Set(w-1, y, Cell{Text: b.Border.Vertical, Style: b.Style.Border})
 		}
-		local.Set(0, 0, Cell{Text: b.Border.TopLeft})
-		local.Set(w-1, 0, Cell{Text: b.Border.TopRight})
-		local.Set(0, h-1, Cell{Text: b.Border.BottomLeft})
-		local.Set(w-1, h-1, Cell{Text: b.Border.BottomRight})
+		local.Set(0, 0, Cell{Text: b.Border.TopLeft, Style: b.Style.Border})
+		local.Set(w-1, 0, Cell{Text: b.Border.TopRight, Style: b.Style.Border})
+		local.Set(0, h-1, Cell{Text: b.Border.BottomLeft, Style: b.Style.Border})
+		local.Set(w-1, h-1, Cell{Text: b.Border.BottomRight, Style: b.Style.Border})
 		if b.Title != "" {
-			writeBounded(local, 1, 0, w-2, b.Border.TitlePrefix+b.Title+b.Border.TitleSuffix)
+			writeBoundedStyled(local, 1, 0, w-2, b.Border.TitlePrefix+b.Title+b.Border.TitleSuffix, b.Style.Title)
 		}
 		padding := max(0, b.Padding)
 		// Compare before doubling to avoid overflow for programmatic inputs.
@@ -118,7 +128,7 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 			inner := Rect{X: 1 + padding, Y: 1 + padding, W: w - 2 - 2*padding, H: h - 2 - 2*padding}
 			paintClipped(local, inner, func(child *Canvas) { b.Child.Draw(child, child.Bounds()) })
 			if b.Footer != "" {
-				writeBounded(local, inner.X, inner.Y+inner.H-1, inner.W, b.Footer)
+				writeBoundedStyled(local, inner.X, inner.Y+inner.H-1, inner.W, b.Footer, b.Style.Footer)
 			}
 		}
 	})
@@ -141,12 +151,20 @@ type Frame struct {
 	Breakpoint       int           `yaml:"breakpoint"`
 	Boxes            []Box         `yaml:"boxes"`
 	Actions          []FrameAction `yaml:"actions"`
+	Style            FrameStyle    `yaml:"-"`
 	ControlSeparator string        `yaml:"control_separator"`
 	FocusNextKey     string        `yaml:"focus_next_key"` // default: tab
 	FocusPrevKey     string        `yaml:"focus_prev_key"` // default: shift-tab
 	focused          int
 	focusSet         bool
 	lastRect         Rect
+}
+
+// FrameStyle controls the frame background, title, and status row.
+type FrameStyle struct {
+	Background Style
+	Title      Style
+	Status     Style
 }
 
 // FrameAction declares a bounded toggle or quit binding and its displayed hints.
@@ -187,11 +205,13 @@ func (f *Frame) Draw(c *Canvas, r Rect) {
 	f.lastRect = r
 	paintClipped(c, r, func(local *Canvas) {
 		w, h := local.Cols(), local.Rows()
-		writeBounded(local, 0, 0, w, f.Title)
+		local.Fill(local.Bounds(), Cell{Text: " ", Style: f.Style.Background})
+		writeBoundedStyled(local, 0, 0, w, f.Title, f.Style.Title)
 		if h < 2 {
 			return
 		}
-		writeBounded(local, 0, h-1, w, f.StatusText())
+		local.Fill(Rect{Y: h - 1, W: w, H: 1}, Cell{Text: " ", Style: f.Style.Status})
+		writeBoundedStyled(local, 0, h-1, w, f.StatusText(), f.Style.Status)
 		for i, rect := range f.Layout(w, h) {
 			box := f.Boxes[i]
 			for _, a := range f.Actions {
@@ -610,13 +630,17 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 }
 
 func writeBounded(c *Canvas, x, y, width int, text string) {
+	writeBoundedStyled(c, x, y, width, text, Style{})
+}
+
+func writeBoundedStyled(c *Canvas, x, y, width int, text string, style Style) {
 	end := min(c.Cols(), x+max(0, width))
 	for _, cluster := range textClusters(text) {
 		w := StringWidth(cluster)
 		if x+w > end {
 			break
 		}
-		c.Write(x, y, cluster, Style{})
+		c.Write(x, y, cluster, style)
 		x += w
 	}
 }

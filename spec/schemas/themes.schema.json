@@ -14,11 +14,12 @@
     }
   },
   "definitions": {
-    "colorIndex": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 255,
-      "description": "256-color palette index; 0 means terminal default (reset)"
+    "themeColor": {
+      "description": "terminal default or a 256-color palette index",
+      "oneOf": [
+        { "const": "default" },
+        { "type": "integer", "minimum": 0, "maximum": 255 }
+      ]
     },
     "theme": {
       "type": "object",
@@ -28,23 +29,40 @@
         "selected_fg", "selected_bg", "selected_bold",
         "header_fg",   "header_bg",   "header_bold",
         "prompt_fg",   "prompt_bg",
+        "placeholder_fg", "placeholder_bg", "placeholder_dim",
+        "scrollbar_track_fg", "scrollbar_track_bg", "scrollbar_track_dim",
+        "scrollbar_thumb_fg", "scrollbar_thumb_bg", "scrollbar_thumb_bold",
+        "status_fg", "status_bg", "status_bold", "status_dim",
         "border_fg",   "border_bg",
         "focus_bg"
       ],
       "properties": {
-        "normal_fg":     { "$ref": "#/definitions/colorIndex" },
-        "normal_bg":     { "$ref": "#/definitions/colorIndex" },
-        "selected_fg":   { "$ref": "#/definitions/colorIndex" },
-        "selected_bg":   { "$ref": "#/definitions/colorIndex" },
+        "normal_fg":     { "$ref": "#/definitions/themeColor" },
+        "normal_bg":     { "$ref": "#/definitions/themeColor" },
+        "selected_fg":   { "$ref": "#/definitions/themeColor" },
+        "selected_bg":   { "$ref": "#/definitions/themeColor" },
         "selected_bold": { "type": "boolean" },
-        "header_fg":     { "$ref": "#/definitions/colorIndex" },
-        "header_bg":     { "$ref": "#/definitions/colorIndex" },
+        "header_fg":     { "$ref": "#/definitions/themeColor" },
+        "header_bg":     { "$ref": "#/definitions/themeColor" },
         "header_bold":   { "type": "boolean" },
-        "prompt_fg":     { "$ref": "#/definitions/colorIndex" },
-        "prompt_bg":     { "$ref": "#/definitions/colorIndex" },
-        "border_fg":     { "$ref": "#/definitions/colorIndex" },
-        "border_bg":     { "$ref": "#/definitions/colorIndex" },
-        "focus_bg":      { "$ref": "#/definitions/colorIndex" }
+        "prompt_fg":     { "$ref": "#/definitions/themeColor" },
+        "prompt_bg":     { "$ref": "#/definitions/themeColor" },
+        "placeholder_fg":  { "$ref": "#/definitions/themeColor" },
+        "placeholder_bg":  { "$ref": "#/definitions/themeColor" },
+        "placeholder_dim": { "type": "boolean" },
+        "scrollbar_track_fg": { "$ref": "#/definitions/themeColor" },
+        "scrollbar_track_bg": { "$ref": "#/definitions/themeColor" },
+        "scrollbar_track_dim": { "type": "boolean" },
+        "scrollbar_thumb_fg": { "$ref": "#/definitions/themeColor" },
+        "scrollbar_thumb_bg": { "$ref": "#/definitions/themeColor" },
+        "scrollbar_thumb_bold": { "type": "boolean" },
+        "status_fg": { "$ref": "#/definitions/themeColor" },
+        "status_bg": { "$ref": "#/definitions/themeColor" },
+        "status_bold": { "type": "boolean" },
+        "status_dim": { "type": "boolean" },
+        "border_fg":     { "$ref": "#/definitions/themeColor" },
+        "border_bg":     { "$ref": "#/definitions/themeColor" },
+        "focus_bg":      { "$ref": "#/definitions/themeColor" }
       }
     }
   }

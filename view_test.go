@@ -55,6 +55,10 @@ func TestViewDrawsScrollbarTrack(t *testing.T) {
 	thumb := SpeccedDefaults.Scrollbar.ForegroundChar
 	track := SpeccedDefaults.Scrollbar.BackgroundChar
 	v := NewView(make([]string, 20))
+	v.Scrollbar = ScrollbarStyle{
+		Track: Style{FG: ColorIndex(33), BG: ColorIndex(27)},
+		Thumb: Style{FG: ColorIndex(51), BG: ColorIndex(27)},
+	}
 	canvas := NewCanvas(10, 4)
 	v.Draw(canvas, Rect{W: 10, H: 4})
 	for y := 0; y < 4; y++ {
@@ -64,6 +68,13 @@ func TestViewDrawsScrollbarTrack(t *testing.T) {
 		}
 		if got := canvas.Get(9, y).Text; got != want {
 			t.Fatalf("track row %d = %q, want %q", y, got, want)
+		}
+		wantStyle := v.Scrollbar.Track
+		if y == 0 {
+			wantStyle = v.Scrollbar.Thumb
+		}
+		if got := canvas.Get(9, y).Style; got != wantStyle {
+			t.Fatalf("track row %d style = %+v, want %+v", y, got, wantStyle)
 		}
 	}
 	v.Scroll = 16

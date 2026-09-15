@@ -5,20 +5,34 @@ package loom
 
 import "strings"
 
+// ScrollbarStyle controls the visual appearance of scrollbar cells.
+type ScrollbarStyle struct {
+	Track Style
+	Thumb Style
+}
+
+// DefaultScrollbarStyle returns terminal-default track and thumb styles.
+func DefaultScrollbarStyle() ScrollbarStyle {
+	return ScrollbarStyle{Track: Style{Dim: true}, Thumb: Style{Bold: true}}
+}
+
 // View is a scrollable list of text lines rendered into a Rect.
 // When content exceeds the visible area a specced scroll indicator appears on the
 // right edge, proportional to the current scroll position.
 type View struct {
-	Lines    []string
-	Scroll   int   // first visible line index
-	Height   int   // preferred visible height cap; 0 = len(Lines)
-	Style    Style // base style for all lines
-	lastH    int   // height from last Draw; gates scroll in HandleKey
-	lastRect Rect
+	Lines     []string
+	Scroll    int   // first visible line index
+	Height    int   // preferred visible height cap; 0 = len(Lines)
+	Style     Style // base style for all lines
+	Scrollbar ScrollbarStyle
+	lastH     int // height from last Draw; gates scroll in HandleKey
+	lastRect  Rect
 }
 
 // NewView creates a View from a slice of pre-formatted lines.
-func NewView(lines []string) *View { return &View{Lines: lines} }
+func NewView(lines []string) *View {
+	return &View{Lines: lines, Scrollbar: DefaultScrollbarStyle()}
+}
 
 // Draw renders visible lines into r. When scrollable, the rightmost column is
 // reserved for the scroll indicator and content is truncated one column shorter.
@@ -61,17 +75,17 @@ func (v *View) Draw(c *Canvas, r Rect) {
 			c.Write(r.X, y, plain, v.Style)
 		}
 		if scrollable {
-			c.Set(r.X+r.W-1, y, scrollbarCell(row == indicatorRow))
+			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row == indicatorRow))
 		}
 	}
 }
 
 // scrollbarCell uses a light track and a solid thumb in the clickable column.
-func scrollbarCell(thumb bool) Cell {
+func scrollbarCell(style ScrollbarStyle, thumb bool) Cell {
 	if thumb {
-		return Cell{Text: SpeccedDefaults.Scrollbar.ForegroundChar, Style: Style{Bold: true}}
+		return Cell{Text: SpeccedDefaults.Scrollbar.ForegroundChar, Style: style.Thumb}
 	}
-	return Cell{Text: SpeccedDefaults.Scrollbar.BackgroundChar, Style: Style{Dim: true}}
+	return Cell{Text: SpeccedDefaults.Scrollbar.BackgroundChar, Style: style.Track}
 }
 
 // HandleKey supports line, half-page, page, and boundary navigation.

@@ -40,15 +40,15 @@ themes:
     focus_bg:         238 # dark grey cell highlight (Grid focus, matches NewGrid default)
 
   # mc — muted Midnight Commander blue-panel palette.
-  # Panel body: soft white on medium steel blue (indices 252 / 68).
-  # Selected row and prompt: black on muted cyan (indices 16 / 73).
+  # Panel body: soft white on saturated steel blue (indices 252 / 69).
+  # Selected row and prompt: black on bright sky blue (indices 16 / 75).
   # Header row: muted yellow on steel blue (bold).
   # Border / title bar: soft white on steel blue.
   mc:
     normal_fg:        252 # soft white (#d0d0d0)
-    normal_bg:        69  # medium steel blue (#5f87d7)
+    normal_bg:        69  # saturated steel blue (#5f87ff)
     selected_fg:      16  # fixed black (#000000)
-    selected_bg:      75  # muted cyan (#5fafaf)
+    selected_bg:      75  # bright sky blue (#5fafff)
     selected_bold:    false
     header_fg:        186 # muted yellow (#d7d787)
     header_bg:        69  # medium steel blue
@@ -58,7 +58,7 @@ themes:
     placeholder_fg:   243 # medium grey (#767676), lower contrast than active input
     placeholder_bg:   75  # muted cyan
     placeholder_dim:  false
-    scrollbar_track_fg: 69 # darker slate blue
+    scrollbar_track_fg: 69 # panel blue; dim creates a terminal-adaptive shade
     scrollbar_track_bg: 69 # panel blue
     scrollbar_track_dim: true
     scrollbar_thumb_fg: 75 # muted cyan
@@ -70,7 +70,7 @@ themes:
     status_dim:       false
     border_fg:        252 # soft white
     border_bg:        69  # medium steel blue
-    focus_bg:         75  # lighter steel blue (#5fafd7) for focused grid cells
+    focus_bg:         75  # bright sky blue (#5fafff) for focused grid cells
 
   # mc-classic — vivid fixed-palette rendering of the classic MC colors.
   mc-classic:

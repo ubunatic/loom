@@ -14,13 +14,15 @@ import (
 )
 
 type browser struct {
-	frame    *loom.Frame
-	list     *loom.Choice
-	details  *detailView
-	dir      string
-	paths    map[string]string
-	notice   string
-	openFile func(string) error
+	frame     *loom.Frame
+	list      *loom.Choice
+	details   *detailView
+	dir       string
+	paths     map[string]string
+	notice    string
+	themeName string
+	theme     loom.ThemeColors
+	openFile  func(string) error
 }
 
 type detailView struct {
@@ -31,7 +33,7 @@ type detailView struct {
 func (v *detailView) Focused() bool         { return v.focused }
 func (v *detailView) SetFocus(focused bool) { v.focused = focused }
 
-func newBrowser(path string) (*browser, error) {
+func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error) {
 	dir, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
@@ -50,17 +52,45 @@ func newBrowser(path string) (*browser, error) {
 	}
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
-		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  ^Q quit",
+		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme  •  F10/^Q quit",
 		Boxes: []loom.Box{
-			{ID: "files", Dynamic: true, MinWidth: 20, Height: 16, Border: border},
-			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 16, Border: border, Child: b.details},
+			{ID: "files", Dynamic: true, MinWidth: 20, Height: 18, Border: border},
+			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 18, Border: border, Child: b.details},
 		},
-		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "ctrl-q"}},
+		Actions: []loom.FrameAction{
+			{ID: "quit_f10", Action: "quit", Key: "f10"},
+			{ID: "quit_ctrl_q", Action: "quit", Key: "ctrl-q"},
+		},
 	}
+	b.applyTheme(themeName, theme)
 	if err := b.open(dir); err != nil {
 		return nil, err
 	}
 	return b, nil
+}
+
+func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
+	b.themeName, b.theme = name, theme
+	b.details.Style = theme.ChoiceStyle().Normal
+	b.details.Scrollbar = theme.ScrollbarStyle()
+	b.frame.Style = theme.FrameStyle()
+	for i := range b.frame.Boxes {
+		b.frame.Boxes[i].Style = theme.BoxStyle()
+	}
+	if b.list != nil {
+		b.list.Style = theme.ChoiceStyle()
+	}
+}
+
+func (b *browser) cycleTheme() {
+	names := themeNames()
+	for i, name := range names {
+		if name == b.themeName {
+			next := names[(i+1)%len(names)]
+			b.applyTheme(next, loom.Theme(next))
+			return
+		}
+	}
 }
 
 func (b *browser) open(dir string) error {
@@ -86,6 +116,7 @@ func (b *browser) open(dir string) error {
 		paths[name] = filepath.Join(dir, entry.Name())
 	}
 	list := loom.NewChoice(items)
+	list.Style = b.theme.ChoiceStyle()
 	list.SelectOnlyOnClick = true
 	list.Prompt = "filter> "
 	list.Placeholder = "type to filter"
@@ -199,6 +230,7 @@ func displayName(value string) string {
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	b.frame.Title = "Browse " + b.dir
+	b.frame.Status = fmt.Sprintf("Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:%s  •  F10/^Q quit", b.themeName)
 	b.frame.Boxes[0].Title = "Files"
 	b.frame.Boxes[1].Title = "Metadata"
 	if focused := b.frame.FocusedBox(); focused != nil {
@@ -212,6 +244,10 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (b *browser) HandleKey(k loom.KeyEvent) bool {
+	if k.Key == "f9" {
+		b.cycleTheme()
+		return false
+	}
 	quit := b.frame.HandleKey(k)
 	b.updateDetails()
 	return quit

@@ -7,8 +7,10 @@ package loom
 // Key names match common terminal conventions; Text carries printable input.
 type KeyEvent struct {
 	Key string // "up","down","left","right","home","end","delete","enter","esc",
-	//            "backspace","tab","shift-tab","ctrl-b","ctrl-c","ctrl-d",
-	//            "ctrl-f","ctrl-q","ctrl-u","ctrl-w",
+	//            "backspace","tab","shift-tab","shift-up","shift-down","shift-left","shift-right",
+	//            "ctrl-up","ctrl-down","ctrl-left","ctrl-right","alt-up","alt-down",
+	//            "f1","f2","f3","f4","f5","f6","f7","f8","f9","f10","f11","f12",
+	//            "ctrl-b","ctrl-c","ctrl-d","ctrl-f","ctrl-q","ctrl-u","ctrl-w",
 	//            or "" for plain text
 	Text string // typed printable text (Key == "" when Text != "")
 }
@@ -75,6 +77,35 @@ func DecodeKey(b []byte) KeyEvent {
 		if len(b) == 1 {
 			return KeyEvent{Key: "esc"}
 		}
+		// CSI 1;<mod><A|B|C|D> (xterm modified cursor keys)
+		// mod: 2=Shift, 3=Alt, 4=Shift+Alt, 5=Ctrl, 6=Ctrl+Shift
+		if len(b) >= 6 && b[1] == '[' && b[2] == '1' && b[3] == ';' {
+			var prefix string
+			switch b[4] {
+			case '2':
+				prefix = "shift-"
+			case '3':
+				prefix = "alt-"
+			case '4':
+				prefix = "shift-alt-"
+			case '5':
+				prefix = "ctrl-"
+			case '6':
+				prefix = "ctrl-shift-"
+			}
+			if prefix != "" {
+				switch b[5] {
+				case 'A':
+					return KeyEvent{Key: prefix + "up"}
+				case 'B':
+					return KeyEvent{Key: prefix + "down"}
+				case 'C':
+					return KeyEvent{Key: prefix + "right"}
+				case 'D':
+					return KeyEvent{Key: prefix + "left"}
+				}
+			}
+		}
 		// \x1b[ (CSI) and \x1bO (application cursor) share the same final byte.
 		if len(b) >= 3 && (b[1] == '[' || b[1] == 'O') {
 			switch b[2] {
@@ -88,25 +119,67 @@ func DecodeKey(b []byte) KeyEvent {
 				return KeyEvent{Key: "right"}
 			case 'D':
 				return KeyEvent{Key: "left"}
+			case 'a':
+				return KeyEvent{Key: "shift-up"}
+			case 'b':
+				return KeyEvent{Key: "shift-down"}
+			case 'c':
+				return KeyEvent{Key: "shift-right"}
+			case 'd':
+				return KeyEvent{Key: "shift-left"}
+			case 'P':
+				return KeyEvent{Key: "f1"}
+			case 'Q':
+				return KeyEvent{Key: "f2"}
+			case 'R':
+				return KeyEvent{Key: "f3"}
+			case 'S':
+				return KeyEvent{Key: "f4"}
 			case 'H':
 				return KeyEvent{Key: "home"}
 			case 'F':
 				return KeyEvent{Key: "end"}
 			}
 			// Numeric tilde sequences: \x1b[1~ home, \x1b[3~ delete, \x1b[4~ end,
-			// \x1b[5~ pgup, \x1b[6~ pgdown, \x1b[7~ home, \x1b[8~ end (xterm/linux console variants).
+			// \x1b[5~ pgup, \x1b[6~ pgdown, \x1b[7~ home, \x1b[8~ end,
+			// and function keys \x1b[15~ .. \x1b[24~ (f5..f12).
 			if len(b) >= 4 && b[len(b)-1] == '~' {
-				switch b[2] {
-				case '1', '7':
+				seq := string(b[2 : len(b)-1])
+				switch seq {
+				case "1", "7":
 					return KeyEvent{Key: "home"}
-				case '3':
+				case "3":
 					return KeyEvent{Key: "delete"}
-				case '4', '8':
+				case "4", "8":
 					return KeyEvent{Key: "end"}
-				case '5':
+				case "5":
 					return KeyEvent{Key: "pgup"}
-				case '6':
+				case "6":
 					return KeyEvent{Key: "pgdown"}
+				case "11":
+					return KeyEvent{Key: "f1"}
+				case "12":
+					return KeyEvent{Key: "f2"}
+				case "13":
+					return KeyEvent{Key: "f3"}
+				case "14":
+					return KeyEvent{Key: "f4"}
+				case "15":
+					return KeyEvent{Key: "f5"}
+				case "17":
+					return KeyEvent{Key: "f6"}
+				case "18":
+					return KeyEvent{Key: "f7"}
+				case "19":
+					return KeyEvent{Key: "f8"}
+				case "20":
+					return KeyEvent{Key: "f9"}
+				case "21":
+					return KeyEvent{Key: "f10"}
+				case "23":
+					return KeyEvent{Key: "f11"}
+				case "24":
+					return KeyEvent{Key: "f12"}
 				}
 			}
 		}
