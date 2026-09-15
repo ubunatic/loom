@@ -59,5 +59,6 @@ upkeep.
 | 045 | [045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md](045-decode-modified-cursor-keys-shift-ctrl-alt-arrows.md) | Decode modified cursor keys: shift-, ctrl-, alt- arrows | Closed |
 | 046 | [046-decode-function-keys-f1-to-f12.md](046-decode-function-keys-f1-to-f12.md) | Decode function keys F1 to F12 | Closed |
 | 047 | [047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md](047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md) | Remove deprecated uzu brand and default global commands from loom.cmdBar | Open |
-| 048 | [048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md](048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) | Emoji rune width discrepancy causes horizontal border drift in box titles | Open |
+| 048 | [048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md](048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) | Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles | Open |
 | 049 | [049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md](049-add-pgup-pgdn-and-home-end-support-to-loom-choice.md) | Add PgUp / PgDn and Home / End support to loom.Choice | Closed |
+| 050 | [050-support-truecolor-rgb-values-in-theme-specs.md](050-support-truecolor-rgb-values-in-theme-specs.md) | Support truecolor RGB values in theme specs | Open |
