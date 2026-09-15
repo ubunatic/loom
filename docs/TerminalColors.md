@@ -75,9 +75,10 @@ though the standard does not guarantee that exact result.
 
 The closest xterm-256 foreground is index 68 (`#5f87d7`), but it is visibly
 different: the fixed palette cannot represent the observed bluish-grey dimmed
-foreground. Other nearby cube entries shift toward purple or cyan. Until themes
-support truecolor values such as `#577cea`, using foreground 69, background 69,
-and dim is a deliberate terminal-adaptive compromise for this track.
+foreground. Other nearby cube entries shift toward purple or cyan. Until
+[theme specs support truecolor values](../issues/050-support-truecolor-rgb-values-in-theme-specs.md)
+such as `#577cea`, using foreground 69, background 69, and dim is a deliberate
+terminal-adaptive compromise for this track.
 
 ## Theme Guidance
 
