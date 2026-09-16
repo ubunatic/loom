@@ -37,6 +37,18 @@ GOWORK=off go run ./examples/monitor
 
 This is the first dashboard slice; watch and responsive wrapping follow later.
 
+`examples/` holds several standalone demo programs (`filebrowser`, `monitor`,
+`splash`, `split`, `treemap`). Browse and launch any of them via the
+installable `loom-demo` app, or smoke-test all of them at once with
+`loom-bench`:
+
+```sh
+make install                 # installs loom-demo, loom-bench, validate-spec
+loom-demo --list              # list all examples
+loom-demo filebrowser         # run one directly
+loom-bench                    # smoke-test every example, report PASS/FAIL
+```
+
 ## Usage
 
 ```go

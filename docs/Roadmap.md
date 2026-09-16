@@ -34,13 +34,13 @@ downstream consumer.
   collection/redraw scheduling, and deterministic geometry checks.
 - [`graph/`](../graph/) contains the adapted Harnez renderers and verified
   provenance. Numerical snapshots drive paired bars, CPU/RAM/GPU timelines,
-  and separate VRAM/GTT timelines. [`state.go`](../examples/monitor/state.go)
+  and separate VRAM/GTT timelines. [`state.go`](../examples/monitor/monitor/state.go)
   supplies copied, bounded simulated histories with independent slow hardware
   and fast meter sampling cadences and timestamps (012, 013 closed).
 - [`collector/`](../collector/) provides `Collector`, explicit `type: file`,
   bounded whole-file reads, immediate/periodic sampling via `Run`, duration-based
   retention, and safe history publication. The monitor loads its embedded
-  [`watch.yaml`](../examples/monitor/spec/watch.yaml) and runs a real
+  [`watch.yaml`](../examples/monitor/monitor/spec/watch.yaml) and runs a real
   `/proc/stat` source at 1 Hz on worker goroutines, parsing CPU percentage into
   live display snapshots with correct simulated vs real provenance footers (027 closed).
 - [`measure/`](../measure/) and [`layout/`](../layout/) export renderer-independent
@@ -148,8 +148,6 @@ simulated-target polish nobody has asked for.
 - [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md)
   (P3, cosmetic): visible seam in `SubChar` glyph rendering without ANSI
   background styling — cosmetic, no known consumer regression.
-- [044](../issues/044-add-julia256-theme.md) (P3): add another bundled theme —
-  pure styling addition, no app currently requests it.
 - [050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) (P2 but
   styling): truecolor RGB theme support — defer until a concrete app needs
   colors beyond the existing palette.

@@ -97,8 +97,8 @@ plain `q` remains available to the filter.
 5. Run `make validate-spec`, `go test ./...`, and `go vet ./...`.
 6. Inspect the theme in the filebrowser and more than one terminal family.
 
-The open [Julia256 theme ticket](../issues/044-add-julia256-theme.md) is a worked
-example of mapping an upstream skin into these roles.
+The `julia256` theme (added via [ticket 044](../issues/044-add-julia256-theme.md))
+is a worked example of mapping an upstream MC skin into these roles.
 
 ## Known Boundaries
 
