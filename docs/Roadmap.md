@@ -200,9 +200,10 @@ widget that gave loom a host) and takes direction 1 of
 (in-process widget factories) — the PTY-hosted variant in 056 stays
 aspirational and unscheduled.
 
-Stage 13 adds the missing library contract: child-first key routing with a
-small reserved host keybind set that never captures `tab`/arrow navigation
-(057), widget-declared terminal requirements replacing per-example pane knobs
+Stage 13 adds the missing library contract: child-first key routing and quit
+containment, with no reserved switch hotkey — `tab`/arrow focus navigation
+stays the primary host-level primitive (057), widget-declared terminal
+requirements replacing per-example pane knobs
 (058), one pinned mouse coordinate convention — which fixes a real pre-existing
 `Frame`-vs-`Tabs`/`Stack`/`Grid` bug (059), a single pane-driven tick plus
 `Pane.Invalidate` so a widget no longer needs to own the render loop (060), and

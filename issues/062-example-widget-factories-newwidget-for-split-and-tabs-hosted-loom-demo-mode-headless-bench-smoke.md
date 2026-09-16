@@ -34,8 +34,11 @@ Converting them also fixes a real coverage hole: `examplesreg.Example` has a
 `tabs` are `false`, so `cmd/loom-bench` skips them entirely — they have **no**
 smoke coverage today (cf. 054).
 
-`tabs`-inside-`Tabs` is also the meta-test for 057's key routing: the inner
-`Tabs` must still get its switch key while the outer host keeps `ctrl-t`.
+`tabs`-inside-`Tabs` is also the meta-test for 057's key routing: with
+`ArrowSwitch = false` on the outer host, `left`/`right` must reach the inner
+`Tabs` (via `KeyConsumer`) rather than switching the outer host's tab, and the
+inner example's own `SwitchKey` (`ctrl-t`, its own app-level convenience per
+057 §2.2 — not a host-reserved binding) must still work.
 
 ## 2. Design — resolved decisions
 
@@ -76,10 +79,15 @@ examples are converted in 063/064/065.
 ### 2.3 loom-demo hosted mode
 
 Add a `Tabs`-based hosted mode alongside today's sequential `Run` launcher:
-one tab per converted example, host reserved keys per 057
-(`ctrl-t` switch, `ctrl-w` close), and `Tabs.OnChildQuit` containing a hosted
-app's quit to its own tab. Keep the existing sequential mode; it remains the
-only way to launch unconverted examples.
+one tab per converted example, `ArrowSwitch = false` (057 §2.3) so `left`/
+`right` reach the focused hosted app instead of switching tabs — tab
+switching in this mode is by mouse click on the tab bar (`tabs.go:184-201`)
+or `Tabs.SetFocusIndex`/`Focus()` wired to whatever selection UI loom-demo
+adds (e.g. number keys, or `tab`/`shift-tab` once `Tabs` joins the focus
+chain — an open gap noted in 057 §2.3, not solved here) — and
+`Tabs.OnChildQuit` containing a hosted app's quit to its own tab. Keep the
+existing sequential mode; it remains the only way to launch unconverted
+examples.
 
 ### 2.4 loom-bench headless smoke
 
@@ -98,10 +106,10 @@ unconverted remainder and is removed once every example has `NewWidget`.
   `tabs`.
 - `loom-bench` renders both headlessly at 80x24 and at a tiny size without
   panicking, covering the two examples that had no smoke test before.
-- `loom-demo` has a hosted `Tabs` mode listing the converted examples;
-  `ctrl-t` switches tabs even while a hosted `tabs` example is focused
-  (the nested-`Tabs` meta-test), and `tab`/arrows still reach the focused
-  child (057 §2.3).
+- `loom-demo` has a hosted `Tabs` mode listing the converted examples with
+  `ArrowSwitch = false`; the hosted `tabs` example's own `left`/`right`/
+  `ctrl-t` still work for switching *its* inner tabs while focused (the
+  nested-`Tabs` meta-test), without switching the outer host's tab.
 - Closing a hosted app returns to the host instead of terminating loom-demo.
 - Standalone `go run ./examples/split` and `./examples/tabs` behave as before.
 - `go test ./...` and `go vet ./...` pass; `make install` run afterwards.
