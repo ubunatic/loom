@@ -41,14 +41,14 @@ scrollbar-dimming case that exposed this gap.
 
 | Theme role | Primary consumers |
 |------------|-------------------|
-| Normal | `Choice`, `Table`, `Frame` background, `Box` background/footer |
+| Normal | `Choice`, `Table`, `Frame` background, `Box` background/footer, `Tabs` inactive titles |
 | Selected | `Choice` and `Table` selected rows |
-| Header | `Table` header and sort header |
+| Header | `Table` header and sort header, `Tabs` active title |
 | Prompt | `Choice` and `Table` prompts |
 | Placeholder | Empty `Choice` filter value |
 | Scrollbar track/thumb | `Choice` and `View` scrollbars |
 | Status | `Frame` status row |
-| Border | `Box` border/title and `Frame` title |
+| Border | `Box` border/title and `Frame` title, `Tabs` bar rule |
 | Focus background | `Grid` focus highlighting |
 
 Roles carry the attributes needed for their semantics, such as selected/header
@@ -65,6 +65,7 @@ frame.Style = theme.FrameStyle()
 box.Style = theme.BoxStyle()
 table.Style = theme.TableStyle()
 grid.FocusBG = theme.FocusBGColor()
+tabs.Style = theme.TabsStyle()
 ```
 
 ## Selection and Runtime Switching

@@ -46,6 +46,7 @@ mouse decoding, colors/styles, screenshots, and widgets including:
 - `Popup`
 - `Notif`
 - `Stack` and `Grid`
+- `Tabs`
 - `Router`
 
 The current public runtime boundary is a procedural `Widget` interface with
