@@ -129,3 +129,40 @@ themes:
     border_fg:        252
     border_bg:        19
     focus_bg:         25
+
+  # julia256 — MC upstream Julia256 skin: calm dark grey panel, cyan
+  # selection and input, yellow headers.
+  # Upstream [core] roles (named terminal colors resolved to fixed 256-color
+  # indices, independent of the user's configurable 16-color palette):
+  #   _default_ = lightgray;color237 -> normal (index 250 for lightgray)
+  #   selected  = black;cyan         -> selected (index 16 for fixed black)
+  #   input     = black;cyan         -> prompt
+  #   header    = yellow;color237    -> header (index 226 for yellow)
+  #   frame     = lightgray;color237 -> border
+  julia256:
+    normal_fg:        250 # lightgray (#bcbcbc)
+    normal_bg:        237 # color237, calm dark grey panel
+    selected_fg:      16  # fixed black (#000000)
+    selected_bg:      51  # cyan (#00ffff)
+    selected_bold:    false
+    header_fg:        226 # yellow (#ffff00)
+    header_bg:        237
+    header_bold:      true
+    prompt_fg:        16
+    prompt_bg:        51
+    placeholder_fg:   243
+    placeholder_bg:   51
+    placeholder_dim:  false
+    scrollbar_track_fg: 237
+    scrollbar_track_bg: 237
+    scrollbar_track_dim: true
+    scrollbar_thumb_fg: 51
+    scrollbar_thumb_bg: 237
+    scrollbar_thumb_bold: false
+    status_fg:        250
+    status_bg:        237
+    status_bold:      false
+    status_dim:       false
+    border_fg:        250
+    border_bg:        237
+    focus_bg:         240 # distinguishable dark grey: between color237 and cyan(51)

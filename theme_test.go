@@ -116,9 +116,33 @@ func TestThemeMCVariantsHaveDistinctPalettes(t *testing.T) {
 
 // TestSpeccedThemesContainsRequiredThemes asserts that all required themes are loaded.
 func TestSpeccedThemesContainsRequiredThemes(t *testing.T) {
-	for _, name := range []string{"plain", "mc", "mc-classic", "mc-dark"} {
+	for _, name := range []string{"plain", "mc", "mc-classic", "mc-dark", "julia256"} {
 		if _, ok := loom.SpeccedThemes[name]; !ok {
 			t.Errorf("SpeccedThemes missing key %q", name)
 		}
+	}
+}
+
+func TestThemeJulia256(t *testing.T) {
+	julia := loom.Theme("julia256")
+	cs := julia.ChoiceStyle()
+	if cs.Normal != (loom.Style{FG: loom.ColorIndex(250), BG: loom.ColorIndex(237)}) {
+		t.Errorf("julia256 normal: got %+v, want lightgray on color237", cs.Normal)
+	}
+	if cs.Selected != (loom.Style{FG: loom.ColorIndex(16), BG: loom.ColorIndex(51)}) {
+		t.Errorf("julia256 selected: got %+v, want black on cyan", cs.Selected)
+	}
+	if cs.Prompt != (loom.Style{FG: loom.ColorIndex(16), BG: loom.ColorIndex(51)}) {
+		t.Errorf("julia256 prompt: got %+v, want black on cyan", cs.Prompt)
+	}
+	ts := julia.TableStyle()
+	if ts.Header.FG != loom.ColorIndex(226) || ts.Header.BG != loom.ColorIndex(237) {
+		t.Errorf("julia256 header: got %+v, want yellow on color237", ts.Header)
+	}
+	if got := julia.BoxStyle().Border; got != (loom.Style{FG: loom.ColorIndex(250), BG: loom.ColorIndex(237)}) {
+		t.Errorf("julia256 box border: got %+v, want lightgray on color237", got)
+	}
+	if julia.FocusBGColor() != loom.ColorIndex(240) {
+		t.Errorf("julia256 focus_bg: got %+v, want ColorIndex(240)", julia.FocusBGColor())
 	}
 }
