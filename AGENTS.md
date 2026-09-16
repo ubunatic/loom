@@ -55,7 +55,7 @@ Put project-specific rules outside this block.
 Applies when this project has an `issues/` tracker. To search existing issues,
 compute the next ticket number, or allocate one, use `harnez find` / `harnez issues`
 instead of `ls issues/`, `find`, or raw grep:
-- `harnez find -d <repo> issues status:open` — list active open issues
+- `harnez find -d <repo> issues -a status:open` — list active open issues
 - `harnez find -d <repo> issues "<query>"` — fuzzy search across titles and body text
 - `harnez find -d <repo> issues next` — report the next free ticket number (read-only)
 - `harnez issues new -d <repo> "<title>"` — atomically reserve that number and create
@@ -75,3 +75,11 @@ reads of AGENTS.md/CLAUDE.md — grep or range-bounded reads), and Invariant 7
 (Media & Demo Verification Gate: explicit user confirmation before publishing
 recordings or screenshots).
 <!-- harnez:end Harnez Managed Conventions -->
+<!-- harnez:begin Quota-1 Guardrails -->
+## Quota-1 Guardrails
+
+- **Single-Test Boundary**: Under Quota-1 rules, the agent may only run the test suite once per step/turn.
+- **Code Modification Required**: If tests fail or complete, you MUST modify repository source files before running tests again. Repeated test runs without intermediate code modifications are blocked.
+- **Enforced Test Target**: Execute tests via `make test-q1` (or `harnez exec --quota-1 -- <test-cmd>`).
+- **Unauthorized Bypass Forbidden**: Bypassing guardrails via `QUOTA_BYPASS=1` or `HARNEZ_QUOTA_BYPASS=1` is strictly reserved for human developers and CI environments. Agent loops must not set or pass bypass flags.
+<!-- harnez:end Quota-1 Guardrails -->

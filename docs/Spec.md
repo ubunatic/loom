@@ -71,41 +71,6 @@ Every YAML file references its schema at the top:
 
 ---
 
-## 3a. Widget Boundary — What Belongs in `spec/` vs. Go (loom)
-
-Not every construct in a spec-driven codebase should be YAML. Loom's own
-widget layer draws a concrete, three-layer boundary (established by
-architectural review, see issues/055):
-
-1. **`spec/*.yaml` holds only library-internal constants** — glyph sets,
-   color/theme roles, keys, timings — content the library itself owns.
-   It never describes *which widgets exist* or *how an application composes
-   them*.
-2. **YAML struct tags on a widget type are reserved for inert,
-   non-interactive chrome.** In loom, `Frame`/`Box`/`Rows` are the only
-   tagged widgets, and each returns `false` from `HandleKey`/`HandleMouse` —
-   they carry no behavior. Any widget with focus, behavior, or arbitrary
-   children (`Stack`, `Grid`, `Popup`, `Choice`, `Tab`) is constructed in Go
-   only, optionally reachable from *user* layout YAML through a `type:`
-   DTO (see `yaml.go`'s `compileWidget`) — a format deliberately kept
-   outside `spec/`, since it describes app composition, not library
-   constants.
-3. **Theming applies universally, but only via Go-wired accessors**
-   (`ThemeColors.ChoiceStyle()`, `.TableStyle()`, etc.). Nothing
-   auto-themes; the widget exposes a `Style` field and the owning code
-   assigns it from a theme lookup.
-
-Practical rule of thumb: if a value is fixed content the library ships
-(border glyphs, color roles) → `spec/*.yaml`. If it's structural geometry
-with no behavior → YAML struct tags, following the `Frame` pattern. If it's
-identity, children, or interaction → Go construction. Never hardcode a
-literal in Go that duplicates a `spec/themes.yaml`/`spec/box.yaml` value —
-source it via `Theme(name)` or the embedded spec instead (see the
-`grid.go` `NewGrid` fix in issues/055, which replaced a hardcoded
-`ColorIndex(238)` with `Theme("plain").FocusBGColor()`).
-
----
-
 ## 4. Quality Invariants — "The Spec Compiles"
 
 A specification-driven codebase is considered **clean** when all of the following hold:
@@ -196,3 +161,30 @@ When modifying spec-driven features:
 - [ ] Validated schema: `make validate-spec` (or language test equivalent).
 - [ ] Verified integrity tests pass: `go test ./...` / `cargo test` / `pytest`.
 - [ ] Cleaned up obsolete definitions, orphaned actions, and schema enums.
+
+<!-- harnez:stop -->
+
+## Loom Widget Boundary — What Belongs in `spec/` vs. Go
+
+Not every construct in a spec-driven codebase should be YAML. Loom's widget
+layer has a three-layer boundary (see issues/055):
+
+1. **`spec/*.yaml` holds library-internal constants** — glyph sets,
+   color/theme roles, keys, timings. It does not describe which widgets exist
+   or how an application composes them.
+2. **YAML struct tags are for inert chrome.** `Frame`, `Box`, and `Rows` are
+   tagged widgets and return `false` from `HandleKey` and `HandleMouse`.
+   Widgets with focus, behavior, or arbitrary children (`Stack`, `Grid`,
+   `Popup`, `Choice`, `Tab`) are constructed in Go. User layout YAML may reach
+   them through a `type:` DTO in `yaml.go`'s `compileWidget`; that format stays
+   outside `spec/` because it describes application composition.
+3. **Theming uses Go-wired accessors** such as `ThemeColors.ChoiceStyle()` and
+   `ThemeColors.TableStyle()`. A widget exposes a `Style` field; its owner
+   assigns the style from a theme lookup.
+
+Fixed library content belongs in `spec/*.yaml`; inert structural geometry may
+use YAML struct tags; identity, children, and interaction belong in Go. Do not
+hardcode Go literals that duplicate `spec/themes.yaml` or `spec/box.yaml`.
+Use `Theme(name)` or the embedded spec instead (see the `grid.go` `NewGrid`
+fix in issues/055, which replaced `ColorIndex(238)` with
+`Theme("plain").FocusBGColor()`).
