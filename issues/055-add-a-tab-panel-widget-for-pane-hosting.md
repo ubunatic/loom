@@ -1,6 +1,6 @@
 # 055 — Add a Tab panel widget for Pane hosting
 
-**Status**: Open
+**Status**: Closed — implemented in `tabs.go` (`Tabs`/`NewTabs`, `ThemeColors.TabsStyle()`), tested in `tabs_test.go`, demoed in `examples/tabs`.
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature

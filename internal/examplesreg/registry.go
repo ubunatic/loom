@@ -13,6 +13,7 @@ import (
 	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
 	"codeberg.org/ubunatic/loom/examples/splash/splash"
 	"codeberg.org/ubunatic/loom/examples/split/split"
+	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
 	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
 )
 
@@ -64,6 +65,13 @@ var Registry = []Example{
 		Description:  "Independent scrolling and keyboard focus in a Frame",
 		Package:      "codeberg.org/ubunatic/loom/examples/split",
 		Run:          split.Run,
+		SupportsHelp: false,
+	},
+	{
+		Name:         "tabs",
+		Description:  "Tabs widget hosting a View, a Choice, and a Table",
+		Package:      "codeberg.org/ubunatic/loom/examples/tabs",
+		Run:          tabs.Run,
 		SupportsHelp: false,
 	},
 	{
