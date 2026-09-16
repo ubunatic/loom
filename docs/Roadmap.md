@@ -186,7 +186,35 @@ Each stage should leave a runnable example and deterministic checks. Keep exampl
 | 10 — Splash & startup screen (Shipped) | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md) (done), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md) (done), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md) (done), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md) (done), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) (done) |
 | 11 — External sources | [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md) |
 | 12 — Wider declarative source/action evaluation | [019](../issues/019-evaluate-declarative-source-and-action-wiring.md) (parked beyond 027's file prototype) |
+| 13 — Hosted widgets (contract) | [057](../issues/057-hosted-widget-key-contract-child-first-routing-reserved-host-keybinds-and-quit-containment.md), [058](../issues/058-widget-declared-pane-requirements-panerequest.md), [059](../issues/059-fix-mouse-coordinate-convention-mismatch-between-frame-and-tabs-stack-grid.md), [060](../issues/060-periodic-redraw-without-pane-ownership-ticker-interface-and-pane-invalidate.md), [061](../issues/061-themeable-host-provided-theme-propagation-through-composite-widgets.md) |
+| 14 — Hosted widgets (example conversion) | [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md), [063](../issues/063-convert-filebrowser-example-to-a-hostable-widget.md), [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md), [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md), [066](../issues/066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md) (independent bug surfaced by this work) |
 
+## Stages 13–14 — Hosted widgets
+
+Every `examples/*` app should become "just a widget": a bare `loom.Widget` any
+host can construct, theme and run, instead of each example owning and driving
+its own `Pane`. This builds directly on
+[055](../issues/055-add-a-tab-panel-widget-for-pane-hosting.md) (the `Tabs`
+widget that gave loom a host) and takes direction 1 of
+[056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md)
+(in-process widget factories) — the PTY-hosted variant in 056 stays
+aspirational and unscheduled.
+
+Stage 13 adds the missing library contract: child-first key routing with a
+small reserved host keybind set that never captures `tab`/arrow navigation
+(057), widget-declared terminal requirements replacing per-example pane knobs
+(058), one pinned mouse coordinate convention — which fixes a real pre-existing
+`Frame`-vs-`Tabs`/`Stack`/`Grid` bug (059), a single pane-driven tick plus
+`Pane.Invalidate` so a widget no longer needs to own the render loop (060), and
+host-provided theme propagation (061). Stage 14 converts the examples in
+dependency order — split/tabs first as the end-to-end demo and the first smoke
+coverage those two ever had, then filebrowser, then the live-data pair
+splash/monitor, and finally treemap, which needs a new ANSI-preserving rows
+widget before it can leave `RawScreen` behind. 066 is an independent
+nested-pane/tty race the review surfaced along the way and can run in parallel.
+
+Dependency order: 057 and 058 gate 062; 061 gates 063; 060 gates 064;
+065 is last; 059 and 066 are independent.
 
 ### Verification gates for the next increments
 
