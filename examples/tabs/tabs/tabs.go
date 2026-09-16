@@ -55,5 +55,6 @@ func Run(_ []string) error {
 	}
 	defer pane.Close()
 	pane.Resizeable = true
+	pane.EnableMouseClicks()
 	return pane.Run(root)
 }
