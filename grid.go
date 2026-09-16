@@ -22,7 +22,7 @@ func NewGrid(cols int, children ...Widget) *Grid {
 	if cols < 1 {
 		cols = 1
 	}
-	return &Grid{Cols: cols, Children: children, FocusBG: ColorIndex(238)}
+	return &Grid{Cols: cols, Children: children, FocusBG: Theme("plain").FocusBGColor()}
 }
 
 // Focus returns the index of the currently focused child.

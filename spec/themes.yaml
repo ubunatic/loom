@@ -37,7 +37,7 @@ themes:
     status_dim:       false
     border_fg:        default
     border_bg:        default
-    focus_bg:         238 # dark grey cell highlight (Grid focus, matches NewGrid default)
+    focus_bg:         238 # dark grey cell highlight; NewGrid's default sources this value
 
   # mc — muted Midnight Commander blue-panel palette.
   # Panel body: soft white on saturated steel blue (indices 252 / 69).
