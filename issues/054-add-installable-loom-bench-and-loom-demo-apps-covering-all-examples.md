@@ -1,6 +1,6 @@
 # 054 — Add installable `loom-bench` and `loom-demo` apps covering all examples
 
-**Status**: Open
+**Status**: Closed — implemented cmd/loom-demo and cmd/loom-bench with importable example libraries under examples/*/<name>; go build/vet/test, validate-spec, and manual --list/bench runs all verified
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
