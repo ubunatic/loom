@@ -1,6 +1,6 @@
 # 044 — Add `julia256` Theme
 
-**Status**: Open
+**Status**: Closed — julia256 theme implemented in spec/themes.yaml with unit tests, committed 23e002b
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
