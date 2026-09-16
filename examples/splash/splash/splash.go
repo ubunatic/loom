@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Uwe Jugel
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Command splash demonstrates the Harnez startup splash screen and transition lifecycle.
-package main
+// Package splash demonstrates the Harnez startup splash screen and transition lifecycle.
+package splash
 
 import (
 	"context"
@@ -140,14 +140,16 @@ func terminalHeight(out io.Writer) int {
 	return rows
 }
 
-func main() {
-	if err := execute(context.Background(), os.Args[1:], os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+// Run runs the splash example with the given command-line args, writing to
+// stdout, matching the Run(args []string) error signature shared by the
+// other examples for loom-demo/loom-bench registration.
+func Run(args []string) error {
+	return Execute(context.Background(), args, os.Stdout)
 }
 
-func execute(ctx context.Context, args []string, out io.Writer) error {
+// Execute runs the splash example's cobra command against ctx/args/out, for
+// callers that need explicit context and output control (e.g. tests).
+func Execute(ctx context.Context, args []string, out io.Writer) error {
 	var watch bool
 	var width int
 	var height int

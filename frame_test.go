@@ -20,7 +20,7 @@ func emptyShellFixture(t *testing.T) string {
 
 func monitorFixture(t *testing.T) string {
 	t.Helper()
-	data, err := os.ReadFile("examples/monitor/spec/monitor.yaml")
+	data, err := os.ReadFile("examples/monitor/monitor/spec/monitor.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

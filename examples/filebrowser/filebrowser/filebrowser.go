@@ -1,18 +1,19 @@
-// Command filebrowser demonstrates a file list and live metadata in split panes.
-package main
+// Package filebrowser demonstrates a file list and live metadata in split panes.
+package filebrowser
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"os"
 	"sort"
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
 )
 
-func run(args []string) error {
+// Run parses args and runs the filebrowser example. It returns flag.ErrHelp
+// when -h/--help was requested, matching the standard flag package
+// convention so callers can treat that as a clean, non-error exit.
+func Run(args []string) error {
 	flags := flag.NewFlagSet("filebrowser", flag.ContinueOnError)
 	themeName := flags.String("theme", "mc", "color theme")
 	if err := flags.Parse(args); err != nil {
@@ -38,16 +39,6 @@ func run(args []string) error {
 	configurePane(pane)
 	pane.EnableMouseClicks()
 	return pane.Run(app)
-}
-
-func main() {
-	if err := run(os.Args[1:]); err != nil {
-		if errors.Is(err, flag.ErrHelp) {
-			return
-		}
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }
 
 func resolveTheme(name string) (loom.ThemeColors, error) {

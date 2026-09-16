@@ -1,9 +1,8 @@
-// Command split demonstrates independent scrolling and keyboard focus in a Frame.
-package main
+// Package split demonstrates independent scrolling and keyboard focus in a Frame.
+package split
 
 import (
 	"fmt"
-	"os"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -35,7 +34,10 @@ func lines(label string) []string {
 	return rows
 }
 
-func run() error {
+// Run runs the split-panes example. It ignores args; it exists so the split
+// example matches the Run(args []string) error signature shared by the
+// other examples for loom-demo/loom-bench registration.
+func Run(_ []string) error {
 	left := &scrollPane{View: loom.NewView(lines("left"))}
 	right := &scrollPane{View: loom.NewView(lines("right"))}
 	frame := &loom.Frame{
@@ -53,11 +55,4 @@ func run() error {
 	defer pane.Close()
 	pane.Resizeable = true
 	return pane.Run(frame)
-}
-
-func main() {
-	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
 }

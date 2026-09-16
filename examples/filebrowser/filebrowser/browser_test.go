@@ -1,4 +1,4 @@
-package main
+package filebrowser
 
 import (
 	"errors"
@@ -122,7 +122,8 @@ func TestResolveTheme(t *testing.T) {
 		{name: "mc", want: loom.Theme("mc")},
 		{name: "mc-classic", want: loom.Theme("mc-classic")},
 		{name: "mc-dark", want: loom.Theme("mc-dark")},
-		{name: "missing", wantErr: `filebrowser: unknown theme "missing" (available: mc, mc-classic, mc-dark, plain)`},
+		{name: "julia256", want: loom.Theme("julia256")},
+		{name: "missing", wantErr: `filebrowser: unknown theme "missing" (available: julia256, mc, mc-classic, mc-dark, plain)`},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

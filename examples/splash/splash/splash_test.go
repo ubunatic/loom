@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Uwe Jugel
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package main
+package splash
 
 import (
 	"bytes"
@@ -34,7 +34,7 @@ func stripANSI(s string) string {
 
 func TestSplashShowOnceOutput(t *testing.T) {
 	var buf bytes.Buffer
-	err := execute(context.Background(), []string{"-w", "60", "-H", "12"}, &buf)
+	err := Execute(context.Background(), []string{"-w", "60", "-H", "12"}, &buf)
 	if err != nil {
 		t.Fatalf("execute failed: %v", err)
 	}

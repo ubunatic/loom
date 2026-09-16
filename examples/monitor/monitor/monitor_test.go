@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 Uwe Jugel
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-package main
+package monitor
 
 import (
 	"bytes"
@@ -125,7 +125,7 @@ func TestCommand(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			var out bytes.Buffer
-			err := execute(context.Background(), tc.args, &out)
+			err := Execute(context.Background(), tc.args, &out)
 			if (err != nil) != tc.fail {
 				t.Fatalf("got %v", err)
 			}

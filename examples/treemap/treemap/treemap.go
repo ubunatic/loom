@@ -12,7 +12,7 @@
 // coloring survives (a loom.View strips inline ANSI from its lines). It
 // still quits on loom's own default keys (q, Esc, Ctrl-C, Ctrl-Q, Ctrl-D)
 // via a small raw-mode /dev/tty reader -- see watchForQuitKey.
-package main
+package treemap
 
 import (
 	"context"
@@ -123,7 +123,10 @@ func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, sho
 	}
 }
 
-func main() {
+// Run parses args and runs the treemap example, matching the
+// Run(args []string) error signature shared by the other examples for
+// loom-demo/loom-bench registration.
+func Run(args []string) error {
 	var width, height, maxNodes, theme int
 	var legendRows, legendWidth int
 	var legendMinValue float64
@@ -167,8 +170,6 @@ func main() {
 	cmd.Flags().IntVar(&legendRows, "legend-rows", 2, "bottom legend rows (0: library default of two, negative: unlimited)")
 	cmd.Flags().IntVar(&legendWidth, "legend-width", 0, "right legend width in columns (default: one third of total width)")
 	cmd.Flags().Float64Var(&legendMinValue, "legend-min-value", 0, "omit legend entries below this value (percent CPU; boxes remain visible)")
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+	cmd.SetArgs(args)
+	return cmd.Execute()
 }

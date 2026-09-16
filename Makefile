@@ -34,4 +34,4 @@ vet: ⚙️  ## run go vet
 	go vet ./...
 
 install: ⚙️
-	@echo "nothing to install, just run 'make build' or 'make test'"
+	go install ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec

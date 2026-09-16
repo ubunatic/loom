@@ -1,8 +1,8 @@
 // SPDX-FileCopyrightText: 2026 Uwe Jugel
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Command monitor prints the embedded static shell once, without opening a TTY.
-package main
+// Package monitor prints the embedded static shell once, without opening a TTY.
+package monitor
 
 import (
 	"context"
@@ -171,14 +171,16 @@ func splitTimeline(left, right []float64) string {
 	return timeline(left, 4) + timeline(right, 4)
 }
 
-func main() {
-	if err := execute(context.Background(), os.Args[1:], os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
-	}
+// Run runs the monitor example with the given command-line args, writing to
+// stdout, matching the Run(args []string) error signature shared by the
+// other examples for loom-demo/loom-bench registration.
+func Run(args []string) error {
+	return Execute(context.Background(), args, os.Stdout)
 }
 
-func execute(ctx context.Context, args []string, out io.Writer) error {
+// Execute runs the monitor example's cobra command against ctx/args/out, for
+// callers that need explicit context and output control (e.g. tests).
+func Execute(ctx context.Context, args []string, out io.Writer) error {
 	spec, err := loadWatch()
 	if err != nil {
 		return err
