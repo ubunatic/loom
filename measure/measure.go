@@ -20,8 +20,14 @@ type Size struct {
 // Loom's rendering policy.
 func StringWidth(text string) int {
 	w := 0
+	var previous rune
 	for _, r := range plainTerminalText(text) {
+		if r == '\ufe0f' && previous >= 0x1f000 && previous <= 0x1faff && RuneWidth(previous) == 1 {
+			// VS16 requests emoji presentation for a text-default pictograph.
+			w++
+		}
 		w += RuneWidth(r)
+		previous = r
 	}
 	return w
 }
@@ -34,7 +40,7 @@ func RuneWidth(r rune) int {
 	if r >= 0x1100 && r <= 0x115f || r >= 0x2e80 && r <= 0xa4cf && r != 0x303f || r >= 0xac00 && r <= 0xd7a3 || r >= 0xf900 && r <= 0xfaff || r >= 0xfe10 && r <= 0xfe19 || r >= 0xfe30 && r <= 0xfe6f || r >= 0xff01 && r <= 0xff60 || r >= 0xffe0 && r <= 0xffe6 || r >= 0x20000 && r <= 0x3fffd {
 		return 2
 	}
-	if r >= 0x1f000 && r <= 0x1faff {
+	if r >= 0x1f000 && r <= 0x1faff && emojiPresentationWidth(r) {
 		return 2
 	}
 	return 1

@@ -112,6 +112,27 @@ func TestBoxPaddingAndIsolation(t *testing.T) {
 	}
 }
 
+func TestBoxTextPresentationTitleKeepsRightBorderAligned(t *testing.T) {
+	border := BoxBorder{TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘", Horizontal: "─", Vertical: "│"}
+	for _, tc := range []struct {
+		title string
+		want  string
+	}{
+		{title: "🖼", want: "┌🖼─────┐"},
+		{title: "🖼️", want: "┌🖼️────┐"},
+	} {
+		t.Run(tc.title, func(t *testing.T) {
+			canvas := NewCanvas(8, 3)
+			box := Box{Title: tc.title, Border: border}
+			box.Draw(canvas, canvas.Bounds())
+			got := strings.TrimSuffix(canvas.Row(0), "\x1b[0m")
+			if got != tc.want || StringWidth(got) != 8 {
+				t.Fatalf("top border = %q (%d cells), want %q", got, StringWidth(got), tc.want)
+			}
+		})
+	}
+}
+
 func TestFrameAndBoxStyles(t *testing.T) {
 	border := BoxBorder{TopLeft: "+", TopRight: "+", BottomLeft: "+", BottomRight: "+", Horizontal: "-", Vertical: "|"}
 	frameStyle := FrameStyle{

@@ -25,6 +25,25 @@ func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 	}
 }
 
+func TestEmojiPresentationWidths(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		text string
+		want int
+	}{
+		{name: "text presentation pictograph", text: "🖼", want: 1},
+		{name: "emoji presentation selector", text: "🖼️", want: 2},
+		{name: "default emoji", text: "📖", want: 2},
+		{name: "default emoji face", text: "😀", want: 2},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := StringWidth(tc.text); got != tc.want {
+				t.Fatalf("StringWidth(%q) = %d, want %d", tc.text, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestLinesMeasuresVisibleBounds(t *testing.T) {
 	got := Lines("CPU\n界界\n")
 	want := Size{Width: 4, Height: 3}

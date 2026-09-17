@@ -3,7 +3,11 @@
 
 package loom
 
-import "strings"
+import (
+	"strings"
+
+	"codeberg.org/ubunatic/loom/measure"
+)
 
 // Popup overlays a fixed-size inner Widget centered over the pane.
 // While Open, it captures all keyboard and mouse events before the
@@ -42,11 +46,8 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	c.Fill(Rect{x, y, pw, ph}, Cell{Text: " ", Style: p.Style})
 
 	// Top border.
-	title := " " + p.Title + " "
-	if len(title) > pw-2 {
-		title = title[:pw-2]
-	}
-	top := "┌" + title + strings.Repeat("─", pw-2-len([]rune(title))) + "┐"
+	title := measure.Fit(" "+p.Title+" ", max(0, pw-2))
+	top := "┌" + title + strings.Repeat("─", max(0, pw-2-StringWidth(title))) + "┐"
 	c.Write(x, y, top, p.Style)
 
 	// Side borders.
