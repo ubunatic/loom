@@ -1,6 +1,6 @@
 # 038 — Fix Multi-byte UTF-8 String Truncation in Popup Title and Borders
 
-**Status**: Open
+**Status**: Closed — popup titles now fit terminal cells and preserve UTF-8; regression tests and make test-q1 pass
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
