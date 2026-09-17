@@ -1,6 +1,6 @@
 # 048 — Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles
 
-**Status**: Open
+**Status**: Closed — Unicode emoji presentation widths and VS16 align box borders; regression tests and make test-q1 pass
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug / Rendering
