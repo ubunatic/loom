@@ -53,3 +53,13 @@ current one-cell policy, so they do not establish cross-terminal alignment.
 Acceptance still needed: choose and verify a portable presentation policy for
 border/title content, or expose a terminal-specific width policy with a real
 terminal canary. Keep an actual foot render in the verification matrix.
+
+## 5. Resolution (2026-09-17)
+
+Loom now removes VS16 from text before measuring and rendering it. The bare
+`🖼` therefore reaches both terminals and occupies one cell in each. A box
+regression asserts that both `🖼` and `🖼️` input render the same aligned top
+border; a measurement regression asserts that VS16 does not reach rendered
+text. `make test-q1` passed, and the user visually confirmed aligned borders
+in foot after the change. Other terminal-specific glyph widths remain outside
+this ticket's verified matrix.
