@@ -169,7 +169,7 @@ func ClipRow(row string, width int) string {
 		return ""
 	}
 	var b strings.Builder
-	used, styled := 0, false
+	used, styled, hasBase := 0, false, false
 	runes := []rune(row)
 	for i := 0; i < len(runes); i++ {
 		r := runes[i]
@@ -181,12 +181,21 @@ func ClipRow(row string, width int) string {
 			styled = true
 			continue
 		}
+		if !measure.RenderRune(r) {
+			continue
+		}
 		w := measure.RuneWidth(r)
+		if w == 0 && !hasBase {
+			continue
+		}
 		if used+w > width {
 			break
 		}
 		b.WriteRune(r)
 		used += w
+		if w > 0 {
+			hasBase = true
+		}
 	}
 	if styled {
 		b.WriteString("\x1b[0m")

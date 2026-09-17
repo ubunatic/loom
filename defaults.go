@@ -34,6 +34,9 @@ func (d ScrollbarDefaults) validate() error {
 		{"foreground_char", d.ForegroundChar},
 		{"background_char", d.BackgroundChar},
 	} {
+		if strings.ContainsAny(field.glyph, "\ufe0f\u200d") {
+			return fmt.Errorf("scrollbar.%s must not contain VS16 or ZWJ", field.name)
+		}
 		if len(textClusters(field.glyph)) != 1 || StringWidth(field.glyph) != 1 || strings.TrimSpace(field.glyph) == "" {
 			return fmt.Errorf("scrollbar.%s must be one visible terminal cell", field.name)
 		}

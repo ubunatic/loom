@@ -63,6 +63,24 @@ func TestClipRowLeavesUnstyledRowsUnstyled(t *testing.T) {
 	}
 }
 
+func TestClipRowNormalizesStyledTextWithoutSplittingClusters(t *testing.T) {
+	for _, tc := range []struct {
+		name, row, want string
+		width           int
+	}{
+		{"VS16 with style", "\x1b[31m🖼️X", "\x1b[31m🖼X\x1b[0m", 2},
+		{"combining cluster at edge", "\x1b[31me\u0301界", "\x1b[31me\u0301\x1b[0m", 1},
+		{"wide glyph at edge", "A界B", "A", 2},
+		{"leading combining mark", "\u0301A", "A", 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := ClipRow(tc.row, tc.width); got != tc.want {
+				t.Fatalf("ClipRow(%q, %d) = %q, want %q", tc.row, tc.width, got, tc.want)
+			}
+		})
+	}
+}
+
 // TestRawScreenNonTerminalPassesRowsThroughUncapped exercises Draw's
 // non-terminal path (os.Pipe ends are never terminals) with an os.Pipe: a
 // piped consumer gets plain, uncapped, newline-separated rows -- there's no

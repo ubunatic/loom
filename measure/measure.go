@@ -40,6 +40,12 @@ func RuneWidth(r rune) int {
 	return 1
 }
 
+// RenderRune reports whether a rune survives Loom's text normalization.
+// Combining marks remain printable so callers can attach them to a base rune.
+func RenderRune(r rune) bool {
+	return r != '\ufe0f' && !unicode.IsControl(r) && !unicode.Is(unicode.Cf, r)
+}
+
 // Clusters returns printable base-rune clusters with combining marks attached.
 // Emoji ZWJ sequences are intentionally not treated as one cluster.
 func Clusters(text string) []string {
@@ -86,12 +92,9 @@ func plainTerminalText(s string) string {
 			}
 			continue
 		}
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
-			continue
-		}
 		// VS16 can change a text-default pictograph from one cell to two in
 		// some terminals. Keep its bare presentation so layout stays stable.
-		if r == '\ufe0f' {
+		if !RenderRune(r) {
 			continue
 		}
 		b.WriteRune(r)
