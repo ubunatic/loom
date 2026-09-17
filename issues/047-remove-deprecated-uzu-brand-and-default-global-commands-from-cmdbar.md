@@ -1,6 +1,6 @@
 # 047 — Remove deprecated uzu brand and default global commands from loom.cmdBar
 
-**Status**: Open
+**Status**: Closed — Removed :home from default globals, dropped uzu refs, tests pass
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Cleanup / Refactor
