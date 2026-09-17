@@ -63,3 +63,10 @@ border; a measurement regression asserts that VS16 does not reach rendered
 text. `make test-q1` passed, and the user visually confirmed aligned borders
 in foot after the change. Other terminal-specific glyph widths remain outside
 this ticket's verified matrix.
+
+Follow-up: `ClipRow` now applies the same text normalization before writing
+RawScreen rows, while preserving ANSI styling and combining marks. Declared
+scrollbar glyphs reject VS16 and ZWJ before their one-cell check; the box
+border schema already restricts its glyphs to fixed choices and ASCII title
+padding. A pre-fix probe confirmed VS16 leakage from `ClipRow`; the added
+regressions and `make test-q1` pass after the fix.
