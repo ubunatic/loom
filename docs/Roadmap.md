@@ -113,7 +113,7 @@ matrix. No concrete downstream app currently blocks on these — revisit once a
 real consumer needs configurable palettes/glyphs or Voxi panels, rather than
 building them speculatively ahead of demand.
 
-### Current focus (2026-09-15) — bugs, key handling, missing features
+### Current focus (2026-09-17) — missing features after correctness fixes
 
 Reprioritized against the open tickets returned by
 `harnez find -d . issues status:open`. The bar for "Now" is: a concrete bug
@@ -121,20 +121,16 @@ a real app can hit, a missing feature a concrete example already needs, or
 input/key-handling correctness — not additional styling/theme surface or
 simulated-target polish nobody has asked for.
 
-**Now — input handling and rendering-correctness bugs.**
+**Shipped correctness fixes.**
 - [053](../issues/053-pane-run-key-decoding-drops-multi-key-reads-and-splits-escape-sequences-across-tty-reads.md)
-  (P2): `Pane.run` drops extra key events coalesced into one tty read and has
-  no carry-over buffer for escape sequences split across reads — can corrupt
-  F-keys and navigation input under real terminal timing. Highest-value fix:
-  it is a correctness bug in the core input path every app depends on.
+  now drains coalesced keys and buffers split escape sequences, with PTY
+  regression coverage.
 - [038](../issues/038-fix-multi-byte-utf-8-string-truncation-in-popup-title-and-borders.md)
-  (P1): multi-byte UTF-8 truncation bug in popup title/borders — a rendering
-  correctness bug affecting any app with non-ASCII text.
+  now clips popup titles by terminal cells without splitting UTF-8.
 - [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md)
-  (P2): emoji rune-width discrepancy causes horizontal border drift — another
-  concrete rendering-correctness bug, not a styling preference.
+  now distinguishes text and emoji presentation widths in box titles.
 
-**Next — missing features concrete examples already need.**
+**Now — missing features concrete examples already need.**
 - [051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md)
   (P2): Frame boxes cannot fill available content height; blocks
   `examples/filebrowser` from a natural layout. A missing capability with a
@@ -142,7 +138,7 @@ simulated-target polish nobody has asked for.
 - [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md)
   (P3): `docs/TuiInput.md` is referenced by 5 code comments (`pane.go`,
   `event.go`, `loom_test.go`) but does not exist. Cheap to fix and directly
-  documents the key-handling path 053 touches — bundle with 053 if convenient.
+  documents the key-handling path corrected by 053.
 
 **Later/Park — styling, theming, and advanced features without a concrete caller.**
 - [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md)
