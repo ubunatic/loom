@@ -1,6 +1,6 @@
 # 048 — Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles
 
-**Status**: Closed — default emoji retain 2-cell width; text-default pictographs and VS16 use 1 cell on observed terminal, preventing border drift; make test-q1 passes
+**Status**: Open — foot and the original terminal disagree on VS16 width; cross-terminal border alignment remains unresolved
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug / Rendering
