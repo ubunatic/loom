@@ -38,3 +38,18 @@ Because Loom assumes the glyph takes 2 cells, it advances by 2 columns when buil
 
 1. Audit and refine `measure.RuneWidth` against standard Unicode East Asian Width / `wcwidth` tables and Emoji Presentation specifications (distinguishing default emoji presentation vs text presentation / VS-16).
 2. For applications requiring deterministic 1-column icons in borders and titles, standard 1-column geometric/symbol glyphs (like `▣`, `▧`, `▦`, `◈`, `•`, `*`) or explicit bracket tags should be used to guarantee single-cell alignment across all terminals.
+
+## 4. Verification after initial fix (2026-09-17)
+
+The default-presentation width table fixes bare `🖼` in the observed terminal.
+However, the two terminals used for visual checks disagree about `🖼️` (the
+same base rune followed by VS16): the first capture advances one cell, while
+foot advances two. Counting VS16 as an extra cell aligns foot but leaves a
+one-cell gap in the first terminal; counting it as zero does the reverse. The
+foot screenshot shows the second box's top-right corner one cell beyond its
+side border. Automated canvas tests and `make test-q1` pass under the
+current one-cell policy, so they do not establish cross-terminal alignment.
+
+Acceptance still needed: choose and verify a portable presentation policy for
+border/title content, or expose a terminal-specific width policy with a real
+terminal canary. Keep an actual foot render in the verification matrix.
