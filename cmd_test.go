@@ -96,8 +96,9 @@ func TestCmdBackTabCompletes(t *testing.T) {
 
 // ── :home ─────────────────────────────────────────────────────────────────────
 
-func TestCmdHomeSetsNavHome(t *testing.T) {
+func TestCmdHomeSetsNavHost(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
+	c.AddCmd(loom.Cmd{Name: "home", Title: "go to root"})
 	typeCmd(c, "home")
 	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
 	if !quit {
@@ -152,7 +153,7 @@ func TestCmdHelpInvokesRunner(t *testing.T) {
 
 	// Render the help widget to verify command contents.
 	rendered := strings.Join(loom.Render(gotWidget, 60, gotHeight), "\n")
-	for _, expected := range []string{":help", ":back", ":home", ":custom", "custom title", "press any key to close"} {
+	for _, expected := range []string{":help", ":back", ":custom", "custom title", "press any key to close"} {
 		if !strings.Contains(rendered, expected) {
 			t.Errorf("help render missing %q:\n%s", expected, rendered)
 		}
@@ -203,8 +204,9 @@ func TestCmdModeDoesNotFilter(t *testing.T) {
 
 // ── Table command mode ────────────────────────────────────────────────────────
 
-func TestTableCmdHomeViaColon(t *testing.T) {
+func TestTableCmdHomeViaColumn(t *testing.T) {
 	tbl, _, _ := psTestTable()
+	tbl.AddCmd(loom.Cmd{Name: "home", Title: "go to root"})
 	typeTableCmd(tbl, "home")
 	quit := tbl.HandleKey(loom.KeyEvent{Key: "enter"})
 	if !quit {

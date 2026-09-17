@@ -74,8 +74,8 @@ type Pane struct {
 // New opens /dev/tty, enters raw mode, and reserves height rows below the
 // current cursor position. Call Close (or defer it) to restore the terminal.
 //
-// Always uses /dev/tty — never os.Stdin — so the pane works inside ZSH
-// command substitution (result=$(uzu)) where stdin may be a pipe.
+// Always uses /dev/tty — never os.Stdin — so the pane works inside shells
+// and command substitution (e.g. `foo=$(bar)`), where stdin may be a pipe.
 // See docs/TuiInput.md §1.
 func New(height int) (*Pane, error) {
 	if height < 1 {

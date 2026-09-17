@@ -51,7 +51,6 @@ func newCmdBar() *cmdBar {
 		global: []Cmd{
 			{Name: "help", Title: "show help for current view"},
 			{Name: "back", Title: "go one level back"},
-			{Name: "home", Title: "go to uzu main menu"},
 		},
 	}
 }
