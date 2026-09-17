@@ -32,7 +32,7 @@ func TestEmojiPresentationWidths(t *testing.T) {
 		want int
 	}{
 		{name: "text presentation pictograph", text: "🖼", want: 1},
-		{name: "emoji presentation selector", text: "🖼️", want: 2},
+		{name: "selector does not add a terminal cell", text: "🖼️", want: 1},
 		{name: "default emoji", text: "📖", want: 2},
 		{name: "default emoji face", text: "😀", want: 2},
 	} {
