@@ -127,11 +127,11 @@ simulated-target polish nobody has asked for.
   regression coverage.
 - [038](../issues/038-fix-multi-byte-utf-8-string-truncation-in-popup-title-and-borders.md)
   now clips popup titles by terminal cells without splitting UTF-8.
-
-**Now — rendering correctness and missing features concrete examples need.**
 - [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md)
-  (P2): bare `🖼` alignment improved, but foot and the original terminal
-  render `🖼️` at different widths; cross-terminal title borders still drift.
+  now removes VS16 before terminal rendering; bare `🖼` aligns in the
+  original terminal and foot.
+
+**Now — missing features concrete examples already need.**
 - [051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md)
   (P2): Frame boxes cannot fill available content height; blocks
   `examples/filebrowser` from a natural layout. A missing capability with a
