@@ -89,6 +89,11 @@ func plainTerminalText(s string) string {
 		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
 			continue
 		}
+		// VS16 can change a text-default pictograph from one cell to two in
+		// some terminals. Keep its bare presentation so layout stays stable.
+		if r == '\ufe0f' {
+			continue
+		}
 		b.WriteRune(r)
 	}
 	return b.String()

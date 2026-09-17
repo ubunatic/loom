@@ -44,6 +44,16 @@ func TestEmojiPresentationWidths(t *testing.T) {
 	}
 }
 
+func TestEmojiSelectorIsRemovedFromRenderedText(t *testing.T) {
+	if got := Fit("🖼️", 1); got != "🖼" {
+		t.Fatalf("Fit with VS16 = %q, want bare pictograph", got)
+	}
+	clusters := Clusters("🖼️")
+	if len(clusters) != 1 || clusters[0] != "🖼" {
+		t.Fatalf("Clusters with VS16 = %q, want bare pictograph", clusters)
+	}
+}
+
 func TestLinesMeasuresVisibleBounds(t *testing.T) {
 	got := Lines("CPU\n界界\n")
 	want := Size{Width: 4, Height: 3}

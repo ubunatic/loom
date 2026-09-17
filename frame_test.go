@@ -119,7 +119,7 @@ func TestBoxTextPresentationTitleKeepsRightBorderAligned(t *testing.T) {
 		want  string
 	}{
 		{title: "🖼", want: "┌🖼─────┐"},
-		{title: "🖼️", want: "┌🖼️─────┐"},
+		{title: "🖼️", want: "┌🖼─────┐"},
 	} {
 		t.Run(tc.title, func(t *testing.T) {
 			canvas := NewCanvas(8, 3)
