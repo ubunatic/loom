@@ -22,5 +22,6 @@
 | [studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md](studies/2026-09-11-splash-screen-architecture-and-runtime-safeguards.md) | Splash Screen Architecture and Runtime Safeguards |
 | [studies/2026-09-14-terminal-safety-hardening-and-treemap-theme-iteration.md](studies/2026-09-14-terminal-safety-hardening-and-treemap-theme-iteration.md) | Terminal Safety Hardening and Treemap Theme Iteration |
 | [studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md](studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md) | x/term Coverage Gap in Pane.termSize |
+| [studies/2026-09-17-reviewing-loom-examples-with-lmcoder-prompt-and-agent-modes.md](studies/2026-09-17-reviewing-loom-examples-with-lmcoder-prompt-and-agent-modes.md) | Reviewing Loom Example Apps with `lmcoder`: Prompt vs. Agent Modes |
 
 Study files are the source of truth for this table.
