@@ -69,6 +69,11 @@ In accordance with `docs/AnimatedBackgrounds.md`, Loom should treat background e
 - Verify clean teardown on exit, context cancellation, or signal interruption with no leaked background tickers.
 - Add support for disabling animation (reduced-motion guardrail) while retaining static background rendering.
 
+**Status: Complete.** `Pane.run` owns the animated-background ticker, derives its
+cadence from `BackgroundCadence` when available, stops it on every exit path, and
+honors `Pane.ReduceMotion` while preserving normal static redraws. Astra cadence
+and quantized frame behavior are covered by deterministic tests.
+
 *Verification*:
 - Deterministic canvas tests for frame progression at quantized timestamps.
 - Goroutine leak and ticker teardown tests ensuring zero zombies upon pane closure.
@@ -81,6 +86,12 @@ In accordance with `docs/AnimatedBackgrounds.md`, Loom should treat background e
 *Verification*:
 - Automated headless/golden canvas tests for `filebrowser` confirming stars render in blank areas of the file list and metadata views.
 - PTY smoke test verifying visual fidelity and mouse/keyboard interactivity during continuous animation ticks.
+
+**Status: In Progress.** The filebrowser now opts into the Astra background, and
+foreground blank cells with default backgrounds are transparent to compositing;
+explicitly colored surfaces remain protected. Headless coverage verifies the
+integration and transparent/opaque surface split. Theme and PTY smoke validation
+remain manual follow-up work.
 
 ### M4 — Documentation, Example Alignment & Final Test Pass
 - Update `docs/AnimatedBackgrounds.md` if compositing APIs or interfaces were refined.

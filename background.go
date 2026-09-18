@@ -34,6 +34,10 @@ type AstraBackground struct{}
 // NewAstraBackground returns the spec-driven Astra star field background.
 func NewAstraBackground() *AstraBackground { return &AstraBackground{} }
 
+func (AstraBackground) BackgroundInterval() time.Duration {
+	return SpeccedBackground.RedrawInterval
+}
+
 // DrawBackground renders one Astra animation frame.
 func (AstraBackground) DrawBackground(c *Canvas, r Rect) {
 	AstraBackground{}.DrawBackgroundAt(c, r, time.Now())

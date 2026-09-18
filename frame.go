@@ -627,6 +627,9 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 			c.Set(x+col, y+row, local.Get(col, row))
 		}
 	}
+	if local.CursorX >= 0 && local.CursorY >= 0 {
+		c.CursorX, c.CursorY = x+local.CursorX, y+local.CursorY
+	}
 }
 
 func writeBounded(c *Canvas, x, y, width int, text string) {

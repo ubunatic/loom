@@ -60,8 +60,11 @@ type Pane struct {
 	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
 	DisableDefaultQuit bool
 
-	// Background is painted before the root widget on every frame.
+	// Background is composited after the root widget on every frame.
 	Background Background
+	// ReduceMotion disables animated background ticks while retaining its static
+	// rendering on normal foreground redraws.
+	ReduceMotion bool
 	// Metrics, when non-nil, receives rolling redraw measurements.
 	Metrics *RenderMetrics
 
@@ -109,6 +112,12 @@ func (m *RenderMetrics) record(now time.Time, astra bool, elapsed time.Duration)
 type AnimatedBackground interface {
 	Background
 	DrawBackgroundAt(*Canvas, Rect, time.Time)
+}
+
+// BackgroundCadence optionally lets an animated background choose its redraw
+// interval. Implementations that do not provide it use the spec default.
+type BackgroundCadence interface {
+	BackgroundInterval() time.Duration
 }
 
 // New opens /dev/tty, enters raw mode, and reserves height rows below the
@@ -421,12 +430,18 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	canvas := NewCanvas(cols, p.rows)
 	var backgroundFrames <-chan time.Time
 	var backgroundTicker *time.Ticker
-	if _, ok := p.Background.(AnimatedBackground); ok {
-		backgroundTicker = time.NewTicker(SpeccedBackground.RedrawInterval)
-		defer backgroundTicker.Stop()
-		backgroundFrames = backgroundTicker.C
-		if p.Metrics != nil && SpeccedBackground.RedrawInterval > 0 {
-			p.Metrics.AstraTargetFPS = 1 / SpeccedBackground.RedrawInterval.Seconds()
+	if _, ok := p.Background.(AnimatedBackground); ok && !p.ReduceMotion {
+		interval := SpeccedBackground.RedrawInterval
+		if cadence, ok := p.Background.(BackgroundCadence); ok {
+			interval = cadence.BackgroundInterval()
+		}
+		if interval > 0 {
+			backgroundTicker = time.NewTicker(interval)
+			backgroundFrames = backgroundTicker.C
+			defer backgroundTicker.Stop()
+		}
+		if p.Metrics != nil && interval > 0 {
+			p.Metrics.AstraTargetFPS = 1 / interval.Seconds()
 		}
 	}
 
@@ -499,12 +514,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			canvas = NewCanvas(cols, p.rows)
 		}
 		canvas.Clear()
-		if animated, ok := p.Background.(AnimatedBackground); ok {
-			animated.DrawBackgroundAt(canvas, canvas.Bounds(), time.Now())
-		} else if p.Background != nil {
-			p.Background.DrawBackground(canvas, canvas.Bounds())
-		}
 		root.Draw(canvas, canvas.Bounds())
+		canvas.ComposeBackground(p.Background, canvas.Bounds(), time.Now())
 		canvas.Flush(p.tty, p.startRow)
 		if p.Metrics != nil {
 			p.Metrics.record(time.Now(), astra, time.Since(started))

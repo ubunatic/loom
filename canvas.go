@@ -6,6 +6,7 @@ package loom
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
@@ -38,6 +39,8 @@ var blank = Cell{Text: " "}
 type Canvas struct {
 	cols, rows int
 	cells      [][]Cell
+	claimed    [][]bool
+	composing  bool
 	CursorX    int // 0-based column index, -1 if hidden
 	CursorY    int // 0-based row index, -1 if hidden
 }
@@ -51,13 +54,15 @@ func NewCanvas(cols, rows int) *Canvas {
 		rows = 1
 	}
 	cells := make([][]Cell, rows)
+	claimed := make([][]bool, rows)
 	for y := range cells {
 		cells[y] = make([]Cell, cols)
+		claimed[y] = make([]bool, cols)
 		for x := range cells[y] {
 			cells[y][x] = blank
 		}
 	}
-	return &Canvas{cols: cols, rows: rows, cells: cells, CursorX: -1, CursorY: -1}
+	return &Canvas{cols: cols, rows: rows, cells: cells, claimed: claimed, CursorX: -1, CursorY: -1}
 }
 
 // Cols returns the canvas width.
@@ -73,6 +78,16 @@ func (c *Canvas) Bounds() Rect { return Rect{W: c.cols, H: c.rows} }
 func (c *Canvas) Set(x, y int, cell Cell) {
 	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
 		return
+	}
+	if c.composing && !c.IsEligibleBackground(x, y) {
+		return
+	}
+	// A blank cell with the default background is transparent foreground
+	// surface. Containers commonly paint these cells to establish their
+	// bounds, but they must not hide a composited background. Text, explicit
+	// background colors, and attributes remain foreground-owned.
+	if !transparentForeground(cell) {
+		c.claimed[y][x] = true
 	}
 	if cell.Continuation {
 		// Only a real wide lead may own a continuation cell.
@@ -108,6 +123,44 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 	if w == 2 {
 		c.cells[y][x+1] = Cell{Style: cell.Style, Continuation: true}
 	}
+}
+
+func transparentForeground(cell Cell) bool {
+	return (cell.Text == "" || cell.Text == " ") && cell.Style.BG == ColorReset() &&
+		!cell.Style.Bold && !cell.Style.Underline && !cell.Style.Dim
+}
+
+// IsEligibleBackground reports whether a cell may be filled by a background
+// compositor. Cells written by the foreground, wide-rune continuations, and
+// the active cursor are protected.
+func (c *Canvas) IsEligibleBackground(x, y int) bool {
+	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
+		return false
+	}
+	if c.claimed[y][x] || (x == c.CursorX && y == c.CursorY) {
+		return false
+	}
+	return !c.Get(x, y).Continuation
+}
+
+// ComposeBackground renders a background only into cells not claimed by the
+// foreground pass. The canvas cursor is restored even if the effect changes
+// it accidentally, keeping cursor ownership with the foreground renderer.
+func (c *Canvas) ComposeBackground(background Background, area Rect, now time.Time) {
+	if c == nil || background == nil {
+		return
+	}
+	cursorX, cursorY := c.CursorX, c.CursorY
+	c.composing = true
+	defer func() {
+		c.composing = false
+		c.CursorX, c.CursorY = cursorX, cursorY
+	}()
+	if animated, ok := background.(AnimatedBackground); ok {
+		animated.DrawBackgroundAt(c, area, now)
+		return
+	}
+	background.DrawBackground(c, area)
 }
 
 // Get returns the cell at (x, y), or blank for out-of-bounds coordinates.
@@ -199,6 +252,7 @@ func (c *Canvas) Clear() {
 	for y := range c.cells {
 		for x := range c.cells[y] {
 			c.cells[y][x] = blank
+			c.claimed[y][x] = false
 		}
 	}
 	c.CursorX = -1

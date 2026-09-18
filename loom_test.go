@@ -5,6 +5,7 @@ package loom_test
 
 import (
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -101,6 +102,74 @@ func TestCanvasClear(t *testing.T) {
 	}
 }
 
+func TestCanvasBackgroundCompositionProtectsForegroundAndCursor(t *testing.T) {
+	c := loom.NewCanvas(4, 1)
+	c.Write(0, 0, "A", loom.Reset)
+	c.Set(1, 0, loom.Cell{Text: " ", Style: loom.Style{BG: loom.ColorIndex(4)}})
+	c.CursorX, c.CursorY = 2, 0
+	c.ComposeBackground(testBackground{}, c.Bounds(), time.Time{})
+	if got := c.Get(0, 0).Text; got != "A" {
+		t.Fatalf("foreground text overwritten: %q", got)
+	}
+	if got := c.Get(1, 0).Style.BG; got != loom.ColorIndex(4) {
+		t.Fatalf("styled blank overwritten: %+v", got)
+	}
+	if got := c.Get(2, 0).Text; got != " " {
+		t.Fatalf("cursor cell painted: %q", got)
+	}
+	if c.CursorX != 2 || c.CursorY != 0 {
+		t.Fatalf("cursor moved to (%d,%d)", c.CursorX, c.CursorY)
+	}
+	if got := c.Get(3, 0).Text; got != "*" {
+		t.Fatalf("eligible cell = %q, want *", got)
+	}
+}
+
+func TestCanvasBackgroundCompositionPassesThroughTransparentBlankCells(t *testing.T) {
+	c := loom.NewCanvas(3, 1)
+	c.Fill(c.Bounds(), loom.Cell{Text: " ", Style: loom.Style{FG: loom.ColorRGB(200, 200, 200)}})
+	c.Set(1, 0, loom.Cell{Text: " ", Style: loom.Style{BG: loom.ColorIndex(24)}})
+	c.ComposeBackground(testBackground{}, c.Bounds(), time.Time{})
+
+	if got := c.Get(0, 0).Text; got != "*" {
+		t.Fatalf("transparent blank cell = %q, want background glyph", got)
+	}
+	if got := c.Get(1, 0).Text; got == "*" {
+		t.Fatal("colored blank cell was overwritten by background")
+	}
+}
+
+func TestAstraBackgroundCadenceAndQuantizedFrames(t *testing.T) {
+	background := loom.NewAstraBackground()
+	interval := background.BackgroundInterval()
+	if interval <= 0 {
+		t.Fatalf("background interval = %s, want positive", interval)
+	}
+
+	first := loom.NewCanvas(32, 4)
+	second := loom.NewCanvas(32, 4)
+	background.DrawBackgroundAt(first, first.Bounds(), time.Unix(0, interval.Nanoseconds()))
+	background.DrawBackgroundAt(second, second.Bounds(), time.Unix(0, interval.Nanoseconds()+1))
+	for y := 0; y < first.Rows(); y++ {
+		for x := 0; x < first.Cols(); x++ {
+			if got, want := second.Get(x, y), first.Get(x, y); got != want {
+				t.Fatalf("frame changed inside one cadence interval at (%d,%d): got %+v, want %+v", x, y, got, want)
+			}
+		}
+	}
+}
+
+var _ loom.AnimatedBackground = loom.NewAstraBackground()
+var _ loom.BackgroundCadence = loom.NewAstraBackground()
+
+type testBackground struct{}
+
+func (testBackground) DrawBackground(c *loom.Canvas, r loom.Rect) {
+	for x := r.X; x < r.X+r.W; x++ {
+		c.Set(x, r.Y, loom.Cell{Text: "*"})
+	}
+}
+
 // ── Rect ─────────────────────────────────────────────────────────────────────
 
 func TestRectContains(t *testing.T) {
@@ -125,7 +194,10 @@ func TestRectContains(t *testing.T) {
 // ── DecodeKey ─────────────────────────────────────────────────────────────────
 
 func TestDecodeKeyArrowsCSI(t *testing.T) {
-	cases := []struct{ b []byte; want string }{
+	cases := []struct {
+		b    []byte
+		want string
+	}{
 		{[]byte{27, '[', 'A'}, "up"},
 		{[]byte{27, '[', 'B'}, "down"},
 		{[]byte{27, '[', 'C'}, "right"},
@@ -165,7 +237,10 @@ func TestDecodeKeyHomeEndDelete(t *testing.T) {
 // ZSH ZLE leaves DECCKM active after zle -I, sending \x1bO instead of \x1b[.
 // Both prefixes must decode to the same key names. See docs/TuiInput.md §3.
 func TestDecodeKeyArrowsApplicationMode(t *testing.T) {
-	cases := []struct{ b []byte; want string }{
+	cases := []struct {
+		b    []byte
+		want string
+	}{
 		{[]byte{27, 'O', 'A'}, "up"},
 		{[]byte{27, 'O', 'B'}, "down"},
 		{[]byte{27, 'O', 'C'}, "right"},
@@ -180,7 +255,10 @@ func TestDecodeKeyArrowsApplicationMode(t *testing.T) {
 }
 
 func TestDecodeKeyControlCodes(t *testing.T) {
-	cases := []struct{ b byte; want string }{
+	cases := []struct {
+		b    byte
+		want string
+	}{
 		{3, "ctrl-c"},
 		{4, "ctrl-d"},
 		{9, "tab"},
@@ -478,9 +556,9 @@ func TestSettingsDraw(t *testing.T) {
 	idx := 0
 	str := "hello"
 	s := loom.NewSettings([]loom.Setting{
-		{Label: "flag",  Kind: loom.KindBool,   Bool:    &v},
-		{Label: "name",  Kind: loom.KindString,  Str:     &str},
-		{Label: "theme", Kind: loom.KindChoice,  Options: []string{"dark", "light"}, Index: &idx},
+		{Label: "flag", Kind: loom.KindBool, Bool: &v},
+		{Label: "name", Kind: loom.KindString, Str: &str},
+		{Label: "theme", Kind: loom.KindChoice, Options: []string{"dark", "light"}, Index: &idx},
 	})
 	c := loom.NewCanvas(40, 6)
 	s.Draw(c, c.Bounds()) // must not panic
@@ -510,7 +588,7 @@ func TestWideCharactersAndDebugBorders(t *testing.T) {
 	// 1. Test Canvas.Write with wide characters
 	c := loom.NewCanvas(5, 1)
 	c.Write(0, 0, "🔍A", loom.Reset)
-	
+
 	// Cell at 0 should be "🔍"
 	if got := c.Get(0, 0).Text; got != "🔍" {
 		t.Errorf("expected cell 0 to be 🔍, got %q", got)
@@ -518,7 +596,7 @@ func TestWideCharactersAndDebugBorders(t *testing.T) {
 	if c.Get(0, 0).Continuation {
 		t.Error("expected cell 0 to not be a continuation cell")
 	}
-	
+
 	// Cell at 1 should be a continuation cell (empty text)
 	if got := c.Get(1, 0).Text; got != "" {
 		t.Errorf("expected cell 1 to have empty text, got %q", got)
@@ -526,12 +604,12 @@ func TestWideCharactersAndDebugBorders(t *testing.T) {
 	if !c.Get(1, 0).Continuation {
 		t.Error("expected cell 1 to be a continuation cell")
 	}
-	
+
 	// Cell at 2 should be "A"
 	if got := c.Get(2, 0).Text; got != "A" {
 		t.Errorf("expected cell 2 to be A, got %q", got)
 	}
-	
+
 	// 2. Test Canvas.Row rendering output
 	row := c.Row(0)
 	// The continuation cell at index 1 must be skipped. The remaining canvas cells (width 5) are spaces.
@@ -546,7 +624,7 @@ func TestWideCharactersAndDebugBorders(t *testing.T) {
 	// We create a view with lines containing the emoji " 🔍", which spans columns 1 and 2 of row 0
 	view := loom.NewView([]string{" 🔍"})
 	stack := loom.NewStack(loom.Vertical, view)
-	
+
 	// Enable Debug mode
 	oldDebug := loom.Debug
 	loom.Debug = true

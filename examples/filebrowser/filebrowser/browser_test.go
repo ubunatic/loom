@@ -45,6 +45,37 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	}
 }
 
+func TestBrowserUsesAnimatedBackground(t *testing.T) {
+	pane, err := loom.New(20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer pane.Close()
+	configurePane(pane)
+	if pane.Background == nil {
+		t.Fatal("filebrowser pane has no animated background")
+	}
+
+	b, err := newBrowser(t.TempDir(), "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := loom.NewCanvas(100, 24)
+	b.Draw(c, c.Bounds())
+
+	transparent := 0
+	for y := 0; y < c.Rows(); y++ {
+		for x := 0; x < c.Cols(); x++ {
+			if c.Get(x, y).Text == " " && c.Get(x, y).Style.BG == loom.ColorReset() {
+				transparent++
+			}
+		}
+	}
+	if transparent == 0 {
+		t.Fatal("filebrowser has no transparent pane surface for background composition")
+	}
+}
+
 func TestBrowserThemePersistsAcrossNavigation(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.Mkdir(filepath.Join(dir, "sub"), 0o755); err != nil {
