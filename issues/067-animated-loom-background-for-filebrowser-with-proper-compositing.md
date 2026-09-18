@@ -4,75 +4,85 @@
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: `b7a831c` (`feat: add animated background support`), [Animated Backgrounds](../docs/AnimatedBackgrounds.md)
+**Related**: `background.go`, `pane.go`, `canvas.go`, `frame.go`, `examples/filebrowser/filebrowser/filebrowser.go`, `docs/AnimatedBackgrounds.md`, `b7a831c` (`feat: add animated background support`), [063](063-convert-filebrowser-example-to-a-hostable-widget.md)
 
 ---
 
 ## 1. Problem & Motivation
 
-The Loom library now provides an animated Astra/Braille star-field background,
-but the filebrowser example cannot use it as a visible application background
-without allowing the foreground frame and boxes to overwrite the entire field.
-The filebrowser should demonstrate a real Loom background rather than a
-filebrowser-specific rendering workaround.
+Loom provides an animated Astra/Braille star-field background (`AstraBackground` in `background.go`), but the filebrowser example cannot use it as a visible application background because foreground layout containers (`Frame` and `Box` in `frame.go`) and widgets fill their bounding rectangles with default spaces/styles, completely overwriting the background drawn in the pre-render pass.
 
-The implementation should also strengthen Loom's general background capability
-so future widgets and applications can safely use animated effects without
-interfering with text, borders, selections, prompts, scrollbars, mouse
-interaction, or the terminal cursor.
+Currently:
+1. `Pane.run` renders `Pane.Background` onto the canvas *before* invoking `root.Draw`.
+2. `Frame.Draw`, `Box.Draw`, `Choice.Draw`, and `View.Draw` fill their rectangular bounds with space cells (`Cell{Text: " ", Style: ...}`), erasing all background glyphs except in unused canvas padding outside the widget tree.
+3. If background is rendered after `root.Draw` without awareness of cell claims, background glyphs overwrite foreground text, borders, selections, prompts, scrollbars, and the active terminal cursor.
 
-## 2. Technical Specification / Findings
+The filebrowser should showcase a real Loom animated background shining through empty/unclaimed regions (such as empty list rows, blank detail areas, and split-pane gaps) while keeping interactive content, borders, and cursor coordinates completely protected. This requires a formal compositing layer in Loom as specified in `docs/AnimatedBackgrounds.md`.
 
-- `Pane.Background` currently renders before the root widget.
-- `Frame.Draw` and `Box.Draw` fill their areas with opaque styles, so a star
-  field assigned directly to the filebrowser pane is mostly hidden.
-- Animated backgrounds are driven by the pane event loop at the global
-  `SpeccedBackground.RedrawInterval`.
-- The intended design in `docs/AnimatedBackgrounds.md` calls for a renderer
-  layer that writes only to safe, unclaimed cells.
-- The solution must remain compatible with normal static backgrounds, themes,
-  terminal resizing, color-disabled terminals, and reduced-motion behavior when
-  that setting becomes available.
+## 2. Technical Specification & Findings
+
+### 2.1 Post-Render Compositing vs Safe Cell Classification
+In accordance with `docs/AnimatedBackgrounds.md`, Loom should treat background effects as a renderer-layer compositing pass:
+- **Foreground pass first**: `root.Draw(canvas, bounds)` executes first to establish all content, styled surfaces, and cursor position (`canvas.CursorX`, `canvas.CursorY`).
+- **Cell eligibility rules**: A cell at `(x, y)` is safe/eligible for background rendering if and only if:
+  1. It is not occupied by printable text (`cell.Text == " "` or `cell.Text == ""`).
+  2. It has no opaque/explicit custom styling (e.g. `cell.Style.BG.IsDefault()` or transparent background).
+  3. It does not coincide with the active terminal cursor `(x == canvas.CursorX && y == canvas.CursorY)`.
+  4. It is not part of an active selection or protected overlay.
+- **Cursor protection**: `Canvas` cursor coordinates must remain untouched during background compositing.
+
+### 2.2 Background Contract & Scheduling
+- `AnimatedBackground` interface in `pane.go`:
+  ```go
+  type Background interface {
+      DrawBackground(*Canvas, Rect)
+  }
+
+  type AnimatedBackground interface {
+      Background
+      DrawBackgroundAt(*Canvas, Rect, time.Time)
+  }
+  ```
+- **Independent cadence & lifecycle**: Background effects should be able to declare or use specific frame intervals without binding all effects to the global `SpeccedBackground.RedrawInterval`.
+- **Teardown & Timer cleanup**: Ensure tickers and redraw channels are cleaned up cleanly on `Pane.Close` or widget teardown with zero leaked goroutines.
+- **Accessibility / Reduced-Motion**: Respect user preferences or configuration to disable animated background redraws without breaking static background styling or widget layout.
+
+### 2.3 Filebrowser Integration & Theming
+- Enable `AstraBackground` in `examples/filebrowser/filebrowser/filebrowser.go` via `pane.Background = loom.NewAstraBackground()`.
+- Verify contrast and aesthetic balance with all supported themes (`mc`, `default`, `julia256`, `plain`) so stars are subtly visible in empty split-pane areas without clashing with file list items or metadata text.
+- Ensure file filtering (`q`), navigation (`↑`/`↓`), theme cycling (`F9`), pane resizing, and mouse selection remain completely responsive and unaffected by the background tick loop.
+
+---
 
 ## 3. Implementation & Verification Plan
 
-### M1 — Define the background composition contract
+### M1 — Compositing Contract & Safe-Cell Canvas Primitives
+- Implement safe-cell eligibility detection on `Canvas` (e.g. `Canvas.IsEligibleBackground(x, y)` or a protected-cell compositor helper `Canvas.ComposeBackground(bg, area, now)`).
+- Ensure `Canvas.Set` or compositor pass respects protected cells, preserving text, non-default backgrounds, wide continuation runes, and cursor state.
+- Update `Pane.redraw` in `pane.go` to execute foreground rendering first, followed by safe background compositing into unclaimed cells.
 
-- Decide whether Loom tracks claimed cells, exposes a protected-cell mask, or
-  provides an equivalent post-render composition API.
-- Keep background effects bounded to the supplied canvas/rectangle and prevent
-  them from moving the cursor or writing raw terminal escapes.
-- Allow effect-specific scheduling/configuration where appropriate instead of
-  coupling all animated effects to Astra's global interval.
+*Verification*:
+- API and canvas unit tests demonstrating that background rendering writes to blank/unclaimed cells while leaving styled text, box borders, prompt text, and cursor positions intact.
 
-Verification: API-level tests demonstrate that a background cannot overwrite
-foreground cells or cursor state.
+### M2 — Animated Background Scheduling & Lifecycle Safety
+- Ensure `Pane.run` schedules background animation ticks smoothly alongside widget events and window resizes (`SIGWINCH`).
+- Verify clean teardown on exit, context cancellation, or signal interruption with no leaked background tickers.
+- Add support for disabling animation (reduced-motion guardrail) while retaining static background rendering.
 
-### M2 — Implement safe animated-background composition
+*Verification*:
+- Deterministic canvas tests for frame progression at quantized timestamps.
+- Goroutine leak and ticker teardown tests ensuring zero zombies upon pane closure.
 
-- Render the foreground tree and compose the background into eligible cells.
-- Preserve borders, titles, status text, file rows, metadata, filter input,
-  selections, scrollbars, and cursor placement.
-- Handle narrow layouts, resize events, empty regions, and ANSI/color-disabled
-  output.
+### M3 — Filebrowser Example Integration & Theming Polish
+- Wire `AstraBackground` into `examples/filebrowser/filebrowser/filebrowser.go`.
+- Validate background star visibility and contrast across all themes (`mc`, `julia256`, `plain`, `default`).
+- Verify split-pane resizing, file filtering, directory navigation, and mouse click hit-testing.
 
-Verification: deterministic canvas tests cover protected-cell behavior,
-resizing, stable star placement, animation ticks, and cancellation/teardown.
+*Verification*:
+- Automated headless/golden canvas tests for `filebrowser` confirming stars render in blank areas of the file list and metadata views.
+- PTY smoke test verifying visual fidelity and mouse/keyboard interactivity during continuous animation ticks.
 
-### M3 — Integrate the filebrowser example
-
-- Enable the Astra star field as the filebrowser's Loom background through the
-  public API.
-- Make its colors legible with the filebrowser themes, including `mc`.
-- Keep the background independent of filebrowser input and navigation logic.
-
-Verification: filebrowser rendering tests confirm that interactive content is
-unchanged while the background animates; a terminal replay/manual smoke test
-confirms visible stars behind the split panes.
-
-### M4 — Documentation and regression coverage
-
-- Document the public background/compositing contract and filebrowser usage.
-- Add or update the background example to exercise the same composition path.
-- Run `make test-q1` once after the implementation changes and include focused
-  tests for each milestone before that suite run.
+### M4 — Documentation, Example Alignment & Final Test Pass
+- Update `docs/AnimatedBackgrounds.md` if compositing APIs or interfaces were refined.
+- Ensure standalone `examples/background` and `examples/filebrowser` consistently use the unified compositing model.
+- Execute single-test boundary verification (`make test-q1` or `harnez exec --quota-1 -- go test ./...`).
