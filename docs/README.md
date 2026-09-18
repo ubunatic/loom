@@ -10,6 +10,7 @@
 - [Terminal safety](TerminalSafety.md): the auto-wrap corruption trap, `loom.RawScreen`/`WriteRows`/`ClipRow`, and `x/term` coverage rules for any raw-ANSI terminal writer.
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
 - [Themes](Themes.md): spec-driven palettes, semantic roles, widget adapters, runtime switching, and known boundaries.
+- [Animated backgrounds](AnimatedBackgrounds.md): Astra-style deterministic Braille star fields, protected-cell rendering, and the custom-effect contract.
 
 ## Case Studies
 

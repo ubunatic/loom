@@ -41,13 +41,33 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	// Fill background.
 	c.Fill(Rect{x, y, pw, ph}, Cell{Text: " ", Style: p.Style})
 
-	// Top border.
-	title := " " + p.Title + " "
-	if len(title) > pw-2 {
-		title = title[:pw-2]
+	// Top border with cluster-aware title truncation (see issue #038).
+	row := make([]Cell, pw)
+	for i := range row {
+		row[i] = Cell{Text: "─"}
 	}
-	top := "┌" + title + strings.Repeat("─", pw-2-len([]rune(title))) + "┐"
-	c.Write(x, y, top, p.Style)
+	row[0] = Cell{Text: "┌"}
+	row[pw-1] = Cell{Text: "┐"}
+	if p.Title != "" {
+		title := " " + p.Title + " "
+		fit := 0
+		for _, cl := range textClusters(title) {
+			dw := StringWidth(cl)
+			// Truncate at the border corners: keep the title within the interior
+			// display-width budget (pw-2) so multi-byte runes never split.
+			if x+1+dw >= pw-1 || dw > max(0, pw-2-fit) {
+				break
+			}
+			n := c.Write(x+1+fit, y, cl, p.Style)
+			if n <= 0 {
+				break
+			}
+			fit += dw
+		}
+	}
+	for i, cell := range row {
+		c.Set(x+i, y, cell)
+	}
 
 	// Side borders.
 	for row := 1; row < ph-1; row++ {
