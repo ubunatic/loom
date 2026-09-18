@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom background specification",
+  "type": "object",
+  "required": ["background"],
+  "properties": {
+    "background": {
+      "type": "object",
+      "required": ["glyphs", "dim_factor", "threshold", "redraw_interval", "density"],
+      "properties": {
+        "glyphs": { "type": "array", "minItems": 8, "items": { "type": "string", "minLength": 1 } },
+        "dim_factor": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
+        "redraw_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "density": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

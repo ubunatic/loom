@@ -60,6 +60,11 @@ type Pane struct {
 	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
 	DisableDefaultQuit bool
 
+	// Background is painted before the root widget on every frame.
+	Background Background
+	// Metrics, when non-nil, receives rolling redraw measurements.
+	Metrics *RenderMetrics
+
 	// winch carries SIGWINCH notifications so the Run loop reflows on a
 	// terminal window resize. Buffered (cap 1) to coalesce resize bursts.
 	winch chan os.Signal
@@ -69,6 +74,41 @@ type Pane struct {
 	// whatever reads the terminal after the pane (e.g. the calling shell).
 	readerDone chan struct{}
 	interrupts chan os.Signal
+}
+
+// RenderMetrics reports recent completed redraw performance.
+type RenderMetrics struct {
+	LoomFPS        float64
+	AstraFPS       float64
+	AstraTargetFPS float64
+	RedrawTime     time.Duration
+	windowStart    time.Time
+	loomFrames     int
+	astraFrames    int
+}
+
+func (m *RenderMetrics) record(now time.Time, astra bool, elapsed time.Duration) {
+	if m.windowStart.IsZero() {
+		m.windowStart = now
+	}
+	m.loomFrames++
+	if astra {
+		m.astraFrames++
+	}
+	if elapsed > 0 {
+		m.RedrawTime = elapsed
+	}
+	if d := now.Sub(m.windowStart); d >= time.Second {
+		m.LoomFPS = float64(m.loomFrames) / d.Seconds()
+		m.AstraFPS = float64(m.astraFrames) / d.Seconds()
+		m.loomFrames, m.astraFrames, m.windowStart = 0, 0, now
+	}
+}
+
+// AnimatedBackground is a background that needs periodic redraws.
+type AnimatedBackground interface {
+	Background
+	DrawBackgroundAt(*Canvas, Rect, time.Time)
 }
 
 // New opens /dev/tty, enters raw mode, and reserves height rows below the
@@ -379,6 +419,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		cols = p.MaxCols
 	}
 	canvas := NewCanvas(cols, p.rows)
+	var backgroundFrames <-chan time.Time
+	var backgroundTicker *time.Ticker
+	if _, ok := p.Background.(AnimatedBackground); ok {
+		backgroundTicker = time.NewTicker(SpeccedBackground.RedrawInterval)
+		defer backgroundTicker.Stop()
+		backgroundFrames = backgroundTicker.C
+		if p.Metrics != nil && SpeccedBackground.RedrawInterval > 0 {
+			p.Metrics.AstraTargetFPS = 1 / SpeccedBackground.RedrawInterval.Seconds()
+		}
+	}
 
 	// Read input in a goroutine and forward it on a channel so the main loop can
 	// select between input and SIGWINCH. os.File.Read retries EINTR via Go's poll
@@ -443,13 +493,22 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// redraw paints one frame. It is a closure so the mouse loop can repaint
 	// after each event in a burst, letting the highlight follow the pointer
 	// rather than jumping once after the whole burst is drained.
-	redraw := func() {
+	redraw := func(astra bool) {
+		started := time.Now()
 		if canvas.Rows() != p.rows {
 			canvas = NewCanvas(cols, p.rows)
 		}
 		canvas.Clear()
+		if animated, ok := p.Background.(AnimatedBackground); ok {
+			animated.DrawBackgroundAt(canvas, canvas.Bounds(), time.Now())
+		} else if p.Background != nil {
+			p.Background.DrawBackground(canvas, canvas.Bounds())
+		}
 		root.Draw(canvas, canvas.Bounds())
 		canvas.Flush(p.tty, p.startRow)
+		if p.Metrics != nil {
+			p.Metrics.record(time.Now(), astra, time.Since(started))
+		}
 	}
 
 	// pending carries over bytes left from a previous reads result that could
@@ -464,6 +523,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	var pendingC <-chan time.Time
 
 	dirty := true
+	animationDirty := false
 	for {
 		if p.Resizeable {
 			targetH := p.wantRows
@@ -479,9 +539,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 
 		if dirty {
-			redraw()
+			redraw(animationDirty)
 		}
 		dirty = false
+		animationDirty = false
 
 		select {
 		case <-ctx.Done():
@@ -494,6 +555,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 		case <-frames:
 			dirty = true
+		case <-backgroundFrames:
+			dirty = true
+			animationDirty = true
 		case <-p.winch:
 			// Terminal window resized: reflow width/bounds and repaint.
 			p.applyWinch(&cols)
@@ -545,7 +609,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 						break
 					}
 					raw = raw[used:]
-					redraw() // repaint after each event so the pointer is followed live
+					redraw(false) // repaint after each event so the pointer is followed live
 				}
 				if quit {
 					return nil

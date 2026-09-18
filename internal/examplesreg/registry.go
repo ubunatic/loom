@@ -9,6 +9,7 @@
 package examplesreg
 
 import (
+	"codeberg.org/ubunatic/loom/examples/background/background"
 	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
 	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
 	"codeberg.org/ubunatic/loom/examples/splash/splash"
@@ -39,6 +40,11 @@ type Example struct {
 
 // Registry lists every examples/* program in a fixed, deterministic order.
 var Registry = []Example{
+	{
+		Name: "background", Description: "Full-screen Astra star field behind a widget",
+		Package: "codeberg.org/ubunatic/loom/examples/background",
+		Run:     background.Run, SupportsHelp: false,
+	},
 	{
 		Name:         "filebrowser",
 		Description:  "File list and live metadata in split panes",
