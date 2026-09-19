@@ -54,8 +54,8 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 		Gap: 1, Breakpoint: 65,
 		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme  •  F10/^Q quit",
 		Boxes: []loom.Box{
-			{ID: "files", Dynamic: true, MinWidth: 20, Height: 18, Border: border},
-			{ID: "metadata", Dynamic: true, MinWidth: 25, Height: 18, Border: border, Child: b.details},
+			{ID: "files", Dynamic: true, FillHeight: true, MinWidth: 20, Height: 18, Border: border},
+			{ID: "metadata", Dynamic: true, FillHeight: true, MinWidth: 25, Height: 18, Border: border, Child: b.details},
 		},
 		Actions: []loom.FrameAction{
 			{ID: "quit_f10", Action: "quit", Key: "f10"},

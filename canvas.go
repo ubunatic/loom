@@ -280,21 +280,54 @@ func (c *Canvas) Row(y int) string {
 // Flush writes all rows to out using absolute cursor positioning.
 // startRow is the 1-based terminal row of the canvas top-left corner.
 func (c *Canvas) Flush(out interface{ WriteString(string) (int, error) }, startRow int) {
+	c.FlushWithClear(out, startRow, 0)
+}
+
+// FlushWithClear writes the complete canvas as one synchronized terminal
+// update using the default resize rendering configuration. clearRows requests
+// additional rows below the canvas to be erased; this is used when a resize
+// shrinks the pane without exposing a blank intermediate frame.
+func (c *Canvas) FlushWithClear(out interface{ WriteString(string) (int, error) }, startRow, clearRows int) {
+	c.FlushWithConfig(out, startRow, clearRows, DefaultResizeConfig())
+}
+
+// FlushWithConfig writes the canvas to out with the provided resize rendering
+// switches (atomic buffered flush, per-row clearing, synchronized output).
+func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error) }, startRow, clearRows int, cfg ResizeConfig) {
 	var b strings.Builder
+	var sink interface{ WriteString(string) (int, error) } = &b
+	if !cfg.AtomicFlush {
+		sink = out
+	}
+
+	if cfg.SynchronizedOutput {
+		sink.WriteString("\x1b[?2026h") //nolint:errcheck
+	}
 	for y := 0; y < c.rows; y++ {
-		b.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row
-		b.WriteString(c.Row(y))
+		sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
+		sink.WriteString(c.Row(y))                              //nolint:errcheck
+		if cfg.RowClear {
+			sink.WriteString("\x1b[K") //nolint:errcheck
+		}
+	}
+	for y := 0; y < clearRows; y++ {
+		sink.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", startRow+c.rows+y)) //nolint:errcheck
 	}
 	if c.CursorX >= 0 && c.CursorY >= 0 {
 		// Position and show the cursor only when a widget asked for it (a prompt).
-		b.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1))
-		b.WriteString("\x1b[?25h")
+		sink.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1)) //nolint:errcheck
+		sink.WriteString("\x1b[?25h")                                                  //nolint:errcheck
 	} else {
 		// No prompt on this frame: hide the hardware cursor so it doesn't linger
 		// as a stray block after the last drawn cell.
-		b.WriteString("\x1b[?25l")
+		sink.WriteString("\x1b[?25l") //nolint:errcheck
 	}
-	out.WriteString(b.String()) //nolint:errcheck
+	if cfg.SynchronizedOutput {
+		sink.WriteString("\x1b[?2026l") //nolint:errcheck
+	}
+	if cfg.AtomicFlush {
+		out.WriteString(b.String()) //nolint:errcheck
+	}
 }
 
 // Clear resets every cell in the canvas to blank and hides the cursor. The

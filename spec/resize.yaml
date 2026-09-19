@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=schemas/resize.schema.json
+modes:
+  coalesce:
+    title: "Resize-event coalescing"
+    description: "Drain intermediate SIGWINCH notifications and render only the latest size"
+    default: true
+    diagnostic_only: false
+    key: "1"
+  atomic_flush:
+    title: "Atomic buffered frame flushes"
+    description: "Buffer the complete frame in memory and flush to terminal in a single write"
+    default: true
+    diagnostic_only: false
+    key: "2"
+  row_clear:
+    title: "Per-row CSI K clearing"
+    description: "Emit CSI K at the end of each rendered row to erase stale content after narrowing"
+    default: true
+    diagnostic_only: false
+    key: "3"
+  synchronized_output:
+    title: "Synchronized output mode"
+    description: "Wrap frame flushes in CSI ?2026h / CSI ?2026l for atomic terminal presentation"
+    default: true
+    diagnostic_only: false
+    key: "4"
+  auto_wrap:
+    title: "Terminal auto-wrap handling"
+    description: "Disable terminal auto-wrap (CSI ?7l) while active and restore on exit (CSI ?7h)"
+    default: true
+    diagnostic_only: false
+    key: "5"
+  out_of_band_clear:
+    title: "Out-of-band resize clearing"
+    description: "Emit immediate escape sequence to clear terminal during SIGWINCH handler (diagnostic only)"
+    default: false
+    diagnostic_only: true
+    key: "6"

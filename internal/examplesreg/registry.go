@@ -16,6 +16,7 @@ import (
 	"codeberg.org/ubunatic/loom/examples/split/split"
 	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
 	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
+	"codeberg.org/ubunatic/loom/examples/winch/winch"
 )
 
 // Example describes one examples/* program.
@@ -85,6 +86,13 @@ var Registry = []Example{
 		Description:  "Live process CPU-usage tree as a treemap layout",
 		Package:      "codeberg.org/ubunatic/loom/examples/treemap",
 		Run:          treemap.Run,
+		SupportsHelp: true,
+	},
+	{
+		Name:         "winch",
+		Description:  "Diagnostic application exposing spec-backed resize modes",
+		Package:      "codeberg.org/ubunatic/loom/examples/winch",
+		Run:          winch.Run,
 		SupportsHelp: true,
 	},
 }

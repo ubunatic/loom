@@ -6,6 +6,7 @@ package loom
 import (
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -193,5 +194,229 @@ func TestPaneRunStandaloneEscTimesOut(t *testing.T) {
 	got := rec.snapshot()
 	if len(got) != 1 || got[0].Key != "esc" {
 		t.Fatalf("got %+v, want a single {Key:esc} event", got)
+	}
+}
+
+func setPTYSize(t *testing.T, master *os.File, cols, rows int) {
+	t.Helper()
+	ws := &unix.Winsize{Row: uint16(rows), Col: uint16(cols)}
+	if err := unix.IoctlSetWinsize(int(master.Fd()), unix.TIOCSWINSZ, ws); err != nil {
+		t.Fatalf("set pty size: %v", err)
+	}
+}
+
+type ptyResizeWidget struct {
+	mu      sync.Mutex
+	draws   int
+	bounds  []Rect
+	lastCol int
+	lastRow int
+	done    chan struct{}
+}
+
+func newPTYResizeWidget() *ptyResizeWidget {
+	return &ptyResizeWidget{done: make(chan struct{})}
+}
+
+func (w *ptyResizeWidget) Draw(c *Canvas, r Rect) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.draws++
+	w.bounds = append(w.bounds, r)
+	w.lastCol = c.Cols()
+	w.lastRow = c.Rows()
+	c.Write(0, 0, fmt.Sprintf("draw %d: %dx%d", w.draws, c.Cols(), c.Rows()), Style{})
+}
+
+func (w *ptyResizeWidget) HandleMouse(MouseEvent) bool { return false }
+
+func (w *ptyResizeWidget) HandleKey(e KeyEvent) bool {
+	if e.Key == "q" || e.Text == "q" {
+		close(w.done)
+		return true
+	}
+	return false
+}
+
+func (w *ptyResizeWidget) lastDimensions() (int, int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.lastCol, w.lastRow
+}
+
+func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	p := &Pane{
+		tty:          slave,
+		fd:           int(slave.Fd()),
+		rows:         20,
+		wantRows:     20,
+		cols:         80,
+		MaxCols:      0,
+		Resizeable:   true,
+		ResizeConfig: DefaultResizeConfig(),
+	}
+	w := newPTYResizeWidget()
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	// Let the initial frame render
+	time.Sleep(20 * time.Millisecond)
+
+	// Simulate rapid resize bursts: 80x24 -> 40x20 -> 25x10 -> 60x18 -> 80x24
+	burst := []struct{ cols, rows int }{
+		{40, 20},
+		{25, 10},
+		{60, 18},
+		{80, 24},
+	}
+	for _, sz := range burst {
+		setPTYSize(t, master, sz.cols, sz.rows)
+		time.Sleep(15 * time.Millisecond)
+	}
+
+	// Wait for coalesced resize handling
+	time.Sleep(60 * time.Millisecond)
+
+	// Send 'q' to exit
+	if _, err := master.Write([]byte("q")); err != nil {
+		t.Fatalf("write q: %v", err)
+	}
+
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for pty resize test to finish")
+	}
+
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+
+	lastCols, lastRows := w.lastDimensions()
+	if lastCols != 80 || lastRows < 20 {
+		t.Fatalf("final dimensions %dx%d, want 80x>=20", lastCols, lastRows)
+	}
+}
+
+func TestPTYResizeModeToggles(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 60, 20)
+
+	cfg := DefaultResizeConfig()
+	p := &Pane{
+		tty:          slave,
+		fd:           int(slave.Fd()),
+		rows:         10,
+		wantRows:     10,
+		cols:         60,
+		MaxCols:      0,
+		Resizeable:   true,
+		ResizeConfig: cfg,
+	}
+	w := newPTYResizeWidget()
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	time.Sleep(30 * time.Millisecond)
+
+	// Drain output from master
+	buf := make([]byte, 4096)
+	n, _ := master.Read(buf)
+	initialOutput := string(buf[:n])
+
+	if !strings.Contains(initialOutput, "\x1b[?2026h") {
+		t.Errorf("expected synchronized output sequence in initial frame: %q", initialOutput)
+	}
+	if !strings.Contains(initialOutput, "\x1b[?7l") {
+		t.Errorf("expected disable auto-wrap sequence in initial frame: %q", initialOutput)
+	}
+
+	// Exit
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestPTYResizeStaleRowClearing(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	p := &Pane{
+		tty:          slave,
+		fd:           int(slave.Fd()),
+		rows:         20,
+		wantRows:     20,
+		cols:         80,
+		MaxCols:      0,
+		Resizeable:   true,
+		ResizeConfig: DefaultResizeConfig(),
+	}
+	w := newPTYResizeWidget()
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	time.Sleep(30 * time.Millisecond)
+
+	// Shrink height significantly: 24 -> 12 rows
+	setPTYSize(t, master, 80, 12)
+	time.Sleep(50 * time.Millisecond)
+
+	// Exit
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	p := &Pane{
+		tty:          slave,
+		fd:           int(slave.Fd()),
+		rows:         15,
+		wantRows:     15,
+		cols:         80,
+		MaxCols:      0,
+		ReduceMotion: true,
+		Background:   NewAstraBackground(),
+		Resizeable:   true,
+		ResizeConfig: DefaultResizeConfig(),
+	}
+	w := newPTYResizeWidget()
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	time.Sleep(30 * time.Millisecond)
+	setPTYSize(t, master, 50, 18)
+	time.Sleep(30 * time.Millisecond)
+
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
 	}
 }

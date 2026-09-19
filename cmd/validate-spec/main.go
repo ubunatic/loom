@@ -27,6 +27,7 @@ var specPairs = []specPair{
 	{document: "spec/box.yaml", schema: "spec/schemas/box.schema.json"},
 	{document: "spec/themes.yaml", schema: "spec/schemas/themes.schema.json"},
 	{document: "spec/backgrounds.yaml", schema: "spec/schemas/backgrounds.schema.json"},
+	{document: "spec/resize.yaml", schema: "spec/schemas/resize.schema.json"},
 	{document: "examples/monitor/monitor/spec/watch.yaml", schema: "spec/schemas/watch.schema.json"},
 	{document: "examples/monitor/monitor/spec/monitor.yaml", schema: "spec/schemas/monitor.schema.json"},
 	{document: "testdata/fixtures/empty-shell.yaml", schema: "spec/schemas/monitor.schema.json"},
@@ -79,6 +80,30 @@ func validatePair(root string, pair specPair) error {
 					plain["normal_fg"] = 256
 				case "invalid_color_name":
 					plain["normal_fg"] = "notacolor"
+				}
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
+	if _, modesOK := document["modes"].(map[string]any); modesOK {
+		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title"} {
+			if err := expectInvalid(schema, pair, document, change, func(invalid map[string]any) error {
+				invalidModes := invalid["modes"].(map[string]any)
+				switch change {
+				case "missing_required_mode":
+					delete(invalidModes, "coalesce")
+				case "invalid_default_type":
+					coalesce := invalidModes["coalesce"].(map[string]any)
+					coalesce["default"] = "not_a_bool"
+				case "unknown_mode_field":
+					coalesce := invalidModes["coalesce"].(map[string]any)
+					coalesce["unknown_field"] = true
+				case "empty_title":
+					coalesce := invalidModes["coalesce"].(map[string]any)
+					coalesce["title"] = ""
 				}
 				return nil
 			}); err != nil {

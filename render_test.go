@@ -34,8 +34,8 @@ func TestCanvasFlushCursorMove(t *testing.T) {
 	var b strings.Builder
 	c.Flush(&b, 5)
 	// Cursor at (startRow+CursorY, CursorX+1) = (5, 2), then made visible.
-	if !strings.HasSuffix(b.String(), "\x1b[5;2H\x1b[?25h") {
-		t.Errorf("Flush should position then show the cursor (\\x1b[5;2H\\x1b[?25h): %q", b.String())
+	if !strings.HasSuffix(b.String(), "\x1b[5;2H\x1b[?25h\x1b[?2026l") {
+		t.Errorf("Flush should position, show the cursor, and end synchronized output: %q", b.String())
 	}
 }
 
@@ -46,6 +46,66 @@ func TestCanvasFlushNoCursorWhenHidden(t *testing.T) {
 	// No final cursor move should be emitted; output ends with the row reset.
 	if strings.HasSuffix(b.String(), "\x1b[3;1H") {
 		t.Error("hidden cursor should not emit a trailing absolute-position move")
+	}
+}
+
+type countingWriter struct {
+	writes int
+	buf    strings.Builder
+}
+
+func (w *countingWriter) WriteString(s string) (int, error) {
+	w.writes++
+	return w.buf.WriteString(s)
+}
+
+func TestCanvasFlushWithConfig(t *testing.T) {
+	c := loom.NewCanvas(4, 2)
+	c.Write(0, 0, "test", loom.Reset)
+
+	// Default config
+	cfg := loom.DefaultResizeConfig()
+	var w countingWriter
+	c.FlushWithConfig(&w, 1, 1, cfg)
+	out := w.buf.String()
+
+	if w.writes != 1 {
+		t.Errorf("atomic flush writes = %d, want 1", w.writes)
+	}
+	if !strings.HasPrefix(out, "\x1b[?2026h") || !strings.HasSuffix(out, "\x1b[?2026l") {
+		t.Errorf("expected synchronized output wrapping in default mode: %q", out)
+	}
+	if !strings.Contains(out, "\x1b[K") {
+		t.Errorf("expected per-row clear in default mode: %q", out)
+	}
+	if !strings.Contains(out, "\x1b[3;1H\x1b[2K") {
+		t.Errorf("expected clearRows output: %q", out)
+	}
+
+	// Disable synchronized output
+	cfg.SynchronizedOutput = false
+	var w2 countingWriter
+	c.FlushWithConfig(&w2, 1, 0, cfg)
+	out2 := w2.buf.String()
+	if strings.Contains(out2, "\x1b[?2026h") || strings.Contains(out2, "\x1b[?2026l") {
+		t.Errorf("did not expect synchronized output when disabled: %q", out2)
+	}
+
+	// Disable per-row clear
+	cfg.RowClear = false
+	var w3 countingWriter
+	c.FlushWithConfig(&w3, 1, 0, cfg)
+	out3 := w3.buf.String()
+	if strings.Contains(out3, "\x1b[K") {
+		t.Errorf("did not expect per-row clear when disabled: %q", out3)
+	}
+
+	// Disable atomic flush
+	cfg.AtomicFlush = false
+	var w4 countingWriter
+	c.FlushWithConfig(&w4, 1, 0, cfg)
+	if w4.writes <= 1 {
+		t.Errorf("expected multiple piecewise writes when atomic flush is disabled, got %d", w4.writes)
 	}
 }
 

@@ -66,3 +66,14 @@ Verification: `make test-q1`, focused PTY tests, and manual resize checks.
 - Compare modes using the diagnostic app across supported terminal environments.
 - Update spec defaults only after behavior is verified.
 - Document selected defaults and known terminal limitations.
+
+---
+
+## 4. Outcome & Findings
+
+All milestones M1 through M5 implemented and verified:
+1. **Spec & Schemas (M1)**: Added `spec/schemas/resize.schema.json` and `spec/resize.yaml` defining candidate defaults (`coalesce: true`, `atomic_flush: true`, `row_clear: true`, `synchronized_output: true`, `auto_wrap: true`, `out_of_band_clear: false`). Added positive and negative controls to `cmd/validate-spec`.
+2. **Framework Routing (M2)**: Routed `ResizeConfig` switches through `Canvas.FlushWithConfig`, `Pane.redraw`, `Pane.applyWinch`, `Pane.run`, and `Pane.close`. Preserved backward compatibility with `Flush` and `FlushWithClear`.
+3. **Diagnostic App (M3)**: Implemented `examples/winch` with responsive dual-panel layout, key shortcuts `[1-6]` to toggle modes, `[R]` to reset, `[M]` to toggle motion, `[T]` to cycle themes, and alignment/checkerboard stress patterns. Registered in `internal/examplesreg` for `loom-demo` and `loom-bench`.
+4. **PTY Regression Coverage (M4)**: Added PTY test suite covering rapid wide → narrow → wide bursts, synchronized output / auto-wrap escape sequence verification, stale-row clearing, and reduced motion / theme combinations.
+5. **Stable Defaults (M5)**: Defaults verified stable across PTY and terminal simulations; documented in `examples/winch/README.md`.

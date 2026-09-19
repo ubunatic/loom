@@ -31,7 +31,10 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	pane, err := loom.New(20)
+	// Request more rows than any terminal can provide; Loom clamps this to the
+	// available height, keeping the browser full-screen while still adapting to
+	// terminal resizes.
+	pane, err := loom.New(1 << 16)
 	if err != nil {
 		return err
 	}

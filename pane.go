@@ -74,6 +74,8 @@ type Pane struct {
 	ReduceMotion bool
 	// Metrics, when non-nil, receives rolling redraw measurements.
 	Metrics *RenderMetrics
+	// ResizeConfig controls runtime resize rendering behaviors.
+	ResizeConfig ResizeConfig
 
 	// winch carries SIGWINCH notifications so the Run loop reflows on a
 	// terminal window resize. Buffered (cap 1) to coalesce resize bursts.
@@ -199,15 +201,16 @@ func New(height int) (*Pane, error) {
 	tty.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow))
 
 	p := &Pane{
-		tty:      tty,
-		fd:       fd,
-		oldState: old,
-		rows:     height,
-		wantRows: wantRows,
-		startRow: startRow,
-		cols:     cols,
-		MaxCols:  DefaultMaxCols,
-		ownsTTY:  true,
+		tty:          tty,
+		fd:           fd,
+		oldState:     old,
+		rows:         height,
+		wantRows:     wantRows,
+		startRow:     startRow,
+		cols:         cols,
+		MaxCols:      DefaultMaxCols,
+		ResizeConfig: DefaultResizeConfig(),
+		ownsTTY:      true,
 	}
 	p.installSignalHandler()
 	return p, nil
@@ -343,12 +346,7 @@ func (p *Pane) Resize(newHeight int) {
 			}
 		}
 	} else {
-		// Shrinking: clear the abandoned lines at the bottom so they don't leave stale text
-		var b strings.Builder
-		for i := newHeight; i < p.rows; i++ {
-			b.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", p.startRow+i))
-		}
-		p.tty.WriteString(b.String()) //nolint:errcheck
+		// The next frame clears abandoned rows together with its UI output.
 	}
 
 	p.rows = newHeight
@@ -377,11 +375,8 @@ func winchBounds(startRow, rows, termRows int) (newStartRow, newRows int) {
 }
 
 // applyWinch re-queries the terminal size after a SIGWINCH and updates the
-// pane bounds and canvas width so the next frame reflows. It clears generously —
-// from the topmost of the old/new pane row down to the bottom of the new screen —
-// because narrowing makes the terminal rewrap our old wide lines and push the
-// overflow down past the old region; a fixed old-region clear would miss that.
-// The caller recreates the canvas at the returned width and redraws.
+// pane bounds and canvas width so the next frame reflows. Rendering and stale
+// row clearing remain a single operation in the caller.
 func (p *Pane) applyWinch(cols *int) {
 	newCols, termRows := termSize(p.fd)
 	if newCols < 1 {
@@ -393,18 +388,17 @@ func (p *Pane) applyWinch(cols *int) {
 	// must not permanently pin the pane at one row).
 	newStartRow, newRows := winchBounds(p.startRow, p.wantRows, termRows)
 
-	// Clear from the highest pane top (old or new) down to the new screen bottom
-	// so rewrapped overflow leaves no stale text. Inline panes live at the bottom,
-	// so clearing to termRows does not eat unrelated content above the pane.
-	top := p.startRow
-	if newStartRow < top {
-		top = newStartRow
+	if p.ResizeConfig.OutOfBandClear && p.tty != nil {
+		top := p.startRow
+		if newStartRow < top {
+			top = newStartRow
+		}
+		var b strings.Builder
+		for row := top; row <= termRows; row++ {
+			fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", row)
+		}
+		p.tty.WriteString(b.String()) //nolint:errcheck
 	}
-	var b strings.Builder
-	for row := top; row <= termRows; row++ {
-		fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", row)
-	}
-	p.tty.WriteString(b.String()) //nolint:errcheck
 
 	p.startRow, p.rows = newStartRow, newRows
 	p.cols = newCols
@@ -543,8 +537,17 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// redraw paints one frame. It is a closure so the mouse loop can repaint
 	// after each event in a burst, letting the highlight follow the pointer
 	// rather than jumping once after the whole burst is drained.
+	autoWrapDisabled := false
+	clearRows := 0
 	redraw := func(astra bool) {
 		started := time.Now()
+		if p.ResizeConfig.AutoWrap && !autoWrapDisabled && p.tty != nil {
+			p.tty.WriteString("\x1b[?7l") //nolint:errcheck
+			autoWrapDisabled = true
+		} else if !p.ResizeConfig.AutoWrap && autoWrapDisabled && p.tty != nil {
+			p.tty.WriteString("\x1b[?7h") //nolint:errcheck
+			autoWrapDisabled = false
+		}
 		if canvas.Rows() != p.rows {
 			canvas = NewCanvas(cols, p.rows)
 		}
@@ -554,7 +557,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			p.help.Draw(canvas, canvas.Bounds())
 		}
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), time.Now())
-		canvas.Flush(p.tty, p.startRow)
+		canvas.FlushWithConfig(p.tty, p.startRow, clearRows, p.ResizeConfig)
+		clearRows = 0
 		if p.Metrics != nil {
 			p.Metrics.record(time.Now(), astra, time.Since(started))
 		}
@@ -609,7 +613,25 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			animationDirty = true
 		case <-p.winch:
 			// Terminal window resized: reflow width/bounds and repaint.
+			if p.ResizeConfig.Coalesce {
+				for {
+					select {
+					case <-p.winch:
+					default:
+						goto resizeCoalesced
+					}
+				}
+			}
+		resizeCoalesced:
+			oldStartRow, oldRows := p.startRow, p.rows
 			p.applyWinch(&cols)
+			oldBottom := oldStartRow + oldRows
+			newBottom := p.startRow + p.rows
+			if oldBottom > newBottom {
+				// A vertical resize can move the pane as well as change its
+				// height. Clear the abandoned tail from the new frame's bottom.
+				clearRows = oldBottom - newBottom
+			}
 			canvas = NewCanvas(cols, p.rows)
 			dirty = true
 			continue
@@ -772,6 +794,7 @@ func (p *Pane) close() {
 	}
 	b.WriteString(fmt.Sprintf("\x1b[%d;1H", p.startRow))
 	b.WriteString("\x1b[?25h")    // restore cursor visibility (a prompt-less frame may have hidden it)
+	b.WriteString("\x1b[?7h")     // restore auto-wrap
 	p.tty.WriteString(b.String()) //nolint:errcheck
 
 	// Discard any unread input before leaving raw mode: keys pressed during the
