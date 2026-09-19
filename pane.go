@@ -84,6 +84,7 @@ type Pane struct {
 	// whatever reads the terminal after the pane (e.g. the calling shell).
 	readerDone chan struct{}
 	interrupts chan os.Signal
+	help       *Popup
 }
 
 // RenderMetrics reports recent completed redraw performance.
@@ -445,6 +446,11 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 }
 
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
+	previousHelpRequest := paneHelpRequest
+	paneHelpRequest = func(cmds []Cmd) {
+		p.help = NewPopup("Help", newHelpWidget(cmds))
+	}
+	defer func() { paneHelpRequest = previousHelpRequest }()
 	defer func() {
 		if r := recover(); r != nil {
 			p.close()
@@ -544,6 +550,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 		canvas.Clear()
 		root.Draw(canvas, canvas.Bounds())
+		if p.help != nil {
+			p.help.Draw(canvas, canvas.Bounds())
+		}
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), time.Now())
 		canvas.Flush(p.tty, p.startRow)
 		if p.Metrics != nil {
@@ -611,7 +620,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			pending = nil
 			pendingC = nil
 			dirty = true
-			if root.HandleKey(ke) || p.handleKeyFallback(ke) {
+			if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke) {
 				return nil
 			}
 		case rr := <-reads:
@@ -644,7 +653,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// hit-test as if their first row were Y=1. Without this, mouse only
 					// lined up when the pane happened to sit at row 1.
 					me.Y -= p.startRow - 1
-					if root.HandleMouse(me) {
+					if p.handleHelpMouse(me) || root.HandleMouse(me) {
 						quit = true
 						break
 					}
@@ -677,7 +686,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// scanKey must always make progress; guard against a stall.
 					break
 				}
-				if root.HandleKey(ke) || p.handleKeyFallback(ke) {
+				if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke) {
 					quit = true
 					break
 				}
@@ -687,6 +696,29 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 		}
 	}
+}
+
+func (p *Pane) handleHelpKey(e KeyEvent) bool {
+	if p.help == nil {
+		return false
+	}
+	if e.Key == "esc" {
+		p.help = nil
+		return true
+	}
+	close := p.help.HandleKey(e)
+	if close || !p.help.Open {
+		p.help = nil
+	}
+	return true
+}
+
+func (p *Pane) handleHelpMouse(e MouseEvent) bool {
+	if p.help == nil {
+		return false
+	}
+	p.help.HandleMouse(e)
+	return true
 }
 
 var defaultQuitKeyMap = func() map[string]bool {

@@ -45,6 +45,11 @@ type cmdBar struct {
 	help   *Popup
 }
 
+// paneHelpRequest is installed only while a Pane event loop is active. It
+// lets command bars nested below clipped composite widgets request a root
+// overlay without needing to know about the widget tree above them.
+var paneHelpRequest func([]Cmd)
+
 func newCmdBar() *cmdBar {
 	return &cmdBar{
 		global: []Cmd{
@@ -182,6 +187,8 @@ func (cb *cmdBar) showHelp() Nav {
 	helpMu.RUnlock()
 	if runner != nil {
 		_ = runner(hw, hw.ContentHeight())
+	} else if paneHelpRequest != nil {
+		paneHelpRequest(cb.allCmds())
 	} else {
 		cb.help = NewPopup("Help", hw)
 	}

@@ -135,3 +135,38 @@ func TestPaneHandleKeyFallback(t *testing.T) {
 		}
 	}
 }
+
+func TestPaneHelpOverlayUsesRootCanvasAndCapturesInput(t *testing.T) {
+	p := &Pane{}
+	previous := paneHelpRequest
+	defer func() { paneHelpRequest = previous }()
+	paneHelpRequest = func(cmds []Cmd) {
+		p.help = NewPopup("Help", newHelpWidget(cmds))
+	}
+
+	bar := newCmdBar()
+	bar.active = true
+	bar.query = "help"
+	if bar.execute(bar.match()) != cmdNone {
+		t.Fatal("help command unexpectedly changed navigation")
+	}
+	if p.help == nil {
+		t.Fatal("help did not request the pane overlay")
+	}
+
+	canvas := NewCanvas(40, 12)
+	canvas.Clear()
+	p.help.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(10, 3).Text; got != "┌" {
+		t.Fatalf("overlay left border at %d,3 = %q, want popup corner", 10, got)
+	}
+	if p.handleHelpKey(KeyEvent{Text: "x"}) {
+		// The event is consumed by the overlay; this branch documents that
+		// underlying widgets must not see it.
+	} else {
+		t.Fatal("help key was not captured")
+	}
+	if p.help != nil {
+		t.Fatal("help overlay remained open after dismissal key")
+	}
+}
