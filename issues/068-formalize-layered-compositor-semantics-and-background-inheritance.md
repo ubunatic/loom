@@ -1,6 +1,6 @@
 # 068 — Formalize layered compositor semantics and background inheritance
 
-**Status**: Open
+**Status**: In Progress — M1/M2 complete (layered compositor API, nested-canvas surface propagation bug fixed, widgets migrated); M3 docs/cleanup/visual-tuning remains
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture
@@ -44,6 +44,12 @@ while protecting text, borders, selections, and cursor state.
 
 ### M1 — Explicit cell ownership and inheritance
 
+**Status: Complete.** `Cell.Claim` gives widgets explicit foreground
+ownership independent of text/style inference, and `Canvas.Set` inherits a
+parent surface's background color into a blank child cell instead of
+resetting it. Wide-rune, cursor, and selection protection were already
+covered by pre-existing tests.
+
 - Define explicit foreground claim/opacity semantics instead of relying only on
   blank text and style heuristics.
 - Define how default backgrounds inherit through nested canvases and how an
@@ -54,6 +60,27 @@ while protecting text, borders, selections, and cursor state.
 colored-cell, child-canvas, wide-rune, and cursor cases.
 
 ### M2 — Layered compositor API
+
+**Status: Complete, with visual tuning deferred.** `PaintSurface` /
+`PaintForeground` / `PaintDecoration` are the new explicit Canvas ops.
+`AstraBackground`, `ImageBackground`, `Box`, `Frame`, `Choice`, `View`,
+`Table`, and `Notif` are migrated onto them. Two real bugs were found and
+fixed along the way, not just theoretical gaps:
+1. The `Surface` marker didn't survive being merged up through nested
+   `paintClipped` canvases (`Frame` → `Box` → child widget), so an inherited
+   background color looked like claimed foreground one level up.
+2. `Choice`/`View`/`Table`/`Notif` painted their background rows with raw
+   `Fill(Cell{Text:" ", Style: themed})` instead of `PaintSurface`, so any
+   theme with a real (non-reset) background color claimed the whole content
+   area and blocked decoration — this is why stars only ever appeared in the
+   `plain` theme and only in the Frame's outer chrome, never inside list/detail
+   panes.
+
+Manually verified across `mc`, `default`, `julia256`, and `plain`: stars now
+render inside painted panes in all themes — confirmed working with
+caveats on visual balance (contrast/density tuning) left for later polish,
+not a compositing-contract gap. The headless-safe filebrowser test (no
+`/dev/tty` dependency) landed as part of this milestone.
 
 - Add focused Canvas/compositor operations for painting surfaces, foreground
   content, and background decoration.
@@ -70,14 +97,20 @@ colored-cell, child-canvas, wide-rune, and cursor cases.
 **Verification:** deterministic canvas tests prove that each layer composes in
   order and that decoration inherits the active surface color; headless
   filebrowser coverage confirms stars render in blank list/detail areas
-  without disturbing selection, filtering, or navigation.
+  without disturbing selection, filtering, or navigation; manual PTY pass
+  across all four themes confirmed stars visible inside painted panes.
 
 ### M3 — Documentation and compatibility cleanup
+
+**Status: Open.** Remaining work, now that M1/M2 landed:
 
 - Document the layering and inheritance contract in `docs/AnimatedBackgrounds.md`
   and relevant geometry documentation.
 - Remove or narrow inference helpers once all consumers use the explicit API.
 - Confirm reduced-motion, resize, theme, and nested-pane behavior.
+- Visual tuning pass: star contrast/density balance per theme was confirmed
+  working end-to-end but not yet polished (deferred from M2 by design — see
+  M2 status note above).
 
 **Verification:** `make test-q1`, geometry replay, and headless example coverage;
 manual PTY smoke validation for colored panes and animated stars.
