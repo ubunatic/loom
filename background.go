@@ -64,7 +64,9 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			if level > 7 {
 				level = 14 - phase
 			}
-			v := uint8(35 + level*10)
+			// Keep the low end visible on light and dark theme surfaces while
+			// retaining enough headroom for the fade peak.
+			v := uint8(42 + level*9)
 			glyph := SpeccedBackground.Glyphs[int(h)%len(SpeccedBackground.Glyphs)]
 			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(v, v, v)}})
 		}

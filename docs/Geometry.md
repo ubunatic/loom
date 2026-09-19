@@ -1,5 +1,15 @@
 # Geometry Gate
 
+## Nested canvas surfaces
+
+Composite widgets render through bounded child canvases. A child cell with no
+explicit background inherits the surface at its parent merge coordinate;
+explicit foreground backgrounds remain authoritative. Use `Canvas.PaintSurface`
+for pane backgrounds, `PaintForeground` for owned content, and
+`PaintDecoration` for effects such as Astra. This preserves colored surfaces
+through nested boxes while keeping text, borders, wide-rune continuations,
+selections, and cursor cells protected.
+
 Ticket 010 gates richer content on terminal-cell geometry, not byte or rune counts.
 
 ## Supported text policy

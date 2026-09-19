@@ -90,7 +90,7 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 // and — when focused — sets the canvas cursor at the caret column. The host owns
 // focus, so it passes focused so an unfocused field shows no cursor.
 func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
-	c.Fill(Rect{r.X, r.Y, r.W, 1}, Cell{Text: " "})
+	c.PaintSurface(Rect{r.X, r.Y, r.W, 1}, Style{})
 	x := r.X
 	if t.Prompt != "" {
 		x += c.Write(x, r.Y, t.Prompt, Style{})

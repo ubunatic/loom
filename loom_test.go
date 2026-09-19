@@ -127,7 +127,7 @@ func TestCanvasBackgroundCompositionProtectsForegroundAndCursor(t *testing.T) {
 
 func TestCanvasBackgroundCompositionPassesThroughTransparentBlankCells(t *testing.T) {
 	c := loom.NewCanvas(3, 1)
-	c.Fill(c.Bounds(), loom.Cell{Text: " ", Style: loom.Style{FG: loom.ColorRGB(200, 200, 200)}})
+	c.PaintSurface(c.Bounds(), loom.Style{FG: loom.ColorRGB(200, 200, 200)})
 	c.Set(1, 0, loom.Cell{Text: " ", Style: loom.Style{BG: loom.ColorIndex(24)}})
 	c.ComposeBackground(testBackground{}, c.Bounds(), time.Time{})
 

@@ -87,7 +87,7 @@ func (c *Canvas) Bounds() Rect { return Rect{W: c.cols, H: c.rows} }
 func (c *Canvas) PaintSurface(r Rect, style Style) {
 	for y := r.Y; y < r.Y+r.H; y++ {
 		for x := r.X; x < r.X+r.W; x++ {
-			c.Set(x, y, Cell{Text: " ", Style: style, Surface: true})
+			c.set(x, y, Cell{Text: " ", Style: style, Surface: true}, false)
 		}
 	}
 }
@@ -97,7 +97,7 @@ func (c *Canvas) PaintSurface(r Rect, style Style) {
 func (c *Canvas) PaintForeground(x, y int, cell Cell) {
 	cell.Claim = true
 	cell.Surface = false
-	c.Set(x, y, cell)
+	c.set(x, y, cell, true)
 }
 
 // PaintDecoration paints only into cells available to the decoration layer.
@@ -108,11 +108,15 @@ func (c *Canvas) PaintDecoration(x, y int, cell Cell) {
 	}
 	cell.Claim = false
 	cell.Surface = false
-	c.Set(x, y, cell)
+	c.set(x, y, cell, false)
 }
 
 // Set places a single cell at (x, y). Out-of-bounds writes are silently dropped.
 func (c *Canvas) Set(x, y int, cell Cell) {
+	c.set(x, y, cell, true)
+}
+
+func (c *Canvas) set(x, y int, cell Cell, claim bool) {
 	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
 		return
 	}
@@ -134,7 +138,7 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 	// surface. Containers commonly paint these cells to establish their
 	// bounds, but they must not hide a composited background. Text, explicit
 	// background colors, and attributes remain foreground-owned.
-	if !transparentForeground(cell) {
+	if claim && !cell.Surface {
 		c.claimed[y][x] = true
 	}
 	if cell.Continuation {
@@ -177,11 +181,6 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 	if w == 2 {
 		c.cells[y][x+1] = Cell{Style: cell.Style, Continuation: true}
 	}
-}
-
-func transparentForeground(cell Cell) bool {
-	return !cell.Claim && (cell.Surface || ((cell.Text == "" || cell.Text == " ") && cell.Style.BG == ColorReset())) &&
-		!cell.Style.Bold && !cell.Style.Underline && !cell.Style.Dim
 }
 
 // IsEligibleBackground reports whether a cell may be filled by a background

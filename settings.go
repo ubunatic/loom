@@ -117,7 +117,7 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 		if y >= r.Y+r.H {
 			break
 		}
-		c.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " "})
+		c.PaintSurface(Rect{r.X, y, r.W, 1}, Style{})
 		sel := i == s.sel
 		labelStyle := Style{}
 		valueStyle := Style{Dim: true}

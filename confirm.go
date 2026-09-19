@@ -43,7 +43,7 @@ func (c *Confirm) answer(yes bool) {
 // the highlighted option marked and bold.
 func (c *Confirm) Draw(cv *Canvas, r Rect) {
 	for i := 0; i < r.H; i++ {
-		cv.Fill(Rect{r.X, r.Y + i, r.W, 1}, Cell{Text: " "})
+		cv.PaintSurface(Rect{r.X, r.Y + i, r.W, 1}, Style{})
 	}
 	if c.Prompt != "" {
 		cv.Write(r.X, r.Y, c.Prompt, Style{})

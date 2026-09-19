@@ -205,7 +205,7 @@ func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 	empty := len(t.lines) == 1 && len(t.lines[0]) == 0
 	for row := 0; row < r.H; row++ {
 		y := r.Y + row
-		c.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " "})
+		c.PaintSurface(Rect{r.X, y, r.W, 1}, Style{})
 		li := t.scroll + row
 		if li >= len(t.lines) {
 			continue

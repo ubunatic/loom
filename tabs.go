@@ -133,7 +133,7 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 		x += w
 	}
 	if x < r.X+r.W {
-		c.Fill(Rect{X: x, Y: r.Y, W: r.X + r.W - x, H: 1}, Cell{Text: " ", Style: t.Style.Inactive})
+		c.PaintSurface(Rect{X: x, Y: r.Y, W: r.X + r.W - x, H: 1}, t.Style.Inactive)
 	}
 	if bar > 1 {
 		c.Fill(Rect{X: r.X, Y: r.Y + 1, W: r.W, H: bar - 1}, Cell{Text: tabsRuleGlyph, Style: t.Style.Rule})

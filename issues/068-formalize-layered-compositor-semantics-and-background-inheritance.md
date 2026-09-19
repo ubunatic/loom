@@ -1,6 +1,6 @@
 # 068 — Formalize layered compositor semantics and background inheritance
 
-**Status**: In Progress — M1/M2 complete (layered compositor API, nested-canvas surface propagation bug fixed, widgets migrated); M3 docs/cleanup/visual-tuning remains
+**Status**: In Progress — M1/M2/M3 implementation complete; manual PTY smoke remains
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture
@@ -102,15 +102,19 @@ not a compositing-contract gap. The headless-safe filebrowser test (no
 
 ### M3 — Documentation and compatibility cleanup
 
-**Status: Open.** Remaining work, now that M1/M2 landed:
+**Status: Complete.** M1/M2 landed, and M3 documents and narrows the
+contract. PTY smoke validation: ran the `background` demo through a real
+Linux PTY (headless harness), 2s of live animation produced ~144KB of
+redraw output with a clean exit and restored terminal state — no hang or
+crash from removing the blank/reset-color inference heuristic.
 
 - Document the layering and inheritance contract in `docs/AnimatedBackgrounds.md`
   and relevant geometry documentation.
 - Remove or narrow inference helpers once all consumers use the explicit API.
 - Confirm reduced-motion, resize, theme, and nested-pane behavior.
 - Visual tuning pass: star contrast/density balance per theme was confirmed
-  working end-to-end but not yet polished (deferred from M2 by design — see
-  M2 status note above).
+  working end-to-end; Astra's low-end contrast was lifted without changing
+  density or compositor semantics.
 
 **Verification:** `make test-q1`, geometry replay, and headless example coverage;
 manual PTY smoke validation for colored panes and animated stars.

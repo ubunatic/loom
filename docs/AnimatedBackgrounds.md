@@ -62,10 +62,41 @@ The Codex reference schedules a redraw every 150 ms, remains visible for 15
 seconds, then fades for one second. Hidden or ineligible frames do not keep a
 timer or redraw loop alive.
 
-## Loom extension shape
+## Loom compositor contract
 
-Loom should treat a background as a renderer-layer effect, not as a widget that
-owns input state. A useful interface is conceptually:
+Loom treats a background as a renderer-layer effect, not as a widget that owns
+input state. Composition has four ordered layers:
+
+```text
+surface/background color → foreground content and claims
+                         → background decoration
+                         → cursor and selection overlays
+```
+
+Widgets use explicit Canvas operations for these layers:
+
+- `PaintSurface(rect, style)` establishes a background without claiming cells.
+- `PaintForeground(x, y, cell)` writes content and claims the cell, including a
+  deliberately blank cell.
+- `PaintDecoration(x, y, cell)` writes only to an eligible, unclaimed cell.
+
+`Cell.Claim` records explicit foreground ownership. `Cell.Surface` marks a
+surface cell created by `PaintSurface`; it is deliberately not a foreground
+claim. `Canvas.Set` remains the low-level compatibility operation for ordinary
+foreground writes, while new widget code should use a layered operation so
+ownership is explicit.
+
+When widgets render through nested `paintClipped` canvases, a cell with no
+explicit background inherits the surface at its parent merge coordinate. An
+explicitly colored foreground background remains authoritative. The surface
+marker and inherited color survive every nested merge, so decoration can appear
+over a colored pane without erasing it. Wide-rune continuation cells, claimed
+text and borders, selection overlays, and the cursor remain protected.
+
+Background effects receive only a bounded rectangle and use
+`PaintDecoration`; they do not own input state, move the cursor, or write raw
+terminal escape sequences. The runtime owns scheduling, cancellation, and
+reduced-motion behavior. A useful conceptual interface is:
 
 ```go
 type BackgroundEffect interface {
@@ -82,16 +113,9 @@ The runtime should own:
 - redraw requests; and
 - the protected-cell mask supplied by the normal layout/render pass.
 
-An effect should only receive a bounded rectangle and write into cells already
-classified as safe. It should not inspect or mutate input buffers, move the
-cursor, write raw terminal escape sequences, or maintain a package-global
-timer. The normal widget render should run first, followed by the background
-effect only for cells that remain unclaimed. Loom treats a blank cell with the
-default background and no foreground attributes as a transparent foreground
-surface: the effect may add its glyph there while preserving the cell's
-background color. Text, explicit background colors, foreground attributes,
-borders, selections, and the cursor remain protected. Composition never
-changes cursor coordinates or selection state.
+The normal widget render runs first, followed by the background effect only for
+cells that remain unclaimed. Composition never changes cursor coordinates or
+selection state.
 
 ## Custom-effect contract
 
@@ -109,9 +133,14 @@ strategies:
 
 Background color and foreground decoration are independent. A consumer may
 paint a colored surface first and then compose the star field over it; the
-colored surface remains protected while transparent blank cells elsewhere can
-still show stars. The standalone background demo and filebrowser example use
-this same compositor model.
+colored surface remains visible while decoration fills eligible cells. The
+standalone background demo and filebrowser example use this same compositor
+model.
+
+The compositor is theme-neutral: Astra uses a restrained grayscale foreground
+that remains visible against the `mc`, `default`, `julia256`, and `plain`
+surfaces. Density and timing remain spec-driven; visual tuning must not change
+ownership or merge semantics.
 
 Every effect should define its activation condition, tick interval, lifetime,
 fade behavior, and cancellation triggers. The default should be off unless a

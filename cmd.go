@@ -232,14 +232,14 @@ func (hw *helpWidget) ContentHeight() int {
 func (hw *helpWidget) Draw(cv *Canvas, r Rect) {
 	for row := 0; row < r.H-1; row++ {
 		y := r.Y + row
-		cv.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " ", Style: Reset})
+		cv.PaintSurface(Rect{r.X, y, r.W, 1}, Reset)
 		i := hw.scroll + row
 		if i < len(hw.lines) {
 			cv.Write(r.X, y, hw.lines[i], Reset)
 		}
 	}
 	promptY := r.Y + r.H - 1
-	cv.Fill(Rect{r.X, promptY, r.W, 1}, Cell{Text: " ", Style: Reset})
+	cv.PaintSurface(Rect{r.X, promptY, r.W, 1}, Reset)
 	cv.Write(r.X, promptY, "  press any key to close", Style{Dim: true})
 }
 
