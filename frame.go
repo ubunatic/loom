@@ -246,16 +246,28 @@ func (f *Frame) Layout(width, height int) []Rect {
 	}
 	if stacked {
 		items := make([]layout.Item, len(visible))
+		allDynamic := true
 		for i, index := range visible {
 			items[i] = layout.Item{Visible: true, Constraint: f.boxConstraint(f.Boxes[index], false)}
+			allDynamic = allDynamic && f.Boxes[index].Dynamic
 		}
-		if allocations, err := layout.Plan(height-2, f.Gap, items); err == nil {
+		allocations, err := layout.Plan(height-2, f.Gap, items)
+		if err != nil {
+			allocations = f.stackedFallback(height-2, items)
+		}
+		if allocations != nil {
+			if allDynamic && stackedDynamicOverflow(items, height-2, f.Gap) {
+				allocations = balancedStackedAllocations(height-2, f.Gap, items)
+			}
 			for i, index := range visible {
 				allocation := allocations[i]
 				box := f.Boxes[index]
+				// Stacking changes flow, not the available inline space. Dynamic
+				// panes therefore stretch across the frame instead of retaining
+				// their horizontal preferred size.
 				w := min(width, max(0, box.Width))
 				if box.Dynamic {
-					w = clampBox(box.Width, box.MinWidth, box.MaxWidth, width)
+					w = width
 				}
 				if w >= 2 && allocation.Size >= 2 {
 					result[index] = Rect{X: 0, Y: 1 + allocation.Offset, W: w, H: allocation.Size}
@@ -306,6 +318,72 @@ func (f *Frame) Layout(width, height int) []Rect {
 		} else {
 			x += w
 			x += min(max(0, f.Gap), width-x)
+		}
+	}
+	return result
+}
+
+func stackedDynamicOverflow(items []layout.Item, total, gap int) bool {
+	if len(items) == 0 || total < gap*(len(items)-1) {
+		return false
+	}
+	for _, item := range items {
+		if item.Constraint.Min != 2 {
+			return false
+		}
+	}
+	preferred := 0
+	for _, item := range items {
+		preferred += item.Constraint.Preferred
+	}
+	return preferred > total-gap*(len(items)-1)
+}
+
+func balancedStackedAllocations(total, gap int, items []layout.Item) []layout.Allocation {
+	result := make([]layout.Allocation, len(items))
+	available := total - gap*(len(items)-1)
+	if available < 0 {
+		return result
+	}
+	base, extra := available/len(items), available%len(items)
+	offset := 0
+	for i := range items {
+		size := base
+		if i < extra {
+			size++
+		}
+		result[i] = layout.Allocation{Offset: offset, Size: size}
+		offset += size + gap
+	}
+	return result
+}
+
+// stackedFallback preserves the legacy first-fit behavior for rigid boxes,
+// while clipping every allocation to the available stack. A stack must never
+// fall back to unconstrained preferred heights: doing so can place a box below
+// the frame when a short terminal cannot satisfy every minimum.
+func (f *Frame) stackedFallback(total int, items []layout.Item) []layout.Allocation {
+	if total <= 0 {
+		return make([]layout.Allocation, len(items))
+	}
+	result := make([]layout.Allocation, len(items))
+	offset := 0
+	for i, item := range items {
+		if offset >= total {
+			break
+		}
+		preferred := item.Constraint.Preferred
+		if preferred == 0 {
+			preferred = item.Constraint.Min
+		}
+		size := min(preferred, total-offset)
+		if size < 2 {
+			break
+		}
+		result[i] = layout.Allocation{Offset: offset, Size: size}
+		offset += size
+		if i+1 < len(items) {
+			offset += min(f.Gap, total-offset)
 		}
 	}
 	return result

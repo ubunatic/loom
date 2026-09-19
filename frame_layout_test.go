@@ -59,9 +59,37 @@ func TestDynamicFrameLayoutStacksAtBreakpoint(t *testing.T) {
 		{ID: "b", Width: 4, Height: 3, Dynamic: true, MinHeight: 2, MaxHeight: 4},
 	}}
 	got := f.Layout(40, 10)
-	want := []Rect{{X: 0, Y: 1, W: 4, H: 4}, {X: 0, Y: 6, W: 4, H: 3}}
+	want := []Rect{{X: 0, Y: 1, W: 40, H: 4}, {X: 0, Y: 6, W: 40, H: 3}}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("stacked dynamic layout=%v, want %v", got, want)
+	}
+}
+
+func TestDynamicFrameLayoutReflowsShortStack(t *testing.T) {
+	f := Frame{Gap: 1, Breakpoint: 65, Boxes: []Box{
+		{ID: "files", Width: 18, Height: 18, Dynamic: true, MinWidth: 20},
+		{ID: "metadata", Width: 25, Height: 18, Dynamic: true, MinWidth: 25},
+	}}
+	got := f.Layout(64, 20)
+	for i, rect := range got {
+		if rect.W == 0 || rect.H == 0 {
+			continue
+		}
+		if rect.X < 0 || rect.Y < 1 || rect.X+rect.W > 64 || rect.Y+rect.H > 19 {
+			t.Fatalf("box %d escapes short frame: %+v", i, rect)
+		}
+		if rect.H < 2 {
+			t.Fatalf("box %d has incomplete border: %+v", i, rect)
+		}
+	}
+	if got[0].H == 18 || got[1].H == 18 || got[1].Y+got[1].H > 19 {
+		t.Fatalf("short stack retained preferred heights: %v", got)
+	}
+	if got[0].H < 8 || got[1].H < 8 {
+		t.Fatalf("short stack collapsed one pane: %v", got)
+	}
+	if got[0].W != 64 || got[1].W != 64 {
+		t.Fatalf("short stack did not stretch panes: %v", got)
 	}
 }
 
