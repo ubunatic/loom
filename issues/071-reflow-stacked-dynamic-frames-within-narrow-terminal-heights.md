@@ -1,6 +1,6 @@
 # 071 — Reflow stacked dynamic frames within narrow terminal heights
 
-**Status**: Open
+**Status**: Closed — implemented bounded stacked reflow and regression coverage
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
