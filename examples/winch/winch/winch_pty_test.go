@@ -67,7 +67,7 @@ func TestWinchPTYAdaptiveGuard(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	s.Send("a")
-	s.WaitFor("[ON]   Use WINCH speed", 3*time.Second)
+	s.WaitFor("[ON]  Use WINCH speed", 3*time.Second)
 
 	for i := 0; i < 8; i++ {
 		s.Resize(100-i*2, 30)
@@ -109,7 +109,7 @@ func TestWinchPTYSlowDragAndManualBurst(t *testing.T) {
 	slow := ptytest.Start(t, 100, 30, bin)
 	slow.WaitFor("Resize Modes", 5*time.Second)
 	slow.Send("a")
-	slow.WaitFor("[ON]   Use WINCH speed", 3*time.Second)
+	slow.WaitFor("[ON]  Use WINCH speed", 3*time.Second)
 	for i := 0; i < 3; i++ {
 		slow.Resize(100-i*4, 30)
 		time.Sleep(700 * time.Millisecond) // longer than the measurement window
@@ -174,7 +174,7 @@ func TestWinchPTYAltScreen(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	s.Send("b")
-	s.WaitFor("[ON]   Alternate screen", 3*time.Second)
+	s.WaitFor("[ON]  Alternate screen", 3*time.Second)
 	for i := 0; i < 8; i++ {
 		s.Resize(100-i*5, 30-i)
 		time.Sleep(15 * time.Millisecond)

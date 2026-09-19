@@ -61,11 +61,11 @@ modes:
     default: false
     diagnostic_only: false
     key: "a"
-    # events/sec over window_ms; n = min_n + floor(rate / rate_step), clamped to max_n.
+    # events/sec over the span of events inside window_ms; n = min_n + floor(rate / rate_step), clamped to max_n.
     window_ms: 500
     min_n: 1
-    max_n: 6
-    rate_step: 10
+    max_n: 24
+    rate_step: 5
   alt_screen:
     title: "Alternate screen"
     description: "Render on the alternate screen buffer (?1049) from row 1; terminals do not reflow it, so a fast drag cannot wrap old rows into stray lines"

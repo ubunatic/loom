@@ -258,9 +258,19 @@ func (m *WinchMeter) Events(now time.Time) int {
 	return len(m.stamps)
 }
 
-// Rate returns events per second over the window ending at now.
+// Rate returns events per second over the span between the first and last
+// event in the window ending at now, so a fast burst is measured at once
+// instead of ramping up as the window fills. Fewer than two events give 0.
 func (m *WinchMeter) Rate(now time.Time) float64 {
-	return float64(m.Events(now)) / winchWindow().Seconds()
+	n := m.Events(now)
+	if n < 2 {
+		return 0
+	}
+	span := m.stamps[n-1].Sub(m.stamps[0])
+	if span < 10*time.Millisecond {
+		span = 10 * time.Millisecond
+	}
+	return float64(n-1) / span.Seconds()
 }
 
 // AdaptiveGuardN maps a measured rate (with its event count) to a guard

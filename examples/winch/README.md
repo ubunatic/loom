@@ -38,8 +38,8 @@ Terminal resize handling involves several interacting mitigations:
 
 With `a` on, the guard width comes from the measured `SIGWINCH` rate instead of
 the manual `n`. All constants live in `spec/resize.yaml` (`adaptive_guard`):
-the rate is the number of events in the last `window_ms` divided by the window
-(the window is the smoothing), and `n = min_n + floor(rate / rate_step)`,
+the rate is the events inside the last `window_ms` divided by the time from the
+first to the last of them (so a fast burst is measured at once), and `n = min_n + floor(rate / rate_step)`,
 clamped to `max_n`. With fewer than two events in the window (startup, a single
 resize) there is no measurable speed and the manual `n` applies. The width is
 latched at each `SIGWINCH`, and the usual one-second settle restores full width.

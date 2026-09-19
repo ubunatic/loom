@@ -160,10 +160,20 @@ func TestWinchMeterAndAdaptiveGuardN(t *testing.T) {
 		t.Fatalf("one event: n=%d, want manual %d", got, manual)
 	}
 
-	// Steady burst: 2 events at the bottom of the mapping give min_n.
-	m.Record(t0.Add(time.Millisecond))
-	if got := AdaptiveGuardN(m.Rate(t0), m.Events(t0), manual); got != a.MinN {
+	// Two events far apart (a slow rate) give min_n; two events 10ms apart
+	// (100/s) are measured at once.
+	m.Record(t0.Add(window * 4 / 5))
+	at := t0.Add(window * 4 / 5)
+	if got := AdaptiveGuardN(m.Rate(at), m.Events(at), manual); got != a.MinN {
 		t.Fatalf("two events: n=%d, want min_n %d", got, a.MinN)
+	}
+
+	var burst WinchMeter
+	burst.Record(t0)
+	burst.Record(t0.Add(10 * time.Millisecond))
+	bn := t0.Add(10 * time.Millisecond)
+	if got, want := AdaptiveGuardN(burst.Rate(bn), burst.Events(bn), manual), min(a.MaxN, a.MinN+100/a.RateStep); got != want {
+		t.Fatalf("100/s burst: n=%d, want %d", got, want)
 	}
 
 	// Rate grows with event density and clamps at max_n.
