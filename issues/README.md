@@ -79,3 +79,4 @@ upkeep.
 | 065 | [065-ansi-styled-rows-widget-and-treemap-conversion.md](065-ansi-styled-rows-widget-and-treemap-conversion.md) | ANSI-styled rows widget and treemap conversion | Open |
 | 066 | [066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md](066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md) | Nested help pane opens a second Pane racing the outer pane tty reader | Open |
 | 067 | [067-animated-loom-background-for-filebrowser-with-proper-compositing.md](067-animated-loom-background-for-filebrowser-with-proper-compositing.md) | Animated Loom background for filebrowser with proper compositing | Open |
+| 068 | [068-formalize-layered-compositor-semantics-and-background-inheritance.md](068-formalize-layered-compositor-semantics-and-background-inheritance.md) | Formalize layered compositor semantics and background inheritance | Open |
