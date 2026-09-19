@@ -144,7 +144,7 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│",
 	}
-	drawBoxBorder(c, r, border, "Resize Modes [1-9,A Toggle, +/- Guard, R Reset]", normal, header)
+	drawBoxBorder(c, r, border, "Resize Modes [1-9,A,B Toggle, +/- Guard, R Reset]", normal, header)
 
 	row := r.Y + 1
 	for _, id := range loom.SpeccedResizeModeIDs {
@@ -261,7 +261,7 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	keyLower := strings.ToLower(key)
 
 	switch keyLower {
-	case "1", "2", "3", "4", "5", "6", "7", "8", "9", "a":
+	case "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b":
 		for _, id := range loom.SpeccedResizeModeIDs {
 			if mode, ok := loom.SpeccedResizeModes.Modes[id]; ok && mode.Key == keyLower {
 				a.toggleMode(id)

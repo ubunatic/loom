@@ -47,6 +47,7 @@ var SpeccedResizeModeIDs = []string{
 	"resize_handling",
 	"width_guard",
 	"adaptive_guard",
+	"alt_screen",
 }
 
 // SpeccedResizeModes is the loaded immutable spec of resize modes.
@@ -78,6 +79,7 @@ type ResizeConfig struct {
 	WidthGuard         bool
 	WidthGuardN        int
 	AdaptiveGuard      bool
+	AltScreen          bool
 }
 
 // DefaultResizeConfig returns a ResizeConfig populated with the spec-defined defaults.
@@ -98,6 +100,7 @@ func DefaultResizeConfig() ResizeConfig {
 		WidthGuard:         SpeccedResizeModes.Modes["width_guard"].Default,
 		WidthGuardN:        guardN,
 		AdaptiveGuard:      SpeccedResizeModes.Modes["adaptive_guard"].Default,
+		AltScreen:          SpeccedResizeModes.Modes["alt_screen"].Default,
 	}
 }
 
@@ -124,6 +127,8 @@ func (c *ResizeConfig) Get(id string) (bool, bool) {
 		return c.WidthGuard, true
 	case "adaptive_guard":
 		return c.AdaptiveGuard, true
+	case "alt_screen":
+		return c.AltScreen, true
 	default:
 		return false, false
 	}
@@ -161,6 +166,9 @@ func (c *ResizeConfig) Set(id string, val bool) bool {
 		return true
 	case "adaptive_guard":
 		c.AdaptiveGuard = val
+		return true
+	case "alt_screen":
+		c.AltScreen = val
 		return true
 	default:
 		return false

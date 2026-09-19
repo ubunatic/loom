@@ -66,3 +66,9 @@ modes:
     min_n: 1
     max_n: 6
     rate_step: 10
+  alt_screen:
+    title: "Alternate screen"
+    description: "Render on the alternate screen buffer (?1049) from row 1; terminals do not reflow it, so a fast drag cannot wrap old rows into stray lines"
+    default: false
+    diagnostic_only: false
+    key: "b"

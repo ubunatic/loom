@@ -80,6 +80,9 @@ type Pane struct {
 	widthGuardActive bool
 	// winchMeter measures SIGWINCH arrival rate for the adaptive guard.
 	winchMeter WinchMeter
+	altActive  bool
+	savedStart int
+	savedRows  int
 	// adaptiveN is the adaptive guard width latched at the last SIGWINCH; 0
 	// means not measurable (fewer than two events), so the manual n applies.
 	adaptiveN int
@@ -401,6 +404,9 @@ func (p *Pane) applyWinch(cols *int) {
 		newStartRow = 1
 		newRows = max(1, termRows-1)
 	}
+	if p.altActive {
+		newStartRow, newRows = 1, max(1, termRows)
+	}
 
 	if p.ResizeConfig.OutOfBandClear && p.tty != nil {
 		top := p.startRow
@@ -418,6 +424,22 @@ func (p *Pane) applyWinch(cols *int) {
 	p.cols = newCols
 
 	*cols = p.guardedCols(newCols)
+}
+
+// switchAltScreen enters or leaves the alternate screen buffer. The primary
+// screen's pane bounds are kept and restored on leave.
+func (p *Pane) switchAltScreen(on bool) {
+	if p.tty == nil || on == p.altActive {
+		return
+	}
+	if on {
+		p.savedStart, p.savedRows = p.startRow, p.rows
+		p.tty.WriteString("\x1b[?1049h\x1b[2J") //nolint:errcheck
+	} else {
+		p.tty.WriteString("\x1b[?1049l") //nolint:errcheck
+		p.startRow, p.rows = p.savedStart, p.savedRows
+	}
+	p.altActive = on
 }
 
 // Run renders root on every frame and dispatches events until the root signals
@@ -577,6 +599,14 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			autoWrapDisabled = false
 		}
 		if canvas.Rows() != p.rows {
+			canvas = NewCanvas(cols, p.rows)
+		}
+		if p.ResizeConfig.AltScreen != p.altActive {
+			p.switchAltScreen(p.ResizeConfig.AltScreen)
+			p.applyWinch(&cols)
+			clearRows = 0
+		}
+		if canvas.Rows() != p.rows || canvas.Cols() != cols {
 			canvas = NewCanvas(cols, p.rows)
 		}
 		canvas.Clear()
@@ -882,6 +912,7 @@ func (p *Pane) close() {
 	}
 
 	p.disableMouse()
+	p.switchAltScreen(false)
 
 	// Clear reserved region.
 	var b strings.Builder

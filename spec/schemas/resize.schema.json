@@ -18,7 +18,8 @@
         "full_screen_buffer",
         "resize_handling",
         "width_guard",
-        "adaptive_guard"
+        "adaptive_guard",
+        "alt_screen"
       ],
       "properties": {
         "coalesce": { "$ref": "#/definitions/mode" },
@@ -30,7 +31,8 @@
         "full_screen_buffer": { "$ref": "#/definitions/mode" },
         "resize_handling": { "$ref": "#/definitions/mode" },
         "width_guard": { "$ref": "#/definitions/mode" },
-        "adaptive_guard": { "$ref": "#/definitions/mode" }
+        "adaptive_guard": { "$ref": "#/definitions/mode" },
+        "alt_screen": { "$ref": "#/definitions/mode" }
       }
     }
   },

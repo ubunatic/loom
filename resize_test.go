@@ -221,3 +221,13 @@ func TestGuardedColsUsesEffectiveN(t *testing.T) {
 		t.Fatalf("MaxCols guardedCols = %d, want 35", got)
 	}
 }
+
+func TestAltScreenModeIsSpecced(t *testing.T) {
+	cfg := DefaultResizeConfig()
+	if cfg.AltScreen != SpeccedResizeModes.Modes["alt_screen"].Default {
+		t.Fatal("alt_screen default differs from spec")
+	}
+	if !cfg.Toggle("alt_screen") || !cfg.AltScreen {
+		t.Fatal("alt_screen toggle failed")
+	}
+}

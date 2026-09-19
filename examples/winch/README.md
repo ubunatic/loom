@@ -25,6 +25,7 @@ Terminal resize handling involves several interacting mitigations:
 | `7` | Toggle **Full-screen buffer** *(diagnostic only)* |
 | `8` | Toggle **Resize handling** |
 | `9` | Toggle **Resize width guard** |
+| `b` | Alternate screen: render on the ?1049 buffer, which terminals do not reflow while dragging |
 | `a` | Toggle **Use WINCH speed** (adaptive width guard) |
 | `+` / `=` | Increase **Width guard columns (n)** |
 | `-` / `_` | Decrease **Width guard columns (n)** |
