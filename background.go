@@ -67,15 +67,23 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			// Fade toward the actual surface color at the dim end instead of a
 			// fixed dark gray, so a star disappears into whatever background
 			// it sits on (e.g. mc's bright blue panes) rather than showing a
-			// dark smudge; the bright peak stays a theme-neutral gray.
-			const peak = 105
+			// dark smudge. The bright peak must also scale with the surface:
+			// a fixed mid-gray reads as barely visible on a bright bluish
+			// panel, so the peak is pushed a fixed margin above each of the
+			// background's own channels (clamped to 255), staying at least
+			// as bright as the old fixed peak on dark/neutral surfaces.
+			const peakFloor = 105
+			const peakMargin = 130
 			t := float64(level) / 7
 			bgR, bgG, bgB, ok := c.Get(r.X+x, r.Y+y).Style.BG.RGB()
 			var fr, fg, fb uint8
 			if ok {
-				fr = uint8(float64(bgR) + (peak-float64(bgR))*t)
-				fg = uint8(float64(bgG) + (peak-float64(bgG))*t)
-				fb = uint8(float64(bgB) + (peak-float64(bgB))*t)
+				peakR := peakChannel(bgR, peakFloor, peakMargin)
+				peakG := peakChannel(bgG, peakFloor, peakMargin)
+				peakB := peakChannel(bgB, peakFloor, peakMargin)
+				fr = uint8(float64(bgR) + (peakR-float64(bgR))*t)
+				fg = uint8(float64(bgG) + (peakG-float64(bgG))*t)
+				fb = uint8(float64(bgB) + (peakB-float64(bgB))*t)
 			} else {
 				v := uint8(42 + level*9)
 				fr, fg, fb = v, v, v
@@ -84,6 +92,20 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(fr, fg, fb)}})
 		}
 	}
+}
+
+// peakChannel returns the bright-phase target for one color channel: at
+// least floor, and at least margin above the surface's own channel value,
+// clamped to the representable range.
+func peakChannel(bg uint8, floor, margin float64) float64 {
+	peak := float64(bg) + margin
+	if peak < floor {
+		peak = floor
+	}
+	if peak > 255 {
+		peak = 255
+	}
+	return peak
 }
 
 func astraHash(x, y int) uint32 {
