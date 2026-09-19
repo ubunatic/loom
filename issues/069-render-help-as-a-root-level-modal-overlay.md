@@ -1,6 +1,6 @@
 # 069 — Render help as a root-level modal overlay
 
-**Status**: Open
+**Status**: Closed — implemented root-level help overlay
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
