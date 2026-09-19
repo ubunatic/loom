@@ -434,7 +434,15 @@ func (p *Pane) switchAltScreen(on bool) {
 	}
 	if on {
 		p.savedStart, p.savedRows = p.startRow, p.rows
-		p.tty.WriteString("\x1b[?1049h\x1b[2J") //nolint:errcheck
+		// Erase the frame already drawn on the primary screen, or it stays in
+		// the scrollback after leaving; park the cursor where the pane started
+		// so leaving restores it there.
+		var b strings.Builder
+		for i := 0; i < p.rows; i++ {
+			fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", p.startRow+i)
+		}
+		fmt.Fprintf(&b, "\x1b[%d;1H\x1b[?1049h\x1b[2J", p.startRow)
+		p.tty.WriteString(b.String()) //nolint:errcheck
 	} else {
 		p.tty.WriteString("\x1b[?1049l") //nolint:errcheck
 		p.startRow, p.rows = p.savedStart, p.savedRows

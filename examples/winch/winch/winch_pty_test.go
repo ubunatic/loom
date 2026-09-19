@@ -189,4 +189,8 @@ func TestWinchPTYAltScreen(t *testing.T) {
 	if on < 0 || off < on {
 		t.Fatalf("alt screen not entered and left (on=%d off=%d)", on, off)
 	}
+	// The primary-screen frame is erased before switching, so it cannot linger.
+	if !strings.Contains(raw[:on], "\x1b[2K") {
+		t.Fatal("primary screen rows not cleared before entering the alt screen")
+	}
 }
