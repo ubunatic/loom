@@ -1,6 +1,6 @@
 # 072 — Ensure stable responsive frame layout during terminal resize
 
-**Status**: Open
+**Status**: In Progress — layout verified headless and via PTY; manual terminal check pending
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Bug
@@ -91,3 +91,11 @@ using the previous width.
 - No stale-width gaps or alternating uncovered rows appear between pane rows
   during the resize stream or after it settles.
 - Headless regression tests and the manual PTY resize check pass.
+
+---
+
+## 5. Outcome & Findings
+
+- **M1**: a headless sweep (`TestDynamicFrameLayoutResizeSequenceStaysBoundedAndFilled`) shrinks and grows a filebrowser-style dynamic frame across the breakpoint and asserts history-independent, bounded, gap-free rectangles. It passes on the unchanged layout code, so the defect was not stale frame geometry; it lay in the resize render stream.
+- **M3/M4**: coalescing, atomic buffered flush, per-row `CSI K`, and synchronized output are the defaults (spec/resize.yaml, issue 073); the out-of-band clear is diagnostic-only and off by default.
+- **M5**: `internal/ptytest` (PTY session + VT) drives the real `winch` binary through shrink/grow streams and checks every synchronized frame. Still pending: a human visual check of the filebrowser in a real terminal while dragging.
