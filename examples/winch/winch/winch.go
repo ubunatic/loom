@@ -177,7 +177,7 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		line := fmt.Sprintf(" %s %s %s%s", keyBadge, stateTag, mode.Title, tag)
 		line = loom.TruncateText(line, r.W-2, "")
 		c.Write(r.X+1, row, line, normal)
-		c.Write(r.X+5, row, stateTag, stateStyle)
+		c.Write(r.X+6, row, stateTag, stateStyle)
 		row++
 	}
 }
