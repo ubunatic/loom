@@ -89,3 +89,50 @@ func TestWinchPTYAdaptiveGuard(t *testing.T) {
 		t.Fatalf("winch exit: %v", err)
 	}
 }
+
+func framesMention(s *ptytest.Session, word string) bool {
+	for _, frame := range s.Frames() {
+		if strings.Contains(strings.Join(frame, "\n"), word) {
+			return true
+		}
+	}
+	return false
+}
+
+// TestWinchPTYSlowDragAndManualBurst covers the other two adaptive cases: a
+// slow drag (events too sparse to measure a speed) must keep the manual n,
+// and a rapid burst with the switch off must stay manual.
+func TestWinchPTYSlowDragAndManualBurst(t *testing.T) {
+	bin := buildWinch(t)
+
+	slow := ptytest.Start(t, 100, 30, bin)
+	slow.WaitFor("Resize Modes", 5*time.Second)
+	slow.Send("a")
+	slow.WaitFor("[ON]   Use WINCH speed", 3*time.Second)
+	for i := 0; i < 3; i++ {
+		slow.Resize(100-i*4, 30)
+		time.Sleep(700 * time.Millisecond) // longer than the measurement window
+	}
+	if framesMention(slow, "adaptive") {
+		t.Fatalf("slow drag reported an adaptive guard; screen:\n%s", strings.Join(slow.Screen(), "\n"))
+	}
+	slow.Send("q")
+	if err := slow.Wait(3 * time.Second); err != nil {
+		t.Fatalf("winch exit: %v", err)
+	}
+
+	manual := ptytest.Start(t, 100, 30, bin)
+	manual.WaitFor("Resize Modes", 5*time.Second)
+	for i := 0; i < 8; i++ {
+		manual.Resize(100-i*2, 30)
+		time.Sleep(15 * time.Millisecond)
+	}
+	manual.WaitFor("Guard: idle", 3*time.Second)
+	if framesMention(manual, "adaptive") {
+		t.Fatal("manual mode reported an adaptive guard during a rapid burst")
+	}
+	manual.Send("q")
+	if err := manual.Wait(3 * time.Second); err != nil {
+		t.Fatalf("winch exit: %v", err)
+	}
+}
