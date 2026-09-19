@@ -11,6 +11,7 @@
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
 - [Themes](Themes.md): spec-driven palettes, semantic roles, widget adapters, runtime switching, and known boundaries.
 - [Animated backgrounds](AnimatedBackgrounds.md): Astra-style deterministic Braille star fields, protected-cell rendering, and the custom-effect contract.
+- [Root overlays](RootOverlays.md): the root-level-overlay hook pattern (`paneHelpRequest`) for modals that must draw over an entire split layout, not just a `paintClipped` child.
 
 ## Case Studies
 
@@ -24,5 +25,6 @@
 | [studies/2026-09-14-terminal-safety-hardening-and-treemap-theme-iteration.md](studies/2026-09-14-terminal-safety-hardening-and-treemap-theme-iteration.md) | Terminal Safety Hardening and Treemap Theme Iteration |
 | [studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md](studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md) | x/term Coverage Gap in Pane.termSize |
 | [studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md](studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md) | Remove Deprecated `uzu` Brand and `:home` Global Command |
+| [studies/2026-09-19-compositor-layering-and-root-modal-overlays.md](studies/2026-09-19-compositor-layering-and-root-modal-overlays.md) | Compositor Layering and Root Modal Overlays |
 
 Study files are the source of truth for this table.

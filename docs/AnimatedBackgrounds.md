@@ -137,10 +137,16 @@ colored surface remains visible while decoration fills eligible cells. The
 standalone background demo and filebrowser example use this same compositor
 model.
 
-The compositor is theme-neutral: Astra uses a restrained grayscale foreground
-that remains visible against the `mc`, `default`, `julia256`, and `plain`
-surfaces. Density and timing remain spec-driven; visual tuning must not change
-ownership or merge semantics.
+The compositor is theme-neutral: Astra derives its dim and peak colors from the
+actual resolved surface RGB (`Color.RGB()`, `style.go`) rather than a fixed
+grayscale ramp, so it remains visible against bright, saturated surfaces (e.g.
+`mc`'s steel-blue `normal_bg`) as well as dark ones. The dimmest star frame
+interpolates to exactly the surface color (`t=0`); the brightest frame uses
+`peakChannel(bg, floor, margin)` per RGB channel — `max(bg+margin, floor)`,
+clamped to 255 — so contrast scales with the surface's own brightness instead
+of assuming a dark terminal. A fixed grayscale fallback (`42+level*9`) is used
+only when the surface color cannot be resolved. Density and timing remain
+spec-driven; visual tuning must not change ownership or merge semantics.
 
 Every effect should define its activation condition, tick interval, lifetime,
 fade behavior, and cancellation triggers. The default should be off unless a
