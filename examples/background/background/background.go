@@ -16,8 +16,10 @@ func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(2, 1, "Loom Astra background", loom.Style{Bold: true, FG: loom.ColorRGB(240, 240, 240)})
 	c.Write(2, 3, "Deterministic stars fade in and out behind the foreground.", loom.Style{FG: loom.ColorRGB(220, 220, 220)})
 	c.Write(2, 5, fmt.Sprintf("Loom: %.1f FPS   Astra: %.1f FPS (target %.1f)   redraw: %s", w.metrics.LoomFPS, w.metrics.AstraFPS, w.metrics.AstraTargetFPS, w.metrics.RedrawTime), loom.Style{FG: loom.ColorRGB(180, 210, 180)})
-	if w.frame != nil && r.H > 7 {
-		w.frame.Draw(c, loom.Rect{X: 1, Y: 7, W: r.W - 2, H: r.H - 7})
+	if w.frame != nil && r.H > 8 {
+		// Keep one quiet row below the frame status line so it does not sit
+		// against the terminal's bottom edge.
+		w.frame.Draw(c, loom.Rect{X: 1, Y: 7, W: r.W - 2, H: r.H - 8})
 	}
 }
 
@@ -52,7 +54,8 @@ func demoFrame() *loom.Frame {
 		"Mode:       -rw-r--r--",
 		"",
 		"The star field is composed after the foreground",
-		"and skips claimed cells, borders, and the cursor.",
+		"and passes through transparent blank cells only.",
+		"Text, borders, colored surfaces, and the cursor stay protected.",
 		"",
 		"This pane intentionally leaves open surface so",
 		"the animation remains visible during interaction.",
@@ -61,8 +64,8 @@ func demoFrame() *loom.Frame {
 		Title: "Composition test area", Status: "Tab: focus  •  arrows: scroll  •  q: quit",
 		Gap: 1, Breakpoint: 70,
 		Boxes: []loom.Box{
-			{ID: "left", Title: "Left pane", Dynamic: true, MinWidth: 18, Height: 12, Child: left},
-			{ID: "right", Title: "Right pane", Dynamic: true, MinWidth: 24, Height: 12, Child: right},
+			{ID: "left", Title: "Left pane", Dynamic: true, FillHeight: true, MinWidth: 18, Height: 12, Style: loom.BoxStyle{Background: loom.Style{BG: loom.ColorRGB(25, 30, 38)}}, Child: left},
+			{ID: "right", Title: "Right pane", Dynamic: true, FillHeight: true, MinWidth: 24, Height: 12, Style: loom.BoxStyle{Background: loom.Style{BG: loom.ColorRGB(30, 27, 38)}}, Child: right},
 		},
 		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "q"}},
 	}

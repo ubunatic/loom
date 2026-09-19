@@ -41,22 +41,23 @@ type BoxStyle struct {
 // Width and Height are preferred outer dimensions used by Frame.
 // YAML frames load Border from Loom's embedded spec; Go callers supply it.
 type Box struct {
-	ID        string    `yaml:"id"`
-	Title     string    `yaml:"title"`
-	Width     int       `yaml:"width"`
-	Height    int       `yaml:"height"`
-	Dynamic   bool      `yaml:"dynamic"`
-	MinWidth  int       `yaml:"min_width"`
-	MaxWidth  int       `yaml:"max_width"`
-	MinHeight int       `yaml:"min_height"`
-	MaxHeight int       `yaml:"max_height"`
-	Padding   int       `yaml:"padding"`
-	Border    BoxBorder `yaml:"-"`
-	Style     BoxStyle  `yaml:"-"`
-	Child     Widget    `yaml:"-"`
-	Hidden    bool      `yaml:"hidden"`
-	Footer    string    `yaml:"footer"`
-	Rows      *Rows     `yaml:"rows"`
+	ID         string    `yaml:"id"`
+	Title      string    `yaml:"title"`
+	Width      int       `yaml:"width"`
+	Height     int       `yaml:"height"`
+	Dynamic    bool      `yaml:"dynamic"`
+	FillHeight bool      `yaml:"fill_height"`
+	MinWidth   int       `yaml:"min_width"`
+	MaxWidth   int       `yaml:"max_width"`
+	MinHeight  int       `yaml:"min_height"`
+	MaxHeight  int       `yaml:"max_height"`
+	Padding    int       `yaml:"padding"`
+	Border     BoxBorder `yaml:"-"`
+	Style      BoxStyle  `yaml:"-"`
+	Child      Widget    `yaml:"-"`
+	Hidden     bool      `yaml:"hidden"`
+	Footer     string    `yaml:"footer"`
+	Rows       *Rows     `yaml:"rows"`
 }
 
 // Measure returns the preferred outer size of the box, including border,
@@ -278,6 +279,9 @@ func (f *Frame) Layout(width, height int) []Rect {
 					h := min(height-2, max(0, box.Height))
 					if box.Dynamic {
 						h = clampBox(box.Height, box.MinHeight, box.MaxHeight, height-2)
+					}
+					if box.FillHeight {
+						h = height - 2
 					}
 					if allocation.Size >= 2 && h >= 2 {
 						result[index] = Rect{X: allocation.Offset, Y: 1, W: allocation.Size, H: h}

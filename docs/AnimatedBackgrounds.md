@@ -86,8 +86,12 @@ An effect should only receive a bounded rectangle and write into cells already
 classified as safe. It should not inspect or mutate input buffers, move the
 cursor, write raw terminal escape sequences, or maintain a package-global
 timer. The normal widget render should run first, followed by the background
-effect only for cells that remain unclaimed. Cursor visibility and selection
-state must be restored by the outer renderer after composition.
+effect only for cells that remain unclaimed. Loom treats a blank cell with the
+default background and no foreground attributes as a transparent foreground
+surface: the effect may add its glyph there while preserving the cell's
+background color. Text, explicit background colors, foreground attributes,
+borders, selections, and the cursor remain protected. Composition never
+changes cursor coordinates or selection state.
 
 ## Custom-effect contract
 
@@ -102,6 +106,12 @@ strategies:
   particles to the safe-cell mask.
 - **Theme-aware color**: blend within the theme's approved contrast range;
   never assume a dark terminal background.
+
+Background color and foreground decoration are independent. A consumer may
+paint a colored surface first and then compose the star field over it; the
+colored surface remains protected while transparent blank cells elsewhere can
+still show stars. The standalone background demo and filebrowser example use
+this same compositor model.
 
 Every effect should define its activation condition, tick interval, lifetime,
 fade behavior, and cancellation triggers. The default should be off unless a

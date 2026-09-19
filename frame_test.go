@@ -147,7 +147,25 @@ func TestFrameAndBoxStyles(t *testing.T) {
 		}
 	}
 }
-
+func TestFrameLayoutFillHeight(t *testing.T) {
+	f := Frame{
+		Boxes: []Box{
+			{ID: "left", Dynamic: true, FillHeight: true, MinWidth: 10, Height: 4},
+			{ID: "right", Dynamic: true, FillHeight: false, MinWidth: 10, Height: 4},
+		},
+	}
+	rects := f.Layout(30, 10)
+	if len(rects) != 2 {
+		t.Fatalf("expected 2 rects, got %d", len(rects))
+	}
+	// Available inner height for boxes is height - 2 (rows 1 to height-2).
+	if got, want := rects[0].H, 8; got != want {
+		t.Errorf("left box FillHeight height = %d, want %d", got, want)
+	}
+	if got, want := rects[1].H, 4; got != want {
+		t.Errorf("right box fixed height = %d, want %d", got, want)
+	}
+}
 func TestFrameTinyBounds(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {
