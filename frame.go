@@ -107,7 +107,7 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		if w < 2 || h < 2 {
 			return
 		}
-		local.Fill(local.Bounds(), Cell{Text: " ", Style: b.Style.Background})
+		local.PaintSurface(local.Bounds(), b.Style.Background)
 		for x := 1; x < w-1; x++ {
 			local.Set(x, 0, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
 			local.Set(x, h-1, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
@@ -206,12 +206,12 @@ func (f *Frame) Draw(c *Canvas, r Rect) {
 	f.lastRect = r
 	paintClipped(c, r, func(local *Canvas) {
 		w, h := local.Cols(), local.Rows()
-		local.Fill(local.Bounds(), Cell{Text: " ", Style: f.Style.Background})
+		local.PaintSurface(local.Bounds(), f.Style.Background)
 		writeBoundedStyled(local, 0, 0, w, f.Title, f.Style.Title)
 		if h < 2 {
 			return
 		}
-		local.Fill(Rect{Y: h - 1, W: w, H: 1}, Cell{Text: " ", Style: f.Style.Status})
+		local.PaintSurface(Rect{Y: h - 1, W: w, H: 1}, f.Style.Status)
 		writeBoundedStyled(local, 0, h-1, w, f.StatusText(), f.Style.Status)
 		for i, rect := range f.Layout(w, h) {
 			box := f.Boxes[i]

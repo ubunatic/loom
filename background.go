@@ -66,7 +66,7 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			}
 			v := uint8(35 + level*10)
 			glyph := SpeccedBackground.Glyphs[int(h)%len(SpeccedBackground.Glyphs)]
-			c.Set(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(v, v, v)}})
+			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(v, v, v)}})
 		}
 	}
 }
@@ -136,7 +136,7 @@ func (b *ImageBackground) DrawBackground(c *Canvas, r Rect) {
 				peakIndex = len(b.glyphs) - 1
 			}
 			v := uint8(float64(contrast) * b.dim)
-			c.Set(r.X+x, r.Y+y, Cell{Text: b.glyphs[peakIndex], Style: Style{FG: ColorRGB(v, v, v), Dim: true}})
+			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: b.glyphs[peakIndex], Style: Style{FG: ColorRGB(v, v, v), Dim: true}})
 		}
 	}
 }

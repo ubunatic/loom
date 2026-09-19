@@ -139,6 +139,35 @@ func TestCanvasBackgroundCompositionPassesThroughTransparentBlankCells(t *testin
 	}
 }
 
+func TestCanvasBackgroundCompositionHonorsExplicitBlankClaim(t *testing.T) {
+	c := loom.NewCanvas(1, 1)
+	c.Set(0, 0, loom.Cell{Claim: true})
+	c.ComposeBackground(testBackground{}, c.Bounds(), time.Time{})
+	if got := c.Get(0, 0).Text; got != " " {
+		t.Fatalf("claimed blank cell = %q, want blank", got)
+	}
+}
+
+func TestCanvasPaintSurfaceAllowsDecorationAndPreservesColor(t *testing.T) {
+	c := loom.NewCanvas(1, 1)
+	c.PaintSurface(c.Bounds(), loom.Style{BG: loom.ColorIndex(7)})
+	c.ComposeBackground(testBackground{}, c.Bounds(), time.Time{})
+	if got := c.Get(0, 0); got.Text != "*" || got.Style.BG != loom.ColorIndex(7) {
+		t.Fatalf("surface decoration = %+v, want star with inherited surface", got)
+	}
+}
+
+func TestCanvasBackgroundCompositionPreservesNestedSurfaceInheritance(t *testing.T) {
+	parent := loom.NewCanvas(1, 1)
+	parent.Set(0, 0, loom.Cell{Text: " ", Style: loom.Style{BG: loom.ColorIndex(7)}})
+	child := loom.NewCanvas(1, 1)
+	child.ComposeBackground(testBackground{}, child.Bounds(), time.Time{})
+	parent.Set(0, 0, child.Get(0, 0))
+	if got := parent.Get(0, 0).Style.BG; got != loom.ColorIndex(7) {
+		t.Fatalf("inherited background = %+v, want parent surface", got)
+	}
+}
+
 func TestAstraBackgroundCadenceAndQuantizedFrames(t *testing.T) {
 	background := loom.NewAstraBackground()
 	interval := background.BackgroundInterval()

@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -46,11 +47,7 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 }
 
 func TestBrowserUsesAnimatedBackground(t *testing.T) {
-	pane, err := loom.New(20)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer pane.Close()
+	pane := &loom.Pane{}
 	configurePane(pane)
 	if pane.Background == nil {
 		t.Fatal("filebrowser pane has no animated background")
@@ -62,6 +59,7 @@ func TestBrowserUsesAnimatedBackground(t *testing.T) {
 	}
 	c := loom.NewCanvas(100, 24)
 	b.Draw(c, c.Bounds())
+	pane.Background.(loom.AnimatedBackground).DrawBackgroundAt(c, c.Bounds(), time.Unix(0, 0))
 
 	transparent := 0
 	for y := 0; y < c.Rows(); y++ {

@@ -30,6 +30,14 @@ type Cell struct {
 	Text         string
 	Style        Style
 	Continuation bool
+	// Claim marks the cell as foreground-owned even when it is blank and has
+	// the default style. This is useful for widgets whose layout owns a cell
+	// without relying on text or style inference.
+	Claim bool
+	// Surface marks an explicit background painted by PaintSurface. Surface
+	// cells remain eligible for decoration while their background is inherited
+	// by later foreground writes.
+	Surface bool
 }
 
 // blank is the default empty cell.
@@ -74,6 +82,35 @@ func (c *Canvas) Rows() int { return c.rows }
 // Bounds returns a Rect covering the full canvas.
 func (c *Canvas) Bounds() Rect { return Rect{W: c.cols, H: c.rows} }
 
+// PaintSurface paints a background surface without claiming its cells from
+// the decoration layer.
+func (c *Canvas) PaintSurface(r Rect, style Style) {
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			c.Set(x, y, Cell{Text: " ", Style: style, Surface: true})
+		}
+	}
+}
+
+// PaintForeground paints content that owns its cell, including an explicitly
+// blank cell via Claim.
+func (c *Canvas) PaintForeground(x, y int, cell Cell) {
+	cell.Claim = true
+	cell.Surface = false
+	c.Set(x, y, cell)
+}
+
+// PaintDecoration paints only into cells available to the decoration layer.
+// It is safe to call during or outside ComposeBackground.
+func (c *Canvas) PaintDecoration(x, y int, cell Cell) {
+	if !c.IsEligibleBackground(x, y) {
+		return
+	}
+	cell.Claim = false
+	cell.Surface = false
+	c.Set(x, y, cell)
+}
+
 // Set places a single cell at (x, y). Out-of-bounds writes are silently dropped.
 func (c *Canvas) Set(x, y int, cell Cell) {
 	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
@@ -105,6 +142,12 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 	if w == 2 && x+1 >= c.cols {
 		return
 	}
+	// A foreground cell without an explicit background inherits the surface
+	// already present at this coordinate. This is what lets a child canvas
+	// paint decoration without erasing its parent's colored surface.
+	if cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+		cell.Style.BG = c.cells[y][x].Style.BG
+	}
 	// Erase both halves of any previous wide glyph touched by this write.
 	clear := func(col int) {
 		if c.cells[y][col].Continuation && col > 0 {
@@ -126,7 +169,7 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 }
 
 func transparentForeground(cell Cell) bool {
-	return (cell.Text == "" || cell.Text == " ") && cell.Style.BG == ColorReset() &&
+	return !cell.Claim && (cell.Surface || ((cell.Text == "" || cell.Text == " ") && cell.Style.BG == ColorReset())) &&
 		!cell.Style.Bold && !cell.Style.Underline && !cell.Style.Dim
 }
 
