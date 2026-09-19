@@ -51,13 +51,36 @@ using the previous width.
    allocation across breakpoint transitions.
 3. Add regression coverage for repeated shrink/grow cycles and narrow widths.
 
-### M3 — PTY and visual verification
+### M3 — Make resize rendering atomic
+
+1. Coalesce resize notifications and render using the latest observed terminal
+   dimensions rather than painting every intermediate signal independently.
+2. Remove the out-of-band row-clearing write from `applyWinch`; resize handling
+   should update state and let the normal renderer produce the next frame.
+3. Combine stale-row clearing and UI drawing into one buffered terminal flush so
+   the live UI is never replaced by an exposed blank intermediate state.
+4. Add `CSI K` line clears to rendered rows so horizontal shrinking removes
+   content left over from the previous wider frame.
+
+### M4 — Harden terminal presentation
+
+1. Wrap complete frame flushes in synchronized output mode
+   (`ESC[?2026h` / `ESC[?2026l`) when supported, while preserving safe behavior
+   for terminals that ignore the mode.
+2. Evaluate disabling terminal auto-wrap while Loom owns the screen, and restore
+   the prior mode during cleanup if this is required by the rendering path.
+3. Keep terminal-control changes isolated from frame geometry and compositing
+   semantics.
+
+### M5 — PTY and visual verification
 
 1. Run the filebrowser PTY path through wide, shrinking, narrow, and growing
    terminal sizes.
-2. Verify no uncovered row bands, clipping, overlap, stale pane placement, or
+2. Exercise repeated wide → narrow → wide resize bursts and capture the output
+   stream while the resize is active.
+3. Verify no uncovered row bands, clipping, overlap, stale pane placement, or
    terminal restoration regressions.
-3. Run the repository's required test, vet, and geometry checks.
+4. Run the repository's required test, vet, and geometry checks.
 
 ## 4. Acceptance Criteria
 
