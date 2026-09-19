@@ -4,7 +4,11 @@
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture
-**Related**: `canvas.go`, `frame.go`, `background.go`, `docs/AnimatedBackgrounds.md`, [067](067-animated-loom-background-for-filebrowser-with-proper-compositing.md)
+**Related**: `canvas.go`, `frame.go`, `background.go`,
+`examples/filebrowser/filebrowser/filebrowser.go`,
+`docs/AnimatedBackgrounds.md`, [067](067-animated-loom-background-for-filebrowser-with-proper-compositing.md) (Closed —
+supplied the safe-cell compositing contract this ticket now formalizes and
+extends; filebrowser wiring deferred here, see M2)
 
 ## Problem
 
@@ -55,11 +59,17 @@ colored-cell, child-canvas, wide-rune, and cursor cases.
   content, and background decoration.
 - Keep `Background` effects independent from widget input and raw terminal
   output.
-- Migrate `AstraBackground`, `Box`, and the filebrowser/background examples to
-  the explicit API.
+- Migrate `AstraBackground`, `Box`, and the `examples/background` demo to the
+  explicit API.
+- Wire `pane.Background = loom.NewAstraBackground()` into
+  `examples/filebrowser/filebrowser/filebrowser.go` (never done under 067,
+  despite that ticket's title) and validate contrast across the `mc`,
+  `default`, `julia256`, and `plain` themes.
 
 **Verification:** deterministic canvas tests prove that each layer composes in
-  order and that decoration inherits the active surface color.
+  order and that decoration inherits the active surface color; headless
+  filebrowser coverage confirms stars render in blank list/detail areas
+  without disturbing selection, filtering, or navigation.
 
 ### M3 — Documentation and compatibility cleanup
 
