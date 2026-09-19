@@ -1,6 +1,6 @@
 # 068 — Formalize layered compositor semantics and background inheritance
 
-**Status**: In Progress — M1/M2/M3 implementation complete; manual PTY smoke remains
+**Status**: Closed — M1-M3 delivered: explicit layered compositor API, nested-canvas surface propagation fixed, all widgets migrated off inference heuristics, PTY smoke validated
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture
