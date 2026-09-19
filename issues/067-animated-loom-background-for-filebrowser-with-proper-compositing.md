@@ -87,17 +87,18 @@ and quantized frame behavior are covered by deterministic tests.
 - Automated headless/golden canvas tests for `filebrowser` confirming stars render in blank areas of the file list and metadata views.
 - PTY smoke test verifying visual fidelity and mouse/keyboard interactivity during continuous animation ticks.
 
-**Status: Superseded.** Correction: the filebrowser never actually opted into
-`AstraBackground` (`pane.Background` is unset in
-`examples/filebrowser/filebrowser/filebrowser.go`); the earlier "In Progress"
-note above was inaccurate. The compositing contract itself (safe-cell
-eligibility, transparent/opaque surface split, cursor protection) is proven
-out via the standalone `examples/background` demo instead. Wiring
-`AstraBackground` into the filebrowser, plus theme/PTY smoke validation, is
-folded into issue [068](068-formalize-layered-compositor-semantics-and-background-inheritance.md)
-M2 ("Migrate `AstraBackground`, `Box`, and the filebrowser/background
-examples to the explicit API") rather than tracked here, so there is one
-forward-looking ticket for background integration work instead of two.
+**Status: Complete.** Correction: an earlier review pass of this ticket
+incorrectly claimed the filebrowser never opted into `AstraBackground`. It
+does: `configurePane` in `examples/filebrowser/filebrowser/filebrowser.go`
+sets `pane.Background = loom.NewAstraBackground()` (landed in `9d9b838`,
+before this ticket was closed), and `TestBrowserUsesAnimatedBackground` in
+`examples/filebrowser/filebrowser/browser_test.go` asserts both the wiring
+and that the drawn frame leaves transparent surface for composition. Theme
+contrast (`mc`, `default`, `julia256`, `plain`) and PTY interactivity remain
+unverified by automated tests since `loom.New`/`Pane.Close` require a real
+tty, which is a headless-test-environment limitation tracked under
+[068](068-formalize-layered-compositor-semantics-and-background-inheritance.md)
+M2, not a missing feature.
 
 ### M4 — Documentation, Example Alignment & Final Test Pass
 
@@ -109,14 +110,15 @@ that issue 068 introduces; tracking them here would duplicate that ticket.
 
 - M1 (compositing contract & safe-cell primitives): Complete.
 - M2 (animated background scheduling & lifecycle safety): Complete.
-- M3 (filebrowser integration & theming polish): Not delivered here; the
-  compositing contract was proven via `examples/background` instead.
-  Remaining filebrowser wiring folded into 068 M2.
+- M3 (filebrowser integration & theming polish): Complete; `configurePane`
+  wires `AstraBackground` into the filebrowser and
+  `TestBrowserUsesAnimatedBackground` covers it. Theme-contrast and PTY
+  smoke validation remain manual/untested and are tracked under 068 M2.
 - M4 (docs/example alignment/final test pass): Deferred to 068 M3.
 
 Closing 067 because its core goal — a working, tested compositing contract
 that lets an animated background shine through unclaimed cells while
-protecting text, borders, and cursor state — is delivered and demonstrated.
-The originally-named filebrowser integration remains outstanding but is
-better tracked as part of 068's explicit-API migration than as a stale,
-inaccurately-labeled milestone here.
+protecting text, borders, and cursor state, demonstrated in both
+`examples/background` and the filebrowser — is delivered. Remaining
+polish (theme contrast validation, PTY smoke tests, unified docs) depends
+on 068's explicit layered-compositor API and is tracked there.
