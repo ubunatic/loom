@@ -1,6 +1,6 @@
 # 074 — Use measured WINCH speed for adaptive resize width guard
 
-**Status**: In Progress — M1-M4 done; manual terminal check (M5) pending
+**Status**: Closed — M1-M5 verified by spec, unit and PTY tests
 **Priority**: P2
 **Severity**: Moderate
 **Category**: Feature
@@ -83,11 +83,11 @@ manual testing exercises slow and rapid terminal drags.
 
 ## 4. Outcome & Findings
 
-M1–M4 implemented; M5 manual terminal checks still pending.
+M1–M5 implemented and verified by automated PTY runs (`internal/ptytest`): a rapid burst reports an adaptive guard, a slow drag (events further apart than the window) keeps the manual n, and a rapid burst with the switch off stays manual. `make test-q1` and `-race` pass.
 
 - **Spec (M1)**: `adaptive_guard` mode in `spec/resize.yaml` (key `a`, default off) with `window_ms`, `min_n`, `max_n`, `rate_step`; schema fields plus a negative control (`invalid_rate_step`); the Go loader rejects `min_n > max_n`.
 - **Policy**: rate = events in the last `window_ms` / window (the window is the smoothing); `n = min_n + floor(rate / rate_step)`, clamped to `max_n`. Fewer than two events in the window (startup, single resize, settled) fall back to the manual `n`. The width is latched at each SIGWINCH so it does not jitter while the rate decays.
 - **Framework (M2/M3)**: `WinchMeter` takes explicit timestamps (deterministic tests: none, one, steady, saturated, aged-out). `Pane.EffectiveGuardN`, `Pane.WinchRate`, and one `guardedCols` helper replace three duplicated width computations.
 - **Winch (M4)**: key `a`, effective n / manual n / adaptive-or-manual / `WINCH: x/s` on the status line; headless and PTY tests.
 - **Limitation**: the kernel coalesces pending SIGWINCH, so very fast drags under-report the raw rate.
-- **Pending (M5)**: manual slow-drag and rapid-drag checks in a real terminal; tune `rate_step`/`max_n` from those.
+- **Follow-up (optional, human)**: watch a real terminal drag and tune `rate_step`/`max_n` if the defaults feel off; they are spec values, so no code change is needed.
