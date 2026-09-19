@@ -29,12 +29,18 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
+
+var paneOwnership struct {
+	sync.Mutex
+	active bool
+}
 
 // DefaultMaxCols is the default maximum canvas width loaded from SpeccedDefaults.
 var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
@@ -50,6 +56,7 @@ type Pane struct {
 	cols     int // terminal width at Open time
 	MaxCols  int // canvas width cap; 0 = use terminal width
 	restored bool
+	ownsTTY  bool
 
 	// mouse tracking is enabled with EnableMouse.
 	mouse      bool
@@ -130,8 +137,12 @@ func New(height int) (*Pane, error) {
 	if height < 1 {
 		height = 1
 	}
+	if !claimPaneOwnership() {
+		return nil, fmt.Errorf("loom: another pane already owns the terminal")
+	}
 	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0)
 	if err != nil {
+		releasePaneOwnership()
 		return nil, fmt.Errorf("loom: open /dev/tty: %w", err)
 	}
 	fd := int(tty.Fd())
@@ -139,6 +150,7 @@ func New(height int) (*Pane, error) {
 	old, err := term.MakeRaw(fd)
 	if err != nil {
 		_ = tty.Close()
+		releasePaneOwnership()
 		return nil, fmt.Errorf("loom: raw mode: %w", err)
 	}
 
@@ -194,9 +206,26 @@ func New(height int) (*Pane, error) {
 		startRow: startRow,
 		cols:     cols,
 		MaxCols:  DefaultMaxCols,
+		ownsTTY:  true,
 	}
 	p.installSignalHandler()
 	return p, nil
+}
+
+func claimPaneOwnership() bool {
+	paneOwnership.Lock()
+	defer paneOwnership.Unlock()
+	if paneOwnership.active {
+		return false
+	}
+	paneOwnership.active = true
+	return true
+}
+
+func releasePaneOwnership() {
+	paneOwnership.Lock()
+	paneOwnership.active = false
+	paneOwnership.Unlock()
 }
 
 func queryCursor(tty *os.File) (row, col int, err error) {
@@ -690,6 +719,10 @@ func (p *Pane) close() {
 		return
 	}
 	p.restored = true
+	if p.ownsTTY {
+		releasePaneOwnership()
+		p.ownsTTY = false
+	}
 
 	if p.winch != nil {
 		signal.Stop(p.winch)

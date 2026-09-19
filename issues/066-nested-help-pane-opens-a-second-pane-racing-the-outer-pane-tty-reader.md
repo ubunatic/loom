@@ -1,6 +1,6 @@
 # 066 — Nested help pane opens a second Pane racing the outer pane tty reader
 
-**Status**: Open
+**Status**: In Progress — nested pane ownership guard implemented; PTY acceptance remains
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
@@ -60,3 +60,12 @@ stop making `isHeadless()` the only thing preventing the bug.
 - Terminal state is correctly restored after dismissing help (no lost echo, no
   stuck raw mode) — checked in the PTY test.
 - `go test ./...`, `go test -race ./...` and `go vet ./...` pass.
+
+## 4. Implementation Notes
+
+`Pane.New` now claims the process-wide terminal owner before opening `/dev/tty`
+and rejects a nested pane with an explicit error. `Pane.Close` releases the
+claim exactly once, including after repeated close calls. The default help path
+now renders an inline `Popup` from the active `Choice` or `Table`, so it does
+not need a second pane at all. The injected help runner remains available for
+headless and custom tests.

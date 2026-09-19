@@ -36,6 +36,27 @@ func TestPaneClickTrackingIsDisabledOnTeardown(t *testing.T) {
 	}
 }
 
+func TestPaneOwnershipRejectsNestedPane(t *testing.T) {
+	if !claimPaneOwnership() {
+		t.Fatal("initial pane ownership claim failed")
+	}
+	defer releasePaneOwnership()
+	if claimPaneOwnership() {
+		t.Fatal("nested pane ownership claim succeeded")
+	}
+}
+
+func TestPaneOwnershipCanBeReclaimedAfterRelease(t *testing.T) {
+	if !claimPaneOwnership() {
+		t.Fatal("pane ownership claim failed")
+	}
+	releasePaneOwnership()
+	if !claimPaneOwnership() {
+		t.Fatal("pane ownership was not released")
+	}
+	releasePaneOwnership()
+}
+
 // TestWinchBounds covers the pane-placement math used when the terminal window
 // is resized: height is clamped to leave the prompt line, and the top row is
 // lifted (never below 1) when the pane would overflow the new bottom.

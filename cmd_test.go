@@ -112,8 +112,8 @@ func TestCmdHomeSetsNavHost(t *testing.T) {
 // ── :help ─────────────────────────────────────────────────────────────────────
 
 func TestCmdHelpDoesNotQuitInTest(t *testing.T) {
-	// In test environments isHeadless() returns true, so showHelp() runs headlessly
-	// without opening /dev/tty or blocking on input. Nav stays NavNone.
+	// With no help runner injected, showHelp() shows an inline popup instead
+	// of opening a second Pane, so this never touches /dev/tty. Nav stays NavNone.
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	typeCmd(c, "help")
 	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})

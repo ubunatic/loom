@@ -5,10 +5,8 @@ package loom
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"sync"
-	"testing"
 )
 
 // Nav is a navigation signal propagated from a widget through the caller chain.
@@ -44,6 +42,7 @@ type cmdBar struct {
 	local  []Cmd
 	active bool
 	query  string
+	help   *Popup
 }
 
 func newCmdBar() *cmdBar {
@@ -173,24 +172,8 @@ func (cb *cmdBar) execute(cmd *Cmd) cmdResult {
 
 var (
 	helpMu     sync.RWMutex
-	helpRunner = defaultHelpRunner
+	helpRunner func(Widget, int) error
 )
-
-func defaultHelpRunner(w Widget, height int) error {
-	if isHeadless() {
-		return nil
-	}
-	pane, err := New(height)
-	if err != nil {
-		return err
-	}
-	defer pane.Close()
-	return pane.Run(w)
-}
-
-func isHeadless() bool {
-	return testing.Testing() || os.Getenv("LOOM_HEADLESS") != ""
-}
 
 func (cb *cmdBar) showHelp() Nav {
 	hw := newHelpWidget(cb.allCmds())
@@ -199,8 +182,36 @@ func (cb *cmdBar) showHelp() Nav {
 	helpMu.RUnlock()
 	if runner != nil {
 		_ = runner(hw, hw.ContentHeight())
+	} else {
+		cb.help = NewPopup("Help", hw)
 	}
 	return NavNone
+}
+
+func (cb *cmdBar) drawHelp(cv *Canvas, r Rect) {
+	if cb.help != nil {
+		cb.help.Draw(cv, r)
+	}
+}
+
+func (cb *cmdBar) handleHelp(e KeyEvent) bool {
+	if cb.help == nil {
+		return false
+	}
+	if cb.help.HandleKey(e) {
+		cb.help = nil
+	}
+	return true
+}
+
+func (cb *cmdBar) handleHelpMouse(e MouseEvent) bool {
+	if cb.help == nil {
+		return false
+	}
+	if cb.help.HandleMouse(e) {
+		cb.help = nil
+	}
+	return true
 }
 
 // helpWidget is a read-only command list that closes on any key except up/down.

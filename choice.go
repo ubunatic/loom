@@ -281,11 +281,15 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			}
 		}
 	}
+	c.cmd.drawHelp(cv, r)
 }
 
 // HandleKey drives navigation and filtering.
 // ':' or '/' activates command mode; all other keys behave normally when inactive.
 func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
+	if c.cmd.handleHelp(e) {
+		return false
+	}
 	if consumed, result := c.cmd.HandleKey(e); consumed {
 		switch result {
 		case cmdBack:
@@ -375,6 +379,9 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 // viewOffset maps that back to a filtered index (mirrors Draw's fi mapping)
 // so hit-tests stay correct once the list has been scrolled.
 func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
+	if c.cmd.handleHelpMouse(e) {
+		return false
+	}
 	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
 		c.lastRect.W > 0 && c.itemRows > 0 &&
 		e.X == c.lastRect.X+c.lastRect.W && len(c.filtered) > c.itemRows {

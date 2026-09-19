@@ -294,11 +294,15 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 		cv.CursorX = r.X + StringWidth(t.Prompt) + StringWidth(t.query)
 		cv.CursorY = promptY
 	}
+	t.cmd.drawHelp(cv, r)
 }
 
 // HandleKey drives navigation, filtering, and sort controls.
 // ':' or '/' activates command mode; Tab completes commands when active.
 func (t *Table) HandleKey(e KeyEvent) (quit bool) {
+	if t.cmd.handleHelp(e) {
+		return false
+	}
 	if consumed, result := t.cmd.HandleKey(e); consumed {
 		switch result {
 		case cmdBack:
@@ -360,7 +364,9 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 }
 
 // HandleMouse is a no-op placeholder (mouse support is optional/future).
-func (t *Table) HandleMouse(_ MouseEvent) (quit bool) { return false }
+func (t *Table) HandleMouse(e MouseEvent) (quit bool) {
+	return t.cmd.handleHelpMouse(e)
+}
 
 func (t *Table) cycleSortNext() {
 	if len(t.Columns) == 0 {
