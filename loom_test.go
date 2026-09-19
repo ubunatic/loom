@@ -191,6 +191,45 @@ func TestCanvasSurfaceInheritanceSurvivesTwoNestedMerges(t *testing.T) {
 	}
 }
 
+// TestAstraBackgroundFadesToSurfaceColorAtDimPhase reproduces the mc-theme
+// complaint: a star at its dimmest phase must fade all the way into the
+// painted surface color under it, not a fixed dark gray that shows up as a
+// smudge on bright theme backgrounds.
+func TestAstraBackgroundFadesToSurfaceColorAtDimPhase(t *testing.T) {
+	bg := loom.NewAstraBackground()
+	interval := bg.BackgroundInterval()
+	var dim, bright loom.Cell
+	minR, maxR := uint8(255), uint8(0)
+	for tick := int64(0); tick < 20; tick++ {
+		c := loom.NewCanvas(20, 20)
+		c.PaintSurface(c.Bounds(), loom.Style{BG: loom.ColorIndex(69)}) // mc normal_bg
+		bg.DrawBackgroundAt(c, c.Bounds(), time.Unix(0, tick*interval.Nanoseconds()))
+		cell := c.Get(0, 0)
+		if cell.Text == " " {
+			continue
+		}
+		r, _, _, _ := cell.Style.FG.RGB()
+		if r <= minR {
+			minR, dim = r, cell
+		}
+		if r >= maxR {
+			maxR, bright = r, cell
+		}
+	}
+	if dim.Text == "" || bright.Text == "" {
+		t.Fatal("did not observe both a dim and a bright star phase in 20 ticks")
+	}
+	bgR, bgG, bgB, _ := loom.ColorIndex(69).RGB()
+	dr, dg, db, _ := dim.Style.FG.RGB()
+	if dr != bgR || dg != bgG || db != bgB {
+		t.Fatalf("dimmest star color = %d,%d,%d, want background color %d,%d,%d", dr, dg, db, bgR, bgG, bgB)
+	}
+	br, bgv, bb, _ := bright.Style.FG.RGB()
+	if br == bgR && bgv == bgG && bb == bgB {
+		t.Fatal("brightest star color must not equal the background color")
+	}
+}
+
 func TestAstraBackgroundCadenceAndQuantizedFrames(t *testing.T) {
 	background := loom.NewAstraBackground()
 	interval := background.BackgroundInterval()

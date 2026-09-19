@@ -64,11 +64,24 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			if level > 7 {
 				level = 14 - phase
 			}
-			// Keep the low end visible on light and dark theme surfaces while
-			// retaining enough headroom for the fade peak.
-			v := uint8(42 + level*9)
+			// Fade toward the actual surface color at the dim end instead of a
+			// fixed dark gray, so a star disappears into whatever background
+			// it sits on (e.g. mc's bright blue panes) rather than showing a
+			// dark smudge; the bright peak stays a theme-neutral gray.
+			const peak = 105
+			t := float64(level) / 7
+			bgR, bgG, bgB, ok := c.Get(r.X+x, r.Y+y).Style.BG.RGB()
+			var fr, fg, fb uint8
+			if ok {
+				fr = uint8(float64(bgR) + (peak-float64(bgR))*t)
+				fg = uint8(float64(bgG) + (peak-float64(bgG))*t)
+				fb = uint8(float64(bgB) + (peak-float64(bgB))*t)
+			} else {
+				v := uint8(42 + level*9)
+				fr, fg, fb = v, v, v
+			}
 			glyph := SpeccedBackground.Glyphs[int(h)%len(SpeccedBackground.Glyphs)]
-			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(v, v, v)}})
+			c.PaintDecoration(r.X+x, r.Y+y, Cell{Text: glyph, Style: Style{FG: ColorRGB(fr, fg, fb)}})
 		}
 	}
 }
