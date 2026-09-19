@@ -77,3 +77,7 @@ All milestones M1 through M5 implemented and verified:
 3. **Diagnostic App (M3)**: Implemented `examples/winch` with responsive dual-panel layout, key shortcuts `[1-6]` to toggle modes, `[R]` to reset, `[M]` to toggle motion, `[T]` to cycle themes, and alignment/checkerboard stress patterns. Registered in `internal/examplesreg` for `loom-demo` and `loom-bench`.
 4. **PTY Regression Coverage (M4)**: Added PTY test suite covering rapid wide → narrow → wide bursts, synchronized output / auto-wrap escape sequence verification, stale-row clearing, and reduced motion / theme combinations.
 5. **Stable Defaults (M5)**: Defaults verified stable across PTY and terminal simulations; documented in `examples/winch/README.md`.
+
+## Outcome: manual check (alt_screen)
+
+Human drag test in a real terminal: modes 1-9/A did not remove the flicker lines; mode `b` (Alternate screen, `?1049`) does. Root cause: on the primary screen the terminal reflows old wide rows while dragging, which no write strategy can undo. `alt_screen` stays off by default in the library (inline apps keep their scrollback behavior); apps that own the whole terminal should enable it.
