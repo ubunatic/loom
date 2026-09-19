@@ -1,6 +1,6 @@
 # 050 — Support truecolor RGB values in theme specs
 
-**Status**: Open
+**Status**: Closed — implemented truecolor RGB theme values
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
