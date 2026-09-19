@@ -1,6 +1,6 @@
 # 070 — Prevent text overflow in framework help modals
 
-**Status**: Open
+**Status**: Closed — Framework help modal text is now display-width truncated to its content bounds; added Unicode/narrow-width regression coverage.
 
 ---
 
