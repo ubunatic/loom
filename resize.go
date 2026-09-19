@@ -21,6 +21,7 @@ type ResizeModeSpec struct {
 	Default        bool   `yaml:"default"`
 	DiagnosticOnly bool   `yaml:"diagnostic_only"`
 	Key            string `yaml:"key"`
+	GuardN         int    `yaml:"guard_n,omitempty"`
 }
 
 // ResizeModesSpec holds all resize modes declared in spec/resize.yaml.
@@ -36,6 +37,9 @@ var SpeccedResizeModeIDs = []string{
 	"synchronized_output",
 	"auto_wrap",
 	"out_of_band_clear",
+	"full_screen_buffer",
+	"resize_handling",
+	"width_guard",
 }
 
 // SpeccedResizeModes is the loaded immutable spec of resize modes.
@@ -59,10 +63,18 @@ type ResizeConfig struct {
 	SynchronizedOutput bool
 	AutoWrap           bool
 	OutOfBandClear     bool
+	FullScreenBuffer   bool
+	ResizeHandling     bool
+	WidthGuard         bool
+	WidthGuardN        int
 }
 
 // DefaultResizeConfig returns a ResizeConfig populated with the spec-defined defaults.
 func DefaultResizeConfig() ResizeConfig {
+	guardN := SpeccedResizeModes.Modes["width_guard"].GuardN
+	if guardN <= 0 {
+		guardN = 1
+	}
 	return ResizeConfig{
 		Coalesce:           SpeccedResizeModes.Modes["coalesce"].Default,
 		AtomicFlush:        SpeccedResizeModes.Modes["atomic_flush"].Default,
@@ -70,6 +82,10 @@ func DefaultResizeConfig() ResizeConfig {
 		SynchronizedOutput: SpeccedResizeModes.Modes["synchronized_output"].Default,
 		AutoWrap:           SpeccedResizeModes.Modes["auto_wrap"].Default,
 		OutOfBandClear:     SpeccedResizeModes.Modes["out_of_band_clear"].Default,
+		FullScreenBuffer:   SpeccedResizeModes.Modes["full_screen_buffer"].Default,
+		ResizeHandling:     SpeccedResizeModes.Modes["resize_handling"].Default,
+		WidthGuard:         SpeccedResizeModes.Modes["width_guard"].Default,
+		WidthGuardN:        guardN,
 	}
 }
 
@@ -88,6 +104,12 @@ func (c *ResizeConfig) Get(id string) (bool, bool) {
 		return c.AutoWrap, true
 	case "out_of_band_clear":
 		return c.OutOfBandClear, true
+	case "full_screen_buffer":
+		return c.FullScreenBuffer, true
+	case "resize_handling":
+		return c.ResizeHandling, true
+	case "width_guard":
+		return c.WidthGuard, true
 	default:
 		return false, false
 	}
@@ -113,6 +135,15 @@ func (c *ResizeConfig) Set(id string, val bool) bool {
 		return true
 	case "out_of_band_clear":
 		c.OutOfBandClear = val
+		return true
+	case "full_screen_buffer":
+		c.FullScreenBuffer = val
+		return true
+	case "resize_handling":
+		c.ResizeHandling = val
+		return true
+	case "width_guard":
+		c.WidthGuard = val
 		return true
 	default:
 		return false
@@ -154,4 +185,18 @@ func (p *Pane) ToggleResizeMode(id string) bool {
 // ResetResizeModes restores the Pane's ResizeConfig to spec defaults.
 func (p *Pane) ResetResizeModes() {
 	p.ResizeConfig.Reset()
+}
+
+// WidthGuardActive reports whether the pane is currently within an active
+// SIGWINCH burst and rendering with the width guard deduction applied.
+func (p *Pane) WidthGuardActive() bool {
+	return p.widthGuardActive
+}
+
+// SetWidthGuardN updates the number of columns deducted during an active resize burst.
+func (p *Pane) SetWidthGuardN(n int) {
+	if n < 1 {
+		n = 1
+	}
+	p.ResizeConfig.WidthGuardN = n
 }

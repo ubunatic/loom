@@ -59,6 +59,24 @@ func openPTY(t *testing.T) (master, slave *os.File) {
 	return m, s
 }
 
+func drainPTY(master *os.File, done <-chan struct{}) {
+	go func() {
+		buf := make([]byte, 4096)
+		for {
+			select {
+			case <-done:
+				return
+			default:
+				_ = master.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
+				_, err := master.Read(buf)
+				if err != nil {
+					time.Sleep(10 * time.Millisecond)
+				}
+			}
+		}
+	}()
+}
+
 // keyRecorder is a minimal Widget that records every KeyEvent it receives
 // and quits once it has seen want of them, so tests can drive Pane.run
 // against a real pty without a full widget tree.
@@ -203,6 +221,7 @@ func setPTYSize(t *testing.T, master *os.File, cols, rows int) {
 	if err := unix.IoctlSetWinsize(int(master.Fd()), unix.TIOCSWINSZ, ws); err != nil {
 		t.Fatalf("set pty size: %v", err)
 	}
+	_ = unix.Kill(unix.Getpid(), unix.SIGWINCH)
 }
 
 type ptyResizeWidget struct {
@@ -244,21 +263,31 @@ func (w *ptyResizeWidget) lastDimensions() (int, int) {
 	return w.lastCol, w.lastRow
 }
 
+func (w *ptyResizeWidget) history() []Rect {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	out := make([]Rect, len(w.bounds))
+	copy(out, w.bounds)
+	return out
+}
+
 func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
 	p := &Pane{
-		tty:          slave,
-		fd:           int(slave.Fd()),
-		rows:         20,
-		wantRows:     20,
-		cols:         80,
-		MaxCols:      0,
-		Resizeable:   true,
-		ResizeConfig: DefaultResizeConfig(),
+		tty:                slave,
+		fd:                 int(slave.Fd()),
+		rows:               20,
+		wantRows:           20,
+		cols:               80,
+		MaxCols:            0,
+		Resizeable:         true,
+		ResizeConfig:       DefaultResizeConfig(),
+		WidthGuardDuration: 30 * time.Millisecond,
 	}
 	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
 
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
@@ -278,8 +307,8 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 		time.Sleep(15 * time.Millisecond)
 	}
 
-	// Wait for coalesced resize handling
-	time.Sleep(60 * time.Millisecond)
+	// Wait for coalesced resize handling and width guard restoration
+	time.Sleep(80 * time.Millisecond)
 
 	// Send 'q' to exit
 	if _, err := master.Write([]byte("q")); err != nil {
@@ -363,6 +392,7 @@ func TestPTYResizeStaleRowClearing(t *testing.T) {
 		ResizeConfig: DefaultResizeConfig(),
 	}
 	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
 
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
@@ -402,6 +432,7 @@ func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
 		ResizeConfig: DefaultResizeConfig(),
 	}
 	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
 
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
@@ -409,6 +440,164 @@ func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
 	time.Sleep(30 * time.Millisecond)
 	setPTYSize(t, master, 50, 18)
 	time.Sleep(30 * time.Millisecond)
+
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	cfg := DefaultResizeConfig()
+	cfg.WidthGuard = true
+	cfg.WidthGuardN = 1
+
+	p := &Pane{
+		tty:                slave,
+		fd:                 int(slave.Fd()),
+		rows:               20,
+		wantRows:           20,
+		cols:               80,
+		MaxCols:            0,
+		Resizeable:         true,
+		ResizeConfig:       cfg,
+		WidthGuardDuration: 80 * time.Millisecond,
+	}
+	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	// Let the initial frame render (width 80)
+	time.Sleep(30 * time.Millisecond)
+
+	// Resize to 60 columns. During active burst, width guard should render at 60 - 1 = 59.
+	setPTYSize(t, master, 60, 20)
+
+	// Wait briefly for the WINCH event to process
+	time.Sleep(30 * time.Millisecond)
+
+	burstCols, _ := w.lastDimensions()
+	if burstCols != 59 {
+		t.Fatalf("during active burst: cols = %d, want 59 (60-1)", burstCols)
+	}
+
+	// Wait for the 80ms guard timer to expire and restore full width 60
+	time.Sleep(120 * time.Millisecond)
+
+	restoredCols, _ := w.lastDimensions()
+	if restoredCols != 60 {
+		t.Fatalf("after burst expiry: cols = %d, want 60", restoredCols)
+	}
+
+	// Exit cleanly
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	cfg := DefaultResizeConfig()
+	cfg.WidthGuard = true
+	cfg.WidthGuardN = 3
+
+	p := &Pane{
+		tty:                slave,
+		fd:                 int(slave.Fd()),
+		rows:               20,
+		wantRows:           20,
+		cols:               80,
+		MaxCols:            0,
+		Resizeable:         true,
+		ResizeConfig:       cfg,
+		WidthGuardDuration: 80 * time.Millisecond,
+	}
+	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	time.Sleep(30 * time.Millisecond)
+
+	// Resize to 70 columns. With n=3, should render at 70 - 3 = 67.
+	setPTYSize(t, master, 70, 20)
+	time.Sleep(30 * time.Millisecond)
+
+	burstCols, _ := w.lastDimensions()
+	if burstCols != 67 {
+		t.Fatalf("during active burst (n=3): cols = %d, want 67 (70-3)", burstCols)
+	}
+
+	// Wait for restore
+	time.Sleep(120 * time.Millisecond)
+	restoredCols, _ := w.lastDimensions()
+	if restoredCols != 70 {
+		t.Fatalf("after burst expiry: cols = %d, want 70", restoredCols)
+	}
+
+	master.Write([]byte("q")) //nolint:errcheck
+	select {
+	case <-w.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for exit")
+	}
+	if err := <-errc; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestPTYResizeWidthGuardDisabled(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+
+	cfg := DefaultResizeConfig()
+	cfg.WidthGuard = false
+
+	p := &Pane{
+		tty:          slave,
+		fd:           int(slave.Fd()),
+		rows:         20,
+		wantRows:     20,
+		cols:         80,
+		MaxCols:      0,
+		Resizeable:   true,
+		ResizeConfig: cfg,
+	}
+	w := newPTYResizeWidget()
+	drainPTY(master, w.done)
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+
+	time.Sleep(25 * time.Millisecond)
+
+	// Resize to 60 columns. With WidthGuard=false, should render at full 60 columns immediately.
+	setPTYSize(t, master, 60, 20)
+	time.Sleep(25 * time.Millisecond)
+
+	cols, _ := w.lastDimensions()
+	if cols != 60 {
+		t.Fatalf("with width guard disabled: cols = %d, want 60", cols)
+	}
 
 	master.Write([]byte("q")) //nolint:errcheck
 	select {

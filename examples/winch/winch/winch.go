@@ -81,24 +81,29 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	normalStyle := choiceStyle.Normal
 	headerStyle := choiceStyle.Selected
 	statusStyle := frameStyle.Status
+	contentH := r.H
+	if contentH > 1 {
+		contentH-- // reserve the final row for the status bar
+	}
 
 	// Determine layout: side-by-side if wide (>= 72 cols), stacked if narrow
 	if r.W >= 72 {
-		modesW := 38
+		modesW := 40
 		diagW := r.W - modesW - 1
-		a.drawModesPanel(c, loom.Rect{X: r.X, Y: r.Y, W: modesW, H: r.H}, cfg, normalStyle, headerStyle)
-		a.drawStressPanel(c, loom.Rect{X: r.X + modesW + 1, Y: r.Y, W: diagW, H: r.H}, cfg, normalStyle, headerStyle)
+		a.drawModesPanel(c, loom.Rect{X: r.X, Y: r.Y, W: modesW, H: contentH}, cfg, normalStyle, headerStyle)
+		a.drawStressPanel(c, loom.Rect{X: r.X + modesW + 1, Y: r.Y, W: diagW, H: contentH}, cfg, normalStyle, headerStyle)
 	} else {
-		modesH := 9
-		if modesH > r.H-4 {
-			modesH = r.H - 4
+		// Reserve one row per spec-defined mode plus the panel borders.
+		modesH := len(loom.SpeccedResizeModeIDs) + 2
+		if modesH > contentH-2 {
+			modesH = contentH - 2
 		}
 		if modesH < 3 {
-			modesH = r.H
+			modesH = contentH
 		}
 		a.drawModesPanel(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: modesH}, cfg, normalStyle, headerStyle)
-		if r.H > modesH+2 {
-			a.drawStressPanel(c, loom.Rect{X: r.X, Y: r.Y + modesH, W: r.W, H: r.H - modesH}, cfg, normalStyle, headerStyle)
+		if contentH > modesH+2 {
+			a.drawStressPanel(c, loom.Rect{X: r.X, Y: r.Y + modesH, W: r.W, H: contentH - modesH}, cfg, normalStyle, headerStyle)
 		}
 	}
 
@@ -139,7 +144,7 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│",
 	}
-	drawBoxBorder(c, r, border, "Resize Modes [1-6 Toggle, R Reset]", normal, header)
+	drawBoxBorder(c, r, border, "Resize Modes [1-9 Toggle, +/- Guard, R Reset]", normal, header)
 
 	row := r.Y + 1
 	for _, id := range loom.SpeccedResizeModeIDs {
@@ -161,7 +166,9 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 
 		keyBadge := fmt.Sprintf("[%s]", mode.Key)
 		tag := ""
-		if mode.DiagnosticOnly {
+		if id == "width_guard" {
+			tag = fmt.Sprintf(" (n=%d)", cfg.WidthGuardN)
+		} else if mode.DiagnosticOnly {
 			tag = " (diag)"
 		}
 
@@ -185,7 +192,13 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 
 	row := r.Y + 1
 	if row < r.Y+r.H-1 {
-		dimText := fmt.Sprintf(" Term: %dx%d | Canvas: %dx%d", c.Cols(), c.Rows(), r.W, r.H)
+		guardState := "idle"
+		if a.pane != nil && a.pane.WidthGuardActive() {
+			guardState = "ACTIVE (burst)"
+		} else if !cfg.WidthGuard {
+			guardState = "OFF"
+		}
+		dimText := fmt.Sprintf(" Term: %dx%d | Canvas: %dx%d | Guard: %s (n=%d)", c.Cols(), c.Rows(), r.W, r.H, guardState, cfg.WidthGuardN)
 		c.Write(r.X+1, row, loom.TruncateText(dimText, r.W-2, ""), normal)
 		row++
 	}
@@ -195,7 +208,7 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 		if a.pane != nil && a.pane.ReduceMotion {
 			motion = "REDUCED"
 		}
-		info := fmt.Sprintf(" Motion [M]: %s | Theme [T]: %s", motion, a.themeName)
+		info := fmt.Sprintf(" Motion [M]: %s | Theme [T]: %s | Guard [+/-]: %d", motion, a.themeName, cfg.WidthGuardN)
 		c.Write(r.X+1, row, loom.TruncateText(info, r.W-2, ""), normal)
 		row++
 	}
@@ -242,13 +255,19 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	keyLower := strings.ToLower(key)
 
 	switch keyLower {
-	case "1", "2", "3", "4", "5", "6":
+	case "1", "2", "3", "4", "5", "6", "7", "8", "9":
 		for _, id := range loom.SpeccedResizeModeIDs {
 			if mode, ok := loom.SpeccedResizeModes.Modes[id]; ok && mode.Key == keyLower {
 				a.toggleMode(id)
 				return false
 			}
 		}
+	case "+", "=", "]":
+		a.adjustGuardN(1)
+		return false
+	case "-", "_", "[":
+		a.adjustGuardN(-1)
+		return false
 	case "r":
 		a.resetDefaults()
 		return false
@@ -263,6 +282,19 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		return true
 	}
 	return false
+}
+
+func (a *App) adjustGuardN(delta int) {
+	cfg := a.Config()
+	n := cfg.WidthGuardN + delta
+	if n < 1 {
+		n = 1
+	}
+	if n > 20 {
+		n = 20
+	}
+	cfg.WidthGuardN = n
+	a.SetConfig(cfg)
 }
 
 // HandleMouse handles click interactions.

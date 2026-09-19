@@ -23,7 +23,7 @@ func TestWinchAppHeadlessConfiguration(t *testing.T) {
 
 	// Initial defaults
 	cfg := app.Config()
-	if !cfg.Coalesce || !cfg.AtomicFlush || !cfg.RowClear || !cfg.SynchronizedOutput || !cfg.AutoWrap || cfg.OutOfBandClear {
+	if !cfg.Coalesce || !cfg.AtomicFlush || !cfg.RowClear || !cfg.SynchronizedOutput || !cfg.AutoWrap || cfg.OutOfBandClear || !cfg.WidthGuard || cfg.WidthGuardN != 1 {
 		t.Fatalf("unexpected initial config: %+v", cfg)
 	}
 
@@ -35,6 +35,32 @@ func TestWinchAppHeadlessConfiguration(t *testing.T) {
 		t.Fatal("expected coalesce to be toggled off")
 	}
 
+	// Toggle key '9' (width_guard)
+	app.HandleKey(loom.KeyEvent{Text: "9"})
+	if app.Config().WidthGuard {
+		t.Fatal("expected width_guard to be toggled off")
+	}
+
+	// Adjust guard n with '+' and '-'
+	app.HandleKey(loom.KeyEvent{Text: "+"})
+	if app.Config().WidthGuardN != 2 {
+		t.Fatalf("expected WidthGuardN = 2 after '+', got %d", app.Config().WidthGuardN)
+	}
+	app.HandleKey(loom.KeyEvent{Text: "+"})
+	if app.Config().WidthGuardN != 3 {
+		t.Fatalf("expected WidthGuardN = 3 after second '+', got %d", app.Config().WidthGuardN)
+	}
+	app.HandleKey(loom.KeyEvent{Text: "-"})
+	if app.Config().WidthGuardN != 2 {
+		t.Fatalf("expected WidthGuardN = 2 after '-', got %d", app.Config().WidthGuardN)
+	}
+	// Decrease past 1, should clamp to 1
+	app.HandleKey(loom.KeyEvent{Text: "-"})
+	app.HandleKey(loom.KeyEvent{Text: "-"})
+	if app.Config().WidthGuardN != 1 {
+		t.Fatalf("expected WidthGuardN clamped to 1, got %d", app.Config().WidthGuardN)
+	}
+
 	// Toggle key '6' (out_of_band_clear)
 	app.HandleKey(loom.KeyEvent{Text: "6"})
 	if !app.Config().OutOfBandClear {
@@ -43,7 +69,7 @@ func TestWinchAppHeadlessConfiguration(t *testing.T) {
 
 	// Reset key 'r'
 	app.HandleKey(loom.KeyEvent{Text: "r"})
-	if !app.Config().Coalesce || app.Config().OutOfBandClear {
+	if !app.Config().Coalesce || app.Config().OutOfBandClear || !app.Config().WidthGuard || app.Config().WidthGuardN != 1 {
 		t.Fatal("expected reset to restore defaults")
 	}
 

@@ -51,6 +51,18 @@ func TestSpeccedResizeModesIntegrity(t *testing.T) {
 	if cfg.OutOfBandClear {
 		t.Error("out_of_band_clear default should be false (diagnostic only)")
 	}
+	if !cfg.FullScreenBuffer {
+		t.Error("full_screen_buffer default should be true")
+	}
+	if !cfg.ResizeHandling {
+		t.Error("resize_handling default should be true")
+	}
+	if !cfg.WidthGuard {
+		t.Error("width_guard default should be true")
+	}
+	if cfg.WidthGuardN != 1 {
+		t.Errorf("width_guard_n default = %d, want 1", cfg.WidthGuardN)
+	}
 }
 
 func TestResizeConfigGetSetToggleReset(t *testing.T) {
@@ -112,8 +124,22 @@ func TestPaneResizeModeHelpers(t *testing.T) {
 		t.Fatal("SetResizeMode did not set Coalesce")
 	}
 	p.SetResizeMode("out_of_band_clear", true)
+	p.SetWidthGuardN(3)
+	if p.ResizeConfig.WidthGuardN != 3 {
+		t.Fatalf("SetWidthGuardN(3) = %d, want 3", p.ResizeConfig.WidthGuardN)
+	}
+	p.SetWidthGuardN(0) // should clamp to 1
+	if p.ResizeConfig.WidthGuardN != 1 {
+		t.Fatalf("SetWidthGuardN(0) = %d, want 1", p.ResizeConfig.WidthGuardN)
+	}
+	if p.WidthGuardActive() {
+		t.Fatal("WidthGuardActive() should be false initially")
+	}
 	p.ResetResizeModes()
 	if p.ResizeConfig.OutOfBandClear {
 		t.Fatal("ResetResizeModes did not reset OutOfBandClear")
+	}
+	if !p.ResizeConfig.WidthGuard || p.ResizeConfig.WidthGuardN != 1 {
+		t.Fatal("ResetResizeModes did not restore WidthGuard defaults")
 	}
 }

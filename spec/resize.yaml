@@ -36,3 +36,22 @@ modes:
     default: false
     diagnostic_only: true
     key: "6"
+  full_screen_buffer:
+    title: "Full-screen buffer"
+    description: "Render from terminal row 1 across the usable screen instead of anchoring at startRow"
+    default: true
+    diagnostic_only: true
+    key: "7"
+  resize_handling:
+    title: "Resize handling"
+    description: "Reflow and redraw the pane when the terminal emits SIGWINCH"
+    default: true
+    diagnostic_only: false
+    key: "8"
+  width_guard:
+    title: "Resize width guard"
+    description: "Render at W-n columns during active SIGWINCH burst to prevent terminal edge-wrap"
+    default: true
+    diagnostic_only: false
+    key: "9"
+    guard_n: 1

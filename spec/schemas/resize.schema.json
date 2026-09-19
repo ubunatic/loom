@@ -14,7 +14,10 @@
         "row_clear",
         "synchronized_output",
         "auto_wrap",
-        "out_of_band_clear"
+        "out_of_band_clear",
+        "full_screen_buffer",
+        "resize_handling",
+        "width_guard"
       ],
       "properties": {
         "coalesce": { "$ref": "#/definitions/mode" },
@@ -22,7 +25,10 @@
         "row_clear": { "$ref": "#/definitions/mode" },
         "synchronized_output": { "$ref": "#/definitions/mode" },
         "auto_wrap": { "$ref": "#/definitions/mode" },
-        "out_of_band_clear": { "$ref": "#/definitions/mode" }
+        "out_of_band_clear": { "$ref": "#/definitions/mode" },
+        "full_screen_buffer": { "$ref": "#/definitions/mode" },
+        "resize_handling": { "$ref": "#/definitions/mode" },
+        "width_guard": { "$ref": "#/definitions/mode" }
       }
     }
   },
@@ -36,7 +42,8 @@
         "description": { "type": "string", "minLength": 1 },
         "default": { "type": "boolean" },
         "diagnostic_only": { "type": "boolean" },
-        "key": { "type": "string", "minLength": 1 }
+        "key": { "type": "string", "minLength": 1 },
+        "guard_n": { "type": "integer", "minimum": 1 }
       }
     }
   }

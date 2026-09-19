@@ -76,6 +76,11 @@ type Pane struct {
 	Metrics *RenderMetrics
 	// ResizeConfig controls runtime resize rendering behaviors.
 	ResizeConfig ResizeConfig
+	// widthGuardActive tracks whether the pane is inside a SIGWINCH burst window.
+	widthGuardActive bool
+	// WidthGuardDuration configures the burst timeout before restoring full width.
+	// When 0, defaults to 1 second.
+	WidthGuardDuration time.Duration
 
 	// winch carries SIGWINCH notifications so the Run loop reflows on a
 	// terminal window resize. Buffered (cap 1) to coalesce resize bursts.
@@ -387,6 +392,10 @@ func (p *Pane) applyWinch(cols *int) {
 	// grows back toward wantRows when the window is enlarged again (a tiny window
 	// must not permanently pin the pane at one row).
 	newStartRow, newRows := winchBounds(p.startRow, p.wantRows, termRows)
+	if p.ResizeConfig.FullScreenBuffer {
+		newStartRow = 1
+		newRows = max(1, termRows-1)
+	}
 
 	if p.ResizeConfig.OutOfBandClear && p.tty != nil {
 		top := p.startRow
@@ -406,6 +415,16 @@ func (p *Pane) applyWinch(cols *int) {
 	canvasCols := newCols
 	if p.MaxCols > 0 && canvasCols > p.MaxCols {
 		canvasCols = p.MaxCols
+	}
+	if p.ResizeConfig.WidthGuard && p.widthGuardActive {
+		n := p.ResizeConfig.WidthGuardN
+		if n < 1 {
+			n = 1
+		}
+		canvasCols -= n
+		if canvasCols < 1 {
+			canvasCols = 1
+		}
 	}
 	*cols = canvasCols
 }
@@ -452,7 +471,25 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 	}()
 
+	if p.winch == nil {
+		p.installSignalHandler()
+		defer func() {
+			if p.winch != nil {
+				signal.Stop(p.winch)
+			}
+			if p.interrupts != nil {
+				signal.Stop(p.interrupts)
+			}
+		}()
+	}
+
 	cols := p.cols
+	if p.ResizeConfig.FullScreenBuffer {
+		// Diagnostic full-screen mode owns the usable terminal buffer from row 1.
+		// Recompute it before allocating the first canvas; later Winch events use
+		// the same path.
+		p.applyWinch(&cols)
+	}
 	if p.MaxCols > 0 && cols > p.MaxCols {
 		cols = p.MaxCols
 	}
@@ -575,9 +612,54 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	var pending []byte
 	var pendingC <-chan time.Time
 
+	var guardTimer *time.Timer
+	var guardTimerC <-chan time.Time
+	guardDuration := p.WidthGuardDuration
+	if guardDuration <= 0 {
+		guardDuration = time.Second
+	}
+	defer func() {
+		if guardTimer != nil {
+			guardTimer.Stop()
+		}
+		p.widthGuardActive = false
+	}()
+
 	dirty := true
 	animationDirty := false
 	for {
+		if !p.ResizeConfig.WidthGuard && p.widthGuardActive {
+			p.widthGuardActive = false
+			if guardTimer != nil {
+				guardTimer.Stop()
+				guardTimerC = nil
+			}
+			fullCols := p.cols
+			if p.MaxCols > 0 && fullCols > p.MaxCols {
+				fullCols = p.MaxCols
+			}
+			if fullCols != cols {
+				cols = fullCols
+				canvas = NewCanvas(cols, p.rows)
+				dirty = true
+			}
+		} else if p.ResizeConfig.WidthGuard && p.widthGuardActive {
+			expectedCols := p.cols
+			if p.MaxCols > 0 && expectedCols > p.MaxCols {
+				expectedCols = p.MaxCols
+			}
+			n := p.ResizeConfig.WidthGuardN
+			if n < 1 {
+				n = 1
+			}
+			expectedCols = max(1, expectedCols-n)
+			if expectedCols != cols {
+				cols = expectedCols
+				canvas = NewCanvas(cols, p.rows)
+				dirty = true
+			}
+		}
+
 		if p.Resizeable {
 			targetH := p.wantRows
 			if ch, ok := root.(WidthHeighter); ok {
@@ -611,7 +693,24 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-backgroundFrames:
 			dirty = true
 			animationDirty = true
+		case <-guardTimerC:
+			guardTimerC = nil
+			p.widthGuardActive = false
+			fullCols := p.cols
+			if p.MaxCols > 0 && fullCols > p.MaxCols {
+				fullCols = p.MaxCols
+			}
+			if fullCols != cols {
+				cols = fullCols
+				canvas = NewCanvas(cols, p.rows)
+				dirty = true
+			}
 		case <-p.winch:
+			if !p.ResizeConfig.ResizeHandling {
+				// Diagnostic mode: consume SIGWINCH but leave the current
+				// canvas and pane geometry untouched.
+				continue
+			}
 			// Terminal window resized: reflow width/bounds and repaint.
 			if p.ResizeConfig.Coalesce {
 				for {
@@ -623,6 +722,28 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				}
 			}
 		resizeCoalesced:
+			if p.ResizeConfig.WidthGuard {
+				p.widthGuardActive = true
+				if guardTimer == nil {
+					guardTimer = time.NewTimer(guardDuration)
+				} else {
+					if !guardTimer.Stop() {
+						select {
+						case <-guardTimer.C:
+						default:
+						}
+					}
+					guardTimer.Reset(guardDuration)
+				}
+				guardTimerC = guardTimer.C
+			} else {
+				p.widthGuardActive = false
+				if guardTimer != nil {
+					guardTimer.Stop()
+					guardTimerC = nil
+				}
+			}
+
 			oldStartRow, oldRows := p.startRow, p.rows
 			p.applyWinch(&cols)
 			oldBottom := oldStartRow + oldRows

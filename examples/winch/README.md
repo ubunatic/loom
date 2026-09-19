@@ -22,6 +22,11 @@ Terminal resize handling involves several interacting mitigations:
 | `4` | Toggle **Synchronized output mode** |
 | `5` | Toggle **Terminal auto-wrap handling** |
 | `6` | Toggle **Out-of-band resize clearing** *(diagnostic only)* |
+| `7` | Toggle **Full-screen buffer** *(diagnostic only)* |
+| `8` | Toggle **Resize handling** |
+| `9` | Toggle **Resize width guard** |
+| `+` / `=` | Increase **Width guard columns (n)** |
+| `-` / `_` | Decrease **Width guard columns (n)** |
 | `r` / `R` | **Reset** all modes to spec defaults |
 | `m` / `M` | Toggle **Reduce Motion** (Astra background animation) |
 | `t` / `T` | **Cycle Color Theme** |
