@@ -1,6 +1,6 @@
 # 066 — Nested help pane opens a second Pane racing the outer pane tty reader
 
-**Status**: In Progress — nested pane ownership guard implemented; PTY acceptance remains
+**Status**: Closed — single-pane ownership guard plus inline help popup; manually verified :h/CR show-dismiss cycle in the filebrowser; split-layout root-overlay gap tracked in 069
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
@@ -69,3 +69,12 @@ claim exactly once, including after repeated close calls. The default help path
 now renders an inline `Popup` from the active `Choice` or `Table`, so it does
 not need a second pane at all. The injected help runner remains available for
 headless and custom tests.
+
+Manually verified against `go run ./examples/filebrowser`: `:h<CR>` swaps the
+`filter>` prompt for command mode and opens the inline help popup, `<CR>`
+dismisses it and returns control to the file list with input still working,
+terminal state intact. The single-pane ownership guard makes the original
+race structurally impossible regardless, since the default path no longer
+calls `Pane.New` a second time at all. The split-layout limitation (help
+confined to its child pane rather than the full root) is tracked separately
+in [069](069-render-help-as-a-root-level-modal-overlay.md).
