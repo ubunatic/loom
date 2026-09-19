@@ -25,12 +25,28 @@ Terminal resize handling involves several interacting mitigations:
 | `7` | Toggle **Full-screen buffer** *(diagnostic only)* |
 | `8` | Toggle **Resize handling** |
 | `9` | Toggle **Resize width guard** |
+| `a` | Toggle **Use WINCH speed** (adaptive width guard) |
 | `+` / `=` | Increase **Width guard columns (n)** |
 | `-` / `_` | Decrease **Width guard columns (n)** |
 | `r` / `R` | **Reset** all modes to spec defaults |
 | `m` / `M` | Toggle **Reduce Motion** (Astra background animation) |
 | `t` / `T` | **Cycle Color Theme** |
 | `q` / `Esc` / `F10` | **Quit** |
+
+## Adaptive width guard
+
+With `a` on, the guard width comes from the measured `SIGWINCH` rate instead of
+the manual `n`. All constants live in `spec/resize.yaml` (`adaptive_guard`):
+the rate is the number of events in the last `window_ms` divided by the window
+(the window is the smoothing), and `n = min_n + floor(rate / rate_step)`,
+clamped to `max_n`. With fewer than two events in the window (startup, a single
+resize) there is no measurable speed and the manual `n` applies. The width is
+latched at each `SIGWINCH`, and the usual one-second settle restores full width.
+The status line shows the effective `n`, whether it is manual or adaptive, the
+manual `n`, and the measured `WINCH: <rate>/s`.
+
+Known limitation: the kernel coalesces pending `SIGWINCH` signals, so a very
+fast drag reports a lower event rate than the terminal's raw size changes.
 
 ## Running
 

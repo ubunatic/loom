@@ -135,3 +135,36 @@ func TestWinchRunHelp(t *testing.T) {
 		t.Fatalf("Run(--help) = %v, want flag.ErrHelp", err)
 	}
 }
+
+func TestWinchAppAdaptiveGuardSwitch(t *testing.T) {
+	pane := &loom.Pane{ResizeConfig: loom.DefaultResizeConfig()}
+	app, err := NewApp(pane, "plain", loom.SpeccedThemes["plain"])
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	if app.Config().AdaptiveGuard {
+		t.Fatal("adaptive guard must default to the spec value (off)")
+	}
+	app.HandleKey(loom.KeyEvent{Text: "a"})
+	if !app.Config().AdaptiveGuard {
+		t.Fatal("key 'a' should enable adaptive guard")
+	}
+
+	canvas := loom.NewCanvas(100, 30)
+	app.Draw(canvas, canvas.Bounds())
+	var rows []string
+	for y := 0; y < canvas.Rows(); y++ {
+		rows = append(rows, canvas.Row(y))
+	}
+	text := strings.Join(rows, "\n")
+	for _, want := range []string{"Use WINCH speed", "WINCH:", "manual n=1"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("draw lacks %q:\n%s", want, text)
+		}
+	}
+
+	app.HandleKey(loom.KeyEvent{Text: "a"})
+	if app.Config().AdaptiveGuard {
+		t.Fatal("second 'a' should disable adaptive guard")
+	}
+}

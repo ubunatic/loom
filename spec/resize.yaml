@@ -55,3 +55,14 @@ modes:
     diagnostic_only: false
     key: "9"
     guard_n: 1
+  adaptive_guard:
+    title: "Use WINCH speed"
+    description: "Derive the width guard from the measured SIGWINCH rate instead of the manual n; fewer than two events in the window fall back to the manual n"
+    default: false
+    diagnostic_only: false
+    key: "a"
+    # events/sec over window_ms; n = min_n + floor(rate / rate_step), clamped to max_n.
+    window_ms: 500
+    min_n: 1
+    max_n: 6
+    rate_step: 10

@@ -182,3 +182,54 @@ func TestResponsiveRenderPreservesState(t *testing.T) {
 		t.Fatal("negative breakpoint accepted")
 	}
 }
+
+// TestDynamicFrameLayoutResizeSequenceStaysBoundedAndFilled sweeps a
+// filebrowser-style dynamic frame through shrink and grow across the
+// breakpoint (issue 072). Every step must be computed from the current size
+// only (identical on the way down and back up), stay inside the frame, and
+// fill the row width in the side-by-side layout or the full width when
+// stacked, leaving no uncovered bands.
+func TestDynamicFrameLayoutResizeSequenceStaysBoundedAndFilled(t *testing.T) {
+	f := Frame{Gap: 1, Breakpoint: 65, Boxes: []Box{
+		{ID: "files", Width: 18, Height: 18, Dynamic: true, MinWidth: 20},
+		{ID: "metadata", Width: 25, Height: 18, Dynamic: true, MinWidth: 25},
+	}}
+	const height = 24
+	seen := map[int][]Rect{}
+	sweep := func(width int, path string) {
+		got := f.Layout(width, height)
+		if prev, ok := seen[width]; ok && !reflect.DeepEqual(prev, got) {
+			t.Fatalf("%s: layout at width %d depends on history: %v then %v", path, width, prev, got)
+		}
+		seen[width] = got
+		var placed []Rect
+		for i, r := range got {
+			if r.W == 0 || r.H == 0 {
+				continue
+			}
+			if r.X < 0 || r.Y < 1 || r.X+r.W > width || r.Y+r.H > height {
+				t.Fatalf("%s: width %d box %d escapes frame: %+v", path, width, i, r)
+			}
+			placed = append(placed, r)
+		}
+		if len(placed) != len(got) {
+			return // a box was omitted because its minimum geometry cannot fit
+		}
+		if got[0].Y == got[1].Y { // side by side: boxes plus gap fill the row exactly
+			if end := got[1].X + got[1].W; end != width {
+				t.Fatalf("%s: width %d side-by-side ends at %d, leaving a gap: %v", path, width, end, got)
+			}
+			if got[0].X+got[0].W+f.Gap != got[1].X {
+				t.Fatalf("%s: width %d boxes are not one gap apart: %v", path, width, got)
+			}
+		} else if got[0].W != width || got[1].W != width { // stacked: full width
+			t.Fatalf("%s: width %d stacked boxes do not fill the width: %v", path, width, got)
+		}
+	}
+	for w := 100; w >= 22; w-- {
+		sweep(w, "shrink")
+	}
+	for w := 22; w <= 100; w++ {
+		sweep(w, "grow")
+	}
+}

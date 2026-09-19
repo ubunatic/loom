@@ -89,7 +89,7 @@ func validatePair(root string, pair specPair) error {
 	}
 
 	if _, modesOK := document["modes"].(map[string]any); modesOK {
-		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n"} {
+		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n", "invalid_rate_step"} {
 			if err := expectInvalid(schema, pair, document, change, func(invalid map[string]any) error {
 				invalidModes := invalid["modes"].(map[string]any)
 				switch change {
@@ -107,6 +107,9 @@ func validatePair(root string, pair specPair) error {
 				case "invalid_guard_n":
 					wg := invalidModes["width_guard"].(map[string]any)
 					wg["guard_n"] = 0
+				case "invalid_rate_step":
+					ag := invalidModes["adaptive_guard"].(map[string]any)
+					ag["rate_step"] = 0
 				}
 				return nil
 			}); err != nil {

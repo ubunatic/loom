@@ -5,6 +5,7 @@ package loom
 
 import (
 	"testing"
+	"time"
 )
 
 func TestSpeccedResizeModesIntegrity(t *testing.T) {
@@ -141,5 +142,82 @@ func TestPaneResizeModeHelpers(t *testing.T) {
 	}
 	if !p.ResizeConfig.WidthGuard || p.ResizeConfig.WidthGuardN != 1 {
 		t.Fatal("ResetResizeModes did not restore WidthGuard defaults")
+	}
+}
+
+func TestWinchMeterAndAdaptiveGuardN(t *testing.T) {
+	a := SpeccedResizeModes.Modes["adaptive_guard"]
+	window := time.Duration(a.WindowMS) * time.Millisecond
+	t0 := time.Unix(1000, 0)
+	const manual = 3
+
+	var m WinchMeter
+	if got := AdaptiveGuardN(m.Rate(t0), m.Events(t0), manual); got != manual {
+		t.Fatalf("no events: n=%d, want manual %d", got, manual)
+	}
+	m.Record(t0)
+	if got := AdaptiveGuardN(m.Rate(t0), m.Events(t0), manual); got != manual {
+		t.Fatalf("one event: n=%d, want manual %d", got, manual)
+	}
+
+	// Steady burst: 2 events at the bottom of the mapping give min_n.
+	m.Record(t0.Add(time.Millisecond))
+	if got := AdaptiveGuardN(m.Rate(t0), m.Events(t0), manual); got != a.MinN {
+		t.Fatalf("two events: n=%d, want min_n %d", got, a.MinN)
+	}
+
+	// Rate grows with event density and clamps at max_n.
+	var fast WinchMeter
+	for i := 0; i < 1000; i++ {
+		fast.Record(t0.Add(time.Duration(i) * window / 2000))
+	}
+	now := t0.Add(window / 2)
+	if got := AdaptiveGuardN(fast.Rate(now), fast.Events(now), manual); got != a.MaxN {
+		t.Fatalf("saturated: n=%d, want max_n %d", got, a.MaxN)
+	}
+
+	// Changing rate: events age out of the window, so the rate falls back.
+	later := t0.Add(2 * window)
+	if got := m.Events(later); got != 0 {
+		t.Fatalf("aged out events = %d, want 0", got)
+	}
+	if got := AdaptiveGuardN(m.Rate(later), m.Events(later), manual); got != manual {
+		t.Fatalf("after settle: n=%d, want manual %d", got, manual)
+	}
+}
+
+func TestEffectiveGuardNPolicy(t *testing.T) {
+	p := &Pane{ResizeConfig: DefaultResizeConfig()}
+	p.ResizeConfig.WidthGuardN = 4
+	p.adaptiveN = 6
+	if got := p.EffectiveGuardN(); got != 4 {
+		t.Fatalf("adaptive off: n=%d, want manual 4", got)
+	}
+	p.ResizeConfig.AdaptiveGuard = true
+	if got := p.EffectiveGuardN(); got != 6 {
+		t.Fatalf("adaptive on: n=%d, want 6", got)
+	}
+	p.adaptiveN = 0
+	if got := p.EffectiveGuardN(); got != 4 {
+		t.Fatalf("adaptive unmeasurable: n=%d, want manual 4", got)
+	}
+}
+
+func TestGuardedColsUsesEffectiveN(t *testing.T) {
+	p := &Pane{ResizeConfig: DefaultResizeConfig(), widthGuardActive: true}
+	p.ResizeConfig.WidthGuardN = 2
+	p.ResizeConfig.AdaptiveGuard = true
+	p.adaptiveN = 5
+	if got := p.guardedCols(80); got != 75 {
+		t.Fatalf("guardedCols = %d, want 75", got)
+	}
+	p.widthGuardActive = false
+	if got := p.guardedCols(80); got != 80 {
+		t.Fatalf("inactive guardedCols = %d, want 80", got)
+	}
+	p.widthGuardActive = true
+	p.MaxCols = 40
+	if got := p.guardedCols(80); got != 35 {
+		t.Fatalf("MaxCols guardedCols = %d, want 35", got)
 	}
 }

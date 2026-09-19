@@ -78,6 +78,11 @@ type Pane struct {
 	ResizeConfig ResizeConfig
 	// widthGuardActive tracks whether the pane is inside a SIGWINCH burst window.
 	widthGuardActive bool
+	// winchMeter measures SIGWINCH arrival rate for the adaptive guard.
+	winchMeter WinchMeter
+	// adaptiveN is the adaptive guard width latched at the last SIGWINCH; 0
+	// means not measurable (fewer than two events), so the manual n applies.
+	adaptiveN int
 	// WidthGuardDuration configures the burst timeout before restoring full width.
 	// When 0, defaults to 1 second.
 	WidthGuardDuration time.Duration
@@ -412,21 +417,7 @@ func (p *Pane) applyWinch(cols *int) {
 	p.startRow, p.rows = newStartRow, newRows
 	p.cols = newCols
 
-	canvasCols := newCols
-	if p.MaxCols > 0 && canvasCols > p.MaxCols {
-		canvasCols = p.MaxCols
-	}
-	if p.ResizeConfig.WidthGuard && p.widthGuardActive {
-		n := p.ResizeConfig.WidthGuardN
-		if n < 1 {
-			n = 1
-		}
-		canvasCols -= n
-		if canvasCols < 1 {
-			canvasCols = 1
-		}
-	}
-	*cols = canvasCols
+	*cols = p.guardedCols(newCols)
 }
 
 // Run renders root on every frame and dispatches events until the root signals
@@ -628,33 +619,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	dirty := true
 	animationDirty := false
 	for {
-		if !p.ResizeConfig.WidthGuard && p.widthGuardActive {
-			p.widthGuardActive = false
-			if guardTimer != nil {
-				guardTimer.Stop()
-				guardTimerC = nil
+		if p.widthGuardActive {
+			if !p.ResizeConfig.WidthGuard {
+				p.widthGuardActive = false
+				if guardTimer != nil {
+					guardTimer.Stop()
+					guardTimerC = nil
+				}
 			}
-			fullCols := p.cols
-			if p.MaxCols > 0 && fullCols > p.MaxCols {
-				fullCols = p.MaxCols
-			}
-			if fullCols != cols {
-				cols = fullCols
-				canvas = NewCanvas(cols, p.rows)
-				dirty = true
-			}
-		} else if p.ResizeConfig.WidthGuard && p.widthGuardActive {
-			expectedCols := p.cols
-			if p.MaxCols > 0 && expectedCols > p.MaxCols {
-				expectedCols = p.MaxCols
-			}
-			n := p.ResizeConfig.WidthGuardN
-			if n < 1 {
-				n = 1
-			}
-			expectedCols = max(1, expectedCols-n)
-			if expectedCols != cols {
-				cols = expectedCols
+			if want := p.guardedCols(p.cols); want != cols {
+				cols = want
 				canvas = NewCanvas(cols, p.rows)
 				dirty = true
 			}
@@ -696,16 +670,14 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-guardTimerC:
 			guardTimerC = nil
 			p.widthGuardActive = false
-			fullCols := p.cols
-			if p.MaxCols > 0 && fullCols > p.MaxCols {
-				fullCols = p.MaxCols
-			}
-			if fullCols != cols {
-				cols = fullCols
+			p.adaptiveN = 0
+			if full := p.guardedCols(p.cols); full != cols {
+				cols = full
 				canvas = NewCanvas(cols, p.rows)
 				dirty = true
 			}
 		case <-p.winch:
+			p.winchMeter.Record(time.Now())
 			if !p.ResizeConfig.ResizeHandling {
 				// Diagnostic mode: consume SIGWINCH but leave the current
 				// canvas and pane geometry untouched.
@@ -722,6 +694,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				}
 			}
 		resizeCoalesced:
+			// Latch the adaptive width once per resize event so the guard does
+			// not jitter as the measured rate decays between events.
+			p.adaptiveN = AdaptiveGuardN(p.winchMeter.Rate(time.Now()), p.winchMeter.Events(time.Now()), 0)
 			if p.ResizeConfig.WidthGuard {
 				p.widthGuardActive = true
 				if guardTimer == nil {

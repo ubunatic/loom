@@ -144,7 +144,7 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│",
 	}
-	drawBoxBorder(c, r, border, "Resize Modes [1-9 Toggle, +/- Guard, R Reset]", normal, header)
+	drawBoxBorder(c, r, border, "Resize Modes [1-9,A Toggle, +/- Guard, R Reset]", normal, header)
 
 	row := r.Y + 1
 	for _, id := range loom.SpeccedResizeModeIDs {
@@ -168,6 +168,8 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		tag := ""
 		if id == "width_guard" {
 			tag = fmt.Sprintf(" (n=%d)", cfg.WidthGuardN)
+		} else if id == "adaptive_guard" {
+			tag = fmt.Sprintf(" (%d-%d)", mode.MinN, mode.MaxN)
 		} else if mode.DiagnosticOnly {
 			tag = " (diag)"
 		}
@@ -198,8 +200,12 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 		} else if !cfg.WidthGuard {
 			guardState = "OFF"
 		}
-		dimText := fmt.Sprintf(" Term: %dx%d | Canvas: %dx%d | Guard: %s (n=%d)", c.Cols(), c.Rows(), r.W, r.H, guardState, cfg.WidthGuardN)
+		dimText := fmt.Sprintf(" Term: %dx%d | Canvas: %dx%d | Guard: %s", c.Cols(), c.Rows(), r.W, r.H, guardState)
 		c.Write(r.X+1, row, loom.TruncateText(dimText, r.W-2, ""), normal)
+		row++
+	}
+	if row < r.Y+r.H-1 {
+		c.Write(r.X+1, row, loom.TruncateText(" "+a.guardSummary(cfg), r.W-2, ""), normal)
 		row++
 	}
 
@@ -255,7 +261,7 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	keyLower := strings.ToLower(key)
 
 	switch keyLower {
-	case "1", "2", "3", "4", "5", "6", "7", "8", "9":
+	case "1", "2", "3", "4", "5", "6", "7", "8", "9", "a":
 		for _, id := range loom.SpeccedResizeModeIDs {
 			if mode, ok := loom.SpeccedResizeModes.Modes[id]; ok && mode.Key == keyLower {
 				a.toggleMode(id)
@@ -282,6 +288,19 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		return true
 	}
 	return false
+}
+
+// guardSummary shows the effective guard width next to the manual n and the
+// measured WINCH speed, so adaptive and manual behavior can be told apart.
+func (a *App) guardSummary(cfg loom.ResizeConfig) string {
+	source, eff, rate := "manual", cfg.WidthGuardN, 0.0
+	if a.pane != nil {
+		eff, rate = a.pane.EffectiveGuardN(), a.pane.WinchRate()
+		if cfg.AdaptiveGuard && eff != cfg.WidthGuardN {
+			source = "adaptive"
+		}
+	}
+	return fmt.Sprintf("n=%d %s | manual n=%d | WINCH: %.1f/s", eff, source, cfg.WidthGuardN, rate)
 }
 
 func (a *App) adjustGuardN(delta int) {

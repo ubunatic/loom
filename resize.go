@@ -6,6 +6,7 @@ package loom
 import (
 	_ "embed"
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,6 +23,11 @@ type ResizeModeSpec struct {
 	DiagnosticOnly bool   `yaml:"diagnostic_only"`
 	Key            string `yaml:"key"`
 	GuardN         int    `yaml:"guard_n,omitempty"`
+	// Adaptive guard policy (see WinchMeter); only set on adaptive_guard.
+	WindowMS int `yaml:"window_ms,omitempty"`
+	MinN     int `yaml:"min_n,omitempty"`
+	MaxN     int `yaml:"max_n,omitempty"`
+	RateStep int `yaml:"rate_step,omitempty"`
 }
 
 // ResizeModesSpec holds all resize modes declared in spec/resize.yaml.
@@ -40,6 +46,7 @@ var SpeccedResizeModeIDs = []string{
 	"full_screen_buffer",
 	"resize_handling",
 	"width_guard",
+	"adaptive_guard",
 }
 
 // SpeccedResizeModes is the loaded immutable spec of resize modes.
@@ -51,6 +58,9 @@ var SpeccedResizeModes = func() ResizeModesSpec {
 	for id, m := range spec.Modes {
 		m.ID = id
 		spec.Modes[id] = m
+	}
+	if a := spec.Modes["adaptive_guard"]; a.MinN > a.MaxN || a.WindowMS <= 0 || a.RateStep <= 0 {
+		panic("loom: spec/resize.yaml adaptive_guard needs window_ms > 0, rate_step > 0 and min_n <= max_n")
 	}
 	return spec
 }()
@@ -67,6 +77,7 @@ type ResizeConfig struct {
 	ResizeHandling     bool
 	WidthGuard         bool
 	WidthGuardN        int
+	AdaptiveGuard      bool
 }
 
 // DefaultResizeConfig returns a ResizeConfig populated with the spec-defined defaults.
@@ -86,6 +97,7 @@ func DefaultResizeConfig() ResizeConfig {
 		ResizeHandling:     SpeccedResizeModes.Modes["resize_handling"].Default,
 		WidthGuard:         SpeccedResizeModes.Modes["width_guard"].Default,
 		WidthGuardN:        guardN,
+		AdaptiveGuard:      SpeccedResizeModes.Modes["adaptive_guard"].Default,
 	}
 }
 
@@ -110,6 +122,8 @@ func (c *ResizeConfig) Get(id string) (bool, bool) {
 		return c.ResizeHandling, true
 	case "width_guard":
 		return c.WidthGuard, true
+	case "adaptive_guard":
+		return c.AdaptiveGuard, true
 	default:
 		return false, false
 	}
@@ -144,6 +158,9 @@ func (c *ResizeConfig) Set(id string, val bool) bool {
 		return true
 	case "width_guard":
 		c.WidthGuard = val
+		return true
+	case "adaptive_guard":
+		c.AdaptiveGuard = val
 		return true
 	default:
 		return false
@@ -199,4 +216,77 @@ func (p *Pane) SetWidthGuardN(n int) {
 		n = 1
 	}
 	p.ResizeConfig.WidthGuardN = n
+}
+
+// WinchMeter measures SIGWINCH arrival rate over a sliding window. The window
+// is also the smoothing: the rate is the event count in the window divided by
+// the window length. It takes explicit timestamps so tests need no clock.
+type WinchMeter struct {
+	stamps []time.Time
+}
+
+func winchWindow() time.Duration {
+	return time.Duration(SpeccedResizeModes.Modes["adaptive_guard"].WindowMS) * time.Millisecond
+}
+
+// Record notes one SIGWINCH received at now.
+func (m *WinchMeter) Record(now time.Time) {
+	m.prune(now)
+	m.stamps = append(m.stamps, now)
+}
+
+func (m *WinchMeter) prune(now time.Time) {
+	cut := now.Add(-winchWindow())
+	i := 0
+	for i < len(m.stamps) && m.stamps[i].Before(cut) {
+		i++
+	}
+	m.stamps = m.stamps[i:]
+}
+
+// Events returns the number of events inside the window ending at now.
+func (m *WinchMeter) Events(now time.Time) int {
+	m.prune(now)
+	return len(m.stamps)
+}
+
+// Rate returns events per second over the window ending at now.
+func (m *WinchMeter) Rate(now time.Time) float64 {
+	return float64(m.Events(now)) / winchWindow().Seconds()
+}
+
+// AdaptiveGuardN maps a measured rate (with its event count) to a guard
+// width using the spec policy: min_n + floor(rate/rate_step), clamped to
+// max_n. With fewer than two events there is no measurable speed, so it
+// returns manualN.
+func AdaptiveGuardN(rate float64, events, manualN int) int {
+	if events < 2 {
+		return manualN
+	}
+	a := SpeccedResizeModes.Modes["adaptive_guard"]
+	return min(a.MaxN, a.MinN+int(rate)/a.RateStep)
+}
+
+// EffectiveGuardN is the guard width in force: the width latched at the last
+// SIGWINCH when adaptive mode is enabled and measurable, otherwise the manual
+// WidthGuardN.
+func (p *Pane) EffectiveGuardN() int {
+	if p.ResizeConfig.AdaptiveGuard && p.adaptiveN > 0 {
+		return p.adaptiveN
+	}
+	return max(1, p.ResizeConfig.WidthGuardN)
+}
+
+// WinchRate returns the measured SIGWINCH rate in events per second.
+func (p *Pane) WinchRate() float64 { return p.winchMeter.Rate(time.Now()) }
+
+// guardedCols applies the width guard (when active) to the full column count.
+func (p *Pane) guardedCols(full int) int {
+	if p.MaxCols > 0 && full > p.MaxCols {
+		full = p.MaxCols
+	}
+	if p.ResizeConfig.WidthGuard && p.widthGuardActive {
+		full = max(1, full-p.EffectiveGuardN())
+	}
+	return full
 }
