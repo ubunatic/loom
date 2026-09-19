@@ -235,7 +235,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 	// Data rows.
 	for row := 0; row < itemRows; row++ {
 		y := r.Y + 1 + row
-		cv.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " ", Style: t.Style.Normal})
+		cv.PaintSurface(Rect{r.X, y, r.W, 1}, t.Style.Normal)
 		fi := t.viewOffset + row
 		if fi < 0 || fi >= len(t.filtered) {
 			continue
@@ -262,7 +262,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 
 	// Prompt row.
 	promptY := r.Y + r.H - 1
-	cv.Fill(Rect{r.X, promptY, r.W, 1}, Cell{Text: " ", Style: t.Style.Prompt})
+	cv.PaintSurface(Rect{r.X, promptY, r.W, 1}, t.Style.Prompt)
 	if prefix, hint := t.cmd.PromptParts(); prefix != "" {
 		// Command mode: ":typed[completion]  dim title"
 		n := cv.Write(r.X, promptY, prefix, t.Style.Prompt)

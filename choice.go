@@ -203,7 +203,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	// Draw item rows.
 	for row := 0; row < itemRows; row++ {
 		y := firstItemY + row
-		cv.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " ", Style: c.Style.Normal})
+		cv.PaintSurface(Rect{r.X, y, r.W, 1}, c.Style.Normal)
 		fi := c.viewOffset + row
 		if fi >= 0 && fi < len(c.filtered) {
 			item := c.filtered[fi]
@@ -243,7 +243,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	}
 
 	// Prompt row.
-	cv.Fill(Rect{r.X, promptY, drawW, 1}, Cell{Text: " ", Style: c.Style.Prompt})
+	cv.PaintSurface(Rect{r.X, promptY, drawW, 1}, c.Style.Prompt)
 	if prefix, hint := c.cmd.PromptParts(); prefix != "" {
 		// Command mode: ":typed[completion]  dim title"
 		n := cv.Write(r.X, promptY, prefix, c.Style.Prompt)

@@ -65,7 +65,7 @@ func (v *View) Draw(c *Canvas, r Rect) {
 
 	for row := 0; row < r.H; row++ {
 		y := r.Y + row
-		c.Fill(Rect{r.X, y, r.W, 1}, Cell{Text: " ", Style: v.Style})
+		c.PaintSurface(Rect{r.X, y, r.W, 1}, v.Style)
 		lineIdx := v.Scroll + row
 		if lineIdx >= 0 && lineIdx < total {
 			plain := stripANSI(v.Lines[lineIdx])
