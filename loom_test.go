@@ -168,6 +168,29 @@ func TestCanvasBackgroundCompositionPreservesNestedSurfaceInheritance(t *testing
 	}
 }
 
+// TestCanvasSurfaceInheritanceSurvivesTwoNestedMerges reproduces the
+// Frame -> Box -> child-widget draw chain: a painted surface is merged one
+// level into a box's own canvas, and a blank child-widget cell merged into
+// that box canvas a second level up must still be eligible for decoration,
+// not just colored.
+func TestCanvasSurfaceInheritanceSurvivesTwoNestedMerges(t *testing.T) {
+	boxLocal := loom.NewCanvas(1, 1)
+	boxLocal.PaintSurface(boxLocal.Bounds(), loom.Style{BG: loom.ColorIndex(7)})
+	child := loom.NewCanvas(1, 1) // fresh, transparent, like a widget's own draw canvas
+	boxLocal.Set(0, 0, child.Get(0, 0))
+
+	outer := loom.NewCanvas(1, 1)
+	outer.Set(0, 0, boxLocal.Get(0, 0))
+
+	if !outer.IsEligibleBackground(0, 0) {
+		t.Fatalf("cell merged through two nested canvases is not decoration-eligible: %+v", outer.Get(0, 0))
+	}
+	outer.ComposeBackground(testBackground{}, outer.Bounds(), time.Time{})
+	if got := outer.Get(0, 0); got.Text != "*" || got.Style.BG != loom.ColorIndex(7) {
+		t.Fatalf("nested surface decoration = %+v, want star with inherited surface", got)
+	}
+}
+
 func TestAstraBackgroundCadenceAndQuantizedFrames(t *testing.T) {
 	background := loom.NewAstraBackground()
 	interval := background.BackgroundInterval()

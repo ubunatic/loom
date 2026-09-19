@@ -119,6 +119,17 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 	if c.composing && !c.IsEligibleBackground(x, y) {
 		return
 	}
+	// A blank cell without an explicit background inherits the surface
+	// already present at this coordinate, including its decoration
+	// eligibility. This must happen before the claim check below so a blank
+	// cell merged up from a nested canvas (e.g. Box -> child widget) keeps
+	// the Surface marker its inherited color came from, instead of looking
+	// like claimed foreground content one level up.
+	if !cell.Claim && (cell.Text == "" || cell.Text == " ") &&
+		cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+		cell.Style.BG = c.cells[y][x].Style.BG
+		cell.Surface = cell.Surface || c.cells[y][x].Surface
+	}
 	// A blank cell with the default background is transparent foreground
 	// surface. Containers commonly paint these cells to establish their
 	// bounds, but they must not hide a composited background. Text, explicit
