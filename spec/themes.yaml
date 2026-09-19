@@ -2,8 +2,8 @@
 # Loom widget color themes.
 #
 # Each theme defines named color roles used by widget style structs
-# (ChoiceStyle, TableStyle, etc.).  Only 256-color palette indices are used
-# here; true-color (RGB) overrides are left for application code.
+# (ChoiceStyle, TableStyle, etc.). Values may be palette indices or explicit
+# six-digit true-color RGB values.
 #
 # Use "default" for the terminal default (reset), or an integer from 0 to 255
 # to force a specific palette entry.

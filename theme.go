@@ -6,6 +6,7 @@ package loom
 import (
 	_ "embed"
 	"fmt"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -13,11 +14,13 @@ import (
 //go:embed spec/themes.yaml
 var themesYAML []byte
 
-// ThemeColor distinguishes the terminal default from all 256 palette indices.
+// ThemeColor distinguishes the terminal default, palette indices, and RGB.
 // Its zero value is the terminal default.
 type ThemeColor struct {
 	index   uint8
 	indexed bool
+	rgb     Color
+	colored bool
 }
 
 // DefaultThemeColor returns the terminal-default theme color.
@@ -28,29 +31,46 @@ func ThemeColorIndex(index uint8) ThemeColor {
 	return ThemeColor{index: index, indexed: true}
 }
 
+// ThemeColorRGB returns an explicit 24-bit theme color.
+func ThemeColorRGB(r, g, b uint8) ThemeColor {
+	return ThemeColor{rgb: ColorRGB(r, g, b), colored: true}
+}
+
 // Color converts a theme color to its terminal rendering color.
 func (c ThemeColor) Color() Color {
-	if !c.indexed {
-		return ColorReset()
+	if c.colored {
+		return c.rgb
 	}
-	return ColorIndex(c.index)
+	if c.indexed {
+		return ColorIndex(c.index)
+	}
+	return ColorReset()
 }
 
 // IsDefault reports whether the color uses the terminal default.
-func (c ThemeColor) IsDefault() bool { return !c.indexed }
+func (c ThemeColor) IsDefault() bool { return !c.indexed && !c.colored }
 
-// UnmarshalYAML accepts "default" or an integer palette index from 0 to 255.
+// UnmarshalYAML accepts "default", #RRGGBB, or an integer palette index.
 func (c *ThemeColor) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind == yaml.ScalarNode && value.Tag == "!!str" {
-		if value.Value != "default" {
-			return fmt.Errorf("theme color %q: want default or palette index", value.Value)
+		if value.Value == "default" {
+			*c = DefaultThemeColor()
+			return nil
 		}
-		*c = DefaultThemeColor()
-		return nil
+		if len(value.Value) == 7 && value.Value[0] == '#' {
+			r, rerr := strconv.ParseUint(value.Value[1:3], 16, 8)
+			g, gerr := strconv.ParseUint(value.Value[3:5], 16, 8)
+			b, berr := strconv.ParseUint(value.Value[5:7], 16, 8)
+			if rerr == nil && gerr == nil && berr == nil {
+				*c = ThemeColorRGB(uint8(r), uint8(g), uint8(b))
+				return nil
+			}
+		}
+		return fmt.Errorf("theme color %q: want default, #RRGGBB, or palette index", value.Value)
 	}
 	var index uint8
 	if err := value.Decode(&index); err != nil {
-		return fmt.Errorf("theme color: want default or palette index: %w", err)
+		return fmt.Errorf("theme color: want default, #RRGGBB, or palette index: %w", err)
 	}
 	*c = ThemeColorIndex(index)
 	return nil

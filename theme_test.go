@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
+	"gopkg.in/yaml.v3"
 )
 
 // TestThemePlainChoiceStyleMatchesDefault asserts that the plain theme produces
@@ -54,6 +55,83 @@ func TestThemeColorDistinguishesDefaultFromPaletteZero(t *testing.T) {
 	}
 	if got := (loom.Style{FG: indexedZero.Color()}).ANSI(); !strings.Contains(got, "\x1b[38;5;0m") {
 		t.Errorf("palette index 0 ANSI = %q, want indexed foreground", got)
+	}
+}
+
+func TestThemeColorRGB(t *testing.T) {
+	for _, test := range []struct {
+		input string
+		want  loom.Color
+	}{
+		{input: "#577cea", want: loom.ColorRGB(0x57, 0x7c, 0xea)},
+		{input: "#AABBCC", want: loom.ColorRGB(0xaa, 0xbb, 0xcc)},
+	} {
+		var got loom.ThemeColor
+		if err := yaml.Unmarshal([]byte("color: '"+test.input+"'\n"), &struct {
+			Color *loom.ThemeColor `yaml:"color"`
+		}{Color: &got}); err != nil {
+			t.Fatalf("decode %q: %v", test.input, err)
+		}
+		if got.Color() != test.want || got.IsDefault() {
+			t.Errorf("decode %q = %+v, want RGB %+v", test.input, got.Color(), test.want)
+		}
+	}
+}
+
+func TestThemeColorRejectsMalformedRGB(t *testing.T) {
+	for _, input := range []string{"#577ce", "#577ceaa", "#gg77aa", "defaultish", "256"} {
+		var got loom.ThemeColor
+		if err := yaml.Unmarshal([]byte("color: '"+input+"'\n"), &struct {
+			Color *loom.ThemeColor `yaml:"color"`
+		}{Color: &got}); err == nil {
+			t.Errorf("decode %q succeeded, want error", input)
+		}
+	}
+}
+
+func TestThemeFullRGBYAML(t *testing.T) {
+	spec := `
+normal_fg: "#ffffff"
+normal_bg: "#1a1b26"
+selected_fg: "#000000"
+selected_bg: "#7aa2f7"
+selected_bold: true
+header_fg: "#e0af68"
+header_bg: "#1a1b26"
+header_bold: true
+prompt_fg: "#7dcfff"
+prompt_bg: "#1a1b26"
+placeholder_fg: "#565f89"
+placeholder_bg: "#1a1b26"
+placeholder_dim: false
+scrollbar_track_fg: "#1a1b26"
+scrollbar_track_bg: "#1a1b26"
+scrollbar_track_dim: true
+scrollbar_thumb_fg: "#7aa2f7"
+scrollbar_thumb_bg: "#1a1b26"
+scrollbar_thumb_bold: false
+status_fg: "#c0caf5"
+status_bg: "#1a1b26"
+status_bold: false
+status_dim: false
+border_fg: "#7aa2f7"
+border_bg: "#1a1b26"
+focus_bg: "#2ac3de"
+`
+	var colors loom.ThemeColors
+	if err := yaml.Unmarshal([]byte(spec), &colors); err != nil {
+		t.Fatalf("unmarshal theme with RGB: %v", err)
+	}
+	cs := colors.ChoiceStyle()
+	if cs.Normal.FG != loom.ColorRGB(0xff, 0xff, 0xff) {
+		t.Errorf("normal_fg = %+v, want RGB(255, 255, 255)", cs.Normal.FG)
+	}
+	if cs.Normal.BG != loom.ColorRGB(0x1a, 0x1b, 0x26) {
+		t.Errorf("normal_bg = %+v, want RGB(26, 27, 38)", cs.Normal.BG)
+	}
+	ansi := cs.Normal.ANSI()
+	if !strings.Contains(ansi, "38;2;255;255;255") || !strings.Contains(ansi, "48;2;26;27;38") {
+		t.Errorf("normal ANSI = %q, want 24-bit RGB escape sequences", ansi)
 	}
 }
 

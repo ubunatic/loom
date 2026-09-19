@@ -26,9 +26,10 @@ scrollbar_track_dim: false
 
 This is authoritative at the terminal-palette level, not necessarily at the RGB
 level. Users and terminals may redefine indexed colors. Terminal-default colors
-are less constrained still. Truecolor RGB values would provide stronger color
-authority, but Loom themes currently accept only `default` or palette indices
-0–255.
+are less constrained still. Truecolor RGB values provide stronger color
+authority. Theme specs accept six-digit `#RRGGBB` values in addition to
+`default` and palette indices 0–255, though the terminal or display pipeline
+may still transform the result.
 
 SGR 2 means faint or decreased intensity, but the standard does not define a
 dimming formula or resulting RGB value. A theme that sets `dim: true` therefore
@@ -75,10 +76,10 @@ though the standard does not guarantee that exact result.
 
 The closest xterm-256 foreground is index 68 (`#5f87d7`), but it is visibly
 different: the fixed palette cannot represent the observed bluish-grey dimmed
-foreground. Other nearby cube entries shift toward purple or cyan. Until
-[theme specs support truecolor values](../issues/050-support-truecolor-rgb-values-in-theme-specs.md)
-such as `#577cea`, using foreground 69, background 69, and dim is a deliberate
-terminal-adaptive compromise for this track.
+foreground. Other nearby cube entries shift toward purple or cyan. Using an
+explicit value such as `#577cea` is now possible when a fixed RGB request is
+preferable; using foreground 69, background 69, and dim remains a deliberate
+terminal-adaptive alternative for this track.
 
 ## Theme Guidance
 

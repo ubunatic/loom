@@ -26,16 +26,16 @@ widgets but must not duplicate palette values.
 - `default` resets to the terminal's default foreground or background.
 - An integer from 0 through 255 selects that real palette index. Index 0 is not
   a reset sentinel.
+- A six-digit value such as `#577cea` requests an explicit 24-bit RGB color.
 
 The zero value of `ThemeColor` is terminal default, while
 `ThemeColorIndex(0)` explicitly selects palette index 0. This distinction lets
 fixed themes request black without changing the behavior of the adaptive
 `plain` theme.
 
-Theme specs do not yet accept RGB values. See
-[issue 050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) and
-[Terminal Colors](TerminalColors.md) for the authority levels and the measured
-scrollbar-dimming case that exposed this gap.
+Truecolor requests are more precise than indexed colors, but the terminal or
+display pipeline may still transform them. They are not a guarantee of the
+physical color seen by the user.
 
 ## Semantic Roles
 

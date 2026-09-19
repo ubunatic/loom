@@ -15,9 +15,10 @@
   },
   "definitions": {
     "themeColor": {
-      "description": "terminal default or a 256-color palette index",
+      "description": "terminal default, a 256-color palette index, or a six-digit RGB value",
       "oneOf": [
         { "const": "default" },
+        { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         { "type": "integer", "minimum": 0, "maximum": 255 }
       ]
     },

@@ -65,6 +65,28 @@ func validatePair(root string, pair specPair) error {
 		return err
 	}
 
+	if _, themesOK := document["themes"].(map[string]any); themesOK {
+		for _, change := range []string{"invalid_rgb_short", "invalid_rgb_chars", "out_of_range_index", "invalid_color_name"} {
+			if err := expectInvalid(schema, pair, document, change, func(invalid map[string]any) error {
+				invalidThemes := invalid["themes"].(map[string]any)
+				plain := invalidThemes["plain"].(map[string]any)
+				switch change {
+				case "invalid_rgb_short":
+					plain["normal_fg"] = "#12345"
+				case "invalid_rgb_chars":
+					plain["normal_fg"] = "#gggggg"
+				case "out_of_range_index":
+					plain["normal_fg"] = 256
+				case "invalid_color_name":
+					plain["normal_fg"] = "notacolor"
+				}
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
 	view, ok := document["view"].(map[string]any)
 	if !ok {
 		return nil
