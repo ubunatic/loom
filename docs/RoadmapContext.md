@@ -32,6 +32,17 @@ The desired capabilities include:
 
 ## Current Loom state
 
+> **Snapshot note (2026-09-19).** This section records the repository as it
+> stood when the roadmap was first derived. It is preserved as historical
+> framing, not as a current inventory — several gaps listed below have since
+> been closed (embedded specs and JSON schemas, the generic `Box`/`Frame`
+> responsive layout, the `graph/` renderers, the `collector/` package and its
+> independent redraw scheduler, `measure/` and `layout/`, themes including
+> truecolor values, and an explicit layered compositor with root-level
+> overlays). For the live state of the backlog see
+> [`Roadmap.md`](Roadmap.md); the vision, target documents, data/redraw
+> decision and sibling-code notes in the rest of this file remain accurate.
+
 Loom is currently a released `v0.1.0` inline TUI widget library extracted from
 `uzu`. It has a working terminal pane/runtime, canvas renderer, keyboard and
 mouse decoding, colors/styles, screenshots, and widgets including:

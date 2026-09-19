@@ -58,6 +58,18 @@ func TestHelpWidgetClosesOnAnyOtherKey(t *testing.T) {
 	}
 }
 
+func TestHelpWidgetDrawTruncatesToContentWidth(t *testing.T) {
+	hw := newHelpWidget([]Cmd{{Name: "長い", Title: "a very long description that must stay inside the modal"}})
+	c := NewCanvas(12, hw.ContentHeight())
+	hw.Draw(c, c.Bounds())
+
+	for y := 0; y < c.Rows(); y++ {
+		if got := StringWidth(c.Row(y)); got > c.Cols() {
+			t.Errorf("row %d width = %d, want <= %d: %q", y, got, c.Cols(), c.Row(y))
+		}
+	}
+}
+
 // rowContains reports whether row y of canvas c contains sub (ANSI stripped).
 func rowContains(c *Canvas, y int, sub string) bool {
 	return strings.Contains(stripANSI(c.Row(y)), sub)

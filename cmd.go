@@ -253,12 +253,12 @@ func (hw *helpWidget) Draw(cv *Canvas, r Rect) {
 		cv.PaintSurface(Rect{r.X, y, r.W, 1}, Reset)
 		i := hw.scroll + row
 		if i < len(hw.lines) {
-			cv.Write(r.X, y, hw.lines[i], Reset)
+			cv.Write(r.X, y, TruncateText(hw.lines[i], r.W, ""), Reset)
 		}
 	}
 	promptY := r.Y + r.H - 1
 	cv.PaintSurface(Rect{r.X, promptY, r.W, 1}, Reset)
-	cv.Write(r.X, promptY, "  press any key to close", Style{Dim: true})
+	cv.Write(r.X, promptY, TruncateText("  press any key to close", r.W, ""), Style{Dim: true})
 }
 
 func (hw *helpWidget) HandleKey(e KeyEvent) bool {
