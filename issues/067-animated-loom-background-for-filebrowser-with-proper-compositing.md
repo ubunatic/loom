@@ -1,6 +1,6 @@
 # 067 — Animated Loom background for filebrowser with proper compositing
 
-**Status**: Open
+**Status**: Closed — compositing contract delivered via examples/background; filebrowser wiring folded into 068 M2
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
@@ -87,13 +87,36 @@ and quantized frame behavior are covered by deterministic tests.
 - Automated headless/golden canvas tests for `filebrowser` confirming stars render in blank areas of the file list and metadata views.
 - PTY smoke test verifying visual fidelity and mouse/keyboard interactivity during continuous animation ticks.
 
-**Status: In Progress.** The filebrowser now opts into the Astra background, and
-foreground blank cells with default backgrounds are transparent to compositing;
-explicitly colored surfaces remain protected. Headless coverage verifies the
-integration and transparent/opaque surface split. Theme and PTY smoke validation
-remain manual follow-up work.
+**Status: Superseded.** Correction: the filebrowser never actually opted into
+`AstraBackground` (`pane.Background` is unset in
+`examples/filebrowser/filebrowser/filebrowser.go`); the earlier "In Progress"
+note above was inaccurate. The compositing contract itself (safe-cell
+eligibility, transparent/opaque surface split, cursor protection) is proven
+out via the standalone `examples/background` demo instead. Wiring
+`AstraBackground` into the filebrowser, plus theme/PTY smoke validation, is
+folded into issue [068](068-formalize-layered-compositor-semantics-and-background-inheritance.md)
+M2 ("Migrate `AstraBackground`, `Box`, and the filebrowser/background
+examples to the explicit API") rather than tracked here, so there is one
+forward-looking ticket for background integration work instead of two.
 
 ### M4 — Documentation, Example Alignment & Final Test Pass
-- Update `docs/AnimatedBackgrounds.md` if compositing APIs or interfaces were refined.
-- Ensure standalone `examples/background` and `examples/filebrowser` consistently use the unified compositing model.
-- Execute single-test boundary verification (`make test-q1` or `harnez exec --quota-1 -- go test ./...`).
+
+**Status: Deferred to 068.** Unified compositing model, filebrowser
+alignment, and doc refresh depend on the explicit layered-compositor API
+that issue 068 introduces; tracking them here would duplicate that ticket.
+
+## Closing Summary
+
+- M1 (compositing contract & safe-cell primitives): Complete.
+- M2 (animated background scheduling & lifecycle safety): Complete.
+- M3 (filebrowser integration & theming polish): Not delivered here; the
+  compositing contract was proven via `examples/background` instead.
+  Remaining filebrowser wiring folded into 068 M2.
+- M4 (docs/example alignment/final test pass): Deferred to 068 M3.
+
+Closing 067 because its core goal — a working, tested compositing contract
+that lets an animated background shine through unclaimed cells while
+protecting text, borders, and cursor state — is delivered and demonstrated.
+The originally-named filebrowser integration remains outstanding but is
+better tracked as part of 068's explicit-API migration than as a stale,
+inaccurately-labeled milestone here.
