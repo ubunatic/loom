@@ -6,6 +6,7 @@ package winch_test
 import (
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -134,5 +135,35 @@ func TestWinchPTYSlowDragAndManualBurst(t *testing.T) {
 	manual.Send("q")
 	if err := manual.Wait(3 * time.Second); err != nil {
 		t.Fatalf("winch exit: %v", err)
+	}
+}
+
+// blankThenWrite matches a whole-line erase (CSI 2K) followed directly by
+// content, the "clear row, then redraw it" pattern that makes lines flash
+// blank between the two writes (see emojig issue 016).
+var blankThenWrite = regexp.MustCompile(`\x1b\[2K[^\x1b]`)
+
+// TestWinchPTYNoBlankThenRewrite asserts Loom never blanks a row before
+// rewriting it: rows are overwritten in place and trimmed with CSI K, and a
+// whole-line erase only ever clears rows below the canvas.
+func TestWinchPTYNoBlankThenRewrite(t *testing.T) {
+	s := ptytest.Start(t, 100, 30, buildWinch(t))
+	s.WaitFor("Resize Modes", 5*time.Second)
+	for i := 0; i < 6; i++ {
+		s.Resize(100-i*6, 30-i)
+		time.Sleep(15 * time.Millisecond)
+	}
+	s.Send("m") // toggle motion to force further redraws
+	time.Sleep(300 * time.Millisecond)
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("winch exit: %v", err)
+	}
+	raw := s.Raw()
+	if !strings.Contains(string(raw), "\x1b[K") {
+		t.Fatal("expected per-row CSI K trims in the output")
+	}
+	if loc := blankThenWrite.FindIndex(raw); loc != nil {
+		t.Fatalf("row blanked then rewritten near %q", raw[max(0, loc[0]-40):min(len(raw), loc[1]+40)])
 	}
 }
