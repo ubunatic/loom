@@ -1,6 +1,6 @@
 # 073 — Add configurable Winch resize diagnostics app and spec-backed rendering modes
 
-**Status**: Open
+**Status**: Closed — all milestones verified (spec, PTY, defaults)
 **Priority**: P2
 **Severity**: Moderate
 **Category**: Feature
