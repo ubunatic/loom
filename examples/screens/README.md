@@ -27,14 +27,17 @@ height, and `[Theme]` and `[Astra]` buttons (left click).
 
 ## Quasi-fullscreen detection
 
-Parameters live in `auto_fullscreen` in `spec/resize.yaml` and are flags here
-(`-margin`, `-percent`, `-auto`, `-auto-alt`). The pane is treated as full
-screen when its **wanted** height (not the clamped one) satisfies:
+The point is a stable screen: an inline pane that is nearly as big as the
+terminal reflows badly when the terminal changes, so it switches to full
+screen; a clearly smaller pane stays inline. Parameters live in
+`auto_fullscreen` in `spec/resize.yaml` and are flags here. Width and height
+are detected separately and either one is enough.
 
-- `terminal_rows - wanted_rows <= margin_rows` (default 1: full height counts
-  as full screen; the pane always leaves the prompt row, so 0 needs every row), or
-- `wanted_rows * 100 >= terminal_rows * min_percent` (when `min_percent > 0`).
+| Detector | Toggle | Full when | Parameters |
+| --- | --- | --- | --- |
+| Width | `x`, `--by-width` | `terminal_cols - wanted_cols <= margin_cols` (a pane without a width cap wants the whole width) | `k`/`K`, `--margin-cols` (default 0) |
+| Height | `y`, `--by-height` | `terminal_rows - wanted_rows <= margin_rows`, or `wanted_rows` is at least `min_percent` of the terminal | `m`/`M` `--margin` (default 1: the pane always leaves the prompt row), `p`/`P` `--percent` (default 0 = off) |
 
-Shrinking the terminal can promote the pane; growing it demotes it again. The
-promotion uses the alternate screen when `alt` is on, otherwise full screen on
-the primary screen (which overwrites the shell's screen content).
+`c` / `--auto` switches all detection on or off. The promotion uses the
+alternate screen when `l` / `--auto-alt` is on (default), otherwise full screen
+on the primary screen, which overwrites the shell's screen content.

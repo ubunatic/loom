@@ -24,10 +24,17 @@ const (
 	stepWidth = 10
 )
 
-// button is a clickable label; rect is in canvas coordinates.
+// seg is a piece of a row: plain text, or a button when key is set. Clicking
+// a button acts like pressing key.
+type seg struct {
+	text string
+	key  string
+}
+
+// button is a drawn seg; rect is in canvas coordinates.
 type button struct {
-	rect   loom.Rect
-	action string
+	rect loom.Rect
+	key  string
 }
 
 // App is the demo widget. pane is nil in headless tests, where cfg and height
@@ -124,29 +131,59 @@ func screenName(m loom.ScreenMode) string {
 	return [...]string{"inline", "primary full screen", "full screen (alt)"}[m]
 }
 
-// lines describes the current state; termRows is 0 when unknown.
-func (a *App) lines(termCols, termRows int) []string {
+// detected reports what each enabled detector says about the terminal.
+func (a *App) detected(termCols, termRows int) (byWidth, byHeight bool) {
+	w, h := a.cfg, a.cfg
+	w.FullByHeight, h.FullByWidth = false, false
+	return w.QuasiFullscreen(a.width, a.height, termCols, termRows), h.QuasiFullscreen(a.width, a.height, termCols, termRows)
+}
+
+// rows describes the UI in groups: state, size, look, auto full screen (with
+// one row per detector), and the remaining keys.
+func (a *App) rows(termCols, termRows int) [][]seg {
 	mode := loom.ScreenInline
 	if a.pane != nil {
 		mode = a.pane.Screen()
 	}
-	quasi := a.cfg.QuasiFullscreen(a.height, termRows)
+	byW, byH := a.detected(termCols, termRows)
 	note := ""
-	if quasi {
+	if byW || byH {
 		note = " (auto)"
 	}
-	return []string{
-		"Screens demo: inline <-> full screen (alternate screen)",
-		fmt.Sprintf("Screen: %s%s", screenName(mode), note),
-		fmt.Sprintf("Terminal %dx%d  height %d  width %d/%d", termCols, termRows, a.height, min(a.width, termCols), termCols),
-		fmt.Sprintf("Theme: %s  astra: %s", a.themeName(), onOff(a.astra)),
-		fmt.Sprintf("Auto: %s  margin=%d percent=%d alt=%s  quasi: %v",
-			onOff(a.cfg.AutoFullscreen), a.cfg.FullMarginRows, a.cfg.FullMinPercent, onOff(a.cfg.FullAlt), quasi),
-		"f full screen (alt)  n primary full (demo)",
-		"c auto full screen  l auto uses alt",
-		"+/- height  w/W width  t theme  a astra",
-		"m/M margin rows  p/P min percent  q quit",
+	cfg := a.cfg
+	stepper := func(label string, down, up string, value string) []seg {
+		return []seg{{text: label}, {"[-]", down}, {text: " " + value + " "}, {"[+]", up}}
 	}
+	join := func(parts ...[]seg) []seg {
+		var out []seg
+		for _, p := range parts {
+			out = append(out, p...)
+		}
+		return out
+	}
+	toggle := func(label, key string, on bool) []seg {
+		return []seg{{text: label}, {"[" + onOff(on) + "]", key}}
+	}
+	return [][]seg{
+		{{text: fmt.Sprintf("Screen: %s%s   terminal %dx%d", screenName(mode), note, termCols, termRows)}},
+		join(stepper("Width ", "W", "w", fmt.Sprintf("%d/%d", min(a.width, termCols), termCols)),
+			stepper("   Height ", "-", "+", fmt.Sprint(a.height))),
+		join([]seg{{text: "Theme "}, {"[" + a.themeName() + "]", "t"}}, toggle("   Astra ", "a", a.astra)),
+		join(toggle("Auto full screen ", "c", cfg.AutoFullscreen), toggle("   uses alt ", "l", cfg.FullAlt)),
+		join(toggle("  by width  ", "x", cfg.FullByWidth), stepper("  margin cols ", "K", "k", fmt.Sprint(cfg.FullMarginCols)),
+			[]seg{{text: yesNo(byW)}}),
+		join(toggle("  by height ", "y", cfg.FullByHeight), stepper("  margin rows ", "M", "m", fmt.Sprint(cfg.FullMarginRows)),
+			[]seg{{text: yesNo(byH)}}),
+		join(stepper("  height percent ", "P", "p", fmt.Sprint(cfg.FullMinPercent))),
+		{{text: "f full screen (alt)  n primary full (demo)  q quit"}},
+	}
+}
+
+func yesNo(v bool) string {
+	if v {
+		return " -> full"
+	}
+	return ""
 }
 
 // Draw renders the state into r.
@@ -160,39 +197,24 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	// on it wherever no text is written.
 	c.PaintSurface(r, normal)
 	inner := drawBorder(c, r, border)
-	lines := a.lines(termCols, termRows)
-	for i, line := range lines {
-		if i >= inner.H-1 {
-			break
-		}
-		writeWords(c, inner.X, inner.Y+i, line, normal)
-	}
 
 	a.buttons = a.buttons[:0]
-	if inner.H < 1 {
-		return
-	}
-	y := inner.Y + inner.H - 1
-	x := inner.X
-	put := func(label, action string, st loom.Style) {
-		w := c.Write(x, y, label, st)
-		if action != "" {
-			a.buttons = append(a.buttons, button{rect: loom.Rect{X: x, Y: y, W: w, H: 1}, action: action})
+	for i, row := range a.rows(termCols, termRows) {
+		if i >= inner.H {
+			break
 		}
-		x += w
+		x, y := inner.X, inner.Y+i
+		for _, sg := range row {
+			if sg.key == "" {
+				writeWords(c, x, y, sg.text, normal)
+				x += loom.StringWidth(sg.text)
+				continue
+			}
+			w := c.Write(x, y, sg.text, btnStyle)
+			a.buttons = append(a.buttons, button{rect: loom.Rect{X: x, Y: y, W: w, H: 1}, key: sg.key})
+			x += w
+		}
 	}
-	put("Width ", "", normal)
-	put("[-]", "w-", btnStyle)
-	put(" ", "", normal)
-	put("[+]", "w+", btnStyle)
-	put("  Height ", "", normal)
-	put("[-]", "h-", btnStyle)
-	put(" ", "", normal)
-	put("[+]", "h+", btnStyle)
-	put("   ", "", normal)
-	put("[Theme]", "t", btnStyle)
-	put(" ", "", normal)
-	put("[Astra]", "a", btnStyle)
 }
 
 // writeWords writes text but leaves its spaces unwritten, so they keep the
@@ -252,6 +274,14 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		a.themeIdx = (a.themeIdx + 1) % len(a.themeNames)
 	case "a":
 		a.astra = !a.astra
+	case "x":
+		a.cfg.FullByWidth = !a.cfg.FullByWidth
+	case "y":
+		a.cfg.FullByHeight = !a.cfg.FullByHeight
+	case "k":
+		a.cfg.FullMarginCols++
+	case "K":
+		a.cfg.FullMarginCols = max(0, a.cfg.FullMarginCols-1)
 	case "m":
 		a.cfg.FullMarginRows++
 	case "M":
@@ -280,16 +310,15 @@ func (a *App) HandleMouse(e loom.MouseEvent) bool {
 		if y != b.rect.Y || x < b.rect.X || x >= b.rect.X+b.rect.W {
 			continue
 		}
-		key := map[string]string{"w+": "w", "w-": "W", "h+": "+", "h-": "-", "t": "t", "a": "a"}[b.action]
-		return a.HandleKey(loom.KeyEvent{Key: key})
+		return a.HandleKey(loom.KeyEvent{Key: b.key})
 	}
 	return false
 }
 
 type options struct {
-	height, width, margin, percent int
-	auto, autoAlt, astra           bool
-	start, theme                   string
+	height, width, margin, marginCols, percent int
+	auto, autoAlt, astra, byWidth, byHeight    bool
+	start, theme                               string
 }
 
 // Run parses args with cobra and runs the demo.
@@ -306,7 +335,11 @@ func Run(args []string) error {
 	f := cmd.Flags()
 	f.IntVar(&o.height, "height", 12, "inline height in rows")
 	f.IntVar(&o.width, "width", 60, "pane width in columns, capped by the terminal width")
-	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly full height")
+	spec := loom.DefaultResizeConfig()
+	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly as big as the terminal")
+	f.BoolVar(&o.byWidth, "by-width", spec.FullByWidth, "detect full screen by width")
+	f.BoolVar(&o.byHeight, "by-height", spec.FullByHeight, "detect full screen by height")
+	f.IntVar(&o.marginCols, "margin-cols", -1, "columns short of the terminal width that still count as full (-1: spec default)")
 	f.IntVar(&o.margin, "margin", -1, "rows short of the terminal height that still count as full (-1: spec default)")
 	f.IntVar(&o.percent, "percent", -1, "percent of the terminal height that counts as full, 0 = off (-1: spec default)")
 	f.BoolVar(&o.autoAlt, "auto-alt", true, "automatic full screen uses the alternate screen (keeps scrollback clean)")
@@ -329,6 +362,10 @@ func (o options) run() error {
 
 	cfg := pane.ResizeConfig
 	cfg.AutoFullscreen, cfg.FullAlt = o.auto, o.autoAlt
+	cfg.FullByWidth, cfg.FullByHeight = o.byWidth, o.byHeight
+	if o.marginCols >= 0 {
+		cfg.FullMarginCols = o.marginCols
+	}
 	if o.margin >= 0 {
 		cfg.FullMarginRows = o.margin
 	}

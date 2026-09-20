@@ -244,10 +244,12 @@ func TestAltScreenModeIsSpecced(t *testing.T) {
 
 func TestQuasiFullscreenPolicy(t *testing.T) {
 	cfg := DefaultResizeConfig()
-	if cfg.AutoFullscreen != SpeccedResizeModes.AutoFullscreen.Default || cfg.FullMarginRows != SpeccedResizeModes.AutoFullscreen.MarginRows {
+	spec := SpeccedResizeModes.AutoFullscreen
+	if cfg.AutoFullscreen != spec.Default || cfg.FullMarginRows != spec.MarginRows || cfg.FullByWidth != spec.ByWidth || cfg.FullMarginCols != spec.MarginCols {
 		t.Fatal("auto fullscreen defaults differ from spec")
 	}
 	cfg.AutoFullscreen = true
+	cfg.FullByWidth, cfg.FullByHeight = false, true
 	cfg.FullMarginRows, cfg.FullMinPercent = 1, 0
 	for _, tc := range []struct {
 		want, term int
@@ -255,20 +257,37 @@ func TestQuasiFullscreenPolicy(t *testing.T) {
 	}{
 		{8, 30, false}, {28, 30, false}, {29, 30, true}, {30, 30, true}, {500, 30, true},
 	} {
-		if got := cfg.QuasiFullscreen(tc.want, tc.term); got != tc.full {
+		if got := cfg.QuasiFullscreen(60, tc.want, 100, tc.term); got != tc.full {
 			t.Errorf("margin 1: want %d on %d rows = %v, want %v", tc.want, tc.term, got, tc.full)
 		}
 	}
 	cfg.FullMarginRows = 0
-	if cfg.QuasiFullscreen(29, 30) || !cfg.QuasiFullscreen(30, 30) {
+	if cfg.QuasiFullscreen(60, 29, 100, 30) || !cfg.QuasiFullscreen(60, 30, 100, 30) {
 		t.Error("margin 0 needs every row")
 	}
 	cfg.FullMinPercent = 80
-	if !cfg.QuasiFullscreen(24, 30) || cfg.QuasiFullscreen(23, 30) {
+	if !cfg.QuasiFullscreen(60, 24, 100, 30) || cfg.QuasiFullscreen(60, 23, 100, 30) {
 		t.Error("min_percent 80 should start at 24 of 30 rows")
 	}
-	cfg.AutoFullscreen = false
-	if cfg.QuasiFullscreen(30, 30) {
+
+	// Width only: a tall pane stays inline while it is clearly narrower.
+	cfg.FullByWidth, cfg.FullByHeight, cfg.FullMarginCols = true, false, 2
+	for _, tc := range []struct {
+		wantCols, termCols int
+		full               bool
+	}{
+		{60, 100, false}, {97, 100, false}, {98, 100, true}, {100, 100, true}, {60, 50, true}, {0, 100, true},
+	} {
+		if got := cfg.QuasiFullscreen(tc.wantCols, 999, tc.termCols, 30); got != tc.full {
+			t.Errorf("width: want %d on %d cols = %v, want %v", tc.wantCols, tc.termCols, got, tc.full)
+		}
+	}
+	cfg.FullByWidth = false
+	if cfg.QuasiFullscreen(100, 999, 100, 30) {
+		t.Error("both detections off must never report full screen")
+	}
+	cfg.FullByWidth, cfg.AutoFullscreen = true, false
+	if cfg.QuasiFullscreen(100, 30, 100, 30) {
 		t.Error("disabled detection must never report full screen")
 	}
 }

@@ -36,6 +36,9 @@ type AutoFullscreenSpec struct {
 	Description string `yaml:"description"`
 	Default     bool   `yaml:"default"`
 	Key         string `yaml:"key"`
+	ByWidth     bool   `yaml:"by_width"`
+	ByHeight    bool   `yaml:"by_height"`
+	MarginCols  int    `yaml:"margin_cols"`
 	MarginRows  int    `yaml:"margin_rows"`
 	MinPercent  int    `yaml:"min_percent"`
 	Alt         bool   `yaml:"alt"`
@@ -95,17 +98,29 @@ type ResizeConfig struct {
 
 	// Quasi-fullscreen detection, see QuasiFullscreen.
 	AutoFullscreen bool // switch to the full-screen layout when the pane is nearly full height
+	FullByWidth    bool // detect by width
+	FullByHeight   bool // detect by height
+	FullMarginCols int  // full when terminal cols - wanted cols <= this
 	FullMarginRows int  // full when terminal rows - wanted rows <= this
 	FullMinPercent int  // also full at this percent of the terminal height; 0 = off
 	FullAlt        bool // use the alternate screen for the automatic full-screen layout
 }
 
-// QuasiFullscreen reports whether a pane that wants wantRows rows on a
-// termRows-row terminal is close enough to full height to be treated as full
-// screen: within FullMarginRows of the terminal height, or at least
-// FullMinPercent percent of it. It is pure so the policy can be unit-tested.
-func (c ResizeConfig) QuasiFullscreen(wantRows, termRows int) bool {
-	if !c.AutoFullscreen || termRows < 1 {
+// QuasiFullscreen reports whether a pane that wants wantCols x wantRows on a
+// termCols x termRows terminal should be shown as a full screen. Width and
+// height are checked separately (FullByWidth, FullByHeight) and either one is
+// enough. Width is full within FullMarginCols of the terminal width, where
+// wantCols <= 0 means "no cap", i.e. the whole width. Height is full within
+// FullMarginRows of the terminal height, or at least FullMinPercent percent of
+// it. It is pure so the policy can be unit-tested.
+func (c ResizeConfig) QuasiFullscreen(wantCols, wantRows, termCols, termRows int) bool {
+	if !c.AutoFullscreen {
+		return false
+	}
+	if c.FullByWidth && termCols > 0 && (wantCols <= 0 || termCols-wantCols <= c.FullMarginCols) {
+		return true
+	}
+	if !c.FullByHeight || termRows < 1 {
 		return false
 	}
 	if termRows-wantRows <= c.FullMarginRows {
@@ -134,6 +149,9 @@ func DefaultResizeConfig() ResizeConfig {
 		AdaptiveGuard:      SpeccedResizeModes.Modes["adaptive_guard"].Default,
 		AltScreen:          SpeccedResizeModes.Modes["alt_screen"].Default,
 		AutoFullscreen:     SpeccedResizeModes.AutoFullscreen.Default,
+		FullByWidth:        SpeccedResizeModes.AutoFullscreen.ByWidth,
+		FullByHeight:       SpeccedResizeModes.AutoFullscreen.ByHeight,
+		FullMarginCols:     SpeccedResizeModes.AutoFullscreen.MarginCols,
 		FullMarginRows:     SpeccedResizeModes.AutoFullscreen.MarginRows,
 		FullMinPercent:     SpeccedResizeModes.AutoFullscreen.MinPercent,
 		FullAlt:            SpeccedResizeModes.AutoFullscreen.Alt,

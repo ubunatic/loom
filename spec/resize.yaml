@@ -78,14 +78,22 @@ modes:
 # the alternate screen. It is off by default so inline apps keep their layout.
 auto_fullscreen:
   title: "Auto full screen"
-  description: "Switch to the full-screen layout when the wanted pane height is close to the terminal height"
+  description: "Switch to the full-screen layout when the wanted pane size is close to the terminal size"
   default: false
   key: "c"
-  # Full when terminal_rows - wanted_rows <= margin_rows. 1 treats "full height"
+  # Detection looks at width and at height; either can be switched off.
+  # A pane that is nearly as wide as the terminal reflows badly when the terminal
+  # narrows, so width is the main signal; height is a second one.
+  by_width: true
+  by_height: true
+  # Width: full when terminal_cols - wanted_cols <= margin_cols. A pane without
+  # a width cap wants the whole terminal width.
+  margin_cols: 0
+  # Height: full when terminal_rows - wanted_rows <= margin_rows. 1 treats "full height"
   # (all rows but the prompt line the pane always leaves) as full screen; 0 needs
   # every row.
   margin_rows: 1
-  # Also full when wanted_rows covers at least this percent of the terminal; 0 disables.
+  # Height: also full when wanted_rows covers at least this percent of the terminal; 0 disables.
   min_percent: 0
   # Use the alternate screen for the automatic full-screen layout.
   alt: true

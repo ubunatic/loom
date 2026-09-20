@@ -463,13 +463,13 @@ func (p *Pane) Screen() ScreenMode {
 
 // wantScreen derives the layout the config asks for right now. full applies to
 // the primary screen only; it is ignored while alt is wanted. Auto full screen
-// compares the wanted height (not the clamped one) with the terminal height.
+// compares the wanted size (not the clamped one) with the terminal size.
 func (p *Pane) wantScreen() (full, alt bool) {
 	cfg := p.ResizeConfig
 	auto := false
 	if cfg.AutoFullscreen {
-		_, termRows := termSize(p.fd)
-		auto = cfg.QuasiFullscreen(p.wantRows, termRows)
+		termCols, termRows := termSize(p.fd)
+		auto = cfg.QuasiFullscreen(p.MaxCols, p.wantRows, termCols, termRows)
 	}
 	return cfg.FullScreenBuffer || auto, cfg.AltScreen || (auto && cfg.FullAlt)
 }

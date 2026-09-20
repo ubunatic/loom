@@ -89,7 +89,7 @@ func validatePair(root string, pair specPair) error {
 	}
 
 	if _, modesOK := document["modes"].(map[string]any); modesOK {
-		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n", "invalid_rate_step", "invalid_margin_rows", "invalid_min_percent"} {
+		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n", "invalid_rate_step", "invalid_margin_rows", "invalid_margin_cols", "invalid_min_percent"} {
 			if err := expectInvalid(schema, pair, document, change, func(invalid map[string]any) error {
 				invalidModes := invalid["modes"].(map[string]any)
 				switch change {
@@ -112,6 +112,8 @@ func validatePair(root string, pair specPair) error {
 					ag["rate_step"] = 0
 				case "invalid_margin_rows":
 					invalid["auto_fullscreen"].(map[string]any)["margin_rows"] = -1
+				case "invalid_margin_cols":
+					invalid["auto_fullscreen"].(map[string]any)["margin_cols"] = -1
 				case "invalid_min_percent":
 					invalid["auto_fullscreen"].(map[string]any)["min_percent"] = 101
 				}

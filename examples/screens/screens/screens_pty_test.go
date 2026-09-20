@@ -61,7 +61,7 @@ func TestScreensAutoFullscreen(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, build(t), "--height=27")
 	s.WaitFor("Screen: inline", 5*time.Second)
 	s.Send("+") // 28 of 30 rows: still 2 short, margin_rows=1
-	s.WaitFor("height 28", 3*time.Second)
+	s.WaitFor("Height [-] 28 [+]", 3*time.Second)
 	if strings.Contains(strings.Join(s.Screen(), "\n"), "Screen: full screen (alt)") {
 		t.Fatal("promoted one row too early")
 	}
@@ -86,24 +86,48 @@ func TestScreensAutoParamsChangeDetection(t *testing.T) {
 	quit(t, s)
 }
 
-// TestScreensWidthButtonsThemeAstra clicks the width [ + ] button and expects
+// TestScreensWidthButtonsThemeAstra presses the width key and expects
 // the pane to grow up to the terminal width, cycles the theme and toggles Astra.
 func TestScreensWidthButtonsThemeAstra(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, build(t), "--auto=false", "--width=50", "--astra=false")
-	s.WaitFor("width 50/100", 5*time.Second)
+	s.WaitFor("Width [-] 50/100 [+]", 5*time.Second)
 	s.Send("w")
-	s.WaitFor("width 60/100", 3*time.Second)
+	s.WaitFor("Width [-] 60/100 [+]", 3*time.Second)
 	for range 8 {
 		s.Send("w")
 		time.Sleep(30 * time.Millisecond) // one key per read
 	}
-	s.WaitFor("width 100/100", 3*time.Second)
+	s.WaitFor("Width [-] 100/100 [+]", 3*time.Second)
 	s.Send("W")
-	s.WaitFor("width 90/100", 3*time.Second)
+	s.WaitFor("Width [-] 90/100 [+]", 3*time.Second)
 
 	s.Send("t")
-	s.WaitFor("Theme:", 3*time.Second)
+	s.WaitFor("Theme [", 3*time.Second)
 	s.Send("a")
-	s.WaitFor("astra: on", 3*time.Second)
+	s.WaitFor("Astra [on]", 3*time.Second)
 	quit(t, s)
+}
+
+// TestScreensAutoByWidth grows the pane to the terminal width: the width
+// detector promotes it even though the height is small, and the height
+// detector alone (--by-width=false) does not.
+func TestScreensAutoByWidth(t *testing.T) {
+	bin := build(t)
+	s := ptytest.Start(t, 100, 30, bin, "--width=90")
+	s.WaitFor("Screen: inline", 5*time.Second)
+	s.Send("w") // 100 of 100 columns
+	s.WaitFor("Screen: full screen (alt) (auto)", 3*time.Second)
+	s.Resize(140, 30) // 100 of 140 columns is clearly narrower again
+	s.WaitFor("Screen: inline", 3*time.Second)
+	quit(t, s)
+
+	off := ptytest.Start(t, 100, 30, bin, "--width=90", "--by-width=false")
+	off.WaitFor("Screen: inline", 5*time.Second)
+	off.Send("w")
+	off.WaitFor("Width [-] 100/100 [+]", 3*time.Second)
+	time.Sleep(200 * time.Millisecond)
+	if strings.Contains(strings.Join(off.Screen(), "\n"), "(auto)") {
+		t.Fatal("width detection is off but the pane was promoted")
+	}
+	quit(t, off)
 }
