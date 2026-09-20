@@ -63,7 +63,7 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 		},
 	}
 	b.applyTheme(themeName, theme)
-	if err := b.open(dir); err != nil {
+	if err := b.open(dir, ""); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -93,7 +93,7 @@ func (b *browser) cycleTheme() {
 	}
 }
 
-func (b *browser) open(dir string) error {
+func (b *browser) open(dir, selectName string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
@@ -128,7 +128,11 @@ func (b *browser) open(dir string) error {
 			return
 		}
 		if info.IsDir() {
-			if err := b.open(path); err != nil {
+			nextSelection := ""
+			if item.Name == ".." {
+				nextSelection = displayName(filepath.Base(dir))
+			}
+			if err := b.open(path, nextSelection); err != nil {
 				b.notice = "Error: " + err.Error()
 			}
 		} else if info.Mode().IsRegular() {
@@ -139,6 +143,14 @@ func (b *browser) open(dir string) error {
 			}
 		} else {
 			b.notice = "Cannot open this file type"
+		}
+	}
+	for i, item := range items {
+		if item.Name == selectName {
+			for range i {
+				list.HandleKey(loom.KeyEvent{Key: "down"})
+			}
+			break
 		}
 	}
 	b.dir, b.paths, b.list, b.notice = dir, paths, list, ""

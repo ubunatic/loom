@@ -44,6 +44,33 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	if b.dir != dir {
 		t.Fatalf("parent navigation returned %q, want %q", b.dir, dir)
 	}
+	if item, ok := b.list.Selected(); !ok || item.Name != "sub" {
+		t.Fatalf("selected item after parent navigation = %+v, ok=%v; want sub", item, ok)
+	}
+}
+
+func TestBrowserNavigationToParentFallsBackToFirstItem(t *testing.T) {
+	dir := t.TempDir()
+	sub := filepath.Join(dir, "sub")
+	if err := os.Mkdir(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(sub, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(sub); err != nil {
+		t.Fatal(err)
+	}
+
+	b.HandleKey(loom.KeyEvent{Key: "enter"})
+
+	if b.dir != dir {
+		t.Fatalf("parent navigation returned %q, want %q", b.dir, dir)
+	}
+	if b.list.FilteredSel() != 0 {
+		t.Fatalf("selected index after missing previous directory = %d, want 0", b.list.FilteredSel())
+	}
 }
 
 func TestBrowserUsesAnimatedBackground(t *testing.T) {
