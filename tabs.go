@@ -98,6 +98,16 @@ func NewTabs(tabs ...Tab) *Tabs {
 // Focus returns the index of the currently active tab.
 func (t *Tabs) Focus() int { return t.focus }
 
+// PaneRequest merges the terminal requirements of all tabs.
+func (t *Tabs) PaneRequest() (request PaneRequest) {
+	for _, tab := range t.Tabs {
+		if child, ok := tab.Widget.(PaneRequester); ok {
+			mergePaneRequest(&request, child.PaneRequest())
+		}
+	}
+	return request
+}
+
 // SetFocusIndex activates the tab at index i, clamping to the valid range.
 func (t *Tabs) SetFocusIndex(i int) {
 	if len(t.Tabs) == 0 {

@@ -178,6 +178,16 @@ type Frame struct {
 	lastRect         Rect
 }
 
+// PaneRequest merges the terminal requirements of all boxes.
+func (f *Frame) PaneRequest() (request PaneRequest) {
+	for _, box := range f.Boxes {
+		if requester, ok := box.Child.(PaneRequester); ok {
+			mergePaneRequest(&request, requester.PaneRequest())
+		}
+	}
+	return request
+}
+
 // FrameStyle controls the frame background, title, and status row.
 type FrameStyle struct {
 	Background Style

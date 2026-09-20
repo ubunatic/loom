@@ -631,6 +631,21 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 }
 
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
+	if requester, ok := root.(PaneRequester); ok {
+		request := requester.PaneRequest()
+		if !p.mouse && request.Mouse > 0 {
+			p.setMouseMode(request.Mouse)
+		}
+		if !p.Resizeable {
+			p.Resizeable = request.Resizeable
+		}
+		if p.MaxCols == 0 {
+			p.MaxCols = request.MaxCols
+		}
+		if request.OwnsQuit {
+			p.DisableDefaultQuit = true
+		}
+	}
 	previousHelpRequest := paneHelpRequest
 	paneHelpRequest = func(cmds []Cmd) {
 		p.help = NewPopup("Help", newHelpWidget(cmds))

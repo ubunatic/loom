@@ -30,6 +30,36 @@ type Widget interface {
 	HandleMouse(e MouseEvent) (quit bool)
 }
 
+// PaneRequest declares terminal capabilities a widget needs from its host
+// before the pane starts processing input.
+// Zero values request no special capability; Mouse is a terminal mouse mode
+// (1000 for clicks or 1003 for all tracking), and MaxCols 0 means unbounded.
+type PaneRequest struct {
+	Mouse      int
+	Resizeable bool
+	MaxCols    int
+	OwnsQuit   bool
+}
+
+// PaneRequester optionally lets a widget declare terminal capabilities to its
+// host pane. Pane reads the request once before starting its event loop.
+type PaneRequester interface {
+	PaneRequest() PaneRequest
+}
+
+func mergePaneRequest(dst *PaneRequest, src PaneRequest) {
+	if src.Mouse > dst.Mouse {
+		dst.Mouse = src.Mouse
+	}
+	dst.Resizeable = dst.Resizeable || src.Resizeable
+	if dst.MaxCols == 0 || src.MaxCols == 0 {
+		dst.MaxCols = 0
+	} else if src.MaxCols > dst.MaxCols {
+		dst.MaxCols = src.MaxCols
+	}
+	dst.OwnsQuit = dst.OwnsQuit || src.OwnsQuit
+}
+
 // Focusable is an optional interface for widgets that track input focus.
 // Pane uses it to highlight the active widget when multiple widgets are present.
 type Focusable interface {

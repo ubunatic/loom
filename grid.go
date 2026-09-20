@@ -26,6 +26,16 @@ func NewGrid(cols int, children ...Widget) *Grid {
 	return &Grid{Cols: cols, Children: children, FocusBG: Theme("plain").FocusBGColor()}
 }
 
+// PaneRequest merges the terminal requirements of all children.
+func (g *Grid) PaneRequest() (request PaneRequest) {
+	for _, child := range g.Children {
+		if requester, ok := child.(PaneRequester); ok {
+			mergePaneRequest(&request, requester.PaneRequest())
+		}
+	}
+	return request
+}
+
 // Focus returns the index of the currently focused child.
 func (g *Grid) Focus() int { return g.focus }
 

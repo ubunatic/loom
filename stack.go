@@ -34,6 +34,16 @@ func NewStack(dir StackDir, children ...Widget) *Stack {
 	return &Stack{Dir: dir, Children: children}
 }
 
+// PaneRequest merges the terminal requirements of all children.
+func (s *Stack) PaneRequest() (request PaneRequest) {
+	for _, child := range s.Children {
+		if requester, ok := child.(PaneRequester); ok {
+			mergePaneRequest(&request, requester.PaneRequest())
+		}
+	}
+	return request
+}
+
 // Draw tiles all children across r.
 func (s *Stack) Draw(c *Canvas, r Rect) {
 	n := len(s.Children)
