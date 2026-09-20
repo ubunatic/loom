@@ -140,7 +140,7 @@ func (a *App) detected(termCols, termRows int) (byWidth, byHeight bool) {
 
 // rows describes the UI in groups: state, size, look, auto full screen (with
 // one row per detector), and the remaining keys.
-func (a *App) rows(termCols, termRows int) [][]seg {
+func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
 	mode := loom.ScreenInline
 	if a.pane != nil {
 		mode = a.pane.Screen()
@@ -167,6 +167,8 @@ func (a *App) rows(termCols, termRows int) [][]seg {
 	var separator []seg // a nil row is drawn as a separator line
 	return [][]seg{
 		{{text: fmt.Sprintf("Screen: %s%s   terminal %dx%d", screenName(mode), note, termCols, termRows)}},
+		{{text: fmt.Sprintf("Pane: %dx%d drawn, %dx%d wanted", pane.W, pane.H, a.width, a.height)}},
+		{{text: fmt.Sprintf("Detect: width %s, height %s", verdict(byW), verdict(byH))}},
 		separator,
 		join(stepper("Width ", "W", "w", fmt.Sprintf("%d/%d", min(a.width, termCols), termCols)),
 			stepper("   Height ", "-", "+", fmt.Sprint(a.height))),
@@ -181,6 +183,13 @@ func (a *App) rows(termCols, termRows int) [][]seg {
 		separator,
 		{{text: "f full screen (alt)  n primary full (demo)  q quit"}},
 	}
+}
+
+func verdict(full bool) string {
+	if full {
+		return "FULL"
+	}
+	return "inline"
 }
 
 func yesNo(v bool) string {
@@ -203,7 +212,7 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	inner := drawBorder(c, r, border)
 
 	a.buttons = a.buttons[:0]
-	for i, row := range a.rows(termCols, termRows) {
+	for i, row := range a.rows(termCols, termRows, r) {
 		if i >= inner.H {
 			break
 		}
@@ -350,7 +359,7 @@ func Run(args []string) error {
 		RunE:          func(*cobra.Command, []string) error { return o.run() },
 	}
 	f := cmd.Flags()
-	f.IntVar(&o.height, "height", 14, "inline height in rows")
+	f.IntVar(&o.height, "height", 15, "inline height in rows")
 	f.IntVar(&o.width, "width", 60, "pane width in columns, capped by the terminal width")
 	spec := loom.DefaultResizeConfig()
 	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly as big as the terminal")

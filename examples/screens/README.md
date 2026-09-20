@@ -4,7 +4,7 @@ A small inline TUI with a visible border that switches to full screen (the
 alternate screen) and back, and that promotes itself when it is nearly full height.
 
 ```
-go run ./examples/screens --height 14 --width 60 --theme plain
+go run ./examples/screens --height 15 --width 60 --theme plain
 ```
 
 | Key | Action |
