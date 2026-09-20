@@ -72,3 +72,20 @@ modes:
     default: false
     diagnostic_only: false
     key: "b"
+
+# Quasi-fullscreen detection: a pane whose wanted height is (nearly) the whole
+# terminal is switched to the full-screen layout automatically, optionally on
+# the alternate screen. It is off by default so inline apps keep their layout.
+auto_fullscreen:
+  title: "Auto full screen"
+  description: "Switch to the full-screen layout when the wanted pane height is close to the terminal height"
+  default: false
+  key: "c"
+  # Full when terminal_rows - wanted_rows <= margin_rows. 1 treats "full height"
+  # (all rows but the prompt line the pane always leaves) as full screen; 0 needs
+  # every row.
+  margin_rows: 1
+  # Also full when wanted_rows covers at least this percent of the terminal; 0 disables.
+  min_percent: 0
+  # Use the alternate screen for the automatic full-screen layout.
+  alt: true

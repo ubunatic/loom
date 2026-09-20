@@ -30,9 +30,21 @@ type ResizeModeSpec struct {
 	RateStep int `yaml:"rate_step,omitempty"`
 }
 
+// AutoFullscreenSpec declares quasi-fullscreen detection (see QuasiFullscreen).
+type AutoFullscreenSpec struct {
+	Title       string `yaml:"title"`
+	Description string `yaml:"description"`
+	Default     bool   `yaml:"default"`
+	Key         string `yaml:"key"`
+	MarginRows  int    `yaml:"margin_rows"`
+	MinPercent  int    `yaml:"min_percent"`
+	Alt         bool   `yaml:"alt"`
+}
+
 // ResizeModesSpec holds all resize modes declared in spec/resize.yaml.
 type ResizeModesSpec struct {
-	Modes map[string]ResizeModeSpec `yaml:"modes"`
+	Modes          map[string]ResizeModeSpec `yaml:"modes"`
+	AutoFullscreen AutoFullscreenSpec        `yaml:"auto_fullscreen"`
 }
 
 // SpeccedResizeModeIDs lists all mode identifiers in fixed presentation order.
@@ -80,6 +92,26 @@ type ResizeConfig struct {
 	WidthGuardN        int
 	AdaptiveGuard      bool
 	AltScreen          bool
+
+	// Quasi-fullscreen detection, see QuasiFullscreen.
+	AutoFullscreen bool // switch to the full-screen layout when the pane is nearly full height
+	FullMarginRows int  // full when terminal rows - wanted rows <= this
+	FullMinPercent int  // also full at this percent of the terminal height; 0 = off
+	FullAlt        bool // use the alternate screen for the automatic full-screen layout
+}
+
+// QuasiFullscreen reports whether a pane that wants wantRows rows on a
+// termRows-row terminal is close enough to full height to be treated as full
+// screen: within FullMarginRows of the terminal height, or at least
+// FullMinPercent percent of it. It is pure so the policy can be unit-tested.
+func (c ResizeConfig) QuasiFullscreen(wantRows, termRows int) bool {
+	if !c.AutoFullscreen || termRows < 1 {
+		return false
+	}
+	if termRows-wantRows <= c.FullMarginRows {
+		return true
+	}
+	return c.FullMinPercent > 0 && wantRows*100 >= termRows*c.FullMinPercent
 }
 
 // DefaultResizeConfig returns a ResizeConfig populated with the spec-defined defaults.
@@ -101,6 +133,10 @@ func DefaultResizeConfig() ResizeConfig {
 		WidthGuardN:        guardN,
 		AdaptiveGuard:      SpeccedResizeModes.Modes["adaptive_guard"].Default,
 		AltScreen:          SpeccedResizeModes.Modes["alt_screen"].Default,
+		AutoFullscreen:     SpeccedResizeModes.AutoFullscreen.Default,
+		FullMarginRows:     SpeccedResizeModes.AutoFullscreen.MarginRows,
+		FullMinPercent:     SpeccedResizeModes.AutoFullscreen.MinPercent,
+		FullAlt:            SpeccedResizeModes.AutoFullscreen.Alt,
 	}
 }
 

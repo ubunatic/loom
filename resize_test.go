@@ -241,3 +241,34 @@ func TestAltScreenModeIsSpecced(t *testing.T) {
 		t.Fatal("alt_screen toggle failed")
 	}
 }
+
+func TestQuasiFullscreenPolicy(t *testing.T) {
+	cfg := DefaultResizeConfig()
+	if cfg.AutoFullscreen != SpeccedResizeModes.AutoFullscreen.Default || cfg.FullMarginRows != SpeccedResizeModes.AutoFullscreen.MarginRows {
+		t.Fatal("auto fullscreen defaults differ from spec")
+	}
+	cfg.AutoFullscreen = true
+	cfg.FullMarginRows, cfg.FullMinPercent = 1, 0
+	for _, tc := range []struct {
+		want, term int
+		full       bool
+	}{
+		{8, 30, false}, {28, 30, false}, {29, 30, true}, {30, 30, true}, {500, 30, true},
+	} {
+		if got := cfg.QuasiFullscreen(tc.want, tc.term); got != tc.full {
+			t.Errorf("margin 1: want %d on %d rows = %v, want %v", tc.want, tc.term, got, tc.full)
+		}
+	}
+	cfg.FullMarginRows = 0
+	if cfg.QuasiFullscreen(29, 30) || !cfg.QuasiFullscreen(30, 30) {
+		t.Error("margin 0 needs every row")
+	}
+	cfg.FullMinPercent = 80
+	if !cfg.QuasiFullscreen(24, 30) || cfg.QuasiFullscreen(23, 30) {
+		t.Error("min_percent 80 should start at 24 of 30 rows")
+	}
+	cfg.AutoFullscreen = false
+	if cfg.QuasiFullscreen(30, 30) {
+		t.Error("disabled detection must never report full screen")
+	}
+}

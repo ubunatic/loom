@@ -12,6 +12,7 @@ import (
 	"codeberg.org/ubunatic/loom/examples/background/background"
 	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
 	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
+	"codeberg.org/ubunatic/loom/examples/screens/screens"
 	"codeberg.org/ubunatic/loom/examples/splash/splash"
 	"codeberg.org/ubunatic/loom/examples/split/split"
 	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
@@ -86,6 +87,13 @@ var Registry = []Example{
 		Description:  "Live process CPU-usage tree as a treemap layout",
 		Package:      "codeberg.org/ubunatic/loom/examples/treemap",
 		Run:          treemap.Run,
+		SupportsHelp: true,
+	},
+	{
+		Name:         "screens",
+		Description:  "Inline TUI that switches to full screen and the alternate screen, with auto full-screen detection",
+		Package:      "codeberg.org/ubunatic/loom/examples/screens",
+		Run:          screens.Run,
 		SupportsHelp: true,
 	},
 	{

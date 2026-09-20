@@ -79,10 +79,12 @@ type Pane struct {
 	// widthGuardActive tracks whether the pane is inside a SIGWINCH burst window.
 	widthGuardActive bool
 	// winchMeter measures SIGWINCH arrival rate for the adaptive guard.
-	winchMeter WinchMeter
-	altActive  bool
-	savedStart int
-	savedRows  int
+	winchMeter  WinchMeter
+	altActive   bool
+	fullActive  bool // primary-screen layout is full screen (from row 1)
+	inlineStart int  // pane top before the full-screen layout took over
+	savedStart  int
+	savedRows   int
 	// adaptiveN is the adaptive guard width latched at the last SIGWINCH; 0
 	// means not measurable (fewer than two events), so the manual n applies.
 	adaptiveN int
@@ -339,6 +341,9 @@ func (p *Pane) Resize(newHeight int) {
 		cols = 80
 	}
 	p.wantRows = newHeight
+	if p.fullActive || p.altActive {
+		return // the layout owns the rows; wantRows applies when inline again
+	}
 	if newHeight > termRows-1 {
 		newHeight = termRows - 1
 	}
@@ -400,7 +405,7 @@ func (p *Pane) applyWinch(cols *int) {
 	// grows back toward wantRows when the window is enlarged again (a tiny window
 	// must not permanently pin the pane at one row).
 	newStartRow, newRows := winchBounds(p.startRow, p.wantRows, termRows)
-	if p.ResizeConfig.FullScreenBuffer {
+	if p.fullActive {
 		newStartRow = 1
 		newRows = max(1, termRows-1)
 	}
@@ -424,6 +429,82 @@ func (p *Pane) applyWinch(cols *int) {
 	p.cols = newCols
 
 	*cols = p.guardedCols(newCols)
+}
+
+// ScreenMode is where the pane draws: a few rows below the prompt, the whole
+// terminal, or the whole alternate screen.
+type ScreenMode int
+
+const (
+	ScreenInline ScreenMode = iota // reserved rows below the prompt
+	ScreenFull                     // full terminal from row 1 on the primary screen
+	ScreenAlt                      // full terminal on the alternate screen
+)
+
+// SetScreenMode selects the layout by setting the resize modes it consists of.
+// The next frame performs the switch. Auto full screen, when enabled, can still
+// promote an inline pane; disable it in ResizeConfig to force ScreenInline.
+func (p *Pane) SetScreenMode(m ScreenMode) {
+	p.ResizeConfig.FullScreenBuffer = m == ScreenFull
+	p.ResizeConfig.AltScreen = m == ScreenAlt
+}
+
+// Screen reports the layout currently in force, including an automatic
+// promotion to full screen.
+func (p *Pane) Screen() ScreenMode {
+	switch {
+	case p.altActive:
+		return ScreenAlt
+	case p.fullActive:
+		return ScreenFull
+	}
+	return ScreenInline
+}
+
+// wantScreen derives the layout the config asks for right now. full applies to
+// the primary screen only; it is ignored while alt is wanted. Auto full screen
+// compares the wanted height (not the clamped one) with the terminal height.
+func (p *Pane) wantScreen() (full, alt bool) {
+	cfg := p.ResizeConfig
+	auto := false
+	if cfg.AutoFullscreen {
+		_, termRows := termSize(p.fd)
+		auto = cfg.QuasiFullscreen(p.wantRows, termRows)
+	}
+	return cfg.FullScreenBuffer || auto, cfg.AltScreen || (auto && cfg.FullAlt)
+}
+
+// changeScreen moves between layouts. Leaving alt first restores the primary
+// bounds, the primary full/inline change happens on the primary screen, and
+// entering alt comes last so it saves the final primary bounds.
+func (p *Pane) changeScreen(full, alt bool) {
+	if p.altActive && !alt {
+		p.switchAltScreen(false)
+	}
+	if !alt && full != p.fullActive {
+		p.switchFull(full)
+	}
+	if alt && !p.altActive {
+		p.switchAltScreen(true)
+	}
+}
+
+// switchFull changes the primary-screen layout between inline and full screen.
+// The old frame is erased row by row; the next frame paints the new one.
+func (p *Pane) switchFull(on bool) {
+	if p.tty != nil {
+		var b strings.Builder
+		for i := 0; i < p.rows; i++ {
+			fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", p.startRow+i)
+		}
+		p.tty.WriteString(b.String()) //nolint:errcheck
+	}
+	if on {
+		p.inlineStart = p.startRow
+	} else {
+		p.startRow = p.inlineStart
+	}
+	p.fullActive = on
 }
 
 // switchAltScreen enters or leaves the alternate screen buffer. The primary
@@ -505,10 +586,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 
 	cols := p.cols
-	if p.ResizeConfig.FullScreenBuffer {
-		// Diagnostic full-screen mode owns the usable terminal buffer from row 1.
+	if full, alt := p.wantScreen(); full && !alt {
+		// The full-screen layout owns the usable terminal buffer from row 1.
 		// Recompute it before allocating the first canvas; later Winch events use
-		// the same path.
+		// the same path. (An alternate-screen start is entered by the first redraw.)
+		p.inlineStart, p.fullActive = p.startRow, true
 		p.applyWinch(&cols)
 	}
 	if p.MaxCols > 0 && cols > p.MaxCols {
@@ -609,8 +691,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if canvas.Rows() != p.rows {
 			canvas = NewCanvas(cols, p.rows)
 		}
-		if p.ResizeConfig.AltScreen != p.altActive {
-			p.switchAltScreen(p.ResizeConfig.AltScreen)
+		if full, alt := p.wantScreen(); alt != p.altActive || (!alt && full != p.fullActive) {
+			p.changeScreen(full, alt)
 			p.applyWinch(&cols)
 			clearRows = 0
 		}
