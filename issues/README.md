@@ -107,3 +107,4 @@ upkeep.
 | 093 | [093-restrict-filebrowser-mouse-interaction-to-item-content.md](093-restrict-filebrowser-mouse-interaction-to-item-content.md) | Restrict filebrowser mouse interaction to item content | Open |
 | 094 | [094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md](094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md) | Keep filebrowser help modal in control of keyboard input | Open |
 | 095 | [095-add-human-observable-pty-test-view-mode-and-feedback-flow.md](095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) | Add human-observable PTY test view mode and feedback flow | Open |
+| 096 | [096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md](096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md) | Follow up 038 with a non-ASCII text rendering example app | Open |
