@@ -168,3 +168,11 @@ Required (design given, do not improvise):
    `ansiviewer --record 2s [-o file] -- <cmd> [args...]`, extract
    `run(args []string, stdout io.Writer) error`, and test it with a scripted
    child. Also update `--help` text and the ticket Notes with the usage line.
+
+### Delivery Summary (host)
+
+All milestones accepted (M1 `312c617`+`a91893d`, M2b `1f503e8`, M3 `1f503e8`..M3d).
+Usage: `ansiviewer --record 2s -o - -- go run ./examples/splash --watch`.
+Known gap: `--record` defaults to writing `ansiviewer.ansi` in the cwd; the ticket
+text implied stdout. Flags must precede `--`. Evidence: `docs/progress/097/*.ansi`.
+Ansi parser is ansiviewer-local; replace with `Canvas.WriteANSI` once 034 lands.
