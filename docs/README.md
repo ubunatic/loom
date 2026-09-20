@@ -27,6 +27,7 @@
 | [studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md](studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md) | x/term Coverage Gap in Pane.termSize |
 | [studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md](studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md) | Remove Deprecated `uzu` Brand and `:home` Global Command |
 | [studies/2026-09-19-compositor-layering-and-root-modal-overlays.md](studies/2026-09-19-compositor-layering-and-root-modal-overlays.md) | Compositor Layering and Root Modal Overlays |
+| [studies/2026-09-20-examples-modernization-and-framework-primitives-audit.md](studies/2026-09-20-examples-modernization-and-framework-primitives-audit.md) | Examples Modernization & Framework Primitives Adoption |
 | [studies/2026-09-20-feature-gap-analysis-background.md](studies/2026-09-20-feature-gap-analysis-background.md) | Background Example Feature-Gap Analysis |
 | [studies/2026-09-20-feature-gap-analysis-filebrowser.md](studies/2026-09-20-feature-gap-analysis-filebrowser.md) | Filebrowser Feature Gap Analysis |
 | [studies/2026-09-20-feature-gap-analysis-monitor.md](studies/2026-09-20-feature-gap-analysis-monitor.md) | Monitor Example Feature Gap Analysis |
