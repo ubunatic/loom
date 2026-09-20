@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"sync"
 	"syscall"
 	"time"
 
@@ -35,44 +36,61 @@ func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, comm
 	if err := slave.Close(); err != nil {
 		return fmt.Errorf("ansiviewer: close recording slave: %w", err)
 	}
-	dataCh := make(chan []byte, 1)
+	var dataMu sync.Mutex
+	var data []byte
+	dataDone := make(chan struct{})
 	go func() {
-		var data []byte
 		buf := make([]byte, 4096)
 		for {
 			n, err := master.Read(buf)
 			if n > 0 {
+				dataMu.Lock()
 				data = append(data, buf[:n]...)
+				dataMu.Unlock()
 			}
 			if err != nil {
 				break
 			}
 		}
-		dataCh <- data
+		close(dataDone)
 	}()
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
 	timer := time.NewTimer(delay)
 	defer timer.Stop()
+	var snapshot []byte
 	select {
 	case <-ctx.Done():
 		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
 		<-done
 		return ctx.Err()
 	case <-done:
+		<-dataDone
+		dataMu.Lock()
+		snapshot = append([]byte(nil), data...)
+		dataMu.Unlock()
 	case <-timer.C:
+		time.Sleep(30 * time.Millisecond)
+		dataMu.Lock()
+		snapshot = append([]byte(nil), data...)
+		dataMu.Unlock()
 		if err := syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM); err != nil && err != syscall.ESRCH {
 			return fmt.Errorf("ansiviewer: stop recording command: %w", err)
 		}
 		<-done
 	}
 	_ = master.Close()
-	data := <-dataCh
-	if len(data) == 0 {
+	<-dataDone
+	if len(snapshot) == 0 {
+		dataMu.Lock()
+		snapshot = append([]byte(nil), data...)
+		dataMu.Unlock()
+	}
+	if len(snapshot) == 0 {
 		return fmt.Errorf("ansiviewer: recording command produced no terminal output")
 	}
 	vt := ptytest.NewVT(100, 30)
-	if _, err := vt.Write(data); err != nil {
+	if _, err := vt.Write(snapshot); err != nil {
 		return fmt.Errorf("ansiviewer: replay recording: %w", err)
 	}
 	_, err = io.WriteString(out, vt.Text()+"\n")

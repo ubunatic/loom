@@ -264,10 +264,13 @@ func Render(out io.Writer, dir string, cols, rows int) error {
 }
 
 // Run starts the interactive viewer rooted at the optional directory argument.
-func Run(args []string) error {
+func Run(args []string) error { return run(args, os.Stdout) }
+
+func run(args []string, output io.Writer) error {
 	fs := flag.NewFlagSet("ansiviewer", flag.ContinueOnError)
 	record := fs.Duration("record", 0, "capture one snapshot after this delay")
 	recordOut := fs.String("record-out", "ansiviewer.ansi", "snapshot output path")
+	fs.StringVar(recordOut, "o", "ansiviewer.ansi", "snapshot output path, or - for stdout")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -276,15 +279,21 @@ func Run(args []string) error {
 		dir = fs.Arg(0)
 	}
 	if *record > 0 {
-		file, err := os.Create(*recordOut)
-		if err != nil {
-			return fmt.Errorf("ansiviewer: create recording: %w", err)
+		var out io.Writer = output
+		var file *os.File
+		var err error
+		if *recordOut != "-" {
+			file, err = os.Create(*recordOut)
+			if err != nil {
+				return fmt.Errorf("ansiviewer: create recording: %w", err)
+			}
+			defer file.Close()
+			out = file
 		}
-		defer file.Close()
 		if fs.NArg() > 0 {
-			return RecordCommand(context.Background(), file, *record, fs.Arg(0), fs.Args()[1:]...)
+			return RecordCommand(context.Background(), out, *record, fs.Arg(0), fs.Args()[1:]...)
 		}
-		return Record(context.Background(), file, dir, *record, 100, 30)
+		return Record(context.Background(), out, dir, *record, 100, 30)
 	}
 	b, err := New(dir)
 	if err != nil {

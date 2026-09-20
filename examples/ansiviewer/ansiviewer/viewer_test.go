@@ -128,6 +128,26 @@ func TestRecordCommandStopsLongLivedChild(t *testing.T) {
 	}
 }
 
+func TestRecordLongLivedKeepsPreTeardownScreen(t *testing.T) {
+	var out bytes.Buffer
+	if err := RecordCommand(context.Background(), &out, 40*time.Millisecond, "sh", "-c", "printf 'harnez usage'; trap 'exit 0' TERM; while :; do sleep 1; done"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "harnez usage") {
+		t.Fatalf("pre-teardown screen = %q", out.String())
+	}
+}
+
+func TestRunRecordWritesToStdout(t *testing.T) {
+	var out bytes.Buffer
+	if err := run([]string{"--record", "1ms", "-o", "-", "--", "sh", "-c", "printf cli"}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "cli") {
+		t.Fatalf("CLI recording = %q", out.String())
+	}
+}
+
 func TestRecordCommandWritesRenderedScreenOnly(t *testing.T) {
 	var out bytes.Buffer
 	if err := RecordCommand(context.Background(), &out, time.Second, "sh", "-c", "printf '\\033[2J\\033[31mred\\033[0m'"); err != nil {
