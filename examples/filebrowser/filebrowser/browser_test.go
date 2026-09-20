@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -272,20 +271,13 @@ func TestBrowserEnterOpensSelectedFile(t *testing.T) {
 	if opened != path || b.dir != dir {
 		t.Fatalf("opened %q, browsing %q; want %q and %q", opened, b.dir, path, dir)
 	}
-	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Opening with xdg-open") {
+	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Opening file") {
 		t.Fatalf("missing open notice: %v", b.details.Lines)
 	}
 	b.openFile = func(string) error { return errors.New("no opener") }
 	b.HandleKey(loom.KeyEvent{Key: "enter"})
 	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Open failed: no opener") {
 		t.Fatalf("missing launch error: %v", b.details.Lines)
-	}
-}
-
-func TestLaunchFileReportsMissingXDGOpen(t *testing.T) {
-	t.Setenv("PATH", t.TempDir())
-	if err := launchFile(filepath.Join(t.TempDir(), "file.txt")); !errors.Is(err, exec.ErrNotFound) {
-		t.Fatalf("launchFile error = %v, want executable not found", err)
 	}
 }
 

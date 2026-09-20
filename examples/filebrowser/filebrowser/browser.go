@@ -2,13 +2,9 @@ package filebrowser
 
 import (
 	"fmt"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strconv"
 	"time"
-	"unicode"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -45,7 +41,7 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 	if !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a directory", dir)
 	}
-	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}, openFile: launchFile}
+	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}, openFile: loom.OpenFile}
 	border := loom.BoxBorder{
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
@@ -94,26 +90,24 @@ func (b *browser) cycleTheme() {
 }
 
 func (b *browser) open(dir, selectName string) error {
-	entries, err := os.ReadDir(dir)
+	directory, err := loom.ReadDirectory(dir, loom.DirectoryOptions{IncludeParent: true})
 	if err != nil {
 		return err
 	}
-	items := make([]loom.Item, 0, len(entries)+1)
-	paths := make(map[string]string, len(entries)+1)
-	if parent := filepath.Dir(dir); parent != dir {
-		items = append(items, loom.Item{Name: "..", Desc: "parent directory"})
-		paths[".."] = parent
-	}
-	for _, entry := range entries {
-		name := displayName(entry.Name())
+	items := make([]loom.Item, 0, len(directory.Entries))
+	paths := make(map[string]string, len(directory.Entries))
+	for _, entry := range directory.Entries {
+		name := entry.DisplayName()
 		desc := ""
-		if entry.IsDir() {
+		if entry.IsParent {
+			desc = "parent directory"
+		} else if entry.Kind == loom.FileKindDirectory {
 			desc = "<dir>"
-		} else if entry.Type()&os.ModeSymlink != 0 {
+		} else if entry.Kind == loom.FileKindSymlink {
 			desc = "<link>"
 		}
 		items = append(items, loom.Item{Name: name, Desc: desc})
-		paths[name] = filepath.Join(dir, entry.Name())
+		paths[name] = entry.Path
 	}
 	list := loom.NewChoice(items)
 	list.Style = b.theme.ChoiceStyle()
@@ -130,7 +124,7 @@ func (b *browser) open(dir, selectName string) error {
 		if info.IsDir() {
 			nextSelection := ""
 			if item.Name == ".." {
-				nextSelection = displayName(filepath.Base(dir))
+				nextSelection = loom.QuoteUnprintable(filepath.Base(dir))
 			}
 			if err := b.open(path, nextSelection); err != nil {
 				b.notice = "Error: " + err.Error()
@@ -139,7 +133,7 @@ func (b *browser) open(dir, selectName string) error {
 			if err := b.openFile(path); err != nil {
 				b.notice = "Open failed: " + err.Error()
 			} else {
-				b.notice = "Opening with xdg-open"
+				b.notice = "Opening file"
 			}
 		} else {
 			b.notice = "Cannot open this file type"
@@ -153,7 +147,7 @@ func (b *browser) open(dir, selectName string) error {
 			break
 		}
 	}
-	b.dir, b.paths, b.list, b.notice = dir, paths, list, ""
+	b.dir, b.paths, b.list, b.notice = directory.Path, paths, list, ""
 	b.frame.Boxes[0].Child = list
 	b.updateDetails()
 	return nil
@@ -175,19 +169,6 @@ func (b *browser) updateDetails() {
 		b.details.Lines = lines
 		b.details.Scroll = 0
 	}
-}
-
-// launchFile lets the desktop choose a viewer without holding up the TUI.
-func launchFile(path string) error {
-	cmd := exec.Command("xdg-open", path)
-	cmd.Stdin = nil
-	cmd.Stdout = io.Discard
-	cmd.Stderr = io.Discard
-	if err := cmd.Start(); err != nil {
-		return err
-	}
-	go func() { _ = cmd.Wait() }()
-	return nil
 }
 
 func equalLines(a, b []string) bool {
@@ -216,8 +197,8 @@ func metadata(path string) []string {
 		kind = "special file"
 	}
 	lines := []string{
-		"Name: " + displayName(info.Name()),
-		"Path: " + displayName(path),
+		"Name: " + loom.QuoteUnprintable(info.Name()),
+		"Path: " + loom.DisplayPath(path),
 		"Type: " + kind,
 		fmt.Sprintf("Size: %d bytes", info.Size()),
 		"Mode: " + info.Mode().String(),
@@ -225,19 +206,10 @@ func metadata(path string) []string {
 	}
 	if info.Mode()&os.ModeSymlink != 0 {
 		if target, err := os.Readlink(path); err == nil {
-			lines = append(lines, "Target: "+displayName(target))
+			lines = append(lines, "Target: "+loom.DisplayPath(target))
 		}
 	}
 	return lines
-}
-
-func displayName(value string) string {
-	for _, r := range value {
-		if !unicode.IsPrint(r) {
-			return strconv.QuoteToASCII(value)
-		}
-	}
-	return value
 }
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
