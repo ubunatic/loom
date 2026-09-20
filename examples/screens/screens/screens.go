@@ -164,17 +164,21 @@ func (a *App) rows(termCols, termRows int) [][]seg {
 	toggle := func(label, key string, on bool) []seg {
 		return []seg{{text: label}, {"[" + onOff(on) + "]", key}}
 	}
+	var separator []seg // a nil row is drawn as a separator line
 	return [][]seg{
 		{{text: fmt.Sprintf("Screen: %s%s   terminal %dx%d", screenName(mode), note, termCols, termRows)}},
+		separator,
 		join(stepper("Width ", "W", "w", fmt.Sprintf("%d/%d", min(a.width, termCols), termCols)),
 			stepper("   Height ", "-", "+", fmt.Sprint(a.height))),
 		join([]seg{{text: "Theme "}, {"[" + a.themeName() + "]", "t"}}, toggle("   Astra ", "a", a.astra)),
+		separator,
 		join(toggle("Auto full screen ", "c", cfg.AutoFullscreen), toggle("   uses alt ", "l", cfg.FullAlt)),
 		join(toggle("  by width  ", "x", cfg.FullByWidth), stepper("  margin cols ", "K", "k", fmt.Sprint(cfg.FullMarginCols)),
 			[]seg{{text: yesNo(byW)}}),
 		join(toggle("  by height ", "y", cfg.FullByHeight), stepper("  margin rows ", "M", "m", fmt.Sprint(cfg.FullMarginRows)),
 			[]seg{{text: yesNo(byH)}}),
 		join(stepper("  height percent ", "P", "p", fmt.Sprint(cfg.FullMinPercent))),
+		separator,
 		{{text: "f full screen (alt)  n primary full (demo)  q quit"}},
 	}
 }
@@ -204,6 +208,10 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 			break
 		}
 		x, y := inner.X, inner.Y+i
+		if row == nil {
+			drawSeparator(c, r, y, border)
+			continue
+		}
 		for _, sg := range row {
 			if sg.key == "" {
 				writeWords(c, x, y, sg.text, normal)
@@ -215,6 +223,15 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 			x += w
 		}
 	}
+}
+
+// drawSeparator draws a horizontal rule across the whole pane on row y, joined
+// to the side borders when there are any.
+func drawSeparator(c *loom.Canvas, r loom.Rect, y int, style loom.Style) {
+	if r.W < 3 {
+		return
+	}
+	c.Write(r.X, y, "├"+strings.Repeat("─", r.W-2)+"┤", style)
 }
 
 // writeWords writes text but leaves its spaces unwritten, so they keep the
@@ -333,7 +350,7 @@ func Run(args []string) error {
 		RunE:          func(*cobra.Command, []string) error { return o.run() },
 	}
 	f := cmd.Flags()
-	f.IntVar(&o.height, "height", 12, "inline height in rows")
+	f.IntVar(&o.height, "height", 14, "inline height in rows")
 	f.IntVar(&o.width, "width", 60, "pane width in columns, capped by the terminal width")
 	spec := loom.DefaultResizeConfig()
 	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly as big as the terminal")
