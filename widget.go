@@ -38,6 +38,13 @@ type Focusable interface {
 	SetFocus(bool)
 }
 
+// KeyConsumer optionally lets a widget report that it handled a key. The
+// signal allows hosted composites to give children first refusal while still
+// preserving Widget.HandleKey's historical quit-only API.
+type KeyConsumer interface {
+	ConsumeKey(e KeyEvent) (quit, consumed bool)
+}
+
 // FocusContainer is a focusable composite that can move focus within itself.
 // FocusNext and FocusPrevious return false when focus is already at the
 // corresponding boundary, allowing a parent container to continue traversal.

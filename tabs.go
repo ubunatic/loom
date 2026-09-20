@@ -80,7 +80,9 @@ type Tabs struct {
 	Keys  TabsKeys
 	// SwitchKey optionally cycles to the next tab in addition to left/right
 	// arrow keys (e.g. "tab" or "ctrl-t"). Empty disables it.
-	SwitchKey string
+	SwitchKey   string
+	ArrowSwitch bool
+	OnChildQuit func(i int) (quitHost bool)
 
 	focus    int    // index of the active tab
 	drawn    bool   // whether Draw has run at least once (for HandleMouse hit-testing)
@@ -90,7 +92,7 @@ type Tabs struct {
 
 // NewTabs creates a Tabs widget hosting the given tabs, analogous to NewStack.
 func NewTabs(tabs ...Tab) *Tabs {
-	return &Tabs{Tabs: tabs, Style: DefaultTabsStyle(), Keys: DefaultTabsKeys()}
+	return &Tabs{Tabs: tabs, Style: DefaultTabsStyle(), Keys: DefaultTabsKeys(), ArrowSwitch: true}
 }
 
 // Focus returns the index of the currently active tab.
@@ -232,6 +234,9 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 	x := r.X
 	t.tabCols = make([]Rect, n)
 	for i, tab := range t.Tabs {
+		if f, ok := tab.Widget.(Focusable); ok {
+			f.SetFocus(i == t.focus)
+		}
 		title := " " + tab.Title + " "
 		style := t.Style.Inactive
 		if i == t.focus {
@@ -264,35 +269,57 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 // HandleKey applies configured navigation (and SwitchKey, if set), delegating
 // everything else to the active child.
 func (t *Tabs) HandleKey(e KeyEvent) (quit bool) {
+	quit, consumed := t.ConsumeKey(e)
+	if consumed {
+		if quit && t.OnChildQuit != nil {
+			return t.OnChildQuit(t.focus)
+		}
+		return quit
+	}
+	child := t.active()
+	if child == nil {
+		return false
+	}
+	quit = child.HandleKey(e)
+	if quit && t.OnChildQuit != nil {
+		return t.OnChildQuit(t.focus)
+	}
+	return quit
+}
+
+func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	n := len(t.Tabs)
 	if n == 0 {
-		return false
+		return false, false
+	}
+	if child := t.active(); child != nil {
+		if consumer, ok := child.(KeyConsumer); ok {
+			if quit, consumed = consumer.ConsumeKey(e); consumed {
+				return quit, true
+			}
+		}
 	}
 	keys := t.Keys
 	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
 		keys = DefaultTabsKeys()
 	}
 	switch {
-	case matchesTabKey(e, keys.Previous):
+	case t.ArrowSwitch && matchesTabKey(e, keys.Previous):
 		t.Select((t.focus - 1 + n) % n)
-		return false
-	case matchesTabKey(e, keys.Next):
+		return false, true
+	case t.ArrowSwitch && matchesTabKey(e, keys.Next):
 		t.Select((t.focus + 1) % n)
-		return false
+		return false, true
 	case matchesTabKey(e, keys.Cycle), matchesTabKey(e, t.SwitchKey):
 		t.Select((t.focus + 1) % n)
-		return false
+		return false, true
 	}
 	for index, binding := range keys.Select {
 		if matchesTabKey(e, binding) && t.Select(index) {
-			return false
+			return false, true
 		}
 	}
-	child := t.active()
-	if child == nil {
-		return false
-	}
-	return child.HandleKey(e)
+	return false, false
 }
 
 func matchesTabKey(event KeyEvent, binding string) bool {

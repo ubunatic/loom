@@ -75,6 +75,22 @@ func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
 	if n == 0 {
 		return false
 	}
+	if quit, consumed := g.ConsumeKey(e); consumed {
+		return quit
+	}
+	return g.Children[g.focus].HandleKey(e)
+}
+
+func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
+	n := len(g.Children)
+	if n == 0 {
+		return false, false
+	}
+	if c, ok := g.Children[g.focus].(KeyConsumer); ok {
+		if quit, consumed = c.ConsumeKey(e); consumed {
+			return quit, true
+		}
+	}
 	switch e.Key {
 	case "left":
 		if g.focus > 0 {
@@ -82,14 +98,14 @@ func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
 		} else {
 			g.focus = n - 1
 		}
-		return false
+		return false, true
 	case "right":
 		if g.focus < n-1 {
 			g.focus++
 		} else {
 			g.focus = 0
 		}
-		return false
+		return false, true
 	case "up":
 		if g.focus >= g.Cols {
 			g.focus -= g.Cols
@@ -100,7 +116,7 @@ func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
 			}
 			g.focus = last
 		}
-		return false
+		return false, true
 	case "down":
 		next := g.focus + g.Cols
 		if next < n {
@@ -108,14 +124,14 @@ func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
 		} else {
 			g.focus = g.focus % g.Cols
 		}
-		return false
+		return false, true
 	case "enter":
 		if g.OnSelect != nil {
 			g.OnSelect(g.focus)
-			return false
+			return false, true
 		}
 	}
-	return g.Children[g.focus].HandleKey(e)
+	return false, false
 }
 
 // HandleMouse routes to the child whose drawn cell contains the event.

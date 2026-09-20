@@ -140,6 +140,11 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 
 // HandleKey forwards input to the child, if present.
 func (b *Box) HandleKey(k KeyEvent) bool {
+	if c, ok := b.Child.(KeyConsumer); ok {
+		if quit, consumed := c.ConsumeKey(k); consumed {
+			return quit
+		}
+	}
 	return b.Child != nil && b.Child.HandleKey(k)
 }
 
@@ -579,6 +584,17 @@ func (f *Frame) cycleFocus(direction int) {
 
 // HandleKey dispatches declared actions, focus keys, then the focused child.
 func (f *Frame) HandleKey(k KeyEvent) bool {
+	if box := f.FocusedBox(); box != nil {
+		if c, ok := box.Child.(KeyConsumer); ok {
+			if quit, consumed := c.ConsumeKey(k); consumed {
+				return quit
+			}
+		}
+	}
+	return f.handleKey(k)
+}
+
+func (f *Frame) handleKey(k KeyEvent) bool {
 	f.syncFocus()
 	key := k.Key
 	if key == "" {
@@ -624,6 +640,17 @@ func (f *Frame) HandleKey(k KeyEvent) bool {
 		return box.HandleKey(k)
 	}
 	return false
+}
+
+func (f *Frame) ConsumeKey(k KeyEvent) (quit, consumed bool) {
+	if box := f.FocusedBox(); box != nil {
+		if c, ok := box.Child.(KeyConsumer); ok {
+			if quit, consumed = c.ConsumeKey(k); consumed {
+				return quit, true
+			}
+		}
+	}
+	return false, false
 }
 
 func (f *Frame) focusFirst() {

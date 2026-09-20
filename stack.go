@@ -104,7 +104,26 @@ func (s *Stack) HandleKey(e KeyEvent) (quit bool) {
 		s.focus = (s.focus + 1) % len(s.Children)
 		return false
 	}
+	if quit, consumed := s.ConsumeKey(e); consumed {
+		return quit
+	}
 	return s.Children[s.focus].HandleKey(e)
+}
+
+func (s *Stack) ConsumeKey(e KeyEvent) (quit, consumed bool) {
+	if len(s.Children) == 0 {
+		return false, false
+	}
+	if c, ok := s.Children[s.focus].(KeyConsumer); ok {
+		if quit, consumed = c.ConsumeKey(e); consumed {
+			return quit, true
+		}
+	}
+	if e.Key == "tab" {
+		s.focus = (s.focus + 1) % len(s.Children)
+		return false, true
+	}
+	return false, false
 }
 
 // HandleMouse forwards to the child whose rect contains the event.

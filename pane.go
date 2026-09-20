@@ -952,7 +952,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			pending = nil
 			pendingC = nil
 			dirty = true
-			if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke) {
+			if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
 				return nil
 			}
 		case rr := <-reads:
@@ -1017,7 +1017,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// scanKey must always make progress; guard against a stall.
 					break
 				}
-				if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke) {
+				if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
 					quit = true
 					break
 				}
@@ -1062,7 +1062,14 @@ var defaultQuitKeyMap = func() map[string]bool {
 
 // handleKeyFallback reports whether an unhandled key should trigger a default
 // safeguard exit based on embedded spec/defaults.yaml.
-func (p *Pane) handleKeyFallback(ke KeyEvent) bool {
+func (p *Pane) handleKeyFallback(ke KeyEvent, roots ...Widget) bool {
+	if len(roots) > 0 {
+		if c, ok := roots[0].(KeyConsumer); ok {
+			if _, consumed := c.ConsumeKey(ke); consumed {
+				return false
+			}
+		}
+	}
 	if p.DisableDefaultQuit {
 		return false
 	}
