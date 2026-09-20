@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"sync"
 	"testing"
@@ -124,6 +125,7 @@ func TestStartupConfigValidation(t *testing.T) {
 	})
 
 	t.Run("nil splash controller", func(t *testing.T) {
+		skipWithoutTTY(t)
 		p, err := loom.New(5)
 		if err != nil {
 			t.Fatalf("New pane failed: %v", err)
@@ -139,6 +141,7 @@ func TestStartupConfigValidation(t *testing.T) {
 	})
 
 	t.Run("nil next destination widget", func(t *testing.T) {
+		skipWithoutTTY(t)
 		p, err := loom.New(5)
 		if err != nil {
 			t.Fatalf("New pane failed: %v", err)
@@ -154,6 +157,7 @@ func TestStartupConfigValidation(t *testing.T) {
 	})
 
 	t.Run("already cancelled context", func(t *testing.T) {
+		skipWithoutTTY(t)
 		p, err := loom.New(5)
 		if err != nil {
 			t.Fatalf("New pane failed: %v", err)
@@ -174,6 +178,7 @@ func TestStartupConfigValidation(t *testing.T) {
 }
 
 func TestStartupLifecycleProgressionAndHandover(t *testing.T) {
+	skipWithoutTTY(t)
 	p, err := loom.New(5)
 	if err != nil {
 		t.Fatalf("New pane failed: %v", err)
@@ -262,6 +267,7 @@ func TestStartupLifecycleProgressionAndHandover(t *testing.T) {
 }
 
 func TestStartupTransitionError(t *testing.T) {
+	skipWithoutTTY(t)
 	p, err := loom.New(5)
 	if err != nil {
 		t.Fatalf("New pane failed: %v", err)
@@ -295,6 +301,7 @@ func TestStartupTransitionError(t *testing.T) {
 }
 
 func TestStartupDismissalImmediateHandover(t *testing.T) {
+	skipWithoutTTY(t)
 	p, err := loom.New(5)
 	if err != nil {
 		t.Fatalf("New pane failed: %v", err)
@@ -353,4 +360,13 @@ func TestStartupDismissalImmediateHandover(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		t.Fatal("RunStartup did not exit after context cancel")
 	}
+}
+
+func skipWithoutTTY(t *testing.T) {
+	t.Helper()
+	tty, err := os.Open("/dev/tty")
+	if err != nil {
+		t.Skipf("requires /dev/tty: %v", err)
+	}
+	_ = tty.Close()
 }

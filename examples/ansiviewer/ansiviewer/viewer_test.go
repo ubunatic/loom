@@ -162,6 +162,17 @@ func TestRecordCommandWritesRenderedScreenOnly(t *testing.T) {
 	}
 }
 
+func TestRecordCommandStripsTerminalStateButKeepsANSIStyles(t *testing.T) {
+	var out bytes.Buffer
+	command := "printf '\033[?1049h\033]0;title\033\\\033[31mred\033[0m\033[?1049l'"
+	if err := RecordCommand(context.Background(), &out, time.Second, "sh", "-c", command); err != nil {
+		t.Fatal(err)
+	}
+	if got := out.String(); got != "\x1b[31mred\x1b[0m" {
+		t.Fatalf("recording = %q, want color-only output", got)
+	}
+}
+
 func TestRecordCommandPreservesUsageANSIFixture(t *testing.T) {
 	testRecordFixture(t, "harnez-usage.ansi")
 }
