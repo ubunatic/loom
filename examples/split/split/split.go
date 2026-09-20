@@ -80,6 +80,18 @@ func (a *splitApp) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (a *splitApp) HandleKey(e loom.KeyEvent) bool {
+	key := e.Key
+	if key == "" {
+		key = e.Text
+	}
+	if key == "/" {
+		if a.hSplit.Ratio < 0.5 {
+			a.hSplit.SetRatio(0.5)
+		} else {
+			a.hSplit.SetRatio(0.4)
+		}
+		return false
+	}
 	return a.frame.HandleKey(e)
 }
 

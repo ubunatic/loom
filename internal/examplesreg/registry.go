@@ -93,7 +93,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/treemap",
 		Run:          treemap.Run,
 		SupportsHelp: true,
-		DemoArgs:     []string{"--watch"},
+		DemoArgs:     []string{"--watch", "--ansi"},
 	},
 	{
 		Name:         "screens",

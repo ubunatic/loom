@@ -79,6 +79,11 @@ func TestSplitAppLayoutAndFocusTraversal(t *testing.T) {
 		t.Errorf("expected updated ratio H: 35/65, got:\n%s", out)
 	}
 
+	app.HandleKey(loom.KeyEvent{Key: "/"})
+	if app.hSplit.Ratio != 0.5 {
+		t.Fatalf("expected '/' to toggle ratio to 50%%, got %f", app.hSplit.Ratio)
+	}
+
 	// Quit key
 	if !app.HandleKey(loom.KeyEvent{Key: "q"}) {
 		t.Fatal("expected 'q' to trigger quit")

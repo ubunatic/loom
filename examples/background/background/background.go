@@ -80,6 +80,12 @@ func demoFrame() *loom.Frame {
 		"This pane intentionally leaves open surface so",
 		"the animation remains visible during interaction.",
 	})
+	panelTheme := loom.SpeccedThemes["mc-dark"]
+	panelStyle := loom.Style{FG: panelTheme.NormalFG.Color(), BG: panelTheme.NormalBG.Color()}
+	left.Style = panelStyle
+	right.Style = panelStyle
+	left.FocusStyle = loom.Style{FG: panelTheme.SelectedFG.Color(), BG: panelTheme.SelectedBG.Color()}
+	right.FocusStyle = left.FocusStyle
 	split := loom.NewSplit(left, right)
 	split.Ratio = 0.45
 	split.MinFirst, split.MinSecond = 18, 24
