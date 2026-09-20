@@ -1,6 +1,6 @@
 # 078 — Add concurrency-safe MetricStore and metric-bound Gauge and Sparkline widgets
 
-**Status**: Open
+**Status**: Closed — implemented and verified by make test-q1
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
