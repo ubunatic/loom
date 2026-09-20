@@ -35,8 +35,8 @@ type Example struct {
 	Run func(args []string) error
 	// SupportsHelp reports whether Run(["--help"]) (or Run(["-h"])) is a fast,
 	// non-blocking, non-interactive exit. Examples with a flag/cobra command
-	// support this; split has no flag parsing at all, so it never returns
-	// from Run without a live TTY, and loom-bench must not invoke it.
+	// support this; examples without flag parsing never return from Run
+	// without a live TTY, and loom-bench must not invoke them.
 	SupportsHelp bool
 	// DemoArgs are the arguments loom-demo passes to Run, e.g. "--watch" for
 	// examples that have a live mode.
@@ -78,14 +78,14 @@ var Registry = []Example{
 		Description:  "Independent scrolling and keyboard focus in a Frame",
 		Package:      "codeberg.org/ubunatic/loom/examples/split",
 		Run:          split.Run,
-		SupportsHelp: false,
+		SupportsHelp: true,
 	},
 	{
 		Name:         "tabs",
 		Description:  "Tabs widget hosting a View, a Choice, and a Table",
 		Package:      "codeberg.org/ubunatic/loom/examples/tabs",
 		Run:          tabs.Run,
-		SupportsHelp: false,
+		SupportsHelp: true,
 	},
 	{
 		Name:         "treemap",

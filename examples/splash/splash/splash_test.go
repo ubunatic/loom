@@ -6,8 +6,11 @@ package splash
 import (
 	"bytes"
 	"context"
+	"errors"
 	"strings"
 	"testing"
+
+	"codeberg.org/ubunatic/loom"
 )
 
 func stripANSI(s string) string {
@@ -51,5 +54,50 @@ func TestSplashShowOnceOutput(t *testing.T) {
 	}
 	if !strings.Contains(out, "Esc to skip") {
 		t.Errorf("output missing footer: %q", out)
+	}
+}
+
+func TestSplashRunWatchContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	var buf bytes.Buffer
+	err := runWatch(ctx, &buf)
+	if err != nil && !errors.Is(err, context.Canceled) {
+		if strings.Contains(err.Error(), "/dev/tty") || strings.Contains(err.Error(), "another pane") {
+			t.Skipf("skipping test without TTY: %v", err)
+		}
+		t.Fatalf("runWatch failed: %v", err)
+	}
+}
+
+func TestResolveTerminalDimensions(t *testing.T) {
+	w, h := resolveTerminalDimensions(100, 40)
+	if w != 100 || h != 40 {
+		t.Fatalf("expected (100, 40), got (%d, %d)", w, h)
+	}
+
+	w, h = resolveTerminalDimensions(0, 0)
+	if w <= 0 || h <= 0 {
+		t.Fatalf("expected positive dimensions, got (%d, %d)", w, h)
+	}
+}
+
+func TestInteractiveDestination(t *testing.T) {
+	dest := newInteractiveDestination()
+	if dest == nil {
+		t.Fatal("expected non-nil destination widget")
+	}
+	canvas := loom.NewCanvas(60, 10)
+	canvas.Clear()
+	dest.Draw(canvas, canvas.Bounds())
+	var b strings.Builder
+	canvas.Flush(&b, 1)
+	out := b.String()
+	if !strings.Contains(out, "harnez usage") {
+		t.Errorf("destination draw missing title: %q", out)
+	}
+	if !strings.Contains(out, "Initialized Providers") {
+		t.Errorf("destination draw missing box header: %q", out)
 	}
 }

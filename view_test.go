@@ -83,3 +83,35 @@ func TestViewDrawsScrollbarTrack(t *testing.T) {
 		t.Fatal("thumb did not move over the visible track")
 	}
 }
+
+func TestViewFocusable(t *testing.T) {
+	v := NewView([]string{"item 1", "item 2"})
+	v.Style = Style{Dim: true}
+	v.FocusStyle = Style{Bold: true}
+
+	if v.Focused() {
+		t.Fatal("expected initially not focused")
+	}
+
+	canvas := NewCanvas(10, 2)
+	v.Draw(canvas, canvas.Bounds())
+	if !canvas.Get(0, 0).Style.Dim {
+		t.Fatal("expected dim style when unfocused")
+	}
+
+	v.SetFocus(true)
+	if !v.Focused() {
+		t.Fatal("expected focused after SetFocus(true)")
+	}
+
+	canvas.Clear()
+	v.Draw(canvas, canvas.Bounds())
+	if !canvas.Get(0, 0).Style.Bold {
+		t.Fatal("expected bold style when focused")
+	}
+
+	v.SetFocus(false)
+	if v.Focused() {
+		t.Fatal("expected not focused after SetFocus(false)")
+	}
+}

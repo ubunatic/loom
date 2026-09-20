@@ -6,6 +6,7 @@ package splash
 
 import (
 	"context"
+	"errors"
 	"io"
 	"os"
 	"time"
@@ -21,23 +22,25 @@ var defaultTasks = []loom.ProviderTask{
 	{Name: "agy", Symbol: "Λ", Duration: 400 * time.Millisecond},
 }
 
-func runShowOnce(out io.Writer, width, height int) error {
-	if width <= 0 || height <= 0 {
-		if cols, rows, err := loom.TerminalSize(); err == nil {
-			if width <= 0 {
-				width = cols
-			}
-			if height <= 0 {
-				height = rows
-			}
-		}
-		if width <= 0 {
-			width = 80
-		}
-		if height <= 0 {
-			height = 20
-		}
+func resolveTerminalDimensions(width, height int) (int, int) {
+	if width > 0 && height > 0 {
+		return width, height
 	}
+	cols, rows, err := loom.TerminalSize()
+	if err != nil || cols <= 0 || rows <= 0 {
+		cols, rows = 80, 20
+	}
+	if width <= 0 {
+		width = cols
+	}
+	if height <= 0 {
+		height = rows
+	}
+	return width, height
+}
+
+func runShowOnce(out io.Writer, width, height int) error {
+	width, height = resolveTerminalDimensions(width, height)
 
 	pills := []loom.ProviderPill{
 		{Symbol: "●", Name: "mic", State: loom.ProviderDone},
@@ -53,7 +56,27 @@ func runShowOnce(out io.Writer, width, height int) error {
 	return loom.RenderTo(out, view, width, height)
 }
 
-func runWatch(ctx context.Context, out io.Writer) error {
+func newInteractiveDestination() loom.Widget {
+	items := []loom.Item{
+		{Name: "mic", Desc: "Micro-agent orchestrator (300ms, active)"},
+		{Name: "claude", Desc: "Claude 3.5 Sonnet provider (450ms, connected)"},
+		{Name: "codex", Desc: "Codex completion engine (350ms, ready)"},
+		{Name: "agy", Desc: "Antigravity runtime (400ms, initialized)"},
+	}
+	choice := loom.NewChoice(items)
+	return &loom.Frame{
+		Title:  "harnez usage",
+		Status: "↑↓ select  •  Enter activate  •  q / Esc exit",
+		Boxes: []loom.Box{
+			{ID: "providers", Title: "Initialized Providers", Dynamic: true, FillHeight: true, Child: choice},
+		},
+		Actions: []loom.FrameAction{
+			{ID: "quit", Action: "quit", Key: "q"},
+		},
+	}
+}
+
+func runWatch(ctx context.Context, _ io.Writer) error {
 	cfg := loom.SplashConfig{
 		Title:        "harnez usage",
 		Tasks:        defaultTasks,
@@ -62,9 +85,7 @@ func runWatch(ctx context.Context, out io.Writer) error {
 	}
 
 	sc := loom.NewSplashController(cfg)
-	view := loom.NewSplashView(cfg.Title)
-	view.Controller = sc
-	next := loom.NewView([]string{"Startup complete — press q or Esc to exit."})
+	next := newInteractiveDestination()
 
 	pane, err := loom.New(10)
 	if err != nil {
@@ -72,17 +93,11 @@ func runWatch(ctx context.Context, out io.Writer) error {
 	}
 	defer pane.Close()
 
-	cadence := loom.Cadence{
-		Collect: 50 * time.Millisecond,
-		Redraw:  50 * time.Millisecond,
-	}
 	err = pane.RunStartup(ctx, loom.StartupConfig{
-		Splash:  sc,
-		View:    view,
-		Next:    next,
-		Cadence: cadence,
+		Splash: sc,
+		Next:   next,
 	})
-	if err == context.Canceled {
+	if errors.Is(err, context.Canceled) {
 		return nil
 	}
 	return err

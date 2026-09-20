@@ -20,19 +20,27 @@ func DefaultScrollbarStyle() ScrollbarStyle {
 // When content exceeds the visible area a specced scroll indicator appears on the
 // right edge, proportional to the current scroll position.
 type View struct {
-	Lines     []string
-	Scroll    int   // first visible line index
-	Height    int   // preferred visible height cap; 0 = len(Lines)
-	Style     Style // base style for all lines
-	Scrollbar ScrollbarStyle
-	lastH     int // height from last Draw; gates scroll in HandleKey
-	lastRect  Rect
+	Lines      []string
+	Scroll     int   // first visible line index
+	Height     int   // preferred visible height cap; 0 = len(Lines)
+	Style      Style // base style for all lines
+	FocusStyle Style // style for all lines when focused (falls back to Style if zero)
+	Scrollbar  ScrollbarStyle
+	focused    bool
+	lastH      int // height from last Draw; gates scroll in HandleKey
+	lastRect   Rect
 }
 
 // NewView creates a View from a slice of pre-formatted lines.
 func NewView(lines []string) *View {
 	return &View{Lines: lines, Scrollbar: DefaultScrollbarStyle()}
 }
+
+// Focused reports whether the view currently has input focus.
+func (v *View) Focused() bool { return v.focused }
+
+// SetFocus sets whether the view currently has input focus.
+func (v *View) SetFocus(focused bool) { v.focused = focused }
 
 // Draw renders visible lines into r. When scrollable, the rightmost column is
 // reserved for the scroll indicator and content is truncated one column shorter.
@@ -63,16 +71,21 @@ func (v *View) Draw(c *Canvas, r Rect) {
 		contentW = r.W - 1 // reserve rightmost column for indicator
 	}
 
+	lineStyle := v.Style
+	if v.focused && v.FocusStyle != (Style{}) {
+		lineStyle = v.FocusStyle
+	}
+
 	for row := 0; row < r.H; row++ {
 		y := r.Y + row
-		c.PaintSurface(Rect{r.X, y, r.W, 1}, v.Style)
+		c.PaintSurface(Rect{r.X, y, r.W, 1}, lineStyle)
 		lineIdx := v.Scroll + row
 		if lineIdx >= 0 && lineIdx < total {
 			plain := stripANSI(v.Lines[lineIdx])
 			if len([]rune(plain)) > contentW {
 				plain = string([]rune(plain)[:contentW])
 			}
-			c.Write(r.X, y, plain, v.Style)
+			c.Write(r.X, y, plain, lineStyle)
 		}
 		if scrollable {
 			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row == indicatorRow))
