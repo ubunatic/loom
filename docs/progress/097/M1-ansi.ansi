@@ -1,0 +1,6 @@
+Files                         Preview
+> color.ansi                  [31mred ANSI text[0m
+  plain.txt                   [32mplain text[0m
+  subdir/                     Enter to open directory
+
+[1mANSI viewer M1[0m  ↑↓ select  Enter open  q quit
