@@ -63,6 +63,30 @@ pre-existing headless gaps, not regressions.
 - Evidence: `M1-text.ansi`, `M1-ansi.ansi` (renders `docs/data/harnez-usage.ansi`),
   `M1-binary.ansi`.
 
+### M1 Review (host) — delivered `312c617`, NOT accepted; finish as M2 Pre-Work
+
+Delivered: skeleton browser, single-color ANSI writer, 2 weak tests.
+Pre-Work / Required Refinements (do these first, commit as `(issue 097 M1b)`):
+1. Add `Classify(path) Kind` (text, ansi, binary, image) by extension plus
+   content sniff (NUL byte / invalid UTF-8 => binary); binary and image files
+   show metadata (name, size, kind) only, never raw bytes. Table test.
+2. Replace `writeANSI` with a real SGR handler: reset, bold, dim, underline,
+   reverse, 30-37, 90-97, 40-47, 100-107, 38/48;5;n and 38/48;2;r;g;b, using
+   loom.Style fields. Skip unknown CSI sequences without printing them. Use
+   `Canvas.WriteANSI` if it exists (check first; ticket 034 is not done).
+3. Clip by display width, not bytes: iterate runes, use the loom display-width
+   helper; CJK/emoji never straddle the right bound. Right pane must not
+   overwrite the left file list or exceed `r`.
+4. Real bounds tests: fill a canvas with a sentinel, draw wide/long/CJK/ANSI
+   lines into a sub-rect, assert every cell outside the rect is unchanged.
+   Assert specific cell text/colors, not just non-empty rows.
+5. Scrolling: PgUp/PgDn/j/k in the viewer with a test.
+6. Add SPDX headers (see other files). Regenerate the M1 `.ansi` evidence by
+   rendering the widget (loom.RenderTo, 100x30) from a test or small
+   generator over `docs/data/harnez-usage.ansi`, a text file, and a binary
+   file. No hand-written evidence. Files: `M1-text.ansi`, `M1-ansi.ansi`,
+   `M1-binary.ansi`.
+
 ### M2 — Browser + viewer layout and `loom-demo` registration
 - `ansiviewer <dir>`: left file browser, right viewer, keyboard navigation
   (up/down/enter/tab focus switch, q quit). Register in `loom-demo` and add a
