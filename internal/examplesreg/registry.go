@@ -71,6 +71,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/splash",
 		Run:          splash.Run,
 		SupportsHelp: true,
+		DemoArgs:     []string{"--watch"},
 	},
 	{
 		Name:         "split",
@@ -92,6 +93,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/treemap",
 		Run:          treemap.Run,
 		SupportsHelp: true,
+		DemoArgs:     []string{"--watch"},
 	},
 	{
 		Name:         "screens",
