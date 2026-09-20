@@ -468,16 +468,28 @@ func (p *Pane) Screen() ScreenMode {
 	return ScreenInline
 }
 
+// AutoFullscreenReasons reports which detectors (width, height) currently ask
+// for the full-screen layout. Both are false when detection is off or the pane
+// is InlineOnly. It is for status displays; the pane acts on it by itself.
+func (p *Pane) AutoFullscreenReasons() (byWidth, byHeight bool) {
+	cfg := p.ResizeConfig
+	if !cfg.AutoFullscreen || p.InlineOnly {
+		return false, false
+	}
+	termCols, termRows := termSize(p.fd)
+	w, h := cfg, cfg
+	w.FullByHeight, h.FullByWidth = false, false
+	return w.QuasiFullscreen(p.MaxCols, p.wantRows, termCols, termRows),
+		h.QuasiFullscreen(p.MaxCols, p.wantRows, termCols, termRows)
+}
+
 // wantScreen derives the layout the config asks for right now. full applies to
 // the primary screen only; it is ignored while alt is wanted. Auto full screen
 // compares the wanted size (not the clamped one) with the terminal size.
 func (p *Pane) wantScreen() (full, alt bool) {
 	cfg := p.ResizeConfig
-	auto := false
-	if cfg.AutoFullscreen && !p.InlineOnly {
-		termCols, termRows := termSize(p.fd)
-		auto = cfg.QuasiFullscreen(p.MaxCols, p.wantRows, termCols, termRows)
-	}
+	byWidth, byHeight := p.AutoFullscreenReasons()
+	auto := byWidth || byHeight
 	return cfg.FullScreenBuffer || auto, cfg.AltScreen || (auto && cfg.FullAlt)
 }
 

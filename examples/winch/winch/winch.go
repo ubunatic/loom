@@ -94,7 +94,7 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 		a.drawStressPanel(c, loom.Rect{X: r.X + modesW + 1, Y: r.Y, W: diagW, H: contentH}, cfg, normalStyle, headerStyle)
 	} else {
 		// Reserve one row per spec-defined mode plus the panel borders.
-		modesH := len(loom.SpeccedResizeModeIDs) + 2
+		modesH := len(loom.SpeccedResizeModeIDs) + 3
 		if modesH > contentH-2 {
 			modesH = contentH - 2
 		}
@@ -144,7 +144,7 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│",
 	}
-	drawBoxBorder(c, r, border, "Resize Modes [1-9,A,B Toggle, +/- Guard, R Reset]", normal, header)
+	drawBoxBorder(c, r, border, "Resize Modes [1-9,A-C Toggle, +/- Guard, R Reset]", normal, header)
 
 	row := r.Y + 1
 	for _, id := range loom.SpeccedResizeModeIDs {
@@ -163,6 +163,11 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 			stateTag = "[ON] "
 			stateStyle = loom.Style{Bold: true}
 		}
+		autoOn := false
+		if id == "alt_screen" && !enabled && a.pane != nil && a.pane.Screen() == loom.ScreenAlt {
+			// Not requested, but auto full screen put the pane there.
+			stateTag, stateStyle, autoOn = "[ON*]", loom.Style{Bold: true}, true
+		}
 
 		keyBadge := fmt.Sprintf("[%s]", mode.Key)
 		tag := ""
@@ -173,12 +178,28 @@ func (a *App) drawModesPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig,
 		} else if mode.DiagnosticOnly {
 			tag = " (diag)"
 		}
+		if autoOn {
+			tag = " (auto)"
+		}
 
 		line := fmt.Sprintf(" %s %s %s%s", keyBadge, stateTag, mode.Title, tag)
 		line = loom.TruncateText(line, r.W-2, "")
 		c.Write(r.X+1, row, line, normal)
 		c.Write(r.X+6, row, stateTag, stateStyle)
 		row++
+	}
+
+	// Auto full screen is not a resize mode but is part of the layout logic
+	// under test, so it gets a row of its own.
+	if row < r.Y+r.H-1 {
+		af := loom.SpeccedResizeModes.AutoFullscreen
+		stateTag, stateStyle := "[OFF]", loom.Style{Dim: true}
+		if cfg.AutoFullscreen {
+			stateTag, stateStyle = "[ON] ", loom.Style{Bold: true}
+		}
+		line := fmt.Sprintf(" [%s] %s %s (cols<=%d rows<=%d)", strings.ToUpper(af.Key), stateTag, af.Title, cfg.FullMarginCols, cfg.FullMarginRows)
+		c.Write(r.X+1, row, loom.TruncateText(line, r.W-2, ""), normal)
+		c.Write(r.X+6, row, stateTag, stateStyle)
 	}
 }
 
@@ -213,6 +234,12 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 		}
 		c.Write(r.X+1, row, loom.TruncateText(" Screen: "+screen+" | Auto full screen: "+onOff(cfg.AutoFullscreen), r.W-2, ""), normal)
 		row++
+		byW, byH := a.pane.AutoFullscreenReasons()
+		if row < r.Y+r.H-1 {
+			detect := fmt.Sprintf(" Detect: width %s (%s) height %s (%s)", verdict(byW), onOff(cfg.FullByWidth), verdict(byH), onOff(cfg.FullByHeight))
+			c.Write(r.X+1, row, loom.TruncateText(detect, r.W-2, ""), normal)
+			row++
+		}
 	}
 	if row < r.Y+r.H-1 {
 		c.Write(r.X+1, row, loom.TruncateText(" "+a.guardSummary(cfg), r.W-2, ""), normal)
@@ -283,6 +310,11 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		return false
 	case "-", "_", "[":
 		a.adjustGuardN(-1)
+		return false
+	case "c":
+		cfg := a.Config()
+		cfg.AutoFullscreen = !cfg.AutoFullscreen
+		a.SetConfig(cfg)
 		return false
 	case "r":
 		a.resetDefaults()
@@ -419,4 +451,11 @@ func onOff(v bool) string {
 		return "on"
 	}
 	return "off"
+}
+
+func verdict(full bool) string {
+	if full {
+		return "FULL"
+	}
+	return "inline"
 }
