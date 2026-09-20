@@ -1,6 +1,6 @@
 # 097 — Add ANSI viewer example with TUI recording
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M3d)
 **Priority**: P2
 **Severity**: Moderate
 **Category**: Feature
