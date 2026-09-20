@@ -110,3 +110,4 @@ upkeep.
 | 096 | [096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md](096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md) | Follow up 038 with a non-ASCII text rendering example app | Open |
 | 097 | [097-add-ansi-viewer-example-with-tui-recording.md](097-add-ansi-viewer-example-with-tui-recording.md) | Add ANSI viewer example with TUI recording | Closed — delivered via lean sprint (M1-M3d) |
 | 098 | [098-document-animatedbackground-ticker-initialization-pitfall.md](098-document-animatedbackground-ticker-initialization-pitfall.md) | Document AnimatedBackground ticker initialization pitfall | Open |
+| 099 | [099-fix-ansiviewer-recording-of-ansi-output-and-terminal-width.md](099-fix-ansiviewer-recording-of-ansi-output-and-terminal-width.md) | Fix ansiviewer recording of ANSI output and terminal width | Open |
