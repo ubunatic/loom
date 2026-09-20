@@ -1,6 +1,6 @@
 # 087 — loom-demo cannot start from Codex terminal
 
-**Status**: Open
+**Status**: Closed — resolved: launch loom-demo through foot for a controlling TTY
 **Priority**: P1
 **Severity**: Major
 **Category**: Bug
