@@ -1,6 +1,6 @@
 # 075 — Position cursor on previous folder when navigating up in file browser
 
-**Status**: Open
+**Status**: Closed — implemented and verified with full test suite
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
