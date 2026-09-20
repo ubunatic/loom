@@ -57,3 +57,58 @@ func TestDecodeKey(t *testing.T) {
 		})
 	}
 }
+
+func TestKeyEventName(t *testing.T) {
+	tests := []struct {
+		name  string
+		event KeyEvent
+		want  string
+	}{
+		{"up", KeyEvent{Key: "up"}, "up"},
+		{"pgup", KeyEvent{Key: "pgup"}, "pgup"},
+		{"esc", KeyEvent{Key: "esc"}, "esc"},
+		{"j", KeyEvent{Text: "j"}, "j"},
+		{"q", KeyEvent{Text: "q"}, "q"},
+		{"question mark", KeyEvent{Text: "?"}, "?"},
+		{"key takes precedence", KeyEvent{Key: "up", Text: "j"}, "up"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.event.Name(); got != tt.want {
+				t.Errorf("Name() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestKeyEventIs(t *testing.T) {
+	if !((KeyEvent{Key: "up"}).Is("down", "up", "left")) {
+		t.Error("Is() = false, want true for a matching candidate")
+	}
+	if (KeyEvent{Text: "j"}).Is("q", "?") {
+		t.Error("Is() = true, want false when no candidate matches")
+	}
+}
+
+func TestKeyEventRune(t *testing.T) {
+	tests := []struct {
+		name  string
+		event KeyEvent
+		want  rune
+	}{
+		{"printable", KeyEvent{Text: "j"}, 'j'},
+		{"unicode printable", KeyEvent{Text: "🙂"}, '🙂'},
+		{"empty", KeyEvent{}, 0},
+		{"non-printable", KeyEvent{Text: "\n"}, 0},
+		{"special key", KeyEvent{Key: "up"}, 0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.event.Rune(); got != tt.want {
+				t.Errorf("Rune() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

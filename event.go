@@ -3,6 +3,8 @@
 
 package loom
 
+import "unicode"
+
 // KeyEvent is a decoded keyboard event.
 // Key names match common terminal conventions; Text carries printable input.
 type KeyEvent struct {
@@ -13,6 +15,36 @@ type KeyEvent struct {
 	//            "ctrl-b","ctrl-c","ctrl-d","ctrl-f","ctrl-q","ctrl-u","ctrl-w",
 	//            or "" for plain text
 	Text string // typed printable text (Key == "" when Text != "")
+}
+
+// Name returns the special-key name or printable text carried by the event.
+func (e KeyEvent) Name() string {
+	if e.Key != "" {
+		return e.Key
+	}
+	return e.Text
+}
+
+// Is reports whether the event name matches one of the provided key identifiers.
+func (e KeyEvent) Is(keys ...string) bool {
+	name := e.Name()
+	for _, key := range keys {
+		if name == key {
+			return true
+		}
+	}
+	return false
+}
+
+// Rune returns the first printable rune in the event text, or zero otherwise.
+func (e KeyEvent) Rune() rune {
+	for _, r := range e.Text {
+		if unicode.IsPrint(r) {
+			return r
+		}
+		return 0
+	}
+	return 0
 }
 
 // MouseAction classifies a mouse event.
