@@ -160,10 +160,11 @@ func TestPaneHelpOverlayUsesRootCanvasAndCapturesInput(t *testing.T) {
 	if got := canvas.Get(10, 3).Text; got != "┌" {
 		t.Fatalf("overlay left border at %d,3 = %q, want popup corner", 10, got)
 	}
-	if p.handleHelpKey(KeyEvent{Text: "x"}) {
-		// The event is consumed by the overlay; this branch documents that
-		// underlying widgets must not see it.
-	} else {
+	quit, handled := p.handleHelpKey(KeyEvent{Text: "x"})
+	if quit {
+		t.Fatal("help dismissal unexpectedly requested application quit")
+	}
+	if !handled {
 		t.Fatal("help key was not captured")
 	}
 	if p.help != nil {
