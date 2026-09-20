@@ -1,6 +1,6 @@
 # 085 — Add robust smoke PTY tests for all example apps
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Infrastructure
