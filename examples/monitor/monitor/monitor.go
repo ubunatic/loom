@@ -16,7 +16,6 @@ import (
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/graph"
 	"github.com/spf13/cobra"
-	"golang.org/x/term"
 )
 
 //go:embed spec/*.yaml
@@ -36,7 +35,7 @@ func runWidth(out io.Writer, width int) error {
 	if err != nil {
 		return err
 	}
-	observed := terminalWidth(out)
+	observed := terminalCols()
 	if width == 0 {
 		width = outputWidth(out, cfg.MaxWidth())
 	} else {
@@ -54,7 +53,7 @@ func runWidth(out io.Writer, width int) error {
 	if responsive, ok := root.(loom.WidthHeighter); ok {
 		height = responsive.HeightForWidth(width)
 	}
-	cols := terminalWidth(out)
+	cols := terminalCols()
 	for _, row := range loom.Render(root, width, height) {
 		// This monochrome shell has no styles; omit Render's row reset so
 		// redirected output is plain terminal text, with no cursor controls.
@@ -77,22 +76,15 @@ func runWidth(out io.Writer, width int) error {
 }
 
 func outputWidth(out io.Writer, fallback int) int {
-	if cols := terminalWidth(out); cols > 0 {
+	if cols := terminalCols(); cols > 0 {
 		return min(cols, fallback)
 	}
 	return fallback
 }
 
-func terminalWidth(out io.Writer) int {
-	file, ok := out.(*os.File)
-	if !ok || !term.IsTerminal(int(file.Fd())) {
-		return 0
-	}
-	cols, _, err := term.GetSize(int(file.Fd()))
-	if err != nil {
-		return 0
-	}
-	if cols < 1 {
+func terminalCols() int {
+	cols, _, err := loom.TerminalSize()
+	if err != nil || cols < 1 {
 		return 0
 	}
 	return cols

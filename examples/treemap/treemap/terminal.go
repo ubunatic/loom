@@ -7,27 +7,17 @@ import (
 	"fmt"
 	"os"
 
-	"golang.org/x/term"
+	"codeberg.org/ubunatic/loom"
 )
 
 // Terminal geometry is demo plumbing: the graph renderer accepts explicit
 // dimensions, while this app must clamp them to the live output terminal.
-func terminalSize(out *os.File) (width, height int, ok bool) {
-	if !term.IsTerminal(int(out.Fd())) {
-		return 0, 0, false
-	}
-	cols, rows, err := term.GetSize(int(out.Fd()))
-	if err != nil || cols < 1 || rows < 1 {
-		return 0, 0, false
-	}
-	return cols, rows, true
-}
-
 // resolveDimensions fills unset dimensions from the terminal, or from an
 // 80x24 fallback when output is redirected. Explicit dimensions are clamped
 // to the terminal to prevent row wrapping from scrambling the grid.
 func resolveDimensions(width, height int) (int, int) {
-	cols, rows, ok := terminalSize(os.Stdout)
+	cols, rows, err := loom.TerminalSize()
+	ok := err == nil && cols > 0 && rows > 0
 	if !ok {
 		if width <= 0 {
 			width = 80

@@ -112,7 +112,7 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 				s2, err2 := parseProcStat(records[len(records)-1].Data)
 				if err1 == nil && err2 == nil {
 					pct := cpuPercentage(s1, s2)
-					state.append("cpu (16c)", pct)
+					state.metrics.Publish("cpu (16c)", pct, now)
 				}
 			}
 		}

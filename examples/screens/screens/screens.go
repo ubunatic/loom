@@ -115,6 +115,10 @@ func (a *App) resizeWidth(delta, maxWidth int) {
 	}
 }
 
+func sizeStepper(label, down, up, value string) []seg {
+	return []seg{{text: label}, {text: "[-]", key: down}, {text: " " + value + " "}, {text: "[+]", key: up}}
+}
+
 func (a *App) termWidth() int {
 	cols, _, _ := loom.TerminalSize()
 	return cols
@@ -131,13 +135,6 @@ func screenName(m loom.ScreenMode) string {
 	return [...]string{"inline", "primary full screen", "full screen (alt)"}[m]
 }
 
-// detected reports what each enabled detector says about the terminal.
-func (a *App) detected(termCols, termRows int) (byWidth, byHeight bool) {
-	w, h := a.cfg, a.cfg
-	w.FullByHeight, h.FullByWidth = false, false
-	return w.QuasiFullscreen(a.width, a.height, termCols, termRows), h.QuasiFullscreen(a.width, a.height, termCols, termRows)
-}
-
 // rows describes the UI in groups: state, size, look, auto full screen (with
 // one row per detector), and the remaining keys.
 func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
@@ -145,15 +142,15 @@ func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
 	if a.pane != nil {
 		mode = a.pane.Screen()
 	}
-	byW, byH := a.detected(termCols, termRows)
+	byW, byH := false, false
+	if a.pane != nil {
+		byW, byH = a.pane.AutoFullscreenReasons()
+	}
 	note := ""
 	if byW || byH {
 		note = " (auto)"
 	}
 	cfg := a.cfg
-	stepper := func(label string, down, up string, value string) []seg {
-		return []seg{{text: label}, {"[-]", down}, {text: " " + value + " "}, {"[+]", up}}
-	}
 	join := func(parts ...[]seg) []seg {
 		var out []seg
 		for _, p := range parts {
@@ -170,16 +167,16 @@ func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
 		{{text: fmt.Sprintf("Pane: %dx%d drawn, %dx%d wanted", pane.W, pane.H, a.width, a.height)}},
 		{{text: fmt.Sprintf("Detect: width %s, height %s", verdict(byW), verdict(byH))}},
 		separator,
-		join(stepper("Width ", "W", "w", fmt.Sprintf("%d/%d", min(a.width, termCols), termCols)),
-			stepper("   Height ", "-", "+", fmt.Sprint(a.height))),
+		join(sizeStepper("Width ", "W", "w", fmt.Sprintf("%d/%d", min(a.width, termCols), termCols)),
+			sizeStepper("   Height ", "-", "+", fmt.Sprint(a.height))),
 		join([]seg{{text: "Theme "}, {"[" + a.themeName() + "]", "t"}}, toggle("   Astra ", "a", a.astra)),
 		separator,
 		join(toggle("Auto full screen ", "c", cfg.AutoFullscreen), toggle("   uses alt ", "l", cfg.FullAlt)),
-		join(toggle("  by width  ", "x", cfg.FullByWidth), stepper("  margin cols ", "K", "k", fmt.Sprint(cfg.FullMarginCols)),
+		join(toggle("  by width  ", "x", cfg.FullByWidth), sizeStepper("  margin cols ", "K", "k", fmt.Sprint(cfg.FullMarginCols)),
 			[]seg{{text: yesNo(byW)}}),
-		join(toggle("  by height ", "y", cfg.FullByHeight), stepper("  margin rows ", "M", "m", fmt.Sprint(cfg.FullMarginRows)),
+		join(toggle("  by height ", "y", cfg.FullByHeight), sizeStepper("  margin rows ", "M", "m", fmt.Sprint(cfg.FullMarginRows)),
 			[]seg{{text: yesNo(byH)}}),
-		join(stepper("  full at height % ", "P", "p", fmt.Sprintf("%d", cfg.FullMinPercent)),
+		join(sizeStepper("  full at height % ", "P", "p", fmt.Sprintf("%d", cfg.FullMinPercent)),
 			[]seg{{text: fmt.Sprintf("(0 = off, now %d%%)", pctOf(a.height, termRows))}}),
 		join(toggle("Leak guard ", "r", cfg.FullLeakGuard)),
 		separator,
@@ -250,7 +247,11 @@ func drawSeparator(c *loom.Canvas, r loom.Rect, y int, style loom.Style) {
 	if r.W < 3 {
 		return
 	}
-	c.Write(r.X, y, "├"+strings.Repeat("─", r.W-2)+"┤", style)
+	for x := r.X; x < r.X+r.W; x++ {
+		c.PaintForeground(x, y, loom.Cell{Text: "─", Style: style, Claim: true})
+	}
+	c.PaintForeground(r.X, y, loom.Cell{Text: "├", Style: style, Claim: true})
+	c.PaintForeground(r.X+r.W-1, y, loom.Cell{Text: "┤", Style: style, Claim: true})
 }
 
 // writeWords writes text but leaves its spaces unwritten, so they keep the
@@ -272,12 +273,19 @@ func drawBorder(c *loom.Canvas, r loom.Rect, style loom.Style) loom.Rect {
 	if r.W < 3 || r.H < 3 {
 		return r
 	}
-	horiz := strings.Repeat("─", r.W-2)
-	c.Write(r.X, r.Y, "┌"+horiz+"┐", style)
-	c.Write(r.X, r.Y+r.H-1, "└"+horiz+"┘", style)
+	box := loom.BoxBorder{TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘", Horizontal: "─", Vertical: "│"}
+	boxStyle := loom.BoxStyle{Border: style}
+	for x := r.X; x < r.X+r.W; x++ {
+		c.PaintForeground(x, r.Y, loom.Cell{Text: box.Horizontal, Style: boxStyle.Border, Claim: true})
+		c.PaintForeground(x, r.Y+r.H-1, loom.Cell{Text: box.Horizontal, Style: boxStyle.Border, Claim: true})
+	}
+	c.Write(r.X, r.Y, box.TopLeft, style)
+	c.Write(r.X+r.W-1, r.Y, box.TopRight, style)
+	c.Write(r.X, r.Y+r.H-1, box.BottomLeft, style)
+	c.Write(r.X+r.W-1, r.Y+r.H-1, box.BottomRight, style)
 	for y := r.Y + 1; y < r.Y+r.H-1; y++ {
-		c.Write(r.X, y, "│", style)
-		c.Write(r.X+r.W-1, y, "│", style)
+		c.PaintForeground(r.X, y, loom.Cell{Text: box.Vertical, Style: boxStyle.Border, Claim: true})
+		c.PaintForeground(r.X+r.W-1, y, loom.Cell{Text: box.Vertical, Style: boxStyle.Border, Claim: true})
 	}
 	return loom.Rect{X: r.X + 1, Y: r.Y + 1, W: r.W - 2, H: r.H - 2}
 }
@@ -290,10 +298,23 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	}
 	switch key {
 	case "f":
-		a.cfg.FullScreenBuffer, a.cfg.AltScreen = false, !a.cfg.AltScreen
+		if a.cfg.AltScreen {
+			a.cfg.FullScreenBuffer, a.cfg.AltScreen = false, false
+			if a.pane != nil {
+				a.pane.SetScreenMode(loom.ScreenInline)
+			}
+		} else {
+			a.cfg.FullScreenBuffer, a.cfg.AltScreen = false, true
+			if a.pane != nil {
+				a.pane.SetScreenMode(loom.ScreenAlt)
+			}
+		}
 	case "n":
 		primaryFull := a.cfg.FullScreenBuffer && !a.cfg.AltScreen
 		a.cfg.FullScreenBuffer, a.cfg.AltScreen = !primaryFull, false
+		if a.pane != nil {
+			a.pane.SetScreenMode(loom.ScreenFull)
+		}
 	case "c":
 		a.cfg.AutoFullscreen = !a.cfg.AutoFullscreen
 	case "l":
