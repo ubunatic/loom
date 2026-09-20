@@ -10,6 +10,9 @@ import (
 type widget struct {
 	metrics *loom.RenderMetrics
 	frame   *loom.Frame
+	pane    *loom.Pane
+	themes  []string
+	theme   int
 }
 
 func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
@@ -23,11 +26,28 @@ func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w widget) HandleKey(k loom.KeyEvent) bool {
+func (w *widget) HandleKey(k loom.KeyEvent) bool {
+	key := k.Key
+	if key == "" {
+		key = k.Text
+	}
+	switch key {
+	case "m", "M":
+		if w.pane != nil {
+			w.pane.ReduceMotion = !w.pane.ReduceMotion
+		}
+		return false
+	case "t", "T":
+		if len(w.themes) > 0 {
+			w.theme = (w.theme + 1) % len(w.themes)
+			applyTheme(w.frame, loom.Theme(w.themes[w.theme]))
+		}
+		return false
+	}
 	return w.frame != nil && w.frame.HandleKey(k)
 }
 
-func (w widget) HandleMouse(k loom.MouseEvent) bool {
+func (w *widget) HandleMouse(k loom.MouseEvent) bool {
 	return w.frame != nil && w.frame.HandleMouse(k)
 }
 
@@ -60,14 +80,21 @@ func demoFrame() *loom.Frame {
 		"This pane intentionally leaves open surface so",
 		"the animation remains visible during interaction.",
 	})
+	split := loom.NewSplit(left, right)
+	split.Ratio = 0.45
+	split.MinFirst, split.MinSecond = 18, 24
 	return &loom.Frame{
 		Title: "Composition test area", Status: "Tab: focus  •  arrows: scroll  •  q: quit",
 		Gap: 1, Breakpoint: 70,
-		Boxes: []loom.Box{
-			{ID: "left", Title: "Left pane", Dynamic: true, FillHeight: true, MinWidth: 18, Height: 12, Style: loom.BoxStyle{Background: loom.Style{BG: loom.ColorRGB(25, 30, 38)}}, Child: left},
-			{ID: "right", Title: "Right pane", Dynamic: true, FillHeight: true, MinWidth: 24, Height: 12, Style: loom.BoxStyle{Background: loom.Style{BG: loom.ColorRGB(30, 27, 38)}}, Child: right},
-		},
+		Boxes:   []loom.Box{{ID: "panels", Title: "Interactive split (drag divider)", Dynamic: true, FillHeight: true, MinWidth: 42, Height: 12, Child: split}},
 		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "q"}},
+	}
+}
+
+func applyTheme(frame *loom.Frame, theme loom.ThemeColors) {
+	frame.Style = theme.FrameStyle()
+	for i := range frame.Boxes {
+		frame.Boxes[i].Style = theme.BoxStyle()
 	}
 }
 
@@ -84,5 +111,9 @@ func Run(_ []string) error {
 	pane.Background = loom.NewAstraBackground()
 	metrics := &loom.RenderMetrics{}
 	pane.Metrics = metrics
-	return pane.Run(widget{metrics: metrics, frame: demoFrame()})
+	themes := make([]string, 0, len(loom.SpeccedThemes))
+	for name := range loom.SpeccedThemes {
+		themes = append(themes, name)
+	}
+	return pane.Run(&widget{metrics: metrics, frame: demoFrame(), pane: pane, themes: themes})
 }

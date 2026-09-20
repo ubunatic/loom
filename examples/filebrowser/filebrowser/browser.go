@@ -15,6 +15,7 @@ type browser struct {
 	details   *detailView
 	dir       string
 	paths     map[string]string
+	entries   map[string]loom.FileEntry
 	notice    string
 	themeName string
 	theme     loom.ThemeColors
@@ -30,18 +31,7 @@ func (v *detailView) Focused() bool         { return v.focused }
 func (v *detailView) SetFocus(focused bool) { v.focused = focused }
 
 func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error) {
-	dir, err := filepath.Abs(path)
-	if err != nil {
-		return nil, err
-	}
-	info, err := os.Stat(dir)
-	if err != nil {
-		return nil, err
-	}
-	if !info.IsDir() {
-		return nil, fmt.Errorf("%s is not a directory", dir)
-	}
-	b := &browser{dir: dir, details: &detailView{View: loom.NewView(nil)}, openFile: loom.OpenFile}
+	b := &browser{dir: path, details: &detailView{View: loom.NewView(nil)}, openFile: loom.OpenFile}
 	border := loom.BoxBorder{
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
@@ -59,7 +49,7 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 		},
 	}
 	b.applyTheme(themeName, theme)
-	if err := b.open(dir, ""); err != nil {
+	if err := b.open(path, ""); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -96,6 +86,7 @@ func (b *browser) open(dir, selectName string) error {
 	}
 	items := make([]loom.Item, 0, len(directory.Entries))
 	paths := make(map[string]string, len(directory.Entries))
+	entries := make(map[string]loom.FileEntry, len(directory.Entries))
 	for _, entry := range directory.Entries {
 		name := entry.DisplayName()
 		desc := ""
@@ -108,6 +99,7 @@ func (b *browser) open(dir, selectName string) error {
 		}
 		items = append(items, loom.Item{Name: name, Desc: desc})
 		paths[name] = entry.Path
+		entries[name] = entry
 	}
 	list := loom.NewChoice(items)
 	list.Style = b.theme.ChoiceStyle()
@@ -115,13 +107,13 @@ func (b *browser) open(dir, selectName string) error {
 	list.Prompt = "filter> "
 	list.Placeholder = "type to filter"
 	list.OnSelect = func(item loom.Item) {
-		path := paths[item.Name]
-		info, err := os.Stat(path)
-		if err != nil {
-			b.notice = "Error: " + err.Error()
+		entry, ok := entries[item.Name]
+		if !ok {
+			b.notice = "Error: entry disappeared"
 			return
 		}
-		if info.IsDir() {
+		path := entry.Path
+		if entry.Kind == loom.FileKindDirectory {
 			nextSelection := ""
 			if item.Name == ".." {
 				nextSelection = loom.QuoteUnprintable(filepath.Base(dir))
@@ -129,11 +121,26 @@ func (b *browser) open(dir, selectName string) error {
 			if err := b.open(path, nextSelection); err != nil {
 				b.notice = "Error: " + err.Error()
 			}
-		} else if info.Mode().IsRegular() {
+		} else if entry.Kind == loom.FileKindRegular {
 			if err := b.openFile(path); err != nil {
 				b.notice = "Open failed: " + err.Error()
 			} else {
 				b.notice = "Opening file"
+			}
+		} else if entry.Kind == loom.FileKindSymlink {
+			info, err := os.Stat(path)
+			if err == nil && info.IsDir() {
+				if err := b.open(path, ""); err != nil {
+					b.notice = "Error: " + err.Error()
+				}
+			} else if err == nil && info.Mode().IsRegular() {
+				if err := b.openFile(path); err != nil {
+					b.notice = "Open failed: " + err.Error()
+				} else {
+					b.notice = "Opening file"
+				}
+			} else {
+				b.notice = "Cannot open this file type"
 			}
 		} else {
 			b.notice = "Cannot open this file type"
@@ -147,7 +154,7 @@ func (b *browser) open(dir, selectName string) error {
 			break
 		}
 	}
-	b.dir, b.paths, b.list, b.notice = directory.Path, paths, list, ""
+	b.dir, b.paths, b.entries, b.list, b.notice = directory.Path, paths, entries, list, ""
 	b.frame.Boxes[0].Child = list
 	b.updateDetails()
 	return nil

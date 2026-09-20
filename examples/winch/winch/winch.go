@@ -126,18 +126,19 @@ func drawBoxBorder(c *loom.Canvas, r loom.Rect, border loom.BoxBorder, title str
 	if r.W < 2 || r.H < 2 {
 		return
 	}
+	c.PaintSurface(r, style)
 	for x := r.X + 1; x < r.X+r.W-1; x++ {
-		c.Set(x, r.Y, loom.Cell{Text: border.Horizontal, Style: style})
-		c.Set(x, r.Y+r.H-1, loom.Cell{Text: border.Horizontal, Style: style})
+		c.PaintForeground(x, r.Y, loom.Cell{Text: border.Horizontal, Style: style, Claim: true})
+		c.PaintForeground(x, r.Y+r.H-1, loom.Cell{Text: border.Horizontal, Style: style, Claim: true})
 	}
 	for y := r.Y + 1; y < r.Y+r.H-1; y++ {
-		c.Set(r.X, y, loom.Cell{Text: border.Vertical, Style: style})
-		c.Set(r.X+r.W-1, y, loom.Cell{Text: border.Vertical, Style: style})
+		c.PaintForeground(r.X, y, loom.Cell{Text: border.Vertical, Style: style, Claim: true})
+		c.PaintForeground(r.X+r.W-1, y, loom.Cell{Text: border.Vertical, Style: style, Claim: true})
 	}
-	c.Set(r.X, r.Y, loom.Cell{Text: border.TopLeft, Style: style})
-	c.Set(r.X+r.W-1, r.Y, loom.Cell{Text: border.TopRight, Style: style})
-	c.Set(r.X, r.Y+r.H-1, loom.Cell{Text: border.BottomLeft, Style: style})
-	c.Set(r.X+r.W-1, r.Y+r.H-1, loom.Cell{Text: border.BottomRight, Style: style})
+	c.PaintForeground(r.X, r.Y, loom.Cell{Text: border.TopLeft, Style: style, Claim: true})
+	c.PaintForeground(r.X+r.W-1, r.Y, loom.Cell{Text: border.TopRight, Style: style, Claim: true})
+	c.PaintForeground(r.X, r.Y+r.H-1, loom.Cell{Text: border.BottomLeft, Style: style, Claim: true})
+	c.PaintForeground(r.X+r.W-1, r.Y+r.H-1, loom.Cell{Text: border.BottomRight, Style: style, Claim: true})
 	if title != "" && r.W > 4 {
 		c.Write(r.X+2, r.Y, loom.TruncateText(" "+title+" ", r.W-4, ""), titleStyle)
 	}
