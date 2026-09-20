@@ -189,6 +189,10 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	if view < 1 {
 		return
 	}
+	if b.kind == KindANSI {
+		writeANSI(c, loom.Rect{X: r.X + left + 1, Y: r.Y + 1, W: r.W - left - 1, H: view}, strings.Join(b.lines, "\n"))
+		return
+	}
 	for i := 0; i < view && b.offset+i < len(b.lines); i++ {
 		writeANSI(c, loom.Rect{X: r.X + left + 1, Y: r.Y + i + 1, W: r.W - left - 1, H: 1}, b.lines[b.offset+i])
 	}
@@ -244,14 +248,41 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 	for i := 0; i < len(rs) && y < r.Y+r.H; {
 		if rs[i] == '\x1b' && i+1 < len(rs) && rs[i+1] == '[' {
 			j := i + 2
-			for j < len(rs) && rs[j] != 'm' {
+			for j < len(rs) && (rs[j] < '@' || rs[j] > '~') {
 				j++
 			}
 			if j < len(rs) {
-				style = applySGR(style, string(rs[i+2:j]))
+				params := string(rs[i+2 : j])
+				switch rs[j] {
+				case 'm':
+					style = applySGR(style, params)
+				case 'C':
+					x += csiNumber(params, 1)
+				case 'H', 'f':
+					row, col := csiPosition(params)
+					y = r.Y + row - 1
+					x = r.X + col - 1
+				case 'G':
+					x = r.X + csiNumber(params, 1) - 1
+				case 'd':
+					y = r.Y + csiNumber(params, 1) - 1
+				case 'J':
+					if params == "2" || params == "3" {
+						c.Fill(r, loom.Cell{})
+					}
+				}
 				i = j + 1
 				continue
 			}
+		}
+		if rs[i] == '\x1b' && i+2 < len(rs) && rs[i+1] == '(' {
+			i += 3
+			continue
+		}
+		if rs[i] == '\r' {
+			x = r.X
+			i++
+			continue
 		}
 		if rs[i] == '\n' {
 			y++
@@ -269,6 +300,26 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 		}
 		i++
 	}
+}
+
+func csiNumber(params string, fallback int) int {
+	n, err := strconv.Atoi(params)
+	if err != nil || n < 1 {
+		return fallback
+	}
+	return n
+}
+
+func csiPosition(params string) (int, int) {
+	parts := strings.Split(params, ";")
+	row, col := 1, 1
+	if len(parts) > 0 && parts[0] != "" {
+		row = csiNumber(parts[0], 1)
+	}
+	if len(parts) > 1 && parts[1] != "" {
+		col = csiNumber(parts[1], 1)
+	}
+	return row, col
 }
 func applySGR(style loom.Style, params string) loom.Style {
 	parts := strings.Split(params, ";")

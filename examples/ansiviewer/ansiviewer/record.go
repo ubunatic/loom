@@ -103,6 +103,7 @@ var recordingOSC = regexp.MustCompile("\\x1b\\](?:0|7);[^\\x07\\x1b]*(?:\\x07|\\
 func stripRecordingState(data []byte) []byte {
 	clean := recordingOSC.ReplaceAll(data, nil)
 	for _, sequence := range []string{
+		"\x1b(B",
 		"\x1b[?1h", "\x1b[?1l", "\x1b=", "\x1b>",
 		"\x1b[?1001s", "\x1b[?1001r", "\x1b[?1002h", "\x1b[?1002l",
 		"\x1b[?1003h", "\x1b[?1003l", "\x1b[?1006h", "\x1b[?1006l",
