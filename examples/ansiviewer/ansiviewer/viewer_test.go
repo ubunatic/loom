@@ -177,8 +177,12 @@ func TestRecordCommandPreservesUsageANSIFixture(t *testing.T) {
 	testRecordFixture(t, "harnez-usage.ansi")
 }
 
-func TestRecordCommandPreservesMCANSIFixture(t *testing.T) {
-	testRecordFixture(t, "mc.ansi")
+func TestRecordCommandPreservesMCANSIFixtures(t *testing.T) {
+	for _, name := range []string{"mc-julia256.ansi", "mc-mc46.ansi"} {
+		t.Run(name, func(t *testing.T) {
+			testRecordFixture(t, name)
+		})
+	}
 }
 
 func testRecordFixture(t *testing.T, name string) {
