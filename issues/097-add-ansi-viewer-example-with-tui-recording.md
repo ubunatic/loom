@@ -93,6 +93,18 @@ Pre-Work / Required Refinements (do these first, commit as `(issue 097 M1b)`):
   PTY smoke test consistent with ticket 085.
 - Evidence: `M2-layout.ansi` (rooted at `docs/data`), `M2-narrow.ansi` (60x20).
 
+### M2 Review (host) — committed `a91893d` by host (index.lock); accepted with Pre-Work for M3
+
+Pre-Work / Required Refinements (do first, commit as `(issue 097 M2b)`):
+1. `TestANSIWriteClipsToBounds` still only asserts a non-empty row. Rewrite it:
+   fill a canvas with a sentinel rune, draw wide, CJK and long SGR lines into
+   an inner rect, assert every cell outside the rect is unchanged and that the
+   in-rect cells hold the expected text and colors.
+2. Add the PTY smoke test for `ansiviewer` like the other examples (ticket 085):
+   starts, shows the file list, responds to down/j, quits with q.
+3. Git note: if `git commit` fails with index.lock, leave files uncommitted and
+   report; the host commits.
+
 ### M3 — `--record <time>`
 - Launch a subprocess TUI in a PTY, capture exactly one screen snapshot after
   the delay, write it as `.ansi`, then terminate and reap the child. Must work
