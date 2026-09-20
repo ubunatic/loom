@@ -292,6 +292,20 @@ func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	if n == 0 {
 		return false, false
 	}
+	keys := t.Keys
+	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
+		keys = DefaultTabsKeys()
+	}
+	if t.ArrowSwitch {
+		switch {
+		case matchesTabKey(e, keys.Previous):
+			t.Select((t.focus - 1 + n) % n)
+			return false, true
+		case matchesTabKey(e, keys.Next):
+			t.Select((t.focus + 1) % n)
+			return false, true
+		}
+	}
 	if child := t.active(); child != nil {
 		if consumer, ok := child.(KeyConsumer); ok {
 			if quit, consumed = consumer.ConsumeKey(e); consumed {
@@ -299,15 +313,11 @@ func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 			}
 		}
 	}
-	keys := t.Keys
-	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
-		keys = DefaultTabsKeys()
-	}
 	switch {
-	case t.ArrowSwitch && matchesTabKey(e, keys.Previous):
+	case !t.ArrowSwitch && matchesTabKey(e, keys.Previous):
 		t.Select((t.focus - 1 + n) % n)
 		return false, true
-	case t.ArrowSwitch && matchesTabKey(e, keys.Next):
+	case !t.ArrowSwitch && matchesTabKey(e, keys.Next):
 		t.Select((t.focus + 1) % n)
 		return false, true
 	case matchesTabKey(e, keys.Cycle), matchesTabKey(e, t.SwitchKey):
