@@ -108,3 +108,4 @@ upkeep.
 | 094 | [094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md](094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md) | Keep filebrowser help modal in control of keyboard input | Closed — completed in lean sprint |
 | 095 | [095-add-human-observable-pty-test-view-mode-and-feedback-flow.md](095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) | Add human-observable PTY test view mode and feedback flow | Open |
 | 096 | [096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md](096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md) | Follow up 038 with a non-ASCII text rendering example app | Open |
+| 097 | [097-add-ansi-viewer-example-with-tui-recording.md](097-add-ansi-viewer-example-with-tui-recording.md) | Add ANSI viewer example with TUI recording | Open |
