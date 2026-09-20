@@ -1,6 +1,6 @@
 # 038 — Fix Multi-byte UTF-8 String Truncation in Popup Title and Borders
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
