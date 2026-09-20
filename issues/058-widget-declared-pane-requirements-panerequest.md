@@ -1,6 +1,6 @@
 # 058 — Widget-declared pane requirements (PaneRequest)
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
