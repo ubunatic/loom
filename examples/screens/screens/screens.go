@@ -156,9 +156,9 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	normal := loom.Style{FG: th.NormalFG.Color(), BG: th.NormalBG.Color()}
 	border := loom.Style{FG: th.BorderFG.Color(), BG: th.BorderBG.Color()}
 	btnStyle := loom.Style{FG: th.SelectedFG.Color(), BG: th.SelectedBG.Color(), Bold: true}
-	if !a.astra {
-		c.Fill(r, loom.Cell{Text: " ", Style: normal})
-	}
+	// Paint the whole pane in the theme so it is uniform. Blank cells with the
+	// default style (the plain theme) stay eligible for the Astra background.
+	c.Fill(r, loom.Cell{Text: " ", Style: normal})
 	inner := drawBorder(c, r, border)
 	lines := a.lines(termCols, termRows)
 	for i, line := range lines {
