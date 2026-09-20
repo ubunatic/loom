@@ -156,3 +156,15 @@ Required (design given, do not improvise):
    stripping SGR, each file must contain the text `harnez usage` and have no
    raw ESC sequences other than SGR. Add a test asserting exactly that on
    the recorded output of a scripted child.
+
+### M3c Review (host) — splash capture accepted; finish as M3d (last two gaps)
+
+1. `M3-record-watch.ansi` is blank after SGR stripping. For a long-lived child
+   the snapshot at `<time>` must show the splash frame ("harnez usage"), i.e.
+   snapshot the live screen at the deadline, not after teardown. Add a test
+   using a scripted long-lived child that paints text then sleeps; assert the
+   text is in the snapshot. Regenerate the file and check for `harnez usage`.
+2. `main.go` still has no `--record` flag (item 3 of M3b was skipped). Add
+   `ansiviewer --record 2s [-o file] -- <cmd> [args...]`, extract
+   `run(args []string, stdout io.Writer) error`, and test it with a scripted
+   child. Also update `--help` text and the ticket Notes with the usage line.
