@@ -3,7 +3,11 @@
 
 package loom
 
-import "gopkg.in/yaml.v3"
+import (
+	"fmt"
+
+	"gopkg.in/yaml.v3"
+)
 
 // Tab pairs a title with the widget shown while that tab is active.
 type Tab struct {
@@ -19,6 +23,21 @@ type TabsStyle struct {
 	Active   Style // active tab title (header_*)
 	Inactive Style // inactive tab titles (normal_*)
 	Rule     Style // bar separator rule (border_*)
+}
+
+// TabsKeys configures keyboard navigation for a Tabs widget. Previous, Next,
+// and Cycle each name one key. Select maps keys to tab indexes by position.
+// Bindings match either KeyEvent.Key or KeyEvent.Text.
+type TabsKeys struct {
+	Previous string
+	Next     string
+	Cycle    string
+	Select   []string
+}
+
+// DefaultTabsKeys returns the historical left/right arrow navigation.
+func DefaultTabsKeys() TabsKeys {
+	return TabsKeys{Previous: "left", Next: "right"}
 }
 
 // DefaultTabsStyle returns a minimal monochrome style, mirroring
@@ -52,13 +71,13 @@ var tabsRuleGlyph = func() string {
 	return border.Horizontal
 }()
 
-// Tabs hosts a fixed set of child widgets under a row of tabs, switching
-// which child receives Draw/HandleKey/HandleMouse. The tab set is fixed at
-// construction time (NewTabs) — dynamic add/remove is out of scope, matching
-// Stack's fixed Children model.
+// Tabs hosts child widgets under a row of tabs, switching which child receives
+// Draw/HandleKey/HandleMouse. Tabs may be added, inserted, removed, or replaced
+// at runtime using its lifecycle methods.
 type Tabs struct {
 	Tabs  []Tab
 	Style TabsStyle
+	Keys  TabsKeys
 	// SwitchKey optionally cycles to the next tab in addition to left/right
 	// arrow keys (e.g. "tab" or "ctrl-t"). Empty disables it.
 	SwitchKey string
@@ -71,7 +90,7 @@ type Tabs struct {
 
 // NewTabs creates a Tabs widget hosting the given tabs, analogous to NewStack.
 func NewTabs(tabs ...Tab) *Tabs {
-	return &Tabs{Tabs: tabs, Style: DefaultTabsStyle()}
+	return &Tabs{Tabs: tabs, Style: DefaultTabsStyle(), Keys: DefaultTabsKeys()}
 }
 
 // Focus returns the index of the currently active tab.
@@ -89,7 +108,97 @@ func (t *Tabs) SetFocusIndex(i int) {
 	if i >= len(t.Tabs) {
 		i = len(t.Tabs) - 1
 	}
-	t.focus = i
+	t.Select(i)
+}
+
+// Add appends tab and returns its index.
+func (t *Tabs) Add(tab Tab) int {
+	index := len(t.Tabs)
+	t.Tabs = append(t.Tabs, tab)
+	t.invalidateLayout()
+	return index
+}
+
+// Insert adds tab at index. Index may equal the current tab count to append.
+// The currently selected tab remains selected.
+func (t *Tabs) Insert(index int, tab Tab) error {
+	if index < 0 || index > len(t.Tabs) {
+		return fmt.Errorf("tabs: insert index %d out of range [0,%d]", index, len(t.Tabs))
+	}
+	t.Tabs = append(t.Tabs, Tab{})
+	copy(t.Tabs[index+1:], t.Tabs[index:])
+	t.Tabs[index] = tab
+	if len(t.Tabs) > 1 && index <= t.focus {
+		t.focus++
+	}
+	t.invalidateLayout()
+	return nil
+}
+
+// Remove deletes the tab at index. Removing a tab before the selection keeps
+// the same tab selected; removing the selected tab chooses its successor, or
+// the preceding tab when the removed tab was last.
+func (t *Tabs) Remove(index int) error {
+	if index < 0 || index >= len(t.Tabs) {
+		return fmt.Errorf("tabs: remove index %d out of range [0,%d)", index, len(t.Tabs))
+	}
+	old := t.active()
+	copy(t.Tabs[index:], t.Tabs[index+1:])
+	t.Tabs[len(t.Tabs)-1] = Tab{}
+	t.Tabs = t.Tabs[:len(t.Tabs)-1]
+	if len(t.Tabs) == 0 {
+		t.focus = 0
+	} else if index < t.focus {
+		t.focus--
+	} else if t.focus >= len(t.Tabs) {
+		t.focus = len(t.Tabs) - 1
+	}
+	t.updateChildFocus(old, t.active())
+	t.invalidateLayout()
+	return nil
+}
+
+// SetTabs replaces all tabs and clamps the selected index to the new bounds.
+func (t *Tabs) SetTabs(tabs ...Tab) {
+	old := t.active()
+	t.Tabs = tabs
+	if len(t.Tabs) == 0 {
+		t.focus = 0
+	} else if t.focus >= len(t.Tabs) {
+		t.focus = len(t.Tabs) - 1
+	} else if t.focus < 0 {
+		t.focus = 0
+	}
+	t.updateChildFocus(old, t.active())
+	t.invalidateLayout()
+}
+
+// Select activates index and reports whether it was valid.
+func (t *Tabs) Select(index int) bool {
+	if index < 0 || index >= len(t.Tabs) {
+		return false
+	}
+	old := t.active()
+	t.focus = index
+	t.updateChildFocus(old, t.active())
+	return true
+}
+
+// SetKeys replaces the declarative navigation key configuration.
+func (t *Tabs) SetKeys(keys TabsKeys) { t.Keys = keys }
+
+func (t *Tabs) invalidateLayout() {
+	t.drawn = false
+	t.tabCols = nil
+}
+
+func (t *Tabs) updateChildFocus(old, current Widget) {
+	if child, ok := old.(Focusable); ok {
+		child.SetFocus(false)
+	}
+	if child, ok := current.(Focusable); ok {
+		child.SetFocus(true)
+	}
 }
 
 // active returns the widget of the currently active tab, or nil if there are none.
@@ -152,29 +261,42 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey switches tabs on left/right arrows (and SwitchKey, if set),
-// delegating everything else to the active child.
+// HandleKey applies configured navigation (and SwitchKey, if set), delegating
+// everything else to the active child.
 func (t *Tabs) HandleKey(e KeyEvent) (quit bool) {
 	n := len(t.Tabs)
 	if n == 0 {
 		return false
 	}
+	keys := t.Keys
+	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
+		keys = DefaultTabsKeys()
+	}
 	switch {
-	case e.Key == "left":
-		t.focus = (t.focus - 1 + n) % n
+	case matchesTabKey(e, keys.Previous):
+		t.Select((t.focus - 1 + n) % n)
 		return false
-	case e.Key == "right":
-		t.focus = (t.focus + 1) % n
+	case matchesTabKey(e, keys.Next):
+		t.Select((t.focus + 1) % n)
 		return false
-	case t.SwitchKey != "" && e.Key == t.SwitchKey:
-		t.focus = (t.focus + 1) % n
+	case matchesTabKey(e, keys.Cycle), matchesTabKey(e, t.SwitchKey):
+		t.Select((t.focus + 1) % n)
 		return false
+	}
+	for index, binding := range keys.Select {
+		if matchesTabKey(e, binding) && t.Select(index) {
+			return false
+		}
 	}
 	child := t.active()
 	if child == nil {
 		return false
 	}
 	return child.HandleKey(e)
+}
+
+func matchesTabKey(event KeyEvent, binding string) bool {
+	return binding != "" && (event.Key == binding || event.Text == binding)
 }
 
 // HandleMouse switches tabs on a left click within the tab bar; any other
@@ -189,7 +311,7 @@ func (t *Tabs) HandleMouse(e MouseEvent) (quit bool) {
 		x, y := e.X-1, e.Y-1
 		for i, cr := range t.tabCols {
 			if cr.Contains(x, y) {
-				t.focus = i
+				t.Select(i)
 				return false
 			}
 		}

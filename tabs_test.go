@@ -19,6 +19,14 @@ type tabSpy struct {
 	quitMice bool
 }
 
+type focusTabSpy struct {
+	tabSpy
+	focused bool
+}
+
+func (s *focusTabSpy) Focused() bool         { return s.focused }
+func (s *focusTabSpy) SetFocus(focused bool) { s.focused = focused }
+
 func (s *tabSpy) Draw(*loom.Canvas, loom.Rect) { s.drawn = true }
 func (s *tabSpy) HandleKey(e loom.KeyEvent) bool {
 	s.keys = append(s.keys, e)
@@ -55,6 +63,111 @@ func TestTabsSwitchWithConfiguredKey(t *testing.T) {
 	tabs.HandleKey(loom.KeyEvent{Key: "ctrl-t"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("after ctrl-t, focus = %d, want 1", tabs.Focus())
+	}
+}
+
+func TestTabsDynamicLifecycle(t *testing.T) {
+	a, b, c, inserted := &focusTabSpy{}, &focusTabSpy{}, &focusTabSpy{}, &focusTabSpy{}
+	tabs := loom.NewTabs(
+		loom.Tab{Title: "A", Widget: a},
+		loom.Tab{Title: "B", Widget: b},
+		loom.Tab{Title: "C", Widget: c},
+	)
+	if !tabs.Select(1) {
+		t.Fatal("Select(1) = false, want true")
+	}
+	if got := tabs.Add(loom.Tab{Title: "D"}); got != 3 {
+		t.Fatalf("Add index = %d, want 3", got)
+	}
+	if err := tabs.Insert(1, loom.Tab{Title: "Inserted", Widget: inserted}); err != nil {
+		t.Fatalf("Insert(1): %v", err)
+	}
+	if tabs.Focus() != 2 || tabs.Tabs[tabs.Focus()].Widget != b {
+		t.Fatalf("insert changed active tab: focus=%d", tabs.Focus())
+	}
+	if err := tabs.Remove(0); err != nil {
+		t.Fatalf("Remove(0): %v", err)
+	}
+	if tabs.Focus() != 1 || tabs.Tabs[tabs.Focus()].Widget != b {
+		t.Fatalf("remove before selection changed active tab: focus=%d", tabs.Focus())
+	}
+	if err := tabs.Remove(1); err != nil {
+		t.Fatalf("Remove(selected): %v", err)
+	}
+	if tabs.Focus() != 1 || tabs.Tabs[tabs.Focus()].Widget != c {
+		t.Fatalf("remove selected did not choose successor: focus=%d", tabs.Focus())
+	}
+	if b.Focused() || !c.Focused() {
+		t.Fatalf("child focus not transferred: b=%v c=%v", b.Focused(), c.Focused())
+	}
+}
+
+func TestTabsLifecycleBoundsAndEmpty(t *testing.T) {
+	tabs := loom.NewTabs()
+	if tabs.Select(0) || tabs.Select(-1) {
+		t.Error("Select should reject indexes for an empty tab list")
+	}
+	if err := tabs.Remove(0); err == nil {
+		t.Error("Remove(0) on empty tabs = nil, want error")
+	}
+	if err := tabs.Insert(-1, loom.Tab{}); err == nil {
+		t.Error("Insert(-1) = nil, want error")
+	}
+	if err := tabs.Insert(1, loom.Tab{}); err == nil {
+		t.Error("Insert(1) on empty tabs = nil, want error")
+	}
+	if err := tabs.Insert(0, loom.Tab{Title: "A"}); err != nil {
+		t.Fatalf("Insert(0) on empty tabs: %v", err)
+	}
+	if tabs.Focus() != 0 || !tabs.Select(0) {
+		t.Fatalf("first inserted tab not selectable: focus=%d", tabs.Focus())
+	}
+	tabs.SetFocusIndex(99)
+	if tabs.Focus() != 0 {
+		t.Fatalf("clamped focus = %d, want 0", tabs.Focus())
+	}
+	tabs.SetTabs()
+	if tabs.Focus() != 0 || len(tabs.Tabs) != 0 {
+		t.Fatalf("SetTabs() left invalid state: focus=%d tabs=%d", tabs.Focus(), len(tabs.Tabs))
+	}
+}
+
+func TestTabsSetTabsClampsSelection(t *testing.T) {
+	tabs := loom.NewTabs(loom.Tab{}, loom.Tab{}, loom.Tab{})
+	tabs.Select(2)
+	tabs.SetTabs(loom.Tab{Title: "Only"})
+	if tabs.Focus() != 0 {
+		t.Fatalf("focus after shrinking tabs = %d, want 0", tabs.Focus())
+	}
+}
+
+func TestTabsConfiguredNavigation(t *testing.T) {
+	tabs := loom.NewTabs(loom.Tab{Title: "A"}, loom.Tab{Title: "B"}, loom.Tab{Title: "C"})
+	tabs.SetKeys(loom.TabsKeys{
+		Previous: "shift-tab",
+		Next:     "tab",
+		Cycle:    "ctrl-t",
+		Select:   []string{"1", "2", "alt-3"},
+	})
+
+	tests := []struct {
+		name  string
+		event loom.KeyEvent
+		want  int
+	}{
+		{name: "next", event: loom.KeyEvent{Key: "tab"}, want: 1},
+		{name: "previous", event: loom.KeyEvent{Key: "shift-tab"}, want: 0},
+		{name: "cycle", event: loom.KeyEvent{Key: "ctrl-t"}, want: 1},
+		{name: "text direct jump", event: loom.KeyEvent{Text: "1"}, want: 0},
+		{name: "named direct jump", event: loom.KeyEvent{Key: "alt-3"}, want: 2},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			tabs.HandleKey(test.event)
+			if tabs.Focus() != test.want {
+				t.Fatalf("focus = %d, want %d", tabs.Focus(), test.want)
+			}
+		})
 	}
 }
 
