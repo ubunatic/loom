@@ -1,6 +1,6 @@
 # 080 — Add declarative Startup transition runner with deterministic completion lifecycle
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
