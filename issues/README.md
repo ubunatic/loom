@@ -103,3 +103,4 @@ upkeep.
 | 089 | [089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md](089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) | Add mouse cursor position hints and configurable visual effects | Open |
 | 090 | [090-support-image-backed-app-backgrounds-and-background-theme-switching.md](090-support-image-backed-app-backgrounds-and-background-theme-switching.md) | Support image-backed app backgrounds and background theme switching | Open |
 | 091 | [091-add-double-click-interaction-for-filebrowser-and-path-trees.md](091-add-double-click-interaction-for-filebrowser-and-path-trees.md) | Add double-click interaction for filebrowser and path trees | Open |
+| 092 | [092-add-mouse-drag-support-for-scrollbars.md](092-add-mouse-drag-support-for-scrollbars.md) | Add mouse-drag support for scrollbars | Open |
