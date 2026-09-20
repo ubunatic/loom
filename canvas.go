@@ -233,6 +233,19 @@ func (c *Canvas) Fill(r Rect, cell Cell) {
 	}
 }
 
+// ClearRect resets cells in r without inheriting their previous surface style.
+func (c *Canvas) ClearRect(r Rect) {
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
+				continue
+			}
+			c.cells[y][x] = blank
+			c.claimed[y][x] = false
+		}
+	}
+}
+
 // Write renders text starting at (x, y) using style, advancing x for each rune.
 // Returns the number of columns consumed. Clips at canvas right edge.
 // Correctly handles wide characters (emojis) by creating continuation cells.
@@ -316,7 +329,7 @@ func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error)
 	if c.CursorX >= 0 && c.CursorY >= 0 {
 		// Position and show the cursor only when a widget asked for it (a prompt).
 		sink.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1)) //nolint:errcheck
-		sink.WriteString("\x1b[?25h")                                                  //nolint:errcheck
+		sink.WriteString("\x1b[?25h")                                                 //nolint:errcheck
 	} else {
 		// No prompt on this frame: hide the hardware cursor so it doesn't linger
 		// as a stray block after the last drawn cell.

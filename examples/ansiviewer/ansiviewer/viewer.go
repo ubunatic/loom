@@ -242,7 +242,9 @@ func max(a, b int) int {
 }
 
 func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
-	style := loom.Style{}
+	baseStyle := initialANSIStyle(input)
+	style := baseStyle
+	claimANSIArea(c, r, baseStyle)
 	x, y := r.X, r.Y
 	rs := []rune(input)
 	for i := 0; i < len(rs) && y < r.Y+r.H; {
@@ -268,7 +270,8 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 					y = r.Y + csiNumber(params, 1) - 1
 				case 'J':
 					if params == "2" || params == "3" {
-						c.Fill(r, loom.Cell{})
+						c.ClearRect(r)
+						claimANSIArea(c, r, baseStyle)
 					}
 				}
 				i = j + 1
@@ -300,6 +303,46 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 		}
 		i++
 	}
+}
+
+// claimANSIArea makes the replay canvas the sole painter for the preview
+// rectangle, including cells that the stream leaves blank. The cells remain
+// transparent to the container's already-painted surface because their
+// styles use the reset background.
+func claimANSIArea(c *loom.Canvas, r loom.Rect, style loom.Style) {
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			c.PaintForeground(x, y, loom.Cell{Style: style})
+		}
+	}
+}
+
+// initialANSIStyle returns the first style that establishes an explicit ANSI
+// background. Cursor-positioning spaces before that point are terminal
+// housekeeping, not the recording's panel surface.
+func initialANSIStyle(input string) loom.Style {
+	style := loom.Style{}
+	rs := []rune(input)
+	for i := 0; i < len(rs); i++ {
+		if rs[i] == '\x1b' && i+1 < len(rs) && rs[i+1] == '[' {
+			j := i + 2
+			for j < len(rs) && (rs[j] < '@' || rs[j] > '~') {
+				j++
+			}
+			if j < len(rs) && rs[j] == 'm' {
+				params := string(rs[i+2:j])
+				style = applySGR(style, params)
+				// mc first uses 40m while clearing terminal state; its
+				// actual panel surface is the explicit 256-color background.
+				if strings.Contains(params, "48;5;") || strings.Contains(params, "48;2;") {
+					return style
+				}
+				i = j
+				continue
+			}
+		}
+	}
+	return style
 }
 
 func csiNumber(params string, fallback int) int {
@@ -339,17 +382,33 @@ func applySGR(style loom.Style, params string) loom.Style {
 			style.FG = loom.ColorIndex(uint8(n - 30))
 		case n >= 90 && n <= 97:
 			style.FG = loom.ColorIndex(uint8(n - 90 + 8))
+		case n >= 40 && n <= 47:
+			style.BG = loom.ColorIndex(uint8(n - 40))
+		case n >= 100 && n <= 107:
+			style.BG = loom.ColorIndex(uint8(n - 100 + 8))
 		case n == 39:
 			style.FG = loom.ColorReset()
+		case n == 49:
+			style.BG = loom.ColorReset()
 		case n == 38 && i+2 < len(parts) && parts[i+1] == "5":
 			v, _ := strconv.Atoi(parts[i+2])
 			style.FG = loom.ColorIndex(uint8(v))
+			i += 2
+		case n == 48 && i+2 < len(parts) && parts[i+1] == "5":
+			v, _ := strconv.Atoi(parts[i+2])
+			style.BG = loom.ColorIndex(uint8(v))
 			i += 2
 		case n == 38 && i+4 < len(parts) && parts[i+1] == "2":
 			r, _ := strconv.Atoi(parts[i+2])
 			g, _ := strconv.Atoi(parts[i+3])
 			b, _ := strconv.Atoi(parts[i+4])
 			style.FG = loom.ColorRGB(uint8(r), uint8(g), uint8(b))
+			i += 4
+		case n == 48 && i+4 < len(parts) && parts[i+1] == "2":
+			r, _ := strconv.Atoi(parts[i+2])
+			g, _ := strconv.Atoi(parts[i+3])
+			b, _ := strconv.Atoi(parts[i+4])
+			style.BG = loom.ColorRGB(uint8(r), uint8(g), uint8(b))
 			i += 4
 		}
 	}
