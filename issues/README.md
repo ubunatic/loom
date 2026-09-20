@@ -101,3 +101,4 @@ upkeep.
 | 087 | [087-loom-demo-cannot-start-from-codex-terminal.md](087-loom-demo-cannot-start-from-codex-terminal.md) | loom-demo cannot start from Codex terminal | Closed — resolved: launch loom-demo through foot for a controlling TTY |
 | 088 | [088-extend-loom-key-capture-coverage-and-sane-action-defaults.md](088-extend-loom-key-capture-coverage-and-sane-action-defaults.md) | Extend Loom key capture coverage and sane action defaults | Open |
 | 089 | [089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md](089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) | Add mouse cursor position hints and configurable visual effects | Open |
+| 090 | [090-support-image-backed-app-backgrounds-and-background-theme-switching.md](090-support-image-backed-app-backgrounds-and-background-theme-switching.md) | Support image-backed app backgrounds and background theme switching | Open |
