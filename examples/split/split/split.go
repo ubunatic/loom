@@ -1,4 +1,4 @@
-// Package split demonstrates independent scrolling and keyboard focus in a Frame.
+// Package split demonstrates independent scrolling and keyboard focus in a loom.Split.
 package split
 
 import (
@@ -40,12 +40,14 @@ func lines(label string) []string {
 func Run(_ []string) error {
 	left := &scrollPane{View: loom.NewView(lines("left"))}
 	right := &scrollPane{View: loom.NewView(lines("right"))}
+	split := loom.NewSplit(left, right)
+	split.Ratio = 0.4
+	split.MinFirst = 12
+	split.MinSecond = 12
+	split.Divider = loom.DividerStyle{Glyph: "│", Style: loom.Style{Dim: true}}
 	frame := &loom.Frame{
-		Title: "Split panes", Status: "Tab / Shift-Tab: focus  •  arrows / PgUp / PgDn: scroll  •  q: quit",
-		Gap: 1, Boxes: []loom.Box{
-			{ID: "left", Title: "Left", Width: 34, Height: 16, Dynamic: true, MinWidth: 12, Child: left},
-			{ID: "right", Title: "Right", Width: 34, Height: 16, Dynamic: true, MinWidth: 12, Child: right},
-		},
+		Title: "Split panes", Status: "Tab / Shift-Tab: focus  •  [ / ]: ratio  •  arrows / PgUp / PgDn: scroll  •  q: quit",
+		Boxes:   []loom.Box{{ID: "split", Title: "40 / 60", Width: 69, Height: 16, Dynamic: true, MinWidth: 26, Child: split}},
 		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "q"}},
 	}
 	pane, err := loom.New(18)

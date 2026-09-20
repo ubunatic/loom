@@ -58,6 +58,7 @@ type Box struct {
 	Hidden     bool      `yaml:"hidden"`
 	Footer     string    `yaml:"footer"`
 	Rows       *Rows     `yaml:"rows"`
+	childRect  Rect
 }
 
 // Measure returns the preferred outer size of the box, including border,
@@ -102,6 +103,7 @@ func (b *Box) SetRowsValues(values [][]string) {
 
 // Draw paints a box. Bounds smaller than a complete border are left blank.
 func (b *Box) Draw(c *Canvas, r Rect) {
+	b.childRect = Rect{}
 	paintClipped(c, r, func(local *Canvas) {
 		w, h := local.Cols(), local.Rows()
 		if w < 2 || h < 2 {
@@ -127,6 +129,7 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		// Compare before doubling to avoid overflow for programmatic inputs.
 		if b.Child != nil && padding < (w-1)/2 && padding < (h-1)/2 {
 			inner := Rect{X: 1 + padding, Y: 1 + padding, W: w - 2 - 2*padding, H: h - 2 - 2*padding}
+			b.childRect = Rect{X: r.X + inner.X, Y: r.Y + inner.Y, W: inner.W, H: inner.H}
 			paintClipped(local, inner, func(child *Canvas) { b.Child.Draw(child, child.Bounds()) })
 			if b.Footer != "" {
 				writeBoundedStyled(local, inner.X, inner.Y+inner.H-1, inner.W, b.Footer, b.Style.Footer)
@@ -140,8 +143,15 @@ func (b *Box) HandleKey(k KeyEvent) bool {
 	return b.Child != nil && b.Child.HandleKey(k)
 }
 
-// HandleMouse leaves static boxes inert.
-func (b *Box) HandleMouse(MouseEvent) bool { return false }
+// HandleMouse forwards events inside the last drawn child bounds.
+func (b *Box) HandleMouse(e MouseEvent) bool {
+	if b.Child == nil || !b.childRect.Contains(e.X-1, e.Y-1) {
+		return false
+	}
+	e.X -= b.childRect.X
+	e.Y -= b.childRect.Y
+	return b.Child.HandleMouse(e)
+}
 
 // Frame places ordered boxes between title/status lines. A positive Breakpoint
 // switches the row to a vertical stack at narrower widths; zero keeps a row.
@@ -158,6 +168,8 @@ type Frame struct {
 	FocusPrevKey     string        `yaml:"focus_prev_key"` // default: shift-tab
 	focused          int
 	focusSet         bool
+	focusManaged     bool
+	hasFocus         bool
 	lastRect         Rect
 }
 
@@ -488,9 +500,66 @@ func (f *Frame) syncFocus() {
 func (f *Frame) applyFocus() {
 	for i := range f.Boxes {
 		if child, ok := f.Boxes[i].Child.(Focusable); ok {
-			child.SetFocus(f.focusSet && i == f.focused && !f.Boxes[i].Hidden)
+			child.SetFocus(f.frameFocused() && f.focusSet && i == f.focused && !f.Boxes[i].Hidden)
 		}
 	}
+}
+
+func (f *Frame) frameFocused() bool { return !f.focusManaged || f.hasFocus }
+
+// Focused reports whether the frame is active. A root frame is active by
+// default; SetFocus controls this state when the frame is nested.
+func (f *Frame) Focused() bool { return f.frameFocused() }
+
+// SetFocus activates or deactivates this frame and its focused descendant.
+func (f *Frame) SetFocus(focused bool) {
+	f.focusManaged = true
+	f.hasFocus = focused
+	f.syncFocus()
+}
+
+// FocusNext advances within the focused child, then to the next visible box.
+// It returns false at the final descendant so a parent can continue traversal.
+func (f *Frame) FocusNext() bool {
+	f.syncFocus()
+	if !f.focusSet {
+		return false
+	}
+	if child, ok := f.Boxes[f.focused].Child.(FocusContainer); ok && child.FocusNext() {
+		return true
+	}
+	for i := f.focused + 1; i < len(f.Boxes); i++ {
+		if f.Boxes[i].Hidden {
+			continue
+		}
+		f.focused = i
+		f.applyFocus()
+		focusFirstWidget(f.Boxes[i].Child)
+		return true
+	}
+	return false
+}
+
+// FocusPrevious retreats within the focused child, then to the previous
+// visible box. It returns false at the first descendant.
+func (f *Frame) FocusPrevious() bool {
+	f.syncFocus()
+	if !f.focusSet {
+		return false
+	}
+	if child, ok := f.Boxes[f.focused].Child.(FocusContainer); ok && child.FocusPrevious() {
+		return true
+	}
+	for i := f.focused - 1; i >= 0; i-- {
+		if f.Boxes[i].Hidden {
+			continue
+		}
+		f.focused = i
+		f.applyFocus()
+		focusLastWidget(f.Boxes[i].Child)
+		return true
+	}
+	return false
 }
 
 func (f *Frame) cycleFocus(direction int) {
@@ -541,16 +610,44 @@ func (f *Frame) HandleKey(k KeyEvent) bool {
 	}
 	switch key {
 	case next:
-		f.cycleFocus(1)
+		if !f.FocusNext() {
+			f.focusFirst()
+		}
 		return false
 	case prev:
-		f.cycleFocus(-1)
+		if !f.FocusPrevious() {
+			f.focusLast()
+		}
 		return false
 	}
 	if box := f.FocusedBox(); box != nil {
 		return box.HandleKey(k)
 	}
 	return false
+}
+
+func (f *Frame) focusFirst() {
+	for i := range f.Boxes {
+		if f.Boxes[i].Hidden {
+			continue
+		}
+		f.focused, f.focusSet = i, true
+		f.applyFocus()
+		focusFirstWidget(f.Boxes[i].Child)
+		return
+	}
+}
+
+func (f *Frame) focusLast() {
+	for i := len(f.Boxes) - 1; i >= 0; i-- {
+		if f.Boxes[i].Hidden {
+			continue
+		}
+		f.focused, f.focusSet = i, true
+		f.applyFocus()
+		focusLastWidget(f.Boxes[i].Child)
+		return
+	}
 }
 
 // HandleMouse focuses clicked boxes and forwards events inside a child's bounds.

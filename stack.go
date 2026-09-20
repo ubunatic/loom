@@ -5,7 +5,7 @@ package loom
 
 import "codeberg.org/ubunatic/loom/layout"
 
-// StackDir controls the direction a Stack arranges its children.
+// StackDir controls the direction a Stack or Split arranges its children.
 type StackDir int
 
 const (

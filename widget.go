@@ -37,6 +37,15 @@ type Focusable interface {
 	SetFocus(bool)
 }
 
+// FocusContainer is a focusable composite that can move focus within itself.
+// FocusNext and FocusPrevious return false when focus is already at the
+// corresponding boundary, allowing a parent container to continue traversal.
+type FocusContainer interface {
+	Focusable
+	FocusNext() bool
+	FocusPrevious() bool
+}
+
 // Item is a named entry used by Choice and similar list widgets.
 type Item struct {
 	Name string

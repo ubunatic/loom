@@ -1,4 +1,4 @@
-// Command split demonstrates independent scrolling and keyboard focus in a Frame.
+// Command split demonstrates independent scrolling and keyboard focus in a Split.
 package main
 
 import (
