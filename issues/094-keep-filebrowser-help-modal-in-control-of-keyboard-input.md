@@ -1,6 +1,6 @@
 # 094 — Keep filebrowser help modal in control of keyboard input
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint
 **Priority**: P1
 **Severity**: Major
 **Category**: Bug
