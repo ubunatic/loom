@@ -1,6 +1,6 @@
 # 082 — Adopt new loom framework features across examples and retire obsolete code
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Refactor
