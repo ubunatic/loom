@@ -156,16 +156,16 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	normal := loom.Style{FG: th.NormalFG.Color(), BG: th.NormalBG.Color()}
 	border := loom.Style{FG: th.BorderFG.Color(), BG: th.BorderBG.Color()}
 	btnStyle := loom.Style{FG: th.SelectedFG.Color(), BG: th.SelectedBG.Color(), Bold: true}
-	// Paint the whole pane in the theme so it is uniform. Blank cells with the
-	// default style (the plain theme) stay eligible for the Astra background.
-	c.Fill(r, loom.Cell{Text: " ", Style: normal})
+	// Paint the whole pane in the theme as a surface: Astra stars still shine
+	// on it wherever no text is written.
+	c.PaintSurface(r, normal)
 	inner := drawBorder(c, r, border)
 	lines := a.lines(termCols, termRows)
 	for i, line := range lines {
 		if i >= inner.H-1 {
 			break
 		}
-		c.Write(inner.X, inner.Y+i, line, normal)
+		writeWords(c, inner.X, inner.Y+i, line, normal)
 	}
 
 	a.buttons = a.buttons[:0]
@@ -193,6 +193,19 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	put("[Theme]", "t", btnStyle)
 	put(" ", "", normal)
 	put("[Astra]", "a", btnStyle)
+}
+
+// writeWords writes text but leaves its spaces unwritten, so they keep the
+// surface and remain open to the background animation.
+func writeWords(c *loom.Canvas, x, y int, text string, style loom.Style) {
+	col := x
+	for _, word := range strings.SplitAfter(text, " ") {
+		trimmed := strings.TrimRight(word, " ")
+		if trimmed != "" {
+			c.Write(col, y, trimmed, style)
+		}
+		col += loom.StringWidth(word)
+	}
 }
 
 // drawBorder outlines r and returns the area inside it. Areas too small for a
