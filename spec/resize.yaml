@@ -79,7 +79,7 @@ modes:
 auto_fullscreen:
   title: "Auto full screen"
   description: "Switch to the full-screen layout when the wanted pane size is close to the terminal size"
-  default: false
+  default: true
   key: "c"
   # Detection looks at width and at height; either can be switched off.
   # A pane that is nearly as wide as the terminal reflows badly when the terminal
@@ -97,3 +97,8 @@ auto_fullscreen:
   min_percent: 0
   # Use the alternate screen for the automatic full-screen layout.
   alt: true
+  # Keep alt-screen switches from leaking into the scrollback: terminals restore
+  # the auto-wrap flag with the cursor when leaving the alternate screen, so the
+  # pane re-asserts its wrap setting and erases its rows on the primary screen
+  # before repainting.
+  leak_guard: true

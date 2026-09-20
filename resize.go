@@ -42,6 +42,7 @@ type AutoFullscreenSpec struct {
 	MarginRows  int    `yaml:"margin_rows"`
 	MinPercent  int    `yaml:"min_percent"`
 	Alt         bool   `yaml:"alt"`
+	LeakGuard   bool   `yaml:"leak_guard"`
 }
 
 // ResizeModesSpec holds all resize modes declared in spec/resize.yaml.
@@ -103,6 +104,7 @@ type ResizeConfig struct {
 	FullMarginCols int  // full when terminal cols - wanted cols <= this
 	FullMarginRows int  // full when terminal rows - wanted rows <= this
 	FullMinPercent int  // also full at this percent of the terminal height; 0 = off
+	FullLeakGuard  bool // re-assert auto-wrap and clear pane rows around alt-screen switches
 	FullAlt        bool // use the alternate screen for the automatic full-screen layout
 }
 
@@ -155,6 +157,7 @@ func DefaultResizeConfig() ResizeConfig {
 		FullMarginRows:     SpeccedResizeModes.AutoFullscreen.MarginRows,
 		FullMinPercent:     SpeccedResizeModes.AutoFullscreen.MinPercent,
 		FullAlt:            SpeccedResizeModes.AutoFullscreen.Alt,
+		FullLeakGuard:      SpeccedResizeModes.AutoFullscreen.LeakGuard,
 	}
 }
 

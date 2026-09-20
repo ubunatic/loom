@@ -63,6 +63,11 @@ type Pane struct {
 	mouseMode  int
 	Resizeable bool
 
+	// InlineOnly opts out of the automatic switch to the alternate screen: the
+	// pane stays inline even when it is nearly as big as the terminal. Loom's
+	// normal mode is to switch when the dimensions get resize-error prone.
+	InlineOnly bool
+
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
 	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
 	DisableDefaultQuit bool
@@ -82,6 +87,7 @@ type Pane struct {
 	winchMeter  WinchMeter
 	altActive   bool
 	fullActive  bool // primary-screen layout is full screen (from row 1)
+	staleRows   int  // rows below the pane left over from a shrink, erased by the next frame
 	inlineStart int  // pane top before the full-screen layout took over
 	savedStart  int
 	savedRows   int
@@ -364,7 +370,8 @@ func (p *Pane) Resize(newHeight int) {
 			}
 		}
 	} else {
-		// The next frame clears abandoned rows together with its UI output.
+		// The next frame clears the abandoned rows together with its UI output.
+		p.staleRows += p.rows - newHeight
 	}
 
 	p.rows = newHeight
@@ -467,7 +474,7 @@ func (p *Pane) Screen() ScreenMode {
 func (p *Pane) wantScreen() (full, alt bool) {
 	cfg := p.ResizeConfig
 	auto := false
-	if cfg.AutoFullscreen {
+	if cfg.AutoFullscreen && !p.InlineOnly {
 		termCols, termRows := termSize(p.fd)
 		auto = cfg.QuasiFullscreen(p.MaxCols, p.wantRows, termCols, termRows)
 	}
@@ -494,11 +501,12 @@ func (p *Pane) changeScreen(full, alt bool) {
 func (p *Pane) switchFull(on bool) {
 	if p.tty != nil {
 		var b strings.Builder
-		for i := 0; i < p.rows; i++ {
+		for i := 0; i < p.rows+p.staleRows; i++ {
 			fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", p.startRow+i)
 		}
 		p.tty.WriteString(b.String()) //nolint:errcheck
 	}
+	p.staleRows = 0
 	if on {
 		p.inlineStart = p.startRow
 	} else {
@@ -519,14 +527,24 @@ func (p *Pane) switchAltScreen(on bool) {
 		// the scrollback after leaving; park the cursor where the pane started
 		// so leaving restores it there.
 		var b strings.Builder
-		for i := 0; i < p.rows; i++ {
+		for i := 0; i < p.rows+p.staleRows; i++ {
 			fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", p.startRow+i)
 		}
+		p.staleRows = 0
 		fmt.Fprintf(&b, "\x1b[%d;1H\x1b[?1049h\x1b[2J", p.startRow)
 		p.tty.WriteString(b.String()) //nolint:errcheck
 	} else {
 		p.tty.WriteString("\x1b[?1049l") //nolint:errcheck
 		p.startRow, p.rows = p.savedStart, p.savedRows
+		if p.ResizeConfig.FullLeakGuard {
+			// The terminal may have reflowed or resized the primary screen while
+			// the alt screen was up; start from clean pane rows.
+			var b strings.Builder
+			for i := 0; i < p.rows; i++ {
+				fmt.Fprintf(&b, "\x1b[%d;1H\x1b[2K", p.startRow+i)
+			}
+			p.tty.WriteString(b.String()) //nolint:errcheck
+		}
 	}
 	p.altActive = on
 }
@@ -701,7 +719,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			canvas = NewCanvas(cols, p.rows)
 		}
 		if full, alt := p.wantScreen(); alt != p.altActive || (!alt && full != p.fullActive) {
+			wasAlt := p.altActive
 			p.changeScreen(full, alt)
+			if p.altActive != wasAlt && p.ResizeConfig.FullLeakGuard && p.ResizeConfig.AutoWrap && p.tty != nil {
+				// Terminals restore the auto-wrap flag with the cursor on
+				// ?1049; without this a wide row wraps and leaks into the
+				// scrollback.
+				p.tty.WriteString("\x1b[?7l") //nolint:errcheck
+				autoWrapDisabled = true
+			}
 			p.applyWinch(&cols)
 			clearRows = 0
 		}
@@ -714,8 +740,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			p.help.Draw(canvas, canvas.Bounds())
 		}
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), time.Now())
-		canvas.FlushWithConfig(p.tty, p.startRow, clearRows, p.ResizeConfig)
-		clearRows = 0
+		canvas.FlushWithConfig(p.tty, p.startRow, clearRows+p.staleRows, p.ResizeConfig)
+		clearRows, p.staleRows = 0, 0
 		if p.Metrics != nil {
 			p.Metrics.record(time.Now(), astra, time.Since(started))
 		}

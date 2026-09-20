@@ -4,7 +4,7 @@ A small inline TUI with a visible border that switches to full screen (the
 alternate screen) and back, and that promotes itself when it is nearly full height.
 
 ```
-go run ./examples/screens --height 15 --width 60 --theme plain
+go run ./examples/screens --height 16 --width 60 --theme plain
 ```
 
 | Key | Action |
@@ -41,3 +41,13 @@ are detected separately and either one is enough.
 `c` / `--auto` switches all detection on or off. The promotion uses the
 alternate screen when `l` / `--auto-alt` is on (default), otherwise full screen
 on the primary screen, which overwrites the shell's screen content.
+
+## Leak guard and defaults
+
+Switching to the alternate screen is loom's normal answer to resize-error prone
+dimensions, so auto full screen is on by default (`auto_fullscreen.default`);
+a pane opts out with `Pane.InlineOnly`. Terminals restore the auto-wrap flag
+along with the cursor when leaving the alternate screen, which can make a wide
+row wrap and leak into the scrollback. `leak_guard` (`r`, `--leak-guard`) re-asserts
+the wrap setting and clears the pane rows on the primary screen when switching.
+Turn it off to compare.

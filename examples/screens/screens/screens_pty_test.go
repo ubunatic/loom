@@ -131,3 +131,26 @@ func TestScreensAutoByWidth(t *testing.T) {
 	}
 	quit(t, off)
 }
+
+// TestScreensShrinkErasesOldRows presses "-" and expects the rows below the
+// smaller pane to be erased, leaving exactly one bottom border.
+func TestScreensShrinkErasesOldRows(t *testing.T) {
+	s := ptytest.Start(t, 100, 30, build(t), "--auto=false", "--height=14")
+	s.WaitFor("Height [-] 14 [+]", 5*time.Second)
+	for range 3 {
+		s.Send("-")
+		time.Sleep(40 * time.Millisecond)
+	}
+	s.WaitFor("Height [-] 11 [+]", 3*time.Second)
+	time.Sleep(100 * time.Millisecond)
+	borders := 0
+	for _, row := range s.Screen() {
+		if strings.HasPrefix(row, "└") {
+			borders++
+		}
+	}
+	if borders != 1 {
+		t.Fatalf("want one bottom border, got %d; screen:\n%s", borders, strings.Join(s.Screen(), "\n"))
+	}
+	quit(t, s)
+}

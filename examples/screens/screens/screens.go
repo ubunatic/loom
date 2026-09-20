@@ -179,10 +179,20 @@ func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
 			[]seg{{text: yesNo(byW)}}),
 		join(toggle("  by height ", "y", cfg.FullByHeight), stepper("  margin rows ", "M", "m", fmt.Sprint(cfg.FullMarginRows)),
 			[]seg{{text: yesNo(byH)}}),
-		join(stepper("  height percent ", "P", "p", fmt.Sprint(cfg.FullMinPercent))),
+		join(stepper("  full at height % ", "P", "p", fmt.Sprintf("%d", cfg.FullMinPercent)),
+			[]seg{{text: fmt.Sprintf("(0 = off, now %d%%)", pctOf(a.height, termRows))}}),
+		join(toggle("Leak guard ", "r", cfg.FullLeakGuard)),
 		separator,
 		{{text: "f full screen (alt)  n primary full (demo)  q quit"}},
 	}
+}
+
+// pctOf is part as a whole-number percent of whole (0 when whole is unknown).
+func pctOf(part, whole int) int {
+	if whole < 1 {
+		return 0
+	}
+	return part * 100 / whole
 }
 
 func verdict(full bool) string {
@@ -300,6 +310,8 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		a.themeIdx = (a.themeIdx + 1) % len(a.themeNames)
 	case "a":
 		a.astra = !a.astra
+	case "r":
+		a.cfg.FullLeakGuard = !a.cfg.FullLeakGuard
 	case "x":
 		a.cfg.FullByWidth = !a.cfg.FullByWidth
 	case "y":
@@ -342,9 +354,9 @@ func (a *App) HandleMouse(e loom.MouseEvent) bool {
 }
 
 type options struct {
-	height, width, margin, marginCols, percent int
-	auto, autoAlt, astra, byWidth, byHeight    bool
-	start, theme                               string
+	height, width, margin, marginCols, percent         int
+	auto, autoAlt, astra, byWidth, byHeight, leakGuard bool
+	start, theme                                       string
 }
 
 // Run parses args with cobra and runs the demo.
@@ -359,9 +371,10 @@ func Run(args []string) error {
 		RunE:          func(*cobra.Command, []string) error { return o.run() },
 	}
 	f := cmd.Flags()
-	f.IntVar(&o.height, "height", 15, "inline height in rows")
+	f.IntVar(&o.height, "height", 16, "inline height in rows")
 	f.IntVar(&o.width, "width", 60, "pane width in columns, capped by the terminal width")
 	spec := loom.DefaultResizeConfig()
+	f.BoolVar(&o.leakGuard, "leak-guard", spec.FullLeakGuard, "keep alt-screen switches from leaking into the scrollback")
 	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly as big as the terminal")
 	f.BoolVar(&o.byWidth, "by-width", spec.FullByWidth, "detect full screen by width")
 	f.BoolVar(&o.byHeight, "by-height", spec.FullByHeight, "detect full screen by height")
@@ -389,6 +402,7 @@ func (o options) run() error {
 	cfg := pane.ResizeConfig
 	cfg.AutoFullscreen, cfg.FullAlt = o.auto, o.autoAlt
 	cfg.FullByWidth, cfg.FullByHeight = o.byWidth, o.byHeight
+	cfg.FullLeakGuard = o.leakGuard
 	if o.marginCols >= 0 {
 		cfg.FullMarginCols = o.marginCols
 	}
