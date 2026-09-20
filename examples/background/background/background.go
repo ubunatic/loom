@@ -7,6 +7,11 @@ import (
 	"codeberg.org/ubunatic/loom"
 )
 
+var (
+	paneBlue   = loom.ColorRGB(25, 30, 38)
+	panePurple = loom.ColorRGB(32, 32, 33)
+)
+
 type widget struct {
 	metrics *loom.RenderMetrics
 	frame   *loom.Frame
@@ -81,10 +86,9 @@ func demoFrame() *loom.Frame {
 		"the animation remains visible during interaction.",
 	})
 	panelTheme := loom.SpeccedThemes["mc-dark"]
-	panelStyle := loom.Style{FG: panelTheme.NormalFG.Color(), BG: panelTheme.NormalBG.Color()}
-	left.Style = panelStyle
-	right.Style = panelStyle
-	left.FocusStyle = loom.Style{FG: panelTheme.SelectedFG.Color(), BG: panelTheme.SelectedBG.Color()}
+	left.Style = loom.Style{FG: panelTheme.NormalFG.Color(), BG: paneBlue}
+	right.Style = loom.Style{FG: panelTheme.NormalFG.Color(), BG: panePurple}
+	left.FocusStyle = loom.Style{FG: panelTheme.NormalFG.Color(), BG: loom.ColorRGB(36, 17, 63)}
 	right.FocusStyle = left.FocusStyle
 	split := loom.NewSplit(left, right)
 	split.Ratio = 0.45
