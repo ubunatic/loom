@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -22,6 +23,7 @@ type App struct {
 	themeNames []string
 	themeIdx   int
 	config     loom.ResizeConfig
+	metrics    *loom.RenderMetrics
 	frameCount int
 	quitting   bool
 }
@@ -42,7 +44,12 @@ func NewApp(pane *loom.Pane, themeName string, theme loom.ThemeColors) (*App, er
 		cfg = pane.ResizeConfig
 	}
 
+	var metrics *loom.RenderMetrics
+	if pane != nil {
+		metrics = pane.Metrics
+	}
 	return &App{
+		metrics:    metrics,
 		pane:       pane,
 		themeName:  themeName,
 		theme:      theme,
@@ -109,7 +116,7 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 
 	// Status bar at bottom row
 	if r.H > 1 {
-		status := fmt.Sprintf(" Winch Diagnostic • Theme: %s • Frames: %d • [Q] Quit", a.themeName, a.frameCount)
+		status := fmt.Sprintf(" Winch Diagnostic • Theme: %s • Frames: %d • [G] Astra [Q] Quit", a.themeName, a.frameCount)
 		status = loom.TruncateText(status, r.W, "")
 		c.Write(r.X, r.Y+r.H-1, status, statusStyle)
 	}
@@ -241,6 +248,18 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 			row++
 		}
 	}
+	if m := a.metrics; m != nil && row < r.Y+r.H-1 {
+		// Last-frame phases and one-second window stats: toggle a mode and
+		// watch how the render time and bytes per frame change.
+		line := fmt.Sprintf(" Render: %s (draw %s bg %s flush %s)", us(m.RedrawTime), us(m.DrawTime), us(m.BackgroundTime), us(m.FlushTime))
+		c.Write(r.X+1, row, loom.TruncateText(line, r.W-2, ""), normal)
+		row++
+		if row < r.Y+r.H-1 {
+			line = fmt.Sprintf(" 1s: avg %s max %s | %.0f fps | %d B/frame", us(m.RedrawAvg), us(m.RedrawMax), m.LoomFPS, m.BytesPerFrame)
+			c.Write(r.X+1, row, loom.TruncateText(line, r.W-2, ""), normal)
+			row++
+		}
+	}
 	if row < r.Y+r.H-1 {
 		c.Write(r.X+1, row, loom.TruncateText(" "+a.guardSummary(cfg), r.W-2, ""), normal)
 		row++
@@ -322,6 +341,8 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	case "t":
 		a.cycleTheme()
 		return false
+	case "g":
+		a.toggleBackground()
 	case "m":
 		a.toggleReduceMotion()
 		return false
@@ -381,6 +402,19 @@ func (a *App) resetDefaults() {
 	}
 }
 
+// toggleBackground switches the Astra background on and off, to compare render
+// times with and without it.
+func (a *App) toggleBackground() {
+	if a.pane == nil {
+		return
+	}
+	if a.pane.Background != nil {
+		a.pane.Background = nil
+	} else {
+		a.pane.Background = loom.NewAstraBackground()
+	}
+}
+
 func (a *App) toggleReduceMotion() {
 	if a.pane != nil {
 		a.pane.ReduceMotion = !a.pane.ReduceMotion
@@ -437,6 +471,7 @@ func Run(args []string) error {
 	pane.MaxCols = 0
 	pane.DisableDefaultQuit = true
 	pane.Background = loom.NewAstraBackground()
+	pane.Metrics = &loom.RenderMetrics{}
 	pane.EnableMouseClicks()
 
 	app, err := NewApp(pane, *themeName, theme)
@@ -458,4 +493,9 @@ func verdict(full bool) string {
 		return "FULL"
 	}
 	return "inline"
+}
+
+// us formats a duration in microseconds, the scale of a terminal redraw.
+func us(d time.Duration) string {
+	return fmt.Sprintf("%dµs", d.Microseconds())
 }

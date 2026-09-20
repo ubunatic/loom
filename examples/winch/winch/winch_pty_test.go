@@ -194,3 +194,17 @@ func TestWinchPTYAltScreen(t *testing.T) {
 		t.Fatal("primary screen rows not cleared before entering the alt screen")
 	}
 }
+
+// TestWinchPTYRenderTime expects render timing and the per-frame byte count to
+// show up, and the Astra toggle to keep working.
+func TestWinchPTYRenderTime(t *testing.T) {
+	s := ptytest.Start(t, 120, 30, buildWinch(t))
+	s.WaitFor("Render:", 5*time.Second)
+	s.WaitFor("B/frame", 5*time.Second) // first one-second window
+	s.Send("g")
+	time.Sleep(200 * time.Millisecond)
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("winch exit: %v", err)
+	}
+}
