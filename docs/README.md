@@ -36,5 +36,6 @@
 | [studies/2026-09-20-feature-gap-analysis-tabs.md](studies/2026-09-20-feature-gap-analysis-tabs.md) | Tabs Example Feature-Gap Analysis |
 | [studies/2026-09-20-feature-gap-analysis-treemap.md](studies/2026-09-20-feature-gap-analysis-treemap.md) | Treemap Feature-Gap Analysis |
 | [studies/2026-09-20-feature-gap-analysis-winch.md](studies/2026-09-20-feature-gap-analysis-winch.md) | Winch Feature Gap Analysis |
+| [studies/2026-09-20-session-token-usage-and-cost-analysis.md](studies/2026-09-20-session-token-usage-and-cost-analysis.md) | Session Token Usage and Cost Analysis |
 
 Study files are the source of truth for this table.
