@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"codeberg.org/ubunatic/loom/internal/ptytest"
 	"golang.org/x/sys/unix"
 )
 
@@ -70,7 +71,11 @@ func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, comm
 	if len(data) == 0 {
 		return fmt.Errorf("ansiviewer: recording command produced no terminal output")
 	}
-	_, err = out.Write(data)
+	vt := ptytest.NewVT(100, 30)
+	if _, err := vt.Write(data); err != nil {
+		return fmt.Errorf("ansiviewer: replay recording: %w", err)
+	}
+	_, err = io.WriteString(out, vt.Text()+"\n")
 	return err
 }
 

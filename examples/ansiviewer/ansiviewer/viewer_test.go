@@ -127,3 +127,18 @@ func TestRecordCommandStopsLongLivedChild(t *testing.T) {
 		t.Fatalf("capture = %q", out.String())
 	}
 }
+
+func TestRecordCommandWritesRenderedScreenOnly(t *testing.T) {
+	var out bytes.Buffer
+	if err := RecordCommand(context.Background(), &out, time.Second, "sh", "-c", "printf '\\033[2J\\033[31mred\\033[0m'"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "red") {
+		t.Fatalf("screen = %q", out.String())
+	}
+	for i := 0; i < len(out.String()); i++ {
+		if out.String()[i] == '\x1b' {
+			t.Fatalf("raw control sequence in screen: %q", out.String())
+		}
+	}
+}
