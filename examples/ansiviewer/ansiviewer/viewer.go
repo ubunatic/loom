@@ -5,6 +5,7 @@
 package ansiviewer
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -13,6 +14,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom"
@@ -264,12 +266,22 @@ func Render(out io.Writer, dir string, cols, rows int) error {
 // Run starts the interactive viewer rooted at the optional directory argument.
 func Run(args []string) error {
 	fs := flag.NewFlagSet("ansiviewer", flag.ContinueOnError)
+	record := fs.Duration("record", 0, "capture one snapshot after this delay")
+	recordOut := fs.String("record-out", "ansiviewer.ansi", "snapshot output path")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
 	dir := "."
 	if fs.NArg() > 0 {
 		dir = fs.Arg(0)
+	}
+	if *record > 0 {
+		file, err := os.Create(*recordOut)
+		if err != nil {
+			return fmt.Errorf("ansiviewer: create recording: %w", err)
+		}
+		defer file.Close()
+		return Record(context.Background(), file, dir, *record, 100, 30)
 	}
 	b, err := New(dir)
 	if err != nil {
@@ -281,4 +293,17 @@ func Run(args []string) error {
 	}
 	defer p.Close()
 	return p.Run(b)
+}
+
+// Record waits delay, renders exactly one frame of the real viewer widget, and
+// returns. The caller owns out; no child process or background goroutine leaks.
+func Record(ctx context.Context, out io.Writer, dir string, delay time.Duration, cols, rows int) error {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+	}
+	return Render(out, dir, cols, rows)
 }

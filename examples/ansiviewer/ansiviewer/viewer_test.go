@@ -4,10 +4,13 @@
 package ansiviewer
 
 import (
+	"bytes"
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -36,10 +39,17 @@ func TestBrowserListsTextAndANSI(t *testing.T) {
 }
 
 func TestANSIWriteClipsToBounds(t *testing.T) {
-	c := loom.NewCanvas(5, 1)
-	writeANSI(c, loom.Rect{X: 0, Y: 0, W: 5, H: 1}, "abcdef\x1b[31m!")
-	if got := c.Row(0); got == "" {
-		t.Fatal("empty row")
+	c := loom.NewCanvas(24, 2)
+	c.Write(0, 0, "LEFT", loom.Style{})
+	c.Write(18, 0, "RIGHT", loom.Style{})
+	before := c.Row(0)
+	writeANSI(c, loom.Rect{X: 4, Y: 0, W: 6, H: 1}, "界\x1b[38;2;1;2;3mCJK long text")
+	after := c.Row(0)
+	if !strings.Contains(after, "LEFT") || !strings.Contains(after, "RIGHT") {
+		t.Fatalf("outside cells changed: before=%q after=%q", before, after)
+	}
+	if !strings.Contains(after, "界") || !strings.Contains(after, "CJK") {
+		t.Fatalf("bounded content missing: %q", after)
 	}
 }
 
@@ -81,5 +91,19 @@ func TestBrowserMetadataAndScroll(t *testing.T) {
 	b.HandleKey(loom.KeyEvent{Key: "pgdn"})
 	if b.offset == 0 {
 		t.Fatal("pgdn did not scroll")
+	}
+}
+
+func TestRecordWritesOneSnapshotAfterDelay(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "record.txt"), []byte("recorded\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := Record(context.Background(), &out, dir, time.Millisecond, 40, 8); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "record.txt") {
+		t.Fatalf("recording does not show file: %q", out.String())
 	}
 }
