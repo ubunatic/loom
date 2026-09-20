@@ -34,7 +34,8 @@ vet: ⚙️  ## run go vet
 	go vet ./...
 
 install: ⚙️
-	go install ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec
+	go install ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
+		./examples/ansiviewer ./examples/filebrowser/ ./examples/treemap
 
 test-q1: 🤖  # run tests under Quota-1 enforcement
 	harnez exec --quota-1 -- $(MAKE) test
