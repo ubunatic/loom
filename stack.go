@@ -26,6 +26,7 @@ type Stack struct {
 	Constraints []layout.Constraint
 	Gap         int
 	focus       int // index of focused child
+	childRects  []Rect
 }
 
 // NewStack creates a Stack with the given children and direction.
@@ -44,6 +45,10 @@ func (s *Stack) Draw(c *Canvas, r Rect) {
 			f.SetFocus(i == s.focus)
 		}
 		cr := s.childRect(r, i, n)
+		if len(s.childRects) != n {
+			s.childRects = make([]Rect, n)
+		}
+		s.childRects[i] = cr
 		child.Draw(c, cr)
 		if Debug {
 			drawDebugBorder(c, cr)
@@ -104,10 +109,13 @@ func (s *Stack) HandleKey(e KeyEvent) (quit bool) {
 
 // HandleMouse forwards to the child whose rect contains the event.
 func (s *Stack) HandleMouse(e MouseEvent) (quit bool) {
-	// Without a Rect at dispatch time we delegate to the focused child.
-	// A full implementation would store child rects during Draw.
 	if len(s.Children) == 0 {
 		return false
+	}
+	for i, rect := range s.childRects {
+		if rect.Contains(e.X, e.Y) {
+			return s.Children[i].HandleMouse(e)
+		}
 	}
 	return s.Children[s.focus].HandleMouse(e)
 }

@@ -215,9 +215,8 @@ func TestTabsMouseClickSwitchesTab(t *testing.T) {
 	tabs.Draw(c, loom.Rect{X: 0, Y: 0, W: 40, H: 10})
 
 	// " A " occupies columns 0-2 (0-based canvas); " B " starts at column 3.
-	// Terminal/pane-relative mouse coords are 1-based, so click at X=5 (canvas
-	// col 4, inside " B ") on the bar row (canvas row 0 -> terminal Y=1).
-	quit := tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 1})
+	// Click at canvas column 4, inside " B ", on the bar's row 0.
+	quit := tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0})
 	if quit {
 		t.Error("switching tabs via mouse must not quit")
 	}

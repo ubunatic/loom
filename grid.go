@@ -11,10 +11,11 @@ package loom
 type Grid struct {
 	Cols     int
 	Children []Widget
-	FocusBG  Color        // background color of the focused cell; zero = default
-	OnSelect func(i int)  // called on Enter if non-nil; prevents quit propagation
+	FocusBG  Color       // background color of the focused cell; zero = default
+	OnSelect func(i int) // called on Enter if non-nil; prevents quit propagation
 
-	focus int // flat index of the focused child
+	focus      int // flat index of the focused child
+	childRects []Rect
 }
 
 // NewGrid creates a Grid with cols columns.
@@ -54,6 +55,10 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 			W: cellW,
 			H: cellH,
 		}
+		if len(g.childRects) != n {
+			g.childRects = make([]Rect, n)
+		}
+		g.childRects[i] = cr
 		if i == g.focus {
 			c.Fill(cr, Cell{Text: " ", Style: Style{BG: g.FocusBG}})
 		}
@@ -113,10 +118,15 @@ func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
 	return g.Children[g.focus].HandleKey(e)
 }
 
-// HandleMouse forwards to the focused child.
+// HandleMouse routes to the child whose drawn cell contains the event.
 func (g *Grid) HandleMouse(e MouseEvent) (quit bool) {
 	if len(g.Children) == 0 {
 		return false
+	}
+	for i, rect := range g.childRects {
+		if rect.Contains(e.X, e.Y) {
+			return g.Children[i].HandleMouse(e)
+		}
 	}
 	return g.Children[g.focus].HandleMouse(e)
 }

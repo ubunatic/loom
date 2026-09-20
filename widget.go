@@ -24,7 +24,8 @@ type Widget interface {
 	// Returns quit=true to signal that the event loop should stop.
 	HandleKey(e KeyEvent) (quit bool)
 
-	// HandleMouse processes a mouse event.
+	// HandleMouse processes a mouse event. e.X and e.Y are canvas-absolute,
+	// 0-based coordinates, with the canvas origin at its top-left corner.
 	// Returns quit=true to signal that the event loop should stop.
 	HandleMouse(e MouseEvent) (quit bool)
 }

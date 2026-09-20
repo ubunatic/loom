@@ -35,17 +35,17 @@ func TestViewScrollbarTrackClick(t *testing.T) {
 		x, y int
 		want int
 	}{
-		{12, 5, 26}, // bottom of the track
-		{12, 3, 8},  // second track row
+		{12, 4, 26}, // bottom of the track
+		{12, 2, 8},  // second track row
 		{11, 5, 8},  // content column: no jump
-		{12, 2, 0},  // top of the track
+		{12, 1, 0},  // top of the track
 	} {
 		v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: tc.x, Y: tc.y})
 		if v.Scroll != tc.want {
 			t.Fatalf("click (%d,%d): scroll=%d, want %d", tc.x, tc.y, v.Scroll, tc.want)
 		}
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 12, Y: 5})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 12, Y: 4})
 	if v.Scroll != 0 {
 		t.Fatal("right click moved scrollbar")
 	}

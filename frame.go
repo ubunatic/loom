@@ -652,7 +652,7 @@ func (f *Frame) focusLast() {
 
 // HandleMouse focuses clicked boxes and forwards events inside a child's bounds.
 func (f *Frame) HandleMouse(e MouseEvent) bool {
-	x, y := e.X-1-f.lastRect.X, e.Y-1-f.lastRect.Y
+	x, y := e.X-f.lastRect.X, e.Y-f.lastRect.Y
 	for i, rect := range f.Layout(f.lastRect.W, f.lastRect.H) {
 		if rect.W < 2 || rect.H < 2 || x < rect.X || x >= rect.X+rect.W || y < rect.Y || y >= rect.Y+rect.H {
 			continue
@@ -668,7 +668,7 @@ func (f *Frame) HandleMouse(e MouseEvent) bool {
 		if box.Child == nil || inner.W <= 0 || inner.H <= 0 || x < inner.X || x >= inner.X+inner.W || y < inner.Y || y >= inner.Y+inner.H {
 			return false
 		}
-		e.X, e.Y = x-inner.X+1, y-inner.Y+1
+		e.X, e.Y = x-inner.X, y-inner.Y
 		return box.Child.HandleMouse(e)
 	}
 	return false

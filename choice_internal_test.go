@@ -35,10 +35,10 @@ func TestHandleMouseScrollOffset(t *testing.T) {
 		t.Fatalf("expected the view to be scrolled (viewOffset>0), got 0")
 	}
 
-	// e.Y is 1-based pane-relative; row 1 is the first visible item, which is
+	// e.Y is 0-based canvas-absolute; row 0 is the first visible item, which is
 	// c.filtered[c.viewOffset]. A click there must select that item.
-	for row := 1; row <= paneRows-1; row++ {
-		want := c.viewOffset + row - 1
+	for row := 0; row < paneRows-1; row++ {
+		want := c.viewOffset + row
 		if want >= total {
 			break
 		}
@@ -57,13 +57,13 @@ func TestHandleMouseClickSelects(t *testing.T) {
 	cv := NewCanvas(40, 6)
 	c.Draw(cv, Rect{X: 0, Y: 0, W: 40, H: 6})
 
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 2})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
 	if c.sel != 1 {
 		t.Errorf("click at Y=2: sel=%d, want 1", c.sel)
 	}
 
 	// A click below the last item (Y beyond len) must not change the selection.
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 9})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 8})
 	if c.sel != 1 {
 		t.Errorf("out-of-range click changed sel to %d, want 1", c.sel)
 	}
@@ -76,7 +76,7 @@ func TestChoiceMouseWheelAndPromptHitTest(t *testing.T) {
 	if c.sel != 1 {
 		t.Fatalf("wheel down selected %d, want 1", c.sel)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 4}) // prompt row
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 3}) // prompt row
 	if c.sel != 1 || c.done {
 		t.Fatal("clicking the prompt selected a file")
 	}
@@ -92,7 +92,7 @@ func TestChoiceSelectOnlyOnClick(t *testing.T) {
 	selected := false
 	c.OnSelect = func(Item) { selected = true }
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 2})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
 	if c.sel != 1 || selected {
 		t.Fatalf("click selected index %d, invoked callback %v", c.sel, selected)
 	}
@@ -106,7 +106,7 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	c := makeChoice(30)
 	c.SelectOnlyOnClick = true
 	c.Draw(NewCanvas(25, 8), Rect{X: 2, Y: 1, W: 20, H: 6})
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 6})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 5})
 	if c.viewOffset != 25 || c.sel != 25 {
 		t.Fatalf("bottom track click: offset=%d sel=%d, want 25", c.viewOffset, c.sel)
 	}
@@ -114,11 +114,11 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	if c.viewOffset != 25 {
 		t.Fatalf("redraw snapped viewport to %d", c.viewOffset)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 2})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 1})
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatalf("top track click: offset=%d sel=%d, want 0 and 4", c.viewOffset, c.sel)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 22, Y: 7}) // prompt
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 6}) // prompt
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatal("prompt-row click moved scrollbar")
 	}
@@ -306,7 +306,7 @@ func TestMultiSelectMouseToggleHonorsScroll(t *testing.T) {
 	c.MultiSelect = true
 	c.viewOffset = 3 // list scrolled so row 1 shows item-03
 
-	quit := c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	quit := c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 0})
 	if quit {
 		t.Error("multi-select click should not confirm/quit")
 	}

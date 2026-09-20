@@ -375,7 +375,7 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 
 // HandleMouse updates selection on hover or wheel, confirms on left-click,
 // and jumps the viewport when the scrollbar track is clicked.
-// e.Y is the 1-based widget-relative row, so e.Y-1 is the visible item row;
+// e.Y is a canvas-absolute 0-based row;
 // viewOffset maps that back to a filtered index (mirrors Draw's fi mapping)
 // so hit-tests stay correct once the list has been scrolled.
 func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
@@ -384,8 +384,8 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	}
 	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
 		c.lastRect.W > 0 && c.itemRows > 0 &&
-		e.X == c.lastRect.X+c.lastRect.W && len(c.filtered) > c.itemRows {
-		row := e.Y - c.lastRect.Y - 1
+		e.X == c.lastRect.X+c.lastRect.W-1 && len(c.filtered) > c.itemRows {
+		row := e.Y - c.lastRect.Y
 		if c.PromptTop {
 			row--
 		}
@@ -413,13 +413,13 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	if c.PromptTop {
 		e.Y--
 	}
-	if e.Y <= 0 {
+	if e.Y < 0 {
 		return false
 	}
-	if c.drawn && e.Y > c.itemRows {
+	if c.drawn && e.Y >= c.itemRows {
 		return false
 	}
-	fi := c.viewOffset + e.Y - 1
+	fi := c.viewOffset + e.Y
 	if fi < 0 || fi >= len(c.filtered) {
 		return false
 	}

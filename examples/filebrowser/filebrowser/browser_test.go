@@ -295,7 +295,7 @@ func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
 	b.openFile = func(path string) error { opened = path; return nil }
 	b.Draw(loom.NewCanvas(80, 20), loom.Rect{W: 80, H: 20})
 	rect := b.frame.Layout(80, 20)[0]
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + 2, Y: rect.Y + 3})
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + 1, Y: rect.Y + 2})
 	if opened != "" || b.list.FilteredSel() != 1 {
 		t.Fatalf("click opened %q or selected index %d, want selection only", opened, b.list.FilteredSel())
 	}
@@ -322,7 +322,7 @@ func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
 	// Child scrollbar is the last column inside the box border. Its final
 	// item row is immediately above Choice's filter prompt.
 	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft,
-		X: rect.X + rect.W - 1, Y: rect.Y + rect.H - 2})
+		X: rect.X + rect.W - 2, Y: rect.Y + rect.H - 3})
 	item, ok := b.list.Selected()
 	if !ok || item.Name != "file-25" {
 		t.Fatalf("bottom track click selected %+v, ok=%v; want file-25", item, ok)

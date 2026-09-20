@@ -134,8 +134,8 @@ func TestChoiceHandleMouseClickSelects(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
-	// Left press at Y=2 selects the 2nd row (Y is 1-based) and quits (no OnSelect).
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 2})
+	// Left press at Y=1 selects the 2nd row (0-based) and quits (no OnSelect).
+	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
 	if !quit {
 		t.Error("left click on a row should quit (done) when OnSelect is nil")
 	}
@@ -148,12 +148,12 @@ func TestChoiceHandleMouseHover(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 3})
+	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 2})
 	if quit {
 		t.Error("hover should not quit")
 	}
 	if c.FilteredSel() != 2 {
-		t.Errorf("sel = %d after hover Y=3, want 2", c.FilteredSel())
+		t.Errorf("sel = %d after hover Y=2, want 2", c.FilteredSel())
 	}
 
 	// Out-of-range Y is a no-op (selection unchanged).
@@ -169,7 +169,7 @@ func TestChoiceHandleMouseOnSelectNoQuit(t *testing.T) {
 	c := loom.NewChoice(items)
 	c.OnSelect = func(it loom.Item) { picked = it.Name }
 
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
+	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0})
 	if quit {
 		t.Error("click with OnSelect set should not quit")
 	}
@@ -178,12 +178,27 @@ func TestChoiceHandleMouseOnSelectNoQuit(t *testing.T) {
 	}
 }
 
+func TestChoiceInFrameHandleMouseUsesCanvasCoordinates(t *testing.T) {
+	choice := loom.NewChoice([]loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}})
+	choice.SelectOnlyOnClick = true
+	frame := &loom.Frame{Boxes: []loom.Box{{Child: choice, Width: 8, Height: 6}}}
+	canvas := loom.NewCanvas(24, 14)
+	frame.Draw(canvas, loom.Rect{X: 5, Y: 3, W: 16, H: 10})
+
+	// Frame chrome is one row high and the box border is one cell high. The
+	// second choice row is therefore at absolute canvas coordinate (7, 6).
+	frame.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 7, Y: 6})
+	if got := choice.FilteredSel(); got != 1 {
+		t.Fatalf("selection after click = %d, want 1", got)
+	}
+}
+
 func TestGridHandleMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{quit: true}
 	g := loom.NewGrid(2, a, b)
 	g.HandleKey(loom.KeyEvent{Key: "right"}) // focus → child 1 (b)
 
-	ev := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 1}
+	ev := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}
 	quit := g.HandleMouse(ev)
 	if !b.got || a.got {
 		t.Errorf("mouse should reach focused child only: a.got=%v b.got=%v", a.got, b.got)
@@ -267,7 +282,7 @@ views:
 		t.Fatalf("expected *loom.Router, got %T", widget)
 	}
 
-	router.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
+	router.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0})
 	if router.Current() != "list" {
 		t.Errorf("after click on row 1, current view = %q, want list", router.Current())
 	}

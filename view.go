@@ -158,8 +158,8 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 	case MousePress:
 		if e.Button == MouseLeft && maxScroll > 0 && v.lastRect.W > 0 &&
 			e.X == v.lastRect.X+v.lastRect.W &&
-			e.Y > v.lastRect.Y && e.Y <= v.lastRect.Y+v.lastRect.H {
-			v.Scroll = scrollTrackPosition(e.Y-v.lastRect.Y-1, v.lastRect.H, maxScroll)
+			e.Y >= v.lastRect.Y && e.Y < v.lastRect.Y+v.lastRect.H {
+			v.Scroll = scrollTrackPosition(e.Y-v.lastRect.Y, v.lastRect.H, maxScroll)
 		}
 	}
 	return false

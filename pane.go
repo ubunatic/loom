@@ -980,11 +980,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					if !ok {
 						break
 					}
-					// Translate absolute terminal coords to pane-relative 1-based:
-					// the pane top (canvas row 0) is terminal row startRow, but widgets
-					// hit-test as if their first row were Y=1. Without this, mouse only
-					// lined up when the pane happened to sit at row 1.
-					me.Y -= p.startRow - 1
+					// Translate terminal 1-based coordinates to pane/canvas-absolute
+					// 0-based coordinates.
+					me.X--
+					me.Y -= p.startRow
 					if p.handleHelpMouse(me) || root.HandleMouse(me) {
 						quit = true
 						break

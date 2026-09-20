@@ -300,15 +300,14 @@ func matchesTabKey(event KeyEvent, binding string) bool {
 }
 
 // HandleMouse switches tabs on a left click within the tab bar; any other
-// event is delegated to the active child. e.X/e.Y are 1-based
-// terminal/pane-relative coordinates (see Pane.run), so they are converted
-// to the 0-based canvas coordinates t.lastRect and t.tabCols use.
+// event is delegated to the active child. Coordinates are canvas-absolute
+// and 0-based.
 func (t *Tabs) HandleMouse(e MouseEvent) (quit bool) {
 	if len(t.Tabs) == 0 {
 		return false
 	}
 	if t.drawn && e.Action == MousePress && e.Button == MouseLeft {
-		x, y := e.X-1, e.Y-1
+		x, y := e.X, e.Y
 		for i, cr := range t.tabCols {
 			if cr.Contains(x, y) {
 				t.Select(i)
