@@ -132,3 +132,27 @@ Delivered (committed by host): M2b tests and PTY smoke test. Rejected:
 5. Pre-existing `splash --watch` processes (PIDs 920646, 920686) may be
    leaked test children; do NOT kill them, but find what leaked them if it
    is in this repo's tests and fix it.
+
+### M3b Review (host) — PTY lifecycle accepted, snapshot and CLI NOT accepted; finish as M3c
+
+Accepted (committed by host): private PTY, child process-group reap, lifecycle tests.
+Required (design given, do not improvise):
+1. Snapshot must be a *rendered screen*, not the byte stream. Feed PTY output
+   into a virtual screen model (check root `rawscreen.go` first; otherwise write
+   a small model in `examples/ansiviewer/ansiviewer` handling: CSI H/f cursor
+   move, K/J erase, 2K, m (SGR into cells), ?25/?7/?2026 (ignore), 6n (ignore
+   or answer with cursor pos), S scroll, alt screen ?1049). Snapshot = rows of
+   cells rendered as SGR text like `Canvas.Row`.
+2. Timing: take the snapshot at `<time>` after start. If the child exits
+   earlier, use the last screen state *before* its teardown (teardown =
+   clearing lines, leaving alt screen, or ?25h at exit): keep a copy of the
+   screen at each end-of-frame (`ESC[?2026l`, or 30 ms of quiet) and use the
+   latest non-blank one. The splash self-exit capture must therefore show
+   "harnez usage", the progress bar and the pill line, not a blank screen.
+3. Add the CLI in `main.go`: `ansiviewer --record 2s [-o file] -- <cmd> [args]`.
+   Write a test that runs `main` logic (extract a `run(args, stdout)`) for it.
+4. Regenerate `M3-record-splash.ansi` (`go run ./examples/splash`) and
+   `M3-record-watch.ansi` (`go run ./examples/splash --watch`); after
+   stripping SGR, each file must contain the text `harnez usage` and have no
+   raw ESC sequences other than SGR. Add a test asserting exactly that on
+   the recorded output of a scripted child.
