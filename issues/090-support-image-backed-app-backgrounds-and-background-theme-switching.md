@@ -42,3 +42,5 @@ and image themes.
 Add focused coverage for image loading/dimming, cell rendering and sampling,
 average-color fallback, loading/error behavior, and theme switching. Verify the
 background example with both themes and representative foreground content.
+Extend the PTY tests to launch the background example, switch themes, and prove
+the image-backed mode renders correctly through a real terminal session.

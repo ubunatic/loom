@@ -44,3 +44,5 @@ without breaking existing intentional choices.
 Add focused coverage for key decoding/matching and representative widget/app
 bindings, including modifier combinations, umlauts, punctuation, and conflict
 handling. Verify the examples remain usable with their documented defaults.
+Extend the PTY tests to exercise these key sequences and prove the resulting
+actions work through a real terminal input path.

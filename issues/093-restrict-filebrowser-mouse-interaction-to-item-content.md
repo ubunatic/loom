@@ -35,3 +35,5 @@ change selection or activation state.
 Add focused coverage for clicks on text, whitespace before/after text, frames,
 icons/decorations, truncated labels, and neighboring rows. Verify selection and
 activation remain correct for mouse and keyboard interaction.
+Extend the PTY tests to click item content and row whitespace and prove that
+only the intended hit regions change selection or activation.

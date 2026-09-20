@@ -39,3 +39,5 @@ Add focused coverage for click timing/movement thresholds, target identity,
 single-versus-double-click dispatch, and file/directory/disabled-item behavior.
 Verify the filebrowser and any path-tree widget or example with mouse and
 keyboard interaction.
+Extend the PTY tests to send double-click input and prove files open and
+directories are entered through a real terminal session.

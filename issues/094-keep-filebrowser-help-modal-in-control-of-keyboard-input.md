@@ -37,3 +37,5 @@ with correct focus restoration on close.
 Add a regression test that opens help, sends quit and other application-level
 keys, confirms the app remains open and the dialog owns input, then closes the
 dialog and verifies normal filebrowser shortcuts work again.
+Extend the PTY tests to reproduce `:help<CR>`, send representative keys, and
+prove the modal—not the parent app—controls input throughout the session.

@@ -44,3 +44,5 @@ Add focused coverage for cursor movement, `dx,dy` and radius behavior, edge and
 missing-cursor cases, spec configuration, and each theme's timing/intensity
 behavior. Verify representative widgets or example apps show the effects while
 preserving their existing input behavior.
+Extend the PTY tests to drive mouse movement and button/key events and prove the
+cursor hints and visual effects work through a real terminal session.

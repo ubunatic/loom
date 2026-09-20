@@ -36,3 +36,5 @@ to existing scrolling interactions.
 Add focused coverage for drag start/move/release/cancel, pointer-to-offset
 mapping, bounds and non-overflow cases, both orientations, and interaction with
 existing wheel and keyboard scrolling.
+Extend the PTY tests to drag scrollbar thumbs and prove scrolling changes the
+visible content through a real terminal session.
