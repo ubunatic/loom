@@ -679,8 +679,17 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// rather than jumping once after the whole burst is drained.
 	autoWrapDisabled := false
 	clearRows := 0
+	lastMaxCols := p.MaxCols
 	redraw := func(astra bool) {
 		started := time.Now()
+		if p.MaxCols != lastMaxCols {
+			// The app changed the width cap: take it up on this frame.
+			lastMaxCols = p.MaxCols
+			cols = p.cols
+			if p.MaxCols > 0 && cols > p.MaxCols {
+				cols = p.MaxCols
+			}
+		}
 		if p.ResizeConfig.AutoWrap && !autoWrapDisabled && p.tty != nil {
 			p.tty.WriteString("\x1b[?7l") //nolint:errcheck
 			autoWrapDisabled = true

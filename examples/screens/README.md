@@ -4,7 +4,7 @@ A small inline TUI with a visible border that switches to full screen (the
 alternate screen) and back, and that promotes itself when it is nearly full height.
 
 ```
-go run ./examples/screens -height 8
+go run ./examples/screens --height 12 --width 60 --theme plain
 ```
 
 | Key | Action |
@@ -14,6 +14,13 @@ go run ./examples/screens -height 8
 | `c` | Toggle auto full screen |
 | `l` | Auto full screen uses the alternate screen |
 | `+` / `-` | Wanted inline height |
+| `w` / `W` | Pane width wider / narrower, up to the terminal width |
+| `t` | Next theme (`--theme`) |
+| `a` | Astra star field background on/off |
+
+The bottom row of the app has clickable `[-]` `[+]` buttons for width and
+height, and `[Theme]` and `[Astra]` buttons (left click).
+
 | `m` / `M` | `margin_rows` up / down |
 | `p` / `P` | `min_percent` up / down (steps of 10) |
 | `q` | Quit |

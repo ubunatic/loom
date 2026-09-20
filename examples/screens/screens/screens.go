@@ -10,14 +10,25 @@
 package screens
 
 import (
-	"flag"
 	"fmt"
+	"sort"
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
+	"github.com/spf13/cobra"
 )
 
-const minHeight = 3
+const (
+	minHeight = 3
+	minWidth  = 30
+	stepWidth = 10
+)
+
+// button is a clickable label; rect is in canvas coordinates.
+type button struct {
+	rect   loom.Rect
+	action string
+}
 
 // App is the demo widget. pane is nil in headless tests, where cfg and height
 // stand in for the pane's state.
@@ -25,11 +36,17 @@ type App struct {
 	pane   *loom.Pane
 	cfg    loom.ResizeConfig
 	height int // wanted inline height
+	width  int // wanted pane width, capped by the terminal width
+
+	themeNames []string
+	themeIdx   int
+	astra      bool
+	buttons    []button
 }
 
 // NewApp returns an App wanting height inline rows, starting inline.
 func NewApp(pane *loom.Pane, cfg loom.ResizeConfig, height int) *App {
-	a := &App{pane: pane, cfg: cfg, height: max(minHeight, height)}
+	a := &App{pane: pane, cfg: cfg, height: max(minHeight, height), width: 60, themeNames: themeNames()}
 	a.cfg.FullScreenBuffer, a.cfg.AltScreen = false, false
 	a.apply()
 	return a
@@ -44,7 +61,56 @@ func (a *App) apply() {
 		return
 	}
 	a.pane.ResizeConfig = a.cfg
+	a.pane.MaxCols = a.width
+	if a.astra {
+		a.pane.Background = loom.NewAstraBackground()
+	} else {
+		a.pane.Background = nil
+	}
 	a.pane.Resize(a.height)
+}
+
+func themeNames() []string {
+	names := make([]string, 0, len(loom.SpeccedThemes))
+	for name := range loom.SpeccedThemes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// SetTheme selects a spec theme by name.
+func (a *App) SetTheme(name string) error {
+	for i, n := range a.themeNames {
+		if n == name {
+			a.themeIdx = i
+			return nil
+		}
+	}
+	return fmt.Errorf("screens: unknown theme %q (available: %s)", name, strings.Join(a.themeNames, ", "))
+}
+
+func (a *App) themeName() string {
+	if len(a.themeNames) == 0 {
+		return ""
+	}
+	return a.themeNames[a.themeIdx]
+}
+
+func (a *App) theme() loom.ThemeColors { return loom.SpeccedThemes[a.themeName()] }
+
+// resizeWidth changes the wanted width by delta, within minWidth and the
+// terminal width (maxWidth <= 0 means unknown, uncapped).
+func (a *App) resizeWidth(delta, maxWidth int) {
+	a.width = max(minWidth, a.width+delta)
+	if maxWidth > 0 {
+		a.width = min(a.width, max(minWidth, maxWidth))
+	}
+}
+
+func (a *App) termWidth() int {
+	cols, _, _ := loom.TerminalSize()
+	return cols
 }
 
 func onOff(v bool) string {
@@ -71,34 +137,70 @@ func (a *App) lines(termCols, termRows int) []string {
 	}
 	return []string{
 		"Screens demo: inline <-> full screen (alternate screen)",
-		fmt.Sprintf("Screen: %s%s   terminal %dx%d   wanted height %d", screenName(mode), note, termCols, termRows, a.height),
-		fmt.Sprintf("Auto full screen: %s   margin_rows=%d min_percent=%d alt=%s   quasi-full now: %v",
+		fmt.Sprintf("Screen: %s%s", screenName(mode), note),
+		fmt.Sprintf("Terminal %dx%d  height %d  width %d/%d", termCols, termRows, a.height, min(a.width, termCols), termCols),
+		fmt.Sprintf("Theme: %s  astra: %s", a.themeName(), onOff(a.astra)),
+		fmt.Sprintf("Auto: %s  margin=%d percent=%d alt=%s  quasi: %v",
 			onOff(a.cfg.AutoFullscreen), a.cfg.FullMarginRows, a.cfg.FullMinPercent, onOff(a.cfg.FullAlt), quasi),
-		"",
-		"f full screen (alt)   n primary full screen (demo)   c auto full screen   l auto uses alt",
-		"+/- inline height   m/M margin rows   p/P min percent   q quit",
+		"f full screen (alt)  n primary full (demo)",
+		"c auto full screen  l auto uses alt",
+		"+/- height  w/W width  t theme  a astra",
+		"m/M margin rows  p/P min percent  q quit",
 	}
 }
 
 // Draw renders the state into r.
 func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	termCols, termRows, _ := loom.TerminalSize()
-	inner := drawBorder(c, r)
-	for i, line := range a.lines(termCols, termRows) {
-		if i >= inner.H {
+	th := a.theme()
+	normal := loom.Style{FG: th.NormalFG.Color(), BG: th.NormalBG.Color()}
+	border := loom.Style{FG: th.BorderFG.Color(), BG: th.BorderBG.Color()}
+	btnStyle := loom.Style{FG: th.SelectedFG.Color(), BG: th.SelectedBG.Color(), Bold: true}
+	if !a.astra {
+		c.Fill(r, loom.Cell{Text: " ", Style: normal})
+	}
+	inner := drawBorder(c, r, border)
+	lines := a.lines(termCols, termRows)
+	for i, line := range lines {
+		if i >= inner.H-1 {
 			break
 		}
-		c.Write(inner.X, inner.Y+i, line, loom.Style{})
+		c.Write(inner.X, inner.Y+i, line, normal)
 	}
+
+	a.buttons = a.buttons[:0]
+	if inner.H < 1 {
+		return
+	}
+	y := inner.Y + inner.H - 1
+	x := inner.X
+	put := func(label, action string, st loom.Style) {
+		w := c.Write(x, y, label, st)
+		if action != "" {
+			a.buttons = append(a.buttons, button{rect: loom.Rect{X: x, Y: y, W: w, H: 1}, action: action})
+		}
+		x += w
+	}
+	put("Width ", "", normal)
+	put("[-]", "w-", btnStyle)
+	put(" ", "", normal)
+	put("[+]", "w+", btnStyle)
+	put("  Height ", "", normal)
+	put("[-]", "h-", btnStyle)
+	put(" ", "", normal)
+	put("[+]", "h+", btnStyle)
+	put("   ", "", normal)
+	put("[Theme]", "t", btnStyle)
+	put(" ", "", normal)
+	put("[Astra]", "a", btnStyle)
 }
 
 // drawBorder outlines r and returns the area inside it. Areas too small for a
 // border are returned unchanged.
-func drawBorder(c *loom.Canvas, r loom.Rect) loom.Rect {
+func drawBorder(c *loom.Canvas, r loom.Rect, style loom.Style) loom.Rect {
 	if r.W < 3 || r.H < 3 {
 		return r
 	}
-	style := loom.Style{}
 	horiz := strings.Repeat("─", r.W-2)
 	c.Write(r.X, r.Y, "┌"+horiz+"┐", style)
 	c.Write(r.X, r.Y+r.H-1, "└"+horiz+"┘", style)
@@ -129,6 +231,14 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		a.height++
 	case "-", "_":
 		a.height = max(minHeight, a.height-1)
+	case "w":
+		a.resizeWidth(stepWidth, a.termWidth())
+	case "W":
+		a.resizeWidth(-stepWidth, a.termWidth())
+	case "t":
+		a.themeIdx = (a.themeIdx + 1) % len(a.themeNames)
+	case "a":
+		a.astra = !a.astra
 	case "m":
 		a.cfg.FullMarginRows++
 	case "M":
@@ -146,47 +256,85 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	return false
 }
 
-// HandleMouse ignores the mouse.
-func (a *App) HandleMouse(loom.MouseEvent) bool { return false }
-
-// Run parses flags and runs the demo.
-func Run(args []string) error {
-	flags := flag.NewFlagSet("screens", flag.ContinueOnError)
-	height := flags.Int("height", 8, "inline height in rows")
-	auto := flags.Bool("auto", true, "switch to full screen when the pane is nearly full height")
-	margin := flags.Int("margin", -1, "rows short of the terminal height that still count as full (-1: spec default)")
-	percent := flags.Int("percent", -1, "percent of the terminal height that counts as full, 0 = off (-1: spec default)")
-	autoAlt := flags.Bool("auto-alt", true, "automatic full screen uses the alternate screen (keeps scrollback clean)")
-	start := flags.String("screen", "inline", "start layout: inline, alt (full screen) or full (primary screen, demo)")
-	if err := flags.Parse(args); err != nil {
-		return err
+// HandleMouse triggers the clicked button. Coordinates are pane-relative and
+// 1-based, so canvas coordinates are one less.
+func (a *App) HandleMouse(e loom.MouseEvent) bool {
+	if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
+		return false
 	}
-	pane, err := loom.New(*height)
+	x, y := e.X-1, e.Y-1
+	for _, b := range a.buttons {
+		if y != b.rect.Y || x < b.rect.X || x >= b.rect.X+b.rect.W {
+			continue
+		}
+		key := map[string]string{"w+": "w", "w-": "W", "h+": "+", "h-": "-", "t": "t", "a": "a"}[b.action]
+		return a.HandleKey(loom.KeyEvent{Key: key})
+	}
+	return false
+}
+
+type options struct {
+	height, width, margin, percent int
+	auto, autoAlt, astra           bool
+	start, theme                   string
+}
+
+// Run parses args with cobra and runs the demo.
+func Run(args []string) error {
+	var o options
+	cmd := &cobra.Command{
+		Use:           "screens",
+		Short:         "Inline TUI that switches to full screen (alternate screen) and back",
+		Args:          cobra.NoArgs,
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE:          func(*cobra.Command, []string) error { return o.run() },
+	}
+	f := cmd.Flags()
+	f.IntVar(&o.height, "height", 12, "inline height in rows")
+	f.IntVar(&o.width, "width", 60, "pane width in columns, capped by the terminal width")
+	f.BoolVar(&o.auto, "auto", true, "switch to full screen when the pane is nearly full height")
+	f.IntVar(&o.margin, "margin", -1, "rows short of the terminal height that still count as full (-1: spec default)")
+	f.IntVar(&o.percent, "percent", -1, "percent of the terminal height that counts as full, 0 = off (-1: spec default)")
+	f.BoolVar(&o.autoAlt, "auto-alt", true, "automatic full screen uses the alternate screen (keeps scrollback clean)")
+	f.BoolVar(&o.astra, "astra", true, "draw the Astra star field background")
+	f.StringVar(&o.theme, "theme", "plain", "color theme ("+strings.Join(themeNames(), ", ")+")")
+	f.StringVar(&o.start, "screen", "inline", "start layout: inline, alt (full screen) or full (primary screen, demo)")
+	cmd.SetArgs(args)
+	return cmd.Execute()
+}
+
+func (o options) run() error {
+	pane, err := loom.New(o.height)
 	if err != nil {
 		return err
 	}
 	defer pane.Close()
 	pane.Resizeable = true
 	pane.DisableDefaultQuit = true
-	pane.MaxCols = 0
+	pane.EnableMouseClicks()
 
 	cfg := pane.ResizeConfig
-	cfg.AutoFullscreen, cfg.FullAlt = *auto, *autoAlt
-	if *margin >= 0 {
-		cfg.FullMarginRows = *margin
+	cfg.AutoFullscreen, cfg.FullAlt = o.auto, o.autoAlt
+	if o.margin >= 0 {
+		cfg.FullMarginRows = o.margin
 	}
-	if *percent >= 0 {
-		cfg.FullMinPercent = *percent
+	if o.percent >= 0 {
+		cfg.FullMinPercent = o.percent
 	}
-	app := NewApp(pane, cfg, *height)
-	switch *start {
+	app := NewApp(pane, cfg, o.height)
+	app.width, app.astra = max(minWidth, o.width), o.astra
+	if err := app.SetTheme(o.theme); err != nil {
+		return err
+	}
+	switch o.start {
 	case "inline":
 	case "alt":
 		app.cfg.AltScreen = true
 	case "full":
 		app.cfg.FullScreenBuffer = true
 	default:
-		return fmt.Errorf("screens: unknown -screen %q (inline, alt, full)", *start)
+		return fmt.Errorf("screens: unknown --screen %q (inline, alt, full)", o.start)
 	}
 	app.apply()
 	return pane.Run(app)

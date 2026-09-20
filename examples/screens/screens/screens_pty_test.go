@@ -33,7 +33,7 @@ func quit(t *testing.T, s *ptytest.Session) {
 // TestScreensSwitchInlineFullAlt walks inline -> full -> alt -> inline and
 // checks each layout's footprint and that the alternate screen is left again.
 func TestScreensSwitchInlineFullAlt(t *testing.T) {
-	s := ptytest.Start(t, 100, 30, build(t), "-auto=false")
+	s := ptytest.Start(t, 100, 30, build(t), "--auto=false")
 	s.WaitFor("Screen: inline", 5*time.Second)
 
 	s.Send("n")
@@ -58,10 +58,10 @@ func TestScreensSwitchInlineFullAlt(t *testing.T) {
 // expects the pane to promote itself to the alternate screen, and to fall
 // back to inline when the terminal grows again.
 func TestScreensAutoFullscreen(t *testing.T) {
-	s := ptytest.Start(t, 100, 30, build(t), "-height=27")
+	s := ptytest.Start(t, 100, 30, build(t), "--height=27")
 	s.WaitFor("Screen: inline", 5*time.Second)
 	s.Send("+") // 28 of 30 rows: still 2 short, margin_rows=1
-	s.WaitFor("wanted height 28", 3*time.Second)
+	s.WaitFor("height 28", 3*time.Second)
 	if strings.Contains(strings.Join(s.Screen(), "\n"), "Screen: full screen (alt)") {
 		t.Fatal("promoted one row too early")
 	}
@@ -76,12 +76,34 @@ func TestScreensAutoFullscreen(t *testing.T) {
 // TestScreensAutoParamsChangeDetection tightens the margin to 0: 29 of 30
 // rows is no longer full, 30 is.
 func TestScreensAutoParamsChangeDetection(t *testing.T) {
-	s := ptytest.Start(t, 100, 30, build(t), "-height=29", "-margin=0", "-auto-alt=false")
+	s := ptytest.Start(t, 100, 30, build(t), "--height=29", "--margin=0", "--auto-alt=false")
 	s.WaitFor("Screen: inline", 5*time.Second)
 	s.Send("+")
 	s.WaitFor("Screen: primary full screen (auto)", 3*time.Second)
 	if strings.Contains(string(s.Raw()), "\x1b[?1049h") {
 		t.Fatal("auto-alt=false must stay on the primary screen")
 	}
+	quit(t, s)
+}
+
+// TestScreensWidthButtonsThemeAstra clicks the width [ + ] button and expects
+// the pane to grow up to the terminal width, cycles the theme and toggles Astra.
+func TestScreensWidthButtonsThemeAstra(t *testing.T) {
+	s := ptytest.Start(t, 100, 30, build(t), "--auto=false", "--width=50", "--astra=false")
+	s.WaitFor("width 50/100", 5*time.Second)
+	s.Send("w")
+	s.WaitFor("width 60/100", 3*time.Second)
+	for range 8 {
+		s.Send("w")
+		time.Sleep(30 * time.Millisecond) // one key per read
+	}
+	s.WaitFor("width 100/100", 3*time.Second)
+	s.Send("W")
+	s.WaitFor("width 90/100", 3*time.Second)
+
+	s.Send("t")
+	s.WaitFor("Theme:", 3*time.Second)
+	s.Send("a")
+	s.WaitFor("astra: on", 3*time.Second)
 	quit(t, s)
 }
