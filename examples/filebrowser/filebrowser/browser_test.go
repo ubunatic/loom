@@ -12,6 +12,12 @@ import (
 	"codeberg.org/ubunatic/loom"
 )
 
+type helpModalProbe struct{}
+
+func (helpModalProbe) Draw(*loom.Canvas, loom.Rect)     {}
+func (helpModalProbe) HandleKey(loom.KeyEvent) bool     { return false }
+func (helpModalProbe) HandleMouse(loom.MouseEvent) bool { return false }
+
 func TestBrowserSelectionAndNavigation(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hello"), 0o644); err != nil {
@@ -225,6 +231,39 @@ func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 	}
 	if !b.HandleKey(loom.KeyEvent{Key: "f10"}) {
 		t.Fatal("F10 did not quit")
+	}
+}
+
+func TestBrowserHelpDismissalRestoresInputRouting(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// The help popup consumes its dismissal key and reports no application quit.
+	help := loom.NewPopup("Help", helpModalProbe{})
+	if help.HandleKey(loom.KeyEvent{Text: "q"}) {
+		t.Fatal("help dismissal reported an application quit")
+	}
+	if !help.Open {
+		t.Fatal("help popup closed without an explicit dismissal state")
+	}
+	if help.HandleKey(loom.KeyEvent{Key: "esc"}) {
+		t.Fatal("Esc dismissal reported an application quit")
+	}
+	if help.Open {
+		t.Fatal("Esc did not close help popup")
+	}
+
+	if b.HandleKey(loom.KeyEvent{Key: "down"}) {
+		t.Fatal("filebrowser navigation reported an application quit after help dismissal")
+	}
+	if item, ok := b.list.Selected(); !ok || item.Name != "a.txt" {
+		t.Fatalf("normal input was not restored after help dismissal: %+v, ok=%v", item, ok)
 	}
 }
 

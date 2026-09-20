@@ -967,7 +967,13 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			pending = nil
 			pendingC = nil
 			dirty = true
-			if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
+			if quit, handled := p.handleHelpKey(ke); handled {
+				if quit {
+					return nil
+				}
+				continue
+			}
+			if root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
 				return nil
 			}
 		case rr := <-reads:
@@ -1032,7 +1038,13 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// scanKey must always make progress; guard against a stall.
 					break
 				}
-				if p.handleHelpKey(ke) || root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
+				if quit, handled := p.handleHelpKey(ke); handled {
+					if quit {
+						return nil
+					}
+					continue
+				}
+				if root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
 					quit = true
 					break
 				}
@@ -1044,19 +1056,19 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 }
 
-func (p *Pane) handleHelpKey(e KeyEvent) bool {
+func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
 	if p.help == nil {
-		return false
+		return false, false
 	}
 	if e.Key == "esc" {
 		p.help = nil
-		return true
+		return false, true
 	}
 	close := p.help.HandleKey(e)
 	if close || !p.help.Open {
 		p.help = nil
 	}
-	return true
+	return false, true
 }
 
 func (p *Pane) handleHelpMouse(e MouseEvent) bool {
