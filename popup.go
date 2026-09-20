@@ -48,6 +48,10 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	}
 	row[0] = Cell{Text: "┌"}
 	row[pw-1] = Cell{Text: "┐"}
+	for i, cell := range row {
+		c.Set(x+i, y, cell)
+	}
+
 	if p.Title != "" {
 		title := " " + p.Title + " "
 		fit := 0
@@ -64,9 +68,6 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 			}
 			fit += dw
 		}
-	}
-	for i, cell := range row {
-		c.Set(x+i, y, cell)
 	}
 
 	// Side borders.
