@@ -107,3 +107,23 @@ func TestRecordWritesOneSnapshotAfterDelay(t *testing.T) {
 		t.Fatalf("recording does not show file: %q", out.String())
 	}
 }
+
+func TestRecordCommandReapsSelfExitingChild(t *testing.T) {
+	var out bytes.Buffer
+	if err := RecordCommand(context.Background(), &out, time.Second, "sh", "-c", "printf '\\033[2Jself-exit'"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "self-exit") {
+		t.Fatalf("capture = %q", out.String())
+	}
+}
+
+func TestRecordCommandStopsLongLivedChild(t *testing.T) {
+	var out bytes.Buffer
+	if err := RecordCommand(context.Background(), &out, 20*time.Millisecond, "sh", "-c", "printf long-lived; trap 'exit 0' TERM; while :; do sleep 1; done"); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "long-lived") {
+		t.Fatalf("capture = %q", out.String())
+	}
+}

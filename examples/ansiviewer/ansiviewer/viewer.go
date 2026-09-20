@@ -281,6 +281,9 @@ func Run(args []string) error {
 			return fmt.Errorf("ansiviewer: create recording: %w", err)
 		}
 		defer file.Close()
+		if fs.NArg() > 0 {
+			return RecordCommand(context.Background(), file, *record, fs.Arg(0), fs.Args()[1:]...)
+		}
 		return Record(context.Background(), file, dir, *record, 100, 30)
 	}
 	b, err := New(dir)
