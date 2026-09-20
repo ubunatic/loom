@@ -1,6 +1,6 @@
 # 077 — Support dynamic tab lifecycle operations and configurable keybindings in Tabs widget
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
