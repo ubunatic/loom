@@ -251,11 +251,11 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 	if m := a.metrics; m != nil && row < r.Y+r.H-1 {
 		// Last-frame phases and one-second window stats: toggle a mode and
 		// watch how the render time and bytes per frame change.
-		line := fmt.Sprintf(" Render: %s (draw %s bg %s flush %s)", us(m.RedrawTime), us(m.DrawTime), us(m.BackgroundTime), us(m.FlushTime))
+		line := fmt.Sprintf(" Render: %s (draw %s bg %s flush %s)", ms(m.RedrawTime), ms(m.DrawTime), ms(m.BackgroundTime), ms(m.FlushTime))
 		c.Write(r.X+1, row, loom.TruncateText(line, r.W-2, ""), normal)
 		row++
 		if row < r.Y+r.H-1 {
-			line = fmt.Sprintf(" 1s: avg %s max %s | %.0f fps | %d B/frame", us(m.RedrawAvg), us(m.RedrawMax), m.LoomFPS, m.BytesPerFrame)
+			line = fmt.Sprintf(" 1s: avg %s max %s | %.0f fps | %d B/frame", ms(m.RedrawAvg), ms(m.RedrawMax), m.LoomFPS, m.BytesPerFrame)
 			c.Write(r.X+1, row, loom.TruncateText(line, r.W-2, ""), normal)
 			row++
 		}
@@ -495,7 +495,8 @@ func verdict(full bool) string {
 	return "inline"
 }
 
-// us formats a duration in microseconds, the scale of a terminal redraw.
-func us(d time.Duration) string {
-	return fmt.Sprintf("%dµs", d.Microseconds())
+// ms formats a duration in milliseconds with three decimals, so redraws of a
+// few hundred microseconds still read as e.g. 0.312ms.
+func ms(d time.Duration) string {
+	return fmt.Sprintf("%.3fms", float64(d.Microseconds())/1000)
 }
