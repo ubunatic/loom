@@ -9,6 +9,7 @@
 package examplesreg
 
 import (
+	"codeberg.org/ubunatic/loom/examples/ansiviewer/ansiviewer"
 	"codeberg.org/ubunatic/loom/examples/background/background"
 	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
 	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
@@ -45,6 +46,11 @@ type Example struct {
 
 // Registry lists every examples/* program in a fixed, deterministic order.
 var Registry = []Example{
+	{
+		Name: "ansiviewer", Description: "Browse and render text, ANSI, and file metadata",
+		Package: "codeberg.org/ubunatic/loom/examples/ansiviewer",
+		Run:     func(args []string) error { return ansiviewer.Run(args) }, SupportsHelp: true,
+	},
 	{
 		Name: "background", Description: "Full-screen Astra star field behind a widget",
 		Package: "codeberg.org/ubunatic/loom/examples/background",

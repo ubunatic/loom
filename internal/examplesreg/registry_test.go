@@ -24,3 +24,13 @@ func TestInteractiveExamplesHaveDemoArgs(t *testing.T) {
 		}
 	}
 }
+
+func TestANSIViewerIsRegistered(t *testing.T) {
+	e, ok := Find("ansiviewer")
+	if !ok {
+		t.Fatal("ansiviewer is not registered")
+	}
+	if e.Package != "codeberg.org/ubunatic/loom/examples/ansiviewer" || !e.SupportsHelp {
+		t.Fatalf("registration = %#v", e)
+	}
+}
