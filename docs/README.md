@@ -26,5 +26,14 @@
 | [studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md](studies/2026-09-14-x-term-coverage-gap-in-pane-termsize.md) | x/term Coverage Gap in Pane.termSize |
 | [studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md](studies/2026-09-17-remove-deprecated-uzu-brand-and-home-global-command.md) | Remove Deprecated `uzu` Brand and `:home` Global Command |
 | [studies/2026-09-19-compositor-layering-and-root-modal-overlays.md](studies/2026-09-19-compositor-layering-and-root-modal-overlays.md) | Compositor Layering and Root Modal Overlays |
+| [studies/2026-09-20-feature-gap-analysis-background.md](studies/2026-09-20-feature-gap-analysis-background.md) | Background Example Feature-Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-filebrowser.md](studies/2026-09-20-feature-gap-analysis-filebrowser.md) | Filebrowser Feature Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-monitor.md](studies/2026-09-20-feature-gap-analysis-monitor.md) | Monitor Example Feature Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-screens.md](studies/2026-09-20-feature-gap-analysis-screens.md) | Screens Example Feature-Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-splash.md](studies/2026-09-20-feature-gap-analysis-splash.md) | Splash Example Feature Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-split.md](studies/2026-09-20-feature-gap-analysis-split.md) | Split Example Feature Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-tabs.md](studies/2026-09-20-feature-gap-analysis-tabs.md) | Tabs Example Feature-Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-treemap.md](studies/2026-09-20-feature-gap-analysis-treemap.md) | Treemap Feature-Gap Analysis |
+| [studies/2026-09-20-feature-gap-analysis-winch.md](studies/2026-09-20-feature-gap-analysis-winch.md) | Winch Feature Gap Analysis |
 
 Study files are the source of truth for this table.
