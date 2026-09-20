@@ -64,22 +64,27 @@ func runByName(name string) error {
 }
 
 // runInteractive shows a loom.Choice menu of every registered example and
-// runs the one the user picks. It uses loom.RunPane, the library's own
-// open/run/close-pane helper, rather than duplicating pane lifecycle or key
-// handling here.
+// runs the one the user picks, then shows the menu again until the user aborts
+// it. It uses loom.RunPane, the library's own open/run/close-pane helper,
+// rather than duplicating pane lifecycle or key handling here. A failing
+// example is reported and does not end the session.
 func runInteractive() error {
 	items := make([]loom.Item, 0, len(examplesreg.Registry))
 	for _, e := range examplesreg.Registry {
 		items = append(items, loom.Item{Name: e.Name, Desc: e.Description})
 	}
-	menu := loom.NewChoice(items)
-	menu.Prompt = "> "
-	item, ok, _, err := loom.RunPane(menu)
-	if err != nil {
-		return err
+	for {
+		menu := loom.NewChoice(items)
+		menu.Prompt = "> "
+		item, ok, _, err := loom.RunPane(menu)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return nil // user aborted the menu; nothing more to run
+		}
+		if err := runByName(item.Name); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+		}
 	}
-	if !ok {
-		return nil // user aborted the menu; nothing to run
-	}
-	return runByName(item.Name)
 }
