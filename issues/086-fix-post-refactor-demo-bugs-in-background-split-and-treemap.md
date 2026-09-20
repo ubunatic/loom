@@ -1,6 +1,6 @@
 # 086 — Fix post-refactor demo bugs in background split and treemap
 
-**Status**: In Progress
+**Status**: Closed — restored background panel mc-dark surfaces, wired split ratio key toggle, and added --ansi to treemap DemoArgs with tests
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Bug
