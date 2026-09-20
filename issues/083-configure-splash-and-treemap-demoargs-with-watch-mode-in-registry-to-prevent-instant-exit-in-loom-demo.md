@@ -1,6 +1,6 @@
 # 083 — Configure splash and treemap DemoArgs with watch mode in registry to prevent instant exit in loom-demo
 
-**Status**: Open
+**Status**: Closed — Configured splash and treemap registry entries with --watch and added regression coverage.
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
