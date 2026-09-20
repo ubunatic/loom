@@ -111,3 +111,24 @@ Pre-Work / Required Refinements (do first, commit as `(issue 097 M2b)`):
   for `go run ./examples/splash --watch` (long-lived) and
   `go run ./examples/splash` (self-exiting). No leaked processes (test it).
 - Evidence: `M3-record-splash.ansi`, `M3-record-watch.ansi`.
+
+### M3 Review (host) — NOT accepted; finish as M3b
+
+Delivered (committed by host): M2b tests and PTY smoke test. Rejected:
+1. `Record` renders a directory snapshot; it must run a *subprocess TUI* (e.g.
+   `go run ./examples/splash --watch`, `go run ./examples/splash`) in a PTY,
+   wait `<time>`, capture exactly one screen snapshot (feed PTY output into a
+   virtual screen, e.g. loom `ParseANSI`/rawscreen if suitable), write it as
+   `.ansi`, then terminate and reap the child (process group, no orphans).
+2. `main.go` has no `--record <time>` flag. Add it: `ansiviewer --record 2s
+   -- <cmd> [args...]` writes the frame to stdout or `-o file`.
+3. Tests: self-exiting child (short-lived helper command) and long-lived child
+   (`sleep`-like helper); assert exactly one snapshot, child gone afterwards
+   (`syscall.Kill(pid, 0)` returns ESRCH), and timeout does not hang.
+4. Evidence must be real: `M3-record-splash.ansi` from recording
+   `go run ./examples/splash`, `M3-record-watch.ansi` from
+   `go run ./examples/splash --watch`. Regenerate; they currently show the
+   viewer file list. Verify no `splash` process remains afterwards.
+5. Pre-existing `splash --watch` processes (PIDs 920646, 920686) may be
+   leaked test children; do NOT kill them, but find what leaked them if it
+   is in this repo's tests and fix it.
