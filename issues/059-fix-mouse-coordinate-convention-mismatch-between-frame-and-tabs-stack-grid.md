@@ -1,6 +1,6 @@
 # 059 — Fix mouse coordinate convention mismatch between Frame and Tabs/Stack/Grid
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
