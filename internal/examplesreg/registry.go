@@ -38,6 +38,9 @@ type Example struct {
 	// support this; split has no flag parsing at all, so it never returns
 	// from Run without a live TTY, and loom-bench must not invoke it.
 	SupportsHelp bool
+	// DemoArgs are the arguments loom-demo passes to Run, e.g. "--watch" for
+	// examples that have a live mode.
+	DemoArgs []string
 }
 
 // Registry lists every examples/* program in a fixed, deterministic order.
@@ -60,6 +63,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/monitor",
 		Run:          monitor.Run,
 		SupportsHelp: true,
+		DemoArgs:     []string{"--watch"},
 	},
 	{
 		Name:         "splash",

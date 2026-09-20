@@ -204,6 +204,16 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 		c.Write(r.X+1, row, loom.TruncateText(dimText, r.W-2, ""), normal)
 		row++
 	}
+	if row < r.Y+r.H-1 && a.pane != nil {
+		// The [B] mode only shows the explicit alt-screen request; auto full
+		// screen may have switched to it as well.
+		screen := [...]string{"inline", "primary full screen", "alternate screen"}[a.pane.Screen()]
+		if a.pane.Screen() == loom.ScreenAlt && !cfg.AltScreen {
+			screen += " (auto)"
+		}
+		c.Write(r.X+1, row, loom.TruncateText(" Screen: "+screen+" | Auto full screen: "+onOff(cfg.AutoFullscreen), r.W-2, ""), normal)
+		row++
+	}
 	if row < r.Y+r.H-1 {
 		c.Write(r.X+1, row, loom.TruncateText(" "+a.guardSummary(cfg), r.W-2, ""), normal)
 		row++
@@ -402,4 +412,11 @@ func Run(args []string) error {
 		return err
 	}
 	return pane.Run(app)
+}
+
+func onOff(v bool) string {
+	if v {
+		return "on"
+	}
+	return "off"
 }

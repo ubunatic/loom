@@ -60,7 +60,7 @@ func runByName(name string) error {
 	if !ok {
 		return fmt.Errorf("loom-demo: unknown example %q (see loom-demo --list)", name)
 	}
-	return e.Run(nil)
+	return e.Run(e.DemoArgs)
 }
 
 // runInteractive shows a loom.Choice menu of every registered example and
