@@ -27,206 +27,237 @@ Stage numbers below preserve the original plan and remain as historical
 acceptance context. The Now/Next/Later sequence is the live priority signal and
 supersedes stage order wherever the two disagree.
 
-## Shipped since the last roadmap pass (2026-09-19)
+## Shipped since the last roadmap pass (2026-09-19 → 2026-09-20)
 
-The compositor and theming track closed out completely this session. This
-retires the whole "Later/Park — styling and theming" bucket the previous
-roadmap carried, and it changes the *shape* of the remaining hosted-widget
-work: overlays and background inheritance are no longer open design questions.
+This was a large sprint. The previous roadmap's "Now" items (059, 057, 058,
+036, 038) are **all still open** — they were not the sprint focus. Instead, a
+broad framework-enrichment wave landed, together with a full examples
+modernization sweep. The open backlog is now 20 tickets.
+
+### Terminal resize and stability (071–074)
 
 | Issue | What landed | Why it matters downstream |
 |---|---|---|
-| [067](../issues/067-animated-loom-background-for-filebrowser-with-proper-compositing.md) | Animated background compositing contract, demonstrated by `examples/background` (see [AnimatedBackgrounds.md](AnimatedBackgrounds.md)) | Proved a widget can paint *behind* the tree without owning it |
-| [068](../issues/068-formalize-layered-compositor-semantics-and-background-inheritance.md) | Explicit layered compositor API (`PaintSurface` / `PaintForeground` / `PaintDecoration`); nested-canvas surface propagation fixed; **all** widgets migrated off background-inference heuristics; PTY smoke validated | The layering contract 061 (theme propagation) and 065 (ANSI rows) both build on. No widget now guesses its background |
-| [066](../issues/066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md) | Single-pane ownership guard; default help path no longer opens a second `Pane`/`/dev/tty` | Removes the tty-reader race that would have made *any* hosted-widget work unsafe; the same guard is what 065's treemap conversion must satisfy |
-| [069](../issues/069-render-help-as-a-root-level-modal-overlay.md) | Root-level `:help` modal via the `paneHelpRequest` hook pattern — documented as a reusable mechanism in [RootOverlays.md](RootOverlays.md) | Gives Loom a *general* answer for anything that must draw above a clipped widget tree (confirm dialogs, global notices). Future modal needs reuse this hook rather than inventing plumbing |
-| [070](../issues/070-prevent-text-overflow-in-framework-help-modals.md) | Framework help modal text display-width truncated to content bounds; Unicode/narrow-width regression coverage | Filed and closed inside the same session as a direct follow-up to 069. Its Unicode-truncation test pattern is the template 038 still needs |
-| [050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) | Truecolor RGB values in theme specs | Unblocks 014's palette work whenever a real consumer asks for it; removes the "themes are palette-limited" objection from 061 |
-| [053](../issues/053-pane-run-key-decoding-drops-multi-key-reads-and-splits-escape-sequences-across-tty-reads.md) | Coalesced multi-key reads and split escape sequences handled in `Pane.run` | Was the previous roadmap's top "Now" item. The core input path is now sound enough to build 057's routing contract on top of |
-| [047](../issues/047-remove-deprecated-uzu-brand-and-default-global-commands-from-cmdbar.md) | uzu branding and `:home` removed from default globals | Surface hygiene; `cmdBar` defaults are now loom's own |
+| [071](../issues/071-reflow-stacked-dynamic-frames-within-narrow-terminal-heights.md) | Bounded stacked frame reflow + regression coverage for narrow heights | Frame-heavy hosted widgets (063) now have a stable layout contract under resize |
+| [072](../issues/072-ensure-stable-responsive-frame-layout-during-terminal-resize.md) | Headless + PTY resize stream verification; resize modes from 073 are the fix | The responsive-layout contract is proven end-to-end |
+| [073](../issues/073-add-configurable-winch-resize-diagnostics-app-and-spec-backed-rendering-modes.md) | Configurable Winch resize diagnostics app; spec-backed rendering modes | Gave loom a standalone diagnostic harness and locked down the resize-mode spec |
+| [074](../issues/074-use-measured-winch-speed-for-adaptive-resize-width-guard.md) | Measured WINCH speed for adaptive resize width guard; spec + unit + PTY tests | The width guard is now evidence-based, not a magic constant |
 
-Everything the previous roadmap listed under "Now" is closed. The sequence
-below is therefore a fresh reading of the remaining 25 open tickets, not a
-shuffle of the old one.
+### New framework primitives (075–080)
+
+| Issue | What landed | Why it matters downstream |
+|---|---|---|
+| [075](../issues/075-position-cursor-on-previous-folder-when-navigating-up-in-file-browser.md) | Cursor restored to previous entry on navigate-up in filebrowser | UX correctness; 063's conversion inherits this |
+| [076](../issues/076-add-first-class-split-widget-with-ratio-control-dividers-and-nested-focus-traversal.md) | First-class `loom.Split`: ratio control, mouse drag, `FocusContainer`, nested focus `Tab`/`Shift-Tab` | Gives hosted-widget layouts a proper two-pane primitive; filebrowser's dual-pane now uses it |
+| [077](../issues/077-support-dynamic-tab-lifecycle-operations-and-configurable-keybindings-in-tabs-widget.md) | Dynamic `Add`/`Remove`/`Insert`/`SetTabs` on `loom.Tabs`; declarative `TabsKeys` | Runtime tab mutation and key-rebinding APIs the hosted-widget host will expose |
+| [078](../issues/078-add-concurrency-safe-metricstore-and-metric-bound-gauge-and-sparkline-widgets.md) | `loom.MetricStore` (concurrency-safe, rolling retention), bound `Gauge` + `Sparkline` widgets | Monitoring widgets now have a standard data-binding layer; monitor conversion (064) is simpler |
+| [079](../issues/079-extract-reusable-directory-model-filebrowser-primitives-and-platform-file-opener.md) | `loom.ReadDirectory`, `loom.DisplayPath`, `loom.OpenFile` — extracted from filebrowser | Reusable filesystem primitives; 063 builds on them |
+| [080](../issues/080-add-declarative-startup-transition-runner-with-deterministic-completion-lifecycle.md) | `Pane.RunStartup` transition runner — deterministic splash → main widget handover | Startup orchestration is now a framework concern; splash conversion (064) drops its ad-hoc sleep loops |
+
+### Examples modernization and demo correctness (082, 083, 086, 087)
+
+| Issue | What landed | Why it matters downstream |
+|---|---|---|
+| [082](../issues/082-adopt-new-loom-framework-features-across-examples-and-retire-obsolete-code.md) | Full examples modernization sweep: all nine apps adopted current primitives (`loom.Split`, dynamic `Tabs`, `MetricStore`/`Gauge`/`Sparkline`, `Directory`/`OpenFile`, `Pane.RunStartup`, layered compositor); study published | The examples are now proof of the library, not workarounds around it; future conversions (062–065) have clean reference code to build on |
+| [083](../issues/083-configure-splash-and-treemap-demoargs-with-watch-mode-in-registry-to-prevent-instant-exit-in-loom-demo.md) | `splash` and `treemap` DemoArgs include `--watch`; regression coverage | `loom-demo` no longer flickers through them |
+| [086](../issues/086-fix-post-refactor-demo-bugs-in-background-split-and-treemap.md) | Background panel mc-dark surfaces restored; split ratio key wired; treemap gets `--ansi` in DemoArgs | All three bugs surfaced by interactive demo testing are closed |
+| [087](../issues/087-loom-demo-cannot-start-from-codex-terminal.md) | loom-demo launch through `foot` for a controlling TTY — resolved | Development workflow restored in the Codex environment |
+
+The compositor and theming track (066–070, 050, 053, 047) was closed in the
+*previous* roadmap pass. Everything the prior "Now" listed (059, 057, 058, 036,
+038) remains open and is the priority target this pass.
 
 ## Themes in the open backlog
 
-The 25 open tickets fall into six groups that emerged from their content, not
-from a fixed taxonomy:
+The 19 open tickets fall into six groups:
 
-1. **Hosted-widget library contract** (057, 058, 059, 060, 061) — the missing
-   API that lets a widget be run by a host it did not construct.
+1. **Hosted-widget library contract** (057, 058, 059, 060, 061) — the API that
+   lets a widget run in a host it did not construct. Unchanged from the
+   previous pass; none of these were touched by the sprint.
 2. **Hosted-widget example conversion** (062, 063, 064, 065) — proving the
-   contract by making every `examples/*` app "just a widget".
+   contract by making every `examples/*` app "just a widget". The sprint
+   (082) has already modernized the example code, making the hosted-widget
+   wrapper thinner to write.
 3. **Rendering and measurement correctness** (038, 048, 039) — geometry bugs
-   reachable by real apps, plus two that root-cause *outside* Loom.
+   reachable by real apps; 039 remains a close/won't-fix candidate.
 4. **Layout capability gaps** (051) — an expressiveness hole a concrete
    example already hits.
 5. **API ergonomics and surface honesty** (034, 036, 037, 042, 052) — small,
    independently shippable work that reduces caller boilerplate or removes
    misleading public API.
-6. **Declarative data sources and simulated targets** (014–019) — the original
-   dashboard track, still without a concrete blocking consumer.
+6. **New feature expansions** (081, 085) — treemap layout models and broad PTY
+   smoke coverage; both filed this session.
 
-Plus one explicitly aspirational ticket (056) that is not scheduled.
+## Now — unblock hosting; close the cheap debt
 
-## Now — unblock hosting, and close the cheap correctness debt
-
-**Rationale.** Hosting is Loom's live value axis: a widget library whose
-widgets can only run in the app that built them is a collection of examples,
-not a library. Stage 13's contract tickets gate everything in theme 2, so they
-are the critical path. 059 earns its place independently — it is a *live bug*
-any app hitting a clickable widget inside a non-origin `Frame` can reproduce
-today, with no hosting involved. 036 and 038 are in Now because they are hours
-of work each, not days, and both directly de-risk the bigger items beside them.
+**Rationale.** The hosted-widget contract (theme 1) remains the critical path.
+Nothing in the modernization sprint closed any of the five contract tickets —
+they are exactly where the previous roadmap left them, and they gate the whole
+conversion track (theme 2). The independent items (036, 038, 085) earn their
+place in Now because they are small and de-risk the bigger work beside them.
+085 is new and important: the sprint showed that PTY-level smoke gaps can hide
+real bugs (083, 086) until interactive testing finds them; closing that gap now
+means future regressions surface in CI rather than in human demo sessions.
 
 - [059](../issues/059-fix-mouse-coordinate-convention-mismatch-between-frame-and-tabs-stack-grid.md)
-  (P2, Bug): two incompatible mouse-coordinate conventions coexist —
-  `Frame.HandleMouse` re-bases into child-local coordinates while
-  `Tabs`/`Stack`/`Grid` forward unchanged, so a `Choice` inside a `Frame`
-  subtracts `lastRect` twice and mis-hits rows. `Stack`/`Grid` also route to
-  the *focused* child rather than the clicked one. Independent of all other
-  work; pick one convention and pin it before more composites are written
-  against the ambiguity.
+  (P2, Bug): `Frame.HandleMouse` re-bases into child-local coordinates while
+  `Tabs`/`Stack`/`Grid` forward unchanged. A `Choice` inside a `Frame`
+  subtracts `lastRect` twice; `Stack`/`Grid` route to the *focused* child
+  rather than the clicked one. Independent of all other work; pick one
+  convention and pin it before more composites are written against the
+  ambiguity. The `loom.Split` divider drag (076) translates mouse correctly —
+  use its pattern as the reference.
 - [057](../issues/057-hosted-widget-key-contract-child-first-routing-reserved-host-keybinds-and-quit-containment.md)
-  (P2): child-first key routing, a `KeyConsumer` notion of *consumed* (today
-  `HandleKey` reports only *quit*), and quit containment so a hosted app's `q`
-  closes its tab instead of the host. Gates 062, 063 and the per-app
-  `DisableDefaultQuit` knob.
+  (P2): child-first key routing, a `KeyConsumer` notion of *consumed*, and quit
+  containment so a hosted app's `q` closes its tab instead of the host. Gates
+  062, 063 and the per-app `DisableDefaultQuit` knob. Dynamic `Tabs` (077) and
+  `Split` focus (076) are now live consumers of correct routing; closing this
+  ends the ambiguity they currently work around.
 - [058](../issues/058-widget-declared-pane-requirements-panerequest.md)
   (P2): `PaneRequest` so a widget declares mouse mode, `Resizeable`, `MaxCols`
   and quit policy instead of the example setting them on a pane it owns.
-  Currently these degrade *silently* when hosted — a hosted widget's
-  `HandleMouse` simply never fires. Co-gates 062 with 057.
+  Currently these degrade *silently* when hosted. Co-gates 062 with 057.
 - [036](../issues/036-keyevent-ergonomic-helpers-e-name-and-e-is-for-unified-key-text-matching.md)
-  (P2, small): `KeyEvent.Name()` / `Is()` / `Rune()`. Today every widget
+  (P2, small): `KeyEvent.Name()` / `Is()` / `Rune()`. Every widget
   hand-writes `key := e.Key; if key == "" { key = e.Text }` or silently fails
-  to match printable keys. Pull this in *before* 057 rewrites routing, so the
+  to match printable keys. Pull this in *before* 057 rewrites routing so the
   new contract is written against the ergonomic form once.
 - [038](../issues/038-fix-multi-byte-utf-8-string-truncation-in-popup-title-and-borders.md)
-  (P1, Bug — **likely a close**): the code fix already landed
-  (`popup.go` now uses `textClusters`/`StringWidth`, commit `6c5dc05`), but the
-  ticket's acceptance tests — multi-byte titles at truncating widths, a
-  multi-byte title that fits, an ASCII regression — do not exist; `loom_test.go`
-  covers only `TestPopupDraw`/`TestPopupEscCloses`. Backfill using 070's
-  Unicode/narrow-width test pattern and close. Cheapest P1 on the board.
+  (P1, Bug — **likely a close**): the code fix already landed (`popup.go` now
+  uses `textClusters`/`StringWidth`, commit `6c5dc05`), but acceptance tests
+  are missing. Backfill using 070's Unicode/narrow-width test pattern and
+  close. Cheapest P1 on the board.
+- [085](../issues/085-add-robust-smoke-pty-tests-for-all-example-apps.md)
+  (P2, Infrastructure): end-to-end PTY smoke tests for all registered example
+  apps — spawn in a pseudo-terminal, verify screen draw and width bounds,
+  exercise at least one key action, assert clean exit. The sprint revealed that
+  without PTY-level coverage, regressions in TTY initialization, dimension
+  negotiation, key routing, and demo lifecycle (083, 086) hide until someone
+  runs `loom-demo` manually. The `internal/testpty` harness exists; this is
+  coverage breadth, not new plumbing.
 
 ## Next — finish the contract, then convert the easy examples
 
-**Rationale.** These are gated by Now, or are small capability gaps whose
-concrete caller is one of the conversions. 062 is deliberately the *first*
-conversion because split/tabs have zero flags, zero theming and no live data,
-and because both currently have **no smoke coverage at all** — converting them
-closes a real test hole as a side effect.
+**Rationale.** Gated by Now, or are small capability gaps whose concrete caller
+is one of the conversions. 062 is deliberately the *first* conversion because
+split/tabs have zero flags, zero theming and no live data. The modernization
+sprint (082) already adopted `loom.Split` and dynamic `Tabs` in those examples,
+so the hosted-widget wrapper is thinner than it would have been before. 081
+earns a Next placement because it was filed *about* treemap's layout
+limitations — closing it is a prerequisite for 065 to succeed on its own
+terms, not just for the wrap.
 
 - [060](../issues/060-periodic-redraw-without-pane-ownership-ticker-interface-and-pane-invalidate.md)
   (P2): a `Ticker` interface plus `Pane.Invalidate`. Today `RunWatch` supports
   exactly **one** cadence and one collect callback per pane, so `monitor` and
-  `splash` structurally cannot be two live tabs. Gates 064.
+  `splash` structurally cannot be two live tabs. `MetricStore` (078) made the
+  data layer concurrent-safe; this makes the render trigger layer match.
+  Gates 064.
 - [061](../issues/061-themeable-host-provided-theme-propagation-through-composite-widgets.md)
-  (P3 but promoted): `Themeable` propagation. Nothing auto-themes today — every
+  (P3, promoted): `Themeable` propagation. Nothing auto-themes today — every
   widget's style is baked in at construction, so a hosted filebrowser's F9
-  theme cycle would retheme only its own subtree. Gates 063. Now cheaper than
+  theme cycle would retheme only its own subtree. Gates 063. Cheaper than
   when filed: 068 removed background inference and 050 widened the value space.
 - [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md)
   (P2): `NewWidget` factories for `split` and `tabs`, hosted `loom-demo` mode,
   headless bench smoke. The end-to-end proof of 057+058; `tabs`-inside-`Tabs`
-  is the meta-test for child-first routing.
+  is the meta-test for child-first routing. 082 already modernized the
+  underlying example code — the remaining work is the wrapper and smoke.
 - [051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md)
   (P2): let a box or row of boxes consume the frame's content height instead of
-  each app re-deriving "rows minus title minus status". filebrowser hard-codes
-  `Height: 18` today. Sequence next to 063 so the conversion validates the new
-  fill semantics rather than preserving the magic number.
+  each app re-deriving "rows minus title minus status". Sequence next to 063
+  so the conversion validates the new fill semantics rather than preserving
+  the magic number.
 - [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md)
   (P3, Documentation): five code comments in `pane.go`/`event.go`/`loom_test.go`
-  cite `docs/TuiInput.md` §1–§3; the file has never existed. It should document
-  `/dev/tty` constraints, the poll-then-read/EINTR pattern, and the two-prefix
-  key decode. Write it *while* 057/036 are fresh — that is the same subsystem,
-  and 066's single-pane ownership guard now belongs in it too.
+  cite `docs/TuiInput.md` §1–§3; the file has never existed. Write it while
+  057/036 are fresh — that is the same subsystem, and 066's single-pane
+  ownership guard belongs in it too.
 - [034](../issues/034-ansi-sgr-escape-sequence-parsing-and-writeansi-canvas-helper.md)
   (P2): `ParseANSI`/`Canvas.WriteANSI` for 3/4-bit, 256-color, 24-bit and
   attribute SGR. Currently `Canvas.Write` and `View.Draw` strip ANSI and apply
   one uniform `Style`. This is a **hard prerequisite for 065** (treemap keeps
   `RawScreen` solely because `View` drops its inline ANSI) and the thing any
-  external syntax highlighter or diagram engine needs. Pull it forward out of
-  "ergonomics" on that dependency alone.
+  external syntax highlighter or diagram engine needs.
+- [081](../issues/081-expose-treemapcell-layout-models-squarified-partitioning-and-value-based-color-scales.md)
+  (P2, Feature): expose `TreemapCell` geometry structures, support squarified
+  layout alongside slice-and-dice, and add `ColorScale` for value-based
+  continuous color gradients. Treemap's renderer currently only supports
+  slice-and-dice with an index-cycling palette; applications cannot do
+  hit-testing, tooltips, or custom decorations without pre-rendered geometry.
+  Sequence before 065 (treemap conversion) so the conversion validates the new
+  layout API rather than preserving the old one.
 
-## Later — the remaining conversions and the surface cleanup
+## Later — remaining conversions and surface cleanup
 
-**Rationale.** Each of these is either gated by two or more Next items, or is
-genuine but non-urgent surface work with no caller waiting.
+**Rationale.** Each is gated by two or more Next items, or is genuine but
+non-urgent surface work with no concrete caller waiting.
 
 - [063](../issues/063-convert-filebrowser-example-to-a-hostable-widget.md)
-  (P2): the conversion that exercises 057, 058, 059 and 061 simultaneously —
-  `q`-as-filter-key vs default quit, `--theme` and F9 cycling, mouse clicks on a
-  `Frame`-based layout, `MaxCols: 0`. Deliberately after 062 so it validates the
-  API rather than designing it.
+  (P2): exercises 057, 058, 059 and 061 simultaneously — `q`-as-filter-key
+  vs default quit, `--theme` and F9 cycling, mouse clicks on a `Frame`-based
+  layout, `MaxCols: 0`. Deliberately after 062 so it validates the API rather
+  than designing it. 082 already adopted `loom.Split` and `loom.Directory`;
+  the hosted-widget wrapper is thinner to write.
 - [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md)
-  (P2): the live-data pair. Blocked on 060, and additionally needs options
-  structs — both apps' cobra `RunE` closure currently *is* the app, and neither
-  produces a `Widget` at all in show-once mode.
+  (P2): the live-data pair. Blocked on 060, and needs options structs — both
+  apps' cobra `RunE` closure currently *is* the app, and neither produces a
+  `Widget` in show-once mode. `MetricStore` (078) and `Pane.RunStartup` (080)
+  made the data and startup sides cleaner; the wrapper is smaller than it was.
 - [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md)
-  (P3): last and hardest. Needs 034's ANSI cell parsing, plus unwinding
-  treemap's own `/dev/tty` raw-mode reader, its own signal handler, its own
-  ticker and its stderr writes — all of which would fight a host pane. 066's
-  ownership guard now makes the current design fail loudly, which is the right
-  pressure.
+  (P3): last and hardest. Needs 034's ANSI cell parsing, 081's exposed layout
+  models, plus unwinding treemap's own `/dev/tty` raw-mode reader, its own
+  signal handler, its own ticker and its stderr writes — all of which would
+  fight a host pane. 066's ownership guard now makes the current design fail
+  loudly, which is the right pressure.
 - [037](../issues/037-canvas-drawborder-and-drawbox-primitives-with-configurable-boxstyles.md)
   (P2, Refactor): `Canvas.DrawBorder`/`DrawBox` with configurable `BoxStyle`,
-  consolidating the three independent border implementations (`Box.Draw`,
-  `Popup.Draw`, and the termaid viewer's hand-rolled rounded modal). Real
-  duplication, but the sharpest symptom (038's byte truncation) is already
-  fixed, so the urgency dropped. Do it when 052's decision needs it.
+  consolidating the three independent border implementations. Real duplication,
+  but the sharpest symptom (038's byte truncation) is already fixed, so the
+  urgency dropped. Do it when 052's decision needs it.
 - [052](../issues/052-resolve-unused-choicestyle-border-contract.md)
   (P2, Refactor): `ChoiceStyle.Border` is public, theme-mapped and **never
-  read** by `Choice.Draw`; the `focused` field's documented border dimming does
-  not exist either. Honest-surface work: either delete the field or implement
-  the border. Coordinate with 037 — if borders become a container primitive,
-  deletion is the answer.
+  read** by `Choice.Draw`. Honest-surface work: either delete the field or
+  implement the border. Coordinate with 037 — if borders become a container
+  primitive, deletion is the answer.
 
 ## Close / deprioritize candidates
 
 Flagged for an explicit decision rather than indefinite carry.
 
 - [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md)
-  (P2, Bug) — **likely reclassify to Documentation.** The ticket's own root
-  cause is that `🖼` (U+1F5BC) has Neutral East Asian Width and `wcwidth` 1,
-  while emoji-presentation tables report 2, and terminals disagree with each
-  other. Its own proposed resolution is "use guaranteed 1-column glyphs
-  (`▣ ▧ ▦ ◈ • *`) in borders and titles" — that is guidance, not a fix. Worth
-  doing: audit `measure.RuneWidth` against East Asian Width + Emoji
-  Presentation (including VS-16) and *document* the guarantee Loom can actually
-  make. Not worth doing: chasing per-terminal parity.
+  (P2, Bug) — **reclassify to Documentation.** The ticket's own root cause is
+  that `🖼` (U+1F5BC) has Neutral East Asian Width and `wcwidth` 1, while
+  emoji-presentation tables report 2, and terminals disagree with each other.
+  Its own proposed resolution is "use guaranteed 1-column glyphs in borders
+  and titles" — that is guidance, not a fix. Audit `measure.RuneWidth` against
+  East Asian Width + Emoji Presentation (including VS-16) and *document* the
+  guarantee Loom can actually make. Not worth chasing per-terminal parity.
 - [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md)
-  (P3, Bug/Documentation) — **close as won't-fix-in-code.** Already
-  root-caused to terminal/font behavior: VTE-class terminals procedurally
-  fill `█ ▓ ▒ ░` but render the eighth-block glyphs `▏▎▍▌▋▊▉` from font
-  outlines with their own bearings, producing the seam. Glyph selection math
-  was verified correct. The actionable residue is a documented recommendation
-  (use `ANSI`/`BackgroundANSI`, or drop `SubChar`, when a seamless bar matters)
-  — fold it into the graph docs and close.
+  (P3, Bug/Documentation) — **close as won't-fix-in-code.** Already root-caused
+  to terminal/font behavior: VTE-class terminals render eighth-block glyphs from
+  font outlines with their own bearings, producing the seam. Glyph selection
+  math was verified correct. The actionable residue is a documented
+  recommendation — fold it into the graph docs and close.
 - [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md)
-  (P2) — **milestone ticket with no consumer.** It gates on 014 and 015, which
-  are themselves demand-less. Consider converting it from a blocking milestone
-  into a checklist that a future real consumer can pick up, so it stops
-  appearing as scheduled work.
+  (P2) — **milestone ticket with no consumer.** Gates on 014 and 015, which
+  are themselves demand-less. Convert it from a blocking milestone into a
+  checklist a future real consumer can pick up.
 - [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md)
-  (P3, self-labelled "aspirational, not scheduled") — direction 1 (in-process
-  widget factories) has been fully absorbed by 057–065 and is being delivered.
-  Direction 2 (PTY-hosted arbitrary programs: `creack/pty`, a VT100 parser, an
-  in-memory screen grid, `TIOCSWINSZ` resize propagation) is a separate product
-  in its own right. Either split direction 2 into its own ticket and close 056,
-  or keep 056 explicitly parked — but it should not sit in the hosted-widget
-  stage table as if it were sequenced.
+  (P3, aspirational) — direction 1 (in-process widget factories) is being
+  delivered by 057–065. Direction 2 (PTY-hosted arbitrary programs: `creack/pty`,
+  a VT100 parser, an in-memory screen grid, `TIOCSWINSZ` resize propagation) is
+  a separate product in its own right. Either split direction 2 into its own
+  ticket and close 056, or keep it explicitly parked — but it should not sit in
+  the hosted-widget stage table as if it were sequenced.
 - [019](../issues/019-evaluate-declarative-source-and-action-wiring.md)
-  (P3) — remains parked behind 017/018, unchanged from the prior roadmap. Its
-  narrow file/cadence declaration is already proven by 027; keep it open only
-  for source mappings, named handlers and the adopt/narrow/reject decision, and
-  do not let a second competing declaration syntax grow beside 027's.
-
+  (P3) — remains parked behind 017/018, unchanged from prior passes. Its narrow
+  file/cadence declaration is already proven by 027; keep it open only for
+  source mappings, named handlers and the adopt/narrow/reject decision, and do
+  not let a second competing declaration syntax grow beside 027's.
 ## Parked — declarative data sources and simulated targets (014–019)
 
-Unchanged in substance from the prior pass, restated because the tickets are
+Unchanged in substance from prior passes, restated because the tickets are
 still open and the reasoning still holds: **no concrete downstream app blocks
 on any of them.**
 
@@ -244,8 +275,7 @@ on any of them.**
   separate-process file/socket fixtures and lifecycle canaries, then bounded
   Linux/daemon probes. Reuse 027's file collector and add
   replacement/partial-write, disconnect/reconnect and stale-data evidence
-  rather than rebuilding it. Real CPU-percentage parsing, GPU paths/units and
-  daemon/transcript formats still need source-specific evidence under 018.
+  rather than rebuilding it.
 - **Wider declarative wiring.** 019 — see close/deprioritize above.
 
 Deferring this whole track preserves attention for reusable library value while
@@ -261,13 +291,15 @@ root test discovery includes them.
 061 ──────────────────┘        │          │
 060 ───────────────────────────┘          │
 034 ──────────────────────────────────────┘
+081 ──────────────────────────────────────┘  (also gates 065 layout)
 051 ──► (validated by 063)
-059, 038, 042, 052 — independent
+059, 038, 042, 052, 085 — independent
 037 ──► (informs 052)
 ```
 
-057 and 058 gate 062; 061 gates 063; 060 gates 064; 034 gates 065; 065 is last.
-059, 038, 042 and 052 are independent and can run in parallel with any of it.
+057 and 058 gate 062; 061 gates 063; 060 gates 064; 034 and 081 gate 065; 065
+is last. 059, 038, 042, 052 and 085 are independent and can run in parallel
+with any of it.
 
 ## Stage table
 
@@ -287,6 +319,9 @@ root test discovery includes them.
 | 13 — Hosted widgets (contract) | [057](../issues/057-hosted-widget-key-contract-child-first-routing-reserved-host-keybinds-and-quit-containment.md), [058](../issues/058-widget-declared-pane-requirements-panerequest.md), [059](../issues/059-fix-mouse-coordinate-convention-mismatch-between-frame-and-tabs-stack-grid.md), [060](../issues/060-periodic-redraw-without-pane-ownership-ticker-interface-and-pane-invalidate.md), [061](../issues/061-themeable-host-provided-theme-propagation-through-composite-widgets.md) |
 | 14 — Hosted widgets (example conversion) | [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md), [063](../issues/063-convert-filebrowser-example-to-a-hostable-widget.md), [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md), [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md) |
 | 15 — Compositor & overlays (Shipped) | [066](../issues/066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md), [067](../issues/067-animated-loom-background-for-filebrowser-with-proper-compositing.md), [068](../issues/068-formalize-layered-compositor-semantics-and-background-inheritance.md), [069](../issues/069-render-help-as-a-root-level-modal-overlay.md), [070](../issues/070-prevent-text-overflow-in-framework-help-modals.md), [050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) |
+| 16 — Terminal resize and stability (Shipped) | [071](../issues/071-reflow-stacked-dynamic-frames-within-narrow-terminal-heights.md), [072](../issues/072-ensure-stable-responsive-frame-layout-during-terminal-resize.md), [073](../issues/073-add-configurable-winch-resize-diagnostics-app-and-spec-backed-rendering-modes.md), [074](../issues/074-use-measured-winch-speed-for-adaptive-resize-width-guard.md) |
+| 17 — Framework primitives (Shipped) | [075](../issues/075-position-cursor-on-previous-folder-when-navigating-up-in-file-browser.md), [076](../issues/076-add-first-class-split-widget-with-ratio-control-dividers-and-nested-focus-traversal.md), [077](../issues/077-support-dynamic-tab-lifecycle-operations-and-configurable-keybindings-in-tabs-widget.md), [078](../issues/078-add-concurrency-safe-metricstore-and-metric-bound-gauge-and-sparkline-widgets.md), [079](../issues/079-extract-reusable-directory-model-filebrowser-primitives-and-platform-file-opener.md), [080](../issues/080-add-declarative-startup-transition-runner-with-deterministic-completion-lifecycle.md) |
+| 18 — Examples modernization (Shipped) | [082](../issues/082-adopt-new-loom-framework-features-across-examples-and-retire-obsolete-code.md), [083](../issues/083-configure-splash-and-treemap-demoargs-with-watch-mode-in-registry-to-prevent-instant-exit-in-loom-demo.md), [086](../issues/086-fix-post-refactor-demo-bugs-in-background-split-and-treemap.md), [087](../issues/087-loom-demo-cannot-start-from-codex-terminal.md) |
 
 ## Stages 13–14 — Hosted widgets
 
@@ -308,8 +343,14 @@ coordinate convention, which fixes a real pre-existing `Frame`-vs-
 host-provided theme propagation (061). Stage 14 converts the examples in
 dependency order — split/tabs first as the end-to-end demo and the first smoke
 coverage those two ever had, then filebrowser, then the live-data pair
-splash/monitor, and finally treemap, which needs 034's ANSI cell parsing and a
-new ANSI-preserving rows widget before it can leave `RawScreen` behind.
+splash/monitor, and finally treemap, which needs 034's ANSI cell parsing, 081's
+squarified layout models, and a new ANSI-preserving rows widget before it can
+leave `RawScreen` behind.
+
+The example code modernization (stage 18) has already been applied: all nine
+example apps now use current framework primitives. The remaining work in
+stages 13–14 is adding the hosted-widget *wrapper* contract on top of that
+clean base.
 
 The compositor prerequisites this stage used to carry implicitly are now
 explicit and shipped: see [RootOverlays.md](RootOverlays.md) for the
@@ -327,7 +368,8 @@ changing file fixtures, stale/error cases, bounded retention and joined
 shutdown. Retain `make test`, relevant race checks and `make watch-pty` for
 implementation delivery. Hosted-widget work additionally needs headless bench
 smoke coverage for every converted example (062 onward) and a PTY smoke run,
-as 068 established.
+as 068 established. 085 will provide the systematic PTY smoke harness for all
+registered example apps.
 
 The stage descriptions below retain the original scope as historical acceptance
 context. Their order is superseded by the Now/Next/Later sequence above.
