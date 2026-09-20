@@ -1,7 +1,7 @@
 # 057 — Hosted widget key contract: child-first routing and quit containment
 (filename retains original title incl. "reserved host keybinds" — see §2.2, dropped on revision)
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Feature
