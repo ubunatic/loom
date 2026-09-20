@@ -3,7 +3,11 @@
 
 package loom
 
-import "strings"
+import (
+	"fmt"
+	"io"
+	"strings"
+)
 
 // Render draws root into an off-screen canvas of the given size and returns each
 // row as an ANSI string (styles reset at every row end, matching Canvas.Row). It
@@ -16,6 +20,22 @@ func Render(root Widget, cols, rows int) []string {
 		out[y] = c.Row(y)
 	}
 	return out
+}
+
+// RenderTo draws one off-screen frame and writes it as sequential lines to w.
+// It performs no terminal control, making it suitable for non-interactive
+// previews, redirected output, and tests. cols and rows must be positive.
+func RenderTo(w io.Writer, root Widget, cols, rows int) error {
+	if w == nil {
+		return fmt.Errorf("loom: render writer required")
+	}
+	if root == nil {
+		return fmt.Errorf("loom: render widget required")
+	}
+	if cols < 1 || rows < 1 {
+		return fmt.Errorf("loom: render size must be positive, got %dx%d", cols, rows)
+	}
+	return WriteRows(w, Render(root, cols, rows))
 }
 
 // ScreenshotScript turns rendered ANSI rows into a minimal, self-printing POSIX
