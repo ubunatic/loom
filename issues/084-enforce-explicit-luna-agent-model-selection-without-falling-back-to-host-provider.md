@@ -1,6 +1,6 @@
 # 084 — Enforce explicit luna agent model selection without falling back to host provider
 
-**Status**: Open
+**Status**: Closed — Moved to Harnez issue 454; not applicable to the Loom library
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Agentic Ergonomics
