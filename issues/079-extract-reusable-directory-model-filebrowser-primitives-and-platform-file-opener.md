@@ -1,6 +1,6 @@
 # 079 — Extract reusable Directory model FileBrowser primitives and platform file opener
 
-**Status**: Open
+**Status**: Closed — implemented and verified by go test ./... and make test-q1
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
