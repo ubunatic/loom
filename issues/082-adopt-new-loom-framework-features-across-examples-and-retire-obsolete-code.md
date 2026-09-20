@@ -1,6 +1,6 @@
 # 082 — Adopt new loom framework features across examples and retire obsolete code
 
-**Status**: In Progress
+**Status**: Closed — modernized all example applications with core Loom primitives across 3 sequential phases, verified by test suites and documented in study
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Refactor
