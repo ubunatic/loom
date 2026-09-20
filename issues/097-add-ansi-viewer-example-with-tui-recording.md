@@ -42,3 +42,36 @@ Investigate the current widget and terminal-capture APIs before implementation;
 do not duplicate spec values or introduce unsafe process handling. Resolve any
 format or platform limitations discovered during implementation in the ticket
 or accompanying documentation.
+
+## Milestones (lean sprint, dev agent `codex:luna:low`)
+
+Every milestone ends with a committed, `cat`-able evidence file under
+`docs/progress/097/` (plain ANSI bytes, one frame, produced headlessly via
+`loom.RenderTo` or a Go test with `-update`-style golden write; never require a
+TTY). Name: `M<N>-<what>.ansi`, 100x30. Commit the `.ansi` files with the code.
+Test runs: use targeted `go test ./examples/ansiviewer/... -run <Name>`; root
+package `/dev/tty` failures (`TestTerminalSize`, `TestPaneStartup`) are
+pre-existing headless gaps, not regressions.
+
+### M1 — Classification and viewer widget
+- Package `examples/ansiviewer`: `Classify(path) Kind` (text, ansi, binary,
+  image) and a viewer widget that renders text / metadata / `.ansi` content
+  clipped to its bounds (use `Canvas.WriteANSI` if present, otherwise a bounded
+  SGR parser inside the example; see ticket 034).
+- Tests: classification table, rendering never writes outside bounds
+  (wide lines, CJK, long ANSI lines), key scrolling.
+- Evidence: `M1-text.ansi`, `M1-ansi.ansi` (renders `docs/data/harnez-usage.ansi`),
+  `M1-binary.ansi`.
+
+### M2 — Browser + viewer layout and `loom-demo` registration
+- `ansiviewer <dir>`: left file browser, right viewer, keyboard navigation
+  (up/down/enter/tab focus switch, q quit). Register in `loom-demo` and add a
+  PTY smoke test consistent with ticket 085.
+- Evidence: `M2-layout.ansi` (rooted at `docs/data`), `M2-narrow.ansi` (60x20).
+
+### M3 — `--record <time>`
+- Launch a subprocess TUI in a PTY, capture exactly one screen snapshot after
+  the delay, write it as `.ansi`, then terminate and reap the child. Must work
+  for `go run ./examples/splash --watch` (long-lived) and
+  `go run ./examples/splash` (self-exiting). No leaked processes (test it).
+- Evidence: `M3-record-splash.ansi`, `M3-record-watch.ansi`.
