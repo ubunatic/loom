@@ -4,11 +4,13 @@
 package ansiviewer
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"sync"
 	"syscall"
 	"time"
@@ -92,8 +94,24 @@ func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, comm
 	}
 	// The command's output is already a terminal recording. Replaying it
 	// through a text-only VT would discard SGR colors and alter line wrapping.
-	_, err = out.Write(snapshot)
+	_, err = out.Write(stripRecordingState(snapshot))
 	return err
+}
+
+var recordingOSC = regexp.MustCompile("\\x1b\\](?:0|7);[^\\x07\\x1b]*(?:\\x07|\\x1b\\\\)")
+
+func stripRecordingState(data []byte) []byte {
+	clean := recordingOSC.ReplaceAll(data, nil)
+	for _, sequence := range []string{
+		"\x1b[?1h", "\x1b[?1l", "\x1b=", "\x1b>",
+		"\x1b[?1001s", "\x1b[?1001r", "\x1b[?1002h", "\x1b[?1002l",
+		"\x1b[?1003h", "\x1b[?1003l", "\x1b[?1006h", "\x1b[?1006l",
+		"\x1b[?1015h", "\x1b[?1015l", "\x1b[?1049h", "\x1b[?1049l",
+		"\x1b[?2004h", "\x1b[?2004l", "\x1b[22;0;0t", "\x1b[23;0;0t", "\x1b[4l",
+	} {
+		clean = bytes.ReplaceAll(clean, []byte(sequence), nil)
+	}
+	return clean
 }
 
 func recordingSize() (int, int) {
