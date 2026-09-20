@@ -180,9 +180,15 @@ type Frame struct {
 
 // PaneRequest merges the terminal requirements of all boxes.
 func (f *Frame) PaneRequest() (request PaneRequest) {
+	first := true
 	for _, box := range f.Boxes {
 		if requester, ok := box.Child.(PaneRequester); ok {
-			mergePaneRequest(&request, requester.PaneRequest())
+			childRequest := requester.PaneRequest()
+			if first {
+				request, first = childRequest, false
+				continue
+			}
+			mergePaneRequest(&request, childRequest)
 		}
 	}
 	return request

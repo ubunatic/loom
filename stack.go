@@ -36,9 +36,15 @@ func NewStack(dir StackDir, children ...Widget) *Stack {
 
 // PaneRequest merges the terminal requirements of all children.
 func (s *Stack) PaneRequest() (request PaneRequest) {
+	first := true
 	for _, child := range s.Children {
 		if requester, ok := child.(PaneRequester); ok {
-			mergePaneRequest(&request, requester.PaneRequest())
+			childRequest := requester.PaneRequest()
+			if first {
+				request, first = childRequest, false
+				continue
+			}
+			mergePaneRequest(&request, childRequest)
 		}
 	}
 	return request

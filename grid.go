@@ -28,9 +28,15 @@ func NewGrid(cols int, children ...Widget) *Grid {
 
 // PaneRequest merges the terminal requirements of all children.
 func (g *Grid) PaneRequest() (request PaneRequest) {
+	first := true
 	for _, child := range g.Children {
 		if requester, ok := child.(PaneRequester); ok {
-			mergePaneRequest(&request, requester.PaneRequest())
+			childRequest := requester.PaneRequest()
+			if first {
+				request, first = childRequest, false
+				continue
+			}
+			mergePaneRequest(&request, childRequest)
 		}
 	}
 	return request

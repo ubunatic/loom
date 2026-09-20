@@ -100,9 +100,15 @@ func (t *Tabs) Focus() int { return t.focus }
 
 // PaneRequest merges the terminal requirements of all tabs.
 func (t *Tabs) PaneRequest() (request PaneRequest) {
+	first := true
 	for _, tab := range t.Tabs {
 		if child, ok := tab.Widget.(PaneRequester); ok {
-			mergePaneRequest(&request, child.PaneRequest())
+			childRequest := child.PaneRequest()
+			if first {
+				request, first = childRequest, false
+				continue
+			}
+			mergePaneRequest(&request, childRequest)
 		}
 	}
 	return request
