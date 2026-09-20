@@ -28,3 +28,35 @@ As a result, consumers who wish to render colored, syntax-highlighted, or diagra
 ## 3. Verification & Acceptance
 - Unit tests verifying 16-color, 256-color, 24-bit RGB, bold, dim, underline, and reset sequences correctly populate `Cell.Style`.
 - Benchmark ensuring minimal overhead when parsing typical colored output lines.
+
+---
+
+## Milestones (lean sprint, dev agent: haiku)
+
+The host reviews only diffs and test output. This ticket is the only channel. Root-package
+tests that need `/dev/tty` fail before this work; ignore those. Commit each milestone
+with `git add <your files>` then `git commit`; if commit fails, say so in your report.
+
+Evidence: each milestone commits a headless frame to `docs/progress/034/M<N>-<what>.ansi`,
+produced by a test or small program (never hand-written) that renders through `loom.RenderTo`
+or the equivalent headless path. The frame must show real styled cells.
+
+### M1 - ParseANSI
+- `ParseANSI(s string) []Cell` in package loom: 16-color, 256-color, 24-bit, bold, dim,
+  italic, underline, reset. Unknown or non-SGR sequences are dropped, never emitted as cells.
+  Wide runes and combining marks must follow the canvas cell conventions.
+- Table tests for every sequence class; benchmark on a typical colored line.
+- Evidence: `M1-parse-samples.ansi` (a row per sequence class, rendered from parsed cells).
+
+### M2 - Canvas.WriteANSI
+- `func (c *Canvas) WriteANSI(x, y int, text string) int` returns cells written, clips to
+  bounds like `Write`, preserves inline styles.
+- Tests: clipping, wide runes at the edge, style reset mid-string.
+- Evidence: `M2-writeansi.ansi`, plus a round trip (render, then parse the ANSI back, compare cells).
+
+### M3 - Replace ansiviewer-local parser
+- Pre-Work: none.
+- Replace the private ANSI parser in `examples/ansiviewer/ansiviewer/` with `Canvas.WriteANSI`
+  where it is a drop-in; keep behavior and all existing ansiviewer tests green
+  (including the mc recordings). If part of the local parser has no equivalent, keep only that part and say why.
+- Evidence: `M3-ansiviewer.ansi` from an ansiviewer render of a colored file.
