@@ -1,7 +1,7 @@
 # Screens
 
-A small inline TUI that can switch to full screen and to the alternate screen,
-and that promotes itself to full screen when it is nearly full height.
+A small inline TUI with a visible border that switches to full screen (the
+alternate screen) and back, and that promotes itself when it is nearly full height.
 
 ```
 go run ./examples/screens -height 8
@@ -9,8 +9,8 @@ go run ./examples/screens -height 8
 
 | Key | Action |
 | --- | --- |
-| `f` | Toggle inline / full screen (primary screen, from row 1) |
-| `b` | Toggle the alternate screen (`?1049`); leaving restores the shell screen and prompt |
+| `f` | Toggle inline / full screen. Full screen is the alternate screen (`?1049`), so the scrollback stays clean and leaving restores the shell screen and prompt |
+| `n` | Toggle full screen on the primary screen (demo only; it overwrites shell rows) |
 | `c` | Toggle auto full screen |
 | `l` | Auto full screen uses the alternate screen |
 | `+` / `-` | Wanted inline height |

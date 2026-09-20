@@ -36,17 +36,18 @@ func TestScreensSwitchInlineFullAlt(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, build(t), "-auto=false")
 	s.WaitFor("Screen: inline", 5*time.Second)
 
+	s.Send("n")
+	s.WaitFor("Screen: primary full screen", 3*time.Second)
 	s.Send("f")
-	s.WaitFor("Screen: full screen", 3*time.Second)
-	s.Send("b")
-	s.WaitFor("Screen: alternate screen", 3*time.Second)
+	s.WaitFor("Screen: full screen (alt)", 3*time.Second)
 	if !strings.Contains(string(s.Raw()), "\x1b[?1049h") {
 		t.Fatal("alternate screen not entered")
 	}
-	s.Send("b")
-	s.WaitFor("Screen: full screen", 3*time.Second)
 	s.Send("f")
 	s.WaitFor("Screen: inline", 3*time.Second)
+	if !strings.Contains(strings.Join(s.Screen(), "\n"), "┌") {
+		t.Fatal("no border drawn")
+	}
 	if strings.Count(string(s.Raw()), "\x1b[?1049l") < 1 {
 		t.Fatal("alternate screen not left")
 	}
@@ -61,11 +62,11 @@ func TestScreensAutoFullscreen(t *testing.T) {
 	s.WaitFor("Screen: inline", 5*time.Second)
 	s.Send("+") // 28 of 30 rows: still 2 short, margin_rows=1
 	s.WaitFor("wanted height 28", 3*time.Second)
-	if strings.Contains(strings.Join(s.Screen(), "\n"), "Screen: alternate") {
+	if strings.Contains(strings.Join(s.Screen(), "\n"), "Screen: full screen (alt)") {
 		t.Fatal("promoted one row too early")
 	}
 	s.Send("+") // 29 of 30: within margin
-	s.WaitFor("Screen: alternate screen (auto)", 3*time.Second)
+	s.WaitFor("Screen: full screen (alt) (auto)", 3*time.Second)
 
 	s.Resize(100, 40) // 29 of 40 rows is no longer full height
 	s.WaitFor("Screen: inline", 3*time.Second)
@@ -78,7 +79,7 @@ func TestScreensAutoParamsChangeDetection(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, build(t), "-height=29", "-margin=0", "-auto-alt=false")
 	s.WaitFor("Screen: inline", 5*time.Second)
 	s.Send("+")
-	s.WaitFor("Screen: full screen (auto)", 3*time.Second)
+	s.WaitFor("Screen: primary full screen (auto)", 3*time.Second)
 	if strings.Contains(string(s.Raw()), "\x1b[?1049h") {
 		t.Fatal("auto-alt=false must stay on the primary screen")
 	}

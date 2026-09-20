@@ -1,15 +1,18 @@
 // SPDX-FileCopyrightText: 2026 Uwe Jugel
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-// Package screens is a demo of the three pane layouts (inline, full screen,
-// alternate screen) and of quasi-fullscreen detection: an inline pane that is
-// grown, or whose terminal is shrunk, to nearly the terminal height switches
-// to full screen by itself.
+// Package screens is a demo of the pane layouts and of quasi-fullscreen
+// detection. Full screen means the alternate screen, so switching between it
+// and inline keeps the scrollback clean; full screen on the primary screen is
+// kept as a demo-only layout. An inline pane that is grown, or whose terminal
+// is shrunk, to nearly the terminal height switches to the alternate screen by
+// itself. The app draws a border so its extent is visible.
 package screens
 
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -52,7 +55,7 @@ func onOff(v bool) string {
 }
 
 func screenName(m loom.ScreenMode) string {
-	return [...]string{"inline", "full screen", "alternate screen"}[m]
+	return [...]string{"inline", "primary full screen", "full screen (alt)"}[m]
 }
 
 // lines describes the current state; termRows is 0 when unknown.
@@ -67,12 +70,12 @@ func (a *App) lines(termCols, termRows int) []string {
 		note = " (auto)"
 	}
 	return []string{
-		"Screens demo: inline -> full screen -> alternate screen",
+		"Screens demo: inline <-> full screen (alternate screen)",
 		fmt.Sprintf("Screen: %s%s   terminal %dx%d   wanted height %d", screenName(mode), note, termCols, termRows, a.height),
 		fmt.Sprintf("Auto full screen: %s   margin_rows=%d min_percent=%d alt=%s   quasi-full now: %v",
 			onOff(a.cfg.AutoFullscreen), a.cfg.FullMarginRows, a.cfg.FullMinPercent, onOff(a.cfg.FullAlt), quasi),
 		"",
-		"f full screen   b alternate screen   c auto full screen   l auto uses alt",
+		"f full screen (alt)   n primary full screen (demo)   c auto full screen   l auto uses alt",
 		"+/- inline height   m/M margin rows   p/P min percent   q quit",
 	}
 }
@@ -80,12 +83,30 @@ func (a *App) lines(termCols, termRows int) []string {
 // Draw renders the state into r.
 func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 	termCols, termRows, _ := loom.TerminalSize()
+	inner := drawBorder(c, r)
 	for i, line := range a.lines(termCols, termRows) {
-		if i >= r.H {
+		if i >= inner.H {
 			break
 		}
-		c.Write(r.X, r.Y+i, line, loom.Style{})
+		c.Write(inner.X, inner.Y+i, line, loom.Style{})
 	}
+}
+
+// drawBorder outlines r and returns the area inside it. Areas too small for a
+// border are returned unchanged.
+func drawBorder(c *loom.Canvas, r loom.Rect) loom.Rect {
+	if r.W < 3 || r.H < 3 {
+		return r
+	}
+	style := loom.Style{}
+	horiz := strings.Repeat("─", r.W-2)
+	c.Write(r.X, r.Y, "┌"+horiz+"┐", style)
+	c.Write(r.X, r.Y+r.H-1, "└"+horiz+"┘", style)
+	for y := r.Y + 1; y < r.Y+r.H-1; y++ {
+		c.Write(r.X, y, "│", style)
+		c.Write(r.X+r.W-1, y, "│", style)
+	}
+	return loom.Rect{X: r.X + 1, Y: r.Y + 1, W: r.W - 2, H: r.H - 2}
 }
 
 // HandleKey handles the demo keys.
@@ -96,10 +117,10 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	}
 	switch key {
 	case "f":
-		full := a.cfg.FullScreenBuffer && !a.cfg.AltScreen
-		a.cfg.FullScreenBuffer, a.cfg.AltScreen = !full, false
-	case "b":
-		a.cfg.AltScreen = !a.cfg.AltScreen
+		a.cfg.FullScreenBuffer, a.cfg.AltScreen = false, !a.cfg.AltScreen
+	case "n":
+		primaryFull := a.cfg.FullScreenBuffer && !a.cfg.AltScreen
+		a.cfg.FullScreenBuffer, a.cfg.AltScreen = !primaryFull, false
 	case "c":
 		a.cfg.AutoFullscreen = !a.cfg.AutoFullscreen
 	case "l":
@@ -135,8 +156,8 @@ func Run(args []string) error {
 	auto := flags.Bool("auto", true, "switch to full screen when the pane is nearly full height")
 	margin := flags.Int("margin", -1, "rows short of the terminal height that still count as full (-1: spec default)")
 	percent := flags.Int("percent", -1, "percent of the terminal height that counts as full, 0 = off (-1: spec default)")
-	autoAlt := flags.Bool("auto-alt", true, "use the alternate screen for the automatic full screen")
-	start := flags.String("screen", "inline", "start layout: inline, full or alt")
+	autoAlt := flags.Bool("auto-alt", true, "automatic full screen uses the alternate screen (keeps scrollback clean)")
+	start := flags.String("screen", "inline", "start layout: inline, alt (full screen) or full (primary screen, demo)")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -160,12 +181,12 @@ func Run(args []string) error {
 	app := NewApp(pane, cfg, *height)
 	switch *start {
 	case "inline":
-	case "full":
-		app.cfg.FullScreenBuffer = true
 	case "alt":
 		app.cfg.AltScreen = true
+	case "full":
+		app.cfg.FullScreenBuffer = true
 	default:
-		return fmt.Errorf("screens: unknown -screen %q (inline, full, alt)", *start)
+		return fmt.Errorf("screens: unknown -screen %q (inline, alt, full)", *start)
 	}
 	app.apply()
 	return pane.Run(app)
