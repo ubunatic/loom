@@ -13,15 +13,16 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
 	"golang.org/x/sys/unix"
 )
 
-// RecordCommand runs command in a private 100x30 PTY, captures output until
+// RecordCommand runs command in a private PTY sized like the hosting terminal,
+// captures output until
 // delay (or until the command exits), terminates only its process group, and
 // waits for the group to be reaped before returning.
 func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, command string, args ...string) error {
-	master, slave, err := openRecorderPTY()
+	cols, rows := recordingSize()
+	master, slave, err := openRecorderPTY(cols, rows)
 	if err != nil {
 		return err
 	}
@@ -89,15 +90,23 @@ func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, comm
 	if len(snapshot) == 0 {
 		return fmt.Errorf("ansiviewer: recording command produced no terminal output")
 	}
-	vt := ptytest.NewVT(100, 30)
-	if _, err := vt.Write(snapshot); err != nil {
-		return fmt.Errorf("ansiviewer: replay recording: %w", err)
-	}
-	_, err = io.WriteString(out, vt.Text()+"\n")
+	// The command's output is already a terminal recording. Replaying it
+	// through a text-only VT would discard SGR colors and alter line wrapping.
+	_, err = out.Write(snapshot)
 	return err
 }
 
-func openRecorderPTY() (*os.File, *os.File, error) {
+func recordingSize() (int, int) {
+	for _, fd := range []uintptr{os.Stdout.Fd(), os.Stdin.Fd()} {
+		ws, err := unix.IoctlGetWinsize(int(fd), unix.TIOCGWINSZ)
+		if err == nil && ws.Col > 0 && ws.Row > 0 {
+			return int(ws.Col), int(ws.Row)
+		}
+	}
+	return 100, 30
+}
+
+func openRecorderPTY(cols, rows int) (*os.File, *os.File, error) {
 	master, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {
 		return nil, nil, fmt.Errorf("ansiviewer: open PTY: %w", err)
@@ -117,7 +126,19 @@ func openRecorderPTY() (*os.File, *os.File, error) {
 		master.Close()
 		return nil, nil, fmt.Errorf("ansiviewer: open PTY slave: %w", err)
 	}
-	if err = unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, &unix.Winsize{Col: 100, Row: 30}); err != nil {
+	term, err := unix.IoctlGetTermios(int(slave.Fd()), unix.TCGETS)
+	if err != nil {
+		slave.Close()
+		master.Close()
+		return nil, nil, fmt.Errorf("ansiviewer: get PTY termios: %w", err)
+	}
+	term.Oflag &^= unix.OPOST
+	if err = unix.IoctlSetTermios(int(slave.Fd()), unix.TCSETS, term); err != nil {
+		slave.Close()
+		master.Close()
+		return nil, nil, fmt.Errorf("ansiviewer: set PTY termios: %w", err)
+	}
+	if err = unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, &unix.Winsize{Col: uint16(cols), Row: uint16(rows)}); err != nil {
 		slave.Close()
 		master.Close()
 		return nil, nil, fmt.Errorf("ansiviewer: size PTY: %w", err)

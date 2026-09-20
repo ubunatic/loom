@@ -63,6 +63,57 @@ type browser struct {
 	metadata         string
 }
 
+type framedBrowser struct {
+	frame *loom.Frame
+	astra *astraToggle
+}
+
+type astraToggle struct {
+	enabled bool
+}
+
+func (a *astraToggle) BackgroundInterval() time.Duration {
+	return loom.SpeccedBackground.RedrawInterval
+}
+
+func (a *astraToggle) DrawBackground(c *loom.Canvas, r loom.Rect) {
+	a.DrawBackgroundAt(c, r, time.Now())
+}
+
+func (a *astraToggle) DrawBackgroundAt(c *loom.Canvas, r loom.Rect, now time.Time) {
+	if a.enabled {
+		loom.NewAstraBackground().DrawBackgroundAt(c, r, now)
+	}
+}
+
+func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
+	theme := loom.Theme("julia256")
+	border := loom.BoxBorder{
+		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
+		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
+	}
+	frame := &loom.Frame{
+		Title:  "ANSI Viewer",
+		Status: "↑↓ select  •  PgUp/PgDn scroll  •  Enter open directory  •  a Astra  •  q quit",
+		Boxes: []loom.Box{{
+			ID: "viewer", FillHeight: true, Dynamic: true, Border: border, Child: b,
+		}},
+		Style: theme.FrameStyle(),
+	}
+	frame.Boxes[0].Style = theme.BoxStyle()
+	return &framedBrowser{frame: frame, astra: astra}
+}
+
+func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) { b.frame.Draw(c, r) }
+func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
+	if e.Is("a") && b.astra != nil {
+		b.astra.enabled = !b.astra.enabled
+		return false
+	}
+	return b.frame.HandleKey(e)
+}
+func (b *framedBrowser) HandleMouse(e loom.MouseEvent) bool { return b.frame.HandleMouse(e) }
+
 // New opens dir and returns an interactive viewer widget.
 func New(dir string) (*browser, error) { return newBrowser(dir) }
 
@@ -260,7 +311,7 @@ func Render(out io.Writer, dir string, cols, rows int) error {
 	if err != nil {
 		return err
 	}
-	return loom.RenderTo(out, b, cols, rows)
+	return loom.RenderTo(out, newFramedBrowser(b, nil), cols, rows)
 }
 
 // Run starts the interactive viewer rooted at the optional directory argument.
@@ -304,7 +355,13 @@ func run(args []string, output io.Writer) error {
 		return err
 	}
 	defer p.Close()
-	return p.Run(b)
+	p.Resizeable = true
+	p.MaxCols = 0
+	p.ResizeConfig.FullScreenBuffer = true
+	astra := &astraToggle{}
+	p.Background = astra
+	view := newFramedBrowser(b, astra)
+	return p.Run(view)
 }
 
 // Record waits delay, renders exactly one frame of the real viewer widget, and

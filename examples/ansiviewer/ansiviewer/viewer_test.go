@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"golang.org/x/sys/unix"
 )
 
 func TestBrowserListsTextAndANSI(t *testing.T) {
@@ -156,9 +157,51 @@ func TestRecordCommandWritesRenderedScreenOnly(t *testing.T) {
 	if !strings.Contains(out.String(), "red") {
 		t.Fatalf("screen = %q", out.String())
 	}
-	for i := 0; i < len(out.String()); i++ {
-		if out.String()[i] == '\x1b' {
-			t.Fatalf("raw control sequence in screen: %q", out.String())
-		}
+	if !strings.Contains(out.String(), "\x1b[31m") {
+		t.Fatalf("ANSI styling was discarded: %q", out.String())
+	}
+}
+
+func TestRecordCommandPreservesUsageANSIFixture(t *testing.T) {
+	testRecordFixture(t, "harnez-usage.ansi")
+}
+
+func TestRecordCommandPreservesMCANSIFixture(t *testing.T) {
+	testRecordFixture(t, "mc.ansi")
+}
+
+func testRecordFixture(t *testing.T, name string) {
+	t.Helper()
+	fixture := filepath.Join("..", "..", "..", "docs", "data", name)
+	want, err := os.ReadFile(fixture)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	if err := RecordCommand(context.Background(), &out, time.Second, "cat", fixture); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(out.Bytes(), want) {
+		t.Fatalf("recorded %s differs: got %d bytes, want %d", name, out.Len(), len(want))
+	}
+	if !bytes.Contains(out.Bytes(), []byte("\x1b[")) {
+		t.Fatalf("recorded %s lost ANSI control sequences", name)
+	}
+}
+
+func TestOpenRecorderPTYUsesRequestedGeometry(t *testing.T) {
+	master, slave, err := openRecorderPTY(115, 37)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer master.Close()
+	defer slave.Close()
+
+	ws, err := unix.IoctlGetWinsize(int(slave.Fd()), unix.TIOCGWINSZ)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ws.Col != 115 || ws.Row != 37 {
+		t.Fatalf("recorder PTY geometry = %dx%d, want 115x37", ws.Col, ws.Row)
 	}
 }
