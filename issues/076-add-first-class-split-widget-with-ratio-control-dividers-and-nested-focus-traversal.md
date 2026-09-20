@@ -1,6 +1,6 @@
 # 076 — Add first-class Split widget with ratio control dividers and nested focus traversal
 
-**Status**: Open
+**Status**: Closed — implemented and verified with make test-q1
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
