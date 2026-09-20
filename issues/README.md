@@ -99,3 +99,4 @@ upkeep.
 | 085 | [085-add-robust-smoke-pty-tests-for-all-example-apps.md](085-add-robust-smoke-pty-tests-for-all-example-apps.md) | Add robust smoke PTY tests for all example apps | Open |
 | 086 | [086-fix-post-refactor-demo-bugs-in-background-split-and-treemap.md](086-fix-post-refactor-demo-bugs-in-background-split-and-treemap.md) | Fix post-refactor demo bugs in background split and treemap | Closed — restored background panel mc-dark surfaces, wired split ratio key toggle, and added --ansi to treemap DemoArgs with tests |
 | 087 | [087-loom-demo-cannot-start-from-codex-terminal.md](087-loom-demo-cannot-start-from-codex-terminal.md) | loom-demo cannot start from Codex terminal | Closed — resolved: launch loom-demo through foot for a controlling TTY |
+| 088 | [088-extend-loom-key-capture-coverage-and-sane-action-defaults.md](088-extend-loom-key-capture-coverage-and-sane-action-defaults.md) | Extend Loom key capture coverage and sane action defaults | Open |
