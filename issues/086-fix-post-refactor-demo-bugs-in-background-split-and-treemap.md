@@ -1,6 +1,6 @@
 # 086 — Fix post-refactor demo bugs in background split and treemap
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Bug
