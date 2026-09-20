@@ -1,6 +1,6 @@
 # 036 — KeyEvent Ergonomic Helpers (e.Name and e.Is) for Unified Key/Text Matching
 
-**Status**: Open
+**Status**: Closed — completed in lean sprint 2026-09-20
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
