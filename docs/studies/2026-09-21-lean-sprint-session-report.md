@@ -1,7 +1,7 @@
 # Lean Sprint Session Report: Roadmap Items with Cheap Developer Agents
 
 **Date**: 2026-09-21
-**Status**: In progress (updated when items finish)
+**Status**: Complete, all 11 goal tickets closed
 **Goal**: finish 11 roadmap tickets in `/lean-sprint` runs with cheap developer agents and leave `.ansi` evidence in the repo.
 **Sources**: [candidate study](2026-09-20-luna-lean-sprint-candidates.md), tickets under `issues/`
 
@@ -26,9 +26,9 @@ for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done
 | 8 | 092 scrollbar drag | closed (M1-M6) | luna:low M1-M4, sol:low M5, sonnet M6 | `docs/progress/092/` |
 | 9 | 093 filebrowser mouse hit-test | closed (M1-M5) | luna:low | `docs/progress/093/` |
 | 10 | 060 Ticker / Invalidate | closed (M1-M4) | luna:low M1-M3, sol:low M4 | `docs/progress/060/` |
-| 11 | 088 key capture coverage | running (plan step) | luna:low | `docs/progress/088/` |
+| 11 | 088 key capture coverage | closed (M1-M5) | luna:low | `docs/progress/088/` |
 
-Done: 11 of 12 counting 097 (10 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
+Done: 12 of 12 counting 097 (all 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
 
 ## How the Sprints Run
 
@@ -59,6 +59,9 @@ Done: 11 of 12 counting 097 (10 of the 11 goal tickets). Second wave 063, 064, 0
 - Lessons now written into tickets: mouse events reaching widgets are 0-based, PTY SGR is 1-based, locate screen text by runes or display width.
 - 093 by luna:low alone (no escalation), four rounds: the review caught `Choice.Draw` truncation changing for all users (now pinned by a test), duplicated row formatting (now shared), and an evidence frame that proved nothing (whitespace click on the already-selected row; now a click on another row).
 - 060: luna:low delivered the Ticker code but the pane reset its tick timer on every event (starvation under event storms); the review caught it, luna's test only modelled the timer, and sol:low wrote the real-Pane tests (starvation test proven red against the old behavior, idle guard, 100-goroutine Invalidate with leak check) and the six evidence frames. The 060 frames are raw terminal streams of a real Pane run (cursor-positioned lines), small but genuine.
+- 088 by luna:low alone: the first audit had 17 rows and "0 gaps"; after the review it generates 217 rows (214 OK, 3 terminal limitations: Ctrl-I, Ctrl-J, Ctrl-M). The paged frames show the first 24 rows of each group, the summary frame carries the full counts.
+- Developer agents: haiku ran 034 to 096 M3 (native subagents, visible as background tasks), luna:low ran 081 to 088, sol:low fixed 081 M5, 060 M4 and found two bugs in 092, native Sonnet closed 092. Every luna and sol commit was blocked by a read-only `.git/index.lock`, so the host committed for them after review.
+- Final checks: `go vet ./...` clean, `go test ./...` without failures, `make install` run, no `dev-*` agents left.
 
 ## Open Items
 
