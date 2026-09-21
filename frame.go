@@ -209,20 +209,27 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 			return
 		}
 		local.PaintSurface(local.Bounds(), b.Style.Background)
-		for x := 1; x < w-1; x++ {
-			local.Set(x, 0, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
-			local.Set(x, h-1, Cell{Text: b.Border.Horizontal, Style: b.Style.Border})
-		}
-		for y := 1; y < h-1; y++ {
-			local.Set(0, y, Cell{Text: b.Border.Vertical, Style: b.Style.Border})
-			local.Set(w-1, y, Cell{Text: b.Border.Vertical, Style: b.Style.Border})
-		}
-		local.Set(0, 0, Cell{Text: b.Border.TopLeft, Style: b.Style.Border})
-		local.Set(w-1, 0, Cell{Text: b.Border.TopRight, Style: b.Style.Border})
-		local.Set(0, h-1, Cell{Text: b.Border.BottomLeft, Style: b.Style.Border})
-		local.Set(w-1, h-1, Cell{Text: b.Border.BottomRight, Style: b.Style.Border})
+
+		// Draw border and title using the new primitive.
+		// The border is drawn, then the title is overlaid on the top edge.
+		local.DrawBorder(Rect{X: 0, Y: 0, W: w, H: h}, BoxBorderStyleSharp, b.Style.Border)
 		if b.Title != "" {
-			writeBoundedStyled(local, 1, 0, w-2, b.Border.TitlePrefix+b.Title+b.Border.TitleSuffix, b.Style.Title)
+			// Write title with prefix/suffix (matching original behavior)
+			titleStr := b.Border.TitlePrefix + b.Title + b.Border.TitleSuffix
+			// Title is positioned at (1, 0) and styled with Title style
+			fit := 0
+			for _, cluster := range textClusters(titleStr) {
+				clusterWidth := StringWidth(cluster)
+				// Keep title within border: w-2 is the interior width (excluding corners)
+				if fit+clusterWidth > w-2 {
+					break
+				}
+				n := local.Write(1+fit, 0, cluster, b.Style.Title)
+				if n <= 0 {
+					break
+				}
+				fit += clusterWidth
+			}
 		}
 		padding := max(0, b.Padding)
 		// Compare before doubling to avoid overflow for programmatic inputs.

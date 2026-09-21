@@ -1,0 +1,20 @@
+  [0m[1m[39m[49mM2: Box.Draw Migrated to DrawBorder Primitive[0m[39m[49m                                 [0m
+  Boxes rendered through migrated Box.Draw using new primitives                 [0m
+                                                                                [0m
+  ┌Box 1──────────────────┐                                                     [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  └───────────────────────┘                                                     [0m
+                                                                                [0m
+                                                                                [0m
+  ┌Padded─────────────────┐er:                                                  [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  │                       │                                                     [0m
+  └───────────────────────┘                                                     [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m

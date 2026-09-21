@@ -3,8 +3,6 @@
 
 package loom
 
-import "strings"
-
 // Popup overlays a fixed-size inner Widget centered over the pane.
 // While Open, it captures all keyboard and mouse events before the
 // background widget. Set Open=false to dismiss.
@@ -41,44 +39,9 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	// Fill background.
 	c.Fill(Rect{x, y, pw, ph}, Cell{Text: " ", Style: p.Style})
 
-	// Top border with cluster-aware title truncation (see issue #038).
-	row := make([]Cell, pw)
-	for i := range row {
-		row[i] = Cell{Text: "─"}
-	}
-	row[0] = Cell{Text: "┌"}
-	row[pw-1] = Cell{Text: "┐"}
-	for i, cell := range row {
-		c.Set(x+i, y, cell)
-	}
-
-	if p.Title != "" {
-		title := " " + p.Title + " "
-		fit := 0
-		for _, cl := range textClusters(title) {
-			dw := StringWidth(cl)
-			// Truncate at the border corners: keep the title within the interior
-			// display-width budget (pw-2) so multi-byte runes never split.
-			if x+1+dw >= pw-1 || dw > max(0, pw-2-fit) {
-				break
-			}
-			n := c.Write(x+1+fit, y, cl, p.Style)
-			if n <= 0 {
-				break
-			}
-			fit += dw
-		}
-	}
-
-	// Side borders.
-	for row := 1; row < ph-1; row++ {
-		c.Write(x, y+row, "│", p.Style)
-		c.Write(x+pw-1, y+row, "│", p.Style)
-	}
-
-	// Bottom border.
-	bottom := "└" + strings.Repeat("─", pw-2) + "┘"
-	c.Write(x, y+ph-1, bottom, p.Style)
+	// Draw border and title using the new primitive (issue 037).
+	// DrawBox uses Sharp style with display-width-aware title truncation.
+	c.DrawBox(Rect{X: x, Y: y, W: pw, H: ph}, BoxBorderStyleSharp, p.Title, p.Style)
 
 	// Inner content area (inside the border).
 	if ph > 2 && pw > 2 {
