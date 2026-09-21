@@ -14,6 +14,11 @@ bindings remain unchanged; conflicts are intentional and listed here.
 | navigation | `up`, `down`, `left`, `right` | Choice, View, Tabs, TextInput | WASD remains opt-in/historical View only |
 | page navigation | `pgup`, `pgdown` | Choice, View | Choice also accepts pageup/pagedown aliases |
 | editing | `backspace`, `delete`, `home`, `end` | TextInput, TextArea | undo/redo are not provided by these widgets |
+| quit/close function | `F10` | Frame actions | not provided as a universal widget default; applications may bind it |
+| view | `F3`, `v` | View | not provided as a universal default; v is historical/example-specific |
+| edit | `F4`, `e` | TextInput, TextArea | not provided as a universal host action |
+| undo/redo | `u`, `U`, `ctrl-z`, `ctrl-r` | TextInput, TextArea | not provided: editors have no undo stack |
+| activate/toggle | `insert` | Frame actions | not provided as a universal default; action specs decide conflicts |
 
 Terminal limitations: Ctrl-I is delivered as Tab, and Ctrl-M as Enter; terminals
 cannot distinguish those pairs at the byte-input layer. Function-key and modified

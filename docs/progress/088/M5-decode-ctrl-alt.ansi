@@ -1,0 +1,25 @@
+key                         bytes                 decoded             status
+alt-a                       1b61                  alt-a               OK
+ctrl-a                      01                    ctrl-a              OK
+alt-b                       1b62                  alt-b               OK
+ctrl-b                      02                    ctrl-b              OK
+alt-c                       1b63                  alt-c               OK
+ctrl-c                      03                    ctrl-c              OK
+alt-d                       1b64                  alt-d               OK
+ctrl-d                      04                    ctrl-d              OK
+alt-e                       1b65                  alt-e               OK
+ctrl-e                      05                    ctrl-e              OK
+alt-f                       1b66                  alt-f               OK
+ctrl-f                      06                    ctrl-f              OK
+alt-g                       1b67                  alt-g               OK
+ctrl-g                      07                    ctrl-g              OK
+alt-h                       1b68                  alt-h               OK
+ctrl-h                      08                    backspace           OK
+alt-i                       1b69                  alt-i               OK
+ctrl-i                      09                    tab                 terminal limitation
+alt-j                       1b6a                  alt-j               OK
+ctrl-j                      0a                    enter               terminal limitation
+alt-k                       1b6b                  alt-k               OK
+ctrl-k                      0b                    ctrl-k              OK
+alt-l                       1b6c                  alt-l               OK
+ctrl-l                      0c                    ctrl-l              OK

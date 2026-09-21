@@ -1,6 +1,11 @@
 action                       default keys
 quit/close                   q, Q, ctrl-c
-activate/select             enter, space
+activate/select                   enter, space
 navigation                   up, down, left, right
-page navigation              pgup, pgdown
-editing                      backspace, delete, home, end
+page navigation                   pgup, pgdown
+editing                   backspace, delete, home, end
+quit/close function                   F10
+view                   F3, v
+edit                   F4, e
+undo/redo                   u, U, ctrl-z, ctrl-r
+activate/toggle                   insert

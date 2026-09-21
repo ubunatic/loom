@@ -130,6 +130,10 @@ func DecodeKey(b []byte) KeyEvent {
 				prefix = "ctrl-"
 			case '6':
 				prefix = "ctrl-shift-"
+			case '7':
+				prefix = "ctrl-alt-"
+			case '8':
+				prefix = "ctrl-shift-alt-"
 			}
 			if prefix != "" {
 				switch b[5] {

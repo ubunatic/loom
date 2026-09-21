@@ -2,7 +2,6 @@ package loom
 
 import (
 	"encoding/hex"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -104,24 +103,12 @@ func TestKey088Evidence(t *testing.T) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	render := func(before bool) string {
-		var b strings.Builder
-		b.WriteString("key                         bytes                 decoded             status\n")
-		for _, tc := range key088Cases() {
-			status := tc.status
-			if before && (tc.name == "umlaut-a" || tc.name == "umlaut-A" || tc.name == "alt-a" || tc.name == "ctrl-a" || tc.name == "insert") {
-				status = "gap"
-			}
-			fmt.Fprintf(&b, "%-27s %-21s %-19s %s\n", tc.name, hex.EncodeToString(tc.bytes), DecodeKey(tc.bytes).Name(), status)
-		}
-		return b.String()
+	var defaults strings.Builder
+	defaults.WriteString("action                       default keys\n")
+	for _, row := range libraryKeyDefaults {
+		defaults.WriteString(row.Action + "                   " + row.Keys + "\n")
 	}
-	for _, item := range []struct{ name, content string }{{"M1-decode-table.ansi", render(true)}, {"M2-decode-table.ansi", render(false)}} {
-		if err := os.WriteFile(filepath.Join(dir, item.name), []byte(item.content), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := os.WriteFile(filepath.Join(dir, "M3-defaults.ansi"), []byte("action                       default keys\nquit/close                   q, Q, ctrl-c\nactivate/select             enter, space\nnavigation                   up, down, left, right\npage navigation              pgup, pgdown\nediting                      backspace, delete, home, end\n"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "M3-defaults.ansi"), []byte(defaults.String()), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(dir, "M4-pty-keys.ansi"), []byte("PTY key capture\nletters: a ä\nmodified: alt-a ctrl-a\nnavigation: up pgup insert\n"), 0o644); err != nil {
