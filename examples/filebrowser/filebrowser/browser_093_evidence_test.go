@@ -1,7 +1,6 @@
 package filebrowser
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,13 +29,20 @@ func TestFilebrowser093Evidence(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	writeBrowser093Frame(t, outDir, "M2-hit-overlay.ansi", b, true, "M2 hit cells: colored cells are interactive")
-	writeBrowser093Frame(t, outDir, "M2-click-before.ansi", b, false, "M2 before click")
 	listRect := b.frame.Layout(80, 24)[0]
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + 2, Y: listRect.Y + 2})
-	writeBrowser093Frame(t, outDir, "M2-click-after-text.ansi", b, false, "M2 after item-text click")
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + listRect.W - 4, Y: listRect.Y + 2})
-	writeBrowser093Frame(t, outDir, "M2-click-after-whitespace.ansi", b, false, "M2 after trailing-whitespace click")
+	if b.list.FilteredSel() != 0 {
+		t.Fatalf("initial selection = %d, want row 0", b.list.FilteredSel())
+	}
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + listRect.W - 4, Y: listRect.Y + 3})
+	if b.list.FilteredSel() != 0 {
+		t.Fatalf("whitespace click changed selection to %d, want row 0", b.list.FilteredSel())
+	}
+	writeBrowser093Frame(t, outDir, "M2-click-after-whitespace.ansi", b, false, "M5 whitespace click on row 2: selection stays on row 0")
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + 4, Y: listRect.Y + 3})
+	if b.list.FilteredSel() != 2 {
+		t.Fatalf("text click selected row %d, want row 2", b.list.FilteredSel())
+	}
+	writeBrowser093Frame(t, outDir, "M2-click-after-text.ansi", b, false, "M5 text click on row 2: selection moves to row 2")
 }
 
 func writeBrowser093Frame(t *testing.T, dir, name string, b *browser, overlay bool, label string) {
@@ -71,7 +77,7 @@ func writeBrowser093Frame(t *testing.T, dir, name string, b *browser, overlay bo
 		t.Fatal(err)
 	}
 	path := filepath.Join(dir, name)
-	if err := os.WriteFile(path, []byte(fmt.Sprintf("%s", out.String())), 0o644); err != nil {
+	if err := os.WriteFile(path, []byte(out.String()), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
