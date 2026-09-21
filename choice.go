@@ -3,7 +3,11 @@
 
 package loom
 
-import "strings"
+import (
+	"strings"
+
+	"codeberg.org/ubunatic/loom/measure"
+)
 
 // ChoiceStyle controls the visual appearance of a Choice widget.
 type ChoiceStyle struct {
@@ -33,6 +37,8 @@ type Choice struct {
 	OnSelect  func(item Item) // called on Enter or a confirming click; if nil, Enter quits
 	// SelectOnlyOnClick keeps a click from confirming; Enter still invokes OnSelect.
 	SelectOnlyOnClick bool
+	// MouseTextOnly restricts mouse selection and activation to rendered item content.
+	MouseTextOnly bool
 
 	// Input customization
 	CursorAlign string // "start" or "end", default "start"
@@ -224,10 +230,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			if item.Desc != "" {
 				line += "  " + item.Desc
 			}
-			runes := []rune(line)
-			if len(runes) > contentW {
-				line = string(runes[:contentW])
-			}
+			line = measure.Truncate(line, contentW, "…")
 			cv.Write(r.X, y, line, style)
 		}
 		if scrollable {
@@ -445,6 +448,28 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	if fi < 0 || fi >= len(c.filtered) {
 		return false
 	}
+	if c.MouseTextOnly && (e.Action == MousePress || e.Action == MouseHover || e.Action == MouseDrag) {
+		item := c.filtered[fi]
+		line := item.Name
+		if c.MultiSelect {
+			marker := "[ ] "
+			if c.checked[item.Name] {
+				marker = "[x] "
+			}
+			line = marker + line
+		}
+		if item.Desc != "" {
+			line += "  " + item.Desc
+		}
+		contentW := c.lastRect.W
+		if len(c.filtered) > c.itemRows {
+			contentW--
+		}
+		_, end, ok := choiceMouseHitRegion(measure.Truncate(line, contentW, "…"), contentW)
+		if !ok || e.X-c.lastRect.X < 0 || e.X-c.lastRect.X >= end {
+			return false
+		}
+	}
 	switch e.Action {
 	case MousePress:
 		if e.Button == MouseLeft {
@@ -467,6 +492,29 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		c.sel = fi
 	}
 	return false
+}
+
+// choiceMouseHitRegion returns the inclusive content span in terminal cells.
+func choiceMouseHitRegion(line string, width int) (start, end int, ok bool) {
+	if width <= 0 {
+		return 0, 0, false
+	}
+	pos := 0
+	for _, cluster := range measure.Clusters(line) {
+		w := measure.StringWidth(cluster)
+		if pos >= width {
+			break
+		}
+		if strings.TrimSpace(cluster) != "" {
+			if !ok {
+				start = pos
+			}
+			end = min(width, pos+w)
+			ok = true
+		}
+		pos += w
+	}
+	return start, end, ok
 }
 
 func max(a, b int) int {

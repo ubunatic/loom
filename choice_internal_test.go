@@ -8,6 +8,32 @@ import (
 	"testing"
 )
 
+func TestChoiceMouseHitRegion(t *testing.T) {
+	tests := []struct {
+		name       string
+		line       string
+		width      int
+		wantStart  int
+		wantEnd    int
+		wantInside bool
+	}{
+		{name: "text", line: "  alpha", width: 10, wantStart: 2, wantEnd: 7, wantInside: true},
+		{name: "trailing whitespace", line: "alpha   ", width: 10, wantStart: 0, wantEnd: 5, wantInside: true},
+		{name: "empty", line: "       ", width: 10, wantInside: false},
+		{name: "marker and gaps", line: "[ ] alpha  desc", width: 20, wantStart: 0, wantEnd: 15, wantInside: true},
+		{name: "wide and combining", line: "中e\u0301 ", width: 10, wantStart: 0, wantEnd: 3, wantInside: true},
+		{name: "truncated", line: "alpha…", width: 6, wantStart: 0, wantEnd: 6, wantInside: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			start, end, ok := choiceMouseHitRegion(tt.line, tt.width)
+			if start != tt.wantStart || end != tt.wantEnd || ok != tt.wantInside {
+				t.Fatalf("choiceMouseHitRegion(%q, %d) = (%d, %d, %v), want (%d, %d, %v)", tt.line, tt.width, start, end, ok, tt.wantStart, tt.wantEnd, tt.wantInside)
+			}
+		})
+	}
+}
+
 // makeChoice builds a Choice with n named items (item-00, item-01, …).
 func makeChoice(n int) *Choice {
 	items := make([]Item, n)

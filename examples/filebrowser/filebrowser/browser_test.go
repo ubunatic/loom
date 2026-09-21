@@ -338,6 +338,10 @@ func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
 	if opened != "" || b.list.FilteredSel() != 1 {
 		t.Fatalf("click opened %q or selected index %d, want selection only", opened, b.list.FilteredSel())
 	}
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + rect.W - 4, Y: rect.Y + 2})
+	if b.list.FilteredSel() != 1 || opened != "" {
+		t.Fatalf("whitespace click changed selection to %d or opened %q", b.list.FilteredSel(), opened)
+	}
 	b.HandleKey(loom.KeyEvent{Key: "enter"})
 	if opened != path {
 		t.Fatalf("Enter opened %q, want %q", opened, path)

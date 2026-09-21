@@ -119,6 +119,7 @@ func (b *browser) open(dir, selectName string) error {
 	list := loom.NewChoice(items)
 	list.Style = b.theme.ChoiceStyle()
 	list.SelectOnlyOnClick = true
+	list.MouseTextOnly = true
 	list.Prompt = "filter> "
 	list.Placeholder = "type to filter"
 	list.OnSelect = func(item loom.Item) {
