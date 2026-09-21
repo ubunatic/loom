@@ -93,10 +93,9 @@ func runInteractive() error {
 	}
 }
 
-// runHosted runs converted examples in a Tabs host with ArrowSwitch disabled
-// so that left/right arrow keys reach the hosted applications instead of
-// switching tabs. This demonstrates the hosting contract from 057 and 058.
-func runHosted() error {
+// newHostedTabs builds the hosted Tabs widget with ArrowSwitch disabled.
+// The returned widget is ready to pass to a Pane.
+func newHostedTabs() (*loom.Tabs, error) {
 	// Collect converted examples (those with NewWidget)
 	tabs := make([]loom.Tab, 0)
 	for _, e := range examplesreg.Registry {
@@ -105,19 +104,17 @@ func runHosted() error {
 		}
 		widget, err := e.NewWidget([]string{})
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "loom-demo: failed to create widget for %q: %v\n", e.Name, err)
-			continue
+			return nil, fmt.Errorf("failed to create widget for %q: %v", e.Name, err)
 		}
 		w, ok := widget.(loom.Widget)
 		if !ok {
-			fmt.Fprintf(os.Stderr, "loom-demo: %q NewWidget did not return a loom.Widget\n", e.Name)
-			continue
+			return nil, fmt.Errorf("%q NewWidget did not return a loom.Widget", e.Name)
 		}
 		tabs = append(tabs, loom.Tab{Title: e.Name, Widget: w})
 	}
 
 	if len(tabs) == 0 {
-		return fmt.Errorf("loom-demo: no examples with NewWidget to host")
+		return nil, fmt.Errorf("no examples with NewWidget to host")
 	}
 
 	// Create the host tabs widget with ArrowSwitch disabled
@@ -127,6 +124,18 @@ func runHosted() error {
 	host.OnChildQuit = func(i int) bool {
 		// Return false to stay in hosted mode when a child quits
 		return false
+	}
+
+	return host, nil
+}
+
+// runHosted runs converted examples in a Tabs host with ArrowSwitch disabled
+// so that left/right arrow keys reach the hosted applications instead of
+// switching tabs. This demonstrates the hosting contract from 057 and 058.
+func runHosted() error {
+	host, err := newHostedTabs()
+	if err != nil {
+		return fmt.Errorf("loom-demo: %v", err)
 	}
 
 	pane, err := loom.New(1 << 16)

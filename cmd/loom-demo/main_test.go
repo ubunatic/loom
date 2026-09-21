@@ -10,45 +10,23 @@ import (
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/examplesreg"
 )
 
 func TestHostedModeSetup(t *testing.T) {
-	// Build the hosted tabs widget
-	tabs := make([]loom.Tab, 0)
-	for _, e := range examplesreg.Registry {
-		if e.NewWidget == nil {
-			continue
-		}
-		widget, err := e.NewWidget([]string{})
-		if err != nil {
-			t.Errorf("failed to create widget for %q: %v", e.Name, err)
-			continue
-		}
-		w, ok := widget.(loom.Widget)
-		if !ok {
-			t.Errorf("%q NewWidget did not return a loom.Widget", e.Name)
-			continue
-		}
-		tabs = append(tabs, loom.Tab{Title: e.Name, Widget: w})
+	host, err := newHostedTabs()
+	if err != nil {
+		t.Fatalf("newHostedTabs failed: %v", err)
 	}
-	
-	if len(tabs) == 0 {
-		t.Fatal("no examples with NewWidget to host")
-	}
-	
-	host := loom.NewTabs(tabs...)
-	host.ArrowSwitch = false
-	
+
 	// Verify the hosted setup
 	if host.Focus() != 0 {
 		t.Errorf("initial focus should be 0, got %d", host.Focus())
 	}
-	
+
 	// Render initial state
 	canvas := loom.NewCanvas(80, 24)
 	host.Draw(canvas, canvas.Bounds())
-	
+
 	// At least the tab bar should be rendered
 	row0 := canvas.Row(0)
 	if row0 == "" {
@@ -57,41 +35,105 @@ func TestHostedModeSetup(t *testing.T) {
 }
 
 func TestNestedTabsMeta(t *testing.T) {
-	// This tests that when the hosted tabs example is focused,
-	// left/right keys reach the inner Tabs and don't switch the outer host.
-	
-	// Find the tabs example and create its widget
-	tabsEx, ok := examplesreg.Find("tabs")
-	if !ok || tabsEx.NewWidget == nil {
-		t.Skip("tabs example with NewWidget not found")
-	}
-	
-	widget, err := tabsEx.NewWidget([]string{})
+	// Test that with the hosted tabs example focused, left/right/ctrl-t keys
+	// reach the inner Tabs and don't switch the outer host tabs.
+	// Host must have at least TWO tabs (split and tabs) to be meaningful.
+
+	host, err := newHostedTabs()
 	if err != nil {
-		t.Fatalf("NewWidget failed: %v", err)
+		t.Fatalf("newHostedTabs failed: %v", err)
 	}
-	w, ok := widget.(loom.Widget)
-	if !ok {
-		t.Fatal("NewWidget did not return a loom.Widget")
+
+	if len(host.Tabs) < 2 {
+		t.Fatalf("host must have at least 2 tabs for nested test, got %d", len(host.Tabs))
 	}
-	
-	// Create a host with just the tabs widget
-	host := loom.NewTabs(loom.Tab{Title: "hosted-tabs", Widget: w})
-	host.ArrowSwitch = false
-	
-	// Simulate a left arrow key event - it should be consumed by the inner tabs,
-	// not by the outer host (which would have no effect anyway with one tab)
-	event := loom.KeyEvent{Key: "left"}
-	quit := host.HandleKey(event)
-	
-	// No quit expected
-	if quit {
-		t.Error("expected no quit on left arrow")
+
+	// Find the tabs example tab index
+	tabsIdx := -1
+	for i, tab := range host.Tabs {
+		if tab.Title == "tabs" {
+			tabsIdx = i
+			break
+		}
 	}
-	
-	// The outer host should still be on tab 0
-	if host.Focus() != 0 {
-		t.Errorf("host focus changed unexpectedly to %d", host.Focus())
+	if tabsIdx < 0 {
+		t.Skip("tabs example not in hosted tabs")
+	}
+
+	// Ensure we're NOT on the tabs tab initially
+	initialIdx := host.Focus()
+	if initialIdx == tabsIdx {
+		// Switch to split if tabs was default
+		host.SetFocusIndex(0)
+		initialIdx = 0
+	}
+
+	// Switch focus to the hosted tabs example
+	host.SetFocusIndex(tabsIdx)
+	if host.Focus() != tabsIdx {
+		t.Fatalf("failed to switch to tabs tab, focus is %d", host.Focus())
+	}
+
+	// Render before and after keys to verify visual change (the inner tabs should switch)
+	framesBefore := loom.Render(host, 80, 24)
+	beforeStr := strings.Join(framesBefore, "\n")
+
+	// Test right arrow key: should reach the inner tabs
+	_ = host.HandleKey(loom.KeyEvent{Key: "right"})
+	if host.Focus() != tabsIdx {
+		t.Errorf("after right key, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
+	}
+
+	framesAfterRight := loom.Render(host, 80, 24)
+	afterRightStr := strings.Join(framesAfterRight, "\n")
+	if beforeStr == afterRightStr {
+		t.Error("after right key, render output did not change (expected inner tabs to switch)")
+	}
+
+	// Test left arrow key: should go back
+	_ = host.HandleKey(loom.KeyEvent{Key: "left"})
+	if host.Focus() != tabsIdx {
+		t.Errorf("after left key, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
+	}
+
+	framesAfterLeft := loom.Render(host, 80, 24)
+	afterLeftStr := strings.Join(framesAfterLeft, "\n")
+	if afterLeftStr != beforeStr {
+		t.Error("after left key, render output did not return to initial state")
+	}
+
+	// Test ctrl-t (cycle): inner tabs should advance
+	_ = host.HandleKey(loom.KeyEvent{Key: "ctrl-t"})
+	if host.Focus() != tabsIdx {
+		t.Errorf("after ctrl-t, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
+	}
+
+	framesAfterCycle := loom.Render(host, 80, 24)
+	afterCycleStr := strings.Join(framesAfterCycle, "\n")
+	if afterCycleStr == beforeStr {
+		t.Error("after ctrl-t, render output did not change (expected inner tabs to cycle)")
+	}
+}
+
+func TestQuitContainment(t *testing.T) {
+	// Test that a hosted app's quit key does not propagate quit to the host.
+
+	host, err := newHostedTabs()
+	if err != nil {
+		t.Fatalf("newHostedTabs failed: %v", err)
+	}
+
+	// The OnChildQuit callback should return false (stay in hosted mode)
+	// when a child quits. Verify the callback is set.
+	if host.OnChildQuit == nil {
+		t.Error("OnChildQuit callback is nil")
+		return
+	}
+
+	// Call the callback and verify it returns false
+	shouldQuit := host.OnChildQuit(0)
+	if shouldQuit {
+		t.Error("OnChildQuit returned true, expected false to stay in hosted mode")
 	}
 }
 
@@ -102,34 +144,12 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 	if os.Getenv("LOOM_EVIDENCE") != "1" {
 		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
 	}
-	
-	// Build the hosted tabs widget
-	tabs := make([]loom.Tab, 0)
-	for _, e := range examplesreg.Registry {
-		if e.NewWidget == nil {
-			continue
-		}
-		widget, err := e.NewWidget([]string{})
-		if err != nil {
-			t.Errorf("failed to create widget for %q: %v", e.Name, err)
-			continue
-		}
-		w, ok := widget.(loom.Widget)
-		if !ok {
-			t.Errorf("%q NewWidget did not return a loom.Widget", e.Name)
-			continue
-		}
-		tabs = append(tabs, loom.Tab{Title: e.Name, Widget: w})
+
+	host, err := newHostedTabs()
+	if err != nil {
+		t.Fatalf("newHostedTabs failed: %v", err)
 	}
-	
-	if len(tabs) == 0 {
-		t.Fatal("no examples with NewWidget to host")
-	}
-	
-	host := loom.NewTabs(tabs...)
-	host.ArrowSwitch = false
-	host.OnChildQuit = func(i int) bool { return false }
-	
+
 	// Render initial state (M3-hosted-split.ansi)
 	frames := loom.Render(host, 80, 24)
 	var buf strings.Builder
@@ -137,19 +157,19 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 		buf.WriteString(line)
 		buf.WriteString("\n")
 	}
-	
+
 	repoRoot := findM3RepoRoot(t)
 	progressDir := filepath.Join(repoRoot, "docs", "progress", "062")
 	if err := os.MkdirAll(progressDir, 0755); err != nil {
 		t.Fatalf("creating progress directory: %v", err)
 	}
-	
+
 	outPath := filepath.Join(progressDir, "M3-hosted-split.ansi")
 	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
 		t.Fatalf("writing evidence: %v", err)
 	}
 	t.Logf("M3 initial evidence saved to %s (%d bytes)", outPath, len(buf.String()))
-	
+
 	// Now test the nested Tabs meta-test: switch to tabs example and send right arrow
 	// Find the tabs tab
 	tabsIdx := -1
@@ -162,14 +182,13 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 	if tabsIdx < 0 {
 		t.Skip("tabs example not in hosted tabs")
 	}
-	
+
 	// Switch focus to tabs tab
 	host.SetFocusIndex(tabsIdx)
-	
-	// Get the tabs widget and send it a right arrow key
-	tabsWidget := host.Tabs[tabsIdx].Widget
-	_ = tabsWidget.HandleKey(loom.KeyEvent{Key: "right"})
-	
+
+	// Send right arrow to the host, which should delegate to the tabs widget
+	_ = host.HandleKey(loom.KeyEvent{Key: "right"})
+
 	// Render after the key (M3-hosted-tabs-inner-switched.ansi)
 	frames2 := loom.Render(host, 80, 24)
 	var buf2 strings.Builder
@@ -177,12 +196,17 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 		buf2.WriteString(line)
 		buf2.WriteString("\n")
 	}
-	
+
 	outPath2 := filepath.Join(progressDir, "M3-hosted-tabs-inner-switched.ansi")
 	if err := os.WriteFile(outPath2, []byte(buf2.String()), 0644); err != nil {
 		t.Fatalf("writing evidence: %v", err)
 	}
 	t.Logf("M3 switched evidence saved to %s (%d bytes)", outPath2, len(buf2.String()))
+
+	// Verify the switched frame is different from the initial frame
+	if buf.String() == buf2.String() {
+		t.Error("M3-hosted-tabs-inner-switched.ansi should differ from the initial frame")
+	}
 }
 
 // findM3RepoRoot walks up from the current directory to find the repo root (where go.mod is)

@@ -117,6 +117,13 @@ func (a *tabsApp) HandleMouse(e loom.MouseEvent) bool {
 	return a.tabs.HandleMouse(e)
 }
 
+// ConsumeKey allows the tabs widget to consume keys before parent widgets
+// (e.g., when hosted in a parent Tabs). This is needed for proper nested-Tabs
+// support when ArrowSwitch=false in the parent.
+func (a *tabsApp) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
+	return a.tabs.ConsumeKey(e)
+}
+
 // PaneRequest declares the terminal requirements of the tabs widget.
 func (a *tabsApp) PaneRequest() loom.PaneRequest {
 	return loom.PaneRequest{
