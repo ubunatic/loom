@@ -78,6 +78,27 @@ func TestBrowserNavigationToParentFallsBackToFirstItem(t *testing.T) {
 	}
 }
 
+func TestBrowserEscapeNavigatesToParentAndConsumesKey(t *testing.T) {
+	root := t.TempDir()
+	child := filepath.Join(root, "child")
+	if err := os.Mkdir(child, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(child, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
+		t.Fatalf("escape = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	}
+	if b.dir != root {
+		t.Fatalf("directory after escape = %q, want %q", b.dir, root)
+	}
+	if item, ok := b.list.Selected(); !ok || item.Name != "child" {
+		t.Fatalf("selection after escape = %+v, ok=%v; want child", item, ok)
+	}
+}
+
 func TestBrowserUsesAnimatedBackground(t *testing.T) {
 	pane := &loom.Pane{}
 	configurePane(pane)

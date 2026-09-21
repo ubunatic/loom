@@ -57,6 +57,7 @@ func Classify(path string) Kind {
 type browser struct {
 	dir              string
 	files            []os.DirEntry
+	filter           string
 	selected, offset int
 	lines            []string
 	kind             Kind
@@ -94,7 +95,7 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 	}
 	frame := &loom.Frame{
 		Title:  "ANSI Viewer",
-		Status: "↑↓ select  •  PgUp/PgDn scroll  •  Enter open directory  •  a Astra  •  q quit",
+		Status: "↑↓ select  •  PgUp/PgDn scroll  •  Enter open directory  •  Esc back  •  a Astra  •  q quit",
 		Boxes: []loom.Box{{
 			ID: "viewer", FillHeight: true, Dynamic: true, Border: border, Child: b,
 		}},
@@ -112,12 +113,22 @@ func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
 	}
 	return b.frame.HandleKey(e)
 }
+func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
+	if !e.Is("esc") {
+		return false, false
+	}
+	return b.HandleKey(e), true
+}
 func (b *framedBrowser) HandleMouse(e loom.MouseEvent) bool { return b.frame.HandleMouse(e) }
 
 // New opens dir and returns an interactive viewer widget.
 func New(dir string) (*browser, error) { return newBrowser(dir) }
 
 func newBrowser(dir string) (*browser, error) {
+	return newBrowserSelection(dir, "")
+}
+
+func newBrowserSelection(dir, selectName string) (*browser, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("ansiviewer: read %s: %w", dir, err)
@@ -126,8 +137,25 @@ func newBrowser(dir string) (*browser, error) {
 	b := &browser{dir: dir, files: entries}
 	if len(entries) > 0 {
 		b.selectFile(0)
+		for i, entry := range entries {
+			if entry.Name() == selectName {
+				b.selectFile(i)
+				break
+			}
+		}
 	}
 	return b, nil
+}
+
+func (b *browser) visibleFiles() []int {
+	visible := make([]int, 0, len(b.files))
+	needle := strings.ToLower(b.filter)
+	for i, entry := range b.files {
+		if needle == "" || strings.Contains(strings.ToLower(entry.Name()), needle) {
+			visible = append(visible, i)
+		}
+	}
+	return visible
 }
 
 func (b *browser) selectFile(i int) {
@@ -175,15 +203,17 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	c.Write(r.X, r.Y, "Files", loom.Style{Bold: true})
 	c.Write(r.X+left, r.Y, "Preview", loom.Style{Bold: true})
-	for i, f := range b.files {
-		if i+1 >= r.H {
+	visible := b.visibleFiles()
+	for row, index := range visible {
+		if row+1 >= r.H {
 			break
 		}
+		f := b.files[index]
 		s := "  " + f.Name()
-		if i == b.selected {
+		if index == b.selected {
 			s = "> " + f.Name()
 		}
-		c.Write(r.X, r.Y+i+1, s, loom.Style{})
+		c.Write(r.X, r.Y+row+1, s, loom.Style{})
 	}
 	view := r.H - 1
 	if view < 1 {
@@ -199,8 +229,36 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (b *browser) HandleKey(e loom.KeyEvent) bool {
-	if e.Is("q", "esc", "ctrl-c") {
+	if e.Is("q", "ctrl-c") {
 		return true
+	}
+	if e.Is("esc") {
+		if b.filter != "" {
+			b.filter = ""
+			b.offset = 0
+			return false
+		}
+		parent := filepath.Dir(filepath.Clean(b.dir))
+		if parent == filepath.Clean(b.dir) {
+			return true
+		}
+		if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
+			*b = *next
+		}
+		return false
+	}
+	if e.Is("/") {
+		b.filter = ""
+		return false
+	}
+	if e.Text != "" {
+		b.filter += e.Text
+		b.offset = 0
+		visible := b.visibleFiles()
+		if len(visible) > 0 {
+			b.selectFile(visible[0])
+		}
+		return false
 	}
 	switch {
 	case e.Is("up"):
@@ -233,7 +291,18 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 	}
 	return false
 }
-func (b *browser) HandleMouse(loom.MouseEvent) bool { return false }
+func (b *browser) HandleMouse(e loom.MouseEvent) bool {
+	if e.Action != loom.MousePress || e.Button != loom.MouseLeft || e.Y < 1 {
+		return false
+	}
+	visible := b.visibleFiles()
+	row := e.Y - 1
+	if row >= len(visible) {
+		return false
+	}
+	b.selectFile(visible[row])
+	return false
+}
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -330,7 +399,7 @@ func initialANSIStyle(input string) loom.Style {
 				j++
 			}
 			if j < len(rs) && rs[j] == 'm' {
-				params := string(rs[i+2:j])
+				params := string(rs[i+2 : j])
 				style = applySGR(style, params)
 				// mc first uses 40m while clearing terminal state; its
 				// actual panel surface is the explicit 256-color background.
@@ -364,6 +433,7 @@ func csiPosition(params string) (int, int) {
 	}
 	return row, col
 }
+
 // applySGR parses and applies SGR (Select Graphic Rendition) parameters to a style.
 // Note: This function is a custom parser for backward compatibility. In loom 034+,
 // this could be replaced with loom.ParseANSI for SGR handling, but the parent

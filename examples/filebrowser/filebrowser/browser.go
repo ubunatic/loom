@@ -255,9 +255,26 @@ func (b *browser) HandleKey(k loom.KeyEvent) bool {
 		b.cycleTheme()
 		return false
 	}
+	if k.Is("esc") {
+		parent := filepath.Dir(filepath.Clean(b.dir))
+		if parent == filepath.Clean(b.dir) {
+			return true
+		}
+		if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
+			b.notice = "Error: " + err.Error()
+		}
+		return false
+	}
 	quit := b.frame.HandleKey(k)
 	b.updateDetails()
 	return quit
+}
+
+func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
+	if !k.Is("esc") {
+		return false, false
+	}
+	return b.HandleKey(k), true
 }
 
 func (b *browser) HandleMouse(k loom.MouseEvent) bool {

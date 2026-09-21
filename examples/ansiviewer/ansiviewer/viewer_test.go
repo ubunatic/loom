@@ -95,6 +95,61 @@ func TestBrowserMetadataAndScroll(t *testing.T) {
 	}
 }
 
+func TestBrowserEscapeGoesToParentDirectory(t *testing.T) {
+	root := t.TempDir()
+	child := filepath.Join(root, "child")
+	if err := os.Mkdir(child, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := newBrowser(child)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+		t.Fatal("escape from a child directory should navigate to its parent")
+	}
+	if b.dir != root {
+		t.Fatalf("directory after escape = %q, want %q", b.dir, root)
+	}
+	if b.files[b.selected].Name() != "child" {
+		t.Fatalf("selection after escape = %q, want child", b.files[b.selected].Name())
+	}
+
+	b.dir = string(filepath.Separator)
+	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); !quit {
+		t.Fatal("escape from the filesystem root should quit")
+	}
+}
+
+func TestBrowserFilterAndMouseSelection(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"alpha.txt", "beta.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(name), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	b.HandleKey(loom.KeyEvent{Text: "/"})
+	b.HandleKey(loom.KeyEvent{Text: "beta"})
+	visible := b.visibleFiles()
+	if len(visible) != 1 || b.files[visible[0]].Name() != "beta.txt" {
+		t.Fatalf("filtered files = %v", visible)
+	}
+
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
+	if b.files[b.selected].Name() != "beta.txt" {
+		t.Fatalf("mouse selected %q, want beta.txt", b.files[b.selected].Name())
+	}
+	framed := newFramedBrowser(b, &astraToggle{})
+	if quit, consumed := framed.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
+		t.Fatalf("framed escape = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	}
+}
+
 func TestRecordWritesOneSnapshotAfterDelay(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "record.txt"), []byte("recorded\n"), 0o644); err != nil {
