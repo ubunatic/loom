@@ -81,3 +81,21 @@ dead or commented-out code.
 ### M3 - PTY drag
 - Extend the PTY tests (existing helper in `internal/ptytest`) to drag a thumb in a real terminal session and
   assert the visible content changes; evidence `M3-pty-drag.ansi` (final screen).
+
+### M1-M2 Review (host)
+Code committed by the host (index.lock and quota_1.state blocked the developer). `go test .` and vet
+green. Accepted: shared axis-neutral mapping and drag state, wiring in `View` and `Choice`, cancel paths.
+Missing: all evidence, the PTY test, and proof of the Esc-cancel path. No widget has a horizontal
+scrollbar, so horizontal frames are dropped from the deliverables (mapping-level tests stay).
+
+### M3 - Pre-Work and Evidence
+1. Tests: Esc during a drag restores the drag-start offset for `View` and `Choice`; a drag that
+   leaves the widget bounds keeps tracking; a non-primary button press on the thumb starts nothing.
+   Add whichever of these is missing.
+2. Evidence test (gated on `LOOM_EVIDENCE=1`, repo-root `docs/progress/092/`, run only this test):
+   `M2-vertical-before.ansi`, `M2-vertical-mid.ansi`, `M2-vertical-after.ansi` from a `View` with long content
+   (thumb position and visible lines change; label rows above the frame; ANSI-stripped check before finishing);
+   the same trio for a `Choice` as `M2-choice-before/mid/after.ansi`.
+3. PTY test with `internal/ptytest` (see existing PTY tests): drag the thumb of a scrollable example in a real
+   terminal session and assert the visible content changes; evidence `M3-pty-drag.ansi`.
+4. Commit '(issue 092 M3)'; if git is blocked say so and leave files staged.
