@@ -54,3 +54,39 @@ borders through the same path:
   migrating onto the shared primitive.
 - The termaid example's help modal can be rewritten to call
   `canvas.DrawBox(...)` instead of its own hand-rolled border block.
+
+---
+
+## Resolved Design (host decisions, binding for the sprint)
+
+- `BoxStyle` is an enum-like type with Sharp, Rounded, Double, ASCII (String and parse helpers).
+  Glyph sets live in the spec system (docs/Spec.md: spec YAML is the source of truth, Go must not
+  duplicate glyph values); extend `spec/box.yaml` or add a sibling spec file, and validate-spec must accept it.
+- `Canvas.DrawBorder(r Rect, style BoxStyle, s Style)`: border only, clips to the canvas, no-op when
+  width or height is below 2.
+- `Canvas.DrawBox(r Rect, style BoxStyle, title string, s Style)`: border plus a left-aligned title
+  in the top edge, display-width aware (runes, wide runes, combining marks), truncated with an
+  ellipsis when it does not fit, never splitting a cluster (see 038).
+  Centered titles are out of scope.
+- `Box.Draw` and `Popup.Draw` migrate onto the primitive. Their existing golden tests must pass
+  unchanged; if a golden must change, stop and record why in your report instead of editing it.
+- The termaid example is in another repo: out of scope.
+
+## Milestones (lean sprint, dev agent: haiku)
+
+Host reviews only diffs and test output; this ticket is the only channel. Root-package tests
+needing `/dev/tty` fail before this work; ignore them. Commit each milestone (message ends
+'(issue 037 MX)'), stage only your files, never docs/README.md, keep the repo root free of stray
+binaries. Evidence: frames produced by code, gated on env `LOOM_EVIDENCE=1`, written to repo-root
+`docs/progress/037/` (find root by walking up to `go.mod`). gofmt touched files.
+
+### M1 - BoxStyle, DrawBorder, DrawBox
+- Spec entry, `BoxStyle`, both primitives, tests: each style, degenerate sizes, clipping at the canvas
+  edge, multi-byte and wide-rune titles, truncation.
+- Evidence: `M1-boxstyle-gallery.ansi` (all four styles, plain and titled), `M1-titles.ansi` (CJK,
+  umlaut, emoji, long title truncated, tiny widths).
+
+### M2 - Migrate Box.Draw and Popup.Draw
+- Migrate both onto the primitives with all existing golden tests unchanged; delete the now-dead
+  private border loops.
+- Evidence: `M2-box.ansi` and `M2-popup.ansi` rendered through the migrated code.
