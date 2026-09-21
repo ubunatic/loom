@@ -181,3 +181,26 @@ Code committed by the host (index.lock). Build, vet, `go test .` and `go test -r
    `M1-tabs-switched.ansi`, `M2-pane-ticks.ansi` (final frame of a real `Pane` headless run after real ticks),
    `M2-invalidate.ansi` (frame after an `Invalidate` from another goroutine). Labels on their own rows; view ANSI-stripped.
 4. Commit '(issue 060 M3)'; if git is blocked say so and leave files staged.
+
+### M3 Review (host)
+Committed by the host. The timer starvation fix is in (`pane.go`) with a unit test, but the test only checks a
+standalone model of the timer (the developer reported it did not reproduce the pre-fix pane behavior), so it does
+not guard the real bug. Still missing after two luna rounds: a test through the real `Pane.run`, the idle-redraw
+guard, 100-goroutine Invalidate before/during/after the loop with a leak check, `RunWatch` unchanged, and ALL
+evidence frames. Escalation ladder: next is `codex:sol:low`.
+
+### M4 - Real-Pane tests and evidence (host guidance)
+1. Find how existing tests run a `Pane` without a real terminal (grep `RunWatch` and `run(` in `*_test.go`, also the
+   PTY helper in `internal/ptytest`) and reuse that harness. Drive the real `Pane.run` with a Ticker widget and count
+   ticks and repaints (wrap the widget so `Draw` counts). Tests, all under `-race`:
+   a. Starvation: Ticker at 20 ms, an event storm (`Invalidate` or key events every 1 ms) for 200 ms: at least 5
+      ticks. Prove the test fails against the previous behavior (reset on every iteration) by temporarily reverting
+      that one line, then restore it; say so in your report.
+   b. Idle guard: a non-Ticker tree for 200 ms: zero ticks, zero extra repaints, no timer goroutine left.
+   c. Invalidate with 100 goroutines before the loop starts, during, and after it stopped; no panic, no leak
+      (`runtime.NumGoroutine` before/after with a short settle).
+   d. `RunWatch` behavior unchanged (existing watch tests still pass; add one if none covers the collect cadence).
+2. Evidence frames as listed in M3 Pre-Work item 3 (`M1-tick-0/1/2`, `M1-tabs-switched`, `M2-pane-ticks`,
+   `M2-invalidate`), gated on `LOOM_EVIDENCE=1`, only this ticket's evidence test; view them ANSI-stripped.
+3. `go vet ./...`, `go test -race` for the new tests, and `go test .`; commit '(issue 060 M4)'; if git is blocked say
+   so and leave files staged.
