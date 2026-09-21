@@ -103,7 +103,7 @@ upkeep.
 | 089 | [089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md](089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) | Add mouse cursor position hints and configurable visual effects | Open |
 | 090 | [090-support-image-backed-app-backgrounds-and-background-theme-switching.md](090-support-image-backed-app-backgrounds-and-background-theme-switching.md) | Support image-backed app backgrounds and background theme switching | Open |
 | 091 | [091-add-double-click-interaction-for-filebrowser-and-path-trees.md](091-add-double-click-interaction-for-filebrowser-and-path-trees.md) | Add double-click interaction for filebrowser and path trees | Open |
-| 092 | [092-add-mouse-drag-support-for-scrollbars.md](092-add-mouse-drag-support-for-scrollbars.md) | Add mouse-drag support for scrollbars | Open |
+| 092 | [092-add-mouse-drag-support-for-scrollbars.md](092-add-mouse-drag-support-for-scrollbars.md) | Add mouse-drag support for scrollbars | Closed — delivered via lean sprint (M1-M6); luna:low M1-M4, sol:low M5, sonnet M6 |
 | 093 | [093-restrict-filebrowser-mouse-interaction-to-item-content.md](093-restrict-filebrowser-mouse-interaction-to-item-content.md) | Restrict filebrowser mouse interaction to item content | Open |
 | 094 | [094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md](094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md) | Keep filebrowser help modal in control of keyboard input | Closed — completed in lean sprint |
 | 095 | [095-add-human-observable-pty-test-view-mode-and-feedback-flow.md](095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) | Add human-observable PTY test view mode and feedback flow | Open |

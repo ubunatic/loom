@@ -1,6 +1,6 @@
 # 092 — Add mouse-drag support for scrollbars
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M6); luna:low M1-M4, sol:low M5, sonnet M6
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
