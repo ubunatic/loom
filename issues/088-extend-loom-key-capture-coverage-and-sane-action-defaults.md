@@ -95,3 +95,27 @@ ANSI-stripped; labels on their own rows. gofmt. No dead code.
 - With `internal/ptytest` and `SendRaw`: send a set of the key sequences through a real PTY to a widget that reports
   the received key (an existing example or a tiny test program), assert the reported names, including umlauts and one
   Alt and one Ctrl combination. Evidence: `M4-pty-keys.ansi` (final screen).
+
+### M1-M4 Review (host)
+Committed by the host (index.lock). Vet and tests green; decoder fixes (umlauts as UTF-8, Alt+letter, Ctrl+letter,
+modifier parameters, Insert) and the defaults doc are accepted. The audit is far too small for the Resolved Design,
+which demands EVERY required key: the frames list 17 rows, so "gap count 0" proves little.
+- Missing from the audit: digits 0-9, the full punctuation set, `ä ö ü Ä Ö Ü ß`, all letters upper and lower,
+  `Alt+<letter/digit>`, all `Ctrl+a..z` (the decoder excludes ctrl-b, c, d, f, h, i, j, m, q, u, w from the generic
+  rule; each of those must still be asserted, with the actual name and, where relevant, a documented limitation
+  such as Ctrl-H = Backspace, Ctrl-J/M = Enter), F1-F12 in both SS3 and CSI forms, arrows, Home/End (`CSI H/F`,
+  `1~ 4~ 7~ 8~`), PgUp/PgDn, Insert/Delete, and Shift/Ctrl/Alt arrows for modifier values 2-8.
+- The defaults doc omits items from the ticket: `F10` quit, `F3`/`v` view, `F4`/`e` edit, `u`/`U`/`Ctrl-Z`/`Ctrl-R`
+  undo/redo: for each say in the table whether it is provided, by which widget, or "not provided" with the reason.
+  Do not add bindings that conflict; document them.
+
+### M5 - Pre-Work
+1. Generate the audit rows programmatically from the lists above (loops, not 200 hand-written rows), assert every
+   row's decoded name through `DecodeKey`, and a representative 25 through `scanKey`; unresolved rows become
+   `known gap` entries with a reason; fix decoder bugs test-first; true terminal limitations stay documented.
+2. Evidence in pages of at most 24 rows each, one file per group, plus a summary frame:
+   `M5-decode-letters-digits.ansi`, `M5-decode-punct-umlauts.ansi`, `M5-decode-ctrl-alt.ansi`,
+   `M5-decode-function-nav.ansi`, `M5-decode-modified-arrows.ansi`, `M5-summary.ansi` (counts: OK, gap, terminal
+   limitation per group). Keep `M1-decode-table.ansi` as it is (before) and replace `M2-decode-table.ansi` by the summary.
+3. Complete the defaults table (all rows above) and keep the drift test.
+4. Commit '(issue 088 M5)'; if git is blocked say so and leave files staged.
