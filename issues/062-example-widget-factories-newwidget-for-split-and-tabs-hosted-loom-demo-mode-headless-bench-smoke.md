@@ -148,3 +148,25 @@ shows only intended files.
 - Tests drive it headless with synthetic key events.
 - Evidence: `M3-hosted-split.ansi`, `M3-hosted-tabs-inner-switched.ansi` (after a right key).
 - Run `make install` at the end of M3 and say so in the report.
+
+### M1-M3 Review (host)
+Delivered: 325ca9a, 1eef59f, 4d06668. Tests and vet green. Defects:
+- Stray untracked binaries `loom-bench` and `loom-demo` in the repo root (from a build or
+  `go install` misuse). Delete them and make sure the build cannot recreate them there.
+- `TestNestedTabsMeta` is vacuous: the host has ONE tab, so "focus stays 0" always holds, and
+  the inner tabs are never shown to switch. `TestHostedModeSetup` does not cover quit containment.
+- The M3 evidence `M3-hosted-tabs-inner-switched.ansi` must actually show the inner tabs switched.
+
+### M4 - Pre-Work / Required Refinements
+1. Rewrite the meta-test with a host of at least TWO tabs (split, tabs) focused on the tabs example:
+   after a `right` key the inner Tabs' active index changed (assert it) and the outer host's index
+   did not; the same for `left`; `ctrl-t` switches the inner tabs and not the outer host.
+   The hosted `tabs` widget must be reachable through the same code path `loom-demo --hosted`
+   uses (extract a helper `newHostedTabs()` from `runHosted` and test that, not a hand-built host).
+2. Test quit containment through that helper: a hosted app's quit key does not return quit from the host.
+3. Regenerate `M3-hosted-tabs-inner-switched.ansi` from the helper after a `right` key; it must
+   visibly differ from the unswitched frame.
+4. In the split example, confirm the PaneRequest mouse mode equals what `Run` enabled before
+   this ticket (git show 325ca9a^:examples/split/split/split.go); fix if you changed it.
+5. Run gofmt on all files you touched (the loom-demo test has trailing whitespace).
+6. Commit '(issue 062 M4)'; go test ./... and go vet ./... green; `make install` again.
