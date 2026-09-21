@@ -94,3 +94,23 @@ but the sprint is incomplete:
 5. Evidence as described above: `M1-slicedice-s1..s3.ansi`, `M2-squarified-s1..s3.ansi` (same data and 3
    sizes each), `M3-colorscale.ansi`. View them ANSI-stripped; labels on own rows; nothing overlapping.
 6. Commit '(issue 081 M4)'; if index.lock blocks, stage your files and say so.
+
+### M4 Review (host)
+Committed by the host. Tests, golden, color-scale edge cases and evidence harness accepted. Blocking defect:
+`layoutTreemapSquarified` just calls the old `layoutTreemap` and leaves the real algorithm in a dead
+comment block. Aspect log: slice-dice 2.893 equals squarified 2.893; M2 frames equal M1 frames.
+This misses the ticket goal, so the step moves up the escalation ladder (`codex:sol:low`).
+
+### M5 - Real squarified layout (architecture given by the host)
+1. Test first: on the five fixed distributions squarified mean worst aspect must be STRICTLY lower
+   than slice-dice, and on at least one distribution the cell rects differ between the layouts.
+2. Implement squarified in `layoutTreemapSquarified` (delete the dead comment block and the fallback):
+   run Bruls-Huizing-van Wijk on FLOAT rectangles (areas proportional to values, sorted descending, rows
+   laid along the shorter side, terminal aspect compensated by scaling the height by 2 for the ratio),
+   then convert to integers by rounding cumulative edges (round the row start and row end coordinates
+   along each axis, and the item start/end inside a row), so neighbours share exact edges and the
+   tiling stays gap- and overlap-free. Guarantee at least one cell per positive value where the
+   area allows; zero-size results are dropped, never overlapping.
+3. All property tests, the golden and the color scale tests stay green; regenerate `M2-squarified-s1..s3.ansi`
+   (they must visibly differ from the M1 frames).
+4. Commit '(issue 081 M5)'; if index.lock blocks, stage your files and say so.
