@@ -264,6 +264,38 @@ func (c *Canvas) Write(x, y int, text string, style Style) int {
 	return col - x
 }
 
+// WriteANSI renders ANSI-formatted text starting at (x, y), preserving inline
+// colors and styles from SGR escape sequences. Returns the number of columns
+// consumed. Clips at canvas right edge and bottom.
+func (c *Canvas) WriteANSI(x, y int, text string) int {
+	if x >= c.cols || y >= c.rows || x < 0 {
+		return 0
+	}
+
+	cells := ParseANSI(text)
+	col := x
+	for _, cell := range cells {
+		if col >= c.cols || y >= c.rows {
+			break
+		}
+
+		// Skip continuation cells from ParseANSI; Set will create them automatically
+		if cell.Continuation {
+			continue
+		}
+
+		w := StringWidth(cell.Text)
+		if col+w > c.cols {
+			break
+		}
+
+		c.Set(col, y, cell)
+		col += w
+	}
+
+	return col - x
+}
+
 // Row renders row y as an ANSI string, resetting style at the end.
 // Returns an empty string for out-of-range rows.
 func (c *Canvas) Row(y int) string {

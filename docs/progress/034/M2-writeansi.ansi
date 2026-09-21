@@ -1,0 +1,20 @@
+  [0m[1m[39m[49mM2: Canvas.WriteANSI Evidence[0m[39m[49m                                                 [0m
+                                                                                [0m
+  Basic:  [0m[38;5;1m[49mRED[0m[39m[49m [0m[38;5;2m[49mGREEN[0m[39m[49m [0m[38;5;4m[49mBLUE[0m[39m[49m                                                        [0m
+  Bold+Color:  [0m[1m[38;5;1m[49mBold Red[0m[39m[49m [0m[1m[38;5;2m[49mBold Green[0m[39m[49m                                              [0m
+  256-color:  [0m[38;5;196m[49mColor196[0m[39m[49m [0m[38;5;226m[49mColor226[0m[39m[49m                                                 [0m
+  24-bit RGB:  [0m[38;2;255;100;50m[49mOrange[0m[39m[49m [0m[38;2;50;100;255m[49mBlue[0m[39m[49m                                                      [0m
+  Backgrounds:  [0m[39m[48;5;1mRed BG[0m[39m[49m [0m[39m[48;5;2mGreen BG[0m[39m[49m [0m[39m[48;5;4mBlue BG[0m[39m[49m                                         [0m
+  Reset:  [0m[1m[38;5;1m[48;5;1m BOLD RED on RED [0m[39m[49m [0m[38;5;2m[49m BACK TO DEFAULT [0m[39m[49m                                   [0m
+  Combined:   [0m[1m[4m[38;2;255;165;0m[48;5;234m BOLD+UNDERLINE+ORANGE ON DARK [0m[39m[49m                                   [0m
+  Clipping:                                                           [0m[38;5;1m[49mLongText[0m[39m[49m  [0m
+  Wide chars:   [0m[38;2;255;215;0m[49m✓[0m[39m[49m [0m[38;2;50;200;50m[49m✔[0m[39m[49m [0m[38;2;200;50;50m[49m✗[0m[39m[49m                                                           [0m
+  Reset test:  [0m[1m[38;5;1m[49m[BOLD RED][0m[39m[49m middle [0m[38;5;2m[49m[GREEN][0m[39m[49m                                        [0m
+  Underline:  Normal [0m[4m[39m[49m Underlined [0m[39m[49m Normal again                                  [0m
+  Dim:    [0m[1m[39m[49mBold[0m[39m[49m [0m[2m[39m[49mDim[0m[39m[49m [0m[1m[2m[39m[49mBold+Dim[0m[39m[49m                                                     [0m
+  Multi-color: [0m[38;5;1m[49mERROR[0m[39m[49m: [0m[38;5;196m[49mFailed[0m[39m[49m - [0m[1m[38;5;4m[49mDetails[0m[39m[49m: Check configuration                     [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
