@@ -1,6 +1,6 @@
 # 062 — Example widget factories: NewWidget for split and tabs, hosted loom-demo mode, headless bench smoke
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M4), haiku dev
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
