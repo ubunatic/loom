@@ -1,7 +1,7 @@
 # Study: Roadmap Items Suited to `codex:luna:low` Lean Sprints
 
 **Date**: 2026-09-20
-**Status**: Proposal (first sprint, 097, running)
+**Status**: Superseded by the [session report](2026-09-21-lean-sprint-session-report.md); all listed tickets delivered. Developers were Haiku first, then luna:low with an escalation ladder, not luna alone. Second wave (063-065) is still open.
 **Sources**: `docs/Roadmap.md`, `docs/studies/2026-09-20-harnez-agent-lean-sprint-orchestration-and-pitfalls.md`
 
 ## Selection Criteria

@@ -124,3 +124,22 @@ err := pane.RunStartup(ctx, cfg)
 ```
 
 - **One-Shot Writer Previews (`loom.RenderTo`)**: Renders static widget snapshots directly to an `io.Writer` (e.g. for non-interactive CLI `--version` or `--help` banners).
+
+## 6. Primitives Added by the 2026-09 Lean Sprints
+
+Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
+
+| Primitive | Ticket | Use |
+|---|---|---|
+| `loom.ParseANSI(s) []Cell`, `Canvas.WriteANSI(x, y, text)` | 034 | Draw SGR-styled text (recordings, `docs/data/*.ansi`) into a canvas. |
+| `Themeable` (`ApplyTheme(ThemeColors)`) | 061 | Hosts restyle Frame, Tabs, Stack, Grid, Choice, Table and filebrowser through one call. |
+| `NewWidget` factories in `examples/split`, `examples/tabs`, `internal/examplesreg` | 062 | Hosted vs standalone examples; `loom-demo --hosted`, `loom-bench` smoke. |
+| `Frame` `FillHeight` (stacked fill) | 051 | A frame box expands to the available content height. |
+| `Canvas.DrawBorder`, `Canvas.DrawBox`, `spec/box.yaml` | 037 | Spec-driven box glyphs; do not duplicate glyphs in Go. |
+| `Ticker` (`TickInterval`, `Tick`), `Pane.Invalidate()` | 060 | Periodic redraw without pane ownership; invalidate is goroutine safe. The pane must not reset its tick timer on every event. |
+| `Choice.MouseTextOnly` | 093 | Mouse selects only on rendered item text. |
+| Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
+| [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
+
+Mouse coordinates: events reaching widgets are 0-based, PTY SGR mouse reports are 1-based.
+In tests locate screen text by runes or display width, never byte offsets.

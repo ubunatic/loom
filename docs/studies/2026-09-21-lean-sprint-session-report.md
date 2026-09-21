@@ -65,6 +65,9 @@ Done: 12 of 12 counting 097 (all 11 goal tickets). Second wave 063, 064, 065 is 
 
 ## Open Items
 
+- Leftovers are ticket 101 (dead treemap block, gofmt, unproven 092 Split test, thin 081/088 frames). Manual checks are collected in ticket 102. ZWJ and flag widths are noted in 048. The missing human feedback tool is ticket 095 (open, not started).
+- Process finding: the `/goal` Stop hook judged the literal text "haiku dev agents" after the plan changed and forced about ten empty turns until `/goal clear`. Update the goal when the plan changes (see AgenticLoop.md section 3).
+
 - 081 leftover: `graph/treemap.go` still holds a dead commented block after the `return` in `layoutTreemapSquarified` (about 110 lines). The ticket asked to delete it; the next sprint touching `graph/` should.
 - Two old `splash --watch` processes (PIDs 920646 and 920686) predate the sprints and were not touched.
 - A peer session (lmcoder-41) asked for a review of the lmcoder roadmap; not acted on, it is outside this goal.

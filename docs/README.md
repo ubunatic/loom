@@ -12,6 +12,8 @@
 - [Themes](Themes.md): spec-driven palettes, semantic roles, widget adapters, runtime switching, and known boundaries.
 - [Animated backgrounds](AnimatedBackgrounds.md): Astra-style deterministic Braille star fields, protected-cell rendering, and the custom-effect contract.
 - [Root overlays](RootOverlays.md): the root-level-overlay hook pattern (`paneHelpRequest`) for modals that must draw over an entire split layout, not just a `paintClipped` child.
+- [Key defaults](KeyDefaults.md): decoded keys, default actions per library widget, terminal limitations.
+- [Progress evidence](progress/): `.ansi` frames per ticket; view with `for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done`.
 - [Widgets & framework primitives](Widgets.md): split layout, dynamic tabs, metric stores, directory navigation, and startup transition runners.
 
 ## Case Studies
@@ -40,5 +42,6 @@
 | [studies/2026-09-20-harnez-agent-lean-sprint-orchestration-and-pitfalls.md](studies/2026-09-20-harnez-agent-lean-sprint-orchestration-and-pitfalls.md) | Practical Orchestration and Pitfall Analysis of `harnez agent` in Lean Sprints |
 | [studies/2026-09-20-luna-lean-sprint-candidates.md](studies/2026-09-20-luna-lean-sprint-candidates.md) | Roadmap Items Suited to `codex:luna:low` Lean Sprints |
 | [studies/2026-09-20-session-token-usage-and-cost-analysis.md](studies/2026-09-20-session-token-usage-and-cost-analysis.md) | Session Token Usage and Cost Analysis |
+| [studies/2026-09-21-lean-sprint-session-report.md](studies/2026-09-21-lean-sprint-session-report.md) | Lean Sprint Session Report: Roadmap Items with Cheap Developer Agents |
 
 Study files are the source of truth for this table.

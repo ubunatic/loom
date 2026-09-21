@@ -112,3 +112,11 @@ The output of `graph` primitives adheres to Loom's display-width invariants veri
 - Standard ASCII brackets (`[` and `]`) and eighth-block characters (`\u2588`–`\u258f`) consume exactly 1 terminal display cell.
 - The entire Unicode Braille Patterns block (`\u2800`–`\u28ff`) consumes exactly 1 terminal cell per glyph.
 - ANSI SGR sequences do not contribute to measured cell width.
+
+## 5. Treemap Cells and Color Scales (`LayoutTreemap`, `ColorScale`)
+
+`graph.LayoutTreemap(segments, w, h, layout)` returns integral `TreemapCell`s. The layout is
+slice-dice or squarified (float squarify plus cumulative rounding so cells tile the area
+exactly); squarified gives visibly better aspect ratios for skewed data. `ColorScale` maps a
+value in a range to a cell style; `LinearColorScale(from, to)` interpolates RGB. Delivered by
+ticket 081; frames in `docs/progress/081/`.
