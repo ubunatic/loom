@@ -90,3 +90,20 @@ binaries. Evidence: frames produced by code, gated on env `LOOM_EVIDENCE=1`, wri
 - Migrate both onto the primitives with all existing golden tests unchanged; delete the now-dead
   private border loops.
 - Evidence: `M2-box.ansi` and `M2-popup.ansi` rendered through the migrated code.
+
+### M1-M2 Review (host)
+Delivered: 25a0ba3, 3c10c9d. Tests, vet, validate-spec green; goldens untouched; glyphs come from
+the spec. Defects:
+- `M2-popup.ansi` is unreadable: the three popups overlap, so borders cross ('Popup 1 │────').
+- After your evidence run, frames of other tickets were modified in the working tree
+  (docs/progress/061 and 062). I restored them. Never run evidence generation with
+  `LOOM_EVIDENCE=1` across `./...`; run it only for the tests of this ticket
+  (`go test -run <YourEvidenceTest> .`) and check `git status` before committing.
+- Popup is only ever drawn Sharp; nothing proves Popup output equals the pre-migration output beyond the goldens.
+
+### M3 - Pre-Work / Required Refinements
+1. Regenerate `M2-popup.ansi` with three NON-overlapping popups (different positions/sizes: short title,
+   long truncated title, CJK title), readable at 80x24.
+2. Add a test that `Popup.Draw` output equals a direct `Canvas.DrawBox(..., BoxBorderStyleSharp, ...)`
+   for the same rect, title and style (cell by cell, including a truncated CJK title).
+3. Commit '(issue 037 M3)', stage only your files, `git status` clean afterwards.
