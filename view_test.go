@@ -35,17 +35,17 @@ func TestViewScrollbarTrackClick(t *testing.T) {
 		x, y int
 		want int
 	}{
-		{12, 4, 26}, // bottom of the track
-		{12, 2, 8},  // second track row
-		{11, 5, 8},  // content column: no jump
-		{12, 1, 0},  // top of the track
+		{11, 4, 26}, // bottom of the track
+		{11, 2, 8},  // second track row
+		{10, 5, 8},  // content column: no jump
+		{11, 1, 0},  // top of the track
 	} {
 		v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: tc.x, Y: tc.y})
 		if v.Scroll != tc.want {
 			t.Fatalf("click (%d,%d): scroll=%d, want %d", tc.x, tc.y, v.Scroll, tc.want)
 		}
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 12, Y: 4})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 4})
 	if v.Scroll != 0 {
 		t.Fatal("right click moved scrollbar")
 	}
@@ -162,12 +162,12 @@ func TestScrollbarDragSequenceAndHorizontalMapping(t *testing.T) {
 func TestViewScrollbarDrag(t *testing.T) {
 	v := NewView(make([]string, 100))
 	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 12, Y: 1})
-	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 12, Y: 9})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 1})
+	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 9})
 	if v.Scroll <= 0 {
 		t.Fatal("drag did not scroll")
 	}
-	v.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 12, Y: 9})
+	v.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 11, Y: 9})
 	if v.drag.active {
 		t.Fatal("release left drag active")
 	}
@@ -179,8 +179,8 @@ func TestViewScrollbarDragCancelAndCapture(t *testing.T) {
 	v.Scroll = 20
 	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
 	start := v.Scroll
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 12, Y: 2})
-	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 12, Y: 99})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 2})
+	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 99})
 	if v.Scroll == start {
 		t.Fatal("captured drag did not update outside the widget")
 	}
@@ -188,7 +188,7 @@ func TestViewScrollbarDragCancelAndCapture(t *testing.T) {
 	if v.Scroll != start || v.drag.active {
 		t.Fatalf("escape cancel: scroll=%d active=%v, want %d false", v.Scroll, v.drag.active, start)
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 12, Y: 2})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 2})
 	if v.drag.active {
 		t.Fatal("non-primary press started drag")
 	}

@@ -1,0 +1,24 @@
+Split panes
+┌Nested Split (H: 40/60 • V: 50/50)──────────────┐
+│Left line 27      ░│Top-Right line 01          ▓│
+│Left line 28      ░│Top-Right line 02          ░│
+│Left line 29      ░│Top-Right line 03          ░│
+│Left line 30      ░│Top-Right line 04          ░│
+│Left line 31      ░│Top-Right line 05          ░│
+│Left line 32      ░│Top-Right line 06          ░│
+│Left line 33      ░│Top-Right line 07          ░│
+│Left line 34      ░│────────────────────────────│
+│Left line 35      ░│Bottom-Right line 01       ▓│
+│Left line 36      ▓│Bottom-Right line 02       ░│
+│Left line 37      ▓│Bottom-Right line 03       ░│
+│Left line 38      ▓│Bottom-Right line 04       ░│
+│Left line 39      ▓│Bottom-Right line 05       ░│
+│Left line 40      ▓│Bottom-Right line 06       ░│
+└────────────────────────────────────────────────┘
+
+
+
+
+
+Ratio: H 40% V 50%  •  Tab: focus  •  [ / ]: ratio
+

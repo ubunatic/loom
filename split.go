@@ -28,12 +28,14 @@ type Split struct {
 	First       Widget
 	Second      Widget
 
-	focused    bool
-	focus      int
-	lastRect   Rect
-	firstRect  Rect
-	secondRect Rect
-	dragging   bool
+	focused      bool
+	focus        int
+	lastRect     Rect
+	firstRect    Rect
+	secondRect   Rect
+	dragging     bool
+	mouseCapture Widget
+	captureRect  Rect
 }
 
 // NewSplit returns an evenly divided horizontal split with a one-cell divider.
@@ -164,7 +166,7 @@ func (s *Split) HandleKey(e KeyEvent) bool {
 // HandleMouse forwards an event to the child under the pointer, translating
 // terminal coordinates to that child's local 1-based coordinates.
 func (s *Split) HandleMouse(e MouseEvent) bool {
-	x, y := e.X-1, e.Y-1
+	x, y := e.X, e.Y
 	if e.Action == MousePress && e.Button == MouseLeft && s.dividerContains(x, y) {
 		s.dragging = true
 		return false
@@ -177,6 +179,15 @@ func (s *Split) HandleMouse(e MouseEvent) bool {
 		s.setRatioFromPosition(x, y)
 		return false
 	}
+	if s.mouseCapture != nil && (e.Action == MouseDrag || e.Action == MouseRelease) {
+		e.X = x - s.captureRect.X
+		e.Y = y - s.captureRect.Y
+		captured := s.mouseCapture
+		if e.Action == MouseRelease {
+			s.mouseCapture = nil
+		}
+		return captured.HandleMouse(e)
+	}
 	for index, target := range []struct {
 		widget Widget
 		rect   Rect
@@ -186,9 +197,11 @@ func (s *Split) HandleMouse(e MouseEvent) bool {
 		}
 		if e.Action == MousePress {
 			s.setFocusedChild(index)
+			s.mouseCapture = target.widget
+			s.captureRect = target.rect
 		}
-		e.X = x - target.rect.X + 1
-		e.Y = y - target.rect.Y + 1
+		e.X = x - target.rect.X
+		e.Y = y - target.rect.Y
 		return target.widget.HandleMouse(e)
 	}
 	return false

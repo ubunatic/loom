@@ -167,7 +167,7 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 		}
 	case MousePress:
 		if e.Button == MouseLeft && maxScroll > 0 && v.lastRect.W > 0 &&
-			e.X == v.lastRect.X+v.lastRect.W &&
+			e.X == v.lastRect.X+v.lastRect.W-1 &&
 			e.Y >= v.lastRect.Y && e.Y < v.lastRect.Y+v.lastRect.H {
 			row := e.Y - v.lastRect.Y
 			thumb := scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH)

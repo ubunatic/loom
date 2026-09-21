@@ -109,6 +109,14 @@ func (s *Session) Send(keys string) {
 	}
 }
 
+// SendRaw writes terminal input bytes without interpreting them.
+func (s *Session) SendRaw(data []byte) {
+	s.t.Helper()
+	if _, err := s.master.Write(data); err != nil {
+		s.t.Fatalf("send raw input: %v", err)
+	}
+}
+
 // Screen returns the current screen rows.
 func (s *Session) Screen() []string {
 	s.mu.Lock()

@@ -152,12 +152,29 @@ func TestSplitDividerMouseDragChangesRatio(t *testing.T) {
 	split := NewSplit(&focusProbe{}, &focusProbe{})
 	canvas := NewCanvas(21, 4)
 	split.Draw(canvas, canvas.Bounds())
-	if split.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 2}) {
+	if split.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 10, Y: 2}) {
 		t.Fatal("divider press requested quit")
 	}
-	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 5, Y: 2})
+	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 4, Y: 2})
 	if split.Ratio != 0.2 {
 		t.Fatalf("dragged ratio = %v, want .2", split.Ratio)
 	}
-	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 5, Y: 2})
+	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 4, Y: 2})
+}
+
+func TestSplitCapturesDragAndReleaseOutsideChild(t *testing.T) {
+	left, right := &focusProbe{}, &focusProbe{}
+	split := NewSplit(left, right)
+	canvas := NewCanvas(21, 4)
+	split.Draw(canvas, canvas.Bounds())
+	split.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 15, Y: 1})
+	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
+	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 3, Y: 9})
+	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
+	if len(left.mice) != 0 || len(right.mice) != 3 {
+		t.Fatalf("left=%d right=%d events, want 0 and 3 (press, drag, release)", len(left.mice), len(right.mice))
+	}
+	if got := right.mice[1]; got.X != -8 || got.Y != 9 {
+		t.Fatalf("captured drag = %+v, want child-relative X=-8 Y=9", got)
+	}
 }
