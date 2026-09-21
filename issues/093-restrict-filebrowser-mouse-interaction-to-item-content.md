@@ -1,6 +1,6 @@
 # 093 — Restrict filebrowser mouse interaction to item content
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M5), luna:low
 **Priority**: P1
 **Severity**: Major
 **Category**: Bug
