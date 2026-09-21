@@ -131,6 +131,55 @@ type treemapRect struct {
 	X, Y, W, H int
 }
 
+// TreemapRect is an integral cell-grid rectangle.
+type TreemapRect struct {
+	X, Y, W, H int
+}
+
+// TreemapCell is the pre-render geometry and metadata for one segment.
+type TreemapCell struct {
+	Rect    TreemapRect
+	Segment TreemapSegment
+	Label   string
+	Value   float64
+	Index   int
+}
+
+// TreemapLayout selects the partitioning strategy used by LayoutTreemap.
+type TreemapLayout int
+
+const (
+	TreemapLayoutSliceDice TreemapLayout = iota
+	TreemapLayoutSquarified
+)
+
+// LayoutTreemap returns positive-valued segments as deterministic, integral
+// cells tiled within w by h. Non-positive, NaN, and infinite values are
+// omitted.
+func LayoutTreemap(segments []TreemapSegment, w, h int, layout TreemapLayout) []TreemapCell {
+	if w <= 0 || h <= 0 {
+		return nil
+	}
+	values := make([]float64, len(segments))
+	for i, segment := range segments {
+		values[i] = segment.Value
+	}
+	var rects []treemapRect
+	if layout == TreemapLayoutSquarified {
+		rects = layoutTreemapSquarified(values, treemapRect{W: w, H: h})
+	} else {
+		rects = layoutTreemap(values, treemapRect{W: w, H: h})
+	}
+	cells := make([]TreemapCell, 0, len(segments))
+	for i, rect := range rects {
+		if rect.W <= 0 || rect.H <= 0 {
+			continue
+		}
+		cells = append(cells, TreemapCell{Rect: TreemapRect{rect.X, rect.Y, rect.W, rect.H}, Segment: segments[i], Label: segments[i].Name, Value: segments[i].Value, Index: i})
+	}
+	return cells
+}
+
 // RenderTreemap lays out segments as a 2D treemap: rectangular boxes tiling
 // a character grid within Width x Height, each box's area proportional to its
 // segment's value. Returns exactly Height rows, with bottom legend rows
@@ -962,6 +1011,183 @@ func layoutTreemap(values []float64, rect treemapRect) []treemapRect {
 	}
 	recurse(idx, rect)
 	return rects
+}
+
+func layoutTreemapSquarified(values []float64, rect treemapRect) []treemapRect {
+	rects := make([]treemapRect, len(values))
+	indexes := make([]int, 0, len(values))
+	for i, value := range values {
+		if isFinite(value) && value > 0 {
+			indexes = append(indexes, i)
+		}
+	}
+	sort.SliceStable(indexes, func(i, j int) bool { return values[indexes[i]] > values[indexes[j]] })
+	var place func([]int, treemapRect)
+	place = func(items []int, area treemapRect) {
+		if len(items) == 0 || area.W <= 0 || area.H <= 0 {
+			return
+		}
+		if len(items) == 1 {
+			rects[items[0]] = area
+			return
+		}
+		if area.W == 1 || area.H == 1 {
+			weights := make([]float64, len(items))
+			for i, index := range items {
+				weights[i] = values[index]
+			}
+			if area.W == 1 {
+				sizes := allocateCells(weights, area.H)
+				y := area.Y
+				for i, index := range items {
+					rects[index] = treemapRect{area.X, y, 1, sizes[i]}
+					y += sizes[i]
+				}
+			} else {
+				sizes := allocateCells(weights, area.W)
+				x := area.X
+				for i, index := range items {
+					rects[index] = treemapRect{x, area.Y, sizes[i], 1}
+					x += sizes[i]
+				}
+			}
+			return
+		}
+		remaining := append([]int(nil), items...)
+		row := []int{remaining[0]}
+		remaining = remaining[1:]
+		for len(remaining) > 0 && squarifiedBetter(row, remaining[0], values, area) {
+			row = append(row, remaining[0])
+			remaining = remaining[1:]
+		}
+		rowTotal := 0.0
+		for _, i := range row {
+			rowTotal += values[i]
+		}
+		allTotal := rowTotal
+		for _, i := range remaining {
+			allTotal += values[i]
+		}
+		if area.W >= area.H {
+			width := int(math.Round(float64(area.W) * rowTotal / allTotal))
+			if width < 1 {
+				width = 1
+			}
+			if width >= area.W {
+				width = area.W - 1
+			}
+			sizes := allocateCellsForValues(row, values, area.H, rowTotal)
+			y := area.Y
+			for n, i := range row {
+				rects[i] = treemapRect{area.X, y, width, sizes[n]}
+				y += sizes[n]
+			}
+			place(remaining, treemapRect{area.X + width, area.Y, area.W - width, area.H})
+		} else {
+			height := int(math.Round(float64(area.H) * rowTotal / allTotal))
+			if height < 1 {
+				height = 1
+			}
+			if height >= area.H {
+				height = area.H - 1
+			}
+			sizes := allocateCellsForValues(row, values, area.W, rowTotal)
+			x := area.X
+			for n, i := range row {
+				rects[i] = treemapRect{x, area.Y, sizes[n], height}
+				x += sizes[n]
+			}
+			place(remaining, treemapRect{area.X, area.Y + height, area.W, area.H - height})
+		}
+	}
+	place(indexes, rect)
+	for _, index := range indexes {
+		if rects[index].W == 0 || rects[index].H == 0 {
+			return layoutTreemap(values, rect)
+		}
+	}
+	return rects
+}
+
+func squarifiedBetter(row []int, next int, values []float64, area treemapRect) bool {
+	if len(row) == 0 {
+		return true
+	}
+	short := math.Min(float64(area.W), float64(area.H))
+	areaSize := float64(area.W * area.H)
+	rowSum := 0.0
+	for _, i := range row {
+		rowSum += values[i]
+	}
+	old := squarifiedWorst(rowSum, values, row, short, areaSize)
+	with := append(append([]int(nil), row...), next)
+	return squarifiedWorst(rowSum+values[next], values, with, short, areaSize) <= old
+}
+
+func squarifiedWorst(sum float64, values []float64, row []int, short, areaSize float64) float64 {
+	if sum <= 0 || short <= 0 {
+		return math.Inf(1)
+	}
+	maxValue, minValue := values[row[0]], values[row[0]]
+	for _, i := range row {
+		maxValue = math.Max(maxValue, values[i])
+		minValue = math.Min(minValue, values[i])
+	}
+	rowArea := areaSize * sum / (areaSize + sum)
+	return math.Max(short*short*maxValue/(rowArea*rowArea), rowArea*rowArea/(short*short*minValue))
+}
+
+func allocateCellsForValues(indexes []int, values []float64, total int, sum float64) []int {
+	weights := make([]float64, len(indexes))
+	for i, index := range indexes {
+		weights[i] = values[index]
+	}
+	return allocateCells(weights, total)
+}
+
+// CellStyle describes ANSI styling for a treemap cell.
+type CellStyle struct {
+	ForegroundANSI string
+	BackgroundANSI string
+}
+
+// ColorScale maps a value in a range to a cell style.
+type ColorScale func(value, min, max float64) CellStyle
+
+// LinearColorScale interpolates RGB foreground colors between from and to.
+// Inputs are ANSI 24-bit color strings in the form "R,G,B".
+func LinearColorScale(from, to string) ColorScale {
+	fr, fg, fb := parseRGB(from)
+	tr, tg, tb := parseRGB(to)
+	return func(value, min, max float64) CellStyle {
+		t := colorScalePosition(value, min, max)
+		return CellStyle{ForegroundANSI: fmt.Sprintf("38;2;%d;%d;%d", lerpByte(fr, tr, t), lerpByte(fg, tg, t), lerpByte(fb, tb, t))}
+	}
+}
+
+// HeatColorScale returns a blue-to-red 24-bit foreground heat scale.
+func HeatColorScale() ColorScale { return LinearColorScale("0,0,255", "255,0,0") }
+
+func colorScalePosition(value, min, max float64) float64 {
+	if math.IsNaN(value) || math.IsNaN(min) || math.IsNaN(max) || math.IsInf(value, 0) || math.IsInf(min, 0) || math.IsInf(max, 0) || min == max {
+		return 0.5
+	}
+	t := (value - min) / (max - min)
+	if t < 0 {
+		return 0
+	}
+	if t > 1 {
+		return 1
+	}
+	return t
+}
+func parseRGB(value string) (int, int, int) {
+	var r, g, b int
+	_, _ = fmt.Sscanf(value, "%d,%d,%d", &r, &g, &b)
+	return r, g, b
+}
+func lerpByte(a, b int, t float64) int {
+	return int(math.Round(float64(a) + (float64(b)-float64(a))*t))
 }
 
 // treemapLandscapeBias sets how much wider than tall (in character cells)

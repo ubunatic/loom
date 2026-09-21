@@ -125,6 +125,47 @@ func TestLayoutTreemapForcesWidthSplitWhenHeightIsOne(t *testing.T) {
 	}
 }
 
+func TestLayoutTreemapPublicModel(t *testing.T) {
+	cells := LayoutTreemap([]TreemapSegment{{Name: "a", Value: 2}, {Name: "b", Value: 1}, {Name: "zero", Value: 0}}, 9, 4, TreemapLayoutSliceDice)
+	if len(cells) != 2 || cells[0].Label != "a" || cells[1].Index != 1 {
+		t.Fatalf("unexpected cells: %+v", cells)
+	}
+	area := 0
+	for _, cell := range cells {
+		area += cell.Rect.W * cell.Rect.H
+	}
+	if area != 36 {
+		t.Fatalf("cell area = %d, want 36", area)
+	}
+}
+
+func TestLayoutTreemapSquarifiedTiles(t *testing.T) {
+	cells := LayoutTreemap([]TreemapSegment{{Value: 10}, {Value: 6}, {Value: 3}, {Value: 1}}, 20, 10, TreemapLayoutSquarified)
+	if len(cells) != 4 {
+		t.Fatalf("got %d cells, want 4", len(cells))
+	}
+	area := 0
+	for _, cell := range cells {
+		area += cell.Rect.W * cell.Rect.H
+	}
+	if area != 200 {
+		t.Fatalf("cell area = %d, want 200", area)
+	}
+}
+
+func TestColorScalesClampAndHandleSpecialValues(t *testing.T) {
+	scale := HeatColorScale()
+	if got := scale(-1, 0, 10).ForegroundANSI; got != "38;2;0;0;255" {
+		t.Errorf("low color = %q", got)
+	}
+	if got := scale(11, 0, 10).ForegroundANSI; got != "38;2;255;0;0" {
+		t.Errorf("high color = %q", got)
+	}
+	if got := scale(math.NaN(), 1, 1).ForegroundANSI; got != "38;2;128;0;128" {
+		t.Errorf("special color = %q", got)
+	}
+}
+
 func TestRenderTreemapDimensions(t *testing.T) {
 	segments := []TreemapSegment{{Name: "a", Value: 3}, {Name: "b", Value: 1}, {Name: "c", Value: 6}}
 	rows := RenderTreemap(segments, TreemapOptions{Width: 20, Height: 8})
