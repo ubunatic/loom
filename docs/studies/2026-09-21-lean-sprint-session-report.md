@@ -21,14 +21,14 @@ for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done
 | 3 | 062 NewWidget split/tabs | closed (M1-M4) | haiku | `docs/progress/062/` |
 | 4 | 051 Frame fills height | closed (M1-M3) | haiku | `docs/progress/051/` |
 | 5 | 037 DrawBorder / DrawBox | closed (M1-M4) | haiku, luna:low fixed evidence | `docs/progress/037/` |
-| 6 | 096 textrender | M4 rework running | haiku, then luna:low | `docs/progress/096/` |
-| 7 | 081 TreemapCell / ColorScale | not started | | |
+| 6 | 096 textrender | closed (M1-M5) | haiku M1-M3, luna:low M4-M5 | `docs/progress/096/` |
+| 7 | 081 TreemapCell / ColorScale | running (plan approved) | luna:low | `docs/progress/081/` |
 | 8 | 092 scrollbar drag | not started | | |
 | 9 | 093 filebrowser mouse hit-test | not started | | |
 | 10 | 060 Ticker / Invalidate | not started | | |
 | 11 | 088 key capture coverage | not started | | |
 
-Done: 6 of 12 counting 097 (5 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
+Done: 7 of 12 counting 097 (6 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
 
 ## How the Sprints Run
 
@@ -47,7 +47,8 @@ Done: 6 of 12 counting 097 (5 of the 11 goal tickets). Second wave 063, 064, 065
   evidence runs that dirtied other tickets' frames (037).
 - Escalations: 037 popup evidence went to `luna:low` after two failed Haiku tries (fixed in one run);
   096 views went to `luna:low` after Haiku produced text lists instead of boxes, buttons and clipping.
-- Open library question (from 096): `loom.StringWidth` may report ZWJ sequences and flags wider than a terminal
+- 096 rework by luna:low: the luna commit failed on index.lock both times, the host committed on its behalf.
+- Open library question (from 096, confirmed as `knownDivergences` in the example): `loom.StringWidth` may report ZWJ sequences and flags wider than a terminal
   shows (family 6, flag 4). The 096 rework records each divergence in `knownDivergences`; the host decides
   about a separate ticket after the report.
 - 097 known gaps: `--record` writes `ansiviewer.ansi` in the cwd by default; the ansiviewer keeps a local SGR
