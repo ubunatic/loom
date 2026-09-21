@@ -1,6 +1,6 @@
 # 060 — Periodic redraw without pane ownership: Ticker interface and Pane.Invalidate
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M4); luna:low M1-M3, sol:low M4
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Feature
