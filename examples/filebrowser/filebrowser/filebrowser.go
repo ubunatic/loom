@@ -4,6 +4,7 @@ package filebrowser
 import (
 	"flag"
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 
@@ -66,5 +67,7 @@ func configurePane(pane *loom.Pane) {
 	pane.Resizeable = true
 	pane.MaxCols = 0               // Use the terminal width; Loom's default cap is 50 columns.
 	pane.DisableDefaultQuit = true // q remains available as a file-list filter.
-	pane.Background = loom.NewAstraBackground()
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		pane.Background = loom.NewAstraBackground()
+	}
 }

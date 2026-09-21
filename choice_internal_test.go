@@ -34,6 +34,31 @@ func TestChoiceMouseHitRegion(t *testing.T) {
 	}
 }
 
+func TestChoiceRowTextPinsDisplayWidthTruncation(t *testing.T) {
+	c := NewChoice([]Item{{Name: "界界"}})
+	c.sel = 0
+	got := c.choiceRowText(0, 5)
+	if got != "▶ 界…" {
+		t.Fatalf("choiceRowText = %q, want wide-rune-safe ellipsis truncation", got)
+	}
+	if StringWidth(got) != 5 {
+		t.Fatalf("choiceRowText width = %d, want 5", StringWidth(got))
+	}
+}
+
+func TestChoiceDrawAndMouseUseSameRowText(t *testing.T) {
+	c := NewChoice([]Item{{Name: "alpha", Desc: "description"}})
+	c.MouseTextOnly = true
+	c.Draw(NewCanvas(20, 3), Rect{W: 20, H: 3})
+	if got := c.choiceRowText(0, 20); got != "▶ alpha  description" {
+		t.Fatalf("shared row text = %q", got)
+	}
+	start, end, ok := choiceMouseHitRegion(c.choiceRowText(0, 20), 20)
+	if !ok || start != 0 || end != 20 {
+		t.Fatalf("shared hit region = (%d, %d, %v)", start, end, ok)
+	}
+}
+
 // makeChoice builds a Choice with n named items (item-00, item-01, …).
 func makeChoice(n int) *Choice {
 	items := make([]Item, n)

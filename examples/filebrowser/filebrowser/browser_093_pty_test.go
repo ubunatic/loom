@@ -26,6 +26,9 @@ func TestFilebrowser093PTYClick(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, bin, "--theme", "plain", dir)
 	s.WaitFor("alpha.txt", 5*time.Second)
 	screen := s.Screen()
+	if strings.Contains(strings.Join(screen, "\n"), "Name: alpha.txt") {
+		t.Fatal("alpha.txt was selected before the text click")
+	}
 	row, col := findPTYText(t, screen, "alpha.txt")
 	// SGR mouse coordinates are 1-based; the screen strings are cell-oriented.
 	s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM", col+1, row+1)))

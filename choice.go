@@ -211,26 +211,11 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 		cv.PaintSurface(Rect{r.X, y, r.W, 1}, c.Style.Normal)
 		fi := c.viewOffset + row
 		if fi >= 0 && fi < len(c.filtered) {
-			item := c.filtered[fi]
 			style := c.Style.Normal
-			marker := "  "
 			if fi == c.sel {
 				style = c.Style.Selected
-				marker = "▶ "
 			}
-			if c.MultiSelect {
-				// Caret marker + checkbox: "▶ [✓] name" / "  [ ] name".
-				if c.checked[item.Name] {
-					marker += "[✓] "
-				} else {
-					marker += "[ ] "
-				}
-			}
-			line := marker + item.Name
-			if item.Desc != "" {
-				line += "  " + item.Desc
-			}
-			line = measure.Truncate(line, contentW, "…")
+			line := c.choiceRowText(fi, contentW)
 			cv.Write(r.X, y, line, style)
 		}
 		if scrollable {
@@ -449,23 +434,11 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		return false
 	}
 	if c.MouseTextOnly && (e.Action == MousePress || e.Action == MouseHover || e.Action == MouseDrag) {
-		item := c.filtered[fi]
-		line := item.Name
-		if c.MultiSelect {
-			marker := "[ ] "
-			if c.checked[item.Name] {
-				marker = "[x] "
-			}
-			line = marker + line
-		}
-		if item.Desc != "" {
-			line += "  " + item.Desc
-		}
 		contentW := c.lastRect.W
 		if len(c.filtered) > c.itemRows {
 			contentW--
 		}
-		_, end, ok := choiceMouseHitRegion(measure.Truncate(line, contentW, "…"), contentW)
+		_, end, ok := choiceMouseHitRegion(c.choiceRowText(fi, contentW), contentW)
 		if !ok || e.X-c.lastRect.X < 0 || e.X-c.lastRect.X >= end {
 			return false
 		}
@@ -492,6 +465,29 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		c.sel = fi
 	}
 	return false
+}
+
+func (c *Choice) choiceRowText(fi, width int) string {
+	if fi < 0 || fi >= len(c.filtered) {
+		return ""
+	}
+	item := c.filtered[fi]
+	marker := "  "
+	if fi == c.sel {
+		marker = "▶ "
+	}
+	if c.MultiSelect {
+		if c.checked[item.Name] {
+			marker += "[✓] "
+		} else {
+			marker += "[ ] "
+		}
+	}
+	line := marker + item.Name
+	if item.Desc != "" {
+		line += "  " + item.Desc
+	}
+	return measure.Truncate(line, width, "…")
 }
 
 // choiceMouseHitRegion returns the inclusive content span in terminal cells.

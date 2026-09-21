@@ -1,0 +1,25 @@
+M2 hit cells: colored cells are interactive
+Browse /tmp/TestFilebrowser093Evidence4160861444/001                            [0m
+┌ ▶ Files ──────────────────────────┐ ┌ Metadata ──────────────────────────────┐[0m
+│[0m[1m[39m[48;5;22m▶ ..  parent directory[0m[39m[49m             │ │Name: TestFilebrowser093Evidence41608614│[0m
+│  [0m[39m[48;5;22ma-very-long-file-name.txt[0m[39m[49m        │ │Path: /tmp/TestFilebrowser093Evidence416│[0m
+│  [0m[39m[48;5;22malpha.txt[0m[39m[49m                        │ │Type: directory                         │[0m
+│  [0m[39m[48;5;22mbeta.txt[0m[39m[49m                         │ │Size: 60 bytes                          │[0m
+│                                   │ │Mode: drwx------                        │[0m
+│                                   │ │Modified: 2026-09-21T03:41:46+02:00     │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│[0m[39m[48;5;22mfilter> [0m[2m[39m[48;5;22mtype to filter[0m[39m[49m             │ │                                        │[0m
+└───────────────────────────────────┘ └────────────────────────────────────────┘[0m
+Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:plain  •  F10/^Q quit        [0m

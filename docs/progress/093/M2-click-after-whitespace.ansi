@@ -1,0 +1,25 @@
+M2 after trailing-whitespace click
+Browse /tmp/TestFilebrowser093Evidence4160861444/001                            [0m
+┌ ▶ Files ──────────────────────────┐ ┌ Metadata ──────────────────────────────┐[0m
+│  ..  parent directory             │ │Name: a-very-long-file-name.txt         │[0m
+│[0m[1m[39m[49m▶ a-very-long-file-name.txt[0m[39m[49m        │ │Path: /tmp/TestFilebrowser093Evidence416│[0m
+│  alpha.txt                        │ │Type: file                              │[0m
+│  beta.txt                         │ │Size: 7 bytes                           │[0m
+│                                   │ │Mode: -rw-r--r--                        │[0m
+│                                   │ │Modified: 2026-09-21T03:41:46+02:00     │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│filter> [0m[2m[39m[49mtype to filter[0m[39m[49m             │ │                                        │[0m
+└───────────────────────────────────┘ └────────────────────────────────────────┘[0m
+Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:plain  •  F10/^Q quit        [0m
