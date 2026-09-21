@@ -159,3 +159,25 @@ frames ANSI-stripped before finishing; labels on their own rows. gofmt. No dead 
 - Run `go test -race` for the root package tests you added and `go test ./...` (root `/dev/tty` failures are pre-existing).
 - Evidence: `M2-pane-ticks.ansi` (final frame of a real `Pane` run headless or in the PTY helper showing the counter
   advanced by ticks) and `M2-invalidate.ansi` (frame after an `Invalidate` from another goroutine).
+
+### M1-M2 Review (host)
+Code committed by the host (index.lock). Build, vet, `go test .` and `go test -race` on the new tests pass. Accepted:
+`Ticker`, forwarding, per-widget cadence map, lazily initialized coalescing `Invalidate`. Defects:
+- Timer starvation: `Pane.run` stops and resets the tick timer on EVERY loop iteration, so any event storm (mouse
+  motion, `Invalidate`, key repeat) restarts the countdown and ticks never fire. Reset only when the shortest interval
+  changed, and re-arm after a fire; keep the timer running across unrelated events.
+- The acceptance list is only partly covered (4 tests): missing are Stack/Grid/Frame forwarding with mixed intervals,
+  a real `Pane` run that ticks (integration), the idle-redraw guard (non-Ticker tree: no timer, no repaint),
+  Invalidate under 100 goroutines before, during and after the loop with a goroutine-leak check, `RunWatch` unchanged,
+  and the event-storm test for the starvation bug above (write it first, watch it fail, then fix).
+- Missing: all evidence frames.
+
+### M3 - Pre-Work / Required Refinements
+1. Failing test first for the starvation bug (a Ticker with a 20 ms interval, an event source hammering `Invalidate`
+   or input every 1 ms for 200 ms: at least 5 ticks must happen), then fix.
+2. Add every missing test from the list above, under `-race`.
+3. Evidence (gated on `LOOM_EVIDENCE=1`, repo-root `docs/progress/060/`; a counter widget inside Tabs):
+   `M1-tick-0.ansi`, `M1-tick-1.ansi`, `M1-tick-2.ansi` (rendered after 0/1/2 driven ticks with the fake clock),
+   `M1-tabs-switched.ansi`, `M2-pane-ticks.ansi` (final frame of a real `Pane` headless run after real ticks),
+   `M2-invalidate.ansi` (frame after an `Invalidate` from another goroutine). Labels on their own rows; view ANSI-stripped.
+4. Commit '(issue 060 M3)'; if git is blocked say so and leave files staged.
