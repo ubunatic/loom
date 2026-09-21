@@ -29,6 +29,7 @@ type View struct {
 	focused    bool
 	lastH      int // height from last Draw; gates scroll in HandleKey
 	lastRect   Rect
+	drag       scrollbarDrag
 }
 
 // NewView creates a View from a slice of pre-formatted lines.
@@ -40,7 +41,13 @@ func NewView(lines []string) *View {
 func (v *View) Focused() bool { return v.focused }
 
 // SetFocus sets whether the view currently has input focus.
-func (v *View) SetFocus(focused bool) { v.focused = focused }
+func (v *View) SetFocus(focused bool) {
+	if !focused && v.drag.active {
+		v.Scroll = v.drag.start
+		v.drag.cancel()
+	}
+	v.focused = focused
+}
 
 // Draw renders visible lines into r. When scrollable, the rightmost column is
 // reserved for the scroll indicator and content is truncated one column shorter.
@@ -61,9 +68,7 @@ func (v *View) Draw(c *Canvas, r Rect) {
 	// Pre-compute indicator row (proportional to scroll position).
 	indicatorRow := 0
 	if scrollable && total > r.H {
-		maxScroll := total - r.H
-		ratio := float64(v.Scroll) / float64(maxScroll)
-		indicatorRow = int(ratio * float64(r.H-1))
+		indicatorRow = scrollbarThumbStart(r.H, scrollbarThumbLength(r.H, total, r.H), v.Scroll, total-r.H)
 	}
 
 	contentW := r.W
@@ -88,7 +93,8 @@ func (v *View) Draw(c *Canvas, r Rect) {
 			c.Write(r.X, y, plain, lineStyle)
 		}
 		if scrollable {
-			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row == indicatorRow))
+			thumb := scrollbarThumbLength(r.H, total, r.H)
+			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
 		}
 	}
 }
@@ -135,6 +141,10 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 	case "end", "G":
 		v.Scroll = maxScroll
 	case "esc", "ctrl-c", "q":
+		if v.drag.active {
+			v.Scroll = v.drag.start
+			v.drag.cancel()
+		}
 		return true
 	}
 	return false
@@ -159,7 +169,22 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 		if e.Button == MouseLeft && maxScroll > 0 && v.lastRect.W > 0 &&
 			e.X == v.lastRect.X+v.lastRect.W &&
 			e.Y >= v.lastRect.Y && e.Y < v.lastRect.Y+v.lastRect.H {
-			v.Scroll = scrollTrackPosition(e.Y-v.lastRect.Y, v.lastRect.H, maxScroll)
+			row := e.Y - v.lastRect.Y
+			thumb := scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH)
+			start := scrollbarThumbStart(v.lastRect.H, thumb, v.Scroll, maxScroll)
+			if row >= start && row < start+thumb {
+				v.drag.press(row, start, v.Scroll)
+			} else {
+				v.Scroll = scrollTrackPosition(row, v.lastRect.H, maxScroll)
+			}
+		}
+	case MouseDrag:
+		if v.drag.active {
+			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y-v.lastRect.Y, v.drag.grab, maxScroll)
+		}
+	case MouseRelease:
+		if v.drag.active {
+			v.drag.cancel()
 		}
 	}
 	return false

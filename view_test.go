@@ -115,3 +115,60 @@ func TestViewFocusable(t *testing.T) {
 		t.Fatal("expected not focused after SetFocus(false)")
 	}
 }
+
+func TestScrollbarMapping(t *testing.T) {
+	for _, tc := range []struct {
+		name                             string
+		track, content, viewport, offset int
+		wantThumb, wantStart             int
+	}{
+		{"normal", 10, 100, 20, 40, 2, 4},
+		{"minimum", 3, 1000, 1, 0, 1, 0},
+		{"equal", 8, 10, 10, 0, 0, 0},
+		{"short-content", 8, 4, 10, 0, 0, 0},
+		{"length-one", 1, 2, 1, 1, 1, 0},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			thumb := scrollbarThumbLength(tc.track, tc.content, tc.viewport)
+			if thumb != tc.wantThumb {
+				t.Fatalf("thumb=%d, want %d", thumb, tc.wantThumb)
+			}
+			if got := scrollbarThumbStart(tc.track, thumb, tc.offset, tc.content-tc.viewport); got != tc.wantStart {
+				t.Fatalf("start=%d, want %d", got, tc.wantStart)
+			}
+		})
+	}
+}
+
+func TestScrollbarDragSequenceAndHorizontalMapping(t *testing.T) {
+	var drag scrollbarDrag
+	drag.press(2, 1, 3)
+	if got := scrollbarOffset(10, 3, 8, drag.grab, 7); got != 7 {
+		t.Fatalf("drag offset=%d, want 7", got)
+	}
+	drag.cancel()
+	if drag.active {
+		t.Fatal("cancel left drag active")
+	}
+	if got := scrollbarOffset(12, 2, 99, 0, 10); got != 10 {
+		t.Fatalf("clamped offset=%d, want 10", got)
+	}
+	// Horizontal scrollbars use the same integer mapping with an independent axis.
+	if got := scrollbarThumbStart(20, scrollbarThumbLength(20, 80, 10), 35, 70); got != 9 {
+		t.Fatalf("horizontal thumb start=%d, want 9", got)
+	}
+}
+
+func TestViewScrollbarDrag(t *testing.T) {
+	v := NewView(make([]string, 100))
+	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 12, Y: 1})
+	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 12, Y: 9})
+	if v.Scroll <= 0 {
+		t.Fatal("drag did not scroll")
+	}
+	v.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 12, Y: 9})
+	if v.drag.active {
+		t.Fatal("release left drag active")
+	}
+}

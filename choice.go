@@ -53,6 +53,7 @@ type Choice struct {
 	itemRows   int // item rows from the last Draw; excludes the prompt
 	drawn      bool
 	lastRect   Rect
+	drag       scrollbarDrag
 	aborted    bool
 	done       bool
 	filtered   []Item
@@ -186,8 +187,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 		total := len(c.filtered)
 		maxOffset := total - itemRows
 		if maxOffset > 0 {
-			ratio := float64(c.viewOffset) / float64(maxOffset)
-			indicatorRow = int(ratio * float64(itemRows-1))
+			indicatorRow = scrollbarThumbStart(itemRows, scrollbarThumbLength(itemRows, total, itemRows), c.viewOffset, maxOffset)
 		}
 	}
 
@@ -231,7 +231,8 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			cv.Write(r.X, y, line, style)
 		}
 		if scrollable {
-			cv.Set(r.X+r.W-1, y, scrollbarCell(c.Style.Scrollbar, row == indicatorRow))
+			thumb := scrollbarThumbLength(itemRows, len(c.filtered), itemRows)
+			cv.Set(r.X+r.W-1, y, scrollbarCell(c.Style.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
 		}
 	}
 
@@ -286,6 +287,10 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 // HandleKey drives navigation and filtering.
 // ':' or '/' activates command mode; all other keys behave normally when inactive.
 func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
+	if e.Is("esc") && c.drag.active {
+		c.viewOffset = c.drag.start
+		c.drag.cancel()
+	}
 	if c.cmd.handleHelp(e) {
 		return false
 	}
@@ -389,10 +394,28 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			row--
 		}
 		if row >= 0 && row < c.itemRows {
-			c.viewOffset = scrollTrackPosition(row, c.itemRows, len(c.filtered)-c.itemRows)
+			maxOffset := len(c.filtered) - c.itemRows
+			thumb := scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows)
+			start := scrollbarThumbStart(c.itemRows, thumb, c.viewOffset, maxOffset)
+			if row >= start && row < start+thumb {
+				c.drag.press(row, start, c.viewOffset)
+			} else {
+				c.viewOffset = scrollTrackPosition(row, c.itemRows, maxOffset)
+			}
 			c.sel = max(c.viewOffset, min(c.sel, c.viewOffset+c.itemRows-1))
 		}
 		return false
+	}
+	if c.drag.active {
+		switch e.Action {
+		case MouseDrag:
+			c.viewOffset = scrollbarOffset(c.itemRows, scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows), e.Y-c.lastRect.Y, c.drag.grab, len(c.filtered)-c.itemRows)
+			c.sel = max(c.viewOffset, min(c.sel, c.viewOffset+c.itemRows-1))
+			return false
+		case MouseRelease:
+			c.drag.cancel()
+			return false
+		}
 	}
 	switch e.Action {
 	case MouseScrollUp:
@@ -460,6 +483,10 @@ func (c *Choice) Focused() bool {
 
 // SetFocus sets the focus state of this widget.
 func (c *Choice) SetFocus(f bool) {
+	if !f && c.drag.active {
+		c.viewOffset = c.drag.start
+		c.drag.cancel()
+	}
 	c.focused = f
 }
 
