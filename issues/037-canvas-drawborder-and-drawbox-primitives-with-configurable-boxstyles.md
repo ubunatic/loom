@@ -1,6 +1,6 @@
 # 037 — Canvas DrawBorder and DrawBox Primitives with Configurable BoxStyles
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M4); haiku dev, luna:low fixed evidence
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
