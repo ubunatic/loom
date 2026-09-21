@@ -1,6 +1,6 @@
 # 061 — Themeable: host-provided theme propagation through composite widgets
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M3), haiku dev
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
