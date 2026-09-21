@@ -447,6 +447,56 @@ func canvasToString(c *loom.Canvas) string {
 	return sb.String()
 }
 
+func TestGenerateM2FilebrowserFillHeightEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a temp directory with test files
+	dir := t.TempDir()
+	for i := 1; i <= 5; i++ {
+		name := fmt.Sprintf("file%d.txt", i)
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(dir, "subdir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create browser with FillHeight and render
+	const cols, rows = 80, 24
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatalf("creating browser: %v", err)
+	}
+
+	// Render the browser
+	frames := loom.Render(b, cols, rows)
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	// Write evidence file for issue 051
+	repoRoot := findFilebrowserRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "051")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-filebrowser-fill.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 filebrowser fill evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
 func TestGenerateM2FilebrowserEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
@@ -527,7 +577,7 @@ func (w *canvasWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *canvasWidget) HandleKey(e loom.KeyEvent) bool   { return false }
+func (w *canvasWidget) HandleKey(e loom.KeyEvent) bool     { return false }
 func (w *canvasWidget) HandleMouse(e loom.MouseEvent) bool { return false }
 
 // findFilebrowserRepoRoot walks up from the filebrowser package directory to find the repo root

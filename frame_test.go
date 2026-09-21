@@ -315,6 +315,63 @@ func TestFrameLayoutFillHeightAtVariousHeights(t *testing.T) {
 		})
 	}
 }
+
+func TestFrameLayoutStackedWidthBehavior(t *testing.T) {
+	// Test that stacked layout properly handles width when boxes are dynamic
+	f := Frame{
+		Gap:        1,
+		Breakpoint: 40,
+		Boxes: []Box{
+			{ID: "box1", Dynamic: true, MinWidth: 10, Height: 4},
+			{ID: "box2", Dynamic: true, MinWidth: 10, Height: 4},
+		},
+	}
+
+	// At 30 width (< 40 breakpoint), should use stacked layout
+	rects := f.Layout(30, 20)
+	if len(rects) != 2 {
+		t.Fatalf("expected 2 rects, got %d", len(rects))
+	}
+
+	// In stacked layout, dynamic boxes should span full width
+	if got := rects[0].W; got != 30 {
+		t.Errorf("stacked box 1 width = %d, expected 30 (full width)", got)
+	}
+	if got := rects[1].W; got != 30 {
+		t.Errorf("stacked box 2 width = %d, expected 30 (full width)", got)
+	}
+}
+
+func TestFrameLayoutHiddenBoxesNotInFill(t *testing.T) {
+	// Hidden boxes should be excluded from fill computation
+	f := Frame{
+		Gap: 1,
+		Boxes: []Box{
+			{ID: "visible", Dynamic: true, FillHeight: true, MinWidth: 10, Height: 4},
+			{ID: "hidden", Dynamic: true, FillHeight: true, MinWidth: 10, Height: 4, Hidden: true},
+			{ID: "visible2", Dynamic: true, FillHeight: false, MinWidth: 10, Height: 6},
+		},
+	}
+
+	rects := f.Layout(50, 20)
+	if len(rects) != 3 {
+		t.Fatalf("expected 3 rects, got %d", len(rects))
+	}
+
+	// Hidden box should not have a rectangle allocated
+	if rects[1].W > 0 || rects[1].H > 0 {
+		t.Errorf("hidden box should have zero rect, got %+v", rects[1])
+	}
+
+	// Visible boxes should still be laid out
+	if rects[0].H == 0 {
+		t.Errorf("visible box 1 should have height")
+	}
+	if rects[2].H == 0 {
+		t.Errorf("visible box 2 should have height")
+	}
+}
+
 func TestFrameTinyBounds(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {
@@ -389,6 +446,49 @@ func TestShellValidation(t *testing.T) {
 	}
 }
 
+func TestFrameContentHeightWithFillHeight(t *testing.T) {
+	// ContentHeight should treat a filling box as its preferred Height (or 1 if Height <= 0)
+	f := Frame{
+		Boxes: []Box{
+			{ID: "fill", FillHeight: true, Height: 6},
+			{ID: "fixed", FillHeight: false, Height: 4},
+		},
+	}
+
+	// ContentHeight includes 2 chrome rows and the tallest preferred height
+	// Filling box has Height=6, fixed has Height=4
+	// So ContentHeight should be 6 + 2 = 8
+	expectedHeight := 8
+	if got := f.ContentHeight(); got != expectedHeight {
+		t.Errorf("ContentHeight with FillHeight = %d, expected %d", got, expectedHeight)
+	}
+}
+
+func TestFrameHeightForWidthWithFillHeight(t *testing.T) {
+	// HeightForWidth should use the same logic as ContentHeight for filling boxes
+	f := Frame{
+		Breakpoint: 40,
+		Gap:        1,
+		Boxes: []Box{
+			{ID: "fill", FillHeight: true, Height: 6},
+			{ID: "fixed", FillHeight: false, Height: 4},
+		},
+	}
+
+	// With wide width (>= breakpoint), uses ContentHeight
+	wideH := f.HeightForWidth(50)
+	if wideH != 8 {
+		t.Errorf("HeightForWidth(50) with breakpoint=40 = %d, expected 8", wideH)
+	}
+
+	// With narrow width (< breakpoint), uses stacked height calculation
+	// In stacked: 2 chrome + (6 gap 4) = 2 + 6 + 1 + 4 = 13
+	narrowH := f.HeightForWidth(30)
+	if narrowH != 13 {
+		t.Errorf("HeightForWidth(30) with breakpoint=40 = %d, expected 13", narrowH)
+	}
+}
+
 func TestGenerateM1FillHeightEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
@@ -432,6 +532,126 @@ func TestGenerateM1FillHeightEvidence(t *testing.T) {
 			t.Logf("M1 evidence saved to %s (%d bytes)", outPath, len(buf.String()))
 		})
 	}
+}
+
+func TestGenerateM2StackedEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a stacked layout test frame
+	source := `app:
+  height: 20
+  max_width: 60
+view:
+  name: main
+  frame:
+    title: Stacked with FillHeight
+    status: Two filling boxes stacked at 60x20
+    breakpoint: 40
+    boxes:
+      - id: top
+        title: Top Box
+        width: 58
+        height: 4
+        fill_height: true
+        padding: 1
+      - id: bottom
+        title: Bottom Box
+        width: 58
+        height: 4
+        fill_height: true
+        padding: 1
+`
+
+	w, _, err := BuildWidget(strings.NewReader(source))
+	if err != nil {
+		t.Fatalf("BuildWidget failed: %v", err)
+	}
+
+	// Render at a narrow width to trigger stacked layout
+	frames := Render(w, 30, 20)
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "051")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-stacked.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+	t.Logf("M2 stacked evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
+func TestGenerateM2BreakpointEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a breakpoint test frame
+	source := `app:
+  height: 20
+  max_width: 60
+view:
+  name: main
+  frame:
+    title: Breakpoint Transition
+    status: Same frame at 70w (horizontal) vs 30w (stacked)
+    breakpoint: 50
+    boxes:
+      - id: left
+        title: Fill Box 1
+        width: 30
+        height: 4
+        fill_height: true
+        min_width: 15
+        padding: 1
+      - id: right
+        title: Fill Box 2
+        width: 30
+        height: 4
+        fill_height: true
+        min_width: 15
+        padding: 1
+`
+
+	w, _, err := BuildWidget(strings.NewReader(source))
+	if err != nil {
+		t.Fatalf("BuildWidget failed: %v", err)
+	}
+
+	// Render at width that exceeds breakpoint (horizontal layout)
+	frames := Render(w, 70, 20)
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "051")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-breakpoint.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+	t.Logf("M2 breakpoint evidence saved to %s (%d bytes)", outPath, len(buf.String()))
 }
 
 // findRepoRoot walks up from the current directory to find the repo root (where go.mod is)
