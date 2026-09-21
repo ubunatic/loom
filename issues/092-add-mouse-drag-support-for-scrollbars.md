@@ -137,3 +137,18 @@ where it lives; if the split example is the wrong vehicle (its divider owns drag
 the ansiviewer preview or the filebrowser list and say why. Final: the PTY test is green, `M3-pty-drag.ansi`
 written from the final screen (ANSI-stripped check), `go vet ./...` and touched packages green, and every
 bug found is listed in your report. Commit '(issue 092 M5)'; if git is blocked say so and leave files staged.
+
+### M5 Review (host)
+`sol:low` found two real bugs (uncommitted in the working tree): `Split` dropped drag/release events outside
+the child bounds (routing layer, capture added in `split.go`), and `View` scrollbar hit-testing used inconsistent
+edge coordinates (`view.go`). Decode layer is correct. The split PTY test is STILL RED and no evidence frame exists.
+Escalation ladder: next is native Sonnet.
+
+### M6 - Finish (native Sonnet)
+Start from the working tree as it is (review the `split.go` and `view.go` changes, keep what is right, each with a
+regression test in its layer). Find why the split example's View scrollbar still does not move in the real PTY:
+compare the coordinates of the thumb you locate on the PTY screen with the View's own hit-test rect (pane origin,
+frame border, title row, 1-based SGR vs 0-based cells), and check for a second consumer of the drag (split divider
+hit area, focus handling: does a View need focus before it handles a press?). If the split example is the wrong
+vehicle, use ansiviewer or the filebrowser list. Done when: PTY test green, `M3-pty-drag.ansi` written from the final
+screen, go vet and all touched packages green, commit '(issue 092 M6)' with only your files. Report every bug.
