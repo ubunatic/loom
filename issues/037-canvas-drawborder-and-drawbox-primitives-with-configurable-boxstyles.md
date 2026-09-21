@@ -107,3 +107,15 @@ the spec. Defects:
 2. Add a test that `Popup.Draw` output equals a direct `Canvas.DrawBox(..., BoxBorderStyleSharp, ...)`
    for the same rect, title and style (cell by cell, including a truncated CJK title).
 3. Commit '(issue 037 M3)', stage only your files, `git status` clean afterwards.
+
+### M3 Review (host)
+Delivered 30937f7. The equivalence test is accepted. `M2-popup.ansi` is still not clean: popup 'OK'
+overlaps a caption line and another box, and 'Popup 1 (short)' has no visible box. Second failed try
+at this frame, so the step moves to a stronger developer (escalation ladder).
+
+### M4 - Evidence Fix Only
+Rewrite the M2 popup evidence test so the frame is built from a fixed grid: three popups in three
+separate columns of one row (each at least 3 rows apart from any caption text, no overlap of any
+cell), captions on their own row above each popup. Assert in the test that no two popup rects
+intersect and no caption cell is inside a popup rect. Regenerate `docs/progress/037/M2-popup.ansi`
+by running only that test with `LOOM_EVIDENCE=1`. Commit '(issue 037 M4)', stage only your files.
