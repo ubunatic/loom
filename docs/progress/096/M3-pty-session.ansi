@@ -1,0 +1,24 @@
+ Borders  Buttons  Clipping  Scroll
+──────────────────────────────────────────────────
+  ASCII  "Hello" (width: 5)
+▶ Accented Latin  "Café" (width: 4)
+  German umlauts (precomposed)  "Müller" (width: 6
+  German umlauts (decomposed)  "Müller" (width: 6
+  CJK  "中文" (width: 4)
+  Combining marks  "e̊" (width: 1)
+  Symbols  "♠♣♥♦" (width: 4)
+  Emoji  "😀" (width: 2)
+  ZWJ sequence  "👨\u200d👩\u200d👧" (width: 6)
+  Flag  "🇩🇪" (width: 4)
+  Mixed line  "Test中文♠😀" (width: 11)
+
+
+
+
+
+
+
+
+>
+ ←/→: cycle tabs  •  q: quit
+

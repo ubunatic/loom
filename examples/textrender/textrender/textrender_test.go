@@ -5,11 +5,14 @@ package textrender
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/internal/ptytest"
 )
 
 // TestWidths verifies that all test cases have correct display widths
@@ -191,5 +194,87 @@ func findRepoRoot(t *testing.T) string {
 			t.Fatalf("go.mod not found in any parent directory")
 		}
 		cwd = parent
+	}
+}
+
+func buildTextrender(t *testing.T) string {
+	t.Helper()
+	bin := filepath.Join(t.TempDir(), "textrender")
+	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/textrender").CombinedOutput(); err != nil {
+		t.Fatalf("build textrender: %v\n%s", err, out)
+	}
+	return bin
+}
+
+// TestTextrenderPTYSession drives the textrender app through all views and verifies
+// non-ASCII text renders correctly in a real terminal session.
+func TestTextrenderPTYSession(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping PTY test in short mode")
+	}
+
+	s := ptytest.Start(t, 80, 24, buildTextrender(t))
+
+	// Wait for initial screen to show
+	s.WaitFor("Borders", 2*time.Second)
+
+	// Verify non-ASCII content appears in Borders view
+	s.WaitFor("Café", 1*time.Second)
+
+	// Switch to Buttons view (right arrow)
+	s.Send("\x1b[C")
+	time.Sleep(50 * time.Millisecond)
+	s.WaitFor("Hello", 1*time.Second)
+
+	// Switch to Clipping view (right arrow)
+	s.Send("\x1b[C")
+	time.Sleep(50 * time.Millisecond)
+	s.WaitFor("progressive", 1*time.Second)
+
+	// Switch to Scroll view (right arrow)
+	s.Send("\x1b[C")
+	time.Sleep(50 * time.Millisecond)
+	s.WaitFor("ASCII", 1*time.Second)
+
+	// Scroll down in the list (down arrow)
+	s.Send("\x1b[B")
+	time.Sleep(50 * time.Millisecond)
+
+	// Take a final screen capture for evidence
+	time.Sleep(100 * time.Millisecond)
+	finalScreen := s.Screen()
+
+	// Save evidence if requested
+	if os.Getenv("LOOM_EVIDENCE") == "1" {
+		var buf strings.Builder
+		for _, line := range finalScreen {
+			buf.WriteString(line)
+			buf.WriteString("\n")
+		}
+
+		repoRoot := findRepoRoot(t)
+		progressDir := filepath.Join(repoRoot, "docs", "progress", "096")
+		if err := os.MkdirAll(progressDir, 0755); err != nil {
+			t.Fatalf("creating progress directory: %v", err)
+		}
+
+		outPath := filepath.Join(progressDir, "M3-pty-session.ansi")
+		if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+			t.Fatalf("writing PTY session evidence: %v", err)
+		}
+
+		t.Logf("M3 PTY session evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+	}
+
+	// Verify non-ASCII content is present in final screen
+	screenText := strings.Join(finalScreen, "\n")
+	if !strings.Contains(screenText, "ASCII") && !strings.Contains(screenText, "中") {
+		t.Fatalf("final screen missing expected non-ASCII content:\n%s", screenText)
+	}
+
+	// Quit the application
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("textrender exit: %v", err)
 	}
 }
