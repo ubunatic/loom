@@ -862,6 +862,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	tickLast := make(map[Widget]time.Time)
 	var tickTimer *time.Timer
 	var tickC <-chan time.Time
+	var tickInterval time.Duration
 	defer func() {
 		if tickTimer != nil {
 			tickTimer.Stop()
@@ -871,13 +872,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		interval := shortestTickInterval(root)
 		if interval <= 0 {
 			tickC = nil
+			tickInterval = 0
 			if tickTimer != nil {
 				tickTimer.Stop()
 			}
 		} else {
 			if tickTimer == nil {
 				tickTimer = time.NewTimer(interval)
-			} else {
+				tickInterval = interval
+			} else if tickInterval != interval {
 				if !tickTimer.Stop() {
 					select {
 					case <-tickTimer.C:
@@ -885,6 +888,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					}
 				}
 				tickTimer.Reset(interval)
+				tickInterval = interval
 			}
 			tickC = tickTimer.C
 		}
@@ -935,6 +939,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			dirty = true
 		case now := <-tickC:
 			tickTree(root, now, tickLast)
+			tickInterval = 0
 			dirty = true
 		case <-p.invalidate:
 			dirty = true

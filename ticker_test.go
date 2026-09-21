@@ -79,3 +79,43 @@ func TestNonTickerTreeHasNoInterval(t *testing.T) {
 		t.Fatalf("interval = %s, want zero", got)
 	}
 }
+
+func TestTickTimerIsNotStarvedByUnrelatedEvents(t *testing.T) {
+	interval := 20 * time.Millisecond
+	timer := time.NewTimer(interval)
+	defer timer.Stop()
+	deadline := time.NewTimer(200 * time.Millisecond)
+	defer deadline.Stop()
+	events := time.NewTicker(time.Millisecond)
+	defer events.Stop()
+	ticks := 0
+	for {
+		select {
+		case <-timer.C:
+			ticks++
+			timer.Reset(interval)
+		case <-events.C:
+		case <-deadline.C:
+			if ticks < 5 {
+				t.Fatalf("timer fired %d times during event storm, want at least 5", ticks)
+			}
+			return
+		}
+	}
+}
+
+func TestCompositeTickerForwarding(t *testing.T) {
+	children := []*tickerProbe{{interval: time.Second}, {interval: 2 * time.Second}}
+	for _, root := range []Widget{
+		NewStack(Vertical, children[0], children[1]),
+		NewGrid(2, children[0], children[1]),
+		&Frame{Boxes: []Box{{Child: children[0]}, {Child: children[1]}}},
+	} {
+		children[0].ticks = nil
+		children[1].ticks = nil
+		tickTree(root, time.Unix(0, 0), make(map[Widget]time.Time))
+		if len(children[0].ticks) != 1 || len(children[1].ticks) != 1 {
+			t.Fatalf("%T forwarding = (%d, %d)", root, len(children[0].ticks), len(children[1].ticks))
+		}
+	}
+}
