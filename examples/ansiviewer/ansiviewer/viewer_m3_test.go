@@ -44,8 +44,9 @@ func TestGenerateM3Evidence(t *testing.T) {
 		t.Fatalf("Render failed: %v", err)
 	}
 
-	// Save evidence
-	baseDir := filepath.Join("..", "..", "docs", "progress", "034")
+	// Save evidence to repo-root docs/progress/034/
+	repoRoot := findRepoRoot(t)
+	baseDir := filepath.Join(repoRoot, "docs", "progress", "034")
 	if err := os.MkdirAll(baseDir, 0o755); err != nil {
 		t.Fatalf("MkdirAll failed: %v", err)
 	}
@@ -56,4 +57,23 @@ func TestGenerateM3Evidence(t *testing.T) {
 	}
 
 	t.Logf("Evidence saved to %s (%d bytes)", outPath, out.Len())
+}
+
+// findRepoRoot walks up the directory tree to find the repo root by locating go.mod
+func findRepoRoot(t *testing.T) string {
+	dir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd failed: %v", err)
+	}
+
+	for {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
+			return dir
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			t.Fatal("could not find repo root (go.mod)")
+		}
+		dir = parent
+	}
 }
