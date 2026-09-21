@@ -115,6 +115,7 @@ func TestGenerateM2BoxEvidence(t *testing.T) {
 
 // TestGenerateM2PopupEvidence renders a frame demonstrating the migrated Popup.Draw.
 // This is the M2-popup.ansi evidence frame for ticket 037.
+// Three non-overlapping popups: short title, long truncated title, CJK title.
 func TestGenerateM2PopupEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
@@ -123,32 +124,53 @@ func TestGenerateM2PopupEvidence(t *testing.T) {
 		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
 	}
 
-	const cols, rows = 80, 25
+	const cols, rows = 80, 24
 	canvas := loom.NewCanvas(cols, rows)
 
 	// Header
-	canvas.Write(2, 0, "M2: Popup.Draw Migrated to DrawBox Primitive", loom.Style{Bold: true})
-	canvas.Write(2, 1, "Popups rendered through migrated Popup.Draw using new primitives", loom.Reset)
+	canvas.Write(2, 0, "M2: Popup.Draw Migrated to DrawBox (BoxBorderStyleSharp)", loom.Style{Bold: true})
 
-	// Background grid (simulate background content)
-	for y := 3; y < 20; y++ {
-		for x := 2; x < 78; x++ {
-			canvas.Set(x, y, loom.Cell{Text: ".", Style: loom.Reset})
-		}
-	}
-
-	// Popup 1: Simple popup with title
-	popup1 := loom.NewPopup("Popup 1", &loom.Grid{})
-	popup1.Width = 20
-	popup1.Height = 6
+	// Popup 1: Short title "OK"
+	canvas.Write(2, 2, "Popup 1 (short):", loom.Reset)
+	popup1 := loom.NewPopup("OK", &loom.Grid{})
+	popup1.Width = 18
+	popup1.Height = 5
 	popup1.Style = loom.Reset
-
 	popup1.Draw(canvas, loom.Rect{X: 0, Y: 0, W: cols, H: rows})
 
-	// Popup 2: Wider popup at different location (simulated with DrawBox directly)
-	canvas.Write(40, 3, "DrawBox (used by Popup):", loom.Reset)
-	canvas.DrawBox(loom.Rect{X: 40, Y: 5, W: 30, H: 8}, loom.BoxBorderStyleSharp, "Popup 2", loom.Reset)
-	canvas.DrawBox(loom.Rect{X: 40, Y: 14, W: 30, H: 8}, loom.BoxBorderStyleRounded, "Long Title Popup 3", loom.Reset)
+	// Popup 2: Long truncated title
+	canvas.Write(25, 2, "Popup 2 (long truncated):", loom.Reset)
+	popup2 := loom.NewPopup("This is a very long title for testing truncation", &loom.Grid{})
+	popup2.Width = 26
+	popup2.Height = 5
+	popup2.Style = loom.Reset
+	// Draw at specific location: (25, 3)
+	popup2.Draw(canvas, loom.Rect{X: 25, Y: 3, W: 26, H: 5})
+
+	// Popup 3: CJK title
+	canvas.Write(54, 2, "Popup 3 (CJK):", loom.Reset)
+	popup3 := loom.NewPopup("你好世界", &loom.Grid{})
+	popup3.Width = 18
+	popup3.Height = 5
+	popup3.Style = loom.Reset
+	popup3.Draw(canvas, loom.Rect{X: 54, Y: 3, W: 18, H: 5})
+
+	// Second row: Show equivalence of Popup.Draw vs DrawBox
+	canvas.Write(2, 10, "Popup.Draw vs Canvas.DrawBox equivalence test:", loom.Reset)
+
+	// Popup.Draw at (5, 12)
+	popup4 := loom.NewPopup("Test", &loom.Grid{})
+	popup4.Width = 20
+	popup4.Height = 6
+	popup4.Style = loom.Reset
+	popup4.Draw(canvas, loom.Rect{X: 5, Y: 12, W: 20, H: 6})
+
+	// Canvas.DrawBox with same params at (30, 12) for comparison
+	canvas.DrawBox(loom.Rect{X: 30, Y: 12, W: 20, H: 6}, loom.BoxBorderStyleSharp, "Test", loom.Reset)
+
+	// Truncation test with CJK
+	canvas.Write(55, 10, "CJK truncation:", loom.Reset)
+	canvas.DrawBox(loom.Rect{X: 55, Y: 12, W: 20, H: 6}, loom.BoxBorderStyleSharp, "你好世界大同", loom.Reset)
 
 	// Render and save
 	var buf bytes.Buffer

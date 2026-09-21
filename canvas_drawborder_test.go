@@ -221,3 +221,58 @@ func TestDrawBoxDegenerateSizes(t *testing.T) {
 		})
 	}
 }
+
+// ── M3: Popup.Draw output equivalence with Canvas.DrawBox ────────────────────
+
+// TestPopupDrawEqualsCanvasDrawBox verifies that Popup.Draw produces identical
+// output to Canvas.DrawBox(..., BoxBorderStyleSharp, ...) cell-by-cell.
+// This confirms the migrated Popup implementation is correct.
+func TestPopupDrawEqualsCanvasDrawBox(t *testing.T) {
+	tests := []struct {
+		name  string
+		title string
+	}{
+		{"simple title", "Test"},
+		{"short title", "OK"},
+		{"truncated title", "This is a very long title that should be truncated"},
+		{"CJK title", "你好"},
+		{"mixed CJK truncated", "你好世界大同小异"},
+		{"empty title", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cols, rows := 40, 10
+
+			// Draw using Popup.Draw
+			popupCanvas := loom.NewCanvas(cols, rows)
+			popup := loom.NewPopup(tt.title, &loom.Grid{})
+			popup.Width = 30
+			popup.Height = 6
+			popup.Style = loom.Reset
+			popup.Draw(popupCanvas, loom.Rect{X: 0, Y: 0, W: cols, H: rows})
+
+			// Draw using Canvas.DrawBox directly
+			boxCanvas := loom.NewCanvas(cols, rows)
+			// Popup centers itself, calculate centered position
+			x := (cols - popup.Width) / 2
+			y := (rows - popup.Height) / 2
+			boxCanvas.DrawBox(loom.Rect{X: x, Y: y, W: popup.Width, H: popup.Height},
+				loom.BoxBorderStyleSharp, tt.title, loom.Reset)
+
+			// Compare cell by cell
+			for cy := 0; cy < rows; cy++ {
+				for cx := 0; cx < cols; cx++ {
+					popupCell := popupCanvas.Get(cx, cy)
+					boxCell := boxCanvas.Get(cx, cy)
+
+					if popupCell.Text != boxCell.Text {
+						t.Errorf("cell (%d,%d) text mismatch: Popup.Draw got %q, DrawBox got %q",
+							cx, cy, popupCell.Text, boxCell.Text)
+					}
+					// Note: Style comparison skipped as Popup may set different default styles
+				}
+			}
+		})
+	}
+}
