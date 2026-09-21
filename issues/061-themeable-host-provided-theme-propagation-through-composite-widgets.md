@@ -110,3 +110,21 @@ walking up to `go.mod` and writes to repo-root `docs/progress/061/`. Run it with
 - filebrowser: export `ApplyTheme(loom.ThemeColors)` (replacing `applyTheme`); standalone
   `--theme` and F9 behave exactly as before (existing tests stay green).
 - Evidence: `M2-filebrowser-themes.ansi`, filebrowser rendered headless under two themes.
+
+### M1-M2 Review (host)
+Delivered: 69443ea (Themeable and composites), e9c0370 (Choice/Table, filebrowser). Tests and vet
+green, evidence gated and rooted correctly. Gaps against the ticket:
+- `M2-filebrowser-themes.ansi` shows a filebrowser-like Frame+Choice, not the real filebrowser.
+- Nothing tests `browser.ApplyTheme` itself. It resolves the name by comparing ThemeColors
+  in a loop and falls back to a fake name "custom"; that name leaks into F9 cycling.
+
+### M3 - Pre-Work / Required Refinements
+1. Add a filebrowser test (package filebrowser, `browser_test.go`): build the real browser on a
+   temp dir with a few files, render it headless under two themes via `ApplyTheme`, assert
+   the output differs and that a following F9 keypress still cycles to a valid named theme
+   (never "custom"). If F9 would produce "custom", make `ApplyTheme` keep the current
+   name when no exact match is found instead of inventing one.
+2. Regenerate `M2-filebrowser-themes.ansi` (LOOM_EVIDENCE=1) from that real browser,
+   one frame per theme with a label line.
+3. Fix comments: 'restyled' should read 'restyles' in tabs.go and frame.go.
+4. Commit with '(issue 061 M3)'; tests and vet green.
