@@ -23,12 +23,12 @@ for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done
 | 5 | 037 DrawBorder / DrawBox | closed (M1-M4) | haiku, luna:low fixed evidence | `docs/progress/037/` |
 | 6 | 096 textrender | closed (M1-M5) | haiku M1-M3, luna:low M4-M5 | `docs/progress/096/` |
 | 7 | 081 TreemapCell / ColorScale | closed (M1-M5) | luna:low M1-M4, sol:low M5 | `docs/progress/081/` |
-| 8 | 092 scrollbar drag | running (plan step) | luna:low | `docs/progress/092/` |
-| 9 | 093 filebrowser mouse hit-test | not started | | |
+| 8 | 092 scrollbar drag | closed (M1-M6) | luna:low M1-M4, sol:low M5, sonnet M6 | `docs/progress/092/` |
+| 9 | 093 filebrowser mouse hit-test | running (plan step) | luna:low | `docs/progress/093/` |
 | 10 | 060 Ticker / Invalidate | not started | | |
 | 11 | 088 key capture coverage | not started | | |
 
-Done: 8 of 12 counting 097 (7 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
+Done: 9 of 12 counting 097 (8 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
 
 ## How the Sprints Run
 
@@ -55,6 +55,8 @@ Done: 8 of 12 counting 097 (7 of the 11 goal tickets). Second wave 063, 064, 065
   parser because it is entangled with cursor replay (decision recorded in 034 M4).
 
 - 081: luna:low built a squarified stub that fell back to slice-dice (aspect 2.893 vs 2.893) and left the real algorithm in a comment; sol:low, given the float-squarify plus cumulative-rounding architecture, delivered it (3.375 vs 1.892). Evidence frames s1 and s2 are identical for both layouts; only s3 differs.
+- 092 used the whole ladder: luna:low built the mapping, drag state and evidence; sol:low found two library bugs (Split dropped drags leaving the child, View edge column) but not why the PTY test was red; native Sonnet found that the remaining causes were in the test itself (byte index instead of rune column, an assertion on a constant, a stray press) and that Split treated 0-based mouse coordinates as 1-based. It also moved the View scrollbar hit column to the drawn column and updated tests that had pinned the wrong column.
+- Lessons now written into tickets: mouse events reaching widgets are 0-based, PTY SGR is 1-based, locate screen text by runes or display width.
 
 ## Open Items
 
