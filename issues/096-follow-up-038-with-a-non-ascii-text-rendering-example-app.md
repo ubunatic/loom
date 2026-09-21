@@ -124,3 +124,5 @@ Defect: in `Borders` each box is only 2 rows high, so the body text is drawn on 
 2. Buttons: if the library has a real button widget, use it; otherwise the tab title and the top status
    line must say 'Choice list (no Button widget yet)' and your report names that gap. Regenerate `M2-buttons.ansi`.
 3. Commit '(issue 096 M5)' (if index.lock blocks you, say so, the host commits).
+
+**Follow-ups**: leftovers tracked in 101 (code/evidence) and 102 (manual review).

@@ -152,3 +152,5 @@ frame border, title row, 1-based SGR vs 0-based cells), and check for a second c
 hit area, focus handling: does a View need focus before it handles a press?). If the split example is the wrong
 vehicle, use ansiviewer or the filebrowser list. Done when: PTY test green, `M3-pty-drag.ansi` written from the final
 screen, go vet and all touched packages green, commit '(issue 092 M6)' with only your files. Report every bug.
+
+**Follow-ups**: leftovers tracked in 101 (code/evidence) and 102 (manual review).

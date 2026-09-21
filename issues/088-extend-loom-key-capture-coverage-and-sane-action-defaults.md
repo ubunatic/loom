@@ -119,3 +119,5 @@ which demands EVERY required key: the frames list 17 rows, so "gap count 0" prov
    limitation per group). Keep `M1-decode-table.ansi` as it is (before) and replace `M2-decode-table.ansi` by the summary.
 3. Complete the defaults table (all rows above) and keep the drift test.
 4. Commit '(issue 088 M5)'; if git is blocked say so and leave files staged.
+
+**Follow-ups**: leftovers tracked in 101 (code/evidence) and 102 (manual review).

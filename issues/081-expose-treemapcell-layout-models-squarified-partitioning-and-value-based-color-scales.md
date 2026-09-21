@@ -114,3 +114,5 @@ This misses the ticket goal, so the step moves up the escalation ladder (`codex:
 3. All property tests, the golden and the color scale tests stay green; regenerate `M2-squarified-s1..s3.ansi`
    (they must visibly differ from the M1 frames).
 4. Commit '(issue 081 M5)'; if index.lock blocks, stage your files and say so.
+
+**Follow-ups**: leftovers tracked in 101 (code/evidence) and 102 (manual review).

@@ -38,3 +38,11 @@ Because Loom assumes the glyph takes 2 cells, it advances by 2 columns when buil
 
 1. Audit and refine `measure.RuneWidth` against standard Unicode East Asian Width / `wcwidth` tables and Emoji Presentation specifications (distinguishing default emoji presentation vs text presentation / VS-16).
 2. For applications requiring deterministic 1-column icons in borders and titles, standard 1-column geometric/symbol glyphs (like `▣`, `▧`, `▦`, `◈`, `•`, `*`) or explicit bracket tags should be used to guarantee single-cell alignment across all terminals.
+
+---
+
+## 4. Related finding from lean sprint 096 (2026-09-21)
+
+`loom.StringWidth` reports a ZWJ family sequence as 6 columns and a regional-indicator flag as 4,
+while terminals show both as 2. The `examples/textrender` example records these as
+`knownDivergences`. Include ZWJ sequences and flag pairs in the audit in section 3.
