@@ -1,0 +1,19 @@
+key                         bytes                 decoded             status
+letter-a                    61                    a                   OK
+uppercase-A                 41                    A                   OK
+digit-7                     37                    7                   OK
+punctuation-question        3f                    ?                   OK
+umlaut-a                    c3a4                  ä                   OK
+umlaut-A                    c384                  Ä                   OK
+alt-a                       1b61                  alt-a               OK
+ctrl-a                      01                    ctrl-a              OK
+ctrl-c                      03                    ctrl-c              OK
+f10                         1b5b32317e            f10                 OK
+up                          1b5b41                up                  OK
+shift-up                    1b5b313b3241          shift-up            OK
+ctrl-left                   1b5b313b3544          ctrl-left           OK
+pgup                        1b5b357e              pgup                OK
+insert                      1b5b327e              insert              OK
+alt-arrow                   1b5b313b3341          alt-up              OK
+ctrl-i-tab-limit            09                    tab                 terminal limitation
+ctrl-m-enter-limit          0d                    enter               terminal limitation

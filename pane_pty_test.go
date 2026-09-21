@@ -145,6 +145,37 @@ func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 	}
 }
 
+func TestKey088PTYCapture(t *testing.T) {
+	master, slave := openPTY(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 40}
+	rec := newKeyRecorder(4)
+	errC := make(chan error, 1)
+	go func() { errC <- p.Run(rec) }()
+	for _, raw := range [][]byte{[]byte("ä"), {27, 'a'}, {1}, []byte("\x1b[A")} {
+		if _, err := master.Write(raw); err != nil {
+			t.Fatal(err)
+		}
+	}
+	select {
+	case <-rec.done:
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for PTY key capture")
+	}
+	if err := <-errC; err != nil {
+		t.Fatal(err)
+	}
+	got := rec.snapshot()
+	want := []string{"ä", "alt-a", "ctrl-a", "up"}
+	if len(got) != len(want) {
+		t.Fatalf("captured %d keys, want %d: %+v", len(got), len(want), got)
+	}
+	for i, event := range got {
+		if event.Name() != want[i] {
+			t.Errorf("key %d = %q, want %q", i, event.Name(), want[i])
+		}
+	}
+}
+
 // TestPaneRunReassemblesSplitEscapeSequence is the ticket-053 acceptance
 // case for bug 2: an escape sequence split across two Write calls (with a
 // short delay, simulating two separate tty reads) must decode as the single

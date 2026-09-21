@@ -1,0 +1,6 @@
+action                       default keys
+quit/close                   q, Q, ctrl-c
+activate/select             enter, space
+navigation                   up, down, left, right
+page navigation              pgup, pgdown
+editing                      backspace, delete, home, end

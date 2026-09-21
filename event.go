@@ -3,7 +3,11 @@
 
 package loom
 
-import "unicode"
+import (
+	"strings"
+	"unicode"
+	"unicode/utf8"
+)
 
 // KeyEvent is a decoded keyboard event.
 // Key names match common terminal conventions; Text carries printable input.
@@ -85,6 +89,8 @@ func DecodeKey(b []byte) KeyEvent {
 		return KeyEvent{}
 	}
 	switch {
+	case b[0] >= 1 && b[0] <= 26 && b[0] != 2 && b[0] != 3 && b[0] != 4 && b[0] != 6 && b[0] != 8 && b[0] != 9 && b[0] != 10 && b[0] != 13 && b[0] != 17 && b[0] != 21 && b[0] != 23:
+		return KeyEvent{Key: "ctrl-" + string(rune('a'+b[0]-1))}
 	case b[0] == 3:
 		return KeyEvent{Key: "ctrl-c"}
 	case b[0] == 2:
@@ -139,6 +145,9 @@ func DecodeKey(b []byte) KeyEvent {
 			}
 		}
 		// \x1b[ (CSI) and \x1bO (application cursor) share the same final byte.
+		if b[1] != '[' && b[1] != 'O' {
+			return KeyEvent{Key: "alt-" + string(b[1:])}
+		}
 		if len(b) >= 3 && (b[1] == '[' || b[1] == 'O') {
 			switch b[2] {
 			case 'Z':
@@ -177,11 +186,16 @@ func DecodeKey(b []byte) KeyEvent {
 			// and function keys \x1b[15~ .. \x1b[24~ (f5..f12).
 			if len(b) >= 4 && b[len(b)-1] == '~' {
 				seq := string(b[2 : len(b)-1])
+				if strings.Contains(seq, ";") {
+					seq = strings.SplitN(seq, ";", 2)[0]
+				}
 				switch seq {
 				case "1", "7":
 					return KeyEvent{Key: "home"}
 				case "3":
 					return KeyEvent{Key: "delete"}
+				case "2":
+					return KeyEvent{Key: "insert"}
 				case "4", "8":
 					return KeyEvent{Key: "end"}
 				case "5":
@@ -217,13 +231,15 @@ func DecodeKey(b []byte) KeyEvent {
 		}
 		return KeyEvent{} // unhandled escape sequence
 	default:
-		out := make([]byte, 0, len(b))
-		for _, c := range b {
-			if c >= 32 && c <= 126 {
-				out = append(out, c)
+		if utf8.Valid(b) {
+			for _, r := range string(b) {
+				if !unicode.IsPrint(r) {
+					return KeyEvent{}
+				}
 			}
+			return KeyEvent{Text: string(b)}
 		}
-		return KeyEvent{Text: string(out)}
+		return KeyEvent{}
 	}
 }
 
@@ -349,8 +365,13 @@ func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
 		return KeyEvent{}, 0, false // could be a standalone ESC, or the start of a sequence
 	}
 	if b[1] != '[' && b[1] != 'O' {
-		// ESC followed by a byte DecodeKey does not treat as CSI/SS3; consume
-		// just the two bytes so we still make forward progress.
+		if b[1] >= 0x80 {
+			if !utf8.FullRune(b[1:]) {
+				return KeyEvent{}, 0, false
+			}
+			_, n := utf8.DecodeRune(b[1:])
+			return DecodeKey(b[:1+n]), 1 + n, true
+		}
 		return DecodeKey(b[:2]), 2, true
 	}
 	if len(b) == 2 {
