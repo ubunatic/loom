@@ -124,6 +124,28 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	}
 }
 
+func TestChoiceScrollbarDragCancelAndCapture(t *testing.T) {
+	c := makeChoice(40)
+	c.sel = 20
+	c.Draw(NewCanvas(25, 8), Rect{W: 20, H: 6})
+	c.viewOffset = 5
+	c.Draw(NewCanvas(25, 8), Rect{W: 20, H: 6})
+	start := c.viewOffset
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 2})
+	c.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 19, Y: 99})
+	if c.viewOffset == start {
+		t.Fatal("captured choice drag did not update outside the widget")
+	}
+	c.HandleKey(KeyEvent{Key: "esc"})
+	if c.viewOffset != start || c.drag.active {
+		t.Fatalf("choice escape cancel: offset=%d active=%v, want %d false", c.viewOffset, c.drag.active, start)
+	}
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 19, Y: 2})
+	if c.drag.active {
+		t.Fatal("choice non-primary press started drag")
+	}
+}
+
 func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
 	thumb := SpeccedDefaults.Scrollbar.ForegroundChar
 	track := SpeccedDefaults.Scrollbar.BackgroundChar

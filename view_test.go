@@ -172,3 +172,24 @@ func TestViewScrollbarDrag(t *testing.T) {
 		t.Fatal("release left drag active")
 	}
 }
+
+func TestViewScrollbarDragCancelAndCapture(t *testing.T) {
+	v := NewView(make([]string, 100))
+	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
+	v.Scroll = 20
+	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
+	start := v.Scroll
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 12, Y: 2})
+	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 12, Y: 99})
+	if v.Scroll == start {
+		t.Fatal("captured drag did not update outside the widget")
+	}
+	v.HandleKey(KeyEvent{Key: "esc"})
+	if v.Scroll != start || v.drag.active {
+		t.Fatalf("escape cancel: scroll=%d active=%v, want %d false", v.Scroll, v.drag.active, start)
+	}
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 12, Y: 2})
+	if v.drag.active {
+		t.Fatal("non-primary press started drag")
+	}
+}
