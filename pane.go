@@ -105,9 +105,11 @@ type Pane struct {
 	// readerDone is closed by Run's input-reader goroutine when it exits. close()
 	// waits on it so a lingering blocked Read cannot steal input meant for
 	// whatever reads the terminal after the pane (e.g. the calling shell).
-	readerDone chan struct{}
-	interrupts chan os.Signal
-	help       *Popup
+	readerDone     chan struct{}
+	interrupts     chan os.Signal
+	invalidate     chan struct{}
+	invalidateOnce sync.Once
+	help           *Popup
 }
 
 // RenderMetrics reports recent completed redraw performance. RedrawTime and
@@ -607,6 +609,15 @@ func (p *Pane) Run(root Widget) error {
 	return p.run(context.Background(), root, nil, nil, nil)
 }
 
+// Invalidate requests a repaint. It is safe to call from any goroutine and never blocks.
+func (p *Pane) Invalidate() {
+	p.invalidateOnce.Do(func() { p.invalidate = make(chan struct{}, 1) })
+	select {
+	case p.invalidate <- struct{}{}:
+	default:
+	}
+}
+
 // RunWatch runs collection and redraw on independent timers. Collection and
 // widget callbacks share the event-loop goroutine; Draw must not collect data.
 // The caller owns Close, as with Run. Collection callbacks must not block.
@@ -631,6 +642,7 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 }
 
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
+	p.invalidateOnce.Do(func() { p.invalidate = make(chan struct{}, 1) })
 	if requester, ok := root.(PaneRequester); ok {
 		request := requester.PaneRequest()
 		if !p.mouse && request.Mouse > 0 {
@@ -847,7 +859,35 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 
 	dirty := true
 	animationDirty := false
+	tickLast := make(map[Widget]time.Time)
+	var tickTimer *time.Timer
+	var tickC <-chan time.Time
+	defer func() {
+		if tickTimer != nil {
+			tickTimer.Stop()
+		}
+	}()
 	for {
+		interval := shortestTickInterval(root)
+		if interval <= 0 {
+			tickC = nil
+			if tickTimer != nil {
+				tickTimer.Stop()
+			}
+		} else {
+			if tickTimer == nil {
+				tickTimer = time.NewTimer(interval)
+			} else {
+				if !tickTimer.Stop() {
+					select {
+					case <-tickTimer.C:
+					default:
+					}
+				}
+				tickTimer.Reset(interval)
+			}
+			tickC = tickTimer.C
+		}
 		if p.widthGuardActive {
 			if !p.ResizeConfig.WidthGuard {
 				p.widthGuardActive = false
@@ -892,6 +932,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				return err
 			}
 		case <-frames:
+			dirty = true
+		case now := <-tickC:
+			tickTree(root, now, tickLast)
+			dirty = true
+		case <-p.invalidate:
 			dirty = true
 		case <-backgroundFrames:
 			dirty = true

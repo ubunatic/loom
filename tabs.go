@@ -5,6 +5,7 @@ package loom
 
 import (
 	"fmt"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -97,6 +98,22 @@ func NewTabs(tabs ...Tab) *Tabs {
 
 // Focus returns the index of the currently active tab.
 func (t *Tabs) Focus() int { return t.focus }
+
+// TickInterval returns the active child's requested cadence.
+func (t *Tabs) TickInterval() time.Duration {
+	child, ok := t.active().(Ticker)
+	if !ok {
+		return 0
+	}
+	return child.TickInterval()
+}
+
+// Tick forwards the update to the active child.
+func (t *Tabs) Tick(now time.Time) {
+	if child, ok := t.active().(Ticker); ok {
+		child.Tick(now)
+	}
+}
 
 // PaneRequest merges the terminal requirements of all tabs.
 func (t *Tabs) PaneRequest() (request PaneRequest) {

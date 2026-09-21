@@ -8,6 +8,7 @@ import (
 	"embed"
 	"fmt"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom/layout"
 	"codeberg.org/ubunatic/loom/measure"
@@ -282,6 +283,23 @@ type Frame struct {
 	focusManaged     bool
 	hasFocus         bool
 	lastRect         Rect
+}
+
+func (f *Frame) TickInterval() (shortest time.Duration) {
+	for _, box := range f.Boxes {
+		if t, ok := box.Child.(Ticker); ok && t.TickInterval() > 0 && (shortest == 0 || t.TickInterval() < shortest) {
+			shortest = t.TickInterval()
+		}
+	}
+	return shortest
+}
+
+func (f *Frame) Tick(now time.Time) {
+	for _, box := range f.Boxes {
+		if t, ok := box.Child.(Ticker); ok && t.TickInterval() > 0 {
+			t.Tick(now)
+		}
+	}
 }
 
 // PaneRequest merges the terminal requirements of all boxes.

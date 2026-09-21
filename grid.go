@@ -3,6 +3,8 @@
 
 package loom
 
+import "time"
+
 // Grid lays out widgets in a fixed number of columns.
 // Row count is inferred from len(Children) and Cols.
 // Navigation: Left/Right move within a row; Up/Down move between rows.
@@ -24,6 +26,23 @@ func NewGrid(cols int, children ...Widget) *Grid {
 		cols = 1
 	}
 	return &Grid{Cols: cols, Children: children, FocusBG: Theme("plain").FocusBGColor()}
+}
+
+func (g *Grid) TickInterval() (shortest time.Duration) {
+	for _, child := range g.Children {
+		if t, ok := child.(Ticker); ok && t.TickInterval() > 0 && (shortest == 0 || t.TickInterval() < shortest) {
+			shortest = t.TickInterval()
+		}
+	}
+	return shortest
+}
+
+func (g *Grid) Tick(now time.Time) {
+	for _, child := range g.Children {
+		if t, ok := child.(Ticker); ok && t.TickInterval() > 0 {
+			t.Tick(now)
+		}
+	}
 }
 
 // PaneRequest merges the terminal requirements of all children.

@@ -3,7 +3,11 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/measure"
+import (
+	"time"
+
+	"codeberg.org/ubunatic/loom/measure"
+)
 
 // Widget is the core interface every loom UI element must satisfy.
 //
@@ -28,6 +32,53 @@ type Widget interface {
 	// 0-based coordinates, with the canvas origin at its top-left corner.
 	// Returns quit=true to signal that the event loop should stop.
 	HandleMouse(e MouseEvent) (quit bool)
+}
+
+// Ticker is an optional interface for widgets that need periodic updates.
+type Ticker interface {
+	Widget
+	TickInterval() time.Duration
+	Tick(now time.Time)
+}
+
+func shortestTickInterval(root Widget) time.Duration {
+	t, ok := root.(Ticker)
+	if !ok || t.TickInterval() <= 0 {
+		return 0
+	}
+	return t.TickInterval()
+}
+
+func tickTree(root Widget, now time.Time, last map[Widget]time.Time) {
+	switch node := root.(type) {
+	case *Tabs:
+		tickTree(node.active(), now, last)
+		return
+	case *Stack:
+		for _, child := range node.Children {
+			tickTree(child, now, last)
+		}
+		return
+	case *Grid:
+		for _, child := range node.Children {
+			tickTree(child, now, last)
+		}
+		return
+	case *Frame:
+		for _, box := range node.Boxes {
+			tickTree(box.Child, now, last)
+		}
+		return
+	}
+	t, ok := root.(Ticker)
+	if !ok || t.TickInterval() <= 0 {
+		return
+	}
+	if previous, ok := last[root]; ok && now.Sub(previous) < t.TickInterval() {
+		return
+	}
+	last[root] = now
+	t.Tick(now)
 }
 
 // PaneRequest declares terminal capabilities a widget needs from its host

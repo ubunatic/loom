@@ -3,7 +3,11 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/layout"
+import (
+	"time"
+
+	"codeberg.org/ubunatic/loom/layout"
+)
 
 // StackDir controls the direction a Stack or Split arranges its children.
 type StackDir int
@@ -32,6 +36,23 @@ type Stack struct {
 // NewStack creates a Stack with the given children and direction.
 func NewStack(dir StackDir, children ...Widget) *Stack {
 	return &Stack{Dir: dir, Children: children}
+}
+
+func (s *Stack) TickInterval() (shortest time.Duration) {
+	for _, child := range s.Children {
+		if t, ok := child.(Ticker); ok && t.TickInterval() > 0 && (shortest == 0 || t.TickInterval() < shortest) {
+			shortest = t.TickInterval()
+		}
+	}
+	return shortest
+}
+
+func (s *Stack) Tick(now time.Time) {
+	for _, child := range s.Children {
+		if t, ok := child.(Ticker); ok && t.TickInterval() > 0 {
+			t.Tick(now)
+		}
+	}
 }
 
 // PaneRequest merges the terminal requirements of all children.
