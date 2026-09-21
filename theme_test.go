@@ -318,6 +318,122 @@ func TestThemeableNestedWidgets(t *testing.T) {
 	t.Logf("M1 evidence saved to %s (%d bytes)", outPath, buf.Len())
 }
 
+// TestChoiceAndTableThemeable tests that Choice and Table implement Themeable
+// and generate M2 evidence showing filebrowser-like structure with themes.
+func TestChoiceAndTableThemeable(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a frame structure similar to filebrowser: Frame containing Choice
+	fileItems := []loom.Item{
+		{Name: "file1.txt", Desc: "text file"},
+		{Name: "file2.go", Desc: "go source"},
+		{Name: "dir1", Desc: "<dir>"},
+		{Name: "file3.md", Desc: "markdown"},
+		{Name: "file4.json", Desc: "data file"},
+	}
+	fileChoice := loom.NewChoice(fileItems)
+
+	border := loom.BoxBorder{
+		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
+		Horizontal: "─", Vertical: "│",
+	}
+
+	// Create a Frame similar to filebrowser
+	frame := &loom.Frame{
+		Title: "File Browser",
+		Status: "↑↓ select  •  Enter open  •  F9 theme  •  F10 quit",
+		Boxes: []loom.Box{
+			{
+				ID: "files", Title: "Files", Dynamic: true, FillHeight: true,
+				MinWidth: 20, Height: 15, Border: border, Child: fileChoice,
+			},
+		},
+	}
+
+	// Also test a Table with Themeable
+	tableCols := []loom.Column{
+		{Header: "Name", Width: 12},
+		{Header: "Size", Width: 8},
+		{Header: "Modified", Width: 12},
+	}
+	tableRows := []loom.Row{
+		{Cells: []string{"file1.txt", "1.2 KB", "2025-01-15"}, Key: "file1"},
+		{Cells: []string{"file2.go", "3.5 KB", "2025-01-14"}, Key: "file2"},
+		{Cells: []string{"dir1", "-", "2025-01-13"}, Key: "dir1"},
+	}
+	table := loom.NewTable(tableCols, tableRows)
+
+	// Render with two different themes
+	const cols, rows = 80, 30
+	themes := []string{"plain", "mc"}
+
+	var buf bytes.Buffer
+	for _, themeName := range themes {
+		theme := loom.Theme(themeName)
+
+		// Apply theme to widgets
+		fileChoice.ApplyTheme(theme)
+		frame.ApplyTheme(theme)
+		table.ApplyTheme(theme)
+
+		// Render the frame
+		canvas := loom.NewCanvas(cols, rows)
+		frame.Draw(canvas, canvas.Bounds())
+
+		// Add a label line before each theme rendering
+		label := fmt.Sprintf("=== Theme: %s ===", themeName)
+		buf.WriteString(label)
+		buf.WriteString("\n\n")
+
+		// Render the canvas to ANSI
+		renderBuf := &bytes.Buffer{}
+		err := loom.RenderTo(renderBuf, &simpleCanvasWidget{canvas: canvas}, cols, rows)
+		if err != nil {
+			t.Fatalf("RenderTo failed: %v", err)
+		}
+		buf.Write(renderBuf.Bytes())
+		buf.WriteString("\n\n")
+
+		// Also render the table separately
+		tableBuf := loom.NewCanvas(cols, 8)
+		table.Draw(tableBuf, tableBuf.Bounds())
+
+		tableLabel := fmt.Sprintf("--- Table with %s theme ---", themeName)
+		buf.WriteString(tableLabel)
+		buf.WriteString("\n\n")
+
+		tableRenderBuf := &bytes.Buffer{}
+		err = loom.RenderTo(tableRenderBuf, &simpleCanvasWidget{canvas: tableBuf}, cols, 8)
+		if err != nil {
+			t.Fatalf("RenderTo table failed: %v", err)
+		}
+		buf.Write(tableRenderBuf.Bytes())
+		buf.WriteString("\n\n")
+	}
+
+	// Write evidence file
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("finding repo root: %v", err)
+	}
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "061")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-filebrowser-themes.ansi")
+	if err := os.WriteFile(outPath, buf.Bytes(), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 evidence saved to %s (%d bytes)", outPath, buf.Len())
+}
+
 // findRepoRoot walks up the directory tree until it finds a go.mod file.
 func findRepoRoot() (string, error) {
 	cwd, err := os.Getwd()

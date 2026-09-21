@@ -68,6 +68,20 @@ func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
 	}
 }
 
+// ApplyTheme updates the browser's theme from ThemeColors.
+func (b *browser) ApplyTheme(theme loom.ThemeColors) {
+	// Find the name by matching the theme's colors
+	for name, t := range loom.SpeccedThemes {
+		if t == theme {
+			b.applyTheme(name, theme)
+			return
+		}
+	}
+	// If exact match not found, use the theme anyway with a generic name
+	b.themeName = "custom"
+	b.applyTheme("custom", theme)
+}
+
 func (b *browser) cycleTheme() {
 	names := themeNames()
 	for i, name := range names {

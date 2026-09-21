@@ -15,10 +15,9 @@ type ChoiceStyle struct {
 	Border      Style
 }
 
-// DefaultChoiceStyle returns a minimal monochrome style.
+// DefaultChoiceStyle returns a minimal monochrome style, derived from the plain theme.
 func DefaultChoiceStyle() ChoiceStyle {
-	sel := Style{Bold: true}
-	return ChoiceStyle{Normal: Reset, Selected: sel, Prompt: Reset, Placeholder: Style{Dim: true}, Scrollbar: DefaultScrollbarStyle(), Border: Reset}
+	return Theme("plain").ChoiceStyle()
 }
 
 // Choice is a filterable, keyboard-navigable list of Items.
@@ -471,4 +470,9 @@ func (c *Choice) ContentHeight() int {
 		return h + 1
 	}
 	return 1
+}
+
+// ApplyTheme updates the Choice style from the theme.
+func (c *Choice) ApplyTheme(theme ThemeColors) {
+	c.Style = theme.ChoiceStyle()
 }

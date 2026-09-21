@@ -42,15 +42,9 @@ type TableStyle struct {
 	Prompt     Style
 }
 
-// DefaultTableStyle returns a minimal monochrome style.
+// DefaultTableStyle returns a minimal monochrome style, derived from the plain theme.
 func DefaultTableStyle() TableStyle {
-	return TableStyle{
-		Header:     Style{Bold: true},
-		SortHeader: Style{Bold: true, Underline: true},
-		Normal:     Reset,
-		Selected:   Style{Bold: true},
-		Prompt:     Reset,
-	}
+	return Theme("plain").TableStyle()
 }
 
 // Table is a filterable, sortable, keyboard-navigable table widget.
@@ -385,4 +379,9 @@ func (t *Table) cycleSortNext() {
 // padCol pads or truncates s to exactly w visual columns with the given alignment.
 func padCol(s string, w int, align Align) string {
 	return measure.Pad(s, w, align == AlignRight)
+}
+
+// ApplyTheme updates the Table style from the theme.
+func (t *Table) ApplyTheme(theme ThemeColors) {
+	t.Style = theme.TableStyle()
 }
