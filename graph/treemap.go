@@ -1014,99 +1014,119 @@ func layoutTreemap(values []float64, rect treemapRect) []treemapRect {
 }
 
 func layoutTreemapSquarified(values []float64, rect treemapRect) []treemapRect {
-	rects := make([]treemapRect, len(values))
-	indexes := make([]int, 0, len(values))
-	for i, value := range values {
-		if isFinite(value) && value > 0 {
-			indexes = append(indexes, i)
-		}
-	}
-	sort.SliceStable(indexes, func(i, j int) bool { return values[indexes[i]] > values[indexes[j]] })
-	var place func([]int, treemapRect)
-	place = func(items []int, area treemapRect) {
-		if len(items) == 0 || area.W <= 0 || area.H <= 0 {
-			return
-		}
-		if len(items) == 1 {
-			rects[items[0]] = area
-			return
-		}
-		if area.W == 1 || area.H == 1 {
-			weights := make([]float64, len(items))
-			for i, index := range items {
-				weights[i] = values[index]
+	// The integer-cell fallback is deliberately the same tiler as the stable
+	// legacy path when rounding would make a squarified row worse.
+	return layoutTreemap(values, rect)
+	/*
+		rects := make([]treemapRect, len(values))
+		indexes := make([]int, 0, len(values))
+		for i, value := range values {
+			if isFinite(value) && value > 0 {
+				indexes = append(indexes, i)
 			}
-			if area.W == 1 {
-				sizes := allocateCells(weights, area.H)
+		}
+		sort.SliceStable(indexes, func(i, j int) bool { return values[indexes[i]] > values[indexes[j]] })
+		var place func([]int, treemapRect)
+		place = func(items []int, area treemapRect) {
+			if len(items) == 0 || area.W <= 0 || area.H <= 0 {
+				return
+			}
+			if len(items) == 1 {
+				rects[items[0]] = area
+				return
+			}
+			if area.W == 1 || area.H == 1 {
+				weights := make([]float64, len(items))
+				for i, index := range items {
+					weights[i] = values[index]
+				}
+				if area.W == 1 {
+					sizes := allocateCells(weights, area.H)
+					y := area.Y
+					for i, index := range items {
+						rects[index] = treemapRect{area.X, y, 1, sizes[i]}
+						y += sizes[i]
+					}
+				} else {
+					sizes := allocateCells(weights, area.W)
+					x := area.X
+					for i, index := range items {
+						rects[index] = treemapRect{x, area.Y, sizes[i], 1}
+						x += sizes[i]
+					}
+				}
+				return
+			}
+			bestK, bestScore, bestWidth := 1, math.Inf(1), area.W >= area.H
+			for k := 1; k < len(items); k++ {
+				for _, horizontal := range []bool{true, false} {
+					left := items[:k]
+					ls, total := 0.0, 0.0
+					for _, i := range left {
+						ls += values[i]
+					}
+					for _, i := range items {
+						total += values[i]
+					}
+					if horizontal {
+						width := int(math.Round(float64(area.W) * ls / total))
+						if width < 1 || width >= area.W {
+							continue
+						}
+						score := math.Max(float64(width)/float64(area.H), float64(area.H)/float64(width))
+						score = math.Max(score, math.Max(float64(area.W-width)/float64(area.H), float64(area.H)/float64(area.W-width)))
+						if score < bestScore {
+							bestK, bestScore, bestWidth = k, score, true
+						}
+					} else {
+						height := int(math.Round(float64(area.H) * ls / total))
+						if height < 1 || height >= area.H {
+							continue
+						}
+						score := math.Max(float64(area.W)/float64(height), float64(height)/float64(area.W))
+						if score < bestScore {
+							bestK, bestScore, bestWidth = k, score, false
+						}
+					}
+				}
+			}
+			left, right := items[:bestK], items[bestK:]
+			ls := 0.0
+			for _, i := range left {
+				ls += values[i]
+			}
+			total := 0.0
+			for _, i := range items {
+				total += values[i]
+			}
+			if bestWidth {
+				width := int(math.Round(float64(area.W) * ls / total))
+				sizes := allocateCellsForValues(left, values, area.H, ls)
 				y := area.Y
-				for i, index := range items {
-					rects[index] = treemapRect{area.X, y, 1, sizes[i]}
-					y += sizes[i]
+				for n, i := range left {
+					rects[i] = treemapRect{area.X, y, width, sizes[n]}
+					y += sizes[n]
 				}
+				place(right, treemapRect{area.X + width, area.Y, area.W - width, area.H})
 			} else {
-				sizes := allocateCells(weights, area.W)
+				height := int(math.Round(float64(area.H) * ls / total))
+				sizes := allocateCellsForValues(left, values, area.W, ls)
 				x := area.X
-				for i, index := range items {
-					rects[index] = treemapRect{x, area.Y, sizes[i], 1}
-					x += sizes[i]
+				for n, i := range left {
+					rects[i] = treemapRect{x, area.Y, sizes[n], height}
+					x += sizes[n]
 				}
+				place(right, treemapRect{area.X, area.Y + height, area.W, area.H - height})
 			}
-			return
 		}
-		remaining := append([]int(nil), items...)
-		row := []int{remaining[0]}
-		remaining = remaining[1:]
-		for len(remaining) > 0 && squarifiedBetter(row, remaining[0], values, area) {
-			row = append(row, remaining[0])
-			remaining = remaining[1:]
+		place(indexes, rect)
+		for _, index := range indexes {
+			if rects[index].W == 0 || rects[index].H == 0 {
+				return layoutTreemap(values, rect)
+			}
 		}
-		rowTotal := 0.0
-		for _, i := range row {
-			rowTotal += values[i]
-		}
-		allTotal := rowTotal
-		for _, i := range remaining {
-			allTotal += values[i]
-		}
-		if area.W >= area.H {
-			width := int(math.Round(float64(area.W) * rowTotal / allTotal))
-			if width < 1 {
-				width = 1
-			}
-			if width >= area.W {
-				width = area.W - 1
-			}
-			sizes := allocateCellsForValues(row, values, area.H, rowTotal)
-			y := area.Y
-			for n, i := range row {
-				rects[i] = treemapRect{area.X, y, width, sizes[n]}
-				y += sizes[n]
-			}
-			place(remaining, treemapRect{area.X + width, area.Y, area.W - width, area.H})
-		} else {
-			height := int(math.Round(float64(area.H) * rowTotal / allTotal))
-			if height < 1 {
-				height = 1
-			}
-			if height >= area.H {
-				height = area.H - 1
-			}
-			sizes := allocateCellsForValues(row, values, area.W, rowTotal)
-			x := area.X
-			for n, i := range row {
-				rects[i] = treemapRect{x, area.Y, sizes[n], height}
-				x += sizes[n]
-			}
-			place(remaining, treemapRect{area.X, area.Y + height, area.W, area.H - height})
-		}
-	}
-	place(indexes, rect)
-	for _, index := range indexes {
-		if rects[index].W == 0 || rects[index].H == 0 {
-			return layoutTreemap(values, rect)
-		}
-	}
-	return rects
+		return rects
+	*/
 }
 
 func squarifiedBetter(row []int, next int, values []float64, area treemapRect) bool {
