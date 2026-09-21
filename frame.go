@@ -727,7 +727,7 @@ func (f *Frame) Box(id string) *Box {
 	return nil
 }
 
-// ApplyTheme restyled the frame and box chrome and forwards the theme to all
+// ApplyTheme restyles the frame and box chrome and forwards the theme to all
 // box children that implement Themeable.
 func (f *Frame) ApplyTheme(theme ThemeColors) {
 	f.Style = theme.FrameStyle()

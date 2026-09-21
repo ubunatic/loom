@@ -69,6 +69,8 @@ func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
 }
 
 // ApplyTheme updates the browser's theme from ThemeColors.
+// If an exact match is found in SpeccedThemes, the name is updated;
+// otherwise the current name is kept so F9 cycling stays valid.
 func (b *browser) ApplyTheme(theme loom.ThemeColors) {
 	// Find the name by matching the theme's colors
 	for name, t := range loom.SpeccedThemes {
@@ -77,9 +79,8 @@ func (b *browser) ApplyTheme(theme loom.ThemeColors) {
 			return
 		}
 	}
-	// If exact match not found, use the theme anyway with a generic name
-	b.themeName = "custom"
-	b.applyTheme("custom", theme)
+	// If exact match not found, keep the current name and apply the theme
+	b.applyTheme(b.themeName, theme)
 }
 
 func (b *browser) cycleTheme() {

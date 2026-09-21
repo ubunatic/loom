@@ -367,3 +367,183 @@ func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
 		t.Fatalf("bottom track click selected %+v, ok=%v; want file-25", item, ok)
 	}
 }
+
+func TestBrowserApplyThemeAndF9Cycling(t *testing.T) {
+	// Create a temp directory with a few test files
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "file1.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "file2.go"), []byte("package main"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(dir, "subdir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Build browser with plain theme
+	b, err := newBrowser(dir, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Render with plain theme
+	c1 := loom.NewCanvas(80, 20)
+	b.Draw(c1, c1.Bounds())
+	plainRendered := canvasToString(c1)
+
+	// Apply a different theme via ApplyTheme
+	b.ApplyTheme(loom.Theme("mc"))
+	c2 := loom.NewCanvas(80, 20)
+	b.Draw(c2, c2.Bounds())
+	mcRendered := canvasToString(c2)
+
+	// Verify the renderings differ (theme was applied)
+	if plainRendered == mcRendered {
+		t.Error("plain and mc themes produced identical output; theme not applied")
+	}
+
+	// Verify that F9 cycles to a valid theme (not "custom")
+	initialThemeName := b.themeName
+	b.HandleKey(loom.KeyEvent{Key: "f9"})
+	if b.themeName == "custom" {
+		t.Errorf("F9 cycled to custom theme; want a named theme")
+	}
+	names := themeNames()
+	validTheme := false
+	for _, name := range names {
+		if name == b.themeName {
+			validTheme = true
+			break
+		}
+	}
+	if !validTheme {
+		t.Errorf("F9 produced theme %q which is not in SpeccedThemes", b.themeName)
+	}
+
+	// Verify that ApplyTheme keeps the current name when no exact match
+	customTheme := loom.Theme("plain")
+	customTheme.NormalFG = loom.ThemeColorRGB(255, 0, 0) // Modify to make it non-matching
+	b.ApplyTheme(customTheme)
+	if b.themeName != initialThemeName && b.themeName != "mc" {
+		// Theme name changed from the last valid one, which is expected
+		// since ApplyTheme keeps the current name when no exact match
+		if b.themeName == "custom" {
+			t.Error("ApplyTheme created custom theme name when no exact match found")
+		}
+	}
+}
+
+// canvasToString renders a canvas to a simple string representation for comparison
+func canvasToString(c *loom.Canvas) string {
+	var sb strings.Builder
+	for y := 0; y < c.Rows(); y++ {
+		for x := 0; x < c.Cols(); x++ {
+			cell := c.Get(x, y)
+			sb.WriteString(cell.Text)
+		}
+		sb.WriteString("\n")
+	}
+	return sb.String()
+}
+
+func TestGenerateM2FilebrowserEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a temp directory with test files
+	dir := t.TempDir()
+	for i := 1; i <= 5; i++ {
+		name := fmt.Sprintf("file%d.txt", i)
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(dir, "subdir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Create browser and render with two themes
+	const cols, rows = 80, 25
+	themes := []string{"plain", "mc"}
+
+	var buf strings.Builder
+	for _, themeName := range themes {
+		b, err := newBrowser(dir, themeName, loom.Theme(themeName))
+		if err != nil {
+			t.Fatalf("creating browser: %v", err)
+		}
+
+		// Render the browser
+		canvas := loom.NewCanvas(cols, rows)
+		b.Draw(canvas, canvas.Bounds())
+
+		// Add a label line before each theme rendering
+		label := fmt.Sprintf("--- Theme: %s ---", themeName)
+		buf.WriteString(label)
+		buf.WriteString("\n\n")
+
+		// Render canvas to ANSI
+		renderBuf := &strings.Builder{}
+		wrapper := &canvasWidget{canvas: canvas}
+		renderErr := loom.RenderTo(renderBuf, wrapper, cols, rows)
+		if renderErr != nil {
+			t.Fatalf("RenderTo failed: %v", renderErr)
+		}
+		buf.WriteString(renderBuf.String())
+		buf.WriteString("\n\n")
+	}
+
+	// Write evidence file
+	repoRoot := findFilebrowserRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "061")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-filebrowser-themes.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
+// canvasWidget wraps a canvas for rendering
+type canvasWidget struct {
+	canvas *loom.Canvas
+}
+
+func (w *canvasWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	for y := 0; y < w.canvas.Rows(); y++ {
+		for x := 0; x < w.canvas.Cols(); x++ {
+			cell := w.canvas.Get(x, y)
+			c.Set(x, y, cell)
+		}
+	}
+}
+
+func (w *canvasWidget) HandleKey(e loom.KeyEvent) bool   { return false }
+func (w *canvasWidget) HandleMouse(e loom.MouseEvent) bool { return false }
+
+// findFilebrowserRepoRoot walks up from the filebrowser package directory to find the repo root
+func findFilebrowserRepoRoot(t *testing.T) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getting current directory: %v", err)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			t.Fatalf("go.mod not found in any parent directory")
+		}
+		cwd = parent
+	}
+}
