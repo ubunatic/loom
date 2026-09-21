@@ -60,3 +60,29 @@ or the equivalent headless path. The frame must show real styled cells.
   where it is a drop-in; keep behavior and all existing ansiviewer tests green
   (including the mc recordings). If part of the local parser has no equivalent, keep only that part and say why.
 - Evidence: `M3-ansiviewer.ansi` from an ansiviewer render of a colored file.
+
+### M1-M3 Review (host)
+Delivered: `ParseANSI` (3cb3ed5), `Canvas.WriteANSI` (4878ad4), M3 evidence (cca8252). Tests and vet green.
+Findings from the diff: M3 did not replace the local parser (accepted only if justified, see M4);
+`M3-ansiviewer.ansi` therefore shows the local parser, not `WriteANSI`, which the evidence
+must not claim. Parser defects: a bare `ESC[m` is not a reset, `22`/`23`/`24` are not handled,
+and values above 255 wrap through `uint8`.
+
+### M4 - Pre-Work / Required Refinements
+1. `ParseANSI`: an empty SGR parameter list (`ESC[m`) and empty parts (`ESC[;1m`) count as 0.
+   Add SGR `22` (bold and dim off) and `24` (underline off); `23` stays a no-op.
+   Out-of-range 256-color or RGB values (over 255, negative) make the whole 38/48 sequence
+   ignored, never wrapped. Each gets a failing test first.
+2. Add a fuzz or property test: `ParseANSI` never panics, and every returned cell has either
+   text, or is a continuation directly after a wide cell.
+3. M3 honesty: in `viewer_m3_test.go`, the evidence test must not rewrite files under
+   docs/ on every plain `go test` run; write only when env `LOOM_EVIDENCE=1` is set.
+   Do the same for the evidence tests of M1 and M2 if they write to docs/.
+4. M3 replacement: identify exactly which ansiviewer-local parser function handles plain
+   SGR only (no cursor moves, no charset). If one exists, route SGR handling through
+   `ParseANSI` or `WriteANSI`; keep the cursor/charset replay local. If SGR is entangled
+   with cursor replay so it cannot be shared, add one sentence to the ticket-independent
+   code comment in that file stating why, and report it. Existing ansiviewer tests, including
+   the mc recordings, stay green.
+5. Regenerate the three evidence frames with `LOOM_EVIDENCE=1` and commit them
+   with the code, message ending '(issue 034 M4)'. Root `/dev/tty` failures are pre-existing.
