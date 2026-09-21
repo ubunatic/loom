@@ -1,6 +1,6 @@
 # 051 — Allow Frame boxes to fill available content height
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M3), haiku dev
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
