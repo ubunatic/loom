@@ -326,7 +326,7 @@ func (f *Frame) Layout(width, height int) []Rect {
 						h = clampBox(box.Height, box.MinHeight, box.MaxHeight, height-2)
 					}
 					if box.FillHeight {
-						h = height - 2
+						h = clampBox(height-2, box.MinHeight, box.MaxHeight, height-2)
 					}
 					if allocation.Size >= 2 && h >= 2 {
 						result[index] = Rect{X: allocation.Offset, Y: 1, W: allocation.Size, H: h}

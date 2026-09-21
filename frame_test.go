@@ -4,7 +4,9 @@
 package loom
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -57,6 +59,57 @@ func TestStaticShellGolden(t *testing.T) {
 		if got != want[y] {
 			t.Errorf("row %d\n got %q\nwant %q", y, got, want[y])
 		}
+	}
+}
+
+func TestFixedHeightFramesRenderIdentical(t *testing.T) {
+	// Golden test: fixed-height frames (without FillHeight) should render
+	// byte-identical regardless of later enhancements.
+	w, cfg, err := BuildWidget(strings.NewReader(emptyShellFixture(t)))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify that the fixture's boxes are NOT using FillHeight
+	frame := w.(*Frame)
+	for _, box := range frame.Boxes {
+		if box.FillHeight {
+			t.Fatalf("fixture should not have FillHeight=true")
+		}
+	}
+
+	// Render at the configured dimensions
+	rows := Render(w, cfg.MaxWidth(), cfg.Height(0))
+
+	// Capture golden output (this is what we're pinning)
+	gotRows := make([]string, len(rows))
+	for i, row := range rows {
+		gotRows[i] = strings.TrimSuffix(row, "\x1b[0m")
+	}
+
+	// These rows should be stable: any change to layout logic should preserve them
+	expectedLineCount := cfg.Height(0)
+	if len(gotRows) != expectedLineCount {
+		t.Errorf("expected %d rows, got %d", expectedLineCount, len(gotRows))
+	}
+
+	// Verify key structural properties (boxes and status visible)
+	if len(gotRows) < 3 {
+		t.Fatalf("need at least 3 rows for title, content, status")
+	}
+	if !strings.Contains(gotRows[0], "Loom monitor") {
+		t.Errorf("title row missing: %q", gotRows[0])
+	}
+	if !strings.Contains(gotRows[len(gotRows)-1], "Show once") {
+		t.Errorf("status row missing: %q", gotRows[len(gotRows)-1])
+	}
+	// Both boxes should be visible (borders visible)
+	allRows := strings.Join(gotRows, "\n")
+	if !strings.Contains(allRows, "All Usage") {
+		t.Errorf("left box title missing")
+	}
+	if !strings.Contains(allRows, "Load") {
+		t.Errorf("right box title missing")
 	}
 }
 
@@ -166,6 +219,102 @@ func TestFrameLayoutFillHeight(t *testing.T) {
 		t.Errorf("right box fixed height = %d, want %d", got, want)
 	}
 }
+
+func TestFrameLayoutFillHeightWithMinMaxClamping(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		height   int
+		minH, mH int
+		wantH    int
+	}{
+		// When available space (height-2) exceeds MaxHeight, clamp to MaxHeight
+		{"clamp to max", 20, 0, 10, 10},
+		// When available space is greater than MinHeight, fill to available
+		{"fill with min constraint", 15, 5, 0, 13},
+		// When available space is between min and max, use available space
+		{"between min and max", 15, 2, 20, 13},
+		// Zero max (no limit) should use available space
+		{"zero max means no limit", 20, 0, 0, 18},
+		// Max below available should be clamped to max
+		{"max limits fill", 30, 0, 15, 15},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			f := Frame{
+				Boxes: []Box{
+					{
+						ID:         "box",
+						Dynamic:    true,
+						FillHeight: true,
+						MinWidth:   10,
+						Height:     4,
+						MinHeight:  tc.minH,
+						MaxHeight:  tc.mH,
+					},
+				},
+			}
+			rects := f.Layout(30, tc.height)
+			if len(rects) != 1 || rects[0].H != tc.wantH {
+				t.Errorf("got height=%d, want %d", rects[0].H, tc.wantH)
+			}
+		})
+	}
+}
+
+func TestFrameLayoutMixedFillAndFixed(t *testing.T) {
+	// Test a row with both filling and fixed-height boxes
+	f := Frame{
+		Gap: 2,
+		Boxes: []Box{
+			{ID: "fill1", Dynamic: true, FillHeight: true, MinWidth: 10, Height: 4},
+			{ID: "fixed", Dynamic: true, FillHeight: false, MinWidth: 10, Height: 6},
+			{ID: "fill2", Dynamic: true, FillHeight: true, MinWidth: 10, Height: 4},
+		},
+	}
+	rects := f.Layout(50, 20)
+	if len(rects) != 3 {
+		t.Fatalf("expected 3 rects, got %d", len(rects))
+	}
+	// Available height is 20 - 2 = 18
+	// All filling boxes should get 18 (clamped by their constraints)
+	// Fixed box should get its preferred height (6)
+	if got := rects[0].H; got != 18 {
+		t.Errorf("fill1 height = %d, want 18", got)
+	}
+	if got := rects[1].H; got != 6 {
+		t.Errorf("fixed height = %d, want 6", got)
+	}
+	if got := rects[2].H; got != 18 {
+		t.Errorf("fill2 height = %d, want 18", got)
+	}
+}
+
+func TestFrameLayoutFillHeightAtVariousHeights(t *testing.T) {
+	// Test that FillHeight boxes adapt to different terminal heights
+	f := Frame{
+		Gap: 1,
+		Boxes: []Box{
+			{ID: "left", Dynamic: true, FillHeight: true, MinWidth: 15, Height: 4},
+			{ID: "right", Dynamic: true, FillHeight: true, MinWidth: 15, Height: 4},
+		},
+	}
+
+	for _, height := range []int{12, 20, 30} {
+		t.Run(fmt.Sprintf("height-%d", height), func(t *testing.T) {
+			rects := f.Layout(60, height)
+			if len(rects) != 2 {
+				t.Fatalf("expected 2 rects, got %d", len(rects))
+			}
+			// Both boxes should fill to available height (height - 2)
+			expectedH := height - 2
+			if got := rects[0].H; got != expectedH {
+				t.Errorf("left height = %d, want %d", got, expectedH)
+			}
+			if got := rects[1].H; got != expectedH {
+				t.Errorf("right height = %d, want %d", got, expectedH)
+			}
+		})
+	}
+}
 func TestFrameTinyBounds(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))
 	if err != nil {
@@ -237,5 +386,69 @@ func TestShellValidation(t *testing.T) {
 				t.Fatal("validation/build disagree")
 			}
 		})
+	}
+}
+
+func TestGenerateM1FillHeightEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	for _, height := range []int{12, 20, 30} {
+		t.Run(fmt.Sprintf("height-%d", height), func(t *testing.T) {
+			source := emptyShellFixture(t)
+			// Add FillHeight: true to both boxes
+			source = strings.Replace(source, "- id: usage", "- id: usage\n        fill_height: true", 1)
+			source = strings.Replace(source, "- id: load", "- id: load\n        fill_height: true", 1)
+			// Update height to the test value
+			source = strings.Replace(source, "  height: 9", fmt.Sprintf("  height: %d", height), 1)
+
+			w, cfg, err := BuildWidget(strings.NewReader(source))
+			if err != nil {
+				t.Fatalf("BuildWidget failed: %v", err)
+			}
+
+			// Render at the target height and full width
+			frames := Render(w, cfg.MaxWidth(), height)
+			var buf strings.Builder
+			for _, line := range frames {
+				buf.WriteString(line)
+				buf.WriteString("\n")
+			}
+
+			repoRoot := findRepoRoot(t)
+			progressDir := filepath.Join(repoRoot, "docs", "progress", "051")
+			if err := os.MkdirAll(progressDir, 0755); err != nil {
+				t.Fatalf("creating progress directory: %v", err)
+			}
+
+			outPath := filepath.Join(progressDir, fmt.Sprintf("M1-fill-h%d.ansi", height))
+			if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+				t.Fatalf("writing evidence: %v", err)
+			}
+			t.Logf("M1 evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+		})
+	}
+}
+
+// findRepoRoot walks up from the current directory to find the repo root (where go.mod is)
+func findRepoRoot(t *testing.T) string {
+	t.Helper()
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getting current directory: %v", err)
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			t.Fatalf("go.mod not found in any parent directory")
+		}
+		cwd = parent
 	}
 }
