@@ -1,6 +1,6 @@
 # 081 — Expose TreemapCell layout models squarified partitioning and value-based color scales
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M5); luna:low M1-M4, sol:low M5
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
