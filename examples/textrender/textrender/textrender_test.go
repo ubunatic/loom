@@ -77,6 +77,105 @@ func TestGenerateM1BordersEvidence(t *testing.T) {
 	t.Logf("M1 evidence (40x12) saved to %s (%d bytes)", outPathNarrow, len(bufNarrow.String()))
 }
 
+func TestGenerateM2ButtonsEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Render the buttons view directly
+	buttonsWidget := newButtonsView()
+	const cols, rows = 80, 24
+	frames := loom.Render(buttonsWidget, cols, rows)
+
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "096")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-buttons.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 Buttons evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
+func TestGenerateM2ClippingEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Render the clipping view directly
+	clippingWidget := newClippingView()
+	const cols, rows = 80, 24
+	frames := loom.Render(clippingWidget, cols, rows)
+
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "096")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-clipping.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 Clipping evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
+func TestGenerateM2ScrollEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Render the scroll view directly
+	scrollWidget := newScrollView()
+	const cols, rows = 80, 24
+	frames := loom.Render(scrollWidget, cols, rows)
+
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "096")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M2-scroll.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M2 Scroll evidence saved to %s (%d bytes)", outPath, len(buf.String()))
+}
+
 // findRepoRoot walks up from the current directory to find the repo root (where go.mod is)
 func findRepoRoot(t *testing.T) string {
 	cwd, err := os.Getwd()

@@ -17,6 +17,7 @@ import (
 	"codeberg.org/ubunatic/loom/examples/splash/splash"
 	"codeberg.org/ubunatic/loom/examples/split/split"
 	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
+	"codeberg.org/ubunatic/loom/examples/textrender/textrender"
 	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
 	"codeberg.org/ubunatic/loom/examples/winch/winch"
 )
@@ -97,6 +98,14 @@ var Registry = []Example{
 		Run:          tabs.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return tabs.NewWidget(args) },
+	},
+	{
+		Name:         "textrender",
+		Description:  "Non-ASCII text rendering across loom widgets",
+		Package:      "codeberg.org/ubunatic/loom/examples/textrender",
+		Run:          textrender.Run,
+		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return textrender.NewWidget(args) },
 	},
 	{
 		Name:         "treemap",

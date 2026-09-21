@@ -39,12 +39,15 @@ type textRenderApp struct {
 
 func newTextRenderApp() *textRenderApp {
 	borders := newBordersView()
+	buttons := newButtonsView()
+	clipping := newClippingView()
+	scroll := newScrollView()
 
 	root := loom.NewTabs(
 		loom.Tab{Title: "Borders", Widget: borders},
-		loom.Tab{Title: "Buttons", Widget: loom.NewView([]string{"Not yet implemented"})},
-		loom.Tab{Title: "Clipping", Widget: loom.NewView([]string{"Not yet implemented"})},
-		loom.Tab{Title: "Scroll", Widget: loom.NewView([]string{"Not yet implemented"})},
+		loom.Tab{Title: "Buttons", Widget: buttons},
+		loom.Tab{Title: "Clipping", Widget: clipping},
+		loom.Tab{Title: "Scroll", Widget: scroll},
 	)
 
 	return &textRenderApp{tabs: root}
@@ -62,6 +65,52 @@ func newBordersView() loom.Widget {
 	}
 
 	return loom.NewView(lines)
+}
+
+// newButtonsView creates a widget with test cases as button labels
+func newButtonsView() loom.Widget {
+	items := make([]loom.Item, len(Cases))
+	for i, tc := range Cases {
+		items[i] = loom.Item{
+			Name: tc.Text,
+			Desc: fmt.Sprintf("%s (width: %d)", tc.Label, tc.WantWidth),
+		}
+	}
+	return loom.NewChoice(items)
+}
+
+// newClippingView creates a widget showing test cases with progressive clipping
+func newClippingView() loom.Widget {
+	lines := []string{
+		"Text samples with progressive clipping:",
+		"",
+	}
+
+	for _, tc := range Cases {
+		lines = append(lines, fmt.Sprintf("  Label: %s", tc.Label))
+		lines = append(lines, fmt.Sprintf("    Full:  %q (width: %d)", tc.Text, tc.WantWidth))
+		// Show progressively clipped versions
+		for clipWidth := 8; clipWidth >= 2; clipWidth -= 2 {
+			if tc.WantWidth > clipWidth {
+				lines = append(lines, fmt.Sprintf("    Clip%d: %q", clipWidth, tc.Text))
+			}
+		}
+		lines = append(lines, "")
+	}
+
+	return loom.NewView(lines)
+}
+
+// newScrollView creates a scrollable list of test cases
+func newScrollView() loom.Widget {
+	items := make([]loom.Item, len(Cases))
+	for i, tc := range Cases {
+		items[i] = loom.Item{
+			Name: tc.Label,
+			Desc: fmt.Sprintf("%q (width: %d)", tc.Text, tc.WantWidth),
+		}
+	}
+	return loom.NewChoice(items)
 }
 
 func (a *textRenderApp) Draw(c *loom.Canvas, r loom.Rect) {
