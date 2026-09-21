@@ -81,3 +81,24 @@ finishing; labels on their own rows. gofmt. No dead code.
 - With `internal/ptytest` and its `SendRaw` helper: launch the filebrowser on a temp dir, click on item text
   (selection or activation changes), click on row whitespace (nothing changes). Locate the screen position from
   the returned screen by rune or display width. Evidence: `M3-pty-click.ansi` (final screen).
+
+### M1-M3 Review (host)
+Code and PTY test committed by the host (index.lock). Tests and vet green. Accepted: `MouseTextOnly`, display-width
+hit region, filebrowser wiring, PTY click test. Notes:
+- `Choice.Draw` now truncates with `measure.Truncate(line, w, "…")` for ALL Choice users (before: a rune cut).
+  Correct for wide runes, but it is a visible behavior change outside this ticket; keep it only with a test
+  that pins the new truncation (wide rune and ellipsis) and mention it in your report.
+- The hit test rebuilds the row text (marker, name, desc) a second time inside `HandleMouse`. Refactor so `Draw`
+  and `HandleMouse` share one function that builds the displayed row string (no duplicated formatting).
+- Missing: the M2 evidence frames (`M2-hit-overlay.ansi`, `M2-click-before.ansi`, `M2-click-after-text.ansi`,
+  `M2-click-after-whitespace.ansi`). `M3-pty-click.ansi` is full of animated-background braille noise; switch the
+  background animation off for the evidence run if the browser allows it (see the existing background test),
+  otherwise render it with a fixed frame, so the list and metadata are readable.
+
+### M4 - Pre-Work
+1. Shared row-text function used by `Draw` and `HandleMouse` (test that both agree).
+2. Pin the new truncation with a test.
+3. The four M2 evidence frames from the real filebrowser, headless, gated as usual; overlay marks hit cells.
+4. Regenerate `M3-pty-click.ansi` without background noise; also assert in the PTY test that the whitespace click
+   leaves the selection unchanged and the text click changes it (state read from the screen).
+5. Commit '(issue 093 M4)'; if git is blocked say so and leave files staged.
