@@ -118,3 +118,44 @@ constructs *and* runs them, not by a framework-wide injection path.
 - `RunWatch`'s public behavior is unchanged; existing monitor/splash watch
   tests and `make watch-pty` still pass.
 - `go test ./...`, `go test -race ./...` and `go vet ./...` pass.
+
+---
+
+## Resolved Design Additions (host decisions, binding for the sprint)
+
+- Follow section 2 as written. No `Host`/`SetHost`.
+- Testable core: a pure walker over the widget tree that (a) returns the shortest positive `TickInterval` (0 if none)
+  and (b) `tickTree(root, now)` calling `Tick` on each `Ticker` that is due. Per-widget last-tick times are kept by the
+  pane in a small map keyed by the widget value (pointer identity), so a child ticks no more often than it asked even
+  though the pane timer runs at the shortest interval. Tests drive it with a fake clock (explicit `now` values); no
+  test sleeps for more than a few milliseconds.
+- `Pane.Invalidate()`: a `cap(1)` channel created where the pane is constructed; make it safe when the pane was
+  built without that constructor (lazy init guarded by `sync.Once`, or a documented zero-value-safe path). A call
+  must never block and never be lost while the loop runs (coalescing is fine).
+- The pane's tick timer must stop when no widget is a `Ticker` (no timer, no wakeups, no repaint).
+- Concurrency proof: `go test -race` on the new tests, N=100 goroutines calling `Invalidate` before the loop runs,
+  during the loop, and after it stopped; no goroutine leak (check `runtime.NumGoroutine` before and after, with a
+  short settle).
+
+## Milestones (lean sprint, developer: luna:low)
+
+Host reviews only diffs, test output and evidence frames; this ticket is the only channel. Root-package tests needing
+`/dev/tty` fail before this work; ignore them. Commit each milestone (message ends '(issue 060 MX)'), stage only your
+files, never docs/README.md, no stray binaries in the repo root; if `.git/index.lock` blocks the commit, stage your
+files and say so (the host commits). Evidence: frames produced by code, gated on env `LOOM_EVIDENCE=1`, written to
+repo-root `docs/progress/060/` (find the root by walking up to `go.mod`); run only this ticket's evidence test; view
+frames ANSI-stripped before finishing; labels on their own rows. gofmt. No dead code.
+
+### M1 - Ticker, forwarding, tree walker
+- `Ticker` in `widget.go`; `Tabs` (active child only), `Stack`, `Grid`, `Frame` (all children) forward; walker and
+  `tickTree` with fake-clock tests: shortest interval, per-child cadence, inactive tab never ticked, tab switch moves
+  ticks, non-Ticker tree yields no interval.
+- Evidence: `M1-tick-0.ansi`, `M1-tick-1.ansi`, `M1-tick-2.ansi` (a small counter widget inside Tabs rendered after 0, 1,
+  2 driven ticks, plus `M1-tabs-switched.ansi` showing the other tab's counter after a switch and further ticks).
+
+### M2 - Pane integration, Invalidate, guards
+- `Pane.run` uses the timer and the walker; `Pane.Invalidate`; `RunWatch` keeps its public behavior; idle-redraw guard
+  (a non-Ticker widget causes no extra repaint); concurrency tests above under `-race`.
+- Run `go test -race` for the root package tests you added and `go test ./...` (root `/dev/tty` failures are pre-existing).
+- Evidence: `M2-pane-ticks.ansi` (final frame of a real `Pane` run headless or in the PTY helper showing the counter
+  advanced by ticks) and `M2-invalidate.ansi` (frame after an `Invalidate` from another goroutine).
