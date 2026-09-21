@@ -116,3 +116,4 @@ upkeep.
 | 102 | [102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md](102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) | Human review collection: manual checks for lean-sprint deliveries | Open — manual checks |
 | 103 | [103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md](103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md) | Provide a hostable migration loop for coexisting Loom views | Open |
 | 104 | [104-add-ansi-parity-fixtures-for-legacy-and-loom-views.md](104-add-ansi-parity-fixtures-for-legacy-and-loom-views.md) | Add ANSI parity fixtures for legacy and Loom views | Open |
+| 105 | [105-unify-filebrowser-navigation-pane-across-examples.md](105-unify-filebrowser-navigation-pane-across-examples.md) | Unify filebrowser navigation pane across examples | Open |
