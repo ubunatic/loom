@@ -31,6 +31,19 @@ func TestWidths(t *testing.T) {
 	}
 }
 
+func TestBordersKeepBodyInsideBox(t *testing.T) {
+	frames := loom.Render(newBordersView(), 80, 24)
+	for _, line := range frames {
+		if strings.Contains(line, "│ASCII: Hello") {
+			if strings.Contains(line, "└") || strings.Contains(line, "┘") {
+				t.Fatalf("body row is on the bottom border: %q", line)
+			}
+			return
+		}
+	}
+	t.Fatal("rendered Borders view has no interior ASCII body row")
+}
+
 func TestGenerateM1BordersEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")

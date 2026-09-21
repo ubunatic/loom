@@ -71,7 +71,7 @@ func newTextRenderApp() *textRenderApp {
 
 	root := loom.NewTabs(
 		loom.Tab{Title: "Borders", Widget: borders},
-		loom.Tab{Title: "Buttons", Widget: buttons},
+		loom.Tab{Title: "Choice list (no Button widget yet)", Widget: buttons},
 		loom.Tab{Title: "Clipping", Widget: clipping},
 		loom.Tab{Title: "Scroll", Widget: scroll},
 	)
@@ -84,10 +84,10 @@ func newBordersView() loom.Widget {
 	return staticView{draw: func(c *loom.Canvas, r loom.Rect) {
 		c.Write(r.X, r.Y, "DrawBox titles and bodies (narrow boxes truncate titles)", loom.Style{Bold: true})
 		for i, tc := range Cases {
-			if r.Y+1+i*2+1 >= r.Y+r.H {
+			if r.Y+1+i*3+2 >= r.Y+r.H {
 				break
 			}
-			y := r.Y + 1 + i*2
+			y := r.Y + 1 + i*3
 			w := r.W - 2
 			if i%2 == 1 {
 				w = 12
@@ -95,7 +95,7 @@ func newBordersView() loom.Widget {
 			if w < 4 {
 				w = 4
 			}
-			c.DrawBox(loom.Rect{X: r.X, Y: y, W: w, H: 2}, loom.BoxBorderStyleSharp, tc.Text, loom.Reset)
+			c.DrawBox(loom.Rect{X: r.X, Y: y, W: w, H: 3}, loom.BoxBorderStyleSharp, tc.Text, loom.Reset)
 			c.Write(r.X+1, y+1, loom.TruncateText(sampleLabel(tc), w-2, ""), loom.Reset)
 		}
 	}}
@@ -107,7 +107,7 @@ type activatableView struct {
 }
 
 func (v *activatableView) Draw(c *loom.Canvas, r loom.Rect) {
-	c.Write(r.X, r.Y, "Activatable samples (Enter activates selection)", loom.Style{Bold: true})
+	c.Write(r.X, r.Y, "Choice list (no Button widget yet): Enter activates selection", loom.Style{Bold: true})
 	v.choice.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
 	c.Write(r.X, r.Y+r.H-1, loom.TruncateText(v.status, r.W, ""), loom.Style{Dim: true})
 }
