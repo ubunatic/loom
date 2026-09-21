@@ -28,6 +28,7 @@ import (
 	"os"
 	"time"
 
+	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/internal/examplesreg"
 )
 
@@ -75,8 +76,14 @@ type runResult struct {
 }
 
 func smokeTest(e examplesreg.Example) result {
+	// For examples with NewWidget, use headless rendering instead of --help
+	if e.NewWidget != nil {
+		return headlessSmoke(e)
+	}
+
+	// Fall back to --help probe for examples not yet converted
 	if !e.SupportsHelp {
-		return result{name: e.Name, status: "SKIP", detail: "no fast-exit flag; interactive TTY required to run"}
+		return result{name: e.Name, status: "SKIP", detail: "no NewWidget and no fast-exit flag; interactive TTY required"}
 	}
 
 	restore := silenceStdIO()
@@ -100,6 +107,46 @@ func smokeTest(e examplesreg.Example) result {
 	case <-time.After(perExampleTimeout):
 		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("timed out after %s running --help", perExampleTimeout)}
 	}
+}
+
+// headlessSmoke tests a widget by rendering it at standard and tiny sizes,
+// asserting non-empty output and consistent line counts.
+func headlessSmoke(e examplesreg.Example) result {
+	start := time.Now()
+
+	// Create the widget
+	widget, err := e.NewWidget([]string{})
+	if err != nil {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("NewWidget failed: %v", err)}
+	}
+
+	// Cast to loom.Widget
+	w, ok := widget.(loom.Widget)
+	if !ok {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: "NewWidget did not return a loom.Widget"}
+	}
+
+	// Render at standard size (80x24)
+	frames80 := loom.Render(w, 80, 24)
+	if len(frames80) == 0 {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: "80x24 render produced no output"}
+	}
+
+	// Render at tiny size (20x5)
+	frames20 := loom.Render(w, 20, 5)
+	if len(frames20) == 0 {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: "20x5 render produced no output"}
+	}
+
+	// Verify line counts match expected dimensions
+	if len(frames80) != 24 {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("80x24 render produced %d lines, expected 24", len(frames80))}
+	}
+	if len(frames20) != 5 {
+		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("20x5 render produced %d lines, expected 5", len(frames20))}
+	}
+
+	return result{name: e.Name, status: "PASS", elapsed: time.Since(start), detail: "headless 80x24 and 20x5 OK"}
 }
 
 // silenceStdIO redirects os.Stdout/os.Stderr to a drained pipe for the
