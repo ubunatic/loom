@@ -22,13 +22,13 @@ for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done
 | 4 | 051 Frame fills height | closed (M1-M3) | haiku | `docs/progress/051/` |
 | 5 | 037 DrawBorder / DrawBox | closed (M1-M4) | haiku, luna:low fixed evidence | `docs/progress/037/` |
 | 6 | 096 textrender | closed (M1-M5) | haiku M1-M3, luna:low M4-M5 | `docs/progress/096/` |
-| 7 | 081 TreemapCell / ColorScale | running (plan approved) | luna:low | `docs/progress/081/` |
-| 8 | 092 scrollbar drag | not started | | |
+| 7 | 081 TreemapCell / ColorScale | closed (M1-M5) | luna:low M1-M4, sol:low M5 | `docs/progress/081/` |
+| 8 | 092 scrollbar drag | running (plan step) | luna:low | `docs/progress/092/` |
 | 9 | 093 filebrowser mouse hit-test | not started | | |
 | 10 | 060 Ticker / Invalidate | not started | | |
 | 11 | 088 key capture coverage | not started | | |
 
-Done: 7 of 12 counting 097 (6 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
+Done: 8 of 12 counting 097 (7 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
 
 ## How the Sprints Run
 
@@ -54,8 +54,11 @@ Done: 7 of 12 counting 097 (6 of the 11 goal tickets). Second wave 063, 064, 065
 - 097 known gaps: `--record` writes `ansiviewer.ansi` in the cwd by default; the ansiviewer keeps a local SGR
   parser because it is entangled with cursor replay (decision recorded in 034 M4).
 
+- 081: luna:low built a squarified stub that fell back to slice-dice (aspect 2.893 vs 2.893) and left the real algorithm in a comment; sol:low, given the float-squarify plus cumulative-rounding architecture, delivered it (3.375 vs 1.892). Evidence frames s1 and s2 are identical for both layouts; only s3 differs.
+
 ## Open Items
 
+- 081 leftover: `graph/treemap.go` still holds a dead commented block after the `return` in `layoutTreemapSquarified` (about 110 lines). The ticket asked to delete it; the next sprint touching `graph/` should.
 - Two old `splash --watch` processes (PIDs 920646 and 920686) predate the sprints and were not touched.
 - A peer session (lmcoder-41) asked for a review of the lmcoder roadmap; not acted on, it is outside this goal.
 - `gofmt -l` still lists a few files that predate or were touched during the sprints (for example
