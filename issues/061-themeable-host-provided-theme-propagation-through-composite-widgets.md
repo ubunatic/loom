@@ -81,3 +81,32 @@ be overridden by an `ApplyTheme` call rather than needing to be "removed".
   hosted (covered in [063](063-convert-filebrowser-example-to-a-hostable-widget.md)).
 - Standalone `--theme` behavior is unchanged.
 - `go test ./...` and `go vet ./...` pass.
+
+---
+
+## Milestones (lean sprint, dev agent: haiku)
+
+The host reviews only diffs and test output; this ticket is the only channel. Root-package
+tests needing `/dev/tty` fail before this work; ignore them. Commit each milestone
+(message ends '(issue 061 MX)'), staging only your own files, never docs/README.md.
+
+Evidence rules (learned in 034): frames are produced by code, never hand-written; the
+evidence test writes only when env `LOOM_EVIDENCE=1` is set; it finds the repo root by
+walking up to `go.mod` and writes to repo-root `docs/progress/061/`. Run it with
+`LOOM_EVIDENCE=1` and check `git status` shows only the intended files.
+
+### M1 - Themeable interface and composite forwarding
+- Add `Themeable` (section 2) to `widget.go`; `Tabs`, `Stack`, `Frame`, `Grid` implement it,
+  restyle their own chrome and forward to children that implement it; other children are skipped.
+- Tests: nested `Tabs{Frame{Choice}}` rendered under two themes from `spec/themes.yaml`
+  differs in tab bar, border and choice; a non-Themeable child does not error.
+  Read the theme list from the spec API, never hardcode color values in Go.
+- Evidence: `M1-nested-themes.ansi`, the same tree rendered once per theme, with a label
+  line before each.
+
+### M2 - Choice/Table defaults and filebrowser adoption
+- `Choice` and `Table` implement `Themeable`; `DefaultChoiceStyle()`/`DefaultTableStyle()` stay
+  `plain` and are overridable through `ApplyTheme`. Update `theme_test.go` accordingly.
+- filebrowser: export `ApplyTheme(loom.ThemeColors)` (replacing `applyTheme`); standalone
+  `--theme` and F9 behave exactly as before (existing tests stay green).
+- Evidence: `M2-filebrowser-themes.ansi`, filebrowser rendered headless under two themes.
