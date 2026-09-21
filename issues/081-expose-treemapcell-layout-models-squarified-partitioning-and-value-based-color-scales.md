@@ -67,3 +67,30 @@ their own rows, nothing overlapping. gofmt.
 ### M3 - ColorScale
 - Scale type, helpers, edge-case tests; a demo render coloring cells by value.
 - Evidence: `M3-colorscale.ansi` (heat gradient legend plus a colored treemap at one size).
+
+### M1-M3 Review (host)
+Code committed by the host (index.lock blocked the developer). It builds and `go test ./graph` passes,
+but the sprint is incomplete:
+- No evidence frames exist at all (the developer found no harness). Write one: an evidence test in
+  `graph/` (gated on `LOOM_EVIDENCE=1`, repo-root `docs/progress/081/`) that renders cells from
+  `LayoutTreemap` into a grid with borders and labels and prints it, plus a small helper for it.
+- The tests are thin: two hand-picked cases. The Resolved Design demands property tests, an
+  aspect-ratio comparison and edge cases.
+- No proof that the existing renderer output is unchanged (golden, byte-identical).
+
+### M4 - Pre-Work / Required Refinements
+1. Property test (seeded `rand`, at least 200 random inputs, sizes 1..80 x 1..40, 1..12 segments, some
+   zero/negative values): for BOTH layouts cells tile the area exactly (build a w x h occupancy grid: every
+   grid cell covered exactly once), all rects inside bounds, no cell for value <= 0, deterministic
+   (same input gives identical output), no panic on empty input or w/h <= 0.
+2. Aspect test: over at least 5 fixed distributions, mean worst aspect ratio (terminal cell aspect 1:2,
+   so use W against H*2) of squarified is <= slice-dice; report the numbers in the test log.
+3. Color scale edge tests: min > max, min==max, +/-Inf, NaN, negative range, exact midpoint value, monotonic
+   red channel for the heat scale.
+4. Golden proof: rendering existing sample segments through `RenderTreemap` is byte-identical to the output
+   on the previous commit (`git stash`-free way: commit the current output of the OLD code path as a
+   golden string in the test before any routing change; do not route the renderer through LayoutTreemap
+   unless it stays byte-identical).
+5. Evidence as described above: `M1-slicedice-s1..s3.ansi`, `M2-squarified-s1..s3.ansi` (same data and 3
+   sizes each), `M3-colorscale.ansi`. View them ANSI-stripped; labels on own rows; nothing overlapping.
+6. Commit '(issue 081 M4)'; if index.lock blocks, stage your files and say so.
