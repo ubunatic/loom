@@ -89,3 +89,27 @@ Evidence rules: frames produced by code, gated on env `LOOM_EVIDENCE=1`, written
 - filebrowser boxes use `FillHeight` instead of the hard-coded 18 and reach the status row; existing
   filebrowser tests stay green.
 - Evidence: `M2-stacked.ansi`, `M2-breakpoint.ansi`, `M2-filebrowser-fill.ansi`.
+
+### M1-M2 Review (host)
+Delivered: 85dcc1c, e6ea79f. Tests and vet green. `FillHeight` already existed on `Box` and
+the horizontal case already worked apart from min/max clamping (fixed in M1, accepted).
+Defect: the stacked behavior of the Resolved Design was NOT implemented. `M2-stacked.ansi` shows
+two filling boxes at 4 rows each with 10 empty rows below, so fill does nothing when stacked;
+`TestFrameLayoutStackedWidthBehavior` tests widths, not fill. Also `Height: 4` in the
+filebrowser is a hidden hack: in stacked mode it makes the boxes tiny.
+
+### M3 - Pre-Work / Required Refinements
+1. Test first: a stacked frame (width below Breakpoint) with two `FillHeight` boxes at heights
+   12, 20, 30 must have the boxes' rects cover all content rows (height minus title and status
+   rows, minus the Gap), sharing equally, remainder to the earlier box; a fixed box next to a
+   filling box keeps its height and the fill box gets the rest; if nothing is left, a filling
+   box gets its minimum (or 1). Then implement it in the stacked branch of `Frame.Layout`
+   (frame.go around the `layout.Plan`/`balancedStackedAllocations` calls). Existing fixed-height
+   and dynamic stacked behavior stays byte-identical (the golden test must stay green).
+2. Regenerate `M2-stacked.ansi` so the boxes visibly fill down to the status row; add
+   `M3-stacked-h12.ansi` and `M3-stacked-h30.ansi`.
+3. filebrowser: remove the `Height: 4` hack (use a small sane preferred height only if
+   validation requires one, and explain in your report), and prove with tests that both the wide
+   and the narrow (stacked) layouts reach the status row. Evidence: `M3-filebrowser-wide.ansi` and
+   `M3-filebrowser-narrow.ansi`.
+4. Commit '(issue 051 M3)'; gofmt, go test ./..., go vet ./... green.
