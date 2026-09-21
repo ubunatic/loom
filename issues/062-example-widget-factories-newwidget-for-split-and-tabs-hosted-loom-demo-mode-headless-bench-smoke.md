@@ -113,3 +113,38 @@ unconverted remainder and is removed once every example has `NewWidget`.
 - Closing a hosted app returns to the host instead of terminating loom-demo.
 - Standalone `go run ./examples/split` and `./examples/tabs` behave as before.
 - `go test ./...` and `go vet ./...` pass; `make install` run afterwards.
+
+---
+
+## Milestones (lean sprint, dev agent: haiku)
+
+Host reviews only diffs and test output; this ticket is the only channel. Root-package tests
+needing `/dev/tty` fail before this work; ignore them. Commit each milestone (message ends
+'(issue 062 MX)'), staging only your own files, never docs/README.md.
+
+Evidence rules: frames are produced by code, gated on env `LOOM_EVIDENCE=1`, written to
+repo-root `docs/progress/062/` (find the root by walking up to `go.mod`; a relative
+`../..` path is a known mistake). Run with `LOOM_EVIDENCE=1`, confirm `git status`
+shows only intended files.
+
+### M1 - NewWidget factories and registry field
+- `NewWidget(args []string) (loom.Widget, error)` for `split` and `tabs`; `Run` becomes a thin
+  wrapper; tabs' `EnableMouseClicks` moves into the widget's PaneRequest (see 058 and
+  the existing PaneRequest API; do not invent a new one).
+- `examplesreg.Example.NewWidget` field, set for split and tabs; registry test covers it.
+- Evidence: `M1-standalone-split.ansi` and `M1-standalone-tabs.ansi` via `loom.Render(w, 80, 24)`.
+
+### M2 - loom-bench headless smoke
+- For examples with `NewWidget`, `loom-bench` renders at 80x24 and 20x5, asserting non-empty
+  output, stable line count, no panic. `SupportsHelp` stays for unconverted examples.
+- Test the new bench path with a table test in the bench package.
+- Evidence: `M2-bench-tiny-split.ansi` and `M2-bench-tiny-tabs.ansi` (the 20x5 frames).
+
+### M3 - loom-demo hosted Tabs mode
+- Hosted mode: one tab per converted example, `ArrowSwitch = false`, `OnChildQuit` contains a
+  hosted app's quit; sequential mode stays. Nested-Tabs meta-test: with the hosted `tabs` example
+  focused, left/right/ctrl-t switch the inner tabs and never the outer tab; a hosted quit does
+  not terminate the host.
+- Tests drive it headless with synthetic key events.
+- Evidence: `M3-hosted-split.ansi`, `M3-hosted-tabs-inner-switched.ansi` (after a right key).
+- Run `make install` at the end of M3 and say so in the report.
