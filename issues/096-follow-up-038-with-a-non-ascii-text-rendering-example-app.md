@@ -1,6 +1,6 @@
 # 096 — Follow up 038 with a non-ASCII text rendering example app
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M5); haiku M1-M3, luna:low M4-M5
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
