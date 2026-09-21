@@ -1,6 +1,6 @@
 # 088 — Extend Loom key capture coverage and sane action defaults
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M5), luna:low
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
