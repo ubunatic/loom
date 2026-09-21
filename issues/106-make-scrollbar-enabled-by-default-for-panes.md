@@ -1,4 +1,4 @@
-# 106 — Make scrollbar enabled by default for panes
+# 106 — Make automatic scrollbars the default for panes
 
 **Status**: Open
 **Priority**: P2 (Medium)
@@ -9,17 +9,19 @@
 
 ## Goal
 
-Make `scrollbar: true` the default for panes/widgets that expose scrollable
-content, so applications receive usable scrolling without repeating local
-configuration. In particular, `ansiviewer` must visibly expose a scrollbar for
-long previews and file lists.
+Make `scrollbar: auto` the default for panes/widgets that expose scrollable
+content: show and use a scrollbar when content overflows, without reserving or
+rendering one when it does not. Applications should receive this behavior
+without repeating local configuration. In particular, `ansiviewer` must
+automatically expose a scrollbar for long previews and file lists.
 
 ## Acceptance
 
 - The pane/widget default is explicitly represented in the relevant defaults or
-  spec source of truth as enabled.
+  spec source of truth as `auto`.
 - `ansiviewer` displays and uses a scrollbar when its file list or preview
   exceeds the available viewport.
-- Existing applications that explicitly disable scrollbars remain unchanged.
+- Existing applications that explicitly set `true` or `false` remain
+  unchanged.
 - Tests cover the default, explicit opt-out, rendering, and interaction paths;
   existing scrollbar and filebrowser tests continue to pass.
