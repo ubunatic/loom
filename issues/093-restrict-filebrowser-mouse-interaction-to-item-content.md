@@ -102,3 +102,14 @@ hit region, filebrowser wiring, PTY click test. Notes:
 4. Regenerate `M3-pty-click.ansi` without background noise; also assert in the PTY test that the whitespace click
    leaves the selection unchanged and the text click changes it (state read from the screen).
 5. Commit '(issue 093 M4)'; if git is blocked say so and leave files staged.
+
+### M4 Review (host)
+Committed by the host. Accepted: shared row text, truncation pin, overlay frame, clean PTY frame. One evidence flaw:
+`M2-click-after-whitespace.ansi` clicks the whitespace of the row that is ALREADY selected from the text click, so the
+unchanged selection proves nothing (a buggy row-wide hit would look the same).
+
+### M5 - Pre-Work
+Change the evidence sequence: `before` (selection on row 0) -> whitespace click on the trailing space of ANOTHER
+row (row 2, far right of its text): selection must stay on row 0 (`M2-click-after-whitespace.ansi`, assert it in the
+test too) -> text click on row 2: selection moves (`M2-click-after-text.ansi`). Update the frame labels. Regenerate only
+these two frames. Commit '(issue 093 M5)'; if git is blocked say so and leave files staged.
