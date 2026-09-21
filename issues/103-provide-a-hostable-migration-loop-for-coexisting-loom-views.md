@@ -5,7 +5,7 @@
 ---
 
 Reserved placeholder ticket.
-# 103 — Provide a hostable migration loop for coexisting Loom views
+# 103 — Port minimal colored `harnez usage --compact --watch`
 
 **Status**: Open
 **Priority**: P2 (Medium)
@@ -14,10 +14,18 @@ Reserved placeholder ticket.
 
 ## Goal
 
-Expose a supported host API that lets an inline or altscreen Go TUI mount
-multiple Loom widgets, share one event/redraw loop, and switch active views
-without each child owning `/dev/tty` or starting its own `Pane.RunWatch`.
+Port the complete `../harnez` `harnez usage --compact --watch` execution path
+into a minimal, standalone Loom example. It must be runnable and fully colored,
+with the two All Usage and Load boxes, asynchronous data collection, an
+independent redraw loop, terminal resize/input handling, and realistic local
+data for Load plus fake All Usage data.
 
-The monitor migration example currently proves the need with a local adapter;
-promote the lifecycle and view-switching contract into the SDK and cover
-coexistence, resize, input routing, and cancellation with deterministic tests.
+The port should preserve the useful Harnez behavior rather than replacing it
+with a placeholder renderer. Once the colored clone is working and covered by
+tests/ANSI evidence, use it as the host application for the Loom migration:
+introduce Loom views incrementally, gate old/new views behind CLI flags, allow
+both views to coexist, and provide an interactive switch between them.
+
+The SDK changes required by the migration should be kept small and generic.
+File separate follow-up issues for Loom capabilities that are discovered but
+are not necessary to complete this port.
