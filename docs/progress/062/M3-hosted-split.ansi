@@ -1,0 +1,24 @@
+[0m[1m[39m[49m split [0m[39m[49m tabs                                                                    [0m
+────────────────────────────────────────────────────────────────────────────────[0m
+Split panes                                                                     [0m
+ Nested Split (H: 40/60 • V: 50/50)                                             [0m
+ [0m[1m[39m[49mLeft line 01                  ▓[0m[2m[39m[49m│Top-Right line 01                            [0m[1m[39m[49m▓[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 02                  [0m[2m[39m[49m░│Top-Right line 02                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 03                  [0m[2m[39m[49m░│Top-Right line 03                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 04                  [0m[2m[39m[49m░│Top-Right line 04                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 05                  [0m[2m[39m[49m░│Top-Right line 05                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 06                  [0m[2m[39m[49m░│Top-Right line 06                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 07                  [0m[2m[39m[49m░│Top-Right line 07                            ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 08                  [0m[2m[39m[49m░│──────────────────────────────────────────────[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 09                  [0m[2m[39m[49m░│Bottom-Right line 01                         [0m[1m[39m[49m▓[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 10                  [0m[2m[39m[49m░│Bottom-Right line 02                         ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 11                  [0m[2m[39m[49m░│Bottom-Right line 03                         ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 12                  [0m[2m[39m[49m░│Bottom-Right line 04                         ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 13                  [0m[2m[39m[49m░│Bottom-Right line 05                         ░[0m[39m[49m [0m
+ [0m[1m[39m[49mLeft line 14                  [0m[2m[39m[49m░│Bottom-Right line 06                         ░[0m[39m[49m [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+Ratio: H 40% V 50%  •  Tab: focus  •  [ / ]: ratio  •  drag divider  •  q: quit [0m

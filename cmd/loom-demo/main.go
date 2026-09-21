@@ -26,7 +26,7 @@ func main() {
 }
 
 func execute(args []string) error {
-	var list bool
+	var list, hosted bool
 	cmd := &cobra.Command{
 		Use:           "loom-demo [example]",
 		Short:         "Interactive launcher for loom's examples/* programs",
@@ -38,6 +38,9 @@ func execute(args []string) error {
 				printList(cmd.OutOrStdout())
 				return nil
 			}
+			if hosted {
+				return runHosted()
+			}
 			if len(args) == 1 {
 				return runByName(args[0])
 			}
@@ -45,6 +48,7 @@ func execute(args []string) error {
 		},
 	}
 	cmd.Flags().BoolVar(&list, "list", false, "print the example registry and exit")
+	cmd.Flags().BoolVar(&hosted, "hosted", false, "run examples in hosted Tabs mode (experimental)")
 	cmd.SetArgs(args)
 	return cmd.Execute()
 }
@@ -87,4 +91,49 @@ func runInteractive() error {
 			fmt.Fprintln(os.Stderr, err)
 		}
 	}
+}
+
+// runHosted runs converted examples in a Tabs host with ArrowSwitch disabled
+// so that left/right arrow keys reach the hosted applications instead of
+// switching tabs. This demonstrates the hosting contract from 057 and 058.
+func runHosted() error {
+	// Collect converted examples (those with NewWidget)
+	tabs := make([]loom.Tab, 0)
+	for _, e := range examplesreg.Registry {
+		if e.NewWidget == nil {
+			continue
+		}
+		widget, err := e.NewWidget([]string{})
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "loom-demo: failed to create widget for %q: %v\n", e.Name, err)
+			continue
+		}
+		w, ok := widget.(loom.Widget)
+		if !ok {
+			fmt.Fprintf(os.Stderr, "loom-demo: %q NewWidget did not return a loom.Widget\n", e.Name)
+			continue
+		}
+		tabs = append(tabs, loom.Tab{Title: e.Name, Widget: w})
+	}
+
+	if len(tabs) == 0 {
+		return fmt.Errorf("loom-demo: no examples with NewWidget to host")
+	}
+
+	// Create the host tabs widget with ArrowSwitch disabled
+	// so left/right arrows reach the hosted app instead of switching tabs.
+	host := loom.NewTabs(tabs...)
+	host.ArrowSwitch = false
+	host.OnChildQuit = func(i int) bool {
+		// Return false to stay in hosted mode when a child quits
+		return false
+	}
+
+	pane, err := loom.New(1 << 16)
+	if err != nil {
+		return err
+	}
+	defer pane.Close()
+	pane.Resizeable = true
+	return pane.Run(host)
 }
