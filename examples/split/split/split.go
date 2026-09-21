@@ -99,6 +99,23 @@ func (a *splitApp) HandleMouse(e loom.MouseEvent) bool {
 	return a.frame.HandleMouse(e)
 }
 
+// PaneRequest declares the terminal requirements of the split widget.
+func (a *splitApp) PaneRequest() loom.PaneRequest {
+	return loom.PaneRequest{
+		Mouse:      1003, // SGR mouse tracking with motion events
+		Resizeable: true,
+	}
+}
+
+// NewWidget builds the split example's root widget from command-line args,
+// without creating or running a Pane.
+func NewWidget(args []string) (loom.Widget, error) {
+	if len(args) > 0 {
+		return nil, fmt.Errorf("split: unexpected arguments: %v", args)
+	}
+	return newSplitApp(), nil
+}
+
 // Run runs the split example with cobra command support.
 func Run(args []string) error {
 	cmd := &cobra.Command{

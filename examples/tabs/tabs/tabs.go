@@ -117,6 +117,23 @@ func (a *tabsApp) HandleMouse(e loom.MouseEvent) bool {
 	return a.tabs.HandleMouse(e)
 }
 
+// PaneRequest declares the terminal requirements of the tabs widget.
+func (a *tabsApp) PaneRequest() loom.PaneRequest {
+	return loom.PaneRequest{
+		Mouse:      1000, // SGR mouse tracking for clicks and wheel only
+		Resizeable: true,
+	}
+}
+
+// NewWidget builds the tabs example's root widget from command-line args,
+// without creating or running a Pane.
+func NewWidget(args []string) (loom.Widget, error) {
+	if len(args) > 0 {
+		return nil, fmt.Errorf("tabs: unexpected arguments: %v", args)
+	}
+	return newTabsApp(), nil
+}
+
 // Run runs the tabs example with cobra command support.
 func Run(args []string) error {
 	cmd := &cobra.Command{

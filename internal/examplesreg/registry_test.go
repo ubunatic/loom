@@ -34,3 +34,16 @@ func TestANSIViewerIsRegistered(t *testing.T) {
 		t.Fatalf("registration = %#v", e)
 	}
 }
+
+func TestNewWidgetConverted(t *testing.T) {
+	examples := []string{"split", "tabs"}
+	for _, name := range examples {
+		example, ok := Find(name)
+		if !ok {
+			t.Fatalf("Find(%q) returned no example", name)
+		}
+		if example.NewWidget == nil {
+			t.Errorf("Find(%q).NewWidget = nil, expected non-nil", name)
+		}
+	}
+}

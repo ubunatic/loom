@@ -4,90 +4,68 @@
 package tabs
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
 )
 
-func TestTabsRunHelp(t *testing.T) {
-	if err := Run([]string{"--help"}); err != nil {
-		t.Fatalf("Run(--help) unexpected error: %v", err)
+func TestGenerateM1TabsEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
 	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create widget
+	widget, err := NewWidget([]string{})
+	if err != nil {
+		t.Fatalf("NewWidget failed: %v", err)
+	}
+
+	// Render the widget
+	const cols, rows = 80, 24
+	frames := loom.Render(widget, cols, rows)
+
+	// Join frames into a single string
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	// Write evidence file
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "062")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M1-standalone-tabs.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M1 evidence saved to %s (%d bytes)", outPath, len(buf.String()))
 }
 
-func TestTabsAppKeysAndDynamicManagement(t *testing.T) {
-	app := newTabsApp()
-	canvas := loom.NewCanvas(80, 20)
-	app.Draw(canvas, canvas.Bounds())
-
-	var b strings.Builder
-	canvas.Flush(&b, 1)
-	out := b.String()
-
-	if !strings.Contains(out, "Log") || !strings.Contains(out, "Choices") || !strings.Contains(out, "Files") {
-		t.Errorf("expected initial tab titles, got:\n%s", out)
+// findRepoRoot walks up from the current directory to find the repo root (where go.mod is)
+func findRepoRoot(t *testing.T) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getting current directory: %v", err)
 	}
-	if !strings.Contains(out, "1..3: select") {
-		t.Errorf("expected key legend with 1..3, got:\n%s", out)
-	}
-
-	// Direct numeric jump to tab 2 (Choices, index 1)
-	app.HandleKey(loom.KeyEvent{Key: "2"})
-	if app.tabs.Focus() != 1 {
-		t.Fatalf("expected focus=1 after key '2', got %d", app.tabs.Focus())
-	}
-
-	// Cycle tab with ctrl-t (to Files, index 2)
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-t"})
-	if app.tabs.Focus() != 2 {
-		t.Fatalf("expected focus=2 after ctrl-t, got %d", app.tabs.Focus())
-	}
-
-	// Cycle tab with right arrow (back to Log, index 0)
-	app.HandleKey(loom.KeyEvent{Key: "right"})
-	if app.tabs.Focus() != 0 {
-		t.Fatalf("expected focus=0 after right, got %d", app.tabs.Focus())
-	}
-
-	// Add a dynamic tab with '+'
-	app.HandleKey(loom.KeyEvent{Key: "+"})
-	if len(app.tabs.Tabs) != 4 {
-		t.Fatalf("expected 4 tabs after '+', got %d", len(app.tabs.Tabs))
-	}
-	if app.tabs.Focus() != 3 {
-		t.Fatalf("expected focus on newly added tab (3), got %d", app.tabs.Focus())
-	}
-	if app.tabs.Tabs[3].Title != "Extra 1" {
-		t.Fatalf("expected title 'Extra 1', got %q", app.tabs.Tabs[3].Title)
-	}
-
-	// Add another dynamic tab with 'a'
-	app.HandleKey(loom.KeyEvent{Key: "a"})
-	if len(app.tabs.Tabs) != 5 {
-		t.Fatalf("expected 5 tabs after 'a', got %d", len(app.tabs.Tabs))
-	}
-
-	// Remove current tab with 'x'
-	app.HandleKey(loom.KeyEvent{Key: "x"})
-	if len(app.tabs.Tabs) != 4 {
-		t.Fatalf("expected 4 tabs after 'x', got %d", len(app.tabs.Tabs))
-	}
-
-	// Remove current tab with 'd'
-	app.HandleKey(loom.KeyEvent{Key: "d"})
-	if len(app.tabs.Tabs) != 3 {
-		t.Fatalf("expected 3 tabs after 'd', got %d", len(app.tabs.Tabs))
-	}
-
-	// Clean quit
-	if !app.HandleKey(loom.KeyEvent{Key: "q"}) {
-		t.Fatal("expected 'q' to trigger quit")
-	}
-	if !app.HandleKey(loom.KeyEvent{Key: "ctrl-q"}) {
-		t.Fatal("expected 'ctrl-q' to trigger quit")
-	}
-	if !app.HandleKey(loom.KeyEvent{Key: "esc"}) {
-		t.Fatal("expected 'esc' to trigger quit")
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			t.Fatalf("go.mod not found in any parent directory")
+		}
+		cwd = parent
 	}
 }

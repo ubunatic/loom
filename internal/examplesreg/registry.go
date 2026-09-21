@@ -42,6 +42,9 @@ type Example struct {
 	// DemoArgs are the arguments loom-demo passes to Run, e.g. "--watch" for
 	// examples that have a live mode.
 	DemoArgs []string
+	// NewWidget builds the example's root widget for in-process hosting and
+	// headless rendering. Nil for examples not yet converted.
+	NewWidget func(args []string) (interface{}, error)
 }
 
 // Registry lists every examples/* program in a fixed, deterministic order.
@@ -85,6 +88,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/split",
 		Run:          split.Run,
 		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return split.NewWidget(args) },
 	},
 	{
 		Name:         "tabs",
@@ -92,6 +96,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/tabs",
 		Run:          tabs.Run,
 		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return tabs.NewWidget(args) },
 	},
 	{
 		Name:         "treemap",

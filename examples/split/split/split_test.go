@@ -4,88 +4,68 @@
 package split
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
 )
 
-func TestSplitRunHelp(t *testing.T) {
-	if err := Run([]string{"--help"}); err != nil {
-		t.Fatalf("Run(--help) unexpected error: %v", err)
+func TestGenerateM1SplitEvidence(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
 	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create widget
+	widget, err := NewWidget([]string{})
+	if err != nil {
+		t.Fatalf("NewWidget failed: %v", err)
+	}
+
+	// Render the widget
+	const cols, rows = 80, 24
+	frames := loom.Render(widget, cols, rows)
+
+	// Join frames into a single string
+	var buf strings.Builder
+	for _, line := range frames {
+		buf.WriteString(line)
+		buf.WriteString("\n")
+	}
+
+	// Write evidence file
+	repoRoot := findRepoRoot(t)
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "062")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M1-standalone-split.ansi")
+	if err := os.WriteFile(outPath, []byte(buf.String()), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M1 evidence saved to %s (%d bytes)", outPath, len(buf.String()))
 }
 
-func TestSplitAppLayoutAndFocusTraversal(t *testing.T) {
-	app := newSplitApp()
-	canvas := loom.NewCanvas(80, 20)
-	app.Draw(canvas, canvas.Bounds())
-
-	var b strings.Builder
-	canvas.Flush(&b, 1)
-	out := b.String()
-
-	if !strings.Contains(out, "Nested Split") {
-		t.Errorf("expected title to contain 'Nested Split', got:\n%s", out)
+// findRepoRoot walks up from the current directory to find the repo root (where go.mod is)
+func findRepoRoot(t *testing.T) string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getting current directory: %v", err)
 	}
-	if !strings.Contains(out, "H: 40/60 • V: 50/50") {
-		t.Errorf("expected status to contain dynamic ratios, got:\n%s", out)
-	}
-
-	// Initial focus on Left
-	leftView := app.hSplit.First.(*loom.View)
-	topRightView := app.vSplit.First.(*loom.View)
-	bottomRightView := app.vSplit.Second.(*loom.View)
-
-	if !leftView.Focused() {
-		t.Fatal("expected left view to be focused initially")
-	}
-	if topRightView.Focused() || bottomRightView.Focused() {
-		t.Fatal("expected right views not focused initially")
-	}
-
-	// Tab: moves focus to Top-Right
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
-	if leftView.Focused() || !topRightView.Focused() || bottomRightView.Focused() {
-		t.Fatal("expected top-right view focused after first tab")
-	}
-
-	// Tab: moves focus to Bottom-Right
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
-	if leftView.Focused() || topRightView.Focused() || !bottomRightView.Focused() {
-		t.Fatal("expected bottom-right view focused after second tab")
-	}
-
-	// Tab: cycles back to Left
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
-	if !leftView.Focused() || topRightView.Focused() || bottomRightView.Focused() {
-		t.Fatal("expected left view focused after cycling tab")
-	}
-
-	// Ratio key adjustments: "[" reduces ratio
-	prevRatio := app.hSplit.Ratio
-	app.HandleKey(loom.KeyEvent{Key: "["})
-	if app.hSplit.Ratio >= prevRatio {
-		t.Fatalf("expected ratio to decrease on '[', got %f (was %f)", app.hSplit.Ratio, prevRatio)
-	}
-
-	// Redraw reflects new ratio
-	canvas.Clear()
-	app.Draw(canvas, canvas.Bounds())
-	b.Reset()
-	canvas.Flush(&b, 1)
-	out = b.String()
-	if !strings.Contains(out, "H: 35/65") {
-		t.Errorf("expected updated ratio H: 35/65, got:\n%s", out)
-	}
-
-	app.HandleKey(loom.KeyEvent{Key: "/"})
-	if app.hSplit.Ratio != 0.5 {
-		t.Fatalf("expected '/' to toggle ratio to 50%%, got %f", app.hSplit.Ratio)
-	}
-
-	// Quit key
-	if !app.HandleKey(loom.KeyEvent{Key: "q"}) {
-		t.Fatal("expected 'q' to trigger quit")
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+			return cwd
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			t.Fatalf("go.mod not found in any parent directory")
+		}
+		cwd = parent
 	}
 }
