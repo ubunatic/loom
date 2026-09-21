@@ -1,9 +1,5 @@
-Stacked with FillHeight       [0m
+Stacked FillHeight            [0m
 ┌ Top Box ───────────────────┐[0m
-│                            │[0m
-│                            │[0m
-│                            │[0m
-│                            │[0m
 │                            │[0m
 │                            │[0m
 │                            │[0m
@@ -12,9 +8,5 @@ Stacked with FillHeight       [0m
 │                            │[0m
 │                            │[0m
 │                            │[0m
-│                            │[0m
-│                            │[0m
-│                            │[0m
-│                            │[0m
 └────────────────────────────┘[0m
-Two filling boxes stacked at 6[0m
+Two filling boxes, height=12  [0m

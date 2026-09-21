@@ -278,22 +278,47 @@ func (f *Frame) Layout(width, height int) []Rect {
 		return result
 	}
 	if stacked {
-		items := make([]layout.Item, len(visible))
-		allDynamic := true
-		for i, index := range visible {
-			items[i] = layout.Item{Visible: true, Constraint: f.boxConstraint(f.Boxes[index], false)}
-			allDynamic = allDynamic && f.Boxes[index].Dynamic
+		// Check if any boxes have FillHeight
+		anyFilling := false
+		for _, index := range visible {
+			if f.Boxes[index].FillHeight {
+				anyFilling = true
+				break
+			}
 		}
-		allocations, err := layout.Plan(height-2, f.Gap, items)
-		if err != nil {
-			allocations = f.stackedFallback(height-2, items)
-		}
-		if allocations != nil {
-			if allDynamic && stackedDynamicOverflow(items, height-2, f.Gap) {
+
+		var allocations []layout.Allocation
+		if anyFilling {
+			// Use special FillHeight allocation for stacked layout
+			allocations = f.stackedFillHeightAllocations(height-2, visible, f.Gap)
+		} else {
+			// Use standard layout.Plan for non-filling boxes
+			items := make([]layout.Item, len(visible))
+			allDynamic := true
+			for i, index := range visible {
+				items[i] = layout.Item{Visible: true, Constraint: f.boxConstraint(f.Boxes[index], false)}
+				allDynamic = allDynamic && f.Boxes[index].Dynamic
+			}
+			var err error
+			allocations, err = layout.Plan(height-2, f.Gap, items)
+			if err != nil {
+				allocations = f.stackedFallback(height-2, items)
+			}
+			if allocations != nil && allDynamic && stackedDynamicOverflow(items, height-2, f.Gap) {
 				allocations = balancedStackedAllocations(height-2, f.Gap, items)
 			}
+		}
+
+		if allocations != nil {
 			for i, index := range visible {
-				allocation := allocations[i]
+				var allocation layout.Allocation
+				if anyFilling {
+					// stackedFillHeightAllocations returns a slice indexed by box index
+					allocation = allocations[index]
+				} else {
+					// layout.Plan returns a slice indexed by position in visible
+					allocation = allocations[i]
+				}
 				box := f.Boxes[index]
 				// Stacking changes flow, not the available inline space. Dynamic
 				// panes therefore stretch across the frame instead of retaining
@@ -388,6 +413,87 @@ func balancedStackedAllocations(total, gap int, items []layout.Item) []layout.Al
 		result[i] = layout.Allocation{Offset: offset, Size: size}
 		offset += size + gap
 	}
+	return result
+}
+
+// stackedFillHeightAllocations distributes height among stacked boxes when FillHeight is present.
+// Non-filling boxes get their preferred height; filling boxes share remaining space equally,
+// with remainder distributed to earlier boxes.
+func (f *Frame) stackedFillHeightAllocations(total int, visible []int, gap int) []layout.Allocation {
+	result := make([]layout.Allocation, len(f.Boxes))
+	if total <= 0 || len(visible) == 0 {
+		return result
+	}
+
+	// Separate filling and non-filling boxes
+	var fillingIndices, fixedIndices []int
+	for _, idx := range visible {
+		if f.Boxes[idx].FillHeight {
+			fillingIndices = append(fillingIndices, idx)
+		} else {
+			fixedIndices = append(fixedIndices, idx)
+		}
+	}
+
+	// If no filling boxes, fall back to normal allocation
+	if len(fillingIndices) == 0 {
+		return result
+	}
+
+	// Calculate space needed for fixed boxes
+	fixedSpace := 0
+	for _, idx := range fixedIndices {
+		h := max(0, f.Boxes[idx].Height)
+		fixedSpace += h
+	}
+
+	// Calculate gaps between all visible boxes
+	totalGaps := gap * max(0, len(visible)-1)
+
+	// Calculate remaining space for filling boxes
+	remaining := total - fixedSpace - totalGaps
+	if remaining < 0 {
+		remaining = 0
+	}
+
+	// Distribute remaining space among filling boxes
+	baseHeight := remaining / len(fillingIndices)
+	extraHeight := remaining % len(fillingIndices)
+
+	// Build allocations
+	offset := 0
+	visibleIdx := 0
+
+	for _, idx := range visible {
+		isFixedBox := false
+		for _, fixedIdx := range fixedIndices {
+			if idx == fixedIdx {
+				isFixedBox = true
+				break
+			}
+		}
+
+		var boxHeight int
+		if isFixedBox {
+			boxHeight = max(0, f.Boxes[idx].Height)
+		} else {
+			// This is a filling box
+			boxHeight = baseHeight
+			if visibleIdx < extraHeight {
+				boxHeight++
+			}
+			// Apply constraints
+			boxHeight = clampBox(boxHeight, f.Boxes[idx].MinHeight, f.Boxes[idx].MaxHeight, boxHeight)
+		}
+
+		result[idx] = layout.Allocation{Offset: offset, Size: boxHeight}
+		offset += boxHeight
+		if visibleIdx < len(visible)-1 {
+			offset += gap
+		}
+		visibleIdx++
+	}
+
 	return result
 }
 

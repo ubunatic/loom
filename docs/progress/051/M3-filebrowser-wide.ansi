@@ -1,0 +1,24 @@
+Browse /tmp/TestGenerateM3FilebrowserWideAndNarrowEvidence2716056874/001        [0m
+┌ ▶ Files ──────────────────────────┐ ┌ Metadata ──────────────────────────────┐[0m
+│[0m[1m[39m[49m▶ ..  parent directory[0m[39m[49m             │ │Name: TestGenerateM3FilebrowserWideAndNa│[0m
+│  file1.txt                        │ │Path: /tmp/TestGenerateM3FilebrowserWide│[0m
+│  file2.txt                        │ │Type: directory                         │[0m
+│  file3.txt                        │ │Size: 60 bytes                          │[0m
+│  file4.txt                        │ │Mode: drwx------                        │[0m
+│  file5.txt                        │ │Modified: 2026-09-21T02:39:40+02:00     │[0m
+│  subdir  <dir>                    │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│                                   │ │                                        │[0m
+│filter> [0m[2m[39m[49mtype to filter[0m[39m[49m             │ │                                        │[0m
+└───────────────────────────────────┘ └────────────────────────────────────────┘[0m
+Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:plain  •  F10/^Q quit        [0m
