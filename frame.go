@@ -37,6 +37,105 @@ type BoxStyle struct {
 	Footer     Style
 }
 
+// BoxBorderStyle specifies which glyph set to use for drawing borders.
+// Values: Sharp (┌─┐│└┘), Rounded (╭─╮│╰╯), Double (╔═╗║╚╝), ASCII (+-+||++)
+type BoxBorderStyle int
+
+const (
+	BoxBorderStyleSharp BoxBorderStyle = iota
+	BoxBorderStyleRounded
+	BoxBorderStyleDouble
+	BoxBorderStyleASCII
+)
+
+// String returns the name of the border style.
+func (s BoxBorderStyle) String() string {
+	switch s {
+	case BoxBorderStyleSharp:
+		return "sharp"
+	case BoxBorderStyleRounded:
+		return "rounded"
+	case BoxBorderStyleDouble:
+		return "double"
+	case BoxBorderStyleASCII:
+		return "ascii"
+	default:
+		return "unknown"
+	}
+}
+
+// ParseBoxBorderStyle parses a string into a BoxBorderStyle.
+func ParseBoxBorderStyle(s string) (BoxBorderStyle, error) {
+	switch strings.ToLower(s) {
+	case "sharp":
+		return BoxBorderStyleSharp, nil
+	case "rounded":
+		return BoxBorderStyleRounded, nil
+	case "double":
+		return BoxBorderStyleDouble, nil
+	case "ascii":
+		return BoxBorderStyleASCII, nil
+	default:
+		return BoxBorderStyleSharp, fmt.Errorf("unknown box border style: %q", s)
+	}
+}
+
+// getBoxBorderGlyphs retrieves the border glyphs for a given BoxBorderStyle.
+func getBoxBorderGlyphs(style BoxBorderStyle) (BoxBorder, error) {
+	data, err := frameSpecs.ReadFile("spec/box.yaml")
+	if err != nil {
+		return BoxBorder{}, fmt.Errorf("box border spec: %w", err)
+	}
+
+	var rawSpec map[string]interface{}
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	if err := decoder.Decode(&rawSpec); err != nil {
+		return BoxBorder{}, fmt.Errorf("box border spec: %w", err)
+	}
+
+	// Get the styles map
+	stylesRaw, ok := rawSpec["styles"]
+	if !ok {
+		return BoxBorder{}, fmt.Errorf("styles section not found in box border spec")
+	}
+
+	stylesMap, ok := stylesRaw.(map[string]interface{})
+	if !ok {
+		return BoxBorder{}, fmt.Errorf("styles is not a map in box border spec")
+	}
+
+	styleName := style.String()
+	styleRaw, ok := stylesMap[styleName]
+	if !ok {
+		return BoxBorder{}, fmt.Errorf("box border style %q not found in spec", styleName)
+	}
+
+	styleMap, ok := styleRaw.(map[string]interface{})
+	if !ok {
+		return BoxBorder{}, fmt.Errorf("box border style %q is not a map", styleName)
+	}
+
+	border := BoxBorder{
+		TopLeft:     getStringField(styleMap, "top_left", ""),
+		TopRight:    getStringField(styleMap, "top_right", ""),
+		BottomLeft:  getStringField(styleMap, "bottom_left", ""),
+		BottomRight: getStringField(styleMap, "bottom_right", ""),
+		Horizontal:  getStringField(styleMap, "horizontal", ""),
+		Vertical:    getStringField(styleMap, "vertical", ""),
+	}
+	return border, nil
+}
+
+// getStringField extracts a string field from a map with a default fallback.
+func getStringField(m map[string]interface{}, key string, defaultVal string) string {
+	if val, ok := m[key]; ok {
+		if str, ok := val.(string); ok {
+			return str
+		}
+	}
+	return defaultVal
+}
+
 // Box is a titled border with padding and an optional isolated child.
 // Width and Height are preferred outer dimensions used by Frame.
 // YAML frames load Border from Loom's embedded spec; Go callers supply it.
@@ -865,7 +964,7 @@ func (f *Frame) validate() error {
 	}
 	var border BoxBorder
 	decoder := yaml.NewDecoder(bytes.NewReader(data))
-	decoder.KnownFields(true)
+	decoder.KnownFields(false) // Allow extra fields like "styles" added in issue 037
 	if err := decoder.Decode(&border); err != nil {
 		return fmt.Errorf("frame border spec: %w", err)
 	}

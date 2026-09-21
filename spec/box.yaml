@@ -1,4 +1,5 @@
 # yaml-language-server: $schema=schemas/box.schema.json
+# Default style (Sharp) for backward compatibility
 top_left: "┌"
 top_right: "┐"
 bottom_left: "└"
@@ -7,3 +8,34 @@ horizontal: "─"
 vertical: "│"
 title_prefix: " "
 title_suffix: " "
+
+# BoxBorderStyle glyph sets (issue 037)
+styles:
+  sharp:
+    top_left: "┌"
+    top_right: "┐"
+    bottom_left: "└"
+    bottom_right: "┘"
+    horizontal: "─"
+    vertical: "│"
+  rounded:
+    top_left: "╭"
+    top_right: "╮"
+    bottom_left: "╰"
+    bottom_right: "╯"
+    horizontal: "─"
+    vertical: "│"
+  double:
+    top_left: "╔"
+    top_right: "╗"
+    bottom_left: "╚"
+    bottom_right: "╝"
+    horizontal: "═"
+    vertical: "║"
+  ascii:
+    top_left: "+"
+    top_right: "+"
+    bottom_left: "+"
+    bottom_right: "+"
+    horizontal: "-"
+    vertical: "|"

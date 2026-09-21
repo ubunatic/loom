@@ -1,0 +1,30 @@
+  [0m[1m[39m[49mM1: Canvas.DrawBorder and DrawBox Gallery[0m[39m[49m                                     [0m
+  All four styles with and without titles                                       [0m
+                                                                                [0m
+  Sharp Style: ┌──────────┐   ┌ Sharp ──────┐   ┌ Long Sharp…─┐                 [0m
+               │          │   │             │   │             │                 [0m
+               │          │   │             │   │             │                 [0m
+               └──────────┘   └─────────────┘   └─────────────┘                 [0m
+                                                                                [0m
+  Rounded Style╭──────────╮   ╭ Rounded ────╮   ╭ Long Round…─╮                 [0m
+               │          │   │             │   │             │                 [0m
+               │          │   │             │   │             │                 [0m
+               ╰──────────╯   ╰─────────────╯   ╰─────────────╯                 [0m
+                                                                                [0m
+  Double Style:╔══════════╗   ╔ Double ═════╗   ╔ Long Doubl…═╗                 [0m
+               ║          ║   ║             ║   ║             ║                 [0m
+               ║          ║   ║             ║   ║             ║                 [0m
+               ╚══════════╝   ╚═════════════╝   ╚═════════════╝                 [0m
+                                                                                [0m
+  ASCII Style: +----------+   + ASCII ------+   + Long ASCII…-+                 [0m
+               |          |   |             |   |             |                 [0m
+               |          |   |             |   |             |                 [0m
+               +----------+   +-------------+   +-------------+                 [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m

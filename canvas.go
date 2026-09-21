@@ -390,6 +390,97 @@ func (c *Canvas) Clear() {
 	c.CursorY = -1
 }
 
+// ── Border Drawing Primitives ────────────────────────────────────────────
+
+// DrawBorder paints the border of a rectangle using the specified style.
+// The border is clipped to the canvas bounds. Rectangles smaller than 2×2
+// are not drawn.
+func (c *Canvas) DrawBorder(r Rect, style BoxBorderStyle, s Style) {
+	if r.W < 2 || r.H < 2 {
+		return
+	}
+
+	border, err := getBoxBorderGlyphs(style)
+	if err != nil {
+		// Fall back to sharp style on error
+		border, _ = getBoxBorderGlyphs(BoxBorderStyleSharp)
+	}
+
+	// Clip to canvas bounds
+	x0 := r.X
+	x1 := r.X + r.W - 1
+	y0 := r.Y
+	y1 := r.Y + r.H - 1
+
+	// Top and bottom edges
+	for x := x0 + 1; x < x1; x++ {
+		c.Set(x, y0, Cell{Text: border.Horizontal, Style: s})
+		c.Set(x, y1, Cell{Text: border.Horizontal, Style: s})
+	}
+
+	// Left and right edges
+	for y := y0 + 1; y < y1; y++ {
+		c.Set(x0, y, Cell{Text: border.Vertical, Style: s})
+		c.Set(x1, y, Cell{Text: border.Vertical, Style: s})
+	}
+
+	// Corners
+	c.Set(x0, y0, Cell{Text: border.TopLeft, Style: s})
+	c.Set(x1, y0, Cell{Text: border.TopRight, Style: s})
+	c.Set(x0, y1, Cell{Text: border.BottomLeft, Style: s})
+	c.Set(x1, y1, Cell{Text: border.BottomRight, Style: s})
+}
+
+// DrawBox paints a border with an optional left-aligned title.
+// The title is display-width aware and truncated with an ellipsis (…) if it
+// does not fit. Multi-byte runes and combining marks are never split.
+// Rectangles smaller than 2×2 are not drawn.
+func (c *Canvas) DrawBox(r Rect, style BoxBorderStyle, title string, s Style) {
+	if r.W < 2 || r.H < 2 {
+		return
+	}
+
+	// Draw the border first
+	c.DrawBorder(r, style, s)
+
+	// Write title if present
+	if title != "" {
+		// Title position: top edge, starting at (r.X+1, r.Y)
+		// Available width: r.W - 2 (excluding corners)
+		titleX := r.X + 1
+		titleY := r.Y
+
+		// Build title string with spacing
+		titleStr := " " + title + " "
+
+		// Fit the title into available space using cluster-aware truncation
+		availableWidth := r.W - 2
+		if StringWidth(titleStr) <= availableWidth {
+			// Title fits completely
+			c.Write(titleX, titleY, titleStr, s)
+		} else {
+			// Title needs truncation with ellipsis
+			fit := 0
+			for _, cluster := range textClusters(titleStr) {
+				clusterWidth := StringWidth(cluster)
+				// Reserve 1 cell for ellipsis
+				if fit+clusterWidth >= availableWidth-1 {
+					break
+				}
+				n := c.Write(titleX+fit, titleY, cluster, s)
+				if n <= 0 {
+					break
+				}
+				fit += clusterWidth
+			}
+			// Add ellipsis if there's room
+			if fit < availableWidth {
+				c.Write(titleX+fit, titleY, "…", s)
+			}
+		}
+	}
+}
+
 // RuneWidth returns the visual column width of a single rune.
 func RuneWidth(r rune) int {
 	return measure.RuneWidth(r)

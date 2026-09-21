@@ -5,13 +5,71 @@
   "additionalProperties": false,
   "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical", "title_prefix", "title_suffix"],
   "properties": {
-    "top_left": {"type": "string", "enum": ["┌", "╭", "+"]},
-    "top_right": {"type": "string", "enum": ["┐", "╮", "+"]},
-    "bottom_left": {"type": "string", "enum": ["└", "╰", "+"]},
-    "bottom_right": {"type": "string", "enum": ["┘", "╯", "+"]},
-    "horizontal": {"type": "string", "enum": ["─", "-"]},
-    "vertical": {"type": "string", "enum": ["│", "|"]},
+    "top_left": {"type": "string", "enum": ["┌", "╭", "╔", "+"]},
+    "top_right": {"type": "string", "enum": ["┐", "╮", "╗", "+"]},
+    "bottom_left": {"type": "string", "enum": ["└", "╰", "╚", "+"]},
+    "bottom_right": {"type": "string", "enum": ["┘", "╯", "╝", "+"]},
+    "horizontal": {"type": "string", "enum": ["─", "═", "-"]},
+    "vertical": {"type": "string", "enum": ["│", "║", "|"]},
     "title_prefix": {"type": "string", "pattern": "^[ -~]*$"},
-    "title_suffix": {"type": "string", "pattern": "^[ -~]*$"}
+    "title_suffix": {"type": "string", "pattern": "^[ -~]*$"},
+    "styles": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sharp": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
+          "properties": {
+            "top_left": {"type": "string"},
+            "top_right": {"type": "string"},
+            "bottom_left": {"type": "string"},
+            "bottom_right": {"type": "string"},
+            "horizontal": {"type": "string"},
+            "vertical": {"type": "string"}
+          }
+        },
+        "rounded": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
+          "properties": {
+            "top_left": {"type": "string"},
+            "top_right": {"type": "string"},
+            "bottom_left": {"type": "string"},
+            "bottom_right": {"type": "string"},
+            "horizontal": {"type": "string"},
+            "vertical": {"type": "string"}
+          }
+        },
+        "double": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
+          "properties": {
+            "top_left": {"type": "string"},
+            "top_right": {"type": "string"},
+            "bottom_left": {"type": "string"},
+            "bottom_right": {"type": "string"},
+            "horizontal": {"type": "string"},
+            "vertical": {"type": "string"}
+          }
+        },
+        "ascii": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
+          "properties": {
+            "top_left": {"type": "string"},
+            "top_right": {"type": "string"},
+            "bottom_left": {"type": "string"},
+            "bottom_right": {"type": "string"},
+            "horizontal": {"type": "string"},
+            "vertical": {"type": "string"}
+          }
+        }
+      }
+    }
   }
 }
