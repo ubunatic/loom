@@ -1,21 +1,21 @@
   [0m[1m[39m[49mM2: Popup.Draw Migrated to DrawBox (BoxBorderStyleSharp)[0m[39m[49m                      [0m
+  Popup 1 (short)           Popup 2 (long)             Popup 3 (CJK)            [0m
                                                                                 [0m
-  Popup 1 (short):       Popup 2 (long truncated):    Popup 3 (CJK):            [0m
-                         ┌ This is a very long t…─┐   ┌ 你好世界 ──────┐        [0m
-                         │                        │   │                │        [0m
-                         │                        │   │                │        [0m
-                         │                        │   │                │        [0m
-                         └────────────────────────┘   └────────────────┘        [0m
                                                                                 [0m
-                               ┌ OK ────────────┐                               [0m
-  Popup.Draw vs Canvas.DrawBox equivalence test:│      CJK truncation:          [0m
-                               │                │                               [0m
-     ┌ Test ────────────┐     ┌ Test ────────────┐     ┌ 你好世界大同 ────┐     [0m
-     │                  │     │└────────────────┘│     │                  │     [0m
-     │                  │     │                  │     │                  │     [0m
-     │                  │     │                  │     │                  │     [0m
-     │                  │     │                  │     │                  │     [0m
-     └──────────────────┘     └──────────────────┘     └──────────────────┘     [0m
+ ┌ OK ──────────────────┐   ┌ This is a very long…─┐   ┌ 你好世界 ────────────┐ [0m
+ │                      │   │                      │   │                      │ [0m
+ │                      │   │                      │   │                      │ [0m
+ │                      │   │                      │   │                      │ [0m
+ └──────────────────────┘   └──────────────────────┘   └──────────────────────┘ [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
                                                                                 [0m
                                                                                 [0m
                                                                                 [0m

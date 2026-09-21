@@ -127,50 +127,53 @@ func TestGenerateM2PopupEvidence(t *testing.T) {
 	const cols, rows = 80, 24
 	canvas := loom.NewCanvas(cols, rows)
 
-	// Header
+	// Header and captions occupy their own rows above a fixed three-column grid.
 	canvas.Write(2, 0, "M2: Popup.Draw Migrated to DrawBox (BoxBorderStyleSharp)", loom.Style{Bold: true})
+	captions := []struct {
+		x, y int
+		text string
+	}{
+		{2, 1, "Popup 1 (short)"},
+		{28, 1, "Popup 2 (long)"},
+		{55, 1, "Popup 3 (CJK)"},
+	}
+	for _, caption := range captions {
+		canvas.Write(caption.x, caption.y, caption.text, loom.Reset)
+	}
 
-	// Popup 1: Short title "OK"
-	canvas.Write(2, 2, "Popup 1 (short):", loom.Reset)
-	popup1 := loom.NewPopup("OK", &loom.Grid{})
-	popup1.Width = 18
-	popup1.Height = 5
-	popup1.Style = loom.Reset
-	popup1.Draw(canvas, loom.Rect{X: 0, Y: 0, W: cols, H: rows})
+	popupRects := []loom.Rect{
+		{X: 1, Y: 4, W: 24, H: 5},
+		{X: 28, Y: 4, W: 24, H: 5},
+		{X: 55, Y: 4, W: 24, H: 5},
+	}
+	for i, rect := range popupRects {
+		for j := 0; j < i; j++ {
+			other := popupRects[j]
+			if rect.X < other.X+other.W && other.X < rect.X+rect.W &&
+				rect.Y < other.Y+other.H && other.Y < rect.Y+rect.H {
+				t.Fatalf("popup rectangles %d and %d intersect", j+1, i+1)
+			}
+		}
+		for _, caption := range captions {
+			for x := caption.x; x < caption.x+len([]rune(caption.text)); x++ {
+				if x >= rect.X && x < rect.X+rect.W && caption.y >= rect.Y && caption.y < rect.Y+rect.H {
+					t.Fatalf("caption %q cell (%d,%d) is inside popup rectangle %v", caption.text, x, caption.y, rect)
+				}
+			}
+		}
+	}
 
-	// Popup 2: Long truncated title
-	canvas.Write(25, 2, "Popup 2 (long truncated):", loom.Reset)
-	popup2 := loom.NewPopup("This is a very long title for testing truncation", &loom.Grid{})
-	popup2.Width = 26
-	popup2.Height = 5
-	popup2.Style = loom.Reset
-	// Draw at specific location: (25, 3)
-	popup2.Draw(canvas, loom.Rect{X: 25, Y: 3, W: 26, H: 5})
-
-	// Popup 3: CJK title
-	canvas.Write(54, 2, "Popup 3 (CJK):", loom.Reset)
-	popup3 := loom.NewPopup("你好世界", &loom.Grid{})
-	popup3.Width = 18
-	popup3.Height = 5
-	popup3.Style = loom.Reset
-	popup3.Draw(canvas, loom.Rect{X: 54, Y: 3, W: 18, H: 5})
-
-	// Second row: Show equivalence of Popup.Draw vs DrawBox
-	canvas.Write(2, 10, "Popup.Draw vs Canvas.DrawBox equivalence test:", loom.Reset)
-
-	// Popup.Draw at (5, 12)
-	popup4 := loom.NewPopup("Test", &loom.Grid{})
-	popup4.Width = 20
-	popup4.Height = 6
-	popup4.Style = loom.Reset
-	popup4.Draw(canvas, loom.Rect{X: 5, Y: 12, W: 20, H: 6})
-
-	// Canvas.DrawBox with same params at (30, 12) for comparison
-	canvas.DrawBox(loom.Rect{X: 30, Y: 12, W: 20, H: 6}, loom.BoxBorderStyleSharp, "Test", loom.Reset)
-
-	// Truncation test with CJK
-	canvas.Write(55, 10, "CJK truncation:", loom.Reset)
-	canvas.DrawBox(loom.Rect{X: 55, Y: 12, W: 20, H: 6}, loom.BoxBorderStyleSharp, "你好世界大同", loom.Reset)
+	popups := []*loom.Popup{
+		loom.NewPopup("OK", &loom.Grid{}),
+		loom.NewPopup("This is a very long title for testing truncation", &loom.Grid{}),
+		loom.NewPopup("你好世界", &loom.Grid{}),
+	}
+	for i, popup := range popups {
+		popup.Width = popupRects[i].W
+		popup.Height = popupRects[i].H
+		popup.Style = loom.Reset
+		popup.Draw(canvas, popupRects[i])
+	}
 
 	// Render and save
 	var buf bytes.Buffer
