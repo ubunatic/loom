@@ -1,24 +1,24 @@
-Text samples with progressive clipping:                                        [0m[1m[39m[49m▓[0m
-                                                                               [0m[2m[39m[49m░[0m
-  Label: ASCII                                                                 [0m[2m[39m[49m░[0m
-    Full:  "Hello" (width: 5)                                                  [0m[2m[39m[49m░[0m
-    Clip4: "Hello"                                                             [0m[2m[39m[49m░[0m
-    Clip2: "Hello"                                                             [0m[2m[39m[49m░[0m
-                                                                               [0m[2m[39m[49m░[0m
-  Label: Accented Latin                                                        [0m[2m[39m[49m░[0m
-    Full:  "Café" (width: 4)                                                   [0m[2m[39m[49m░[0m
-    Clip2: "Café"                                                              [0m[2m[39m[49m░[0m
-                                                                               [0m[2m[39m[49m░[0m
-  Label: German umlauts (precomposed)                                          [0m[2m[39m[49m░[0m
-    Full:  "Müller" (width: 6)                                                 [0m[2m[39m[49m░[0m
-    Clip4: "Müller"                                                            [0m[2m[39m[49m░[0m
-    Clip2: "Müller"                                                            [0m[2m[39m[49m░[0m
-                                                                               [0m[2m[39m[49m░[0m
-  Label: German umlauts (decomposed)                                           [0m[2m[39m[49m░[0m
-    Full:  "Müller" (width: 6)                                                 [0m[2m[39m[49m░[0m
-    Clip4: "Müller"                                                            [0m[2m[39m[49m░[0m
-    Clip2: "Müller"                                                            [0m[2m[39m[49m░[0m
-                                                                               [0m[2m[39m[49m░[0m
-  Label: CJK                                                                   [0m[2m[39m[49m░[0m
-    Full:  "中文" (width: 4)                                                   [0m[2m[39m[49m░[0m
-    Clip2: "中文"                                                              [0m[2m[39m[49m░[0m
+[0m[1m[39m[49mCluster-safe clipping: widths 8 / 6 / 4 / 2[0m[39m[49m                                     [0m
+ASCII                Hello | Hello | Hel… | H…                                  [0m
+Accented Latin       Café | Café | Café | C…                                    [0m
+German umlauts (precomposed) Müller | Müller | Mül… | M…                        [0m
+German umlauts (decomposed) Müller | Müller | Mül… | M…                         [0m
+CJK                  中文 | 中文 | 中文 | …                                     [0m
+Combining marks      e̊ | e̊ | e̊ | e̊                                              [0m
+Symbols              ♠♣♥♦ | ♠♣♥♦ | ♠♣♥♦ | ♠…                                    [0m
+Emoji                😀 | 😀 | 😀 | 😀                                          [0m
+ZWJ sequence         👨👩👧 | 👨👩👧 | 👨… | …                                  [0m
+Flag                 🇩🇪 | 🇩🇪 | 🇩🇪 | …                                     [0m
+Mixed line           Test中… | Test… | Tes… | T…                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m
+                                                                                [0m

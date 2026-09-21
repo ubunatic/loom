@@ -1,14 +1,14 @@
-[0m[1m[39m[49m▶ ASCII  "Hello" (width: 5)[0m[39m[49m                                                     [0m
-  Accented Latin  "Café" (width: 4)                                             [0m
-  German umlauts (precomposed)  "Müller" (width: 6)                             [0m
-  German umlauts (decomposed)  "Müller" (width: 6)                              [0m
-  CJK  "中文" (width: 4)                                                        [0m
-  Combining marks  "e̊" (width: 1)                                               [0m
-  Symbols  "♠♣♥♦" (width: 4)                                                    [0m
-  Emoji  "😀" (width: 2)                                                        [0m
-  ZWJ sequence  "👨\u200d👩\u200d👧" (width: 6)                                 [0m
-  Flag  "🇩🇪" (width: 4)                                                       [0m
-  Mixed line  "Test中文♠😀" (width: 11)                                         [0m
+[0m[1m[39m[49m▶ ASCII  Hello [U+0048 U+0065 U+006C U+006C U+006F][0m[39m[49m                             [0m
+  Accented Latin  Café [U+0043 U+0061 U+0066 U+00E9]                            [0m
+  German umlauts (precomposed)  Müller [U+004D U+00FC U+006C U+006C U+0065 U+007[0m
+  German umlauts (decomposed)  Müller [U+004D U+0075 U+0308 U+006C U+006C U+006 [0m
+  CJK  中文 [U+4E2D U+6587]                                                     [0m
+  Combining marks  e̊ [U+0065 U+030A]                                            [0m
+  Symbols  ♠♣♥♦ [U+2660 U+2663 U+2665 U+2666]                                   [0m
+  Emoji  😀 [U+1F600]                                                           [0m
+  ZWJ sequence  👨👩👧 [U+1F468 U+200D U+1F469 U+200D U+1F467]                  [0m
+  Flag  🇩🇪 [U+1F1E9 U+1F1EA]                                                  [0m
+  Mixed line  Test中文♠😀 [U+0054 U+0065 U+0073 U+0074 U+4E2D U+6587 U+2660 U+1F[0m
                                                                                 [0m
                                                                                 [0m
                                                                                 [0m

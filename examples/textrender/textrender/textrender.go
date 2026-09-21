@@ -6,6 +6,7 @@ package textrender
 
 import (
 	"fmt"
+	"strings"
 
 	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
@@ -23,18 +24,43 @@ var Cases = []TestCase{
 	{Label: "ASCII", Text: "Hello", WantWidth: 5},
 	{Label: "Accented Latin", Text: "Café", WantWidth: 4},
 	{Label: "German umlauts (precomposed)", Text: "Müller", WantWidth: 6},
-	{Label: "German umlauts (decomposed)", Text: "Müller", WantWidth: 6},
+	{Label: "German umlauts (decomposed)", Text: "Mu\u0308ller", WantWidth: 6},
 	{Label: "CJK", Text: "中文", WantWidth: 4},
-	{Label: "Combining marks", Text: "e̊", WantWidth: 1},
+	{Label: "Combining marks", Text: "e\u030a", WantWidth: 1},
 	{Label: "Symbols", Text: "♠♣♥♦", WantWidth: 4},
 	{Label: "Emoji", Text: "😀", WantWidth: 2},
-	{Label: "ZWJ sequence", Text: "👨‍👩‍👧", WantWidth: 6},
-	{Label: "Flag", Text: "🇩🇪", WantWidth: 4},
+	{Label: "ZWJ sequence", Text: "👨\u200d👩\u200d👧", WantWidth: 2},
+	{Label: "Flag", Text: "🇩🇪", WantWidth: 2},
 	{Label: "Mixed line", Text: "Test中文♠😀", WantWidth: 11},
+}
+
+// knownDivergences records library behavior that differs from modern terminal
+// cluster widths; WantWidth remains the terminal expectation.
+var knownDivergences = map[string]int{
+	"ZWJ sequence": 6,
+	"Flag":         4,
 }
 
 type textRenderApp struct {
 	tabs *loom.Tabs
+}
+
+type staticView struct{ draw func(*loom.Canvas, loom.Rect) }
+
+func (v staticView) Draw(c *loom.Canvas, r loom.Rect) { v.draw(c, r) }
+func (v staticView) HandleKey(loom.KeyEvent) bool     { return false }
+func (v staticView) HandleMouse(loom.MouseEvent) bool { return false }
+
+func codepoints(s string) string {
+	parts := make([]string, 0, len([]rune(s)))
+	for _, r := range s {
+		parts = append(parts, fmt.Sprintf("U+%04X", r))
+	}
+	return strings.Join(parts, " ")
+}
+
+func sampleLabel(tc TestCase) string {
+	return fmt.Sprintf("%s: %s [%s]", tc.Label, tc.Text, codepoints(tc.Text))
 }
 
 func newTextRenderApp() *textRenderApp {
@@ -53,62 +79,76 @@ func newTextRenderApp() *textRenderApp {
 	return &textRenderApp{tabs: root}
 }
 
-// newBordersView creates a view that displays test cases with labels and widths
+// newBordersView creates real titled boxes with samples as titles and bodies.
 func newBordersView() loom.Widget {
-	lines := []string{
-		"Text samples with display widths:",
-		"",
-	}
-
-	for _, tc := range Cases {
-		lines = append(lines, fmt.Sprintf("  %s: %q (width: %d)", tc.Label, tc.Text, tc.WantWidth))
-	}
-
-	return loom.NewView(lines)
+	return staticView{draw: func(c *loom.Canvas, r loom.Rect) {
+		c.Write(r.X, r.Y, "DrawBox titles and bodies (narrow boxes truncate titles)", loom.Style{Bold: true})
+		for i, tc := range Cases {
+			if r.Y+1+i*2+1 >= r.Y+r.H {
+				break
+			}
+			y := r.Y + 1 + i*2
+			w := r.W - 2
+			if i%2 == 1 {
+				w = 12
+			}
+			if w < 4 {
+				w = 4
+			}
+			c.DrawBox(loom.Rect{X: r.X, Y: y, W: w, H: 2}, loom.BoxBorderStyleSharp, tc.Text, loom.Reset)
+			c.Write(r.X+1, y+1, loom.TruncateText(sampleLabel(tc), w-2, ""), loom.Reset)
+		}
+	}}
 }
 
-// newButtonsView creates a widget with test cases as button labels
+type activatableView struct {
+	choice *loom.Choice
+	status string
+}
+
+func (v *activatableView) Draw(c *loom.Canvas, r loom.Rect) {
+	c.Write(r.X, r.Y, "Activatable samples (Enter activates selection)", loom.Style{Bold: true})
+	v.choice.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
+	c.Write(r.X, r.Y+r.H-1, loom.TruncateText(v.status, r.W, ""), loom.Style{Dim: true})
+}
+func (v *activatableView) HandleKey(e loom.KeyEvent) bool     { return v.choice.HandleKey(e) }
+func (v *activatableView) HandleMouse(e loom.MouseEvent) bool { return v.choice.HandleMouse(e) }
+
+// newButtonsView uses Choice as the closest existing activatable widget.
 func newButtonsView() loom.Widget {
 	items := make([]loom.Item, len(Cases))
 	for i, tc := range Cases {
-		items[i] = loom.Item{
-			Name: tc.Text,
-			Desc: fmt.Sprintf("%s (width: %d)", tc.Label, tc.WantWidth),
-		}
+		items[i] = loom.Item{Name: tc.Text, Desc: fmt.Sprintf("%s [%s]", tc.Label, codepoints(tc.Text))}
 	}
-	return loom.NewChoice(items)
+	v := &activatableView{}
+	v.choice = loom.NewChoice(items)
+	v.choice.OnSelect = func(item loom.Item) { v.status = "Activated: " + item.Name }
+	return v
 }
 
-// newClippingView creates a widget showing test cases with progressive clipping
+// newClippingView renders each sample into real cell-limited areas.
 func newClippingView() loom.Widget {
-	lines := []string{
-		"Text samples with progressive clipping:",
-		"",
-	}
-
-	for _, tc := range Cases {
-		lines = append(lines, fmt.Sprintf("  Label: %s", tc.Label))
-		lines = append(lines, fmt.Sprintf("    Full:  %q (width: %d)", tc.Text, tc.WantWidth))
-		// Show progressively clipped versions
-		for clipWidth := 8; clipWidth >= 2; clipWidth -= 2 {
-			if tc.WantWidth > clipWidth {
-				lines = append(lines, fmt.Sprintf("    Clip%d: %q", clipWidth, tc.Text))
+	return staticView{draw: func(c *loom.Canvas, r loom.Rect) {
+		c.Write(r.X, r.Y, "Cluster-safe clipping: widths 8 / 6 / 4 / 2", loom.Style{Bold: true})
+		for i, tc := range Cases {
+			y := r.Y + 1 + i
+			if y >= r.Y+r.H {
+				break
 			}
+			line := fmt.Sprintf("%-20s %s", tc.Label, loom.TruncateText(tc.Text, 8, "…"))
+			for _, w := range []int{6, 4, 2} {
+				line += " | " + loom.TruncateText(tc.Text, w, "…")
+			}
+			c.Write(r.X, y, loom.TruncateText(line, r.W, ""), loom.Reset)
 		}
-		lines = append(lines, "")
-	}
-
-	return loom.NewView(lines)
+	}}
 }
 
 // newScrollView creates a scrollable list of test cases
 func newScrollView() loom.Widget {
 	items := make([]loom.Item, len(Cases))
 	for i, tc := range Cases {
-		items[i] = loom.Item{
-			Name: tc.Label,
-			Desc: fmt.Sprintf("%q (width: %d)", tc.Text, tc.WantWidth),
-		}
+		items[i] = loom.Item{Name: tc.Label, Desc: fmt.Sprintf("%s [%s]", tc.Text, codepoints(tc.Text))}
 	}
 	return loom.NewChoice(items)
 }

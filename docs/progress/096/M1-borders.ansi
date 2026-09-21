@@ -1,24 +1,24 @@
 [0m[1m[39m[49m Borders [0m[39m[49m Buttons  Clipping  Scroll                                             [0m
 ────────────────────────────────────────────────────────────────────────────────[0m
-Text samples with display widths:                                               [0m
-                                                                                [0m
-  ASCII: "Hello" (width: 5)                                                     [0m
-  Accented Latin: "Café" (width: 4)                                             [0m
-  German umlauts (precomposed): "Müller" (width: 6)                             [0m
-  German umlauts (decomposed): "Müller" (width: 6)                              [0m
-  CJK: "中文" (width: 4)                                                        [0m
-  Combining marks: "e̊" (width: 1)                                               [0m
-  Symbols: "♠♣♥♦" (width: 4)                                                    [0m
-  Emoji: "😀" (width: 2)                                                        [0m
-  ZWJ sequence: "👨\u200d👩\u200d👧" (width: 6)                                 [0m
-  Flag: "🇩🇪" (width: 4)                                                       [0m
-  Mixed line: "Test中文♠😀" (width: 11)                                         [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
+[0m[1m[39m[49mDrawBox titles and bodies (narrow boxes truncate titles)[0m[39m[49m                        [0m
+┌ Hello ─────────────────────────────────────────────────────────────────────┐  [0m
+└ASCII: Hello [U+0048 U+0065 U+006C U+006C U+006F]───────────────────────────┘  [0m
+┌ Café ────┐                                                                    [0m
+└Accented L┘                                                                    [0m
+┌ Müller ────────────────────────────────────────────────────────────────────┐  [0m
+└German umlauts (precomposed): Müller [U+004D U+00FC U+006C U+006C U+0065 U+0┘  [0m
+┌ Müller ──┐                                                                    [0m
+└German uml┘                                                                    [0m
+┌ 中文 ──────────────────────────────────────────────────────────────────────┐  [0m
+└CJK: 中文 [U+4E2D U+6587]───────────────────────────────────────────────────┘  [0m
+┌ e̊ ───────┐                                                                    [0m
+└Combining ┘                                                                    [0m
+┌ ♠♣♥♦ ──────────────────────────────────────────────────────────────────────┐  [0m
+└Symbols: ♠♣♥♦ [U+2660 U+2663 U+2665 U+2666]─────────────────────────────────┘  [0m
+┌ 😀 ──────┐                                                                    [0m
+└Emoji: 😀 ┘                                                                    [0m
+┌ 👨👩👧 ────────────────────────────────────────────────────────────────────┐  [0m
+└ZWJ sequence: 👨👩👧 [U+1F468 U+200D U+1F469 U+200D U+1F467]────────────────┘  [0m
+┌ 🇩🇪 ────┐                                                                    [0m
+└Flag: 🇩🇪┘                                                                    [0m
 [0m[2m[39m[49m ←/→: cycle tabs  •  q: quit                                                    [0m

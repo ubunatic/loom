@@ -1,12 +1,12 @@
 [0m[1m[39m[49m Borders [0m[39m[49m Buttons  Clipping  Scroll     [0m
 ────────────────────────────────────────[0m
-Text samples with display widths:      [0m[1m[39m[49m▓[0m
-                                       [0m[2m[39m[49m░[0m
-  ASCII: "Hello" (width: 5)            [0m[2m[39m[49m░[0m
-  Accented Latin: "Café" (width: 4)    [0m[2m[39m[49m░[0m
-  German umlauts (precomposed): "Müller[0m[2m[39m[49m░[0m
-  German umlauts (decomposed): "Müller [0m[2m[39m[49m░[0m
-  CJK: "中文" (width: 4)               [0m[2m[39m[49m░[0m
-  Combining marks: "e̊" (width: 1)      [0m[2m[39m[49m░[0m
-  Symbols: "♠♣♥♦" (width: 4)           [0m[2m[39m[49m░[0m
+[0m[1m[39m[49mDrawBox titles and bodies (narrow boxes [0m
+┌ Hello ─────────────────────────────┐  [0m
+└ASCII: Hello [U+0048 U+0065 U+006C U┘  [0m
+┌ Café ────┐                            [0m
+└Accented L┘                            [0m
+┌ Müller ────────────────────────────┐  [0m
+└German umlauts (precomposed): Müller┘  [0m
+┌ Müller ──┐                            [0m
+└German uml┘                            [0m
 [0m[2m[39m[49m ←/→: cycle tabs  •  q: quit            [0m
