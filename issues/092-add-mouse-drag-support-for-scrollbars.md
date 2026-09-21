@@ -38,3 +38,46 @@ mapping, bounds and non-overflow cases, both orientations, and interaction with
 existing wheel and keyboard scrolling.
 Extend the PTY tests to drag scrollbar thumbs and prove scrolling changes the
 visible content through a real terminal session.
+
+---
+
+## Resolved Design (host decisions, binding for the sprint)
+
+- Find the existing scrollbar type and its mouse handling first; extend it, add no second scrollbar.
+- One pure mapping function shared by both orientations: thumb geometry (track length, thumb length,
+  content length, viewport length) to offset and back, integers, rounding to nearest, clamped to
+  [0, max]. Table-tested, including minimum thumb size 1, thumb equal to track (no overflow), content
+  smaller than viewport, and length-1 tracks.
+- Drag state machine: press on the thumb with the primary button starts a drag and stores the grab
+  offset (pointer minus thumb start) so the thumb stays attached to the pointer; motion events update the
+  offset even when the pointer leaves the thumb, the scrollbar or the widget (capture until release);
+  release ends the drag; a cancel (Esc, or losing focus/capture) ends the drag and restores the offset
+  from the drag start. Non-primary buttons never start a drag.
+- Track click (not on the thumb) keeps its existing behavior; if none exists, it pages one viewport
+  toward the click. Content that does not overflow: no thumb, no drag. Disabled or read-only: ignore mouse.
+- Wheel, keyboard and paging behavior stay byte-identical (existing tests unchanged).
+- Vertical and horizontal go through the same code path with the axis as a parameter.
+
+## Milestones (lean sprint, developer: luna:low)
+
+Host reviews only diffs, test output and evidence frames; this ticket is the only channel. Root-package tests
+needing `/dev/tty` fail before this work; ignore them. Commit each milestone (message ends '(issue 092 MX)'),
+stage only your files, never docs/README.md, no stray binaries in the repo root; if `.git/index.lock` blocks the
+commit, stage your files and say so (the host commits). Evidence: frames produced by code, gated on env
+`LOOM_EVIDENCE=1`, written to repo-root `docs/progress/092/` (find root by walking up to `go.mod`); run only this
+ticket's evidence test; view frames ANSI-stripped before finishing; labels on their own rows. gofmt. Do not leave
+dead or commented-out code.
+
+### M1 - Mapping and drag state machine
+- Pure mapping function plus drag state machine, table and sequence tests (press, move outside, release,
+  cancel, non-primary button, no-overflow, disabled).
+
+### M2 - Wire into the scrollbar widget, both orientations
+- Extend the real scrollbar and a scrollable widget that uses it; synthetic mouse events drive drags; existing
+  wheel/key/paging tests unchanged and green.
+- Evidence: `M2-vertical-before.ansi`, `M2-vertical-mid.ansi`, `M2-vertical-after.ansi`,
+  `M2-horizontal-before.ansi`, `M2-horizontal-mid.ansi`, `M2-horizontal-after.ansi` (thumb and visible content change).
+
+### M3 - PTY drag
+- Extend the PTY tests (existing helper in `internal/ptytest`) to drag a thumb in a real terminal session and
+  assert the visible content changes; evidence `M3-pty-drag.ansi` (final screen).
