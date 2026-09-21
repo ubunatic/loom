@@ -111,3 +111,16 @@ Design; the evidence proves little:
 6. Regenerate `M1-borders*.ansi`, `M2-*.ansi`, `M3-pty-session.ansi` (only this ticket's evidence tests);
    view them with ANSI stripped and make sure each is readable before committing.
 7. Keep the PTY test green. Commit '(issue 096 M4)', stage only your files, no stray binaries.
+
+### M4 Review (host)
+Committed by the host (index.lock) as the M4 commit. Accepted: codepoint labels, honest `WantWidth` with
+`knownDivergences` (ZWJ family: loom 6, terminal 2; flag: loom 4, terminal 2), real clipping frame.
+Defect: in `Borders` each box is only 2 rows high, so the body text is drawn on the bottom border
+('└ASCII: Hello ...┘') and the box has no interior. The buttons view is still a plain list.
+
+### M5 - Pre-Work
+1. Borders: boxes get at least 3 rows (top border, one body row, bottom border) so the body sits inside;
+   test asserts the body row starts and ends with the side border glyphs. Regenerate `M1-borders*.ansi`.
+2. Buttons: if the library has a real button widget, use it; otherwise the tab title and the top status
+   line must say 'Choice list (no Button widget yet)' and your report names that gap. Regenerate `M2-buttons.ansi`.
+3. Commit '(issue 096 M5)' (if index.lock blocks you, say so, the host commits).
