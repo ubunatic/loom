@@ -86,3 +86,15 @@ and values above 255 wrap through `uint8`.
    the mc recordings, stay green.
 5. Regenerate the three evidence frames with `LOOM_EVIDENCE=1` and commit them
    with the code, message ending '(issue 034 M4)'. Root `/dev/tty` failures are pre-existing.
+
+### M4 Review (host)
+Accepted: parser fixes, tests, `LOOM_EVIDENCE` gating, and the documented decision to keep
+`applySGR` (entangled with cursor replay). One defect remains.
+
+### M5 - Pre-Work
+`viewer_m3_test.go` writes evidence to `../../docs/progress/034`, which resolves relative to
+its package dir to `examples/docs/...` (a stray untracked dir now exists). Fix the path so
+the frame lands in the repo-root `docs/progress/034/M3-ansiviewer.ansi` (for example
+locate the repo root by walking up to `go.mod`), delete `examples/docs/`, regenerate
+with `LOOM_EVIDENCE=1`, confirm `git status` shows only the intended file, and commit
+'(issue 034 M5)'. Check the M1 and M2 evidence tests for the same relative-path mistake.
