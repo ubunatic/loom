@@ -110,3 +110,10 @@ type ContentWidther interface {
 type Measurer interface {
 	Measure(width int) measure.Size
 }
+
+// Themeable is an optional interface for widgets that can restyle themselves
+// from a ThemeColors set. Composite widgets forward ApplyTheme to children.
+type Themeable interface {
+	Widget
+	ApplyTheme(ThemeColors)
+}

@@ -225,3 +225,12 @@ func (s *Stack) ContentWidth() int {
 	}
 	return width
 }
+
+// ApplyTheme forwards the theme to all children that implement Themeable.
+func (s *Stack) ApplyTheme(theme ThemeColors) {
+	for _, child := range s.Children {
+		if themeable, ok := child.(Themeable); ok {
+			themeable.ApplyTheme(theme)
+		}
+	}
+}

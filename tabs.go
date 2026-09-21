@@ -435,3 +435,14 @@ func (t *Tabs) ContentWidth() int {
 	}
 	return max(barW, maxChildW)
 }
+
+// ApplyTheme restyled the tab bar and forwards the theme to all children
+// that implement Themeable.
+func (t *Tabs) ApplyTheme(theme ThemeColors) {
+	t.Style = theme.TabsStyle()
+	for _, tab := range t.Tabs {
+		if themeable, ok := tab.Widget.(Themeable); ok {
+			themeable.ApplyTheme(theme)
+		}
+	}
+}

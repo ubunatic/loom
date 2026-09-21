@@ -4,6 +4,10 @@
 package loom_test
 
 import (
+	"bytes"
+	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -222,5 +226,112 @@ func TestThemeJulia256(t *testing.T) {
 	}
 	if julia.FocusBGColor() != loom.ColorIndex(240) {
 		t.Errorf("julia256 focus_bg: got %+v, want ColorIndex(240)", julia.FocusBGColor())
+	}
+}
+
+// TestThemeableNestedWidgets tests that ApplyTheme correctly propagates through
+// a nested Tabs{Frame{Choice}} widget tree and generates M1 evidence.
+func TestThemeableNestedWidgets(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
+	}
+
+	// Create a nested widget structure: Tabs containing Frame containing Choice
+	items := []loom.Item{
+		{Name: "Option A", Desc: "First option"},
+		{Name: "Option B", Desc: "Second option"},
+		{Name: "Option C", Desc: "Third option"},
+	}
+	choice := loom.NewChoice(items)
+
+	// Create a Frame containing the Choice
+	border := loom.BoxBorder{
+		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
+		Horizontal: "─", Vertical: "│",
+	}
+	frame := &loom.Frame{
+		Title: "File Browser",
+		Status: "Themed Frame",
+		Boxes: []loom.Box{
+			{
+				ID: "files", Title: "Files", Dynamic: true, FillHeight: true,
+				MinWidth: 20, Height: 10, Border: border, Child: choice,
+			},
+		},
+	}
+
+	// Create Tabs with two different frames
+	tabs := loom.NewTabs(
+		loom.Tab{Title: "Tab 1", Widget: frame},
+		loom.Tab{Title: "Tab 2", Widget: loom.NewChoice([]loom.Item{
+			{Name: "Item 1"},
+			{Name: "Item 2"},
+		})},
+	)
+
+	// Render with two different themes
+	const cols, rows = 80, 25
+	themes := []string{"plain", "mc"}
+
+	var buf bytes.Buffer
+	for _, themeName := range themes {
+		theme := loom.Theme(themeName)
+		tabs.ApplyTheme(theme)
+
+		// Render the tabs
+		canvas := loom.NewCanvas(cols, rows)
+		tabs.Draw(canvas, canvas.Bounds())
+
+		// Add a label line before each theme rendering
+		label := fmt.Sprintf("--- Theme: %s ---", themeName)
+		buf.WriteString(label)
+		buf.WriteString("\n\n")
+
+		// Render the canvas to ANSI
+		renderBuf := &bytes.Buffer{}
+		err := loom.RenderTo(renderBuf, &simpleCanvasWidget{canvas: canvas}, cols, rows)
+		if err != nil {
+			t.Fatalf("RenderTo failed: %v", err)
+		}
+		buf.Write(renderBuf.Bytes())
+		buf.WriteString("\n\n")
+	}
+
+	// Write evidence file
+	repoRoot, err := findRepoRoot()
+	if err != nil {
+		t.Fatalf("finding repo root: %v", err)
+	}
+	progressDir := filepath.Join(repoRoot, "docs", "progress", "061")
+	if err := os.MkdirAll(progressDir, 0755); err != nil {
+		t.Fatalf("creating progress directory: %v", err)
+	}
+
+	outPath := filepath.Join(progressDir, "M1-nested-themes.ansi")
+	if err := os.WriteFile(outPath, buf.Bytes(), 0644); err != nil {
+		t.Fatalf("writing evidence: %v", err)
+	}
+
+	t.Logf("M1 evidence saved to %s (%d bytes)", outPath, buf.Len())
+}
+
+// findRepoRoot walks up the directory tree until it finds a go.mod file.
+func findRepoRoot() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	for {
+		if _, err := os.Stat(filepath.Join(cwd, "go.mod")); err == nil {
+			return cwd, nil
+		}
+		parent := filepath.Dir(cwd)
+		if parent == cwd {
+			return "", fmt.Errorf("go.mod not found in any parent directory")
+		}
+		cwd = parent
 	}
 }

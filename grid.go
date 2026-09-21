@@ -185,3 +185,14 @@ func (g *Grid) ContentHeight() int {
 	}
 	return rows * maxH
 }
+
+// ApplyTheme updates the focus background color and forwards the theme to all
+// children that implement Themeable.
+func (g *Grid) ApplyTheme(theme ThemeColors) {
+	g.FocusBG = theme.FocusBGColor()
+	for _, child := range g.Children {
+		if themeable, ok := child.(Themeable); ok {
+			themeable.ApplyTheme(theme)
+		}
+	}
+}

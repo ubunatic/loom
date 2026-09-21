@@ -727,6 +727,19 @@ func (f *Frame) Box(id string) *Box {
 	return nil
 }
 
+// ApplyTheme restyled the frame and box chrome and forwards the theme to all
+// box children that implement Themeable.
+func (f *Frame) ApplyTheme(theme ThemeColors) {
+	f.Style = theme.FrameStyle()
+	boxStyle := theme.BoxStyle()
+	for i := range f.Boxes {
+		f.Boxes[i].Style = boxStyle
+		if themeable, ok := f.Boxes[i].Child.(Themeable); ok {
+			themeable.ApplyTheme(theme)
+		}
+	}
+}
+
 func (f *Frame) validate() error {
 	if f.Breakpoint < 0 {
 		return fmt.Errorf("frame.breakpoint: cannot be negative")
