@@ -1,6 +1,6 @@
 # 034 — ANSI SGR Escape Sequence Parsing and WriteANSI Canvas Helper
 
-**Status**: Open
+**Status**: Closed — delivered via lean sprint (M1-M5), haiku dev
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
