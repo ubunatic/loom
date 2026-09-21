@@ -1014,9 +1014,7 @@ func layoutTreemap(values []float64, rect treemapRect) []treemapRect {
 }
 
 func layoutTreemapSquarified(values []float64, rect treemapRect) []treemapRect {
-	// The integer-cell fallback is deliberately the same tiler as the stable
-	// legacy path when rounding would make a squarified row worse.
-	return layoutTreemap(values, rect)
+	return layoutTreemapSquarifiedFloat(values, rect)
 	/*
 		rects := make([]treemapRect, len(values))
 		indexes := make([]int, 0, len(values))
@@ -1127,6 +1125,93 @@ func layoutTreemapSquarified(values []float64, rect treemapRect) []treemapRect {
 		}
 		return rects
 	*/
+}
+
+// layoutTreemapSquarifiedFloat lays out rows in continuous coordinates first;
+// integer edges are rounded cumulatively when each row is emitted.
+func layoutTreemapSquarifiedFloat(values []float64, rect treemapRect) []treemapRect {
+	type frect struct{ x, y, w, h float64 }
+	result := make([]treemapRect, len(values))
+	ids := make([]int, 0, len(values))
+	total := 0.0
+	for i, v := range values {
+		if isFinite(v) && v > 0 {
+			ids = append(ids, i)
+			total += v
+		}
+	}
+	sort.SliceStable(ids, func(i, j int) bool { return values[ids[i]] > values[ids[j]] })
+	var place func([]int, frect, float64)
+	place = func(items []int, a frect, sum float64) {
+		if len(items) == 0 || a.w <= 0 || a.h <= 0 || sum <= 0 {
+			return
+		}
+		if len(items) == 1 {
+			x0, y0 := math.Round(a.x), math.Round(a.y)
+			x1, y1 := math.Round(a.x+a.w), math.Round(a.y+a.h)
+			result[items[0]] = treemapRect{int(x0), int(y0), int(x1 - x0), int(y1 - y0)}
+			return
+		}
+		short := math.Min(a.w, a.h*2)
+		row := make([]int, 0, len(items))
+		rowSum := 0.0
+		worst := math.Inf(1)
+		for _, id := range items {
+			next := append(row, id)
+			ns := rowSum + values[id]
+			area := a.w * a.h * ns / sum
+			maxv, minv := values[next[0]], values[next[0]]
+			for _, n := range next {
+				maxv = math.Max(maxv, values[n])
+				minv = math.Min(minv, values[n])
+			}
+			score := math.Max(short*short*maxv/(area*area), area*area/(short*short*minv))
+			if len(row) > 0 && score > worst {
+				break
+			}
+			row, rowSum, worst = next, ns, score
+		}
+		rowSet := make(map[int]bool, len(row))
+		for _, id := range row {
+			rowSet[id] = true
+		}
+		rowArea := a.w * a.h * rowSum / sum
+		if a.w <= a.h*2 {
+			h := rowArea / a.w
+			x := a.x
+			for _, id := range row {
+				w := a.w * values[id] / rowSum
+				x0, x1 := math.Round(x), math.Round(x+w)
+				y0, y1 := math.Round(a.y), math.Round(a.y+h)
+				result[id] = treemapRect{int(x0), int(y0), int(x1 - x0), int(y1 - y0)}
+				x += w
+			}
+			place(filterIDs(items, rowSet), frect{a.x, a.y + h, a.w, a.h - h}, sum-rowSum)
+		} else {
+			w := rowArea / a.h
+			y := a.y
+			for _, id := range row {
+				h := a.h * values[id] / rowSum
+				x0, x1 := math.Round(a.x), math.Round(a.x+w)
+				y0, y1 := math.Round(y), math.Round(y+h)
+				result[id] = treemapRect{int(x0), int(y0), int(x1 - x0), int(y1 - y0)}
+				y += h
+			}
+			place(filterIDs(items, rowSet), frect{a.x + w, a.y, a.w - w, a.h}, sum-rowSum)
+		}
+	}
+	place(ids, frect{float64(rect.X), float64(rect.Y), float64(rect.W), float64(rect.H)}, total)
+	return result
+}
+
+func filterIDs(ids []int, used map[int]bool) []int {
+	out := make([]int, 0, len(ids))
+	for _, id := range ids {
+		if !used[id] {
+			out = append(out, id)
+		}
+	}
+	return out
 }
 
 func squarifiedBetter(row []int, next int, values []float64, area treemapRect) bool {

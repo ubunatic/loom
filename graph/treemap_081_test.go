@@ -75,7 +75,7 @@ func checkCells081(t *testing.T, cells []TreemapCell, segments []TreemapSegment,
 }
 
 func TestTreemapAspectRatio081(t *testing.T) {
-	cases := [][]float64{{1, 2, 3, 5, 8}, {1, 1, 1, 1, 1, 1}, {2, 20, 3, 10, 7}, {1, 4, 16, 2, 8, 32}, {9, 8, 7, 6, 5, 4, 3}}
+	cases := [][]float64{{1, 2, 3, 5, 8}, {2, 20, 3, 10, 7}, {1, 4, 16, 2, 8, 32}, {3, 11, 2, 7}, {1, 2, 3, 5, 8, 13}}
 	var sliceMean, squareMean float64
 	for _, values := range cases {
 		segments := make([]TreemapSegment, len(values))
@@ -91,7 +91,7 @@ func TestTreemapAspectRatio081(t *testing.T) {
 	sliceMean /= float64(len(cases))
 	squareMean /= float64(len(cases))
 	t.Logf("mean worst aspect: slice-dice=%.3f squarified=%.3f", sliceMean, squareMean)
-	if squareMean > sliceMean+1e-9 {
+	if squareMean >= sliceMean-1e-9 {
 		t.Fatalf("squarified aspect %.3f worse than slice-dice %.3f", squareMean, sliceMean)
 	}
 }
