@@ -115,3 +115,25 @@ did not, that is the bug to report. Assert that the visible text after the drag 
 the first visible line moved forward. Write `M3-pty-drag.ansi` from the final screen (ANSI-stripped check).
 If the ptytest helper lacks a way to write raw bytes or read the screen, add the smallest helper and test it.
 Commit '(issue 092 M4)'; if git is blocked say so and leave files staged.
+
+### M4 Review (host)
+Not committed: the developer added `ptytest.Session.SendRaw` (uncommitted, `internal/ptytest/session.go`) and
+`examples/split/split/split_pty_test.go` (uncommitted), but the PTY test is RED: raw SGR input is accepted and
+the visible `View` content does not move. Multi-layer problem (PTY, mouse decode, routing through the hosted
+widgets, View drag), so the step moves up the escalation ladder (`codex:sol:low`).
+
+### M5 - Diagnose and finish the PTY drag (host guidance)
+Bisect by layers, cheapest first, and keep each layer's test:
+1. Headless: drive the same widget tree the split example builds (`NewWidget`) with synthetic `MouseEvent`
+   press/drag/release at the thumb cell and check the View offset. If it moves, the widget is fine.
+2. Decode: check that the raw bytes the test sends decode to the same `MouseEvent` kinds (`MousePress`, `MouseDrag`,
+   `MouseRelease`, button, coordinates 1-based vs 0-based) as the synthetic events; note that mode 1003 vs
+   1002 reporting and the motion bit 32 matter.
+3. Routing: the split (divider drag), the frame or the pane may consume drag events before the View sees
+   them; find where drag events are captured and whether the View's scrollbar column is hit-tested with the
+   right offsets (pane origin, frame border, title row).
+Fix a genuine bug in library code if it is small and covered by a failing-then-passing test in the layer
+where it lives; if the split example is the wrong vehicle (its divider owns drags), switch the PTY test to
+the ansiviewer preview or the filebrowser list and say why. Final: the PTY test is green, `M3-pty-drag.ansi`
+written from the final screen (ANSI-stripped check), `go vet ./...` and touched packages green, and every
+bug found is listed in your report. Commit '(issue 092 M5)'; if git is blocked say so and leave files staged.
