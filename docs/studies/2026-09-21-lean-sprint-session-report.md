@@ -25,10 +25,10 @@ for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done
 | 7 | 081 TreemapCell / ColorScale | closed (M1-M5) | luna:low M1-M4, sol:low M5 | `docs/progress/081/` |
 | 8 | 092 scrollbar drag | closed (M1-M6) | luna:low M1-M4, sol:low M5, sonnet M6 | `docs/progress/092/` |
 | 9 | 093 filebrowser mouse hit-test | closed (M1-M5) | luna:low | `docs/progress/093/` |
-| 10 | 060 Ticker / Invalidate | running (plan step) | luna:low | `docs/progress/060/` |
-| 11 | 088 key capture coverage | not started | | |
+| 10 | 060 Ticker / Invalidate | closed (M1-M4) | luna:low M1-M3, sol:low M4 | `docs/progress/060/` |
+| 11 | 088 key capture coverage | running (plan step) | luna:low | `docs/progress/088/` |
 
-Done: 10 of 12 counting 097 (9 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
+Done: 11 of 12 counting 097 (10 of the 11 goal tickets). Second wave 063, 064, 065 is not part of the goal.
 
 ## How the Sprints Run
 
@@ -58,6 +58,7 @@ Done: 10 of 12 counting 097 (9 of the 11 goal tickets). Second wave 063, 064, 06
 - 092 used the whole ladder: luna:low built the mapping, drag state and evidence; sol:low found two library bugs (Split dropped drags leaving the child, View edge column) but not why the PTY test was red; native Sonnet found that the remaining causes were in the test itself (byte index instead of rune column, an assertion on a constant, a stray press) and that Split treated 0-based mouse coordinates as 1-based. It also moved the View scrollbar hit column to the drawn column and updated tests that had pinned the wrong column.
 - Lessons now written into tickets: mouse events reaching widgets are 0-based, PTY SGR is 1-based, locate screen text by runes or display width.
 - 093 by luna:low alone (no escalation), four rounds: the review caught `Choice.Draw` truncation changing for all users (now pinned by a test), duplicated row formatting (now shared), and an evidence frame that proved nothing (whitespace click on the already-selected row; now a click on another row).
+- 060: luna:low delivered the Ticker code but the pane reset its tick timer on every event (starvation under event storms); the review caught it, luna's test only modelled the timer, and sol:low wrote the real-Pane tests (starvation test proven red against the old behavior, idle guard, 100-goroutine Invalidate with leak check) and the six evidence frames. The 060 frames are raw terminal streams of a real Pane run (cursor-positioned lines), small but genuine.
 
 ## Open Items
 
