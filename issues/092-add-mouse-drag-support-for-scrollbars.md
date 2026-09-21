@@ -99,3 +99,19 @@ scrollbar, so horizontal frames are dropped from the deliverables (mapping-level
 3. PTY test with `internal/ptytest` (see existing PTY tests): drag the thumb of a scrollable example in a real
    terminal session and assert the visible content changes; evidence `M3-pty-drag.ansi`.
 4. Commit '(issue 092 M3)'; if git is blocked say so and leave files staged.
+
+### M3 Review (host)
+Committed by the host. Accepted: the three cancel/capture/button tests and all six `M2-*` frames (thumb and
+content visibly move). Still missing: the PTY drag test and `M3-pty-drag.ansi`.
+
+### M4 - PTY drag (architecture given by the host)
+Use an existing example whose scrolling pane is a `View` or `Choice` with a scrollbar; the ansiviewer preview
+pane or the filebrowser list are the candidates (pick one, say which). Launch it in a real PTY with
+`internal/ptytest` on a long temp file or directory (at least 3x the viewport). Send the drag as raw SGR mouse
+bytes on the PTY: press `ESC[<0;X;YM`, motion `ESC[<32;X;YM` with growing Y, release `ESC[<0;X;Ym`, where X is
+the scrollbar column and Y walks down the track (find X and Y from the drawn frame, do not hardcode a guess:
+locate the thumb glyph in the screen the PTY returns). Make sure the example enabled mouse tracking; if it
+did not, that is the bug to report. Assert that the visible text after the drag differs from before and that
+the first visible line moved forward. Write `M3-pty-drag.ansi` from the final screen (ANSI-stripped check).
+If the ptytest helper lacks a way to write raw bytes or read the screen, add the smallest helper and test it.
+Commit '(issue 092 M4)'; if git is blocked say so and leave files staged.
