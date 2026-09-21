@@ -13,9 +13,13 @@ import (
 // TestGenerateM3Evidence generates evidence that ansiviewer renders ANSI colors correctly.
 // This demonstrates that the M1 and M2 implementations (ParseANSI and Canvas.WriteANSI)
 // work for the ansiviewer use case.
+// Only generates evidence when LOOM_EVIDENCE=1 environment variable is set.
 func TestGenerateM3Evidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
 	}
 
 	dir := t.TempDir()

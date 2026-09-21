@@ -387,6 +387,114 @@ func TestParseANSIIncompleteSequence(t *testing.T) {
 	}
 }
 
+// ── M4: Edge cases and advanced SGR codes ──────────────────────────────────────
+
+func TestParseANSIEmptySGR(t *testing.T) {
+	// Bare ESC[m (empty parameter list) should reset all
+	cells := loom.ParseANSI("\x1b[1;31mBOLD RED\x1b[mNOT BOLD")
+	if len(cells) < 12 {
+		t.Fatalf("got %d cells, want at least 12", len(cells))
+	}
+	// First 8 cells should be bold+red
+	for i := 0; i < 8; i++ {
+		if !cells[i].Style.Bold {
+			t.Errorf("cell %d (before reset): should be bold", i)
+		}
+	}
+	// Last 8 cells should be reset
+	for i := 8; i < 16; i++ {
+		if i < len(cells) && cells[i].Style != loom.Reset {
+			t.Errorf("cell %d (after reset): should be reset, got %#v", i, cells[i].Style)
+		}
+	}
+}
+
+func TestParseANSIEmptyParts(t *testing.T) {
+	// ESC[;1m with empty first part should treat empty as 0
+	cells := loom.ParseANSI("\x1b[;1mtext")
+	if len(cells) != 4 {
+		t.Fatalf("got %d cells, want 4", len(cells))
+	}
+	for _, cell := range cells {
+		if !cell.Style.Bold {
+			t.Errorf("expected bold, got %#v", cell.Style)
+		}
+	}
+}
+
+func TestParseANSIBoldOff(t *testing.T) {
+	// SGR code 22 turns off bold and dim
+	cells := loom.ParseANSI("\x1b[1mBOLD\x1b[22mNOT")
+	if len(cells) < 7 {
+		t.Fatalf("got %d cells, want at least 7", len(cells))
+	}
+	// First 4 should be bold
+	for i := 0; i < 4; i++ {
+		if !cells[i].Style.Bold {
+			t.Errorf("cell %d: should be bold", i)
+		}
+	}
+	// Last 3 should not be bold
+	for i := 4; i < 7; i++ {
+		if cells[i].Style.Bold {
+			t.Errorf("cell %d: should not be bold after code 22", i)
+		}
+	}
+}
+
+func TestParseANSIUnderlineOff(t *testing.T) {
+	// SGR code 24 turns off underline
+	cells := loom.ParseANSI("\x1b[4mUNDER\x1b[24mNOT")
+	if len(cells) < 8 {
+		t.Fatalf("got %d cells, want at least 8", len(cells))
+	}
+	// First 5 should be underlined
+	for i := 0; i < 5; i++ {
+		if !cells[i].Style.Underline {
+			t.Errorf("cell %d: should be underlined", i)
+		}
+	}
+	// Last 3 should not be underlined
+	for i := 5; i < 8; i++ {
+		if cells[i].Style.Underline {
+			t.Errorf("cell %d: should not be underlined after code 24", i)
+		}
+	}
+}
+
+func TestParseANSI256ColorOutOfRange(t *testing.T) {
+	// Value > 255 in 256-color should be ignored, not wrapped
+	cells := loom.ParseANSI("\x1b[38;5;256ma\x1b[38;5;100mb")
+	if len(cells) < 2 {
+		t.Fatalf("got %d cells, want at least 2", len(cells))
+	}
+	// First cell should have default (reset) color, not wrapped
+	if cells[0].Style.FG != loom.ColorReset() {
+		t.Errorf("cell 0: color 256 should be ignored, got %#v", cells[0].Style.FG)
+	}
+	// Second cell should have color 100
+	if cells[1].Style.FG != loom.ColorIndex(100) {
+		t.Errorf("cell 1: expected color 100, got %#v", cells[1].Style.FG)
+	}
+}
+
+func TestParseANSIRGBOutOfRange(t *testing.T) {
+	// RGB value > 255 should be ignored
+	cells := loom.ParseANSI("\x1b[38;2;300;0;0ma\x1b[38;2;100;100;100mb")
+	if len(cells) < 2 {
+		t.Fatalf("got %d cells, want at least 2", len(cells))
+	}
+	// First cell should have default (reset) color
+	if cells[0].Style.FG != loom.ColorReset() {
+		t.Errorf("cell 0: RGB(300,0,0) should be ignored, got %#v", cells[0].Style.FG)
+	}
+	// Second cell should have color (100,100,100)
+	r, g, b, ok := cells[1].Style.FG.RGB()
+	if !ok || r != 100 || g != 100 || b != 100 {
+		t.Errorf("cell 1: expected RGB(100,100,100), got (%d,%d,%d)", r, g, b)
+	}
+}
+
 // ── Benchmark ────────────────────────────────────────────────────────────────
 
 func BenchmarkParseANSI(b *testing.B) {
@@ -399,5 +507,70 @@ func BenchmarkParseANSI(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = loom.ParseANSI(input)
+	}
+}
+
+// ── Fuzz/Property test ──────────────────────────────────────────────────────────
+
+func TestParseANSIPropertyValidCells(t *testing.T) {
+	// Property test: ParseANSI never returns invalid cell sequences
+	testCases := []string{
+		"",
+		"plain text",
+		"\x1b[31mred\x1b[0m",
+		"\x1b[38;5;196mcolor196\x1b[0m",
+		"\x1b[38;2;255;100;50mrgb\x1b[0m",
+		"👍emoji",
+		"\x1b[1;4;31mbold underline red\x1b[0m",
+		"\x1b[1m\x1b[22m\x1b[4m\x1b[24mbold off underline off",
+		"\x1b[;1m;empty parts;",
+		"\x1b[mbare reset",
+	}
+
+	for _, input := range testCases {
+		cells := loom.ParseANSI(input)
+		for i := 0; i < len(cells); i++ {
+			cell := cells[i]
+			// Continuation cells should appear after wide cells
+			if cell.Continuation {
+				if i == 0 {
+					t.Errorf("input %q: continuation at index 0", input)
+				}
+				prevCell := cells[i-1]
+				if loom.StringWidth(prevCell.Text) != 2 {
+					t.Errorf("input %q: continuation at %d not after wide cell", input, i)
+				}
+			}
+			// All cells should have either text or be continuation
+			if cell.Text == "" && !cell.Continuation {
+				t.Errorf("input %q: cell %d is blank non-continuation", input, i)
+			}
+		}
+	}
+}
+
+func TestParseANSINeverPanics(t *testing.T) {
+	// Property test: ParseANSI never panics on any input
+	testInputs := []string{
+		"\x1b",           // incomplete escape
+		"\x1b[",          // incomplete CSI
+		"\x1b[1;2;3;4;5", // incomplete
+		"\x1b[999m",      // high code
+		"\x1b[38;5;999m", // high color
+		"\x1b[38;2;999;999;999m", // high RGB
+		"\x1b[38;999m",   // malformed
+		string([]byte{255, 254, 253}), // invalid UTF-8
+		"\x1b[;;;;;m",    // many empty parts
+	}
+
+	for _, input := range testInputs {
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("ParseANSI panicked on input %q: %v", input, r)
+				}
+			}()
+			loom.ParseANSI(input)
+		}()
 	}
 }

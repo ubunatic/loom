@@ -364,6 +364,13 @@ func csiPosition(params string) (int, int) {
 	}
 	return row, col
 }
+// applySGR parses and applies SGR (Select Graphic Rendition) parameters to a style.
+// Note: This function is a custom parser for backward compatibility. In loom 034+,
+// this could be replaced with loom.ParseANSI for SGR handling, but the parent
+// writeANSI() function handles cursor positioning (H, C, G, d) and character set
+// designation (ESC () alongside SGR, requiring a refactor to separate these concerns.
+// For now, applySGR remains local to maintain the existing rectangle-bounded
+// rendering with integrated cursor replay.
 func applySGR(style loom.Style, params string) loom.Style {
 	parts := strings.Split(params, ";")
 	for i := 0; i < len(parts); i++ {

@@ -87,9 +87,19 @@ func ParseANSI(s string) []Cell {
 
 // applySGRSequence applies SGR parameters to a style.
 func applySGRSequence(style Style, params string) Style {
+	// Empty parameter list (bare ESC[m) counts as code 0 (reset)
+	if params == "" {
+		return Style{}
+	}
+
 	parts := strings.Split(params, ";")
 
 	for i := 0; i < len(parts); i++ {
+		// Empty parts (e.g., ESC[;1m) are treated as 0
+		if parts[i] == "" {
+			parts[i] = "0"
+		}
+
 		code, err := strconv.Atoi(parts[i])
 		if err != nil {
 			continue
@@ -114,6 +124,15 @@ func applySGRSequence(style Style, params string) Style {
 		case code == 4:
 			// Underline
 			style.Underline = true
+
+		case code == 22:
+			// Bold and dim off
+			style.Bold = false
+			style.Dim = false
+
+		case code == 24:
+			// Underline off
+			style.Underline = false
 
 		case code >= 30 && code <= 37:
 			// 16-color foreground (30-37)
@@ -142,7 +161,8 @@ func applySGRSequence(style Style, params string) Style {
 		case code == 38 && i+2 < len(parts) && parts[i+1] == "5":
 			// 256-color foreground: 38;5;n
 			v, err := strconv.Atoi(parts[i+2])
-			if err == nil {
+			// Ignore out-of-range values (0-255 only)
+			if err == nil && v >= 0 && v <= 255 {
 				style.FG = ColorIndex(uint8(v))
 			}
 			i += 2
@@ -150,7 +170,8 @@ func applySGRSequence(style Style, params string) Style {
 		case code == 48 && i+2 < len(parts) && parts[i+1] == "5":
 			// 256-color background: 48;5;n
 			v, err := strconv.Atoi(parts[i+2])
-			if err == nil {
+			// Ignore out-of-range values (0-255 only)
+			if err == nil && v >= 0 && v <= 255 {
 				style.BG = ColorIndex(uint8(v))
 			}
 			i += 2
@@ -160,7 +181,9 @@ func applySGRSequence(style Style, params string) Style {
 			r, errR := strconv.Atoi(parts[i+2])
 			g, errG := strconv.Atoi(parts[i+3])
 			b, errB := strconv.Atoi(parts[i+4])
-			if errR == nil && errG == nil && errB == nil {
+			// Ignore if any value is out of range (0-255 only)
+			if errR == nil && errG == nil && errB == nil &&
+				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
 			}
 			i += 4
@@ -170,7 +193,9 @@ func applySGRSequence(style Style, params string) Style {
 			r, errR := strconv.Atoi(parts[i+2])
 			g, errG := strconv.Atoi(parts[i+3])
 			b, errB := strconv.Atoi(parts[i+4])
-			if errR == nil && errG == nil && errB == nil {
+			// Ignore if any value is out of range (0-255 only)
+			if errR == nil && errG == nil && errB == nil &&
+				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))
 			}
 			i += 4

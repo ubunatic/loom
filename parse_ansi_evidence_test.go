@@ -31,9 +31,13 @@ func (w *simpleCanvasWidget) HandleMouse(e loom.MouseEvent) bool { return false 
 
 // TestGenerateM1Evidence generates a visual frame demonstrating ParseANSI capabilities.
 // This is the M1 evidence frame for ticket 034.
+// Only generates evidence when LOOM_EVIDENCE=1 environment variable is set.
 func TestGenerateM1Evidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
+	}
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		t.Skip("set LOOM_EVIDENCE=1 to generate evidence frames")
 	}
 
 	const cols, rows = 80, 20
