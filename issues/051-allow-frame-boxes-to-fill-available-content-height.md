@@ -51,3 +51,41 @@ clear in both Go and YAML.
 - Hidden boxes and breakpoint transitions do not leave stale gaps.
 - Existing fixed-height frames preserve their layout.
 - `go test ./...` and `go vet ./...` pass.
+
+---
+
+## Resolved Design (host decisions, binding for the sprint)
+
+- **Property**: a boolean `FillHeight` on `Box` (YAML `fill_height: true`), following the
+  existing spec system in docs/Spec.md (spec YAML is source of truth; validate-spec must accept it).
+  Zero-height semantics are unchanged; there is no special meaning for 0.
+- **Horizontal row**: a filling box takes all available content rows (frame height minus the title
+  and status rows), clamped by the box's min/max height constraints if the Box already has them.
+  Non-filling boxes in the same row keep today's preferred-height behavior, so a row may mix both.
+- **Stacked layout**: filling boxes share the height left after fixed boxes, equally, remainder to the
+  earlier boxes; if nothing is left they get their minimum (or 1).
+- **Preferred size**: `ContentHeight` and `HeightForWidth` treat a filling box as its preferred
+  `Height` if greater than 0, else 1, never as the most recent draw size.
+- **Hidden boxes** are excluded from the fill computation; breakpoint transitions recompute it.
+- Existing fixed-height frames render byte-identical (assert with a golden test before changing code).
+
+## Milestones (lean sprint, dev agent: haiku)
+
+Host reviews only diffs and test output; this ticket is the only channel. Root-package tests
+needing `/dev/tty` fail before this work; ignore them. Commit each milestone (message ends
+'(issue 051 MX)'), stage only your files, never docs/README.md.
+
+Evidence rules: frames produced by code, gated on env `LOOM_EVIDENCE=1`, written to repo-root
+`docs/progress/051/` (find root by walking up to `go.mod`). Run with `LOOM_EVIDENCE=1` and confirm
+`git status` shows only intended files. Run gofmt on touched files.
+
+### M1 - FillHeight in horizontal layout
+- Golden test that pins existing fixed-height layout first, then the field, spec entry, validation,
+  and horizontal fill with min/max clamping and mixed rows.
+- Evidence: `M1-fill-h12.ansi`, `M1-fill-h20.ansi`, `M1-fill-h30.ansi` (same frame at three terminal heights).
+
+### M2 - Stacked, hidden, breakpoint, filebrowser
+- Stacked behavior, hidden boxes, breakpoint transition, `ContentHeight`/`HeightForWidth`, all tested.
+- filebrowser boxes use `FillHeight` instead of the hard-coded 18 and reach the status row; existing
+  filebrowser tests stay green.
+- Evidence: `M2-stacked.ansi`, `M2-breakpoint.ansi`, `M2-filebrowser-fill.ansi`.
