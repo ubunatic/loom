@@ -104,6 +104,7 @@ func (a *splitApp) PaneRequest() loom.PaneRequest {
 	return loom.PaneRequest{
 		Mouse:      1003, // SGR mouse tracking with motion events
 		Resizeable: true,
+		OwnsQuit:   true,
 	}
 }
 
@@ -140,6 +141,7 @@ func run() error {
 	}
 	defer pane.Close()
 	pane.Resizeable = true
+	pane.DisableDefaultQuit = true
 	pane.EnableMouse()
 	return pane.Run(app)
 }

@@ -118,6 +118,7 @@ func Run(_ []string) error {
 	}
 	defer pane.Close()
 	pane.MaxCols = 0 // use the full terminal width for the image background
+	pane.DisableDefaultQuit = true
 	pane.Background = loom.NewAstraBackground()
 	metrics := &loom.RenderMetrics{}
 	pane.Metrics = metrics

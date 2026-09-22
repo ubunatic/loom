@@ -151,4 +151,16 @@ func TestFileBrowserNavigation(t *testing.T) {
 	if app.activePath != filepath.Join(tmpDir, "f1.txt") {
 		t.Errorf("activePath = %q, want %q", app.activePath, filepath.Join(tmpDir, "f1.txt"))
 	}
+
+	// Backspace navigates to parent directory without quitting
+	subDir := filepath.Join(tmpDir, "sub")
+	os.Mkdir(subDir, 0755)
+	fb2 := newFileBrowser(subDir, app)
+	if fb2.dir != subDir {
+		t.Fatalf("fb2.dir = %q, want %q", fb2.dir, subDir)
+	}
+	fb2.HandleKey(loom.KeyEvent{Key: "backspace"})
+	if fb2.dir != tmpDir {
+		t.Fatalf("fb2.dir after backspace = %q, want %q", fb2.dir, tmpDir)
+	}
 }

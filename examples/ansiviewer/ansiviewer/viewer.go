@@ -114,7 +114,7 @@ func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
 	return b.frame.HandleKey(e)
 }
 func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	if !e.Is("esc") {
+	if !e.Is("esc") && !e.Is("backspace") {
 		return false, false
 	}
 	return b.HandleKey(e), true
@@ -232,6 +232,25 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 	if e.Is("q", "ctrl-c") {
 		return true
 	}
+	if e.Is("backspace") {
+		if b.filter != "" {
+			runes := []rune(b.filter)
+			b.filter = string(runes[:len(runes)-1])
+			b.offset = 0
+			visible := b.visibleFiles()
+			if len(visible) > 0 {
+				b.selectFile(visible[0])
+			}
+			return false
+		}
+		parent := filepath.Dir(filepath.Clean(b.dir))
+		if parent != filepath.Clean(b.dir) {
+			if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
+				*b = *next
+			}
+		}
+		return false
+	}
 	if e.Is("esc") {
 		if b.filter != "" {
 			b.filter = ""
@@ -239,11 +258,10 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 			return false
 		}
 		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent == filepath.Clean(b.dir) {
-			return true
-		}
-		if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
-			*b = *next
+		if parent != filepath.Clean(b.dir) {
+			if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
+				*b = *next
+			}
 		}
 		return false
 	}
@@ -544,6 +562,7 @@ func run(args []string, output io.Writer) error {
 	defer p.Close()
 	p.Resizeable = true
 	p.MaxCols = 0
+	p.DisableDefaultQuit = true
 	p.ResizeConfig.FullScreenBuffer = true
 	astra := &astraToggle{}
 	p.Background = astra

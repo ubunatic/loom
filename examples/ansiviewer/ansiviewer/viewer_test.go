@@ -117,8 +117,11 @@ func TestBrowserEscapeGoesToParentDirectory(t *testing.T) {
 	}
 
 	b.dir = string(filepath.Separator)
-	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); !quit {
-		t.Fatal("escape from the filesystem root should quit")
+	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+		t.Fatal("escape from the filesystem root should not quit")
+	}
+	if quit := b.HandleKey(loom.KeyEvent{Key: "backspace"}); quit {
+		t.Fatal("backspace from the filesystem root should not quit")
 	}
 }
 

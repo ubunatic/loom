@@ -95,6 +95,9 @@ func (c *Choice) Selected() (Item, bool) {
 // Aborted reports whether the user dismissed without selecting.
 func (c *Choice) Aborted() bool { return c.aborted }
 
+// Query returns the current filter query string.
+func (c *Choice) Query() string { return c.query }
+
 // Checked returns the checked items in original list order (MultiSelect mode).
 // It returns nil when the user aborted (Esc) so a cancelled picker yields no set.
 func (c *Choice) Checked() []Item {
