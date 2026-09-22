@@ -134,6 +134,13 @@ func (fb *fileBrowserWidget) HandleKey(e loom.KeyEvent) bool {
 			fb.selected++
 		}
 		return true
+	case e.Is("backspace", "esc"):
+		parent := filepath.Dir(filepath.Clean(fb.dir))
+		if parent != filepath.Clean(fb.dir) {
+			fb.dir = parent
+			fb.reload()
+		}
+		return true
 	case e.Is("enter"):
 		if len(fb.files) == 0 {
 			return true
@@ -511,6 +518,7 @@ func (app *TextEditApp) PaneRequest() loom.PaneRequest {
 	return loom.PaneRequest{
 		Mouse:      1003,
 		Resizeable: true,
+		OwnsQuit:   true,
 	}
 }
 
@@ -546,6 +554,7 @@ func run() error {
 	}
 	defer pane.Close()
 	pane.Resizeable = true
+	pane.DisableDefaultQuit = true
 	pane.EnableMouse()
 	return pane.Run(app)
 }

@@ -255,14 +255,29 @@ func (b *browser) HandleKey(k loom.KeyEvent) bool {
 		b.cycleTheme()
 		return false
 	}
+	if k.Is("backspace") {
+		if b.list != nil && b.list.Query() != "" {
+			quit := b.frame.HandleKey(k)
+			b.updateDetails()
+			return quit
+		}
+		parent := filepath.Dir(filepath.Clean(b.dir))
+		if parent != filepath.Clean(b.dir) {
+			if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
+				b.notice = "Error: " + err.Error()
+			}
+		}
+		b.updateDetails()
+		return false
+	}
 	if k.Is("esc") {
 		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent == filepath.Clean(b.dir) {
-			return true
+		if parent != filepath.Clean(b.dir) {
+			if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
+				b.notice = "Error: " + err.Error()
+			}
 		}
-		if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
-			b.notice = "Error: " + err.Error()
-		}
+		b.updateDetails()
 		return false
 	}
 	quit := b.frame.HandleKey(k)
@@ -271,7 +286,7 @@ func (b *browser) HandleKey(k loom.KeyEvent) bool {
 }
 
 func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
-	if !k.Is("esc") {
+	if !k.Is("esc") && !k.Is("backspace") {
 		return false, false
 	}
 	return b.HandleKey(k), true

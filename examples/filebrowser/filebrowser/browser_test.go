@@ -99,6 +99,56 @@ func TestBrowserEscapeNavigatesToParentAndConsumesKey(t *testing.T) {
 	}
 }
 
+func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
+	root := t.TempDir()
+	child := filepath.Join(root, "child")
+	if err := os.Mkdir(child, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(child, "test.txt"), []byte("test"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(child, "plain", loom.Theme("plain"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Filter query non-empty: backspace deletes character from query, does not navigate up
+	b.HandleKey(loom.KeyEvent{Text: "t"})
+	if b.list.Query() != "t" {
+		t.Fatalf("filter query = %q, want t", b.list.Query())
+	}
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); quit || !consumed {
+		t.Fatalf("backspace on non-empty query = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	}
+	if b.dir != child {
+		t.Fatalf("directory after backspace on non-empty query = %q, want %q", b.dir, child)
+	}
+	if b.list.Query() != "" {
+		t.Fatalf("filter query after backspace = %q, want empty", b.list.Query())
+	}
+
+	// Filter query empty: backspace navigates up to parent directory
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); quit || !consumed {
+		t.Fatalf("backspace on empty query = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	}
+	if b.dir != root {
+		t.Fatalf("directory after backspace = %q, want %q", b.dir, root)
+	}
+
+	// At filesystem root: backspace and esc do not exit
+	b.dir = string(filepath.Separator)
+	if quit := b.HandleKey(loom.KeyEvent{Key: "backspace"}); quit {
+		t.Fatal("backspace from filesystem root should not quit")
+	}
+	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+		t.Fatal("esc from filesystem root should not quit")
+	}
+	if quit := b.HandleKey(loom.KeyEvent{Text: "x"}); quit {
+		t.Fatal("random keys should not quit")
+	}
+}
+
 func TestBrowserUsesAnimatedBackground(t *testing.T) {
 	pane := &loom.Pane{}
 	configurePane(pane)
