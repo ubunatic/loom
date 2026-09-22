@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/internal/examplesreg"
@@ -30,7 +31,7 @@ func execute(args []string) error {
 	cmd := &cobra.Command{
 		Use:           "loom-demo [example]",
 		Short:         "Interactive launcher for loom's examples/* programs",
-		Args:          cobra.MaximumNArgs(1),
+		Args:          cobra.ArbitraryArgs,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -41,12 +42,13 @@ func execute(args []string) error {
 			if hosted {
 				return runHosted()
 			}
-			if len(args) == 1 {
-				return runByName(args[0])
+			if len(args) >= 1 {
+				return runByName(args[0], args[1:]...)
 			}
 			return runInteractive()
 		},
 	}
+	cmd.Flags().SetInterspersed(false)
 	cmd.Flags().BoolVar(&list, "list", false, "print the example registry and exit")
 	cmd.Flags().BoolVar(&hosted, "hosted", false, "run examples in hosted Tabs mode (experimental)")
 	cmd.SetArgs(args)
@@ -59,12 +61,27 @@ func printList(out io.Writer) {
 	}
 }
 
-func runByName(name string) error {
-	e, ok := examplesreg.Find(name)
+func normalizeName(name string) string {
+	clean := strings.ToLower(strings.TrimSpace(name))
+	clean = strings.TrimPrefix(clean, "examples/")
+	clean = strings.TrimSuffix(clean, "/")
+	return clean
+}
+
+func runByName(name string, extraArgs ...string) error {
+	clean := normalizeName(name)
+	e, ok := examplesreg.Find(clean)
+	if !ok {
+		e, ok = examplesreg.Find(name)
+	}
 	if !ok {
 		return fmt.Errorf("loom-demo: unknown example %q (see loom-demo --list)", name)
 	}
-	return e.Run(e.DemoArgs)
+	runArgs := e.DemoArgs
+	if len(extraArgs) > 0 {
+		runArgs = extraArgs
+	}
+	return e.Run(runArgs)
 }
 
 // runInteractive shows a loom.Choice menu of every registered example and
@@ -144,5 +161,6 @@ func runHosted() error {
 	}
 	defer pane.Close()
 	pane.Resizeable = true
+	pane.MaxCols = 0
 	return pane.Run(host)
 }

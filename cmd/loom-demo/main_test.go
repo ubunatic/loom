@@ -226,3 +226,33 @@ func findM3RepoRoot(t *testing.T) string {
 		cwd = parent
 	}
 }
+
+func TestNormalizeName(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"monitor", "monitor"},
+		{"examples/monitor", "monitor"},
+		{"examples/split/", "split"},
+		{"  SPLIT  ", "split"},
+	}
+	for _, tc := range tests {
+		if got := normalizeName(tc.input); got != tc.want {
+			t.Errorf("normalizeName(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}
+
+func TestRunByNameAndExecute(t *testing.T) {
+	// Running with -h/--help should succeed quickly without blocking or requiring TTY.
+	if err := runByName("examples/split/", "--help"); err != nil {
+		t.Errorf("runByName with --help failed: %v", err)
+	}
+	if err := execute([]string{"examples/monitor", "--help"}); err != nil {
+		t.Errorf("execute with --help failed: %v", err)
+	}
+	if err := runByName("nonexistent"); err == nil {
+		t.Error("expected error for nonexistent example, got nil")
+	}
+}
