@@ -651,7 +651,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if !p.Resizeable {
 			p.Resizeable = request.Resizeable
 		}
-		if p.MaxCols == 0 {
+		if p.MaxCols == 0 || p.MaxCols == DefaultMaxCols {
 			p.MaxCols = request.MaxCols
 		}
 		if request.OwnsQuit {

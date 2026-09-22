@@ -252,10 +252,10 @@ func TestChoiceUsesPlaceholderStyleOnlyForPlaceholder(t *testing.T) {
 	}
 }
 
-// TestBackspaceEmptyQueryLeavesView verifies that pressing backspace with no
-// filter text dismisses the view (aborts), mirroring Esc/`:back`, while
-// backspace with a non-empty query only trims the filter.
-func TestBackspaceEmptyQueryLeavesView(t *testing.T) {
+// TestBackspaceEmptyQueryDoesNotLeaveView verifies that pressing backspace with no
+// filter text does not dismiss the view (abort), while backspace with a non-empty
+// query trims the filter.
+func TestBackspaceEmptyQueryDoesNotLeaveView(t *testing.T) {
 	c := makeChoice(3)
 
 	// With a filter query, backspace trims it and does not quit.
@@ -275,12 +275,12 @@ func TestBackspaceEmptyQueryLeavesView(t *testing.T) {
 		t.Errorf("query should be empty, got %q", c.query)
 	}
 
-	// The next backspace on the now-empty query leaves the view.
-	if quit := c.HandleKey(KeyEvent{Key: "backspace"}); !quit {
-		t.Fatal("backspace on empty query should quit the view")
+	// The next backspace on the empty query is a no-op and does not leave the view.
+	if quit := c.HandleKey(KeyEvent{Key: "backspace"}); quit {
+		t.Fatal("backspace on empty query should not quit the view")
 	}
-	if !c.Aborted() {
-		t.Error("leaving via backspace should mark the choice aborted")
+	if c.Aborted() {
+		t.Error("backspace on empty query should not mark choice as aborted")
 	}
 }
 

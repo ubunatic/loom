@@ -346,11 +346,6 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 			runes := []rune(c.query)
 			c.query = string(runes[:len(runes)-1])
 			c.refilter()
-		} else {
-			// Backspace past an empty filter leaves the view, mirroring Esc/`:back`.
-			c.aborted = true
-			c.done = true
-			return true
 		}
 	default:
 		if c.MultiSelect && e.Text == " " {

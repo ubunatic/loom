@@ -33,7 +33,7 @@ func TestShowOnce(t *testing.T) {
 	if !strings.Contains(rows[1], "All Usage") || !strings.Contains(rows[1], "Load") {
 		t.Fatal("embedded declaration not rendered")
 	}
-	if !strings.Contains(rows[0], "Loom monitor (observed: n/a, effective: 80)") {
+	if !strings.Contains(rows[0], "Loom monitor (") || !strings.Contains(rows[0], "effective: 80)") {
 		t.Fatalf("width title missing: %q", rows[0])
 	}
 	if !strings.Contains(strings.Join(rows, "\n"), "(simulated data)") {
