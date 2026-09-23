@@ -225,17 +225,20 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 }
 
 func (p *picker) HandleMouse(e loom.MouseEvent) bool {
-	if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
+	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
 		return false
 	}
 	// Pane translates mouse reports to canvas-local, zero-based coordinates
 	// before dispatching them to widgets.
 	x, y := e.X, e.Y
-	if y == p.searchY {
+	if y == p.searchY && e.Action == loom.MousePress && e.Button == loom.MouseLeft {
 		p.focused = true
 		return false
 	}
 	if y == p.categoryY {
+		if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
+			return false
+		}
 		if x < 1 || x >= p.width {
 			return false
 		}
@@ -255,8 +258,10 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 		idx := p.gridStart + row*p.cols + col
 		if col >= 0 && col < p.cols && idx >= 0 && idx < len(p.items) {
 			p.index, p.focused = idx, false
-			p.chosen = emojiList[p.items[idx]].icon
-			return true
+			if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
+				p.chosen = emojiList[p.items[idx]].icon
+				return true
+			}
 		}
 	}
 	return false
@@ -279,7 +284,7 @@ func Run(args []string) error {
 		}
 		defer pane.Close()
 		pane.Resizeable = true
-		pane.EnableMouseClicks()
+		pane.EnableMouse()
 		app := newPicker()
 		err = pane.Run(app)
 		pane.Close()
