@@ -166,7 +166,7 @@ func (v *VT) lineFeed() {
 		v.y++
 		return
 	}
-	v.cells = append(v.cells[1:], v.blankRow(v.Cols, Style{}))
+	v.cells = append(v.cells[1:], v.blankRow(v.Cols, Style{BG: v.pen.BG}))
 }
 
 func (v *VT) put(r rune) {

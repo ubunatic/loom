@@ -98,6 +98,15 @@ type Style struct {
 	Strike    bool
 }
 
+// Effective returns the rendered foreground and background colors, swapping
+// them when Reverse is active.
+func (s Style) Effective() (fg, bg Color) {
+	if s.Reverse {
+		return s.BG, s.FG
+	}
+	return s.FG, s.BG
+}
+
 func (s Style) String() string {
 	var parts []string
 	if s.FG.Type != ColorDefault {

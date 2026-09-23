@@ -292,3 +292,37 @@ func TestSGRFrameSnapshots(t *testing.T) {
 		t.Errorf("frame 1 cell(0,0) = %+v, want 'B' with green FG", frame1[0][0])
 	}
 }
+
+func TestStyleEffective(t *testing.T) {
+	s1 := Style{FG: ColorIndex(1), BG: ColorIndex(2)}
+	fg, bg := s1.Effective()
+	if fg != ColorIndex(1) || bg != ColorIndex(2) {
+		t.Errorf("s1.Effective() = (%v, %v), want (index(1), index(2))", fg, bg)
+	}
+
+	s2 := Style{FG: ColorIndex(1), BG: ColorIndex(2), Reverse: true}
+	fg, bg = s2.Effective()
+	if fg != ColorIndex(2) || bg != ColorIndex(1) {
+		t.Errorf("s2.Effective() with Reverse = (%v, %v), want (index(2), index(1))", fg, bg)
+	}
+
+	s3 := Style{Reverse: true}
+	fg, bg = s3.Effective()
+	if fg != ColorReset() || bg != ColorReset() {
+		t.Errorf("s3.Effective() with Reverse = (%v, %v), want (default, default)", fg, bg)
+	}
+}
+
+func TestVTLineFeedPenBG(t *testing.T) {
+	v := NewVT(4, 2)
+	// Set red BG (index 1) and scroll down
+	v.Write([]byte("\x1b[41m\x1b[1;1HA\x1b[2;1HB\nC")) //nolint:errcheck
+	// Screen scrolled up: row 0 has 'B', row 1 has 'C' followed by red spaces
+	for x := 1; x < 4; x++ {
+		c := v.Cell(x, 1)
+		if c.Style.BG != ColorIndex(1) {
+			t.Errorf("scrolled cell(%d,1) BG = %v, want index(1)", x, c.Style.BG)
+		}
+	}
+}
+
