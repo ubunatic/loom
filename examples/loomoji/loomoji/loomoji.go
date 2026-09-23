@@ -42,6 +42,8 @@ var emojiList = []emoji{
 
 var categories = []string{"☺", "♙", "🐾", "🍴", "⚽", "✈", "♡"}
 
+const emojiCellWidth = 3
+
 type picker struct {
 	query     *loom.TextInput
 	group     int
@@ -123,7 +125,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	p.gridTop = p.searchY + 2
 	gridBottom := p.categoryY
-	p.cols = max(1, (r.W-2)/5)
+	p.cols = max(1, (r.W-2)/emojiCellWidth)
 	p.viewRows = max(0, gridBottom-p.gridTop)
 	startRow := 0
 	selectedRow := p.index / p.cols
@@ -135,7 +137,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	visible := min(len(p.items)-start, p.cols*p.viewRows)
 	for n := 0; n < visible; n++ {
 		idx := start + n
-		x := r.X + 1 + (n%p.cols)*5
+		x := r.X + 1 + (n%p.cols)*emojiCellWidth
 		y := p.gridTop + n/p.cols
 		style := loom.Style{FG: loom.ColorRGB(244, 203, 69)}
 		if idx == p.index {
@@ -243,7 +245,7 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 		if x < 1 || x >= p.width {
 			return false
 		}
-		col := (x - 1) / 5
+		col := (x - 1) / emojiCellWidth
 		row := y - p.gridTop
 		idx := p.gridStart + row*p.cols + col
 		if col >= 0 && col < p.cols && idx >= 0 && idx < len(p.items) {
