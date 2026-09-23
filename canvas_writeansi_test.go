@@ -281,3 +281,61 @@ func BenchmarkCanvasWriteANSI(b *testing.B) {
 		_ = canvas.WriteANSI(0, 0, input)
 	}
 }
+
+// ── Parity tests between old and new Canvas WriteANSI / set paths ───────────
+
+func TestCanvasWriteANSIOldNewParity(t *testing.T) {
+	inputs := []string{
+		"hello world",
+		"\x1b[31mRED\x1b[0m \x1b[32mGREEN\x1b[0m",
+		"\x1b[1mbold\x1b[0mnormal",
+		"👍test emoji",
+		"\x1b[38;2;255;0;128mRGB test\x1b[0m",
+	}
+
+	for i, input := range inputs {
+		cOld := loom.NewCanvas(30, 5)
+		cNew := loom.NewCanvas(30, 5)
+
+		t.Setenv("LOOM_FAST_ANSI", "0")
+		_ = cOld.WriteANSI(0, 0, input)
+
+		t.Setenv("LOOM_FAST_ANSI", "1")
+		_ = cNew.WriteANSI(0, 0, input)
+
+		rowOld := cOld.Row(0)
+		rowNew := cNew.Row(0)
+
+		if rowOld != rowNew {
+			t.Errorf("case %d (%q): rendered row mismatch:\n old: %q\n new: %q", i, input, rowOld, rowNew)
+		}
+	}
+}
+
+func BenchmarkCanvasWriteANSI_Old(b *testing.B) {
+	b.Setenv("LOOM_FAST_ANSI", "0")
+	canvas := loom.NewCanvas(80, 24)
+	input := "\x1b[31mERROR\x1b[0m: " +
+		"\x1b[38;5;196mFailed\x1b[0m - " +
+		"\x1b[1;34mDetails\x1b[0m: " +
+		"Some error message with lots of words that goes on for a bit"
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.WriteANSI(0, 0, input)
+	}
+}
+
+func BenchmarkCanvasWriteANSI_New(b *testing.B) {
+	b.Setenv("LOOM_FAST_ANSI", "1")
+	canvas := loom.NewCanvas(80, 24)
+	input := "\x1b[31mERROR\x1b[0m: " +
+		"\x1b[38;5;196mFailed\x1b[0m - " +
+		"\x1b[1;34mDetails\x1b[0m: " +
+		"Some error message with lots of words that goes on for a bit"
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.WriteANSI(0, 0, input)
+	}
+}

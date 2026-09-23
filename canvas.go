@@ -117,6 +117,68 @@ func (c *Canvas) Set(x, y int, cell Cell) {
 }
 
 func (c *Canvas) set(x, y int, cell Cell, claim bool) {
+	if !useFastANSI() {
+		c.setOld(x, y, cell, claim)
+		return
+	}
+	c.setNew(x, y, cell, claim)
+}
+
+func (c *Canvas) setOld(x, y int, cell Cell, claim bool) {
+	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
+		return
+	}
+	if c.composing && !c.IsEligibleBackground(x, y) {
+		return
+	}
+	if !cell.Claim && (cell.Text == "" || cell.Text == " ") &&
+		cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+		cell.Style.BG = c.cells[y][x].Style.BG
+		cell.Surface = cell.Surface || c.cells[y][x].Surface
+	}
+	if claim && !cell.Surface {
+		c.claimed[y][x] = true
+	}
+	if cell.Continuation {
+		if x > 0 && StringWidth(c.cells[y][x-1].Text) == 2 {
+			c.cells[y][x] = cell
+		}
+		return
+	}
+	clusters := textClusters(cell.Text)
+	cell.Text = " "
+	if len(clusters) > 0 {
+		cell.Text = clusters[0]
+	}
+	w := StringWidth(cell.Text)
+	if w == 2 && x+1 >= c.cols {
+		return
+	}
+	if cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+		cell.Style.BG = c.cells[y][x].Style.BG
+	}
+	clear := func(col int) {
+		if c.cells[y][col].Continuation && col > 0 {
+			c.cells[y][col-1] = blank
+		}
+		if col+1 < c.cols && c.cells[y][col+1].Continuation {
+			c.cells[y][col+1] = blank
+		}
+		c.cells[y][col] = blank
+	}
+	clear(x)
+	if w == 2 {
+		clear(x + 1)
+	}
+	c.cells[y][x] = cell
+	if w == 2 {
+		cont := cell
+		cont.Continuation = true
+		c.cells[y][x+1] = cont
+	}
+}
+
+func (c *Canvas) setNew(x, y int, cell Cell, claim bool) {
 	if x < 0 || x >= c.cols || y < 0 || y >= c.rows {
 		return
 	}

@@ -574,3 +574,64 @@ func TestParseANSINeverPanics(t *testing.T) {
 		}()
 	}
 }
+
+// ── Parity tests between ParseANSIOld and ParseANSINew ───────────────────────
+
+func TestParseANSIOldNewParity(t *testing.T) {
+	testCases := []string{
+		"",
+		"plain text",
+		"\x1b[31mred\x1b[0m",
+		"\x1b[38;5;196mcolor196\x1b[0m",
+		"\x1b[38;2;255;100;50mrgb\x1b[0m",
+		"👍emoji",
+		"écombining",
+		"\x1b[1;4;31mbold underline red\x1b[0m",
+		"\x1b[1m\x1b[22m\x1b[4m\x1b[24mbold off underline off",
+		"\x1b[;1m;empty parts;",
+		"\x1b[mbare reset",
+		"\x1b[Atext",
+		"\x1b(Btext",
+		"hello \x1b[1mworld\x1b[0m end",
+		"\x1b[31mERROR\x1b[0m: \x1b[38;5;196mFailed\x1b[0m - \x1b[1;34mDetails\x1b[0m: Some error message with lots of words",
+	}
+
+	for i, input := range testCases {
+		oldCells := loom.ParseANSIOld(input)
+		newCells := loom.ParseANSINew(input)
+
+		if len(oldCells) != len(newCells) {
+			t.Fatalf("case %d (%q): cell count mismatch: old=%d, new=%d", i, input, len(oldCells), len(newCells))
+		}
+
+		for j := range oldCells {
+			if oldCells[j] != newCells[j] {
+				t.Errorf("case %d (%q) cell %d: old=%#v, new=%#v", i, input, j, oldCells[j], newCells[j])
+			}
+		}
+	}
+}
+
+func BenchmarkParseANSI_Old(b *testing.B) {
+	input := "\x1b[31mERROR\x1b[0m: " +
+		"\x1b[38;5;196mFailed\x1b[0m - " +
+		"\x1b[1;34mDetails\x1b[0m: " +
+		"Some error message with lots of words that goes on for a bit"
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = loom.ParseANSIOld(input)
+	}
+}
+
+func BenchmarkParseANSI_New(b *testing.B) {
+	input := "\x1b[31mERROR\x1b[0m: " +
+		"\x1b[38;5;196mFailed\x1b[0m - " +
+		"\x1b[1;34mDetails\x1b[0m: " +
+		"Some error message with lots of words that goes on for a bit"
+
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = loom.ParseANSINew(input)
+	}
+}
