@@ -1,0 +1,3 @@
+## 2026-09-23 - Eliminating Suffix-Slicing Allocations in ANSI Parsing & Canvas Set Fast Paths
+**Learning:** Calling `measure.Clusters(string(rs[i:]))` on every character inside `ParseANSI` allocated `string(rs[i:])` sub-slices on the heap for every rune step. Additionally, in `Canvas.Set`, calling `textClusters` and `measure.Clusters` for single-byte ASCII characters generated heavy GC pressure on hot render loops.
+**Action:** Scan combining mark rune sequences in-place using direct rune range slices `rs[i:j]`, and provide a fast-path in `Canvas.set` for standard single-byte ASCII cells (`len(cell.Text) == 1 && cell.Text[0] >= 0x20 && cell.Text[0] <= 0x7e`) to skip string cluster splitting.

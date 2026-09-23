@@ -148,12 +148,20 @@ func (c *Canvas) set(x, y int, cell Cell, claim bool) {
 		}
 		return
 	}
-	clusters := textClusters(cell.Text)
-	cell.Text = " "
-	if len(clusters) > 0 {
-		cell.Text = clusters[0]
+	var w int
+	if len(cell.Text) == 1 && cell.Text[0] >= 0x20 && cell.Text[0] <= 0x7e {
+		w = 1
+	} else if len(cell.Text) == 0 {
+		cell.Text = " "
+		w = 1
+	} else {
+		clusters := textClusters(cell.Text)
+		cell.Text = " "
+		if len(clusters) > 0 {
+			cell.Text = clusters[0]
+		}
+		w = StringWidth(cell.Text)
 	}
-	w := StringWidth(cell.Text)
 	if w == 2 && x+1 >= c.cols {
 		return
 	}

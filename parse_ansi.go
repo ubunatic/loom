@@ -6,7 +6,7 @@ package loom
 import (
 	"strconv"
 	"strings"
-	"unicode/utf8"
+	"unicode"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
@@ -18,20 +18,24 @@ import (
 // produce two cells (the character and a Continuation cell), and combining marks
 // attach to their base glyph in a single cell.
 func ParseANSI(s string) []Cell {
-	var cells []Cell
+	if s == "" {
+		return nil
+	}
+	cells := make([]Cell, 0, len(s))
 	style := Style{}
 
 	rs := []rune(s)
-	for i := 0; i < len(rs); {
+	n := len(rs)
+	for i := 0; i < n; {
 		// Check for CSI sequence: ESC [ ... m
-		if rs[i] == '\x1b' && i+1 < len(rs) && rs[i+1] == '[' {
+		if rs[i] == '\x1b' && i+1 < n && rs[i+1] == '[' {
 			// Find the end of the sequence (terminated by a letter in range @ to ~)
 			j := i + 2
-			for j < len(rs) && (rs[j] < '@' || rs[j] > '~') {
+			for j < n && (rs[j] < '@' || rs[j] > '~') {
 				j++
 			}
 
-			if j < len(rs) {
+			if j < n {
 				// We have a complete sequence
 				if rs[j] == 'm' {
 					// SGR (Select Graphic Rendition) sequence
@@ -51,35 +55,41 @@ func ParseANSI(s string) []Cell {
 		}
 
 		// Check for character set designation: ESC ( ... (skip these)
-		if rs[i] == '\x1b' && i+2 < len(rs) && rs[i+1] == '(' {
+		if rs[i] == '\x1b' && i+2 < n && rs[i+1] == '(' {
 			i += 3
 			continue
 		}
 
-		// Regular character: add to cells
-		// Use text clusters to handle combining marks properly
-		clusters := measure.Clusters(string(rs[i:]))
-		if len(clusters) > 0 {
-			cluster := clusters[0]
-			w := StringWidth(cluster)
-
-			if w == 2 {
-				// Wide character: add lead cell and continuation cell
-				cells = append(cells, Cell{Text: cluster, Style: style})
-				cells = append(cells, Cell{Style: style, Continuation: true})
-			} else if w == 1 {
-				// Normal width character
-				cells = append(cells, Cell{Text: cluster, Style: style})
-			} else if w == 0 {
-				// Zero-width (combining mark or similar); skip
-				// (combining marks are already handled as part of clusters)
-			}
-
-			// Advance past the cluster
-			i += utf8.RuneCountInString(cluster)
-		} else {
+		r := rs[i]
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
 			i++
+			continue
 		}
+
+		w := measure.RuneWidth(r)
+		if w == 0 {
+			// Standalone combining mark without base
+			i++
+			continue
+		}
+
+		// Collect base rune plus any subsequent zero-width combining marks into a cluster
+		j := i + 1
+		for j < n && (unicode.Is(unicode.Mn, rs[j]) || unicode.Is(unicode.Me, rs[j])) {
+			j++
+		}
+
+		cluster := string(rs[i:j])
+		if w == 2 {
+			// Wide character: add lead cell and continuation cell
+			cells = append(cells, Cell{Text: cluster, Style: style})
+			cells = append(cells, Cell{Style: style, Continuation: true})
+		} else {
+			// Normal width character (w == 1)
+			cells = append(cells, Cell{Text: cluster, Style: style})
+		}
+
+		i = j
 	}
 
 	return cells
