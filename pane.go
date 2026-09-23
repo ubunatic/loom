@@ -47,16 +47,18 @@ var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
 
 // Pane manages an inline terminal region and drives the widget event loop.
 type Pane struct {
-	tty      *os.File
-	fd       int
-	oldState *term.State
-	rows     int // reserved height (clamped to the current terminal)
-	wantRows int // desired height; rows is restored toward this when space allows
-	startRow int // 1-based terminal row of the pane top
-	cols     int // terminal width at Open time
-	MaxCols  int // canvas width cap; 0 = use terminal width
-	restored bool
-	ownsTTY  bool
+	tty             *os.File
+	fd              int
+	oldState        *term.State
+	rows            int // reserved height (clamped to the current terminal)
+	wantRows        int // desired height; rows is restored toward this when space allows
+	startRow        int // 1-based terminal row of the pane top
+	cursorRowOffset int // original cursor row relative to startRow, after reservation scroll
+	cursorCol       int // original 1-based terminal column
+	cols            int // terminal width at Open time
+	MaxCols         int // canvas width cap; 0 = use terminal width
+	restored        bool
+	ownsTTY         bool
 
 	// mouse tracking is enabled with EnableMouse.
 	mouse      bool
@@ -257,23 +259,30 @@ func New(height int) (*Pane, error) {
 	}
 
 	if toScroll > 0 {
-		tty.WriteString(fmt.Sprintf("\x1b[%dS", toScroll)) // scroll up toScroll lines
+		// Scroll with line feeds instead of CSI S. Many terminals discard lines
+		// scrolled with CSI S instead of adding them to scrollback.
+		tty.WriteString(fmt.Sprintf("\x1b[%d;1H", termRows))
+		for i := 0; i < toScroll; i++ {
+			tty.WriteString("\r\n")
+		}
 	}
 
 	// Move cursor to startRow so drawing begins at the correct relative row
 	tty.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow))
 
 	p := &Pane{
-		tty:          tty,
-		fd:           fd,
-		oldState:     old,
-		rows:         height,
-		wantRows:     wantRows,
-		startRow:     startRow,
-		cols:         cols,
-		MaxCols:      DefaultMaxCols,
-		ResizeConfig: DefaultResizeConfig(),
-		ownsTTY:      true,
+		tty:             tty,
+		fd:              fd,
+		oldState:        old,
+		rows:            height,
+		wantRows:        wantRows,
+		startRow:        startRow,
+		cursorRowOffset: toScroll,
+		cursorCol:       cx,
+		cols:            cols,
+		MaxCols:         DefaultMaxCols,
+		ResizeConfig:    DefaultResizeConfig(),
+		ownsTTY:         true,
 	}
 	p.installSignalHandler()
 	return p, nil
@@ -1190,7 +1199,7 @@ func (p *Pane) close() {
 		for i := 0; i < p.rows; i++ {
 			b.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", p.startRow+i))
 		}
-		b.WriteString(fmt.Sprintf("\x1b[%d;1H", p.startRow))
+		b.WriteString(fmt.Sprintf("\x1b[%d;%dH", p.startRow+p.cursorRowOffset, max(1, p.cursorCol)))
 	}
 	b.WriteString("\x1b[?25h")    // restore cursor visibility (a prompt-less frame may have hidden it)
 	b.WriteString("\x1b[?7h")     // restore auto-wrap
