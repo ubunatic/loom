@@ -119,3 +119,11 @@ Pre-Work / Required Refinements (probe placement):
 - In the table, mark a grid-hover NO_CHANGE as "no visible target" rather
   than a pass or fail; the test fails when any measured offset ≠ (0,0).
 - Print a one-line summary: dominant (dx, dy) across measured probes.
+
+M2 delivered (dfc5b18): loomoji hover probe — differential FG/BG detection,
+screen-derived geometry, frame-arrival settle. Result: **dominant offset
+(dx=+0, dy=-1) across 10/10 measured probes**; the highlight lands one grid
+row above the hovered cell. `TestLoomoji107HoverProbe` fails by design until
+the fix ticket lands. Second probes on the same item (right half, gap) show
+NO_CHANGE because the off-grid reset does not clear the previous highlight.
+loomoji source untouched since 63ea328.
