@@ -162,4 +162,3 @@ func AlignOffset(available, size int, align Align) int {
 		return 0
 	}
 }
-

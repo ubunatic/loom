@@ -92,4 +92,3 @@ func TestSplashControllerDismissalWithQKey(t *testing.T) {
 		t.Errorf("state not dismissed after 'q'")
 	}
 }
-

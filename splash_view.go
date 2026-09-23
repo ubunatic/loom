@@ -23,7 +23,6 @@ type SplashView struct {
 	Controller   *SplashController
 }
 
-
 // NewSplashView creates a SplashView with default settings matching HarnezSplashTarget.
 func NewSplashView(title string, pills ...ProviderPill) *SplashView {
 	return &SplashView{
@@ -35,7 +34,6 @@ func NewSplashView(title string, pills ...ProviderPill) *SplashView {
 		StepText:     SpeccedDefaults.Splash.StepText,
 	}
 }
-
 
 // ApplySnapshot updates the view properties from a SplashSnapshot.
 func (sv *SplashView) ApplySnapshot(snap SplashSnapshot) {
@@ -167,7 +165,6 @@ func (sv *SplashView) HandleKey(e KeyEvent) bool {
 	}
 	return false
 }
-
 
 // HandleMouse implements Widget.
 func (sv *SplashView) HandleMouse(e MouseEvent) bool {

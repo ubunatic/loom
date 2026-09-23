@@ -6,9 +6,17 @@
 package measure
 
 import (
+	"os"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
+
+// useFastMeasure returns true unless LOOM_FAST_MEASURE is set to "0", "false", or "off".
+func useFastMeasure() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_FAST_MEASURE")))
+	return v != "0" && v != "false" && v != "off"
+}
 
 // Size describes the visible terminal-cell dimensions of text lines.
 type Size struct {
@@ -19,9 +27,83 @@ type Size struct {
 // StringWidth returns the visible terminal-cell width of text according to
 // Loom's rendering policy.
 func StringWidth(text string) int {
+	if useFastMeasure() {
+		return StringWidthNew(text)
+	}
+	return StringWidthOld(text)
+}
+
+// StringWidthOld is the legacy StringWidth preserved for fallback and comparison.
+func StringWidthOld(text string) int {
 	w := 0
-	for _, r := range plainTerminalText(text) {
+	for _, r := range plainTerminalTextOld(text) {
 		w += RuneWidth(r)
+	}
+	return w
+}
+
+// StringWidthNew is the zero-allocation fast path for StringWidth.
+func StringWidthNew(text string) int {
+	if text == "" {
+		return 0
+	}
+	// Fast path for plain printable ASCII
+	isPureASCII := true
+	for i := 0; i < len(text); i++ {
+		b := text[i]
+		if b < 0x20 || b > 0x7e {
+			isPureASCII = false
+			break
+		}
+	}
+	if isPureASCII {
+		return len(text)
+	}
+
+	w := 0
+	i := 0
+	n := len(text)
+	for i < n {
+		b := text[i]
+		if b == 27 { // ESC
+			i++
+			if i >= n {
+				break
+			}
+			switch text[i] {
+			case '[':
+				i++
+				for i < n && (text[i] < '@' || text[i] > '~') {
+					i++
+				}
+				if i < n {
+					i++
+				}
+			case ']', 'P', '^', '_':
+				i++
+				for i < n {
+					if text[i] == 7 {
+						i++
+						break
+					}
+					if text[i] == 27 && i+1 < n && text[i+1] == '\\' {
+						i += 2
+						break
+					}
+					i++
+				}
+			}
+			continue
+		}
+
+		r, sz := utf8.DecodeRuneInString(text[i:])
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			i += sz
+			continue
+		}
+
+		w += RuneWidth(r)
+		i += sz
 	}
 	return w
 }
@@ -43,8 +125,16 @@ func RuneWidth(r rune) int {
 // Clusters returns printable base-rune clusters with combining marks attached.
 // Emoji ZWJ sequences are intentionally not treated as one cluster.
 func Clusters(text string) []string {
+	if useFastMeasure() {
+		return ClustersNew(text)
+	}
+	return ClustersOld(text)
+}
+
+// ClustersOld is the legacy Clusters implementation preserved for comparison.
+func ClustersOld(text string) []string {
 	var result []string
-	for _, r := range plainTerminalText(text) {
+	for _, r := range plainTerminalTextOld(text) {
 		if RuneWidth(r) == 0 {
 			if len(result) > 0 {
 				result[len(result)-1] += string(r)
@@ -56,7 +146,69 @@ func Clusters(text string) []string {
 	return result
 }
 
+// ClustersNew is the zero-allocation cluster slice scanner.
+func ClustersNew(text string) []string {
+	if text == "" {
+		return nil
+	}
+
+	// Fast path for pure printable ASCII
+	isPureASCII := true
+	for i := 0; i < len(text); i++ {
+		b := text[i]
+		if b < 0x20 || b > 0x7e {
+			isPureASCII = false
+			break
+		}
+	}
+	if isPureASCII {
+		res := make([]string, len(text))
+		for i := 0; i < len(text); i++ {
+			res[i] = text[i : i+1]
+		}
+		return res
+	}
+
+	var result []string
+	plain := plainTerminalTextNew(text)
+	if plain == "" {
+		return nil
+	}
+
+	var clusterStart int
+	var lastLen int
+	var hasCluster bool
+
+	i := 0
+	n := len(plain)
+	for i < n {
+		r, sz := utf8.DecodeRuneInString(plain[i:])
+		rw := RuneWidth(r)
+		if rw == 0 {
+			if hasCluster {
+				// Extend previous cluster
+				lastLen += sz
+				result[len(result)-1] = plain[clusterStart : clusterStart+lastLen]
+			}
+		} else {
+			clusterStart = i
+			lastLen = sz
+			hasCluster = true
+			result = append(result, plain[clusterStart:clusterStart+sz])
+		}
+		i += sz
+	}
+	return result
+}
+
 func plainTerminalText(s string) string {
+	if useFastMeasure() {
+		return plainTerminalTextNew(s)
+	}
+	return plainTerminalTextOld(s)
+}
+
+func plainTerminalTextOld(s string) string {
 	var b strings.Builder
 	runes := []rune(s)
 	for i := 0; i < len(runes); i++ {
@@ -90,6 +242,98 @@ func plainTerminalText(s string) string {
 			continue
 		}
 		b.WriteRune(r)
+	}
+	return b.String()
+}
+
+func plainTerminalTextNew(s string) string {
+	if s == "" {
+		return ""
+	}
+
+	// Fast path for pure ASCII printable
+	isPureASCII := true
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		if b < 0x20 || b > 0x7e {
+			isPureASCII = false
+			break
+		}
+	}
+	if isPureASCII {
+		return s
+	}
+
+	// Check if any filtering is needed at all
+	hasEscOrControl := false
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		if b == 27 || b < 0x20 || b == 0x7f {
+			hasEscOrControl = true
+			break
+		}
+	}
+
+	if !hasEscOrControl {
+		// Verify no utf8 control/Cf runes
+		clean := true
+		for _, r := range s {
+			if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+				clean = false
+				break
+			}
+		}
+		if clean {
+			return s
+		}
+	}
+
+	var b strings.Builder
+	b.Grow(len(s))
+
+	i := 0
+	n := len(s)
+	for i < n {
+		byteVal := s[i]
+		if byteVal == 27 {
+			i++
+			if i >= n {
+				break
+			}
+			switch s[i] {
+			case '[':
+				i++
+				for i < n && (s[i] < '@' || s[i] > '~') {
+					i++
+				}
+				if i < n {
+					i++
+				}
+			case ']', 'P', '^', '_':
+				i++
+				for i < n {
+					if s[i] == 7 {
+						i++
+						break
+					}
+					if s[i] == 27 && i+1 < n && s[i+1] == '\\' {
+						i += 2
+						break
+					}
+					i++
+				}
+			}
+			continue
+		}
+
+		r, sz := utf8.DecodeRuneInString(s[i:])
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			i += sz
+			continue
+		}
+
+		b.WriteRune(r)
+		i += sz
 	}
 	return b.String()
 }
@@ -189,6 +433,13 @@ func fitClusters(clusters []string, width int) string {
 }
 
 func plainTerminalLines(s string) []string {
+	if useFastMeasure() {
+		return plainTerminalLinesNew(s)
+	}
+	return plainTerminalLinesOld(s)
+}
+
+func plainTerminalLinesOld(s string) []string {
 	lines := []string{""}
 	runes := []rune(s)
 	for i := 0; i < len(runes); i++ {
@@ -227,5 +478,82 @@ func plainTerminalLines(s string) []string {
 		}
 		lines[len(lines)-1] += string(r)
 	}
+	return lines
+}
+
+func plainTerminalLinesNew(s string) []string {
+	if s == "" {
+		return []string{""}
+	}
+
+	// Fast path for plain ASCII
+	isPureASCII := true
+	for i := 0; i < len(s); i++ {
+		b := s[i]
+		if (b < 0x20 && b != '\n') || b > 0x7e {
+			isPureASCII = false
+			break
+		}
+	}
+	if isPureASCII {
+		return strings.Split(s, "\n")
+	}
+
+	var lines []string
+	var current strings.Builder
+	current.Grow(len(s))
+
+	i := 0
+	n := len(s)
+	for i < n {
+		b := s[i]
+		if b == 27 {
+			i++
+			if i >= n {
+				break
+			}
+			switch s[i] {
+			case '[':
+				i++
+				for i < n && (s[i] < '@' || s[i] > '~') {
+					i++
+				}
+				if i < n {
+					i++
+				}
+			case ']', 'P', '^', '_':
+				i++
+				for i < n {
+					if s[i] == 7 {
+						i++
+						break
+					}
+					if s[i] == 27 && i+1 < n && s[i+1] == '\\' {
+						i += 2
+						break
+					}
+					i++
+				}
+			}
+			continue
+		}
+
+		if b == '\n' {
+			lines = append(lines, current.String())
+			current.Reset()
+			i++
+			continue
+		}
+
+		r, sz := utf8.DecodeRuneInString(s[i:])
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			i += sz
+			continue
+		}
+
+		current.WriteRune(r)
+		i += sz
+	}
+	lines = append(lines, current.String())
 	return lines
 }

@@ -253,7 +253,7 @@ func TestThemeableNestedWidgets(t *testing.T) {
 		Horizontal: "─", Vertical: "│",
 	}
 	frame := &loom.Frame{
-		Title: "File Browser",
+		Title:  "File Browser",
 		Status: "Themed Frame",
 		Boxes: []loom.Box{
 			{
@@ -345,7 +345,7 @@ func TestChoiceAndTableThemeable(t *testing.T) {
 
 	// Create a Frame similar to filebrowser
 	frame := &loom.Frame{
-		Title: "File Browser",
+		Title:  "File Browser",
 		Status: "↑↓ select  •  Enter open  •  F9 theme  •  F10 quit",
 		Boxes: []loom.Box{
 			{

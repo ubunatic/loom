@@ -90,7 +90,6 @@ func NewSplashController(cfg SplashConfig) *SplashController {
 	}
 }
 
-
 // Start begins the animation tick loop and async provider task execution.
 func (sc *SplashController) Start(ctx context.Context) {
 	runCtx, cancel := context.WithCancel(ctx)
@@ -246,4 +245,3 @@ func (sc *SplashController) HandleKey(e KeyEvent) bool {
 	}
 	return false
 }
-

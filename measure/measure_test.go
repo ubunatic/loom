@@ -120,3 +120,141 @@ func TestMalformedANSIIsSafeAndConsumesNoCells(t *testing.T) {
 		}
 	}
 }
+
+func TestMeasureOldNewParity(t *testing.T) {
+	testCases := []string{
+		"",
+		"CPU",
+		"Hello World",
+		"\x1b[31mCPU\x1b[0m",
+		"\x1b[38;5;196mFailed\x1b[0m - \x1b[1;34mDetails\x1b[0m",
+		"\x1b[38;2;255;100;50mrgb text\x1b[0m",
+		"e\u0301",
+		"界",
+		"⣿",
+		"👍emoji",
+		"CPU\n界界\n",
+		"\x1b]title\nhidden\x07X\nY",
+		"\x1b[31",
+		"\x1b]title",
+		"\x1bPpayload",
+		"12界34",
+		"ab界d",
+	}
+
+	for i, tc := range testCases {
+		oldW := StringWidthOld(tc)
+		newW := StringWidthNew(tc)
+		if oldW != newW {
+			t.Errorf("case %d (%q) StringWidth mismatch: Old=%d, New=%d", i, tc, oldW, newW)
+		}
+
+		oldC := ClustersOld(tc)
+		newC := ClustersNew(tc)
+		if len(oldC) != len(newC) {
+			t.Errorf("case %d (%q) Clusters len mismatch: Old=%d (%v), New=%d (%v)", i, tc, len(oldC), oldC, len(newC), newC)
+		} else {
+			for j := range oldC {
+				if oldC[j] != newC[j] {
+					t.Errorf("case %d (%q) Cluster[%d] mismatch: Old=%q, New=%q", i, tc, j, oldC[j], newC[j])
+				}
+			}
+		}
+
+		oldP := plainTerminalTextOld(tc)
+		newP := plainTerminalTextNew(tc)
+		if oldP != newP {
+			t.Errorf("case %d (%q) plainTerminalText mismatch: Old=%q, New=%q", i, tc, oldP, newP)
+		}
+
+		oldL := plainTerminalLinesOld(tc)
+		newL := plainTerminalLinesNew(tc)
+		if len(oldL) != len(newL) {
+			t.Errorf("case %d (%q) plainTerminalLines len mismatch: Old=%d (%v), New=%d (%v)", i, tc, len(oldL), oldL, len(newL), newL)
+		} else {
+			for j := range oldL {
+				if oldL[j] != newL[j] {
+					t.Errorf("case %d (%q) plainTerminalLines[%d] mismatch: Old=%q, New=%q", i, tc, j, oldL[j], newL[j])
+				}
+			}
+		}
+	}
+}
+
+func TestFastMeasureEnvVarToggle(t *testing.T) {
+	tc := "\x1b[31mERROR\x1b[0m: Failed"
+
+	t.Setenv("LOOM_FAST_MEASURE", "0")
+	if got := StringWidth(tc); got != 13 {
+		t.Errorf("StringWidth with LOOM_FAST_MEASURE=0 got %d, want 13", got)
+	}
+
+	t.Setenv("LOOM_FAST_MEASURE", "1")
+	if got := StringWidth(tc); got != 13 {
+		t.Errorf("StringWidth with LOOM_FAST_MEASURE=1 got %d, want 13", got)
+	}
+}
+
+// ── Benchmarks ──────────────────────────────────────────────────────────────
+
+var benchTextPlain = "STATUS: 200 OK - Processing request completed successfully in 12ms"
+var benchTextANSI = "\x1b[31mERROR\x1b[0m: " +
+	"\x1b[38;5;196mFailed\x1b[0m - " +
+	"\x1b[1;34mDetails\x1b[0m: " +
+	"Some error message with lots of words that goes on for a bit"
+
+func BenchmarkStringWidth_Old(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidthOld(benchTextANSI)
+	}
+}
+
+func BenchmarkStringWidth_New(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidthNew(benchTextANSI)
+	}
+}
+
+func BenchmarkStringWidth_Plain_Old(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidthOld(benchTextPlain)
+	}
+}
+
+func BenchmarkStringWidth_Plain_New(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidthNew(benchTextPlain)
+	}
+}
+
+func BenchmarkClusters_Old(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = ClustersOld(benchTextANSI)
+	}
+}
+
+func BenchmarkClusters_New(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = ClustersNew(benchTextANSI)
+	}
+}
+
+func BenchmarkPlainTerminalText_Old(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = plainTerminalTextOld(benchTextANSI)
+	}
+}
+
+func BenchmarkPlainTerminalText_New(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = plainTerminalTextNew(benchTextANSI)
+	}
+}

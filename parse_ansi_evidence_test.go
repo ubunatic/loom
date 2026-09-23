@@ -26,7 +26,7 @@ func (w *simpleCanvasWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *simpleCanvasWidget) HandleKey(e loom.KeyEvent) bool   { return false }
+func (w *simpleCanvasWidget) HandleKey(e loom.KeyEvent) bool     { return false }
 func (w *simpleCanvasWidget) HandleMouse(e loom.MouseEvent) bool { return false }
 
 // TestGenerateM1Evidence generates a visual frame demonstrating ParseANSI capabilities.

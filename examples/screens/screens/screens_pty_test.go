@@ -102,7 +102,7 @@ func TestScreensWidthButtonsThemeAstra(t *testing.T) {
 	s.WaitFor("Width [-] 90/100 [+]", 3*time.Second)
 
 	s.Send("t")
-	s.WaitFor("Theme [", 3*time.Second)
+	s.WaitFor("Theme [julia256]", 3*time.Second)
 	s.Send("a")
 	s.WaitFor("Astra [on]", 3*time.Second)
 	quit(t, s)

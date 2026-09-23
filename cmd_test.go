@@ -36,7 +36,7 @@ func TestCmdSlashActivates(t *testing.T) {
 
 func TestCmdEscDeactivatesWithoutQuitting(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})    // activate
+	c.HandleKey(loom.KeyEvent{Text: ":"})          // activate
 	quit := c.HandleKey(loom.KeyEvent{Key: "esc"}) // deactivate
 	if quit {
 		t.Error("Esc in command mode should deactivate, not quit")
@@ -51,9 +51,9 @@ func TestCmdEscDeactivatesWithoutQuitting(t *testing.T) {
 func TestCmdBackspaceToEmptyDeactivates(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "h"})                 // query = "h"
-	c.HandleKey(loom.KeyEvent{Key: "backspace"})           // query = ""
-	quit := c.HandleKey(loom.KeyEvent{Key: "backspace"})   // deactivates
+	c.HandleKey(loom.KeyEvent{Text: "h"})                // query = "h"
+	c.HandleKey(loom.KeyEvent{Key: "backspace"})         // query = ""
+	quit := c.HandleKey(loom.KeyEvent{Key: "backspace"}) // deactivates
 	if quit {
 		t.Error("backspace to empty should deactivate command mode, not quit")
 	}
@@ -84,8 +84,8 @@ func TestCmdBackAbortsWidget(t *testing.T) {
 func TestCmdBackTabCompletes(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "b"})                // "b" matches "back"
-	quit := c.HandleKey(loom.KeyEvent{Key: "tab"})       // complete + execute
+	c.HandleKey(loom.KeyEvent{Text: "b"})          // "b" matches "back"
+	quit := c.HandleKey(loom.KeyEvent{Key: "tab"}) // complete + execute
 	if !quit {
 		t.Error(":b tab should complete to :back and quit")
 	}
