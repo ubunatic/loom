@@ -114,7 +114,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{BG: background})
 	// Keep a quiet row above the control, protected from background decoration.
 	for x := r.X; x < r.X+r.W; x++ {
-		c.PaintForeground(x, r.Y, loom.Cell{Text: " ", Style: loom.Style{BG: background}, Claim: true})
+		c.PaintForeground(x, r.Y, loom.Cell{Text: " ", Style: loom.Style{BG: panel}, Claim: true})
 	}
 	p.width = r.W
 	p.searchY = r.Y + 1
