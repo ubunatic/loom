@@ -1,6 +1,6 @@
 # 107 — PTY mouse test system: detect loomoji hover-vs-highlight offset via rendered FG/BG cells
 
-**Status**: Open
+**Status**: Closed — M1 VT colour cells (396efdb) + M2 hover probe (dfc5b18); measured offset dx=0, dy=-1
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Testing
