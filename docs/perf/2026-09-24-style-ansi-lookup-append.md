@@ -7,6 +7,7 @@ By introducing:
 1. Pre-computed 256-color indexed ANSI lookup tables (`fgIndexTable` and `bgIndexTable`).
 2. Zero-allocation byte slice appenders (`Color.appendFG`, `Color.appendBG`, `Style.AppendANSI`).
 3. Pre-allocated byte buffer slice allocation in `Canvas.Row`.
+4. Environment variable toggle via `LOOM_FAST_ANSI` (defaulting to fast path, falling back to legacy path when set to `"0"`, `"false"`, or `"off"`).
 
 `Style.ANSI()` allocs dropped from **6** to **1** (or **0** when using `AppendANSI`), and `Canvas.Row` allocs dropped from **610** to **4** per row.
 

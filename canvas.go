@@ -369,6 +369,37 @@ func (c *Canvas) WriteANSI(x, y int, text string) int {
 // Row renders row y as an ANSI string, resetting style at the end.
 // Returns an empty string for out-of-range rows.
 func (c *Canvas) Row(y int) string {
+	if !useFastANSI() {
+		return c.rowOld(y)
+	}
+	return c.rowNew(y)
+}
+
+func (c *Canvas) rowOld(y int) string {
+	if y < 0 || y >= c.rows {
+		return ""
+	}
+	var b strings.Builder
+	var cur Style
+	for _, cell := range c.cells[y] {
+		if cell.Continuation {
+			continue
+		}
+		if cell.Style != cur {
+			b.WriteString(cell.Style.ANSI())
+			cur = cell.Style
+		}
+		if cell.Text == "" {
+			b.WriteByte(' ')
+		} else {
+			b.WriteString(cell.Text)
+		}
+	}
+	b.WriteString("\x1b[0m") // reset after every row so colors don't bleed
+	return b.String()
+}
+
+func (c *Canvas) rowNew(y int) string {
 	if y < 0 || y >= c.rows {
 		return ""
 	}

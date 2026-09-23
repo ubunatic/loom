@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -86,6 +87,34 @@ func TestColorResetSequences(t *testing.T) {
 	bg := loom.Style{BG: loom.ColorReset()}.ANSI()
 	if !strings.Contains(bg, "\x1b[49m") {
 		t.Errorf("default BG should emit 49m: %q", bg)
+	}
+}
+
+func TestFastANSIEnvVarToggleParity(t *testing.T) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(100, 150, 200),
+		BG:        loom.ColorIndex(50),
+		Bold:      true,
+		Underline: true,
+	}
+	c := loom.NewCanvas(10, 1)
+	c.Set(0, 0, loom.Cell{Text: "X", Style: s})
+
+	os.Unsetenv("LOOM_FAST_ANSI")
+	fastStyle := s.ANSI()
+	fastRow := c.Row(0)
+
+	os.Setenv("LOOM_FAST_ANSI", "0")
+	slowStyle := s.ANSI()
+	slowRow := c.Row(0)
+
+	os.Unsetenv("LOOM_FAST_ANSI")
+
+	if fastStyle != slowStyle {
+		t.Errorf("Style.ANSI mismatch fast=%q vs slow=%q", fastStyle, slowStyle)
+	}
+	if fastRow != slowRow {
+		t.Errorf("Canvas.Row mismatch fast=%q vs slow=%q", fastRow, slowRow)
 	}
 }
 

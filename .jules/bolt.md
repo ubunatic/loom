@@ -8,4 +8,4 @@
 
 ## 2026-09-24 - Zero-Alloc Style ANSI Generation & Pre-Allocated Canvas.Row Buffering
 **Learning:** Calling `fmt.Sprintf` and string concatenation `+` in `Color.fgSeq()`, `Color.bgSeq()`, `Style.ANSI()`, and `Canvas.Row()` generated thousands of heap allocations and heavy GC overhead per rendered frame.
-**Action:** Added pre-computed lookup tables for indexed 256 colors (`fgIndexTable`, `bgIndexTable`), implemented zero-allocation `AppendANSI([]byte)` on `Style` and `Color` using `strconv.AppendUint`, and refactored `Canvas.Row` to append directly into a single pre-allocated byte slice buffer. Reduced `Canvas.Row` allocs from 610 to 4 per row (-99.34%).
+**Action:** Added pre-computed lookup tables for indexed 256 colors (`fgIndexTable`, `bgIndexTable`), implemented zero-allocation `AppendANSI([]byte)` on `Style` and `Color` using `strconv.AppendUint`, and refactored `Canvas.Row` to append directly into a single pre-allocated byte slice buffer. Added environment variable toggle via `LOOM_FAST_ANSI` to fall back to legacy string concatenations if disabled. Reduced `Canvas.Row` allocs from 610 to 4 per row (-99.34%).
