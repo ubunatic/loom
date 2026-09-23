@@ -45,21 +45,27 @@ const (
 	grpBox
 )
 
-var categories = []category{
-	{"😀", "Faces"},
-	{"👋", "Hands"},
-	{"🐾", "Animals"},
-	{"🍔", "Food"},
-	{"⚽", "Sports"},
-	{"🚀", "Travel"},
-	{"💡", "Objects"},
-	{"❤️", "Hearts"},
-	{"🌿", "Nature"},
-	{"🔣", "Symbols"},
-	{"➔", "Arrows"},
-	{"█", "Blocks"},
-	{"─", "Lines"},
-	{"┼", "Box"},
+func categories() []category {
+	return []category{
+		{"😀", "Faces"},
+		{"👋", "Hands"},
+		{"🐾", "Animals"},
+		{"🍔", "Food"},
+		{"⚽", "Sports"},
+		{"🚀", "Travel"},
+		{"💡", "Objects"},
+		{"❤️", "Hearts"},
+		{"🌿", "Nature"},
+		{"🔣", "Symbols"},
+		{"➔", "Arrows"},
+		{"█", "Blocks"},
+		{"─", "Lines"},
+		{"┼", "Box"},
+	}
+}
+
+func entries() []entry {
+	return entryList
 }
 
 var entryList = []entry{
@@ -1164,37 +1170,37 @@ var entryList = []entry{
 	{"╹", "box heavy up thick vertical line cap bottom", grpLines},
 	{"╺", "box heavy right thick horizontal line cap start", grpLines},
 	{"╻", "box heavy down thick vertical line cap top", grpLines},
-	{"╼", "box light left heavy right horizontal transition", grpLines},
-	{"╽", "box light up heavy down vertical transition", grpLines},
-	{"╾", "box heavy left light right horizontal transition", grpLines},
-	{"╿", "box heavy up light down vertical transition", grpLines},
-	{"╒", "box down single right double corner top left mixed", grpLines},
-	{"╓", "box down double right single corner top left mixed", grpLines},
-	{"╔", "box double down double right corner top left double", grpLines},
-	{"╕", "box down single left double corner top right mixed", grpLines},
-	{"╖", "box down double left single corner top right mixed", grpLines},
-	{"╗", "box double down double left corner top right double", grpLines},
-	{"╘", "box up single right double corner bottom left mixed", grpLines},
-	{"╙", "box up double right single corner bottom left mixed", grpLines},
-	{"╚", "box double up double right corner bottom left double", grpLines},
-	{"╛", "box up single left double corner bottom right mixed", grpLines},
-	{"╜", "box up double left single corner bottom right mixed", grpLines},
-	{"╝", "box double up double left corner bottom right double", grpLines},
-	{"╞", "box vertical single right double tee left junction mixed", grpLines},
-	{"╟", "box vertical double right single tee left junction mixed", grpLines},
-	{"╠", "box double vertical double right tee left junction double", grpLines},
-	{"╡", "box vertical single left double tee right junction mixed", grpLines},
-	{"╢", "box vertical double left single tee right junction mixed", grpLines},
-	{"╣", "box double vertical double left tee right junction double", grpLines},
-	{"╤", "box down single horizontal double tee top junction mixed", grpLines},
-	{"╥", "box down double horizontal single tee top junction mixed", grpLines},
-	{"╦", "box double down double horizontal tee top junction double", grpLines},
-	{"╧", "box up single horizontal double tee bottom junction mixed", grpLines},
-	{"╨", "box up double horizontal single tee bottom junction mixed", grpLines},
-	{"╩", "box double up double horizontal tee bottom junction double", grpLines},
-	{"╪", "box vertical single horizontal double cross four way mixed", grpLines},
-	{"╫", "box vertical double horizontal single cross four way mixed", grpLines},
-	{"╬", "box double vertical double horizontal cross four way double", grpLines},
+	{"╼", "box light left heavy right horizontal transition", grpBox},
+	{"╽", "box light up heavy down vertical transition", grpBox},
+	{"╾", "box heavy left light right horizontal transition", grpBox},
+	{"╿", "box heavy up light down vertical transition", grpBox},
+	{"╒", "box down single right double corner top left mixed", grpBox},
+	{"╓", "box down double right single corner top left mixed", grpBox},
+	{"╔", "box double down double right corner top left double", grpBox},
+	{"╕", "box down single left double corner top right mixed", grpBox},
+	{"╖", "box down double left single corner top right mixed", grpBox},
+	{"╗", "box double down double left corner top right double", grpBox},
+	{"╘", "box up single right double corner bottom left mixed", grpBox},
+	{"╙", "box up double right single corner bottom left mixed", grpBox},
+	{"╚", "box double up double right corner bottom left double", grpBox},
+	{"╛", "box up single left double corner bottom right mixed", grpBox},
+	{"╜", "box up double left single corner bottom right mixed", grpBox},
+	{"╝", "box double up double left corner bottom right double", grpBox},
+	{"╞", "box vertical single right double tee left junction mixed", grpBox},
+	{"╟", "box vertical double right single tee left junction mixed", grpBox},
+	{"╠", "box double vertical double right tee left junction double", grpBox},
+	{"╡", "box vertical single left double tee right junction mixed", grpBox},
+	{"╢", "box vertical double left single tee right junction mixed", grpBox},
+	{"╣", "box double vertical double left tee right junction double", grpBox},
+	{"╤", "box down single horizontal double tee top junction mixed", grpBox},
+	{"╥", "box down double horizontal single tee top junction mixed", grpBox},
+	{"╦", "box double down double horizontal tee top junction double", grpBox},
+	{"╧", "box up single horizontal double tee bottom junction mixed", grpBox},
+	{"╨", "box up double horizontal single tee bottom junction mixed", grpBox},
+	{"╩", "box double up double horizontal tee bottom junction double", grpBox},
+	{"╪", "box vertical single horizontal double cross four way mixed", grpBox},
+	{"╫", "box vertical double horizontal single cross four way mixed", grpBox},
+	{"╬", "box double vertical double horizontal cross four way double", grpBox},
 
 	// ── Box-drawing ───────────────────────────────────────────────────────────
 	{"┌", "box light down and right sharp top left corner corner", grpBox},
@@ -1219,59 +1225,50 @@ var entryList = []entry{
 	{"╮", "box light arc down and left rounded soft top right corner", grpBox},
 	{"╯", "box light arc up and left rounded soft bottom right corner", grpBox},
 	{"╰", "box light arc up and right rounded soft bottom left corner", grpBox},
-	{"╔", "box double down and right top left corner double frame", grpBox},
-	{"╗", "box double down and left top right corner double frame", grpBox},
-	{"╚", "box double up and right bottom left corner double frame", grpBox},
-	{"╝", "box double up and left bottom right corner double frame", grpBox},
-	{"╠", "box double vertical and right tee left junction double branch", grpBox},
-	{"╣", "box double vertical and left tee right junction double branch", grpBox},
-	{"╦", "box double down and horizontal tee top junction double beam", grpBox},
-	{"╩", "box double up and horizontal tee bottom junction double base", grpBox},
-	{"╬", "box double vertical and horizontal cross intersection double plus", grpBox},
 	{"╱", "box light diagonal upper right to lower left slash forward", grpBox},
 	{"╲", "box light diagonal upper left to lower right backslash backward", grpBox},
 	{"╳", "box light diagonal cross diagonal intersection cross mark", grpBox},
-	{"╿", "box up light and down heavy vertical joint column transition", grpBox},
-	{"╽", "box up heavy and down light vertical joint column transition", grpBox},
-	{"╾", "box left heavy and right light horizontal joint beam transition", grpBox},
-	{"╼", "box left light and right heavy horizontal joint beam transition", grpBox},
 }
 
 const (
-	entryCellWidth   = 3
 	emojiGridColumns = 10
 )
 
 // ── Widget types ──────────────────────────────────────────────────────────────
 
 type picker struct {
-	query     *loom.TextInput
-	split     *loom.Split
-	group     int
-	items     []int
-	index     int
-	gridFocus bool // true = grid is focused (arrow keys move selection); false = search is focused
-	chosen    string
-	width     int
-	searchY   int
-	categoryY int
-	cols      int
-	viewRows  int
-	gridStart int
+	query      *loom.TextInput
+	split      *loom.Split
+	group      int
+	items      []int
+	index      int
+	gridFocus  bool // true = grid is focused (arrow keys move selection); false = search is focused
+	chosen     string
+	width      int
+	searchY    int
+	categoryY  int
+	cols       int
+	viewRows   int
+	gridStart  int
+	categories []category
+	entries    []entry
+	cellWidth  int
 }
 
 type gridPane struct{ picker *picker }
 
 func (g *gridPane) Draw(c *loom.Canvas, r loom.Rect) { g.picker.drawGrid(c, r) }
-func (g *gridPane) HandleKey(loom.KeyEvent) bool      { return false }
+func (g *gridPane) HandleKey(loom.KeyEvent) bool     { return false }
 func (g *gridPane) HandleMouse(e loom.MouseEvent) bool {
 	return g.picker.handleGridMouse(e)
 }
 
 func newPicker() *picker {
 	p := &picker{
-		query:     loom.NewTextInput(""),
-		gridFocus: true, // start with grid focused so arrow keys work immediately
+		query:      loom.NewTextInput(""),
+		gridFocus:  true, // start with grid focused so arrow keys work immediately
+		categories: categories(),
+		entries:    entries(),
 	}
 	p.split = loom.NewSplit(&gridPane{picker: p}, nil)
 	p.split.Ratio = 1.0
@@ -1284,7 +1281,7 @@ func newPicker() *picker {
 func (p *picker) refresh() {
 	p.items = p.items[:0]
 	q := strings.TrimSpace(strings.ToLower(p.query.Value()))
-	for i, e := range entryList {
+	for i, e := range p.entries {
 		matchQuery := q == "" || strings.Contains(strings.ToLower(e.name), q) || strings.Contains(e.icon, q)
 		if q == "" {
 			if e.group == p.group {
@@ -1298,7 +1295,7 @@ func (p *picker) refresh() {
 }
 
 func (p *picker) selectCategory(idx int) {
-	if idx >= 0 && idx < len(categories) {
+	if idx >= 0 && idx < len(p.categories) {
 		p.group = idx
 		p.query.SetValue("")
 		p.index = 0
@@ -1308,11 +1305,11 @@ func (p *picker) selectCategory(idx int) {
 }
 
 func (p *picker) prevCategory() {
-	p.selectCategory((p.group - 1 + len(categories)) % len(categories))
+	p.selectCategory((p.group - 1 + len(p.categories)) % len(p.categories))
 }
 
 func (p *picker) nextCategory() {
-	p.selectCategory((p.group + 1) % len(categories))
+	p.selectCategory((p.group + 1) % len(p.categories))
 }
 
 // ── Draw ──────────────────────────────────────────────────────────────────────
@@ -1367,7 +1364,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	if p.categoryY >= r.Y && p.categoryY < r.Y+r.H {
 		c.PaintSurface(loom.Rect{X: r.X, Y: p.categoryY, W: r.W, H: 1}, loom.Style{BG: panel})
 		x := r.X + 2
-		for i, cat := range categories {
+		for i, cat := range p.categories {
 			w := loom.StringWidth(cat.icon)
 			if x+w >= r.X+r.W-1 {
 				break
@@ -1384,10 +1381,10 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	// ── Status bar ────────────────────────────────────────────────────────────
 	statusY := r.Y + r.H - 1
 	c.PaintSurface(loom.Rect{X: r.X, Y: statusY, W: r.W, H: 1}, loom.Style{BG: panel})
-	footer := "↑↓←→ grid   Tab search   1-9 category   [ ] cycle   Enter copy   Esc quit"
+	footer := "↑↓←→ grid   Tab search   [ ] cycle   Enter copy   Esc quit"
 	if len(p.items) > 0 {
-		e := entryList[p.items[p.index]]
-		cat := categories[e.group].label
+		e := p.entries[p.items[p.index]]
+		cat := p.categories[e.group].label
 		footer = fmt.Sprintf("%s  %s  [%s]  %d / %d", e.icon, e.name, cat, p.index+1, len(p.items))
 	}
 	c.Write(r.X+1, statusY, footer, loom.Style{FG: loom.ColorRGB(175, 178, 181), Dim: true})
@@ -1403,7 +1400,13 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	accent := loom.ColorRGB(32, 151, 185)
-	p.cols = min(emojiGridColumns, max(1, (r.W-2)/entryCellWidth))
+	p.cellWidth = 1
+	for _, item := range p.items {
+		p.cellWidth = max(p.cellWidth, loom.StringWidth(p.entries[item].icon))
+	}
+	p.cellWidth = max(1, p.cellWidth)
+	columnWidth := p.cellWidth + 1
+	p.cols = min(emojiGridColumns, max(1, (r.W-2)/columnWidth))
 	p.viewRows = r.H
 	selectedRow := p.index / p.cols
 	startRow := 0
@@ -1415,21 +1418,21 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 	visible := min(len(p.items)-start, p.cols*p.viewRows)
 	for n := 0; n < visible; n++ {
 		idx := start + n
-		x := 1 + (n%p.cols)*entryCellWidth
+		x := 1 + (n%p.cols)*columnWidth
 		y := n / p.cols
-		icon := entryList[p.items[idx]].icon
+		icon := p.entries[p.items[idx]].icon
 		style := loom.Style{FG: loom.ColorRGB(220, 200, 120)}
-		cellText := icon
+		cellText := loom.TruncateText(icon, p.cellWidth, "")
 		if idx == p.index {
 			style = loom.Style{FG: loom.ColorRGB(255, 255, 255), BG: accent, Bold: true}
-			if w := loom.StringWidth(icon); w < 2 {
-				cellText = icon + strings.Repeat(" ", 2-w)
+			if w := loom.StringWidth(cellText); w < p.cellWidth {
+				cellText += strings.Repeat(" ", p.cellWidth-w)
 			}
 		}
-		c.Write(x, y, cellText, style)
+		c.Write(r.X+x, r.Y+y, cellText, style)
 	}
 	if len(p.items) == 0 {
-		c.Write(2, 0, "No matching entries", loom.Style{FG: loom.ColorRGB(170, 170, 170), Dim: true})
+		c.Write(r.X+2, r.Y, "No matching entries", loom.Style{FG: loom.ColorRGB(170, 170, 170), Dim: true})
 	}
 }
 
@@ -1471,7 +1474,7 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 		p.nextCategory()
 	case "enter":
 		if len(p.items) > 0 {
-			p.chosen = entryList[p.items[p.index]].icon
+			p.chosen = p.entries[p.items[p.index]].icon
 			return true
 		}
 	case "backspace":
@@ -1480,17 +1483,6 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 			p.refresh()
 		}
 	default:
-		// Number keys 1–9, 0 select a category directly when in grid mode.
-		if p.gridFocus && len(key) == 1 && key[0] >= '0' && key[0] <= '9' {
-			idx := int(key[0] - '1')
-			if key[0] == '0' {
-				idx = 9 // '0' maps to 10th category (Symbols)
-			}
-			if idx >= 0 && idx < len(categories) {
-				p.selectCategory(idx)
-				return false
-			}
-		}
 		// [ and ] cycle categories when in grid mode.
 		if p.gridFocus && (key == "[" || key == "]") {
 			if key == "[" {
@@ -1517,12 +1509,12 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 	}
 	x, y := e.X, e.Y
 	// Click on search bar → switch to search focus
-	if y == p.searchY && e.Action == loom.MousePress && e.Button == loom.MouseLeft {
+	if (y == p.searchY || y == p.searchY+1) && e.Action == loom.MousePress && e.Button == loom.MouseLeft {
 		p.gridFocus = false
 		return false
 	}
 	// Click on category bar → switch category
-	if y == p.categoryY {
+	if y == p.categoryY || y == p.categoryY+1 {
 		if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
 			return false
 		}
@@ -1531,7 +1523,7 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 		}
 		// Walk the category icons to find which one was clicked.
 		cx := 2
-		for i, cat := range categories {
+		for i, cat := range p.categories {
 			w := loom.StringWidth(cat.icon) + 2
 			if x >= cx && x < cx+w {
 				p.selectCategory(i)
@@ -1548,17 +1540,20 @@ func (p *picker) handleGridMouse(e loom.MouseEvent) bool {
 	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
 		return false
 	}
-	if e.Y < 0 || e.Y >= p.viewRows || e.X < 1 {
+	if e.Y < 1 || e.Y > p.viewRows || e.X < 1 {
 		return false
 	}
-	col := (e.X - 1) / entryCellWidth
-	idx := p.gridStart + e.Y*p.cols + col
+	if p.cellWidth < 1 {
+		p.cellWidth = 1
+	}
+	col := (e.X - 1) / max(1, p.cellWidth+1)
+	idx := p.gridStart + (e.Y-1)*p.cols + col
 	if col < 0 || col >= p.cols || idx < 0 || idx >= len(p.items) {
 		return false
 	}
 	p.index, p.gridFocus = idx, true
 	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
-		p.chosen = entryList[p.items[idx]].icon
+		p.chosen = p.entries[p.items[idx]].icon
 		return true
 	}
 	return false

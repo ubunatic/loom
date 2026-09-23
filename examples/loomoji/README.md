@@ -26,9 +26,8 @@ the chosen character to standard output instead.
 
 - **Arrow Keys** (`↑` `↓` `←` `→`): Navigate the character grid (focused on start).
 - **Tab**: Switch focus between character grid and search input.
-- **`1`–`9`, `0`**: Jump directly to category tabs 1 through 10.
-- **`[` / `]`** or **`PgUp` / `PgDn`**: Cycle categories backward and forward.
-- **Typing text**: Filter and fuzzy-search across all emojis, symbols, and box characters.
+- **`[` / `]`**, **`PgUp` / `PgDn`**, or **Shift+`←` / Shift+`→`**: Cycle categories backward and forward.
+- **Typing text, including digits**: Filter and search across all emojis, symbols, and box characters.
 - **Enter**: Copy the selected emoji / character and exit.
 - **Esc** / **Ctrl-C**: Cancel and exit without output.
 - **Mouse**: Click category tabs to switch categories, hover to preview, or click any grid cell to select immediately.

@@ -43,25 +43,31 @@ func TestCategorySwitching(t *testing.T) {
 		t.Fatalf("expected initial group %d, got %d", grpFaces, p.group)
 	}
 
-	// Press '3' to jump to Animals (index 2)
+	// Digits start a search while the grid is focused.
 	p.HandleKey(loom.KeyEvent{Text: "3"})
-	if p.group != grpAnimals {
-		t.Errorf("expected group %d (Animals), got %d", grpAnimals, p.group)
+	if p.group != grpFaces || p.query.Value() != "3" || p.gridFocus {
+		t.Errorf("digit should start a search without changing category; group=%d query=%q focus=%v", p.group, p.query.Value(), p.gridFocus)
 	}
-	if len(p.items) == 0 {
-		t.Errorf("expected non-empty items for Animals category")
-	}
+	p.query.SetValue("")
+	p.gridFocus = true
+	p.refresh()
 
-	// Press ']' to advance to Food
+	// Brackets cycle categories.
 	p.HandleKey(loom.KeyEvent{Text: "]"})
-	if p.group != grpFood {
-		t.Errorf("expected group %d (Food), got %d", grpFood, p.group)
+	if p.group != grpHands {
+		t.Errorf("expected group %d (Hands), got %d", grpHands, p.group)
 	}
 
-	// Press '[' to go back to Animals
-	p.HandleKey(loom.KeyEvent{Text: "["})
+	// Press ']' to advance to Animals
+	p.HandleKey(loom.KeyEvent{Text: "]"})
 	if p.group != grpAnimals {
 		t.Errorf("expected group %d (Animals), got %d", grpAnimals, p.group)
+	}
+
+	// Press '[' to go back to Hands
+	p.HandleKey(loom.KeyEvent{Text: "["})
+	if p.group != grpHands {
+		t.Errorf("expected group %d (Hands), got %d", grpHands, p.group)
 	}
 
 	// Select Box category directly
@@ -71,7 +77,7 @@ func TestCategorySwitching(t *testing.T) {
 	}
 	hasLightBox := false
 	for _, idx := range p.items {
-		if entryList[idx].icon == "┌" {
+		if p.entries[idx].icon == "┌" {
 			hasLightBox = true
 			break
 		}
@@ -95,7 +101,7 @@ func TestSearchFiltering(t *testing.T) {
 
 	// Verify all returned items match "box" in name or icon
 	for _, idx := range p.items {
-		e := entryList[idx]
+		e := p.entries[idx]
 		if !containsIgnoreCase(e.name, "box") && !containsIgnoreCase(e.icon, "box") {
 			t.Errorf("item %q (%s) does not match query 'box'", e.name, e.icon)
 		}
@@ -105,7 +111,7 @@ func TestSearchFiltering(t *testing.T) {
 func TestMouseInteraction(t *testing.T) {
 	p := newPicker()
 	canvas := loom.NewCanvas(60, 15)
-	p.Draw(canvas, canvas.Bounds())
+	p.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 50, H: 12})
 
 	// Click category bar (y = p.categoryY)
 	catY := p.categoryY
@@ -113,27 +119,65 @@ func TestMouseInteraction(t *testing.T) {
 	// Calculate X position of 3rd category
 	cx := 2
 	for i := 0; i < 2; i++ {
-		cx += loom.StringWidth(categories[i].icon) + 2
+		cx += loom.StringWidth(p.categories[i].icon) + 2
 	}
-	p.HandleMouse(loom.MouseEvent{
+	if p.HandleMouse(loom.MouseEvent{
 		Action: loom.MousePress,
 		Button: loom.MouseLeft,
 		X:      cx,
-		Y:      catY,
-	})
-	if p.group != 2 {
-		t.Errorf("expected group 2 after mouse click, got %d", p.group)
+		Y:      catY + 1,
+	}) {
+		t.Fatal("category click unexpectedly selected an entry")
+	}
+	if p.group != grpAnimals {
+		t.Errorf("expected Animals after mouse click, got %d", p.group)
 	}
 
-	// Click on first grid item
-	p.handleGridMouse(loom.MouseEvent{
+	canvas = loom.NewCanvas(60, 15)
+	p.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 50, H: 12})
+	want := p.entries[p.items[1]].icon
+	if !p.HandleMouse(loom.MouseEvent{
 		Action: loom.MousePress,
 		Button: loom.MouseLeft,
-		X:      2,
-		Y:      0,
-	})
-	if p.chosen == "" {
-		t.Errorf("expected item to be chosen on mouse click in grid")
+		X:      2 + p.cellWidth + 1,
+		Y:      p.searchY + 3,
+	}) {
+		t.Fatal("grid click should select and exit")
+	}
+	if p.chosen != want {
+		t.Errorf("mouse selected %q, want %q", p.chosen, want)
+	}
+}
+
+func TestCategoriesAreDisjoint(t *testing.T) {
+	p := newPicker()
+	seen := make(map[string]int)
+	for _, e := range p.entries {
+		if e.group == grpLines || e.group == grpBox {
+			seen[e.icon]++
+		}
+	}
+	for icon, count := range seen {
+		if count != 1 {
+			t.Errorf("line and box symbol %q occurs %d times", icon, count)
+		}
+	}
+}
+
+func TestGridCellsFitWideIcons(t *testing.T) {
+	p := newPicker()
+	p.entries = []entry{{icon: "👨‍👩‍👧‍👦", name: "family", group: grpFaces}, {icon: "😀", name: "face", group: grpFaces}}
+	p.items = []int{0, 1}
+	canvas := loom.NewCanvas(14, 1)
+	p.drawGrid(canvas, loom.Rect{X: 0, Y: 0, W: 14, H: 1})
+	if p.cellWidth != loom.StringWidth(p.entries[0].icon) {
+		t.Fatalf("cell width = %d, want %d", p.cellWidth, loom.StringWidth(p.entries[0].icon))
+	}
+	if p.cols != 1 {
+		t.Fatalf("columns = %d, want 1 when two two-cell icons do not fit side by side", p.cols)
+	}
+	if got := loom.StringWidth(canvas.Row(0)); got > 14 {
+		t.Fatalf("rendered row width %d exceeds canvas width", got)
 	}
 }
 
