@@ -53,7 +53,18 @@ state; loomoji handles `loom.MouseHover`.
 - Unit tests feeding raw SGR byte streams; wide runes keep their colour on
   both halves.
 
+M1 delivered (396efdb): VT colour cells — `Cell{Rune,Style}` grid, SGR
+16/256/truecolor/attrs/reverse, EL/ED pen-BG fill, `Cells`/`Cell`/`CellFrames`
+on VT and Session; ptytest tests green, loomoji untouched.
+
 ### M2 — Loomoji hover probe
+
+Pre-Work / Required Refinements (from M1 review):
+
+- Add `Style.Effective() (fg, bg Color)` (swaps under Reverse) with a unit
+  test; the probe must compare effective BG, not raw BG.
+- `lineFeed` scroll inserts rows with `Style{}`; use the pen BG like ED/EL.
+
 
 - PTY test under `examples/loomoji/` using only `SendRaw` SGR hover reports
   and the M1 colour grid; loomoji source untouched (`git diff` on
