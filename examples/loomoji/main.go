@@ -1,4 +1,4 @@
-// Command loomoji demonstrates an inline searchable emoji picker.
+// Command loomoji demonstrates an inline searchable emoji and symbol picker.
 package main
 
 import (
