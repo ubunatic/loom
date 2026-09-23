@@ -106,3 +106,16 @@ Pre-Work / Required Refinements (from M2 rework review):
   logged as such. Same for the off-grid reset step.
 - Add a sanity assertion that at least one on-grid hover produces a change;
   otherwise fail with "hover not observable" instead of reporting offsets.
+
+M2 second rework (e1beb26) reviewed: timing fixed; the table is now
+consistent with a real dy=-1 offset (row-3 hovers land on row 2, (1,4) lands
+on the already-focused (1,3), (1,5) → (1,4)). Probe placement hides it.
+
+Pre-Work / Required Refinements (probe placement):
+
+- Move the edge probes (first/last cell, both emoji halves, gap, last item
+  of row) to grid rows ≥ 5 and several columns, so dx and dy are both
+  measured; keep row-3/4 and padding probes as edge cases.
+- In the table, mark a grid-hover NO_CHANGE as "no visible target" rather
+  than a pass or fail; the test fails when any measured offset ≠ (0,0).
+- Print a one-line summary: dominant (dx, dy) across measured probes.
