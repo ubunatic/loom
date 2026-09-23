@@ -169,15 +169,10 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 		key = e.Text
 	}
 	switch key {
-	case "ctrl-c", "q":
+	case "ctrl-c", "esc":
 		return true
-	case "esc":
-		if p.query.Value() != "" {
-			p.query.SetValue("")
-			p.refresh()
-		} else {
-			return true
-		}
+	case "tab":
+		p.focused = !p.focused
 	case "left":
 		if p.focused {
 			p.query.HandleKey(e)
@@ -215,8 +210,9 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 			p.refresh()
 			return false
 		}
-		if e.Text != "" && p.focused {
+		if e.Text != "" {
 			p.query.HandleKey(e)
+			p.focused = true
 			p.index = 0
 			p.refresh()
 		}
