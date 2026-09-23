@@ -71,3 +71,23 @@ Pre-Work / Required Refinements (from M1 review):
   `examples/loomoji/loomoji/` must stay empty).
 - Probes per ticket Notes edges; logs (dx, dy) per probe; currently exposes
   the offset bug.
+
+M2 first pass (5df53d4) rejected in review: the offset table is an artifact.
+Pre-Work style fixes (`Style.Effective`, lineFeed pen BG) accepted.
+
+### M2 rework — differential hover detection
+
+Pre-Work / Required Refinements (from M2 review):
+
+- `findHighlighted` returns the first cell with a hard-coded accent RGB; the
+  startup focus at (1,3) always wins, so nearly every probe reports (1,3).
+- Black-box: no colours or geometry copied from loomoji source. Take a
+  baseline grid before each hover (and move the pointer off-grid between
+  probes); the hover highlight = cells whose effective BG differs from the
+  baseline. Report the full changed-cell bounding box.
+- Derive item positions from the rendered screen (emoji cell columns via
+  display width), not hard-coded x values.
+- Wait until the screen is stable after the hover (no new frame for a short
+  settle window), not the first new frame; no fixed 250 ms fallback that
+  silently returns a stale grid.
+- Distinguish "hover changes nothing" (status NO_CHANGE) from an offset.
