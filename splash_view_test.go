@@ -132,4 +132,3 @@ func TestSplashViewKeyHandling(t *testing.T) {
 		t.Errorf("controller not dismissed after q key")
 	}
 }
-

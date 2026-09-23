@@ -34,10 +34,10 @@ func (f TransitionFunc) Enter(ctx context.Context, from, to Widget) error {
 // and redraw; zero values use the splash animation interval. Transition is
 // optional and defaults to an immediate handover.
 type StartupConfig struct {
-	Splash    *SplashController
-	View      *SplashView
-	Next      Widget
-	Cadence   Cadence
+	Splash     *SplashController
+	View       *SplashView
+	Next       Widget
+	Cadence    Cadence
 	Transition Transition
 }
 
@@ -125,11 +125,11 @@ type startupRoot struct {
 	controller *SplashController
 	transition Transition
 
-	mu               sync.Mutex
-	completed        bool
+	mu                sync.Mutex
+	completed         bool
 	completedRendered bool
-	active           bool
-	transitionErr    error
+	active            bool
+	transitionErr     error
 }
 
 func (r *startupRoot) collect() {

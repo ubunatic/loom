@@ -552,15 +552,15 @@ func TestParseANSIPropertyValidCells(t *testing.T) {
 func TestParseANSINeverPanics(t *testing.T) {
 	// Property test: ParseANSI never panics on any input
 	testInputs := []string{
-		"\x1b",           // incomplete escape
-		"\x1b[",          // incomplete CSI
-		"\x1b[1;2;3;4;5", // incomplete
-		"\x1b[999m",      // high code
-		"\x1b[38;5;999m", // high color
-		"\x1b[38;2;999;999;999m", // high RGB
-		"\x1b[38;999m",   // malformed
+		"\x1b",                        // incomplete escape
+		"\x1b[",                       // incomplete CSI
+		"\x1b[1;2;3;4;5",              // incomplete
+		"\x1b[999m",                   // high code
+		"\x1b[38;5;999m",              // high color
+		"\x1b[38;2;999;999;999m",      // high RGB
+		"\x1b[38;999m",                // malformed
 		string([]byte{255, 254, 253}), // invalid UTF-8
-		"\x1b[;;;;;m",    // many empty parts
+		"\x1b[;;;;;m",                 // many empty parts
 	}
 
 	for _, input := range testInputs {
