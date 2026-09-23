@@ -71,23 +71,58 @@ func findGridItems(grid [][]ptytest.Cell) [][]screenItem {
 	return gridRows
 }
 
-// sendHover sends an SGR 1006 mouse hover report (1-based coordinates).
-func sendHover(s *ptytest.Session, hx, hy int) {
-	s.SendRaw([]byte(fmt.Sprintf("\x1b[<35;%d;%dM", hx+1, hy+1)))
+// sendAndSettle sends raw terminal input, waits for at least one new frame (within frameTimeout),
+// and then waits for output to stabilize (no new frames during settleQuiet).
+// Returns the settled grid and true, or current grid and false if timed out without a new frame.
+func sendAndSettle(s *ptytest.Session, raw []byte) ([][]ptytest.Cell, bool) {
+	const (
+		frameTimeout = 2 * time.Second
+		settleQuiet  = 30 * time.Millisecond
+		pollStep     = 5 * time.Millisecond
+	)
+	startCount := len(s.CellFrames())
+	s.SendRaw(raw)
+
+	// Wait for at least one new frame
+	start := time.Now()
+	for len(s.CellFrames()) == startCount {
+		if time.Since(start) >= frameTimeout {
+			return s.Cells(), false
+		}
+		time.Sleep(pollStep)
+	}
+
+	// Settle quiet window
+	lastCount := len(s.CellFrames())
+	lastChange := time.Now()
+	for {
+		time.Sleep(pollStep)
+		count := len(s.CellFrames())
+		now := time.Now()
+		if count != lastCount {
+			lastCount = count
+			lastChange = now
+		} else if time.Since(lastChange) >= settleQuiet {
+			break
+		}
+	}
+	return s.Cells(), true
 }
 
-// waitForSettle polls until terminal output stabilizes (no new frames during settleQuiet).
-func waitForSettle(s *ptytest.Session) [][]ptytest.Cell {
+// sendHover sends an SGR 1006 mouse hover report (1-based coordinates) and waits for settlement.
+func sendHover(s *ptytest.Session, hx, hy int) ([][]ptytest.Cell, bool) {
+	return sendAndSettle(s, []byte(fmt.Sprintf("\x1b[<35;%d;%dM", hx+1, hy+1)))
+}
+
+// waitForQuiet polls until terminal output stabilizes (no new frames during settleQuiet).
+func waitForQuiet(s *ptytest.Session) [][]ptytest.Cell {
 	const (
 		settleQuiet = 30 * time.Millisecond
-		maxWait     = 300 * time.Millisecond
 		pollStep    = 5 * time.Millisecond
 	)
-	start := time.Now()
 	lastCount := len(s.CellFrames())
-	lastChange := start
-
-	for time.Since(start) < maxWait {
+	lastChange := time.Now()
+	for {
 		time.Sleep(pollStep)
 		count := len(s.CellFrames())
 		now := time.Now()
@@ -183,7 +218,7 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 
 	s := ptytest.Start(t, 80, 24, bin)
 	s.WaitFor("search…", 5*time.Second)
-	initialGrid := waitForSettle(s)
+	initialGrid := waitForQuiet(s)
 
 	gridRows := findGridItems(initialGrid)
 	if len(gridRows) < 3 || len(gridRows[0]) < 3 {
@@ -238,22 +273,35 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 
 	var results []probeResult
 	bugs := 0
+	observedChanges := 0
 
 	for _, p := range probes {
 		// Move pointer off-grid between probes to ensure a clean transition
-		sendHover(s, 0, 0)
-		baseline := waitForSettle(s)
-
-		sendHover(s, p.hoverX, p.hoverY)
-		hoverGrid := waitForSettle(s)
-
-		minX, minY, maxX, maxY, found := diffHighlight(baseline, hoverGrid)
+		baseline, okReset := sendHover(s, 0, 0)
+		hoverGrid, okHover := sendHover(s, p.hoverX, p.hoverY)
 
 		res := probeResult{
 			probe:   p,
 			actualX: -1,
 			actualY: -1,
 		}
+
+		if !okReset || !okHover {
+			res.boxStr = "none"
+			res.offsetStr = "N/A"
+			if p.expectedX == -1 && p.expectedY == -1 {
+				res.status = "PASS"
+				res.note = "no change (as expected)"
+			} else {
+				res.status = "NO_CHANGE"
+				res.note = "hover changed nothing"
+				bugs++
+			}
+			results = append(results, res)
+			continue
+		}
+
+		minX, minY, maxX, maxY, found := diffHighlight(baseline, hoverGrid)
 
 		if !found {
 			res.boxStr = "none"
@@ -267,6 +315,9 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 				bugs++
 			}
 		} else {
+			if p.expectedX != -1 || p.expectedY != -1 {
+				observedChanges++
+			}
 			res.actualX = minX
 			res.actualY = minY
 			if minX == maxX && minY == maxY {
@@ -297,6 +348,10 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 			}
 		}
 		results = append(results, res)
+	}
+
+	if observedChanges == 0 {
+		t.Fatal("hover not observable: no on-grid hover produced a screen change")
 	}
 
 	// Format results table
