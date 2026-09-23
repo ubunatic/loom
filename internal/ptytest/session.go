@@ -124,11 +124,32 @@ func (s *Session) Screen() []string {
 	return s.vt.Screen()
 }
 
+// Cells returns a snapshot of the current cell grid (runes and styles).
+func (s *Session) Cells() [][]Cell {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.Cells()
+}
+
+// Cell returns the cell at (x, y), or a zero Cell if out of bounds.
+func (s *Session) Cell(x, y int) Cell {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.Cell(x, y)
+}
+
 // Frames returns a copy of the snapshots taken at each ?2026 frame end.
 func (s *Session) Frames() [][]string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return append([][]string(nil), s.vt.Frames...)
+}
+
+// CellFrames returns snapshots of the cell grid taken at each ?2026 frame end.
+func (s *Session) CellFrames() [][][]Cell {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.FrameCells()
 }
 
 // Raw returns every byte the child has written so far.

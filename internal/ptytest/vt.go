@@ -8,8 +8,9 @@
 // frame boundary).
 //
 // The VT implements only what Loom emits: printable text, CR/LF, CUP, CUU/CUD/
-// CUF/CUB, EL, ED, SGR (ignored), and the ?7 (auto-wrap), ?25 (cursor) and
-// ?2026 (synchronized output) private modes. Anything else is ignored.
+// CUF/CUB, EL, ED, SGR (per-cell colors and styles), and the ?7 (auto-wrap),
+// ?25 (cursor) and ?2026 (synchronized output) private modes. Anything else
+// is ignored.
 package ptytest
 
 import (
@@ -26,8 +27,11 @@ type VT struct {
 	CursorVisible bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
+	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
+	CellFrames [][][]Cell
 
-	cells    [][]rune // 0 marks the trailing half of a wide rune
+	cells    [][]Cell // Rune=0 marks the trailing half of a wide rune
+	pen      Style
 	x, y     int
 	autoWrap bool
 	pending  []byte // incomplete escape or UTF-8 tail carried between Write calls
@@ -40,13 +44,18 @@ func NewVT(cols, rows int) *VT {
 	return v
 }
 
-func (v *VT) blank(cols, rows int) [][]rune {
-	g := make([][]rune, rows)
+func (v *VT) blankRow(cols int, s Style) []Cell {
+	row := make([]Cell, cols)
+	for i := range row {
+		row[i] = Cell{Rune: ' ', Style: s}
+	}
+	return row
+}
+
+func (v *VT) blank(cols, rows int) [][]Cell {
+	g := make([][]Cell, rows)
 	for i := range g {
-		g[i] = make([]rune, cols)
-		for j := range g[i] {
-			g[i][j] = ' '
-		}
+		g[i] = v.blankRow(cols, Style{})
 	}
 	return g
 }
@@ -67,9 +76,9 @@ func (v *VT) Screen() []string {
 	out := make([]string, v.Rows)
 	for y, row := range v.cells {
 		var b strings.Builder
-		for _, r := range row {
-			if r != 0 {
-				b.WriteRune(r)
+		for _, cell := range row {
+			if cell.Rune != 0 {
+				b.WriteRune(cell.Rune)
 			}
 		}
 		out[y] = strings.TrimRight(b.String(), " ")
@@ -82,6 +91,40 @@ func (v *VT) Text() string { return strings.Join(v.Screen(), "\n") }
 
 // Cursor returns the zero-based cursor position.
 func (v *VT) Cursor() (x, y int) { return v.x, v.y }
+
+// Pen returns the current SGR pen style.
+func (v *VT) Pen() Style { return v.pen }
+
+// Cells returns a snapshot of the current cell grid.
+func (v *VT) Cells() [][]Cell {
+	out := make([][]Cell, v.Rows)
+	for y := range v.cells {
+		out[y] = make([]Cell, v.Cols)
+		copy(out[y], v.cells[y])
+	}
+	return out
+}
+
+// Cell returns the cell at (x, y), or a zero Cell if out of bounds.
+func (v *VT) Cell(x, y int) Cell {
+	if x < 0 || x >= v.Cols || y < 0 || y >= v.Rows {
+		return Cell{}
+	}
+	return v.cells[y][x]
+}
+
+// FrameCells returns a copy of the cell snapshots taken at each ?2026 frame end.
+func (v *VT) FrameCells() [][][]Cell {
+	out := make([][][]Cell, len(v.CellFrames))
+	for i, frame := range v.CellFrames {
+		out[i] = make([][]Cell, len(frame))
+		for y, row := range frame {
+			out[i][y] = make([]Cell, len(row))
+			copy(out[i][y], row)
+		}
+	}
+	return out
+}
 
 // Write feeds terminal output into the VT.
 func (v *VT) Write(p []byte) (int, error) {
@@ -123,7 +166,7 @@ func (v *VT) lineFeed() {
 		v.y++
 		return
 	}
-	v.cells = append(v.cells[1:], v.blank(v.Cols, 1)[0])
+	v.cells = append(v.cells[1:], v.blankRow(v.Cols, Style{}))
 }
 
 func (v *VT) put(r rune) {
@@ -136,12 +179,12 @@ func (v *VT) put(r rune) {
 			v.x = v.Cols - w
 		}
 	}
-	if v.x < 0 {
+	if v.x < 0 || v.x >= v.Cols || v.y < 0 || v.y >= v.Rows {
 		return
 	}
-	v.cells[v.y][v.x] = r
+	v.cells[v.y][v.x] = Cell{Rune: r, Style: v.pen}
 	if w == 2 && v.x+1 < v.Cols {
-		v.cells[v.y][v.x+1] = 0
+		v.cells[v.y][v.x+1] = Cell{Rune: 0, Style: v.pen}
 	}
 	v.x += w
 }
@@ -166,8 +209,17 @@ func (v *VT) escape(data []byte) (n int, ok bool) {
 
 func csiParams(s string) []int {
 	s = strings.TrimPrefix(s, "?")
+	if s == "" {
+		return []int{0}
+	}
+	fields := strings.FieldsFunc(s, func(r rune) bool {
+		return r == ';' || r == ':'
+	})
+	if len(fields) == 0 {
+		return []int{0}
+	}
 	var out []int
-	for _, f := range strings.Split(s, ";") {
+	for _, f := range fields {
 		n := 0
 		for _, c := range f {
 			if c >= '0' && c <= '9' {
@@ -188,6 +240,8 @@ func (v *VT) csi(params string, final byte) {
 		return def
 	}
 	switch final {
+	case 'm':
+		v.sgr(params)
 	case 'H', 'f':
 		v.y = min(max(arg(0, 1)-1, 0), v.Rows-1)
 		v.x = min(max(arg(1, 1)-1, 0), v.Cols-1)
@@ -216,12 +270,102 @@ func (v *VT) csi(params string, final byte) {
 		case 2026:
 			if !on {
 				v.Frames = append(v.Frames, v.Screen())
+				v.CellFrames = append(v.CellFrames, v.Cells())
 			}
 		}
 	}
 }
 
+func (v *VT) sgr(params string) {
+	p := csiParams(params)
+	for i := 0; i < len(p); i++ {
+		code := p[i]
+		switch {
+		case code == 0:
+			v.pen = Style{}
+		case code == 1:
+			v.pen.Bold = true
+		case code == 2:
+			v.pen.Dim = true
+		case code == 3:
+			v.pen.Italic = true
+		case code == 4:
+			v.pen.Underline = true
+		case code == 5 || code == 6:
+			v.pen.Blink = true
+		case code == 7:
+			v.pen.Reverse = true
+		case code == 8:
+			v.pen.Hidden = true
+		case code == 9:
+			v.pen.Strike = true
+		case code == 21:
+			v.pen.Bold = false
+		case code == 22:
+			v.pen.Bold = false
+			v.pen.Dim = false
+		case code == 23:
+			v.pen.Italic = false
+		case code == 24:
+			v.pen.Underline = false
+		case code == 25:
+			v.pen.Blink = false
+		case code == 27:
+			v.pen.Reverse = false
+		case code == 28:
+			v.pen.Hidden = false
+		case code == 29:
+			v.pen.Strike = false
+		case code >= 30 && code <= 37:
+			v.pen.FG = ColorIndex(uint8(code - 30))
+		case code == 38:
+			if i+1 < len(p) {
+				switch p[i+1] {
+				case 5: // 38;5;n
+					if i+2 < len(p) {
+						v.pen.FG = ColorIndex(uint8(p[i+2]))
+						i += 2
+					}
+				case 2: // 38;2;r;g;b
+					if i+4 < len(p) {
+						v.pen.FG = ColorRGB(uint8(p[i+2]), uint8(p[i+3]), uint8(p[i+4]))
+						i += 4
+					}
+				}
+			}
+		case code == 39:
+			v.pen.FG = ColorReset()
+		case code >= 40 && code <= 47:
+			v.pen.BG = ColorIndex(uint8(code - 40))
+		case code == 48:
+			if i+1 < len(p) {
+				switch p[i+1] {
+				case 5: // 48;5;n
+					if i+2 < len(p) {
+						v.pen.BG = ColorIndex(uint8(p[i+2]))
+						i += 2
+					}
+				case 2: // 48;2;r;g;b
+					if i+4 < len(p) {
+						v.pen.BG = ColorRGB(uint8(p[i+2]), uint8(p[i+3]), uint8(p[i+4]))
+						i += 4
+					}
+				}
+			}
+		case code == 49:
+			v.pen.BG = ColorReset()
+		case code >= 90 && code <= 97:
+			v.pen.FG = ColorIndex(uint8(code - 90 + 8))
+		case code >= 100 && code <= 107:
+			v.pen.BG = ColorIndex(uint8(code - 100 + 8))
+		}
+	}
+}
+
 func (v *VT) eraseLine(mode int) {
+	if v.y < 0 || v.y >= v.Rows {
+		return
+	}
 	from, to := v.x, v.Cols
 	switch mode {
 	case 1:
@@ -229,19 +373,28 @@ func (v *VT) eraseLine(mode int) {
 	case 2:
 		from, to = 0, v.Cols
 	}
-	for x := from; x < min(to, v.Cols); x++ {
-		v.cells[v.y][x] = ' '
+	eraseStyle := Style{BG: v.pen.BG}
+	for x := max(0, from); x < min(to, v.Cols); x++ {
+		v.cells[v.y][x] = Cell{Rune: ' ', Style: eraseStyle}
 	}
 }
 
 func (v *VT) eraseDisplay(mode int) {
+	eraseStyle := Style{BG: v.pen.BG}
 	switch mode {
 	case 0:
 		v.eraseLine(0)
 		for y := v.y + 1; y < v.Rows; y++ {
-			copy(v.cells[y], v.blank(v.Cols, 1)[0])
+			v.cells[y] = v.blankRow(v.Cols, eraseStyle)
 		}
+	case 1:
+		for y := 0; y < v.y; y++ {
+			v.cells[y] = v.blankRow(v.Cols, eraseStyle)
+		}
+		v.eraseLine(1)
 	case 2, 3:
-		v.cells = v.blank(v.Cols, v.Rows)
+		for y := 0; y < v.Rows; y++ {
+			v.cells[y] = v.blankRow(v.Cols, eraseStyle)
+		}
 	}
 }
