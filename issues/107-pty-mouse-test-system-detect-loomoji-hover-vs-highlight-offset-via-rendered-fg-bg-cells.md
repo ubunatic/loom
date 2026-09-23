@@ -39,3 +39,24 @@ bug (fail or log a non-zero offset).
 - `findPTYText` uses rune index, not display width — wrong after wide runes.
 - Prefer waiting on synchronized frames (`Frames()`) over `time.Sleep`.
 - Re-verify against live code/commits before starting.
+
+## Milestones
+
+Preflight (HEAD 63ea328): premise holds — `VT.cells` is `[][]rune`, no SGR
+state; loomoji handles `loom.MouseHover`.
+
+### M1 — VT colour cells
+
+- `ptytest.VT` tracks per-cell FG/BG/attrs via SGR (`CSI … m`: reset, 16,
+  256, truecolor, reverse); existing rune-only API unchanged.
+- Session accessor for the colour grid (current and per-frame if cheap).
+- Unit tests feeding raw SGR byte streams; wide runes keep their colour on
+  both halves.
+
+### M2 — Loomoji hover probe
+
+- PTY test under `examples/loomoji/` using only `SendRaw` SGR hover reports
+  and the M1 colour grid; loomoji source untouched (`git diff` on
+  `examples/loomoji/loomoji/` must stay empty).
+- Probes per ticket Notes edges; logs (dx, dy) per probe; currently exposes
+  the offset bug.
