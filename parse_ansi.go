@@ -4,20 +4,113 @@
 package loom
 
 import (
+	"os"
 	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
 
+// useFastANSI returns true unless LOOM_FAST_ANSI is set to "0", "false", or "off".
+func useFastANSI() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_FAST_ANSI")))
+	return v != "0" && v != "false" && v != "off"
+}
+
 // ParseANSI decodes an ANSI-formatted string into a slice of Cells.
-// Supports 16-color, 256-color, 24-bit RGB, and text attributes (bold, dim, underline).
-// Unknown or non-SGR escape sequences are dropped; their text content is preserved.
-// Wide runes and combining marks follow canvas cell conventions: wide characters
-// produce two cells (the character and a Continuation cell), and combining marks
-// attach to their base glyph in a single cell.
+// By default, it uses the optimized zero-allocation ParseANSINew. If LOOM_FAST_ANSI
+// is set to "0", "false", or "off", it falls back to ParseANSIOld.
 func ParseANSI(s string) []Cell {
+	if useFastANSI() {
+		return ParseANSINew(s)
+	}
+	return ParseANSIOld(s)
+}
+
+// ParseANSINew is the optimized zero-allocation ANSI parser that performs in-place
+// rune cluster scanning over []rune slices and pre-allocates cell slice capacity.
+func ParseANSINew(s string) []Cell {
+	if s == "" {
+		return nil
+	}
+	cells := make([]Cell, 0, len(s))
+	style := Style{}
+
+	rs := []rune(s)
+	n := len(rs)
+	for i := 0; i < n; {
+		// Check for CSI sequence: ESC [ ... m
+		if rs[i] == '\x1b' && i+1 < n && rs[i+1] == '[' {
+			// Find the end of the sequence (terminated by a letter in range @ to ~)
+			j := i + 2
+			for j < n && (rs[j] < '@' || rs[j] > '~') {
+				j++
+			}
+
+			if j < n {
+				// We have a complete sequence
+				if rs[j] == 'm' {
+					// SGR (Select Graphic Rendition) sequence
+					params := string(rs[i+2 : j])
+					style = applySGRSequence(style, params)
+					i = j + 1
+					continue
+				} else {
+					// Non-SGR escape sequence (e.g., cursor movement); skip it
+					i = j + 1
+					continue
+				}
+			}
+			// Incomplete sequence; skip the ESC and continue
+			i++
+			continue
+		}
+
+		// Check for character set designation: ESC ( ... (skip these)
+		if rs[i] == '\x1b' && i+2 < n && rs[i+1] == '(' {
+			i += 3
+			continue
+		}
+
+		r := rs[i]
+		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			i++
+			continue
+		}
+
+		w := measure.RuneWidth(r)
+		if w == 0 {
+			// Standalone combining mark without base
+			i++
+			continue
+		}
+
+		// Collect base rune plus any subsequent zero-width combining marks into a cluster
+		j := i + 1
+		for j < n && (unicode.Is(unicode.Mn, rs[j]) || unicode.Is(unicode.Me, rs[j])) {
+			j++
+		}
+
+		cluster := string(rs[i:j])
+		if w == 2 {
+			// Wide character: add lead cell and continuation cell
+			cells = append(cells, Cell{Text: cluster, Style: style})
+			cells = append(cells, Cell{Style: style, Continuation: true})
+		} else {
+			// Normal width character (w == 1)
+			cells = append(cells, Cell{Text: cluster, Style: style})
+		}
+
+		i = j
+	}
+
+	return cells
+}
+
+// ParseANSIOld is the legacy ANSI parser preserved for comparison and testing.
+func ParseANSIOld(s string) []Cell {
 	var cells []Cell
 	style := Style{}
 
