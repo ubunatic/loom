@@ -91,3 +91,18 @@ Pre-Work / Required Refinements (from M2 review):
   settle window), not the first new frame; no fixed 250 ms fallback that
   silently returns a stale grid.
 - Distinguish "hover changes nothing" (status NO_CHANGE) from an offset.
+
+M2 rework pass (d009530) reviewed: differential detection and screen-derived
+geometry accepted; results still an artifact (timing).
+
+Pre-Work / Required Refinements (from M2 rework review):
+
+- `waitForSettle` returns after 30 ms without any new frame, so a render
+  arriving later is read as NO_CHANGE and bleeds into the next probe. The only
+  "offset" (probe at (1,5) → change (1,4)..(4,4)) is exactly the previous
+  probe's item.
+- After each `SendRaw`, require at least one new frame (generous timeout,
+  e.g. 2 s) before the quiet window; a timeout with no frame = NO_CHANGE,
+  logged as such. Same for the off-grid reset step.
+- Add a sanity assertion that at least one on-grid hover produces a change;
+  otherwise fail with "hover not observable" instead of reporting offsets.
