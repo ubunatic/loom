@@ -49,6 +49,7 @@ const (
 
 type picker struct {
 	query     *loom.TextInput
+	split     *loom.Split
 	group     int
 	items     []int
 	index     int
@@ -56,15 +57,38 @@ type picker struct {
 	chosen    string
 	width     int
 	searchY   int
-	gridTop   int
 	categoryY int
 	cols      int
 	viewRows  int
 	gridStart int
 }
 
+type gridPane struct{ picker *picker }
+
+func (g *gridPane) Draw(c *loom.Canvas, r loom.Rect) { g.picker.drawGrid(c, r) }
+func (g *gridPane) HandleKey(loom.KeyEvent) bool     { return false }
+func (g *gridPane) HandleMouse(e loom.MouseEvent) bool {
+	return g.picker.handleGridMouse(e)
+}
+
+type placeholderPane struct{}
+
+func (placeholderPane) Draw(c *loom.Canvas, r loom.Rect) {
+	if r.W <= 0 || r.H <= 0 {
+		return
+	}
+	c.PaintSurface(r, loom.Style{BG: loom.ColorRGB(31, 33, 36)})
+	c.Write(0, 0, "Right pane", loom.Style{FG: loom.ColorRGB(145, 148, 151), Dim: true})
+}
+func (placeholderPane) HandleKey(loom.KeyEvent) bool     { return false }
+func (placeholderPane) HandleMouse(loom.MouseEvent) bool { return false }
+
 func newPicker() *picker {
 	p := &picker{query: loom.NewTextInput(""), focused: true}
+	p.split = loom.NewSplit(&gridPane{picker: p}, placeholderPane{})
+	p.split.Ratio = 2.0 / 3.0
+	p.split.MinFirst = 20
+	p.split.MinSecond = 10
 	p.refresh()
 	return p
 }
@@ -109,9 +133,6 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 
 	p.categoryY = r.Y + r.H - 2
-	if p.categoryY < p.searchY+2 {
-		p.categoryY = p.searchY + 2
-	}
 	if p.categoryY < r.Y+r.H {
 		c.PaintSurface(loom.Rect{X: r.X, Y: p.categoryY, W: r.W, H: min(1, r.Y+r.H-p.categoryY)}, loom.Style{BG: panel})
 		for i, icon := range categories {
@@ -126,10 +147,26 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 			c.Write(x, p.categoryY, icon, style)
 		}
 	}
-	p.gridTop = p.searchY + 2
-	gridBottom := p.categoryY
+	statusY := r.Y + r.H - 1
+	c.PaintSurface(loom.Rect{X: r.X, Y: statusY, W: r.W, H: 1}, loom.Style{BG: panel})
+	mainY := p.searchY + 2
+	mainRect := loom.Rect{X: r.X, Y: mainY, W: r.W, H: max(0, p.categoryY-mainY)}
+	p.split.Draw(c, mainRect)
+	footer := "↑↓←→ move   Tab search/grid   Enter insert   Esc quit"
+	if len(p.items) > 0 {
+		item := emojiList[p.items[p.index]]
+		footer = fmt.Sprintf("%s  %s   •   %d / %d", item.icon, item.name, p.index+1, len(p.items))
+	}
+	c.Write(r.X+1, statusY, footer, loom.Style{FG: loom.ColorRGB(175, 178, 181), Dim: true})
+}
+
+func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
+	if r.W <= 0 || r.H <= 0 {
+		return
+	}
+	accent := loom.ColorRGB(32, 151, 185)
 	p.cols = min(emojiGridColumns, max(1, (r.W-2)/emojiCellWidth))
-	p.viewRows = max(0, gridBottom-p.gridTop)
+	p.viewRows = r.H
 	startRow := 0
 	selectedRow := p.index / p.cols
 	if selectedRow >= p.viewRows && p.viewRows > 0 {
@@ -140,26 +177,16 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	visible := min(len(p.items)-start, p.cols*p.viewRows)
 	for n := 0; n < visible; n++ {
 		idx := start + n
-		x := r.X + 1 + (n%p.cols)*emojiCellWidth
-		y := p.gridTop + n/p.cols
+		x := 1 + (n%p.cols)*emojiCellWidth
+		y := n / p.cols
 		style := loom.Style{FG: loom.ColorRGB(244, 203, 69)}
 		if idx == p.index {
 			style = loom.Style{FG: loom.ColorRGB(255, 255, 255), BG: accent, Bold: true}
 		}
 		c.Write(x, y, emojiList[p.items[idx]].icon, style)
 	}
-	if p.categoryY > p.gridTop {
-		if len(p.items) == 0 {
-			c.Write(r.X+2, p.gridTop, "No matching emoji", loom.Style{FG: loom.ColorRGB(170, 170, 170), Dim: true})
-		}
-	}
-	if r.H > 0 {
-		footer := "↑↓←→ move   Enter insert   1–7 category   Ctrl-C quit"
-		if len(p.items) > 0 {
-			item := emojiList[p.items[p.index]]
-			footer = fmt.Sprintf("%s  %s   •   %d / %d", item.icon, item.name, p.index+1, len(p.items))
-		}
-		c.Write(r.X+1, r.Y+r.H-1, footer, loom.Style{FG: loom.ColorRGB(175, 178, 181), Dim: true})
+	if len(p.items) == 0 {
+		c.Write(2, 0, "No matching emoji", loom.Style{FG: loom.ColorRGB(170, 170, 170), Dim: true})
 	}
 }
 
@@ -245,20 +272,25 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 		}
 		return false
 	}
-	if y >= p.gridTop && y < p.categoryY {
-		if x < 1 || x >= p.width {
-			return false
-		}
-		col := (x - 1) / emojiCellWidth
-		row := y - p.gridTop
-		idx := p.gridStart + row*p.cols + col
-		if col >= 0 && col < p.cols && idx >= 0 && idx < len(p.items) {
-			p.index, p.focused = idx, false
-			if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
-				p.chosen = emojiList[p.items[idx]].icon
-				return true
-			}
-		}
+	return p.split.HandleMouse(e)
+}
+
+func (p *picker) handleGridMouse(e loom.MouseEvent) bool {
+	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
+		return false
+	}
+	if e.Y < 0 || e.Y >= p.viewRows || e.X < 1 {
+		return false
+	}
+	col := (e.X - 1) / emojiCellWidth
+	idx := p.gridStart + e.Y*p.cols + col
+	if col < 0 || col >= p.cols || idx < 0 || idx >= len(p.items) {
+		return false
+	}
+	p.index, p.focused = idx, false
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
+		p.chosen = emojiList[p.items[idx]].icon
+		return true
 	}
 	return false
 }
