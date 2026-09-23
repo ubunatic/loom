@@ -116,6 +116,9 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	for x := r.X; x < r.X+r.W; x++ {
 		c.PaintForeground(x, r.Y, loom.Cell{Text: " ", Style: loom.Style{BG: panel}, Claim: true})
 	}
+	for y := r.Y; y < r.Y+r.H; y++ {
+		c.PaintForeground(r.X, y, loom.Cell{Text: " ", Style: loom.Style{BG: panel}, Claim: true})
+	}
 	p.width = r.W
 	p.searchY = r.Y + 1
 	searchRect := loom.Rect{X: r.X, Y: p.searchY, W: r.W, H: min(2, max(0, r.Y+r.H-p.searchY))}
