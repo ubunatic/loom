@@ -42,7 +42,10 @@ var emojiList = []emoji{
 
 var categories = []string{"☺", "♙", "🐾", "🍴", "⚽", "✈", "♡"}
 
-const emojiCellWidth = 3
+const (
+	emojiCellWidth   = 3
+	emojiGridColumns = 10
+)
 
 type picker struct {
 	query     *loom.TextInput
@@ -125,7 +128,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	p.gridTop = p.searchY + 2
 	gridBottom := p.categoryY
-	p.cols = max(1, (r.W-2)/emojiCellWidth)
+	p.cols = min(emojiGridColumns, max(1, (r.W-2)/emojiCellWidth))
 	p.viewRows = max(0, gridBottom-p.gridTop)
 	startRow := 0
 	selectedRow := p.index / p.cols
@@ -225,7 +228,9 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 	if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
 		return false
 	}
-	x, y := e.X-1, e.Y-1
+	// Pane translates mouse reports to canvas-local, zero-based coordinates
+	// before dispatching them to widgets.
+	x, y := e.X, e.Y
 	if y == p.searchY {
 		p.focused = true
 		return false
