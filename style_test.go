@@ -21,6 +21,23 @@ func TestStyleResetANSI(t *testing.T) {
 	}
 }
 
+func TestStyleAppendANSI(t *testing.T) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+
+	buf := s.AppendANSI(nil)
+	got := string(buf)
+	want := s.ANSI()
+
+	if got != want {
+		t.Errorf("AppendANSI() = %q, want %q", got, want)
+	}
+}
+
 func TestStyleAttributesANSI(t *testing.T) {
 	s := loom.Style{Bold: true, Underline: true, Dim: true}
 	got := s.ANSI()
@@ -69,5 +86,36 @@ func TestColorResetSequences(t *testing.T) {
 	bg := loom.Style{BG: loom.ColorReset()}.ANSI()
 	if !strings.Contains(bg, "\x1b[49m") {
 		t.Errorf("default BG should emit 49m: %q", bg)
+	}
+}
+
+// ── Benchmarks ──────────────────────────────────────────────────────────────
+
+func BenchmarkStyleANSI(b *testing.B) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = s.ANSI()
+	}
+}
+
+func BenchmarkStyleAppendANSI(b *testing.B) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+	var buf [64]byte
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = s.AppendANSI(buf[:0])
 	}
 }

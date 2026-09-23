@@ -372,24 +372,24 @@ func (c *Canvas) Row(y int) string {
 	if y < 0 || y >= c.rows {
 		return ""
 	}
-	var b strings.Builder
+	buf := make([]byte, 0, c.cols*16)
 	var cur Style
 	for _, cell := range c.cells[y] {
 		if cell.Continuation {
 			continue
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSI())
+			buf = cell.Style.AppendANSI(buf)
 			cur = cell.Style
 		}
 		if cell.Text == "" {
-			b.WriteByte(' ')
+			buf = append(buf, ' ')
 		} else {
-			b.WriteString(cell.Text)
+			buf = append(buf, cell.Text...)
 		}
 	}
-	b.WriteString("\x1b[0m") // reset after every row so colors don't bleed
-	return b.String()
+	buf = append(buf, "\x1b[0m"...) // reset after every row so colors don't bleed
+	return string(buf)
 }
 
 // Flush writes all rows to out using absolute cursor positioning.
