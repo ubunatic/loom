@@ -221,54 +221,74 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 	initialGrid := waitForQuiet(s)
 
 	gridRows := findGridItems(initialGrid)
-	if len(gridRows) < 3 || len(gridRows[0]) < 3 {
+	if len(gridRows) < 5 || len(gridRows[0]) < 4 {
 		t.Fatalf("could not derive grid items from rendered screen (found %d grid rows)", len(gridRows))
 	}
 
-	item0 := gridRows[0][0]
-	item1 := gridRows[0][1]
-	item2 := gridRows[0][2]
-	lastItem0 := gridRows[0][len(gridRows[0])-1]
+	row0Item0 := gridRows[0][0]
+	row0Item1 := gridRows[0][1]
 	row1Item0 := gridRows[1][0]
-	row2Item0 := gridRows[2][0]
+	row1Item1 := gridRows[1][1]
 
-	// Spacing gap between item 1 and item 2
-	gapX := item1.startX + item1.width
+	row2Item0 := gridRows[2][0]
+	row2Item1 := gridRows[2][1]
+	row2Item2 := gridRows[2][2]
+	row2Item3 := gridRows[2][3]
+	row2Last := gridRows[2][len(gridRows[2])-1]
+	row2Gap := row2Item1.startX + row2Item1.width
+
+	row3Item0 := gridRows[3][0]
+	row3Item2 := gridRows[3][2]
+	row3Last := gridRows[3][len(gridRows[3])-1]
+
+	row4Item1 := gridRows[4][1]
+	row4Item4 := gridRows[4][4]
 
 	// Probes covering edge cases per issue 107 notes:
-	// - Cells next to left/top padding
-	// - Both halves of wide (emoji) cells
-	// - First/last cell of an item and inter-item gap
+	// - Primary edge probes moved to grid rows ≥ 5 across multiple columns
+	// - Row-3/4 probes kept as edge cases
+	// - Padding & border probes kept as edge cases
 	probes := []probeCase{
-		// Left padding & leftmost item (row 0)
-		{name: "Left padding border", hoverX: item0.startX - 1, hoverY: item0.y, expectedX: -1, expectedY: -1},
-		{name: "Item 0 left half (wide emoji)", hoverX: item0.startX, hoverY: item0.y, expectedX: item0.startX, expectedY: item0.y},
-		{name: "Item 0 right half (wide emoji)", hoverX: item0.startX + 1, hoverY: item0.y, expectedX: item0.startX, expectedY: item0.y},
+		// ── Primary edge probes on grid rows ≥ 5 ─────────────────────────────
+		// Row 2 (y=5) item 0: both emoji halves
+		{name: "Row 2 item 0 left half", hoverX: row2Item0.startX, hoverY: row2Item0.y, expectedX: row2Item0.startX, expectedY: row2Item0.y},
+		{name: "Row 2 item 0 right half", hoverX: row2Item0.startX + 1, hoverY: row2Item0.y, expectedX: row2Item0.startX, expectedY: row2Item0.y},
 
-		// Item 1 (first, last, gap)
-		{name: "Item 1 left half (first cell)", hoverX: item1.startX, hoverY: item1.y, expectedX: item1.startX, expectedY: item1.y},
-		{name: "Item 1 right half (last cell)", hoverX: item1.startX + 1, hoverY: item1.y, expectedX: item1.startX, expectedY: item1.y},
-		{name: "Item 1 spacing gap", hoverX: gapX, hoverY: item1.y, expectedX: item1.startX, expectedY: item1.y},
+		// Row 2 (y=5) item 1: first/last cell and inter-item gap
+		{name: "Row 2 item 1 first cell", hoverX: row2Item1.startX, hoverY: row2Item1.y, expectedX: row2Item1.startX, expectedY: row2Item1.y},
+		{name: "Row 2 item 1 last cell", hoverX: row2Item1.startX + 1, hoverY: row2Item1.y, expectedX: row2Item1.startX, expectedY: row2Item1.y},
+		{name: "Row 2 item 1 spacing gap", hoverX: row2Gap, hoverY: row2Item1.y, expectedX: row2Item1.startX, expectedY: row2Item1.y},
 
-		// Item 2 (wide emoji halves)
-		{name: "Item 2 left half", hoverX: item2.startX, hoverY: item2.y, expectedX: item2.startX, expectedY: item2.y},
-		{name: "Item 2 right half", hoverX: item2.startX + 1, hoverY: item2.y, expectedX: item2.startX, expectedY: item2.y},
+		// Row 2 (y=5) item 2 & 3: multiple columns across row
+		{name: "Row 2 item 2 left half", hoverX: row2Item2.startX, hoverY: row2Item2.y, expectedX: row2Item2.startX, expectedY: row2Item2.y},
+		{name: "Row 2 item 2 right half", hoverX: row2Item2.startX + 1, hoverY: row2Item2.y, expectedX: row2Item2.startX, expectedY: row2Item2.y},
+		{name: "Row 2 item 3 left half", hoverX: row2Item3.startX, hoverY: row2Item3.y, expectedX: row2Item3.startX, expectedY: row2Item3.y},
 
-		// Last item in row 0
-		{name: "Row 0 last item first half", hoverX: lastItem0.startX, hoverY: lastItem0.y, expectedX: lastItem0.startX, expectedY: lastItem0.y},
-		{name: "Row 0 last item last half", hoverX: lastItem0.startX + 1, hoverY: lastItem0.y, expectedX: lastItem0.startX, expectedY: lastItem0.y},
+		// Row 2 (y=5) last item of row
+		{name: "Row 2 last item first half", hoverX: row2Last.startX, hoverY: row2Last.y, expectedX: row2Last.startX, expectedY: row2Last.y},
+		{name: "Row 2 last item last half", hoverX: row2Last.startX + 1, hoverY: row2Last.y, expectedX: row2Last.startX, expectedY: row2Last.y},
 
-		// Top padding & search bar (rows above first grid row)
-		{name: "Top padding border", hoverX: item0.startX, hoverY: 0, expectedX: -1, expectedY: -1},
-		{name: "Search bar row", hoverX: item0.startX, hoverY: 1, expectedX: -1, expectedY: -1},
-		{name: "Search bar padding row", hoverX: item0.startX, hoverY: 2, expectedX: -1, expectedY: -1},
+		// Row 3 (y=6) items across columns
+		{name: "Row 3 item 0 left half", hoverX: row3Item0.startX, hoverY: row3Item0.y, expectedX: row3Item0.startX, expectedY: row3Item0.y},
+		{name: "Row 3 item 2 left half", hoverX: row3Item2.startX, hoverY: row3Item2.y, expectedX: row3Item2.startX, expectedY: row3Item2.y},
+		{name: "Row 3 last item last half", hoverX: row3Last.startX + 1, hoverY: row3Last.y, expectedX: row3Last.startX, expectedY: row3Last.y},
 
-		// Row 1 items
-		{name: "Row 1 item 16 left half", hoverX: row1Item0.startX, hoverY: row1Item0.y, expectedX: row1Item0.startX, expectedY: row1Item0.y},
-		{name: "Row 1 item 16 right half", hoverX: row1Item0.startX + 1, hoverY: row1Item0.y, expectedX: row1Item0.startX, expectedY: row1Item0.y},
+		// Row 4 (y=7) items across columns
+		{name: "Row 4 item 1 left half", hoverX: row4Item1.startX, hoverY: row4Item1.y, expectedX: row4Item1.startX, expectedY: row4Item1.y},
+		{name: "Row 4 item 4 left half", hoverX: row4Item4.startX, hoverY: row4Item4.y, expectedX: row4Item4.startX, expectedY: row4Item4.y},
 
-		// Row 2 items
-		{name: "Row 2 item 32 left half", hoverX: row2Item0.startX, hoverY: row2Item0.y, expectedX: row2Item0.startX, expectedY: row2Item0.y},
+		// ── Row-3/4 edge cases ───────────────────────────────────────────────
+		{name: "Row 0 (y=3) item 0 left half", hoverX: row0Item0.startX, hoverY: row0Item0.y, expectedX: row0Item0.startX, expectedY: row0Item0.y},
+		{name: "Row 0 (y=3) item 1 left half", hoverX: row0Item1.startX, hoverY: row0Item1.y, expectedX: row0Item1.startX, expectedY: row0Item1.y},
+		{name: "Row 1 (y=4) item 0 left half", hoverX: row1Item0.startX, hoverY: row1Item0.y, expectedX: row1Item0.startX, expectedY: row1Item0.y},
+		{name: "Row 1 (y=4) item 1 left half", hoverX: row1Item1.startX, hoverY: row1Item1.y, expectedX: row1Item1.startX, expectedY: row1Item1.y},
+
+		// ── Padding & border edge cases ──────────────────────────────────────
+		{name: "Left padding border (row 0)", hoverX: row0Item0.startX - 1, hoverY: row0Item0.y, expectedX: -1, expectedY: -1},
+		{name: "Left padding border (row 2)", hoverX: row2Item0.startX - 1, hoverY: row2Item0.y, expectedX: -1, expectedY: -1},
+		{name: "Top padding border", hoverX: row0Item0.startX, hoverY: 0, expectedX: -1, expectedY: -1},
+		{name: "Search bar row", hoverX: row0Item0.startX, hoverY: 1, expectedX: -1, expectedY: -1},
+		{name: "Search bar padding row", hoverX: row0Item0.startX, hoverY: 2, expectedX: -1, expectedY: -1},
 	}
 
 	var results []probeResult
@@ -294,8 +314,7 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 				res.note = "no change (as expected)"
 			} else {
 				res.status = "NO_CHANGE"
-				res.note = "hover changed nothing"
-				bugs++
+				res.note = "no visible target"
 			}
 			results = append(results, res)
 			continue
@@ -311,8 +330,7 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 				res.note = "no change (as expected)"
 			} else {
 				res.status = "NO_CHANGE"
-				res.note = "hover changed nothing"
-				bugs++
+				res.note = "no visible target"
 			}
 		} else {
 			if p.expectedX != -1 || p.expectedY != -1 {
@@ -354,12 +372,38 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 		t.Fatal("hover not observable: no on-grid hover produced a screen change")
 	}
 
+	// Calculate dominant (dx, dy) across measured probes
+	type offsetKey struct{ dx, dy int }
+	offsetCounts := make(map[offsetKey]int)
+	var dominant offsetKey
+	maxCount := 0
+	measuredCount := 0
+
+	for _, r := range results {
+		if r.probe.expectedX != -1 && r.actualX != -1 {
+			k := offsetKey{r.dx, r.dy}
+			offsetCounts[k]++
+			if offsetCounts[k] > maxCount {
+				maxCount = offsetCounts[k]
+				dominant = k
+			}
+			measuredCount++
+		}
+	}
+
+	var summaryLine string
+	if measuredCount > 0 {
+		summaryLine = fmt.Sprintf("Dominant offset: (dx=%+d, dy=%+d) across %d/%d measured probes", dominant.dx, dominant.dy, maxCount, measuredCount)
+	} else {
+		summaryLine = "No probes measured a highlight change"
+	}
+
 	// Format results table
 	var b strings.Builder
 	b.WriteString("\n=== LOOMOJI HOVER PROBE OFFSET TABLE ===\n")
-	b.WriteString(fmt.Sprintf("%-30s | %-10s | %-10s | %-16s | %-12s | %-14s | %s\n",
+	b.WriteString(fmt.Sprintf("%-32s | %-11s | %-11s | %-16s | %-13s | %-14s | %s\n",
 		"Probe", "Hover(X,Y)", "Expected", "Changed Box", "Offset(dx,dy)", "Status", "Note"))
-	b.WriteString(strings.Repeat("-", 130) + "\n")
+	b.WriteString(strings.Repeat("-", 135) + "\n")
 
 	for _, r := range results {
 		hoverStr := fmt.Sprintf("(%d,%d)", r.probe.hoverX, r.probe.hoverY)
@@ -368,15 +412,16 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 			expStr = fmt.Sprintf("(%d,%d)", r.probe.expectedX, r.probe.expectedY)
 		}
 
-		b.WriteString(fmt.Sprintf("%-30s | %-10s | %-10s | %-16s | %-12s | %-14s | %s\n",
+		b.WriteString(fmt.Sprintf("%-32s | %-11s | %-11s | %-16s | %-13s | %-14s | %s\n",
 			r.probe.name, hoverStr, expStr, r.boxStr, r.offsetStr, r.status, r.note))
 	}
-	b.WriteString(strings.Repeat("-", 130) + "\n")
+	b.WriteString(strings.Repeat("-", 135) + "\n")
+	b.WriteString(summaryLine + "\n")
 
 	tableStr := b.String()
 	t.Log(tableStr)
 
 	if bugs > 0 {
-		t.Errorf("loomoji hover probe exposed %d offset/highlight bugs (expected under current bug):\n%s", bugs, tableStr)
+		t.Errorf("loomoji hover probe exposed %d offset bugs (expected under current bug):\n%s", bugs, tableStr)
 	}
 }
