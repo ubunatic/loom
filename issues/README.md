@@ -116,4 +116,5 @@ upkeep.
 | 102 | [102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md](102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) | Human review collection: manual checks for lean-sprint deliveries | Open — manual checks |
 | 103 | [103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md](103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md) | Provide a hostable migration loop for coexisting Loom views | Open |
 | 105 | [105-unify-filebrowser-navigation-pane-across-examples.md](105-unify-filebrowser-navigation-pane-across-examples.md) | Unify filebrowser navigation pane across examples | Open |
-| 106 | [106-make-scrollbar-enabled-by-default-for-panes.md](106-make-scrollbar-enabled-by-default-for-panes.md) | Make scrollbar enabled by default for panes | Open |
+| 106 | [106-make-scrollbar-enabled-by-default-for-panes.md](106-make-scrollbar-enabled-by-default-for-panes.md) | Make automatic scrollbars the default for panes | Open |
+| 107 | [107-pty-mouse-test-system-detect-loomoji-hover-vs-highlight-offset-via-rendered-fg-bg-cells.md](107-pty-mouse-test-system-detect-loomoji-hover-vs-highlight-offset-via-rendered-fg-bg-cells.md) | PTY mouse test system: detect loomoji hover-vs-highlight offset via rendered FG/BG cells | Open |
