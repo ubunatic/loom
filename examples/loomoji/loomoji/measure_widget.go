@@ -12,32 +12,57 @@ import (
 
 const measurePageSize = 10
 
+// MeasureOptions selects either the normal unmeasured flow or recorded-glyph review.
+type MeasureOptions struct {
+	Review          bool
+	Filter          MeasureFilter
+	DiffersFromLoom bool
+	HasComment      bool
+}
+
 // MeasureWidget guides a user through recording terminal-rendered glyph widths.
 type MeasureWidget struct {
-	store          *MeasurementStore
-	glyphs         []string
-	page           int
-	selected       int
-	pending        map[string]Measurement
-	jsonPath       string
-	textPath       string
-	editingComment bool
-	comment        []rune
-	saveErr        error
+	store           *MeasurementStore
+	glyphs          []string
+	page            int
+	selected        int
+	pending         map[string]Measurement
+	jsonPath        string
+	textPath        string
+	editingComment  bool
+	comment         []rune
+	saveErr         error
+	review          bool
+	filter          MeasureFilter
+	differsFromLoom bool
+	hasComment      bool
 }
 
 // NewMeasureWidget creates a keyboard-driven measure widget for unrecorded loomoji glyphs.
 func NewMeasureWidget(store *MeasurementStore, jsonPath, textPath string) *MeasureWidget {
+	return NewMeasureWidgetWithOptions(store, jsonPath, textPath, MeasureOptions{})
+}
+
+// NewMeasureWidgetWithOptions creates a measurement widget with optional review filters.
+func NewMeasureWidgetWithOptions(store *MeasurementStore, jsonPath, textPath string, options MeasureOptions) *MeasureWidget {
 	if store == nil {
 		store = NewMeasurementStore(TerminalProfile{})
 	}
-	return &MeasureWidget{
-		store:    store,
-		glyphs:   store.Unmeasured(uniqueGlyphs()),
-		pending:  make(map[string]Measurement),
-		jsonPath: jsonPath,
-		textPath: textPath,
+	if options.Filter == "" {
+		options.Filter = MeasureFilterAll
 	}
+	w := &MeasureWidget{
+		store:           store,
+		pending:         make(map[string]Measurement),
+		jsonPath:        jsonPath,
+		textPath:        textPath,
+		review:          options.Review,
+		filter:          options.Filter,
+		differsFromLoom: options.DiffersFromLoom,
+		hasComment:      options.HasComment,
+	}
+	w.refreshGlyphs()
+	return w
 }
 
 // Err reports the most recent page save failure, if any.
@@ -84,7 +109,11 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	muted := loom.ColorRGB(155, 160, 165)
 	accent := loom.ColorRGB(32, 151, 185)
 	c.PaintSurface(r, loom.Style{BG: bg})
-	w.center(c, r, 1, "Terminal emoji width measurement", loom.Style{FG: accent, Bold: true})
+	title := "Terminal emoji width measurement"
+	if w.review {
+		title = "Terminal emoji width review (" + string(w.filter) + ")"
+	}
+	w.center(c, r, 1, title, loom.Style{FG: accent, Bold: true})
 	page := w.PageGlyphs()
 	if len(page) == 0 {
 		w.center(c, r, r.H/2, "All glyphs are recorded. Press Esc to finish.", loom.Style{FG: fg})
@@ -110,7 +139,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		comment = "Comment: " + string(w.comment) + "▏"
 	}
 	w.center(c, r, r.H-3, comment, loom.Style{FG: fg})
-	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  Enter/PgDn: confirm page  PgUp: back  q: quit"
+	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  c: comment  Tab: review  f: filter  Enter/PgDn: save page  PgUp: back  q: quit"
 	if w.saveErr != nil {
 		footer = "Save error: " + w.saveErr.Error()
 	}
@@ -128,6 +157,19 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 	}
 	if key == "esc" || key == "ctrl-c" || key == "q" {
 		return true
+	}
+	switch key {
+	case "tab":
+		w.review = !w.review
+		w.filter = MeasureFilterAll
+		w.refreshGlyphs()
+		return false
+	case "f":
+		if w.review {
+			w.filter = nextMeasureFilter(w.filter)
+			w.refreshGlyphs()
+		}
+		return false
 	}
 	page := w.PageGlyphs()
 	if len(page) == 0 {
@@ -155,6 +197,42 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 		w.previousPage()
 	}
 	return false
+}
+
+func (w *MeasureWidget) refreshGlyphs() {
+	all := uniqueGlyphs()
+	if w.review {
+		w.glyphs = w.store.Review(all, w.filter)
+		if w.differsFromLoom {
+			w.glyphs = w.store.Review(w.glyphs, MeasureFilterDiffersFromLoom)
+		}
+		if w.hasComment {
+			w.glyphs = w.store.Review(w.glyphs, MeasureFilterHasComment)
+		}
+	} else {
+		w.glyphs = w.store.Unmeasured(all)
+	}
+	w.page = 0
+	w.selected = 0
+}
+
+func nextMeasureFilter(filter MeasureFilter) MeasureFilter {
+	filters := []MeasureFilter{
+		MeasureFilterAll,
+		MeasureFilterWidth1,
+		MeasureFilterWidth2,
+		MeasureFilterWidth3,
+		MeasureFilterWidth4,
+		MeasureFilterUnsure,
+		MeasureFilterDiffersFromLoom,
+		MeasureFilterHasComment,
+	}
+	for i, candidate := range filters {
+		if candidate == filter {
+			return filters[(i+1)%len(filters)]
+		}
+	}
+	return MeasureFilterAll
 }
 
 // HandleMouse implements the loom.Widget interface; the measure flow is keyboard-only.

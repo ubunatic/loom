@@ -19,7 +19,22 @@ import (
 type TerminalProfile struct {
 	Term        string `json:"term"`
 	TermProgram string `json:"term_program,omitempty"`
+	VTEVersion  string `json:"vte_version,omitempty"`
 }
+
+// MeasureFilter selects one category of recorded measurements for review.
+type MeasureFilter string
+
+const (
+	MeasureFilterAll             MeasureFilter = "all"
+	MeasureFilterWidth1          MeasureFilter = "width-1"
+	MeasureFilterWidth2          MeasureFilter = "width-2"
+	MeasureFilterWidth3          MeasureFilter = "width-3"
+	MeasureFilterWidth4          MeasureFilter = "width-4"
+	MeasureFilterUnsure          MeasureFilter = "unsure"
+	MeasureFilterDiffersFromLoom MeasureFilter = "differs-from-loom"
+	MeasureFilterHasComment      MeasureFilter = "has-comment"
+)
 
 // Measurement contains the observed and computed width of one glyph.
 // MeasuredWidth is 1 through 4 for a confirmed result and 0 for unsure/other.
@@ -90,6 +105,44 @@ func (s *MeasurementStore) Unmeasured(glyphs []string) []string {
 	return result
 }
 
+// Review returns recorded glyphs matching filter, preserving input order.
+func (s *MeasurementStore) Review(glyphs []string, filter MeasureFilter) []string {
+	result := make([]string, 0, len(glyphs))
+	for _, glyph := range glyphs {
+		measurement, exists := s.Entries[glyph]
+		if !exists || (!measurement.Answered && measurement.MeasuredWidth == 0) {
+			continue
+		}
+		if measurementMatchesFilter(measurement, filter) {
+			result = append(result, glyph)
+		}
+	}
+	return result
+}
+
+func measurementMatchesFilter(measurement Measurement, filter MeasureFilter) bool {
+	switch filter {
+	case MeasureFilterAll:
+		return true
+	case MeasureFilterWidth1:
+		return measurement.MeasuredWidth == 1
+	case MeasureFilterWidth2:
+		return measurement.MeasuredWidth == 2
+	case MeasureFilterWidth3:
+		return measurement.MeasuredWidth == 3
+	case MeasureFilterWidth4:
+		return measurement.MeasuredWidth == 4
+	case MeasureFilterUnsure:
+		return measurement.MeasuredWidth == 0
+	case MeasureFilterDiffersFromLoom:
+		return measurement.MeasuredWidth != 0 && measurement.MeasuredWidth != measurement.ComputedWidth
+	case MeasureFilterHasComment:
+		return measurement.Comment != ""
+	default:
+		return false
+	}
+}
+
 // LoadMeasurementStore reads a profile store from JSON.
 func LoadMeasurementStore(path string) (*MeasurementStore, error) {
 	data, err := os.ReadFile(path)
@@ -125,7 +178,7 @@ func (s *MeasurementStore) Save(path string) error {
 // SaveTextReport writes a stable, human-readable report for the store.
 func (s *MeasurementStore) SaveTextReport(path string) error {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Terminal width measurements\nTERM=%s\nTERM_PROGRAM=%s\n\n", s.Profile.Term, s.Profile.TermProgram)
+	fmt.Fprintf(&b, "Terminal width measurements\nTERM=%s\nTERM_PROGRAM=%s\nVTE_VERSION=%s\n\n", s.Profile.Term, s.Profile.TermProgram, s.Profile.VTEVersion)
 	glyphs := make([]string, 0, len(s.Entries))
 	for glyph := range s.Entries {
 		glyphs = append(glyphs, glyph)
@@ -152,6 +205,10 @@ func (s *MeasurementStore) SaveTextReport(path string) error {
 
 // Paths returns the JSON and text report paths for a terminal profile.
 func (p TerminalProfile) Paths(dir string) (jsonPath, textPath string) {
+	if p.VTEVersion != "" {
+		stem := "vte-" + url.PathEscape(p.VTEVersion)
+		return filepath.Join(dir, stem+".json"), filepath.Join(dir, stem+".txt")
+	}
 	term := p.Term
 	if term == "" {
 		term = "unknown"

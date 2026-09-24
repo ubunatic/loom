@@ -70,9 +70,46 @@ func TestMeasurementStoreSetUpdatesAndMissingFileLoadsEmpty(t *testing.T) {
 	}
 }
 
+func TestMeasurementStoreReviewFiltersMeasuredGlyphs(t *testing.T) {
+	store := NewMeasurementStore(TerminalProfile{})
+	store.Set(Measurement{Glyph: "one", ComputedWidth: 1, MeasuredWidth: 1, Answered: true})
+	store.Set(Measurement{Glyph: "two", ComputedWidth: 1, MeasuredWidth: 2, Answered: true})
+	store.Set(Measurement{Glyph: "three", ComputedWidth: 3, MeasuredWidth: 3, Answered: true})
+	store.Set(Measurement{Glyph: "unsure", ComputedWidth: 2, MeasuredWidth: 0, Answered: true})
+	store.Set(Measurement{Glyph: "comment", ComputedWidth: 2, MeasuredWidth: 2, Answered: true, Comment: "check this"})
+
+	all := []string{"one", "two", "three", "unsure", "comment", "missing"}
+	for _, tt := range []struct {
+		filter MeasureFilter
+		want   []string
+	}{
+		{MeasureFilterWidth1, []string{"one"}},
+		{MeasureFilterWidth2, []string{"two", "comment"}},
+		{MeasureFilterWidth3, []string{"three"}},
+		{MeasureFilterUnsure, []string{"unsure"}},
+		{MeasureFilterDiffersFromLoom, []string{"two"}},
+		{MeasureFilterHasComment, []string{"comment"}},
+	} {
+		if got := store.Review(all, tt.filter); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("Review(%s) = %#v, want %#v", tt.filter, got, tt.want)
+		}
+	}
+}
+
+func TestTerminalProfileUsesVTEName(t *testing.T) {
+	profile := TerminalProfile{Term: "xterm-256color", VTEVersion: "8401"}
+	jsonPath, textPath := profile.Paths("widths")
+	if got, want := filepath.Base(jsonPath), "vte-8401.json"; got != want {
+		t.Errorf("VTE JSON path = %q, want %q", got, want)
+	}
+	if got, want := filepath.Base(textPath), "vte-8401.txt"; got != want {
+		t.Errorf("VTE report path = %q, want %q", got, want)
+	}
+}
+
 func TestMeasurementStoreSaveTextReport(t *testing.T) {
 	dir := t.TempDir()
-	store := NewMeasurementStore(TerminalProfile{Term: "screen", TermProgram: "tmux"})
+	store := NewMeasurementStore(TerminalProfile{Term: "screen", TermProgram: "tmux", VTEVersion: "8401"})
 	store.Merge(Measurement{Glyph: "🇩🇪", Codepoints: []string{"U+1F1E9", "U+1F1EA"}, ComputedWidth: 2, MeasuredWidth: 2, Comment: "flag"})
 	jsonPath := filepath.Join(dir, "profile.json")
 	if err := store.Save(jsonPath); err != nil {
@@ -85,7 +122,7 @@ func TestMeasurementStoreSaveTextReport(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile() error = %v", err)
 	}
-	for _, want := range []string{"TERM=screen", "TERM_PROGRAM=tmux", "🇩🇪", "U+1F1E9 U+1F1EA", "computed=2", "measured=2", "flag"} {
+	for _, want := range []string{"TERM=screen", "TERM_PROGRAM=tmux", "VTE_VERSION=8401", "🇩🇪", "U+1F1E9 U+1F1EA", "computed=2", "measured=2", "flag"} {
 		if !strings.Contains(string(report), want) {
 			t.Errorf("text report missing %q: %s", want, report)
 		}

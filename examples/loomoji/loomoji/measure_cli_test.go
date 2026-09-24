@@ -14,9 +14,10 @@ import (
 func TestDebugMeasureCommandParsesAndUsesEnvironmentProfile(t *testing.T) {
 	t.Setenv("TERM", "xterm-256color")
 	t.Setenv("TERM_PROGRAM", "WezTerm")
-	want := TerminalProfile{Term: "xterm-256color", TermProgram: "WezTerm"}
+	t.Setenv("VTE_VERSION", "8401")
+	want := TerminalProfile{Term: "xterm-256color", TermProgram: "WezTerm", VTEVersion: "8401"}
 	called := false
-	cmd := newCommand(func() error { return nil }, func(profile TerminalProfile) error {
+	cmd := newCommand(func() error { return nil }, func(profile TerminalProfile, _ MeasureOptions) error {
 		called = true
 		if profile != want {
 			t.Errorf("runMeasure profile = %#v, want %#v", profile, want)
@@ -32,6 +33,30 @@ func TestDebugMeasureCommandParsesAndUsesEnvironmentProfile(t *testing.T) {
 	}
 }
 
+func TestDebugMeasureReviewFlags(t *testing.T) {
+	var got MeasureOptions
+	cmd := newCommand(func() error { return nil }, func(_ TerminalProfile, options MeasureOptions) error {
+		got = options
+		return nil
+	})
+	cmd.SetArgs([]string{"debug", "--measure", "--review", "--width", "2", "--differs-from-loom", "--has-comment"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("debug review flags Execute() error = %v", err)
+	}
+	want := MeasureOptions{Review: true, Filter: MeasureFilterWidth2, DiffersFromLoom: true, HasComment: true}
+	if got != want {
+		t.Errorf("review options = %#v, want %#v", got, want)
+	}
+}
+
+func TestDebugMeasureRejectsInvalidReviewWidth(t *testing.T) {
+	cmd := newCommand(func() error { return nil }, func(TerminalProfile, MeasureOptions) error { return nil })
+	cmd.SetArgs([]string{"debug", "--measure", "--review", "--width", "5"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("debug --measure --review --width 5 succeeded, want error")
+	}
+}
+
 func TestDebugCommandRequiresMeasureFlagAndNoExtraArguments(t *testing.T) {
 	tests := []struct {
 		name string
@@ -43,7 +68,7 @@ func TestDebugCommandRequiresMeasureFlagAndNoExtraArguments(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			called := false
-			cmd := newCommand(func() error { return nil }, func(TerminalProfile) error {
+			cmd := newCommand(func() error { return nil }, func(TerminalProfile, MeasureOptions) error {
 				called = true
 				return nil
 			})
@@ -83,7 +108,7 @@ func TestMeasureSessionLoadsProfileAndSkipsAnsweredGlyphs(t *testing.T) {
 		t.Fatalf("Save() existing profile error = %v", err)
 	}
 
-	widget, err := newMeasureSession(profile, dir)
+	widget, err := newMeasureSession(profile, dir, MeasureOptions{})
 	if err != nil {
 		t.Fatalf("newMeasureSession() error = %v", err)
 	}

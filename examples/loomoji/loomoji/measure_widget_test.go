@@ -6,6 +6,7 @@ package loomoji
 import (
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -122,6 +123,32 @@ func TestMeasureWidgetQuitLeavesUnconfirmedPageUnmeasured(t *testing.T) {
 	}
 	if _, exists := store.Entries[glyph]; exists {
 		t.Fatalf("q saved unconfirmed row %q", glyph)
+	}
+}
+
+func TestMeasureWidgetReviewModeFiltersAndSavesEdits(t *testing.T) {
+	dir := t.TempDir()
+	store := NewMeasurementStore(TerminalProfile{})
+	glyphs := uniqueGlyphs()
+	store.Set(Measurement{Glyph: glyphs[0], ComputedWidth: 1, MeasuredWidth: 1, Answered: true})
+	store.Set(Measurement{Glyph: glyphs[1], ComputedWidth: 2, MeasuredWidth: 2, Answered: true, Comment: "recheck"})
+	w := NewMeasureWidgetWithOptions(store, filepath.Join(dir, "measurements.json"), "", MeasureOptions{Review: true, Filter: MeasureFilterWidth2})
+	if got := w.PageGlyphs(); !reflect.DeepEqual(got, []string{glyphs[1]}) {
+		t.Fatalf("review width-2 page = %#v, want %#v", got, []string{glyphs[1]})
+	}
+	w.HandleKey(loom.KeyEvent{Key: "left"})
+	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	if got := store.Entries[glyphs[1]]; got.MeasuredWidth != 1 || !got.Answered {
+		t.Fatalf("saved review edit = %#v, want answered width 1", got)
+	}
+	w.HandleKey(loom.KeyEvent{Key: "tab"})
+	if w.review {
+		t.Fatal("Tab did not leave review mode")
+	}
+	w.HandleKey(loom.KeyEvent{Key: "tab"})
+	w.HandleKey(loom.KeyEvent{Text: "f"})
+	if w.filter != MeasureFilterWidth1 {
+		t.Fatalf("f filter = %s, want width 1", w.filter)
 	}
 }
 

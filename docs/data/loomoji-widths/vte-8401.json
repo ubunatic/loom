@@ -1,6 +1,7 @@
 {
   "terminal": {
-    "term": "xterm-256color"
+    "term": "xterm-256color",
+    "vte_version": "8401"
   },
   "measurements": {
     " ": {
