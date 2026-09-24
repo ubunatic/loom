@@ -140,12 +140,32 @@ func TestMouseInteraction(t *testing.T) {
 		Action: loom.MousePress,
 		Button: loom.MouseLeft,
 		X:      2 + p.cellWidth + 1,
-		Y:      p.searchY + 3,
+		Y:      p.searchY + 2,
 	}) {
 		t.Fatal("grid click should select and exit")
 	}
 	if p.chosen != want {
 		t.Errorf("mouse selected %q, want %q", p.chosen, want)
+	}
+}
+
+func TestGridMouseUsesRenderedRowForHoverPressAndDrag(t *testing.T) {
+	p := newPicker()
+	p.cols = 3
+	p.viewRows = 2
+	p.gridStart = 0
+	p.cellWidth = 1
+	want := 4
+
+	for _, action := range []loom.MouseAction{loom.MouseHover, loom.MousePress, loom.MouseDrag} {
+		p.index = 0
+		selected := p.handleGridMouse(loom.MouseEvent{Action: action, Button: loom.MouseLeft, X: 3, Y: 1})
+		if selected != (action == loom.MousePress) {
+			t.Errorf("action %v selected = %v, want %v", action, selected, action == loom.MousePress)
+		}
+		if p.index != want {
+			t.Errorf("action %v selected index %d, want %d", action, p.index, want)
+		}
 	}
 }
 

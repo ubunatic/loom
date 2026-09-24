@@ -1540,14 +1540,14 @@ func (p *picker) handleGridMouse(e loom.MouseEvent) bool {
 	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
 		return false
 	}
-	if e.Y < 1 || e.Y > p.viewRows || e.X < 1 {
+	if e.Y < 0 || e.Y >= p.viewRows || e.X < 1 {
 		return false
 	}
 	if p.cellWidth < 1 {
 		p.cellWidth = 1
 	}
 	col := (e.X - 1) / max(1, p.cellWidth+1)
-	idx := p.gridStart + (e.Y-1)*p.cols + col
+	idx := p.gridStart + e.Y*p.cols + col
 	if col < 0 || col >= p.cols || idx < 0 || idx >= len(p.items) {
 		return false
 	}
