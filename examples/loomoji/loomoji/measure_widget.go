@@ -121,7 +121,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	w.center(c, r, 2, fmt.Sprintf("Page %d   %d glyphs remaining", w.page+1, w.Remaining()), loom.Style{FG: muted})
-	w.write(c, r, 3, "Row  Glyph     Codepoints                 Mode          Width  Comment", loom.Style{FG: muted, Bold: true})
+	w.write(c, r, 3, "Row  Glyph     Codepoints                 Mode          VTE Width  Loom  Match  Comment", loom.Style{FG: muted, Bold: true})
 	for row, glyph := range page {
 		m := w.measurement(glyph)
 		mode := m.RenderMode
@@ -138,8 +138,15 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		if visualWidth == 0 {
 			widthStr = "?"
 		}
+		loomWidth := measure.StringWidth(glyph)
+		matchStr := "✓"
+		if visualWidth == 0 {
+			matchStr = "?"
+		} else if visualWidth != loomWidth {
+			matchStr = "≠"
+		}
 		displayGlyph := fmt.Sprintf("|%s|", rendered)
-		line := fmt.Sprintf("%-3d  %-8s  %-25s %-12s %5s  %s", row, displayGlyph, strings.Join(m.Codepoints, " "), mode, widthStr, m.Comment)
+		line := fmt.Sprintf("%-3d  %-8s  %-25s %-12s %9s  %4d  %-5s  %s", row, displayGlyph, strings.Join(m.Codepoints, " "), mode, widthStr, loomWidth, matchStr, m.Comment)
 		style := loom.Style{FG: fg}
 		if row == w.selected {
 			style = loom.Style{FG: fg, BG: loom.ColorRGB(56, 62, 68), Bold: true}

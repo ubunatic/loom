@@ -110,7 +110,7 @@ func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 		rows[i] = canvas.Row(i)
 	}
 	rendered := strings.Join(rows, "\n")
-	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + "|", "Mode", "Width", "Comment", "←/→: mode"} {
+	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + "|", "Mode", "VTE Width", "Loom", "Match", "Comment", "←/→: mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Errorf("measure widget rendering missing %q:\n%s", want, rendered)
 		}
