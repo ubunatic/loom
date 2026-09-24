@@ -52,3 +52,16 @@ width with the same `measure` function. Only a human looking at a real terminal 
 - The command works end to end and a second run skips glyphs that are already measured.
 - The data files are written under `docs/data/` with a short format note (README or header).
 - A test covers the load/merge/save round trip and the "unmeasured only" filtering.
+
+## Milestones (lean sprint, developer codex:terra:med)
+
+Decisions:
+- Results are keyed by terminal profile (`TERM` + `TERM_PROGRAM`), one JSON per profile under
+  `docs/data/loomoji-widths/`. A glyph counts as "not measured yet" per profile.
+- The `CSI 6n` auto-probe is out of scope; it's a follow-up once the manual workflow works.
+
+- **M1 (persistence)**: store, merge, unmeasured filter, JSON + text report, format README; round-trip tests.
+- **M2 (measure widget)**: keyboard-only loom widget with numbered glyphs between markers.
+  Keys `1`/`2`/`?`, comment entry, progress indicator, incremental save. Deterministic widget tests.
+- **M3 (CLI wiring)**: `loomoji debug --measure`, terminal profile detection, loads M1 data; parsing tests.
+  The user does a manual smoke test in a real terminal.
