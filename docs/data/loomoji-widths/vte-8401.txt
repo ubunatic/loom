@@ -289,23 +289,23 @@ VTE_VERSION=8401
 ☮️	U+262E U+FE0F	computed=2	measured=3	comment=
 ☯️	U+262F U+FE0F	computed=2	measured=3	comment=
 ☸️	U+2638 U+FE0F	computed=2	measured=3	comment=
-♈	U+2648	computed=1	measured=1	comment=VTE:2
-♉	U+2649	computed=1	measured=1	comment=VTE:2
-♊	U+264A	computed=1	measured=1	comment=VTE:2
-♋	U+264B	computed=1	measured=1	comment=VTE:2
-♌	U+264C	computed=1	measured=1	comment=VTE:2
-♍	U+264D	computed=1	measured=1	comment=VTE:2
-♎	U+264E	computed=1	measured=1	comment=VTE:2
-♏	U+264F	computed=1	measured=1	comment=VTE:2
-♐	U+2650	computed=1	measured=1	comment=VTE:2
-♑	U+2651	computed=1	measured=1	comment=VTE:2
-♒	U+2652	computed=1	measured=1	comment=VTE:2
-♓	U+2653	computed=1	measured=1	comment=VTE:2
+♈	U+2648	computed=1	measured=1	comment=
+♉	U+2649	computed=1	measured=1	comment=
+♊	U+264A	computed=1	measured=1	comment=
+♋	U+264B	computed=1	measured=1	comment=
+♌	U+264C	computed=1	measured=1	comment=
+♍	U+264D	computed=1	measured=1	comment=
+♎	U+264E	computed=1	measured=1	comment=
+♏	U+264F	computed=1	measured=1	comment=
+♐	U+2650	computed=1	measured=1	comment=
+♑	U+2651	computed=1	measured=1	comment=
+♒	U+2652	computed=1	measured=1	comment=
+♓	U+2653	computed=1	measured=1	comment=
 ♟️	U+265F U+FE0F	computed=2	measured=3	comment=
 ♨️	U+2668 U+FE0F	computed=2	measured=3	comment=
-♿	U+267F	computed=1	measured=1	comment=VTE:2
+♿	U+267F	computed=1	measured=1	comment=
 ⚒️	U+2692 U+FE0F	computed=2	measured=3	comment=
-⚓	U+2693	computed=1	measured=1	comment=VTE:2
+⚓	U+2693	computed=1	measured=1	comment=
 ⚔️	U+2694 U+FE0F	computed=2	measured=3	comment=
 ⚖️	U+2696 U+FE0F	computed=2	measured=3	comment=
 ⚗️	U+2697 U+FE0F	computed=2	measured=3	comment=
@@ -318,23 +318,23 @@ VTE_VERSION=8401
 ⚾	U+26BE	computed=1	measured=1	comment=
 ⛄	U+26C4	computed=1	measured=1	comment=
 ⛅	U+26C5	computed=1	measured=1	comment=
-⛎	U+26CE	computed=1	measured=1	comment=VTE:2
+⛎	U+26CE	computed=1	measured=1	comment=
 ⛏️	U+26CF U+FE0F	computed=2	measured=3	comment=
-⛔	U+26D4	computed=1	measured=1	comment=VTE:2
+⛔	U+26D4	computed=1	measured=1	comment=
 ⛩️	U+26E9 U+FE0F	computed=2	measured=3	comment=
-⛪	U+26EA	computed=1	measured=1	comment=VTE:2
+⛪	U+26EA	computed=1	measured=1	comment=
 ⛰️	U+26F0 U+FE0F	computed=2	measured=3	comment=
-⛲	U+26F2	computed=1	measured=1	comment=VTE:2
-⛳	U+26F3	computed=1	measured=1	comment=VTE:2
+⛲	U+26F2	computed=1	measured=1	comment=
+⛳	U+26F3	computed=1	measured=1	comment=
 ⛴️	U+26F4 U+FE0F	computed=2	measured=3	comment=
-⛵	U+26F5	computed=1	measured=1	comment=VTE:2
+⛵	U+26F5	computed=1	measured=1	comment=
 ⛷️	U+26F7 U+FE0F	computed=2	measured=3	comment=
 ⛸️	U+26F8 U+FE0F	computed=2	measured=3	comment=
 ⛹️	U+26F9 U+FE0F	computed=2	measured=3	comment=
-⛺	U+26FA	computed=1	measured=1	comment=VTE:2
-⛽	U+26FD	computed=1	measured=1	comment=VTE:2
+⛺	U+26FA	computed=1	measured=1	comment=
+⛽	U+26FD	computed=1	measured=1	comment=
 ✂️	U+2702 U+FE0F	computed=2	measured=3	comment=
-✅	U+2705	computed=1	measured=1	comment=VTE:2
+✅	U+2705	computed=1	measured=1	comment=
 ✈️	U+2708 U+FE0F	computed=2	measured=3	comment=
 ✉️	U+2709 U+FE0F	computed=2	measured=3	comment=
 ✊	U+270A	computed=1	measured=1	comment=
@@ -346,20 +346,20 @@ VTE_VERSION=8401
 ✡️	U+2721 U+FE0F	computed=2	measured=3	comment=
 ✨	U+2728	computed=1	measured=1	comment=
 ❄️	U+2744 U+FE0F	computed=2	measured=3	comment=
-❌	U+274C	computed=1	measured=1	comment=VTE:2
-❎	U+274E	computed=1	measured=1	comment=VTE:2
-❓	U+2753	computed=1	measured=1	comment=VTE:2
-❔	U+2754	computed=1	measured=1	comment=VTE:2
-❕	U+2755	computed=1	measured=1	comment=VTE:2
-❗	U+2757	computed=1	measured=1	comment=VTE:2
+❌	U+274C	computed=1	measured=1	comment=
+❎	U+274E	computed=1	measured=1	comment=
+❓	U+2753	computed=1	measured=1	comment=
+❔	U+2754	computed=1	measured=1	comment=
+❕	U+2755	computed=1	measured=1	comment=
+❗	U+2757	computed=1	measured=1	comment=
 ❣️	U+2763 U+FE0F	computed=2	measured=3	comment=
 ❤️	U+2764 U+FE0F	computed=2	measured=3	comment=
 ❤️‍🔥	U+2764 U+FE0F U+200D U+1F525	computed=3	measured=3	comment=3ch long overlapping pair, VTE:3
 ❤️‍🩹	U+2764 U+FE0F U+200D U+1FA79	computed=3	measured=3	comment=3ch long overlapping pair, VTE:3
 ➔	U+2794	computed=1	measured=1	comment=
-➕	U+2795	computed=1	measured=1	comment=VTE:2
-➖	U+2796	computed=1	measured=1	comment=VTE:2
-➗	U+2797	computed=1	measured=1	comment=VTE:2
+➕	U+2795	computed=1	measured=1	comment=
+➖	U+2796	computed=1	measured=1	comment=
+➗	U+2797	computed=1	measured=1	comment=
 ⟵	U+27F5	computed=2	measured=3	comment=
 ⟶	U+27F6	computed=2	measured=3	comment=
 ⟷	U+27F7	computed=3	measured=4	comment=
@@ -528,7 +528,7 @@ VTE_VERSION=8401
 🏉	U+1F3C9	computed=2	measured=2	comment=
 🏊	U+1F3CA	computed=2	measured=2	comment=
 🏋️	U+1F3CB U+FE0F	computed=3	measured=4	comment=
-🏌️	U+1F3CC U+FE0F	computed=3	measured=4	comment=3 correct, 2ch wide
+🏌️	U+1F3CC U+FE0F	computed=3	measured=4	comment=
 🏍️	U+1F3CD U+FE0F	computed=3	measured=4	comment=
 🏎️	U+1F3CE U+FE0F	computed=3	measured=4	comment=
 🏏	U+1F3CF	computed=2	measured=2	comment=
@@ -634,7 +634,7 @@ VTE_VERSION=8401
 🐿️	U+1F43F U+FE0F	computed=3	measured=4	comment=
 👀	U+1F440	computed=2	measured=2	comment=
 👁️	U+1F441 U+FE0F	computed=3	measured=4	comment=
-👁️‍🗨️	U+1F441 U+FE0F U+200D U+1F5E8 U+FE0F	computed=3	measured=4	comment=toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping pair, VTE:3, still broken
+👁️‍🗨️	U+1F441 U+FE0F U+200D U+1F5E8 U+FE0F	computed=3	measured=4	comment=VTE:3 (visually), Currently, it shows an overlapping speech bubble on the eye, And the framing between the two bars is correct. Do not change how this is rendered. 
 👂	U+1F442	computed=2	measured=2	comment=
 👃	U+1F443	computed=2	measured=2	comment=
 👄	U+1F444	computed=2	measured=2	comment=
