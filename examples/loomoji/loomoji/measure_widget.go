@@ -110,13 +110,13 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	accent := loom.ColorRGB(32, 151, 185)
 	c.PaintSurface(r, loom.Style{BG: bg})
 	title := "Terminal emoji width measurement"
-	if w.review {
-		title = "Terminal emoji width review (" + string(w.filter) + ")"
+	if w.filter != MeasureFilterAll {
+		title = "Terminal emoji width measurement (" + string(w.filter) + ")"
 	}
 	w.center(c, r, 1, title, loom.Style{FG: accent, Bold: true})
 	page := w.PageGlyphs()
 	if len(page) == 0 {
-		w.center(c, r, r.H/2, "All glyphs are recorded. Press Esc to finish.", loom.Style{FG: fg})
+		w.center(c, r, r.H/2, "No glyphs match the current filter. Press Tab or f to change filter, or q to exit.", loom.Style{FG: fg})
 		return
 	}
 	w.center(c, r, 2, fmt.Sprintf("Page %d   %d glyphs remaining", w.page+1, w.Remaining()), loom.Style{FG: muted})
@@ -139,7 +139,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		comment = "Comment: " + string(w.comment) + "▏"
 	}
 	w.center(c, r, r.H-3, comment, loom.Style{FG: fg})
-	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  c: comment  Tab: review  f: filter  Enter/PgDn: save page  PgUp: back  q: quit"
+	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  c: comment  Tab/f: filter (" + string(w.filter) + ")  Enter/PgDn: save page  PgUp: back  q: quit"
 	if w.saveErr != nil {
 		footer = "Save error: " + w.saveErr.Error()
 	}
@@ -159,16 +159,9 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 		return true
 	}
 	switch key {
-	case "tab":
-		w.review = !w.review
-		w.filter = MeasureFilterAll
+	case "tab", "f":
+		w.filter = nextMeasureFilter(w.filter)
 		w.refreshGlyphs()
-		return false
-	case "f":
-		if w.review {
-			w.filter = nextMeasureFilter(w.filter)
-			w.refreshGlyphs()
-		}
 		return false
 	}
 	page := w.PageGlyphs()
@@ -201,16 +194,12 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 
 func (w *MeasureWidget) refreshGlyphs() {
 	all := uniqueGlyphs()
-	if w.review {
-		w.glyphs = w.store.Review(all, w.filter)
-		if w.differsFromLoom {
-			w.glyphs = w.store.Review(w.glyphs, MeasureFilterDiffersFromLoom)
-		}
-		if w.hasComment {
-			w.glyphs = w.store.Review(w.glyphs, MeasureFilterHasComment)
-		}
-	} else {
-		w.glyphs = w.store.Unmeasured(all)
+	w.glyphs = w.store.Filter(all, w.filter)
+	if w.differsFromLoom {
+		w.glyphs = w.store.Filter(w.glyphs, MeasureFilterDiffersFromLoom)
+	}
+	if w.hasComment {
+		w.glyphs = w.store.Filter(w.glyphs, MeasureFilterHasComment)
 	}
 	w.page = 0
 	w.selected = 0
@@ -219,6 +208,7 @@ func (w *MeasureWidget) refreshGlyphs() {
 func nextMeasureFilter(filter MeasureFilter) MeasureFilter {
 	filters := []MeasureFilter{
 		MeasureFilterAll,
+		MeasureFilterUnassessed,
 		MeasureFilterWidth1,
 		MeasureFilterWidth2,
 		MeasureFilterWidth3,

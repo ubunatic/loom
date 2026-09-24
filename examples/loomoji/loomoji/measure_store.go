@@ -27,6 +27,7 @@ type MeasureFilter string
 
 const (
 	MeasureFilterAll             MeasureFilter = "all"
+	MeasureFilterUnassessed      MeasureFilter = "unassessed"
 	MeasureFilterWidth1          MeasureFilter = "width-1"
 	MeasureFilterWidth2          MeasureFilter = "width-2"
 	MeasureFilterWidth3          MeasureFilter = "width-3"
@@ -147,11 +148,20 @@ func (s *MeasurementStore) Unmeasured(glyphs []string) []string {
 	return result
 }
 
-// Review returns recorded glyphs matching filter, preserving input order.
-func (s *MeasurementStore) Review(glyphs []string, filter MeasureFilter) []string {
+// Filter returns glyphs matching filter, preserving input order.
+func (s *MeasurementStore) Filter(glyphs []string, filter MeasureFilter) []string {
+	if filter == "" || filter == MeasureFilterAll {
+		return append([]string(nil), glyphs...)
+	}
 	result := make([]string, 0, len(glyphs))
 	for _, glyph := range glyphs {
 		measurement, exists := s.Entries[glyph]
+		if filter == MeasureFilterUnassessed || filter == "unmeasured" {
+			if !exists || (!measurement.Answered && measurement.MeasuredWidth == 0) {
+				result = append(result, glyph)
+			}
+			continue
+		}
 		if !exists || (!measurement.Answered && measurement.MeasuredWidth == 0) {
 			continue
 		}
@@ -160,6 +170,11 @@ func (s *MeasurementStore) Review(glyphs []string, filter MeasureFilter) []strin
 		}
 	}
 	return result
+}
+
+// Review returns recorded glyphs matching filter, preserving input order.
+func (s *MeasurementStore) Review(glyphs []string, filter MeasureFilter) []string {
+	return s.Filter(glyphs, filter)
 }
 
 func measurementMatchesFilter(measurement Measurement, filter MeasureFilter) bool {

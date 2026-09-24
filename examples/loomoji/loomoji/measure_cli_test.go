@@ -97,7 +97,7 @@ func TestConfigureMeasurePaneUsesFullTerminalWidth(t *testing.T) {
 	}
 }
 
-func TestMeasureSessionLoadsProfileAndSkipsAnsweredGlyphs(t *testing.T) {
+func TestMeasureSessionLoadsProfileAndShowsAllGlyphsByDefault(t *testing.T) {
 	dir := t.TempDir()
 	profile := TerminalProfile{Term: "screen-256color", TermProgram: "tmux"}
 	jsonPath, textPath := profile.Paths(dir)
@@ -115,9 +115,18 @@ func TestMeasureSessionLoadsProfileAndSkipsAnsweredGlyphs(t *testing.T) {
 	if widget.store.Profile != profile {
 		t.Errorf("loaded profile = %#v, want %#v", widget.store.Profile, profile)
 	}
-	if widget.CurrentGlyph() == first {
-		t.Fatalf("session queued already answered glyph %q", first)
+	if widget.CurrentGlyph() != first {
+		t.Fatalf("session did not show first glyph %q in default all mode", first)
 	}
+
+	unassessedWidget, err := newMeasureSession(profile, dir, MeasureOptions{Filter: MeasureFilterUnassessed})
+	if err != nil {
+		t.Fatalf("newMeasureSession(unassessed) error = %v", err)
+	}
+	if unassessedWidget.CurrentGlyph() == first {
+		t.Fatalf("unassessed session queued already answered glyph %q", first)
+	}
+
 	widget.HandleKey(keyText("0"))
 	widget.HandleKey(loom.KeyEvent{Key: "enter"})
 	loaded, err := LoadMeasurementStore(jsonPath)
