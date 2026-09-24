@@ -537,7 +537,7 @@ func TestParseANSIPropertyValidCells(t *testing.T) {
 					t.Errorf("input %q: continuation at index 0", input)
 				}
 				prevCell := cells[i-1]
-				if loom.StringWidth(prevCell.Text) != 2 {
+				if !prevCell.Continuation && loom.StringWidth(prevCell.Text) < 2 {
 					t.Errorf("input %q: continuation at %d not after wide cell", input, i)
 				}
 			}

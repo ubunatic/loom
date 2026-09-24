@@ -3,7 +3,10 @@
 
 package measure
 
-import "testing"
+import (
+	"os"
+	"testing"
+)
 
 func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 	for _, tc := range []struct {
@@ -16,12 +19,64 @@ func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 		{name: "combining", text: "e\u0301", want: 1},
 		{name: "wide", text: "界", want: 2},
 		{name: "graph", text: "⣿", want: 1},
+		{name: "vs16_double_exclamation", text: "‼️", want: 2},
+		{name: "vs16_interrobang", text: "⁉️", want: 2},
+		{name: "vs16_warning", text: "⚠️", want: 2},
+		{name: "vs16_sun", text: "☀️", want: 2},
+		{name: "vs16_point_up", text: "☝️", want: 2},
+		{name: "flag_de", text: "🇩🇪", want: 2},
+		{name: "zwj_family", text: "👨‍👩‍👧", want: 2},
+		{name: "zwj_heart_on_fire", text: "❤️‍🔥", want: 2},
+		{name: "zwj_polar_bear", text: "🐻‍❄️", want: 2},
+		{name: "zwj_black_cat", text: "🐈‍⬛", want: 2},
+		{name: "zwj_mending_heart", text: "❤️‍🩹", want: 2},
+		{name: "vs16_hand_with_fingers_splayed", text: "🖐️", want: 2},
+		{name: "vs16_hot_pepper", text: "🌶️", want: 2},
+		{name: "override_raised_fist", text: "✊", want: 2},
+		{name: "override_high_voltage", text: "⚡", want: 2},
+		{name: "override_sparkles", text: "✨", want: 2},
+		{name: "override_coffee", text: "☕", want: 2},
+		{name: "override_long_left_arrow", text: "⟵", want: 2},
+		{name: "override_long_right_double_arrow", text: "⟹", want: 2},
+		{name: "override_long_left_right_arrow", text: "⟷", want: 3},
+		{name: "standard_emoji", text: "😀", want: 2},
+		{name: "standard_arrow", text: "←", want: 1},
+		{name: "mixed_line", text: "Test中文♠😀", want: 11},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if got := StringWidth(tc.text); got != tc.want {
 				t.Fatalf("StringWidth(%q)=%d, want %d", tc.text, got, tc.want)
 			}
 		})
+	}
+}
+
+func TestEmojiSpecLoadAndReconcile(t *testing.T) {
+	data, err := os.ReadFile("../spec/emoji.yaml")
+	if err != nil {
+		t.Fatalf("read ../spec/emoji.yaml: %v", err)
+	}
+	if err := LoadEmojiSpecYAML(data); err != nil {
+		t.Fatalf("LoadEmojiSpecYAML() error = %v", err)
+	}
+	spec := ActiveEmojiSpec()
+	if spec.VS16DefaultWidth != 2 {
+		t.Errorf("VS16DefaultWidth = %d, want 2", spec.VS16DefaultWidth)
+	}
+	if spec.ZWJDefaultWidth != 2 {
+		t.Errorf("ZWJDefaultWidth = %d, want 2", spec.ZWJDefaultWidth)
+	}
+	if spec.FlagDefaultWidth != 2 {
+		t.Errorf("FlagDefaultWidth = %d, want 2", spec.FlagDefaultWidth)
+	}
+	if len(spec.Overrides) == 0 {
+		t.Error("spec.Overrides is empty")
+	}
+	if got := RuneWidth('✊'); got != 2 {
+		t.Errorf("RuneWidth('✊') = %d, want 2", got)
+	}
+	if got := RuneWidth('⟷'); got != 3 {
+		t.Errorf("RuneWidth('⟷') = %d, want 3", got)
 	}
 }
 
@@ -133,6 +188,13 @@ func TestMeasureOldNewParity(t *testing.T) {
 		"界",
 		"⣿",
 		"👍emoji",
+		"‼️",
+		"🇩🇪",
+		"👨‍👩‍👧",
+		"✊",
+		"⟵",
+		"⟷",
+		"Test中文♠😀",
 		"CPU\n界界\n",
 		"\x1b]title\nhidden\x07X\nY",
 		"\x1b[31",
@@ -183,7 +245,6 @@ func TestMeasureOldNewParity(t *testing.T) {
 
 func TestFastMeasureEnvVarToggle(t *testing.T) {
 	tc := "\x1b[31mERROR\x1b[0m: Failed"
-
 	t.Setenv("LOOM_FAST_MEASURE", "0")
 	if got := StringWidth(tc); got != 13 {
 		t.Errorf("StringWidth with LOOM_FAST_MEASURE=0 got %d, want 13", got)

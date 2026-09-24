@@ -118,14 +118,14 @@ func TestEvaluateVTEWidth(t *testing.T) {
 		computed int
 		wantVTE  int
 	}{
-		{glyph: "‼️", computed: 1, wantVTE: 2},
-		{glyph: "⁉️", computed: 1, wantVTE: 2},
-		{glyph: "⚠️", computed: 1, wantVTE: 2},
-		{glyph: "☀️", computed: 1, wantVTE: 2},
-		{glyph: "☝️", computed: 1, wantVTE: 2},
-		{glyph: "🇩🇪", computed: 4, wantVTE: 2},
-		{glyph: "👨‍👩‍👧", computed: 6, wantVTE: 2},
-		{glyph: "✊", computed: 1, wantVTE: 2},
+		{glyph: "‼️", computed: 2, wantVTE: 2},
+		{glyph: "⁉️", computed: 2, wantVTE: 2},
+		{glyph: "⚠️", computed: 2, wantVTE: 2},
+		{glyph: "☀️", computed: 2, wantVTE: 2},
+		{glyph: "☝️", computed: 2, wantVTE: 2},
+		{glyph: "🇩🇪", computed: 2, wantVTE: 2},
+		{glyph: "👨‍👩‍👧", computed: 2, wantVTE: 2},
+		{glyph: "✊", computed: 2, wantVTE: 2},
 		{glyph: "😀", computed: 2, wantVTE: 2},
 		{glyph: "←", computed: 1, wantVTE: 1},
 		{glyph: "a", computed: 1, wantVTE: 1},

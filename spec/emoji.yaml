@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=schemas/emoji.schema.json
+vs16_default_width: 2
+zwj_default_width: 2
+flag_default_width: 2
+
+overrides:
+  # Emoji presentation symbols (U+270A, U+270B, etc.)
+  - glyph: "✊"
+    codepoints:
+      - "U+270A"
+    width: 2
+    note: "raised fist, emoji presentation"
+
+  - glyph: "✋"
+    codepoints:
+      - "U+270B"
+    width: 2
+    note: "raised hand, emoji presentation"
+
+  - glyph: "✌"
+    codepoints:
+      - "U+270C"
+    width: 2
+    note: "victory hand, emoji presentation"
+
+  - glyph: "✍"
+    codepoints:
+      - "U+270D"
+    width: 2
+    note: "writing hand, emoji presentation"
+
+  - glyph: "✨"
+    codepoints:
+      - "U+2728"
+    width: 2
+    note: "sparkles, emoji presentation"
+
+  - glyph: "⚡"
+    codepoints:
+      - "U+26A1"
+    width: 2
+    note: "high voltage, emoji presentation"
+
+  - glyph: "⚽"
+    codepoints:
+      - "U+26BD"
+    width: 2
+    note: "soccer ball, emoji presentation"
+
+  - glyph: "⚾"
+    codepoints:
+      - "U+26BE"
+    width: 2
+    note: "baseball, emoji presentation"
+
+  - glyph: "⛄"
+    codepoints:
+      - "U+26C4"
+    width: 2
+    note: "snowman without snow, emoji presentation"
+
+  - glyph: "⛅"
+    codepoints:
+      - "U+26C5"
+    width: 2
+    note: "sun behind cloud, emoji presentation"
+
+  - glyph: "☕"
+    codepoints:
+      - "U+2615"
+    width: 2
+    note: "hot beverage, emoji presentation"
+
+  - glyph: "⟵"
+    codepoints:
+      - "U+27F5"
+    width: 2
+    note: "long leftwards arrow"
+
+  - glyph: "⟶"
+    codepoints:
+      - "U+27F6"
+    width: 2
+    note: "long rightwards arrow"
+
+  - glyph: "⟹"
+    codepoints:
+      - "U+27F9"
+    width: 2
+    note: "long rightwards double arrow"
+
+  - glyph: "⟷"
+    codepoints:
+      - "U+27F7"
+    width: 3
+    note: "long left right arrow"
+
+  - glyph: "⟺"
+    codepoints:
+      - "U+27FA"
+    width: 3
+    note: "long left right double arrow"

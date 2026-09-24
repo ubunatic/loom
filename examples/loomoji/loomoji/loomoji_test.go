@@ -188,15 +188,15 @@ func TestGridCellsFitWideIcons(t *testing.T) {
 	p := newPicker()
 	p.entries = []entry{{icon: "👨‍👩‍👧‍👦", name: "family", group: grpFaces}, {icon: "😀", name: "face", group: grpFaces}}
 	p.items = []int{0, 1}
-	canvas := loom.NewCanvas(14, 1)
-	p.drawGrid(canvas, loom.Rect{X: 0, Y: 0, W: 14, H: 1})
+	canvas := loom.NewCanvas(6, 1)
+	p.drawGrid(canvas, loom.Rect{X: 0, Y: 0, W: 6, H: 1})
 	if p.cellWidth != loom.StringWidth(p.entries[0].icon) {
 		t.Fatalf("cell width = %d, want %d", p.cellWidth, loom.StringWidth(p.entries[0].icon))
 	}
 	if p.cols != 1 {
 		t.Fatalf("columns = %d, want 1 when two two-cell icons do not fit side by side", p.cols)
 	}
-	if got := loom.StringWidth(canvas.Row(0)); got > 14 {
+	if got := loom.StringWidth(canvas.Row(0)); got > 6 {
 		t.Fatalf("rendered row width %d exceeds canvas width", got)
 	}
 }

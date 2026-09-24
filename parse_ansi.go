@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
-	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
@@ -29,13 +28,10 @@ func ParseANSI(s string) []Cell {
 	return ParseANSIOld(s)
 }
 
-// ParseANSINew is the optimized zero-allocation ANSI parser that performs in-place
-// rune cluster scanning over []rune slices and pre-allocates cell slice capacity.
+// ParseANSINew is the optimized ANSI parser that performs cluster collection
+// and cell mapping with continuation cells for wide characters.
 func ParseANSINew(s string) []Cell {
-	if s == "" {
-		return nil
-	}
-	cells := make([]Cell, 0, len(s))
+	var cells []Cell
 	style := Style{}
 
 	rs := []rune(s)
@@ -75,34 +71,41 @@ func ParseANSINew(s string) []Cell {
 		}
 
 		r := rs[i]
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) {
 			i++
 			continue
 		}
 
-		w := measure.RuneWidth(r)
-		if w == 0 {
-			// Standalone combining mark without base
-			i++
-			continue
-		}
-
-		// Collect base rune plus any subsequent zero-width combining marks into a cluster
+		// Collect base rune plus any subsequent combining marks / variation selectors / ZWJs
 		j := i + 1
-		for j < n && (unicode.Is(unicode.Mn, rs[j]) || unicode.Is(unicode.Me, rs[j])) {
+		if r >= 0x1F1E6 && r <= 0x1F1FF && j < n && rs[j] >= 0x1F1E6 && rs[j] <= 0x1F1FF {
 			j++
+		} else {
+			for j < n {
+				next := rs[j]
+				if next == 0x200D {
+					j++
+					if j < n {
+						j++
+					}
+					continue
+				}
+				if next == 0xFE0F || next == 0xFE0E || unicode.Is(unicode.Mn, next) || unicode.Is(unicode.Me, next) {
+					j++
+					continue
+				}
+				break
+			}
 		}
 
 		cluster := string(rs[i:j])
-		if w == 2 {
-			// Wide character: add lead cell and continuation cell
+		w := measure.StringWidth(cluster)
+		if w > 0 {
 			cells = append(cells, Cell{Text: cluster, Style: style})
-			cells = append(cells, Cell{Style: style, Continuation: true})
-		} else {
-			// Normal width character (w == 1)
-			cells = append(cells, Cell{Text: cluster, Style: style})
+			for k := 1; k < w; k++ {
+				cells = append(cells, Cell{Style: style, Continuation: true})
+			}
 		}
-
 		i = j
 	}
 
@@ -115,16 +118,17 @@ func ParseANSIOld(s string) []Cell {
 	style := Style{}
 
 	rs := []rune(s)
-	for i := 0; i < len(rs); {
+	n := len(rs)
+	for i := 0; i < n; {
 		// Check for CSI sequence: ESC [ ... m
-		if rs[i] == '\x1b' && i+1 < len(rs) && rs[i+1] == '[' {
+		if rs[i] == '\x1b' && i+1 < n && rs[i+1] == '[' {
 			// Find the end of the sequence (terminated by a letter in range @ to ~)
 			j := i + 2
-			for j < len(rs) && (rs[j] < '@' || rs[j] > '~') {
+			for j < n && (rs[j] < '@' || rs[j] > '~') {
 				j++
 			}
 
-			if j < len(rs) {
+			if j < n {
 				// We have a complete sequence
 				if rs[j] == 'm' {
 					// SGR (Select Graphic Rendition) sequence
@@ -144,35 +148,47 @@ func ParseANSIOld(s string) []Cell {
 		}
 
 		// Check for character set designation: ESC ( ... (skip these)
-		if rs[i] == '\x1b' && i+2 < len(rs) && rs[i+1] == '(' {
+		if rs[i] == '\x1b' && i+2 < n && rs[i+1] == '(' {
 			i += 3
 			continue
 		}
 
-		// Regular character: add to cells
-		// Use text clusters to handle combining marks properly
-		clusters := measure.Clusters(string(rs[i:]))
-		if len(clusters) > 0 {
-			cluster := clusters[0]
-			w := StringWidth(cluster)
-
-			if w == 2 {
-				// Wide character: add lead cell and continuation cell
-				cells = append(cells, Cell{Text: cluster, Style: style})
-				cells = append(cells, Cell{Style: style, Continuation: true})
-			} else if w == 1 {
-				// Normal width character
-				cells = append(cells, Cell{Text: cluster, Style: style})
-			} else if w == 0 {
-				// Zero-width (combining mark or similar); skip
-				// (combining marks are already handled as part of clusters)
-			}
-
-			// Advance past the cluster
-			i += utf8.RuneCountInString(cluster)
-		} else {
+		r := rs[i]
+		if unicode.IsControl(r) {
 			i++
+			continue
 		}
+
+		j := i + 1
+		if r >= 0x1F1E6 && r <= 0x1F1FF && j < n && rs[j] >= 0x1F1E6 && rs[j] <= 0x1F1FF {
+			j++
+		} else {
+			for j < n {
+				next := rs[j]
+				if next == 0x200D {
+					j++
+					if j < n {
+						j++
+					}
+					continue
+				}
+				if next == 0xFE0F || next == 0xFE0E || unicode.Is(unicode.Mn, next) || unicode.Is(unicode.Me, next) {
+					j++
+					continue
+				}
+				break
+			}
+		}
+
+		cluster := string(rs[i:j])
+		w := StringWidth(cluster)
+		if w > 0 {
+			cells = append(cells, Cell{Text: cluster, Style: style})
+			for k := 1; k < w; k++ {
+				cells = append(cells, Cell{Style: style, Continuation: true})
+			}
+		}
+		i = j
 	}
 
 	return cells
@@ -185,17 +201,17 @@ func applySGRSequence(style Style, params string) Style {
 		return Style{}
 	}
 
+	// Split by semicolon; an empty part (e.g. ESC[;1m or ESC[1;m) counts as 0
 	parts := strings.Split(params, ";")
-
 	for i := 0; i < len(parts); i++ {
-		// Empty parts (e.g., ESC[;1m) are treated as 0
-		if parts[i] == "" {
-			parts[i] = "0"
-		}
-
-		code, err := strconv.Atoi(parts[i])
-		if err != nil {
-			continue
+		p := parts[i]
+		code := 0
+		if p != "" {
+			var err error
+			code, err = strconv.Atoi(p)
+			if err != nil {
+				continue
+			}
 		}
 
 		switch {
@@ -210,9 +226,6 @@ func applySGRSequence(style Style, params string) Style {
 		case code == 2:
 			// Dim
 			style.Dim = true
-
-		case code == 3:
-			// Italic (not supported in loom.Style, skip)
 
 		case code == 4:
 			// Underline

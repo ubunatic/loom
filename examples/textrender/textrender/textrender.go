@@ -36,10 +36,7 @@ var Cases = []TestCase{
 
 // knownDivergences records library behavior that differs from modern terminal
 // cluster widths; WantWidth remains the terminal expectation.
-var knownDivergences = map[string]int{
-	"ZWJ sequence": 6,
-	"Flag":         4,
-}
+var knownDivergences = map[string]int{}
 
 type textRenderApp struct {
 	tabs *loom.Tabs

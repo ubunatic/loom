@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"golang.org/x/sys/unix"
 )
 
 type testWidget struct {
@@ -368,5 +369,9 @@ func skipWithoutTTY(t *testing.T) {
 	if err != nil {
 		t.Skipf("requires /dev/tty: %v", err)
 	}
-	_ = tty.Close()
+	defer tty.Close()
+	pgrp, err := unix.IoctlGetInt(int(tty.Fd()), unix.TIOCGPGRP)
+	if err != nil || pgrp != unix.Getpgrp() {
+		t.Skip("skipping test requiring foreground /dev/tty")
+	}
 }

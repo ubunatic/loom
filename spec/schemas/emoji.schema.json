@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom emoji and sequence width specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "vs16_default_width",
+    "zwj_default_width",
+    "flag_default_width",
+    "overrides"
+  ],
+  "properties": {
+    "vs16_default_width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "description": "Visual cell width for VS16 (\\uFE0F) emoji presentation sequences"
+    },
+    "zwj_default_width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 4,
+      "description": "Visual cell width for joined ZWJ (\\u200D) emoji sequences"
+    },
+    "flag_default_width": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 2,
+      "description": "Visual cell width for regional indicator flag pairs"
+    },
+    "overrides": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["glyph", "width"],
+        "properties": {
+          "glyph": {
+            "type": "string",
+            "minLength": 1
+          },
+          "codepoints": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "width": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 4
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

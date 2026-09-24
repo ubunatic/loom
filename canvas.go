@@ -140,7 +140,7 @@ func (c *Canvas) setOld(x, y int, cell Cell, claim bool) {
 		c.claimed[y][x] = true
 	}
 	if cell.Continuation {
-		if x > 0 && StringWidth(c.cells[y][x-1].Text) == 2 {
+		if x > 0 && (c.cells[y][x-1].Continuation || StringWidth(c.cells[y][x-1].Text) >= 2) {
 			c.cells[y][x] = cell
 		}
 		return
@@ -151,7 +151,7 @@ func (c *Canvas) setOld(x, y int, cell Cell, claim bool) {
 		cell.Text = clusters[0]
 	}
 	w := StringWidth(cell.Text)
-	if w == 2 && x+1 >= c.cols {
+	if w >= 2 && x+w-1 >= c.cols {
 		return
 	}
 	if cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
@@ -167,14 +167,14 @@ func (c *Canvas) setOld(x, y int, cell Cell, claim bool) {
 		c.cells[y][col] = blank
 	}
 	clear(x)
-	if w == 2 {
-		clear(x + 1)
+	for k := 1; k < w; k++ {
+		clear(x + k)
 	}
 	c.cells[y][x] = cell
-	if w == 2 {
+	for k := 1; k < w && x+k < c.cols; k++ {
 		cont := cell
 		cont.Continuation = true
-		c.cells[y][x+1] = cont
+		c.cells[y][x+k] = cont
 	}
 }
 
@@ -205,7 +205,7 @@ func (c *Canvas) setNew(x, y int, cell Cell, claim bool) {
 	}
 	if cell.Continuation {
 		// Only a real wide lead may own a continuation cell.
-		if x > 0 && StringWidth(c.cells[y][x-1].Text) == 2 {
+		if x > 0 && (c.cells[y][x-1].Continuation || StringWidth(c.cells[y][x-1].Text) >= 2) {
 			c.cells[y][x] = cell
 		}
 		return
@@ -224,7 +224,7 @@ func (c *Canvas) setNew(x, y int, cell Cell, claim bool) {
 		}
 		w = StringWidth(cell.Text)
 	}
-	if w == 2 && x+1 >= c.cols {
+	if w >= 2 && x+w-1 >= c.cols {
 		return
 	}
 	// A foreground cell without an explicit background inherits the surface
@@ -244,12 +244,12 @@ func (c *Canvas) setNew(x, y int, cell Cell, claim bool) {
 		c.cells[y][col] = blank
 	}
 	clear(x)
-	if w == 2 {
-		clear(x + 1)
+	for k := 1; k < w; k++ {
+		clear(x + k)
 	}
 	c.cells[y][x] = cell
-	if w == 2 {
-		c.cells[y][x+1] = Cell{Style: cell.Style, Continuation: true}
+	for k := 1; k < w && x+k < c.cols; k++ {
+		c.cells[y][x+k] = Cell{Style: cell.Style, Continuation: true}
 	}
 }
 

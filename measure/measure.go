@@ -36,8 +36,8 @@ func StringWidth(text string) int {
 // StringWidthOld is the legacy StringWidth preserved for fallback and comparison.
 func StringWidthOld(text string) int {
 	w := 0
-	for _, r := range plainTerminalTextOld(text) {
-		w += RuneWidth(r)
+	for _, c := range ClustersOld(text) {
+		w += ClusterWidth(c)
 	}
 	return w
 }
@@ -97,20 +97,126 @@ func StringWidthNew(text string) int {
 		}
 
 		r, sz := utf8.DecodeRuneInString(text[i:])
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 			i += sz
 			continue
 		}
 
-		w += RuneWidth(r)
+		// Check for regional indicator pair (flag)
+		if isRegionalIndicator(r) {
+			nextIdx := i + sz
+			if nextIdx < n {
+				r2, sz2 := utf8.DecodeRuneInString(text[nextIdx:])
+				if isRegionalIndicator(r2) {
+					w += ActiveEmojiSpec().FlagDefaultWidth
+					i = nextIdx + sz2
+					continue
+				}
+			}
+		}
+
+		// Check for base rune + modifiers / ZWJ / VS16
+		start := i
+		clusterWidth := RuneWidth(r)
+		hasVS16 := false
+		hasVS15 := false
+		hasZWJ := false
+
 		i += sz
+		for i < n {
+			if text[i] == 27 {
+				break
+			}
+			nr, nsz := utf8.DecodeRuneInString(text[i:])
+			if nr == 0x200D {
+				hasZWJ = true
+				i += nsz
+				if i < n {
+					_, jsz := utf8.DecodeRuneInString(text[i:])
+					i += jsz
+				}
+				continue
+			}
+			if nr == 0xFE0F {
+				hasVS16 = true
+				i += nsz
+				continue
+			}
+			if nr == 0xFE0E {
+				hasVS15 = true
+				i += nsz
+				continue
+			}
+			if unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !isFormatRune(nr)) {
+				i += nsz
+				continue
+			}
+			break
+		}
+
+		if gw, ok := getGlyphOverride(text[start:i]); ok {
+			w += gw
+		} else if hasZWJ {
+			w += ActiveEmojiSpec().ZWJDefaultWidth
+		} else if hasVS16 {
+			w += ActiveEmojiSpec().VS16DefaultWidth
+		} else if hasVS15 {
+			w += 1
+		} else {
+			w += clusterWidth
+		}
 	}
 	return w
 }
 
+func isFormatRune(r rune) bool {
+	return r == 0xFE0F || r == 0xFE0E || r == 0x200D || r == 0x200C
+}
+
+func isRegionalIndicator(r rune) bool {
+	return r >= 0x1F1E6 && r <= 0x1F1FF
+}
+
+// ClusterWidth returns the visual column width of a single text cluster.
+func ClusterWidth(cluster string) int {
+	if cluster == "" {
+		return 0
+	}
+	if w, ok := getGlyphOverride(cluster); ok {
+		return w
+	}
+	rs := []rune(cluster)
+	if len(rs) == 0 {
+		return 0
+	}
+	// Flag sequence: two regional indicator symbols (U+1F1E6..U+1F1FF)
+	if len(rs) == 2 && isRegionalIndicator(rs[0]) && isRegionalIndicator(rs[1]) {
+		return ActiveEmojiSpec().FlagDefaultWidth
+	}
+	// ZWJ sequences: rendered as single joined emoji in modern terminals
+	if strings.ContainsRune(cluster, '\u200D') {
+		return ActiveEmojiSpec().ZWJDefaultWidth
+	}
+	// VS16 (Variation Selector-16) emoji presentation: width 2
+	if strings.ContainsRune(cluster, '\uFE0F') {
+		return ActiveEmojiSpec().VS16DefaultWidth
+	}
+	// VS15 (Variation Selector-15) text presentation: width 1
+	if strings.ContainsRune(cluster, '\uFE0E') {
+		return 1
+	}
+	return RuneWidth(rs[0])
+}
+
 // RuneWidth returns the visual column width of a single rune.
 func RuneWidth(r rune) int {
-	if unicode.IsControl(r) || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || unicode.Is(unicode.Cf, r) {
+	if unicode.IsControl(r) || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) {
+		return 0
+	}
+	if w, ok := getRuneOverride(r); ok {
+		return w
+	}
+	if unicode.Is(unicode.Cf, r) {
 		return 0
 	}
 	if r >= 0x1100 && r <= 0x115f || r >= 0x2e80 && r <= 0xa4cf && r != 0x303f || r >= 0xac00 && r <= 0xd7a3 || r >= 0xf900 && r <= 0xfaff || r >= 0xfe10 && r <= 0xfe19 || r >= 0xfe30 && r <= 0xfe6f || r >= 0xff01 && r <= 0xff60 || r >= 0xffe0 && r <= 0xffe6 || r >= 0x20000 && r <= 0x3fffd {
@@ -123,7 +229,6 @@ func RuneWidth(r rune) int {
 }
 
 // Clusters returns printable base-rune clusters with combining marks attached.
-// Emoji ZWJ sequences are intentionally not treated as one cluster.
 func Clusters(text string) []string {
 	if useFastMeasure() {
 		return ClustersNew(text)
@@ -133,15 +238,44 @@ func Clusters(text string) []string {
 
 // ClustersOld is the legacy Clusters implementation preserved for comparison.
 func ClustersOld(text string) []string {
+	plain := plainTerminalTextOld(text)
+	if plain == "" {
+		return nil
+	}
 	var result []string
-	for _, r := range plainTerminalTextOld(text) {
-		if RuneWidth(r) == 0 {
+	rs := []rune(plain)
+	n := len(rs)
+	for i := 0; i < n; {
+		if (unicode.Is(unicode.Mn, rs[i]) || unicode.Is(unicode.Me, rs[i])) && !isFormatRune(rs[i]) {
 			if len(result) > 0 {
-				result[len(result)-1] += string(r)
+				result[len(result)-1] += string(rs[i])
 			}
-		} else {
-			result = append(result, string(r))
+			i++
+			continue
 		}
+		if isRegionalIndicator(rs[i]) && i+1 < n && isRegionalIndicator(rs[i+1]) {
+			result = append(result, string(rs[i:i+2]))
+			i += 2
+			continue
+		}
+		start := i
+		i++
+		for i < n {
+			r := rs[i]
+			if r == 0x200D {
+				i++
+				if i < n {
+					i++
+				}
+				continue
+			}
+			if r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
+				i++
+				continue
+			}
+			break
+		}
+		result = append(result, string(rs[start:i]))
 	}
 	return result
 }
@@ -169,34 +303,45 @@ func ClustersNew(text string) []string {
 		return res
 	}
 
-	var result []string
 	plain := plainTerminalTextNew(text)
 	if plain == "" {
 		return nil
 	}
 
-	var clusterStart int
-	var lastLen int
-	var hasCluster bool
-
-	i := 0
-	n := len(plain)
-	for i < n {
-		r, sz := utf8.DecodeRuneInString(plain[i:])
-		rw := RuneWidth(r)
-		if rw == 0 {
-			if hasCluster {
-				// Extend previous cluster
-				lastLen += sz
-				result[len(result)-1] = plain[clusterStart : clusterStart+lastLen]
+	var result []string
+	rs := []rune(plain)
+	n := len(rs)
+	for i := 0; i < n; {
+		if (unicode.Is(unicode.Mn, rs[i]) || unicode.Is(unicode.Me, rs[i])) && !isFormatRune(rs[i]) {
+			if len(result) > 0 {
+				result[len(result)-1] += string(rs[i])
 			}
-		} else {
-			clusterStart = i
-			lastLen = sz
-			hasCluster = true
-			result = append(result, plain[clusterStart:clusterStart+sz])
+			i++
+			continue
 		}
-		i += sz
+		if isRegionalIndicator(rs[i]) && i+1 < n && isRegionalIndicator(rs[i+1]) {
+			result = append(result, string(rs[i:i+2]))
+			i += 2
+			continue
+		}
+		start := i
+		i++
+		for i < n {
+			r := rs[i]
+			if r == 0x200D {
+				i++
+				if i < n {
+					i++
+				}
+				continue
+			}
+			if r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
+				i++
+				continue
+			}
+			break
+		}
+		result = append(result, string(rs[start:i]))
 	}
 	return result
 }
@@ -238,7 +383,7 @@ func plainTerminalTextOld(s string) string {
 			}
 			continue
 		}
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 			continue
 		}
 		b.WriteRune(r)
@@ -278,7 +423,7 @@ func plainTerminalTextNew(s string) string {
 		// Verify no utf8 control/Cf runes
 		clean := true
 		for _, r := range s {
-			if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+			if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 				clean = false
 				break
 			}
@@ -327,7 +472,7 @@ func plainTerminalTextNew(s string) string {
 		}
 
 		r, sz := utf8.DecodeRuneInString(s[i:])
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 			i += sz
 			continue
 		}
@@ -381,55 +526,58 @@ func TruncateLeft(text string, width int, marker string) string {
 	if remain <= 0 {
 		return start
 	}
-	var trailing []string
-	used := 0
-	for i := len(clusters) - 1; i >= 0; i-- {
-		w := StringWidth(clusters[i])
-		if used+w > remain {
-			break
-		}
-		trailing = append([]string{clusters[i]}, trailing...)
-		used += w
-	}
-	return start + strings.Join(trailing, "")
+	return start + tailClusters(clusters, remain)
 }
 
-// Fit keeps the longest prefix of text that fits within width terminal cells.
-// It strips terminal controls and never splits a combining cluster or a wide
-// glyph. A non-positive width returns an empty string.
+func tailClusters(clusters []string, width int) string {
+	var result []string
+	current := 0
+	for i := len(clusters) - 1; i >= 0; i-- {
+		w := StringWidth(clusters[i])
+		if current+w > width {
+			break
+		}
+		result = append([]string{clusters[i]}, result...)
+		current += w
+	}
+	return strings.Join(result, "")
+}
+
+func fitClusters(clusters []string, width int) string {
+	var result []string
+	current := 0
+	for _, c := range clusters {
+		w := StringWidth(c)
+		if current+w > width {
+			break
+		}
+		result = append(result, c)
+		current += w
+	}
+	return strings.Join(result, "")
+}
+
+// Fit returns the longest prefix of text that fits within width terminal cells.
+// Terminal styling is stripped; combining marks and wide glyphs are never split.
 func Fit(text string, width int) string {
 	if width <= 0 {
 		return ""
 	}
-	return fitClusters(Clusters(text), width)
+	clusters := Clusters(text)
+	return fitClusters(clusters, width)
 }
 
-// Pad fits text to at most width terminal cells and pads the remaining cells.
-// When right is true, padding is placed before the text. Text is normalized by
-// the same terminal-cell policy as Fit.
+// Pad extends text to width terminal cells using spaces.
 func Pad(text string, width int, right bool) string {
-	if width <= 0 {
-		return ""
+	w := StringWidth(text)
+	if w >= width {
+		return text
 	}
-	text = Fit(text, width)
-	padding := strings.Repeat(" ", width-StringWidth(text))
+	padding := strings.Repeat(" ", width-w)
 	if right {
 		return padding + text
 	}
 	return text + padding
-}
-
-func fitClusters(clusters []string, width int) string {
-	var result strings.Builder
-	for _, cluster := range clusters {
-		cells := StringWidth(cluster)
-		if cells > width {
-			break
-		}
-		result.WriteString(cluster)
-		width -= cells
-	}
-	return result.String()
 }
 
 func plainTerminalLines(s string) []string {
@@ -473,7 +621,7 @@ func plainTerminalLinesOld(s string) []string {
 			lines = append(lines, "")
 			continue
 		}
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 			continue
 		}
 		lines[len(lines)-1] += string(r)
@@ -522,7 +670,6 @@ func plainTerminalLinesNew(s string) []string {
 					i++
 				}
 			case ']', 'P', '^', '_':
-				i++
 				for i < n {
 					if s[i] == 7 {
 						i++
@@ -537,7 +684,6 @@ func plainTerminalLinesNew(s string) []string {
 			}
 			continue
 		}
-
 		if b == '\n' {
 			lines = append(lines, current.String())
 			current.Reset()
@@ -546,7 +692,7 @@ func plainTerminalLinesNew(s string) []string {
 		}
 
 		r, sz := utf8.DecodeRuneInString(s[i:])
-		if unicode.IsControl(r) || unicode.Is(unicode.Cf, r) {
+		if unicode.IsControl(r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
 			i += sz
 			continue
 		}
