@@ -576,7 +576,7 @@ VTE_VERSION=8401
 🐆	U+1F406	computed=2	measured=2	comment=
 🐇	U+1F407	computed=2	measured=2	comment=
 🐈	U+1F408	computed=2	measured=2	comment=
-🐈‍⬛	U+1F408 U+200D U+2B1B	computed=4	measured=4	comment=4ch wide: shows 🐈 (2ch) next to ⬛ (2ch), renders correctly consuming 4ch
+🐈‍⬛	U+1F408 U+200D U+2B1B	computed=4	measured=4	comment=4ch wide: shows 🐈 (2ch) next to ⬛ (2ch)
 🐉	U+1F409	computed=2	measured=2	comment=
 🐊	U+1F40A	computed=2	measured=2	comment=
 🐋	U+1F40B	computed=2	measured=2	comment=
@@ -634,7 +634,7 @@ VTE_VERSION=8401
 🐿️	U+1F43F U+FE0F	computed=2	measured=2	mode=pad-1	comment=
 👀	U+1F440	computed=2	measured=2	comment=
 👁️	U+1F441 U+FE0F	computed=2	measured=2	mode=pad-1	comment=
-👁️‍🗨️	U+1F441 U+FE0F U+200D U+1F5E8 U+FE0F	computed=3	measured=3	mode=pad-1	comment=VTE:3 (visually), Currently, it shows an overlapping speech bubble on the eye, And the framing between the two bars is correct. Do not change how this is rendered. 
+👁️‍🗨️	U+1F441 U+FE0F U+200D U+1F5E8 U+FE0F	computed=3	measured=3	mode=pad-1	comment=
 👂	U+1F442	computed=2	measured=2	comment=
 👃	U+1F443	computed=2	measured=2	comment=
 👄	U+1F444	computed=2	measured=2	comment=

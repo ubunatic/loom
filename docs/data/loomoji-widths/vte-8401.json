@@ -6410,7 +6410,7 @@
       "measured_width": 4,
       "render_mode": "default",
       "answered": true,
-      "comment": "4ch wide: shows 🐈 (2ch) next to ⬛ (2ch), renders correctly consuming 4ch"
+      "comment": "4ch wide: shows 🐈 (2ch) next to ⬛ (2ch)"
     },
     "🐉": {
       "glyph": "🐉",
@@ -7057,8 +7057,7 @@
       "vte_width": 4,
       "measured_width": 3,
       "render_mode": "pad-1",
-      "answered": true,
-      "comment": "VTE:3 (visually), Currently, it shows an overlapping speech bubble on the eye, And the framing between the two bars is correct. Do not change how this is rendered. "
+      "answered": true
     },
     "👂": {
       "glyph": "👂",
