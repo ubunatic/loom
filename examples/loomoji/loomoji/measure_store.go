@@ -51,31 +51,6 @@ type Measurement struct {
 
 // EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.
 func EvaluateVTEWidth(glyph string) int {
-	if glyph == "" {
-		return 0
-	}
-	runes := []rune(glyph)
-	// Flag sequence: two regional indicator symbols (U+1F1E6..U+1F1FF)
-	if len(runes) == 2 && runes[0] >= 0x1F1E6 && runes[0] <= 0x1F1FF && runes[1] >= 0x1F1E6 && runes[1] <= 0x1F1FF {
-		return 2
-	}
-	// ZWJ sequences: rendered in modern terminal emoji presentation as width 2
-	if strings.ContainsRune(glyph, '\u200D') {
-		return 2
-	}
-	// VS16 (Variation Selector-16) emoji presentation: width 2
-	if strings.ContainsRune(glyph, '\uFE0F') {
-		return 2
-	}
-	// Explicit emoji presentation runes that standard wcwidth/measure might count as 1
-	for _, r := range runes {
-		if r == 0x270A || r == 0x270B || r == 0x270C || r == 0x270D || r == 0x2728 || r == 0x26A1 || r == 0x26BD || r == 0x26BE || r == 0x26C4 || r == 0x26C5 || r == 0x2615 || r == 0x2600 || r == 0x2601 || r == 0x2614 || r == 0x26A0 {
-			return 2
-		}
-		if measure.RuneWidth(r) == 2 {
-			return 2
-		}
-	}
 	return measure.StringWidth(glyph)
 }
 

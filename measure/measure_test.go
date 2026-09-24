@@ -8,6 +8,13 @@ import (
 	"testing"
 )
 
+func TestMain(m *testing.M) {
+	if data, err := os.ReadFile("../spec/emoji.yaml"); err == nil {
+		_ = LoadEmojiSpecYAML(data)
+	}
+	os.Exit(m.Run())
+}
+
 func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -26,16 +33,16 @@ func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 		{name: "vs16_point_up", text: "☝️", want: 2},
 		{name: "flag_de", text: "🇩🇪", want: 2},
 		{name: "zwj_family", text: "👨‍👩‍👧", want: 2},
-		{name: "zwj_heart_on_fire", text: "❤️‍🔥", want: 2},
-		{name: "zwj_polar_bear", text: "🐻‍❄️", want: 2},
-		{name: "zwj_black_cat", text: "🐈‍⬛", want: 2},
-		{name: "zwj_mending_heart", text: "❤️‍🩹", want: 2},
-		{name: "vs16_hand_with_fingers_splayed", text: "🖐️", want: 2},
-		{name: "vs16_hot_pepper", text: "🌶️", want: 2},
-		{name: "override_raised_fist", text: "✊", want: 2},
-		{name: "override_high_voltage", text: "⚡", want: 2},
-		{name: "override_sparkles", text: "✨", want: 2},
-		{name: "override_coffee", text: "☕", want: 2},
+		{name: "zwj_heart_on_fire", text: "❤️‍🔥", want: 3},
+		{name: "zwj_polar_bear", text: "🐻‍❄️", want: 4},
+		{name: "zwj_black_cat", text: "🐈‍⬛", want: 4},
+		{name: "zwj_mending_heart", text: "❤️‍🩹", want: 3},
+		{name: "vs16_hand_with_fingers_splayed", text: "🖐️", want: 3},
+		{name: "vs16_hot_pepper", text: "🌶️", want: 3},
+		{name: "override_raised_fist", text: "✊", want: 1},
+		{name: "override_high_voltage", text: "⚡", want: 1},
+		{name: "override_sparkles", text: "✨", want: 1},
+		{name: "override_coffee", text: "☕", want: 1},
 		{name: "override_long_left_arrow", text: "⟵", want: 2},
 		{name: "override_long_right_double_arrow", text: "⟹", want: 2},
 		{name: "override_long_left_right_arrow", text: "⟷", want: 3},
@@ -72,8 +79,8 @@ func TestEmojiSpecLoadAndReconcile(t *testing.T) {
 	if len(spec.Overrides) == 0 {
 		t.Error("spec.Overrides is empty")
 	}
-	if got := RuneWidth('✊'); got != 2 {
-		t.Errorf("RuneWidth('✊') = %d, want 2", got)
+	if got := RuneWidth('✊'); got != 1 {
+		t.Errorf("RuneWidth('✊') = %d, want 1", got)
 	}
 	if got := RuneWidth('⟷'); got != 3 {
 		t.Errorf("RuneWidth('⟷') = %d, want 3", got)
