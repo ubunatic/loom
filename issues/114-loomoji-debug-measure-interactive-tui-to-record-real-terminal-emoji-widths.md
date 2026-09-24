@@ -86,3 +86,13 @@ passed on 58ca4d0 yet; M3's test run must confirm M2.
 `make install` done.
 Remaining: the user's manual smoke test in a real terminal (`go run ./examples/loomoji debug --measure`).
 Caveat: the data dir `docs/data/loomoji-widths` is relative to the current directory, so run it from the repo root.
+
+### M4: page table UI (user request after the M3 demo)
+- Show 10 unmeasured glyphs at once as a table: row number 0-9, glyph between markers, codepoints,
+  loom's computed width, current answer, comment.
+- Each answer starts at loom's computed width. Keys `0`-`9` toggle that row between 1 and 2.
+- Up/down arrows select a row. `c` edits the selected row's comment (Enter saves, Esc cancels).
+  `?` marks the selected row unsure.
+- Enter (or PgDn) saves the whole page as answered and moves to the next 10. PgUp goes back one page.
+  `q` quits after saving the pages already confirmed.
+- Update the widget tests. Rows on a page that isn't confirmed stay unmeasured on disk.
