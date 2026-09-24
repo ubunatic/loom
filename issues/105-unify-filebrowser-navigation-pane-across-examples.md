@@ -86,3 +86,13 @@ Pre-Work / Required Refinements (M2):
 M2 second pass (flash37, timed out at 10 min, uncommitted WIP): added `Choice.SetItems`/`SelectIndex` so the pane keeps one stable `Choice`; frame hosts the pane. Status unknown. Escalated to terra.
 
 M2 delivered (80d9e8d, terra): filebrowser hosts the shared pane; duplicate navigation removed; `Choice.SetItems`/`SelectIndex` with unit tests. Host suite green.
+
+M3 first pass (luna, uncommitted WIP in ansiviewer `viewer.go`/`viewer_test.go`): host suite red. Escalated to flash37.
+
+Pre-Work / Required Refinements (M3):
+
+- File list renders empty (framed recording shows no rows; `TestRecordWritesOneSnapshotAfterDelay`).
+- ESC in a child dir does not go to parent (`TestBrowserEscapeGoesToParentDirectory`); framed ESC at
+  a non-root dir quits (`TestBrowserFilterAndMouseSelection` wants quit:false).
+- `q` no longer quits: `TestViewerPTYShowsFilesAndQuits` and the ansiviewer PTY smoke hang.
+- Luna routed navigation keys from the host around frame focus; prefer filebrowser's 80d9e8d wiring.
