@@ -9,6 +9,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -61,8 +62,7 @@ func TestSplashRunWatchContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
 
-	var buf bytes.Buffer
-	err := runWatch(ctx, &buf)
+	err := runWatch(ctx, Options{Watch: true})
 	if err != nil && !errors.Is(err, context.Canceled) {
 		if strings.Contains(err.Error(), "/dev/tty") || strings.Contains(err.Error(), "another pane") {
 			t.Skipf("skipping test without TTY: %v", err)
@@ -99,5 +99,104 @@ func TestInteractiveDestination(t *testing.T) {
 	}
 	if !strings.Contains(out, "Initialized Providers") {
 		t.Errorf("destination draw missing box header: %q", out)
+	}
+}
+
+func TestNewWidgetOptions(t *testing.T) {
+	w, err := NewWidget([]string{"--watch"})
+	if err != nil {
+		t.Fatalf("NewWidget(--watch) failed: %v", err)
+	}
+	if w == nil {
+		t.Fatal("NewWidget returned nil")
+	}
+
+	_, err = NewWidget([]string{"extra"})
+	if err == nil {
+		t.Fatal("expected error on unexpected arguments")
+	}
+}
+
+func TestSplashWidgetLifecycleAndTicks(t *testing.T) {
+	widget, err := NewWidget([]string{"--watch"})
+	if err != nil {
+		t.Fatalf("NewWidget failed: %v", err)
+	}
+	app, ok := widget.(*splashApp)
+	if !ok {
+		t.Fatalf("expected *splashApp, got %T", widget)
+	}
+	defer app.Close()
+
+	requester, ok := widget.(loom.PaneRequester)
+	if !ok {
+		t.Fatalf("expected loom.PaneRequester, got %T", widget)
+	}
+	req := requester.PaneRequest()
+	if !req.Resizeable {
+		t.Errorf("expected Resizeable=true, got %v", req.Resizeable)
+	}
+
+	ticker, ok := widget.(loom.Ticker)
+	if !ok {
+		t.Fatalf("expected loom.Ticker, got %T", widget)
+	}
+	if ticker.TickInterval() != 80*time.Millisecond {
+		t.Errorf("expected 80ms interval, got %v", ticker.TickInterval())
+	}
+
+	// First tick starts controller
+	ticker.Tick(time.Now())
+
+	// Dismiss splash via key
+	app.HandleKey(loom.KeyEvent{Key: "esc"})
+
+	// Advance ticks to finish transition
+	ticker.Tick(time.Now())
+	canvas := loom.NewCanvas(60, 12)
+	app.Draw(canvas, canvas.Bounds())
+	ticker.Tick(time.Now())
+
+	if !app.active {
+		t.Error("expected splash to transition to destination widget after dismissal")
+	}
+
+	// Key in active destination: 'q' should quit
+	quit := app.HandleKey(loom.KeyEvent{Key: "q"})
+	if !quit {
+		t.Error("expected 'q' in active destination to signal quit")
+	}
+}
+
+func TestSplashHostedInTabsOnChildQuit(t *testing.T) {
+	widget, err := NewWidget([]string{"--watch"})
+	if err != nil {
+		t.Fatalf("NewWidget failed: %v", err)
+	}
+	app := widget.(*splashApp)
+	defer app.Close()
+
+	var childQuitReported bool
+	tabs := loom.NewTabs(loom.Tab{Title: "Splash", Widget: app})
+	tabs.OnChildQuit = func(i int) bool {
+		childQuitReported = true
+		return false // stay alive in host
+	}
+
+	// Dismiss splash and transition to destination
+	app.Tick(time.Now())
+	app.HandleKey(loom.KeyEvent{Key: "esc"})
+	app.Tick(time.Now())
+	canvas := loom.NewCanvas(60, 12)
+	tabs.Draw(canvas, canvas.Bounds())
+	app.Tick(time.Now())
+
+	// Send 'q' key through Tabs
+	quit := tabs.HandleKey(loom.KeyEvent{Key: "q"})
+	if quit {
+		t.Error("expected Tabs.HandleKey to return false when OnChildQuit contains quit")
+	}
+	if !childQuitReported {
+		t.Error("expected Tabs.OnChildQuit to be called when child destination quits")
 	}
 }

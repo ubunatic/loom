@@ -84,6 +84,7 @@ var Registry = []Example{
 		Run:          splash.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch"},
+		NewWidget:    func(args []string) (interface{}, error) { return splash.NewWidget(args) },
 	},
 	{
 		Name:         "split",
