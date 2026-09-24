@@ -45,5 +45,6 @@
 | [studies/2026-09-20-luna-lean-sprint-candidates.md](studies/2026-09-20-luna-lean-sprint-candidates.md) | Roadmap Items Suited to `codex:luna:low` Lean Sprints |
 | [studies/2026-09-20-session-token-usage-and-cost-analysis.md](studies/2026-09-20-session-token-usage-and-cost-analysis.md) | Session Token Usage and Cost Analysis |
 | [studies/2026-09-21-lean-sprint-session-report.md](studies/2026-09-21-lean-sprint-session-report.md) | Lean Sprint Session Report: Roadmap Items with Cheap Developer Agents |
+| [studies/2026-09-24-roadmap-now-sprint-099-101-105.md](studies/2026-09-24-roadmap-now-sprint-099-101-105.md) | Roadmap "Now" sprint: 099, 101, 105 |
 
 Study files are the source of truth for this table.
