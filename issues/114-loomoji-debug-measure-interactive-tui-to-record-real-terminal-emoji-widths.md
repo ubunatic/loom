@@ -99,3 +99,6 @@ Caveat: the data dir `docs/data/loomoji-widths` is relative to the current direc
 
 ### M4 delivered: paged table (51d25ab)
 Test suite green on the rerun; make install done. User smoke pending.
+
+### M5: full-width table (user request)
+The measure table fills the full terminal width. Columns stretch; the comment column takes the remaining space. It adapts on resize.
