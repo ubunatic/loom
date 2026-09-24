@@ -1,6 +1,6 @@
 # 108 — Fix loomoji hover highlight one row above pointer (dy=-1)
 
-**Status**: Open
+**Status**: Closed — fixed in aea1135: grid mouse Y is zero-based child-local; probe passes, suite green
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
