@@ -65,3 +65,13 @@ Decisions:
   Keys `1`/`2`/`?`, comment entry, progress indicator, incremental save. Deterministic widget tests.
 - **M3 (CLI wiring)**: `loomoji debug --measure`, terminal profile detection, loads M1 data; parsing tests.
   The user does a manual smoke test in a real terminal.
+
+### M1 delivered: persistence (c5d4116)
+`MeasurementStore`, one per terminal profile. Includes Merge (keeps existing answers), Unmeasured,
+JSON and text save with atomic writes, and a format README. `0` = unsure. `make test-q1` green.
+
+### M2 Pre-Work / Required Refinements
+- `Merge` never overwrites, so the TUI can't correct an answer or add a comment afterwards. Add an explicit
+  `Set`/`Update` (last write wins) for in-session edits and going back to the previous glyph. Keep `Merge` for load-time merging.
+- `LoadMeasurementStore` fails when the file is missing. On a first run, treat that as an empty store
+  (needed for M3; add a test).
