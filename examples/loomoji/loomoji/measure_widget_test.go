@@ -54,8 +54,9 @@ func TestMeasureWidgetAnswersCommentsReviewAndIncrementalSave(t *testing.T) {
 		t.Errorf("corrected answer = %#v", got)
 	}
 	w.HandleKey(loom.KeyEvent{Key: "right"})
+	unsureGlyph := w.CurrentGlyph()
 	w.HandleKey(loom.KeyEvent{Text: "?"})
-	if got := store.Entries[secondGlyph]; got.MeasuredWidth != 0 || !got.Answered {
+	if got := store.Entries[unsureGlyph]; got.MeasuredWidth != 0 || !got.Answered {
 		t.Errorf("unsure answer = %#v", got)
 	}
 
