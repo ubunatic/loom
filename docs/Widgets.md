@@ -105,6 +105,30 @@ Loom extracts common terminal file-browsing and launch operations into clean, po
 - **Terminal-Safe Path Escaping (`DisplayPath`, `QuoteUnprintable`)**: Escapes unprintable control codes and formats paths safely for terminal display columns without corrupting layouts.
 - **Injectable Platform File Opener (`OpenFile`, `FileOpener`)**: Dispatches file launch commands (`xdg-open`, `gio`, `open`, `start`) detached from the terminal process, with mockable injection for deterministic unit tests.
 
+### Shared File Navigation Pane (`examples/filebrowser/filebrowser.NavigationPane`)
+The filebrowser example package provides a reusable `NavigationPane` for directory lists. It is a widget that hosts can place directly in a `Frame` box; it owns a stable `loom.Choice` internally and updates its items when the directory changes.
+
+```go
+nav, err := filebrowser.NewNavigationPane(dir, filebrowser.NavigationPaneOptions{
+    OnSelection: func(entry loom.FileEntry) { /* update preview or metadata */ },
+    OnActivate:  func(entry loom.FileEntry) { /* activate a selected file */ },
+    OnOpen:      func(directory loom.Directory) { /* react to navigation */ },
+    OnQuit:      func() { /* handle ESC at the configured root */ },
+})
+if err != nil {
+    return err
+}
+frame.Boxes[0].Child = nav
+```
+
+`OnSelection` runs when the current entry changes, including after directory loading. `OnActivate` handles confirmed non-directory entries. `OnOpen` runs after a directory is opened, and `OnQuit` handles ESC at the navigation root. Hosts can inspect `Directory()` and `Selected()`, style the list through `List()`, and call `SetRoot("")` when ESC should navigate to the filesystem parent without requesting a quit.
+
+`ConsumeKey` reports whether ESC or backspace belongs to the navigation contract. Hosted widgets can forward these keys to `ConsumeKey` before a frame handles other keys, preserving parent navigation and root quit behavior across focus boundaries. Other keys should pass through the normal frame routing so filtering, selection, and frame actions continue to work.
+
+The pane retains one `Choice` instance while opening directories: `Choice.SetItems` replaces the rows and resets its filter, while `SelectIndex` restores a requested row. Hosts that customize list behavior can use `List()` without replacing the pane's child widget; the frame and pane then keep a consistent child identity.
+
+The pane draws its Choice inside the rectangle supplied by its host. `Choice.HandleMouse` expects coordinates relative to that drawn rectangle, while `NavigationPane.HandleMouse` receives child-local coordinates and bridges them to the last Choice draw rectangle. Containers already translate mouse events to child-local coordinates, so callers should pass those events directly and must not subtract an additional cell.
+
 ---
 
 ## 5. Startup & Splash Transition Runner (`Pane.RunStartup`)

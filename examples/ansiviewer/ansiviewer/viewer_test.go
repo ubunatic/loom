@@ -170,10 +170,19 @@ func TestBrowserFilterAndMouseSelection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b.navigation.HandleKey(loom.KeyEvent{Key: "/"})
-	b.navigation.HandleKey(loom.KeyEvent{Text: "beta"})
+	framed := newFramedBrowser(b, &astraToggle{})
+	if framed.HandleKey(loom.KeyEvent{Key: "/"}) {
+		t.Fatal("slash filtering quit the browser")
+	}
+	if framed.HandleKey(loom.KeyEvent{Text: "beta"}) {
+		t.Fatal("typing a filter query quit the browser")
+	}
 	if got := b.navigation.List().Query(); got != "beta" {
 		t.Fatalf("filter query = %q, want beta", got)
+	}
+	list := b.navigation.List()
+	if list.FilteredItem(0).Name != "beta.txt" || list.FilteredItem(1).Name != "" {
+		t.Fatalf("filtered files = [%q, %q], want [beta.txt]", list.FilteredItem(0).Name, list.FilteredItem(1).Name)
 	}
 
 	c := loom.NewCanvas(30, 8)
@@ -184,7 +193,6 @@ func TestBrowserFilterAndMouseSelection(t *testing.T) {
 	if !ok || entry.Name != "beta.txt" {
 		t.Fatalf("mouse selection = %+v, ok=%v; want beta.txt", entry, ok)
 	}
-	framed := newFramedBrowser(b, &astraToggle{})
 	if quit, consumed := framed.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
 		t.Fatalf("framed escape = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
 	}
