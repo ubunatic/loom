@@ -64,3 +64,11 @@ Pre-Work / Required Refinements (M1):
 FAIL
 FAIL	codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser	0.606s
 ```
+
+M1 delivered (8e1105a + flash37 fix): shared `NavigationPane` (callbacks OnSelection/OnActivate/OnOpen/OnQuit,
+`ConsumeKey` boundary); mouse maps child-local back into the frame `Choice` drew in (Choice subtracts its own rect).
+Host suite green.
+
+Pre-Work for M4 (docs, user request): update the evergreen docs this touches — `docs/Widgets.md` (shared
+pane, callback API, the Choice rect bridge), example docs/READMEs, `docs/README.md` index if a doc is added.
+Only edit non-managed sections of AGENTS.md; harnez-managed blocks stay untouched.
