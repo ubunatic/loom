@@ -10,6 +10,7 @@
         "U+0020"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -20,6 +21,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -30,6 +32,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -39,6 +42,7 @@
         "U+2190"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -48,6 +52,7 @@
         "U+2191"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -57,6 +62,7 @@
         "U+2192"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -66,6 +72,7 @@
         "U+2193"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -75,6 +82,7 @@
         "U+2194"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -84,6 +92,7 @@
         "U+2195"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -93,6 +102,7 @@
         "U+2196"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -102,6 +112,7 @@
         "U+2197"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -111,6 +122,7 @@
         "U+2198"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -120,6 +132,7 @@
         "U+2199"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -129,6 +142,7 @@
         "U+219A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -138,6 +152,7 @@
         "U+219B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -147,6 +162,7 @@
         "U+219C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -156,6 +172,7 @@
         "U+219D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -165,6 +182,7 @@
         "U+219E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -174,6 +192,7 @@
         "U+219F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -183,6 +202,7 @@
         "U+21A0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -192,6 +212,7 @@
         "U+21A1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -201,6 +222,7 @@
         "U+21A2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -210,6 +232,7 @@
         "U+21A3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -219,6 +242,7 @@
         "U+21A4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -228,6 +252,7 @@
         "U+21A5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -237,6 +262,7 @@
         "U+21A6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -246,6 +272,7 @@
         "U+21A7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -255,6 +282,7 @@
         "U+21A8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -264,6 +292,7 @@
         "U+21A9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -273,6 +302,7 @@
         "U+21AA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -282,6 +312,7 @@
         "U+21AB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -291,6 +322,7 @@
         "U+21AC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -300,6 +332,7 @@
         "U+21AD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -309,6 +342,7 @@
         "U+21AE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -318,6 +352,7 @@
         "U+21AF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -327,6 +362,7 @@
         "U+21B0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -336,6 +372,7 @@
         "U+21B1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -345,6 +382,7 @@
         "U+21B2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -354,6 +392,7 @@
         "U+21B3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -363,6 +402,7 @@
         "U+21B5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -372,6 +412,7 @@
         "U+21B6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -381,6 +422,7 @@
         "U+21B7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -390,6 +432,7 @@
         "U+21BA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -399,6 +442,7 @@
         "U+21BB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -408,6 +452,7 @@
         "U+21BC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -417,6 +462,7 @@
         "U+21BD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -426,6 +472,7 @@
         "U+21BE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -435,6 +482,7 @@
         "U+21BF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -444,6 +492,7 @@
         "U+21C0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -453,6 +502,7 @@
         "U+21C1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -462,6 +512,7 @@
         "U+21C2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -471,6 +522,7 @@
         "U+21C3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -480,6 +532,7 @@
         "U+21C4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -489,6 +542,7 @@
         "U+21C5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -498,6 +552,7 @@
         "U+21C6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -507,6 +562,7 @@
         "U+21C7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -516,6 +572,7 @@
         "U+21C8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -525,6 +582,7 @@
         "U+21C9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -534,6 +592,7 @@
         "U+21CA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -543,6 +602,7 @@
         "U+21CB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -552,6 +612,7 @@
         "U+21CC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -561,6 +622,7 @@
         "U+21D0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -570,6 +632,7 @@
         "U+21D1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -579,6 +642,7 @@
         "U+21D2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -588,6 +652,7 @@
         "U+21D3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -597,6 +662,7 @@
         "U+21D4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -606,6 +672,7 @@
         "U+21D5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -615,6 +682,7 @@
         "U+21D6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -624,6 +692,7 @@
         "U+21D7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -633,6 +702,7 @@
         "U+21D8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -642,6 +712,7 @@
         "U+21D9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -651,6 +722,7 @@
         "U+21DA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -660,6 +732,7 @@
         "U+21DB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -669,6 +742,7 @@
         "U+21DC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -678,6 +752,7 @@
         "U+21DD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -687,6 +762,7 @@
         "U+21DE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -696,6 +772,7 @@
         "U+21DF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -705,6 +782,7 @@
         "U+21E0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -714,6 +792,7 @@
         "U+21E1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -723,6 +802,7 @@
         "U+21E2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -732,6 +812,7 @@
         "U+21E3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -741,6 +822,7 @@
         "U+21E4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -750,6 +832,7 @@
         "U+21E5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -759,6 +842,7 @@
         "U+21E6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -768,6 +852,7 @@
         "U+21E7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -777,6 +862,7 @@
         "U+21E8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -786,6 +872,7 @@
         "U+21E9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -795,6 +882,7 @@
         "U+231B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -805,6 +893,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -814,6 +903,7 @@
         "U+23F0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -824,6 +914,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -834,6 +925,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -843,6 +935,7 @@
         "U+23F3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -853,6 +946,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -862,6 +956,7 @@
         "U+2500"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -871,6 +966,7 @@
         "U+2501"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -880,6 +976,7 @@
         "U+2502"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -889,6 +986,7 @@
         "U+2503"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -898,6 +996,7 @@
         "U+2504"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -907,6 +1006,7 @@
         "U+2505"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -916,6 +1016,7 @@
         "U+2506"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -925,6 +1026,7 @@
         "U+2507"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -934,6 +1036,7 @@
         "U+2508"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -943,6 +1046,7 @@
         "U+2509"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -952,6 +1056,7 @@
         "U+250A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -961,6 +1066,7 @@
         "U+250B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -970,6 +1076,7 @@
         "U+250C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -979,6 +1086,7 @@
         "U+250F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -988,6 +1096,7 @@
         "U+2510"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -997,6 +1106,7 @@
         "U+2513"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1006,6 +1116,7 @@
         "U+2514"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1015,6 +1126,7 @@
         "U+2517"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1024,6 +1136,7 @@
         "U+2518"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1033,6 +1146,7 @@
         "U+251B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1042,6 +1156,7 @@
         "U+251C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1051,6 +1166,7 @@
         "U+2523"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1060,6 +1176,7 @@
         "U+2524"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1069,6 +1186,7 @@
         "U+252B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1078,6 +1196,7 @@
         "U+252C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1087,6 +1206,7 @@
         "U+2533"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1096,6 +1216,7 @@
         "U+2534"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1105,6 +1226,7 @@
         "U+253B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1114,6 +1236,7 @@
         "U+253C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1123,6 +1246,7 @@
         "U+254B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1132,6 +1256,7 @@
         "U+254C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1141,6 +1266,7 @@
         "U+254D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1150,6 +1276,7 @@
         "U+254E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1159,6 +1286,7 @@
         "U+254F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1168,6 +1296,7 @@
         "U+2550"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1177,6 +1306,7 @@
         "U+2551"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1186,6 +1316,7 @@
         "U+2552"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1195,6 +1326,7 @@
         "U+2553"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1204,6 +1336,7 @@
         "U+2554"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1213,6 +1346,7 @@
         "U+2555"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1222,6 +1356,7 @@
         "U+2556"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1231,6 +1366,7 @@
         "U+2557"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1240,6 +1376,7 @@
         "U+2558"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1249,6 +1386,7 @@
         "U+2559"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1258,6 +1396,7 @@
         "U+255A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1267,6 +1406,7 @@
         "U+255B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1276,6 +1416,7 @@
         "U+255C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1285,6 +1426,7 @@
         "U+255D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1294,6 +1436,7 @@
         "U+255E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1303,6 +1446,7 @@
         "U+255F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1312,6 +1456,7 @@
         "U+2560"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1321,6 +1466,7 @@
         "U+2561"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1330,6 +1476,7 @@
         "U+2562"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1339,6 +1486,7 @@
         "U+2563"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1348,6 +1496,7 @@
         "U+2564"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1357,6 +1506,7 @@
         "U+2565"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1366,6 +1516,7 @@
         "U+2566"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1375,6 +1526,7 @@
         "U+2567"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1384,6 +1536,7 @@
         "U+2568"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1393,6 +1546,7 @@
         "U+2569"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1402,6 +1556,7 @@
         "U+256A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1411,6 +1566,7 @@
         "U+256B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1420,6 +1576,7 @@
         "U+256C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1429,6 +1586,7 @@
         "U+256D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1438,6 +1596,7 @@
         "U+256E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1447,6 +1606,7 @@
         "U+256F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1456,6 +1616,7 @@
         "U+2570"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1465,6 +1626,7 @@
         "U+2571"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1474,6 +1636,7 @@
         "U+2572"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1483,6 +1646,7 @@
         "U+2573"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1492,6 +1656,7 @@
         "U+2574"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1501,6 +1666,7 @@
         "U+2575"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1510,6 +1676,7 @@
         "U+2576"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1519,6 +1686,7 @@
         "U+2577"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1528,6 +1696,7 @@
         "U+2578"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1537,6 +1706,7 @@
         "U+2579"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1546,6 +1716,7 @@
         "U+257A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1555,6 +1726,7 @@
         "U+257B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1564,6 +1736,7 @@
         "U+257C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1573,6 +1746,7 @@
         "U+257D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1582,6 +1756,7 @@
         "U+257E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1591,6 +1766,7 @@
         "U+257F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1600,6 +1776,7 @@
         "U+2580"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1609,6 +1786,7 @@
         "U+2582"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1618,6 +1796,7 @@
         "U+2583"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1627,6 +1806,7 @@
         "U+2584"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1636,6 +1816,7 @@
         "U+2585"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1645,6 +1826,7 @@
         "U+2586"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1654,6 +1836,7 @@
         "U+2587"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1663,6 +1846,7 @@
         "U+2588"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1672,6 +1856,7 @@
         "U+2589"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1681,6 +1866,7 @@
         "U+258A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1690,6 +1876,7 @@
         "U+258B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1699,6 +1886,7 @@
         "U+258C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1708,6 +1896,7 @@
         "U+258D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1717,6 +1906,7 @@
         "U+258E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1726,6 +1916,7 @@
         "U+258F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1735,6 +1926,7 @@
         "U+2590"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1744,6 +1936,7 @@
         "U+2591"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1753,6 +1946,7 @@
         "U+2592"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1762,6 +1956,7 @@
         "U+2593"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1771,6 +1966,7 @@
         "U+2594"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1780,6 +1976,7 @@
         "U+2595"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1789,6 +1986,7 @@
         "U+2596"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1798,6 +1996,7 @@
         "U+2597"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1807,6 +2006,7 @@
         "U+2598"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1816,6 +2016,7 @@
         "U+2599"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1825,6 +2026,7 @@
         "U+259A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1834,6 +2036,7 @@
         "U+259B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1843,6 +2046,7 @@
         "U+259C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1852,6 +2056,7 @@
         "U+259D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1861,6 +2066,7 @@
         "U+259E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1870,6 +2076,7 @@
         "U+259F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1879,6 +2086,7 @@
         "U+25A0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1888,6 +2096,7 @@
         "U+25A1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1897,6 +2106,7 @@
         "U+25A2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1906,6 +2116,7 @@
         "U+25A3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1915,6 +2126,7 @@
         "U+25A4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1924,6 +2136,7 @@
         "U+25A5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1933,6 +2146,7 @@
         "U+25A6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1942,6 +2156,7 @@
         "U+25A7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1951,6 +2166,7 @@
         "U+25A8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1960,6 +2176,7 @@
         "U+25A9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1969,6 +2186,7 @@
         "U+25AA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1978,6 +2196,7 @@
         "U+25AB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1987,6 +2206,7 @@
         "U+25AC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -1996,6 +2216,7 @@
         "U+25AD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2005,6 +2226,7 @@
         "U+25AE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2014,6 +2236,7 @@
         "U+25AF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2023,6 +2246,7 @@
         "U+25B0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2032,6 +2256,7 @@
         "U+25B1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2041,6 +2266,7 @@
         "U+25B2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2050,6 +2276,7 @@
         "U+25B3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2059,6 +2286,7 @@
         "U+25B4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2068,6 +2296,7 @@
         "U+25B5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2077,6 +2306,7 @@
         "U+25B6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2086,6 +2316,7 @@
         "U+25B7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2095,6 +2326,7 @@
         "U+25B8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2104,6 +2336,7 @@
         "U+25B9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2113,6 +2346,7 @@
         "U+25BA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2122,6 +2356,7 @@
         "U+25BC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2131,6 +2366,7 @@
         "U+25BD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2140,6 +2376,7 @@
         "U+25BE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2149,6 +2386,7 @@
         "U+25BF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2158,6 +2396,7 @@
         "U+25C0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2167,6 +2406,7 @@
         "U+25C1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2176,6 +2416,7 @@
         "U+25C2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2185,6 +2426,7 @@
         "U+25C3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2194,6 +2436,7 @@
         "U+25C4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2203,6 +2446,7 @@
         "U+25C6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2212,6 +2456,7 @@
         "U+25C7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2221,6 +2466,7 @@
         "U+25C8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2230,6 +2476,7 @@
         "U+25C9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2239,6 +2486,7 @@
         "U+25CA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2248,6 +2496,7 @@
         "U+25CB"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2257,6 +2506,7 @@
         "U+25CC"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2266,6 +2516,7 @@
         "U+25CD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2275,6 +2526,7 @@
         "U+25CE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2284,6 +2536,7 @@
         "U+25CF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2293,6 +2546,7 @@
         "U+25D0"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2302,6 +2556,7 @@
         "U+25D1"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2311,6 +2566,7 @@
         "U+25D2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2320,6 +2576,7 @@
         "U+25D3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2329,6 +2586,7 @@
         "U+25D4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2338,6 +2596,7 @@
         "U+25D5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2347,6 +2606,7 @@
         "U+25D6"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2356,6 +2616,7 @@
         "U+25D7"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2365,6 +2626,7 @@
         "U+25D8"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2374,6 +2636,7 @@
         "U+25D9"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2383,6 +2646,7 @@
         "U+25E2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2392,6 +2656,7 @@
         "U+25E3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2401,6 +2666,7 @@
         "U+25E4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2410,6 +2676,7 @@
         "U+25E5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2419,6 +2686,7 @@
         "U+25EF"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2429,6 +2697,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2439,6 +2708,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2449,6 +2719,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2459,6 +2730,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2469,6 +2741,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2479,6 +2752,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2488,6 +2762,7 @@
         "U+2614"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2497,6 +2772,7 @@
         "U+2615"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2507,6 +2783,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2517,6 +2794,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2527,6 +2805,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2537,6 +2816,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2547,6 +2827,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2557,6 +2838,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2567,6 +2849,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2577,6 +2860,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2587,6 +2871,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2597,6 +2882,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2606,8 +2892,10 @@
         "U+2648"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♉": {
       "glyph": "♉",
@@ -2615,8 +2903,10 @@
         "U+2649"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♊": {
       "glyph": "♊",
@@ -2624,8 +2914,10 @@
         "U+264A"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♋": {
       "glyph": "♋",
@@ -2633,8 +2925,10 @@
         "U+264B"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♌": {
       "glyph": "♌",
@@ -2642,8 +2936,10 @@
         "U+264C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♍": {
       "glyph": "♍",
@@ -2651,8 +2947,10 @@
         "U+264D"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♎": {
       "glyph": "♎",
@@ -2660,8 +2958,10 @@
         "U+264E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♏": {
       "glyph": "♏",
@@ -2669,8 +2969,10 @@
         "U+264F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♐": {
       "glyph": "♐",
@@ -2678,8 +2980,10 @@
         "U+2650"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♑": {
       "glyph": "♑",
@@ -2687,8 +2991,10 @@
         "U+2651"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♒": {
       "glyph": "♒",
@@ -2696,8 +3002,10 @@
         "U+2652"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♓": {
       "glyph": "♓",
@@ -2705,8 +3013,10 @@
         "U+2653"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "♟️": {
       "glyph": "♟️",
@@ -2715,6 +3025,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2725,6 +3036,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2734,8 +3046,10 @@
         "U+267F"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⚒️": {
       "glyph": "⚒️",
@@ -2744,6 +3058,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2753,8 +3068,10 @@
         "U+2693"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⚔️": {
       "glyph": "⚔️",
@@ -2763,6 +3080,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2773,6 +3091,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2783,6 +3102,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2793,6 +3113,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2803,6 +3124,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2812,6 +3134,7 @@
         "U+26A1"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2822,6 +3145,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2832,6 +3156,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2841,6 +3166,7 @@
         "U+26BD"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2850,6 +3176,7 @@
         "U+26BE"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2859,6 +3186,7 @@
         "U+26C4"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2868,6 +3196,7 @@
         "U+26C5"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -2877,8 +3206,10 @@
         "U+26CE"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛏️": {
       "glyph": "⛏️",
@@ -2887,6 +3218,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2896,8 +3228,10 @@
         "U+26D4"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛩️": {
       "glyph": "⛩️",
@@ -2906,6 +3240,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2915,8 +3250,10 @@
         "U+26EA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛰️": {
       "glyph": "⛰️",
@@ -2925,6 +3262,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2934,8 +3272,10 @@
         "U+26F2"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛳": {
       "glyph": "⛳",
@@ -2943,8 +3283,10 @@
         "U+26F3"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛴️": {
       "glyph": "⛴️",
@@ -2953,6 +3295,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2962,8 +3305,10 @@
         "U+26F5"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛷️": {
       "glyph": "⛷️",
@@ -2972,6 +3317,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2982,6 +3328,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -2992,6 +3339,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3001,8 +3349,10 @@
         "U+26FA"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⛽": {
       "glyph": "⛽",
@@ -3010,8 +3360,10 @@
         "U+26FD"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "✂️": {
       "glyph": "✂️",
@@ -3020,6 +3372,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3029,8 +3382,10 @@
         "U+2705"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "✈️": {
       "glyph": "✈️",
@@ -3039,6 +3394,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3049,6 +3405,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3058,9 +3415,9 @@
         "U+270A"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
-      "answered": true,
-      "comment": "1 looks correct now"
+      "answered": true
     },
     "✋": {
       "glyph": "✋",
@@ -3068,6 +3425,7 @@
         "U+270B"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -3078,6 +3436,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3088,6 +3447,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3098,6 +3458,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3108,6 +3469,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3118,6 +3480,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3127,6 +3490,7 @@
         "U+2728"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -3137,6 +3501,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3146,8 +3511,10 @@
         "U+274C"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❎": {
       "glyph": "❎",
@@ -3155,8 +3522,10 @@
         "U+274E"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❓": {
       "glyph": "❓",
@@ -3164,8 +3533,10 @@
         "U+2753"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❔": {
       "glyph": "❔",
@@ -3173,8 +3544,10 @@
         "U+2754"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❕": {
       "glyph": "❕",
@@ -3182,8 +3555,10 @@
         "U+2755"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❗": {
       "glyph": "❗",
@@ -3191,8 +3566,10 @@
         "U+2757"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "❣️": {
       "glyph": "❣️",
@@ -3201,6 +3578,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3211,6 +3589,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3223,9 +3602,10 @@
         "U+1F525"
       ],
       "computed_width": 3,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
-      "comment": "3ch long overlapping pair"
+      "comment": "3ch long overlapping pair, VTE:3"
     },
     "❤️‍🩹": {
       "glyph": "❤️‍🩹",
@@ -3236,9 +3616,10 @@
         "U+1FA79"
       ],
       "computed_width": 3,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
-      "comment": "3ch long overlapping pair"
+      "comment": "3ch long overlapping pair, VTE:3"
     },
     "➔": {
       "glyph": "➔",
@@ -3246,6 +3627,7 @@
         "U+2794"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3255,8 +3637,10 @@
         "U+2795"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "➖": {
       "glyph": "➖",
@@ -3264,8 +3648,10 @@
         "U+2796"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "➗": {
       "glyph": "➗",
@@ -3273,8 +3659,10 @@
         "U+2797"
       ],
       "computed_width": 1,
+      "vte_width": 1,
       "measured_width": 1,
-      "answered": true
+      "answered": true,
+      "comment": "VTE:2"
     },
     "⟵": {
       "glyph": "⟵",
@@ -3282,6 +3670,7 @@
         "U+27F5"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3291,6 +3680,7 @@
         "U+27F6"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3300,9 +3690,9 @@
         "U+27F7"
       ],
       "computed_width": 1,
+      "vte_width": 3,
       "measured_width": 3,
-      "answered": true,
-      "comment": "2 is too short, 3 too long, emoji never centers"
+      "answered": true
     },
     "⟹": {
       "glyph": "⟹",
@@ -3310,6 +3700,7 @@
         "U+27F9"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3319,9 +3710,9 @@
         "U+27FA"
       ],
       "computed_width": 1,
+      "vte_width": 3,
       "measured_width": 3,
-      "answered": true,
-      "comment": "2 is too short, 3 too long, emoji never centers"
+      "answered": true
     },
     "⭐️": {
       "glyph": "⭐️",
@@ -3330,6 +3721,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true
     },
@@ -3340,6 +3732,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3349,6 +3742,7 @@
         "U+1F300"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3358,6 +3752,7 @@
         "U+1F308"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3367,6 +3762,7 @@
         "U+1F30A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3376,6 +3772,7 @@
         "U+1F30B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3385,6 +3782,7 @@
         "U+1F30D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3394,6 +3792,7 @@
         "U+1F30E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3403,6 +3802,7 @@
         "U+1F30F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3412,6 +3812,7 @@
         "U+1F310"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3421,6 +3822,7 @@
         "U+1F311"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3430,6 +3832,7 @@
         "U+1F312"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3439,6 +3842,7 @@
         "U+1F313"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3448,6 +3852,7 @@
         "U+1F314"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3457,6 +3862,7 @@
         "U+1F315"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3466,6 +3872,7 @@
         "U+1F316"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3475,6 +3882,7 @@
         "U+1F317"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3484,6 +3892,7 @@
         "U+1F318"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3493,6 +3902,7 @@
         "U+1F319"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3502,6 +3912,7 @@
         "U+1F31A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3511,6 +3922,7 @@
         "U+1F31B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3520,6 +3932,7 @@
         "U+1F31C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3529,6 +3942,7 @@
         "U+1F31D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3538,6 +3952,7 @@
         "U+1F31E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3547,6 +3962,7 @@
         "U+1F31F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3557,6 +3973,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3567,6 +3984,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3577,6 +3995,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3587,6 +4006,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3597,6 +4017,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3607,6 +4028,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3617,6 +4039,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3627,6 +4050,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3637,6 +4061,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -3646,6 +4071,7 @@
         "U+1F32D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3655,6 +4081,7 @@
         "U+1F32E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3664,6 +4091,7 @@
         "U+1F32F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3673,6 +4101,7 @@
         "U+1F330"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3682,6 +4111,7 @@
         "U+1F331"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3691,6 +4121,7 @@
         "U+1F332"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3700,6 +4131,7 @@
         "U+1F333"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3709,6 +4141,7 @@
         "U+1F334"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3719,9 +4152,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🌷": {
       "glyph": "🌷",
@@ -3729,6 +4162,7 @@
         "U+1F337"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3738,6 +4172,7 @@
         "U+1F338"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3747,6 +4182,7 @@
         "U+1F339"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3756,6 +4192,7 @@
         "U+1F33A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3765,6 +4202,7 @@
         "U+1F33B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3774,6 +4212,7 @@
         "U+1F33C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3783,6 +4222,7 @@
         "U+1F33D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3792,6 +4232,7 @@
         "U+1F33E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3801,6 +4242,7 @@
         "U+1F33F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3810,6 +4252,7 @@
         "U+1F340"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3819,6 +4262,7 @@
         "U+1F341"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3828,6 +4272,7 @@
         "U+1F342"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3837,6 +4282,7 @@
         "U+1F343"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3846,6 +4292,7 @@
         "U+1F344"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3855,6 +4302,7 @@
         "U+1F345"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3864,6 +4312,7 @@
         "U+1F346"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3873,6 +4322,7 @@
         "U+1F347"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3882,6 +4332,7 @@
         "U+1F348"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3891,6 +4342,7 @@
         "U+1F349"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3900,6 +4352,7 @@
         "U+1F34A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3909,6 +4362,7 @@
         "U+1F34B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3918,6 +4372,7 @@
         "U+1F34C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3927,6 +4382,7 @@
         "U+1F34D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3936,6 +4392,7 @@
         "U+1F34E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3945,6 +4402,7 @@
         "U+1F34F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3954,6 +4412,7 @@
         "U+1F350"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3963,6 +4422,7 @@
         "U+1F351"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3972,6 +4432,7 @@
         "U+1F352"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3981,6 +4442,7 @@
         "U+1F353"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3990,6 +4452,7 @@
         "U+1F354"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -3999,6 +4462,7 @@
         "U+1F355"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4008,6 +4472,7 @@
         "U+1F356"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4017,6 +4482,7 @@
         "U+1F357"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4026,6 +4492,7 @@
         "U+1F358"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4035,6 +4502,7 @@
         "U+1F359"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4044,6 +4512,7 @@
         "U+1F35A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4053,6 +4522,7 @@
         "U+1F35B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4062,6 +4532,7 @@
         "U+1F35C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4071,6 +4542,7 @@
         "U+1F35D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4080,6 +4552,7 @@
         "U+1F35E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4089,6 +4562,7 @@
         "U+1F35F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4098,6 +4572,7 @@
         "U+1F360"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4107,6 +4582,7 @@
         "U+1F361"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4116,6 +4592,7 @@
         "U+1F362"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4125,6 +4602,7 @@
         "U+1F363"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4134,6 +4612,7 @@
         "U+1F364"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4143,6 +4622,7 @@
         "U+1F365"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4152,6 +4632,7 @@
         "U+1F366"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4161,6 +4642,7 @@
         "U+1F367"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4170,6 +4652,7 @@
         "U+1F368"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4179,6 +4662,7 @@
         "U+1F369"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4188,6 +4672,7 @@
         "U+1F36A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4197,6 +4682,7 @@
         "U+1F36B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4206,6 +4692,7 @@
         "U+1F36C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4215,6 +4702,7 @@
         "U+1F36D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4224,6 +4712,7 @@
         "U+1F36E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4233,6 +4722,7 @@
         "U+1F36F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4242,6 +4732,7 @@
         "U+1F370"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4251,6 +4742,7 @@
         "U+1F371"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4260,6 +4752,7 @@
         "U+1F372"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4269,6 +4762,7 @@
         "U+1F373"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4278,6 +4772,7 @@
         "U+1F375"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4287,6 +4782,7 @@
         "U+1F376"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4296,6 +4792,7 @@
         "U+1F377"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4305,6 +4802,7 @@
         "U+1F378"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4314,6 +4812,7 @@
         "U+1F379"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4323,6 +4822,7 @@
         "U+1F37A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4332,6 +4832,7 @@
         "U+1F37B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4341,6 +4842,7 @@
         "U+1F37C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4350,6 +4852,7 @@
         "U+1F37E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4359,6 +4862,7 @@
         "U+1F37F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4368,6 +4872,7 @@
         "U+1F382"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4377,6 +4882,7 @@
         "U+1F38B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4386,6 +4892,7 @@
         "U+1F38D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4396,9 +4903,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🎗️": {
       "glyph": "🎗️",
@@ -4407,9 +4914,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🎙️": {
       "glyph": "🎙️",
@@ -4418,6 +4925,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4428,6 +4936,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4438,6 +4947,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4448,6 +4958,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4458,9 +4969,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🎠": {
       "glyph": "🎠",
@@ -4468,6 +4979,7 @@
         "U+1F3A0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4477,6 +4989,7 @@
         "U+1F3A1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4486,6 +4999,7 @@
         "U+1F3A2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4495,6 +5009,7 @@
         "U+1F3A3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4504,6 +5019,7 @@
         "U+1F3A4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4513,6 +5029,7 @@
         "U+1F3A5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4522,6 +5039,7 @@
         "U+1F3A7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4531,6 +5049,7 @@
         "U+1F3A8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4540,6 +5059,7 @@
         "U+1F3AA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4549,9 +5069,9 @@
         "U+1F3AB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🎬": {
       "glyph": "🎬",
@@ -4559,6 +5079,7 @@
         "U+1F3AC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4568,6 +5089,7 @@
         "U+1F3AD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4577,6 +5099,7 @@
         "U+1F3AE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4586,6 +5109,7 @@
         "U+1F3AF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4595,6 +5119,7 @@
         "U+1F3B0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4604,6 +5129,7 @@
         "U+1F3B1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4613,6 +5139,7 @@
         "U+1F3B2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4622,6 +5149,7 @@
         "U+1F3B3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4631,6 +5159,7 @@
         "U+1F3B5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4640,6 +5169,7 @@
         "U+1F3B6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4649,6 +5179,7 @@
         "U+1F3B7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4658,6 +5189,7 @@
         "U+1F3B8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4667,6 +5199,7 @@
         "U+1F3B9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4676,6 +5209,7 @@
         "U+1F3BA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4685,6 +5219,7 @@
         "U+1F3BB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4694,6 +5229,7 @@
         "U+1F3BC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4703,6 +5239,7 @@
         "U+1F3BD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4712,6 +5249,7 @@
         "U+1F3BE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4721,6 +5259,7 @@
         "U+1F3BF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4730,6 +5269,7 @@
         "U+1F3C0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4739,6 +5279,7 @@
         "U+1F3C2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4748,6 +5289,7 @@
         "U+1F3C4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4757,6 +5299,7 @@
         "U+1F3C5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4766,6 +5309,7 @@
         "U+1F3C6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4775,6 +5319,7 @@
         "U+1F3C7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4784,6 +5329,7 @@
         "U+1F3C8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4793,6 +5339,7 @@
         "U+1F3C9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4802,6 +5349,7 @@
         "U+1F3CA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4812,6 +5360,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4822,6 +5371,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
       "comment": "3 correct, 2ch wide"
@@ -4833,9 +5383,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🏎️": {
       "glyph": "🏎️",
@@ -4844,9 +5394,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🏏": {
       "glyph": "🏏",
@@ -4854,6 +5404,7 @@
         "U+1F3CF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4863,6 +5414,7 @@
         "U+1F3D0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4872,6 +5424,7 @@
         "U+1F3D1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4881,6 +5434,7 @@
         "U+1F3D2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4890,6 +5444,7 @@
         "U+1F3D3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -4900,6 +5455,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4910,6 +5466,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4920,9 +5477,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "I will stop commenting the 3ch,2ch comment now and only report on emojis that look odd"
+      "answered": true
     },
     "🏗️": {
       "glyph": "🏗️",
@@ -4931,6 +5488,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4941,6 +5499,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4951,6 +5510,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4961,6 +5521,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4971,6 +5532,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4981,6 +5543,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -4991,9 +5554,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🏠": {
       "glyph": "🏠",
@@ -5001,6 +5564,7 @@
         "U+1F3E0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5010,6 +5574,7 @@
         "U+1F3E1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5019,6 +5584,7 @@
         "U+1F3E2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5028,6 +5594,7 @@
         "U+1F3E3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5037,6 +5604,7 @@
         "U+1F3E4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5046,6 +5614,7 @@
         "U+1F3E5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5055,6 +5624,7 @@
         "U+1F3E6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5064,6 +5634,7 @@
         "U+1F3E8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5073,6 +5644,7 @@
         "U+1F3E9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5082,6 +5654,7 @@
         "U+1F3EA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5091,6 +5664,7 @@
         "U+1F3EB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5100,6 +5674,7 @@
         "U+1F3EC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5109,6 +5684,7 @@
         "U+1F3ED"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5118,6 +5694,7 @@
         "U+1F3EE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5127,6 +5704,7 @@
         "U+1F3EF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5136,6 +5714,7 @@
         "U+1F3F0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5146,9 +5725,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🏷️": {
       "glyph": "🏷️",
@@ -5157,6 +5736,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -5166,6 +5746,7 @@
         "U+1F3F8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5175,6 +5756,7 @@
         "U+1F3F9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5184,6 +5766,7 @@
         "U+1F3FA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5193,6 +5776,7 @@
         "U+1F400"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5202,6 +5786,7 @@
         "U+1F401"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5211,6 +5796,7 @@
         "U+1F402"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5220,6 +5806,7 @@
         "U+1F403"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5229,6 +5816,7 @@
         "U+1F404"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5238,6 +5826,7 @@
         "U+1F405"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5247,6 +5836,7 @@
         "U+1F406"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5256,6 +5846,7 @@
         "U+1F407"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5265,6 +5856,7 @@
         "U+1F408"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5276,6 +5868,7 @@
         "U+2B1B"
       ],
       "computed_width": 3,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
       "comment": "3 looks correct and makes the pair 4 chars wide, shows a 🐈 next to ⬛, each is 2ch wide"
@@ -5286,6 +5879,7 @@
         "U+1F409"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5295,6 +5889,7 @@
         "U+1F40A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5304,6 +5899,7 @@
         "U+1F40B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5313,6 +5909,7 @@
         "U+1F40C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5322,6 +5919,7 @@
         "U+1F40D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5331,6 +5929,7 @@
         "U+1F40E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5340,6 +5939,7 @@
         "U+1F40F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5349,6 +5949,7 @@
         "U+1F410"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5358,6 +5959,7 @@
         "U+1F411"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5367,6 +5969,7 @@
         "U+1F412"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5376,6 +5979,7 @@
         "U+1F413"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5385,6 +5989,7 @@
         "U+1F414"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5394,6 +5999,7 @@
         "U+1F415"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5403,6 +6009,7 @@
         "U+1F416"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5412,6 +6019,7 @@
         "U+1F417"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5421,6 +6029,7 @@
         "U+1F418"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5430,6 +6039,7 @@
         "U+1F419"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5439,6 +6049,7 @@
         "U+1F41A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5448,6 +6059,7 @@
         "U+1F41B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5457,6 +6069,7 @@
         "U+1F41C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5466,6 +6079,7 @@
         "U+1F41D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5475,6 +6089,7 @@
         "U+1F41E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5484,6 +6099,7 @@
         "U+1F41F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5493,6 +6109,7 @@
         "U+1F420"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5502,6 +6119,7 @@
         "U+1F421"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5511,6 +6129,7 @@
         "U+1F422"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5520,6 +6139,7 @@
         "U+1F423"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5529,6 +6149,7 @@
         "U+1F424"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5538,6 +6159,7 @@
         "U+1F425"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5547,6 +6169,7 @@
         "U+1F426"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5556,6 +6179,7 @@
         "U+1F427"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5565,6 +6189,7 @@
         "U+1F428"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5574,6 +6199,7 @@
         "U+1F429"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5583,6 +6209,7 @@
         "U+1F42A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5592,6 +6219,7 @@
         "U+1F42B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5601,6 +6229,7 @@
         "U+1F42C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5610,6 +6239,7 @@
         "U+1F42D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5619,6 +6249,7 @@
         "U+1F42E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5628,6 +6259,7 @@
         "U+1F42F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5637,6 +6269,7 @@
         "U+1F430"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5646,6 +6279,7 @@
         "U+1F431"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5655,6 +6289,7 @@
         "U+1F432"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5664,6 +6299,7 @@
         "U+1F433"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5673,6 +6309,7 @@
         "U+1F434"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5682,6 +6319,7 @@
         "U+1F435"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5691,6 +6329,7 @@
         "U+1F436"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5700,6 +6339,7 @@
         "U+1F437"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5709,6 +6349,7 @@
         "U+1F438"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5718,6 +6359,7 @@
         "U+1F439"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5727,6 +6369,7 @@
         "U+1F43A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5736,6 +6379,7 @@
         "U+1F43B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5748,9 +6392,10 @@
         "U+FE0F"
       ],
       "computed_width": 3,
+      "vte_width": 2,
       "measured_width": 4,
       "answered": true,
-      "comment": "should be 4, but could not toggle, with 3 it overflows"
+      "comment": "VTE:4, shows as two emoji"
     },
     "🐼": {
       "glyph": "🐼",
@@ -5758,6 +6403,7 @@
         "U+1F43C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5767,6 +6413,7 @@
         "U+1F43D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5777,9 +6424,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "👀": {
       "glyph": "👀",
@@ -5787,6 +6434,7 @@
         "U+1F440"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5797,9 +6445,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "2ch wide at 3"
+      "answered": true
     },
     "👁️‍🗨️": {
       "glyph": "👁️‍🗨️",
@@ -5811,9 +6459,10 @@
         "U+FE0F"
       ],
       "computed_width": 4,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
-      "comment": "toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping pair"
+      "comment": "toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping pair, VTE:3, still broken"
     },
     "👂": {
       "glyph": "👂",
@@ -5821,6 +6470,7 @@
         "U+1F442"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5830,6 +6480,7 @@
         "U+1F443"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5839,6 +6490,7 @@
         "U+1F444"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5848,6 +6500,7 @@
         "U+1F445"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5857,6 +6510,7 @@
         "U+1F446"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5866,6 +6520,7 @@
         "U+1F447"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5875,6 +6530,7 @@
         "U+1F448"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5884,6 +6540,7 @@
         "U+1F449"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5893,6 +6550,7 @@
         "U+1F44A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5902,6 +6560,7 @@
         "U+1F44B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5911,6 +6570,7 @@
         "U+1F44C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5920,6 +6580,7 @@
         "U+1F44D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5929,6 +6590,7 @@
         "U+1F44E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5938,6 +6600,7 @@
         "U+1F44F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5947,6 +6610,7 @@
         "U+1F450"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5956,6 +6620,7 @@
         "U+1F479"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5965,6 +6630,7 @@
         "U+1F47A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5974,6 +6640,7 @@
         "U+1F47B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5983,6 +6650,7 @@
         "U+1F47D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -5992,6 +6660,7 @@
         "U+1F47E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6001,6 +6670,7 @@
         "U+1F47F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6010,6 +6680,7 @@
         "U+1F480"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6019,6 +6690,7 @@
         "U+1F485"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6028,6 +6700,7 @@
         "U+1F488"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6037,6 +6710,7 @@
         "U+1F489"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6046,6 +6720,7 @@
         "U+1F48E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6055,6 +6730,7 @@
         "U+1F490"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6064,6 +6740,7 @@
         "U+1F492"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6073,6 +6750,7 @@
         "U+1F493"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6082,6 +6760,7 @@
         "U+1F494"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6091,6 +6770,7 @@
         "U+1F495"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6100,6 +6780,7 @@
         "U+1F496"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6109,6 +6790,7 @@
         "U+1F497"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6118,6 +6800,7 @@
         "U+1F498"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6127,6 +6810,7 @@
         "U+1F499"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6136,6 +6820,7 @@
         "U+1F49A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6145,6 +6830,7 @@
         "U+1F49B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6154,6 +6840,7 @@
         "U+1F49C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6163,6 +6850,7 @@
         "U+1F49D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6172,6 +6860,7 @@
         "U+1F49E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6181,6 +6870,7 @@
         "U+1F49F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6190,6 +6880,7 @@
         "U+1F4A0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6199,6 +6890,7 @@
         "U+1F4A1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6208,6 +6900,7 @@
         "U+1F4A2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6217,6 +6910,7 @@
         "U+1F4A3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6226,6 +6920,7 @@
         "U+1F4A4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6235,6 +6930,7 @@
         "U+1F4A5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6244,6 +6940,7 @@
         "U+1F4A6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6253,6 +6950,7 @@
         "U+1F4A7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6262,6 +6960,7 @@
         "U+1F4A8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6271,6 +6970,7 @@
         "U+1F4A9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6280,6 +6980,7 @@
         "U+1F4AA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6289,6 +6990,7 @@
         "U+1F4AB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6298,6 +7000,7 @@
         "U+1F4AC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6307,6 +7010,7 @@
         "U+1F4AD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6316,6 +7020,7 @@
         "U+1F4AE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6325,6 +7030,7 @@
         "U+1F4AF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6334,6 +7040,7 @@
         "U+1F4B0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6343,6 +7050,7 @@
         "U+1F4B3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6352,6 +7060,7 @@
         "U+1F4B5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6361,6 +7070,7 @@
         "U+1F4BA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6370,6 +7080,7 @@
         "U+1F4BB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6379,6 +7090,7 @@
         "U+1F4BD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6388,6 +7100,7 @@
         "U+1F4BE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6397,6 +7110,7 @@
         "U+1F4BF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6406,6 +7120,7 @@
         "U+1F4C0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6415,6 +7130,7 @@
         "U+1F4C1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6424,6 +7140,7 @@
         "U+1F4C2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6433,6 +7150,7 @@
         "U+1F4C5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6442,6 +7160,7 @@
         "U+1F4C6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6451,6 +7170,7 @@
         "U+1F4C7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6460,6 +7180,7 @@
         "U+1F4C8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6469,6 +7190,7 @@
         "U+1F4C9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6478,6 +7200,7 @@
         "U+1F4CA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6487,6 +7210,7 @@
         "U+1F4CB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6496,6 +7220,7 @@
         "U+1F4CC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6505,6 +7230,7 @@
         "U+1F4CD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6514,6 +7240,7 @@
         "U+1F4CE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6523,6 +7250,7 @@
         "U+1F4CF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6532,6 +7260,7 @@
         "U+1F4D0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6541,6 +7270,7 @@
         "U+1F4DE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6550,6 +7280,7 @@
         "U+1F4DF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6559,6 +7290,7 @@
         "U+1F4E0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6568,6 +7300,7 @@
         "U+1F4E1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6577,6 +7310,7 @@
         "U+1F4E4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6586,6 +7320,7 @@
         "U+1F4E5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6595,6 +7330,7 @@
         "U+1F4E6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6604,6 +7340,7 @@
         "U+1F4E7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6613,6 +7350,7 @@
         "U+1F4E8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6622,6 +7360,7 @@
         "U+1F4E9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6631,6 +7370,7 @@
         "U+1F4EA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6640,6 +7380,7 @@
         "U+1F4EB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6649,6 +7390,7 @@
         "U+1F4EC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6658,6 +7400,7 @@
         "U+1F4ED"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6667,6 +7410,7 @@
         "U+1F4EE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6676,6 +7420,7 @@
         "U+1F4F1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6685,6 +7430,7 @@
         "U+1F4F2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6694,6 +7440,7 @@
         "U+1F4F7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6703,6 +7450,7 @@
         "U+1F4F8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6712,6 +7460,7 @@
         "U+1F4F9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6721,6 +7470,7 @@
         "U+1F4FA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6730,6 +7480,7 @@
         "U+1F4FB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6739,6 +7490,7 @@
         "U+1F4FC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6749,6 +7501,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -6758,6 +7511,7 @@
         "U+1F50F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6767,6 +7521,7 @@
         "U+1F510"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6776,6 +7531,7 @@
         "U+1F511"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6785,6 +7541,7 @@
         "U+1F512"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6794,6 +7551,7 @@
         "U+1F513"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6803,6 +7561,7 @@
         "U+1F514"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6812,6 +7571,7 @@
         "U+1F515"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6821,6 +7581,7 @@
         "U+1F51E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6830,6 +7591,7 @@
         "U+1F525"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6839,6 +7601,7 @@
         "U+1F526"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6848,6 +7611,7 @@
         "U+1F527"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6857,6 +7621,7 @@
         "U+1F528"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6866,6 +7631,7 @@
         "U+1F529"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6875,6 +7641,7 @@
         "U+1F52A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6884,6 +7651,7 @@
         "U+1F52B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6893,6 +7661,7 @@
         "U+1F52C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6902,6 +7671,7 @@
         "U+1F52D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6911,6 +7681,7 @@
         "U+1F52E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6920,6 +7691,7 @@
         "U+1F52F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6930,6 +7702,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -6940,9 +7713,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 looks correct, 2 ch wide"
+      "answered": true
     },
     "🕋": {
       "glyph": "🕋",
@@ -6950,6 +7723,7 @@
         "U+1F54B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6959,6 +7733,7 @@
         "U+1F54C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6968,6 +7743,7 @@
         "U+1F54D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6977,6 +7753,7 @@
         "U+1F54E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -6987,6 +7764,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -6997,6 +7775,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
       "comment": "3 looks correct and is rendered as 2 ch wide"
@@ -7008,6 +7787,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true,
       "comment": "3 looks correct and renders as 2 ch wide"
@@ -7019,6 +7799,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7029,9 +7810,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "hand overflows next char at 2, looks good at 3"
+      "answered": true
     },
     "🖕": {
       "glyph": "🖕",
@@ -7039,6 +7820,7 @@
         "U+1F595"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7048,6 +7830,7 @@
         "U+1F596"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7057,6 +7840,7 @@
         "U+1F5A4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7067,6 +7851,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7077,6 +7862,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7087,6 +7873,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7097,6 +7884,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7107,6 +7895,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7117,6 +7906,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7127,6 +7917,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7137,6 +7928,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7147,6 +7939,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7157,6 +7950,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7167,6 +7961,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7177,6 +7972,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7187,6 +7983,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -7197,9 +7994,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🗻": {
       "glyph": "🗻",
@@ -7207,6 +8004,7 @@
         "U+1F5FB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7216,6 +8014,7 @@
         "U+1F5FC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7225,6 +8024,7 @@
         "U+1F5FD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7234,6 +8034,7 @@
         "U+1F5FF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7243,6 +8044,7 @@
         "U+1F600"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7252,6 +8054,7 @@
         "U+1F601"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7261,6 +8064,7 @@
         "U+1F602"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7270,6 +8074,7 @@
         "U+1F603"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7279,6 +8084,7 @@
         "U+1F604"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7288,6 +8094,7 @@
         "U+1F605"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7297,6 +8104,7 @@
         "U+1F606"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7306,6 +8114,7 @@
         "U+1F607"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7315,6 +8124,7 @@
         "U+1F608"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7324,6 +8134,7 @@
         "U+1F609"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7333,6 +8144,7 @@
         "U+1F60A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7342,6 +8154,7 @@
         "U+1F60B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7351,6 +8164,7 @@
         "U+1F60D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7360,6 +8174,7 @@
         "U+1F60E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7369,6 +8184,7 @@
         "U+1F60F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7378,6 +8194,7 @@
         "U+1F610"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7387,6 +8204,7 @@
         "U+1F611"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7396,6 +8214,7 @@
         "U+1F618"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7405,6 +8224,7 @@
         "U+1F61B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7414,6 +8234,7 @@
         "U+1F61C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7423,6 +8244,7 @@
         "U+1F61D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7432,6 +8254,7 @@
         "U+1F620"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7441,6 +8264,7 @@
         "U+1F621"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7450,6 +8274,7 @@
         "U+1F622"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7459,6 +8284,7 @@
         "U+1F624"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7468,6 +8294,7 @@
         "U+1F62A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7477,6 +8304,7 @@
         "U+1F62C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7486,6 +8314,7 @@
         "U+1F62D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7497,8 +8326,10 @@
         "U+1F4A8"
       ],
       "computed_width": 4,
+      "vte_width": 2,
       "measured_width": 4,
-      "answered": true
+      "answered": true,
+      "comment": "consumes 4ch in VTE, shows as two emoji"
     },
     "😴": {
       "glyph": "😴",
@@ -7506,6 +8337,7 @@
         "U+1F634"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7515,6 +8347,7 @@
         "U+1F635"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7526,8 +8359,10 @@
         "U+1F4AB"
       ],
       "computed_width": 4,
+      "vte_width": 2,
       "measured_width": 4,
-      "answered": true
+      "answered": true,
+      "comment": "consumes 4ch in VTE, shows as two emoji "
     },
     "😶": {
       "glyph": "😶",
@@ -7535,6 +8370,7 @@
         "U+1F636"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7544,6 +8380,7 @@
         "U+1F638"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7553,6 +8390,7 @@
         "U+1F639"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7562,6 +8400,7 @@
         "U+1F63A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7571,6 +8410,7 @@
         "U+1F63B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7580,6 +8420,7 @@
         "U+1F63C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7589,6 +8430,7 @@
         "U+1F63D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7598,6 +8440,7 @@
         "U+1F63E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7607,6 +8450,7 @@
         "U+1F63F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7616,6 +8460,7 @@
         "U+1F640"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7625,6 +8470,7 @@
         "U+1F642"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7634,6 +8480,7 @@
         "U+1F643"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7643,6 +8490,7 @@
         "U+1F644"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7652,6 +8500,7 @@
         "U+1F648"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7661,6 +8510,7 @@
         "U+1F649"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7670,6 +8520,7 @@
         "U+1F64A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7679,6 +8530,7 @@
         "U+1F64C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7688,6 +8540,7 @@
         "U+1F64F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7697,6 +8550,7 @@
         "U+1F680"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7706,6 +8560,7 @@
         "U+1F681"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7715,6 +8570,7 @@
         "U+1F682"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7724,6 +8580,7 @@
         "U+1F683"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7733,6 +8590,7 @@
         "U+1F684"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7742,6 +8600,7 @@
         "U+1F685"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7751,6 +8610,7 @@
         "U+1F686"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7760,6 +8620,7 @@
         "U+1F687"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7769,6 +8630,7 @@
         "U+1F688"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7778,6 +8640,7 @@
         "U+1F689"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7787,6 +8650,7 @@
         "U+1F68A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7796,6 +8660,7 @@
         "U+1F68B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7805,6 +8670,7 @@
         "U+1F68C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7814,6 +8680,7 @@
         "U+1F68D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7823,6 +8690,7 @@
         "U+1F68E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7832,6 +8700,7 @@
         "U+1F68F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7841,6 +8710,7 @@
         "U+1F690"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7850,6 +8720,7 @@
         "U+1F691"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7859,6 +8730,7 @@
         "U+1F692"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7868,6 +8740,7 @@
         "U+1F693"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7877,6 +8750,7 @@
         "U+1F694"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7886,6 +8760,7 @@
         "U+1F695"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7895,6 +8770,7 @@
         "U+1F696"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7904,6 +8780,7 @@
         "U+1F697"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7913,6 +8790,7 @@
         "U+1F698"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7922,6 +8800,7 @@
         "U+1F699"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7931,6 +8810,7 @@
         "U+1F69A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7940,6 +8820,7 @@
         "U+1F69B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7949,6 +8830,7 @@
         "U+1F69C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7958,6 +8840,7 @@
         "U+1F69D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7967,6 +8850,7 @@
         "U+1F69E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7976,6 +8860,7 @@
         "U+1F69F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7985,6 +8870,7 @@
         "U+1F6A0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -7994,6 +8880,7 @@
         "U+1F6A1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8003,6 +8890,7 @@
         "U+1F6A2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8012,6 +8900,7 @@
         "U+1F6A3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8021,6 +8910,7 @@
         "U+1F6A4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8030,6 +8920,7 @@
         "U+1F6A5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8039,6 +8930,7 @@
         "U+1F6A6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8048,6 +8940,7 @@
         "U+1F6A7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8057,6 +8950,7 @@
         "U+1F6A8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8066,6 +8960,7 @@
         "U+1F6AA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8075,6 +8970,7 @@
         "U+1F6AB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8084,6 +8980,7 @@
         "U+1F6AC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8093,6 +8990,7 @@
         "U+1F6AD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8102,6 +9000,7 @@
         "U+1F6AF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8111,6 +9010,7 @@
         "U+1F6B1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8120,6 +9020,7 @@
         "U+1F6B2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8129,6 +9030,7 @@
         "U+1F6B3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8138,6 +9040,7 @@
         "U+1F6B4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8147,6 +9050,7 @@
         "U+1F6B5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8156,6 +9060,7 @@
         "U+1F6B7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8165,6 +9070,7 @@
         "U+1F6B8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8174,6 +9080,7 @@
         "U+1F6BD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8183,6 +9090,7 @@
         "U+1F6BF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8192,6 +9100,7 @@
         "U+1F6C1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8202,6 +9111,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -8212,6 +9122,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -8221,6 +9132,7 @@
         "U+1F6D0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8230,6 +9142,7 @@
         "U+1F6D1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8239,6 +9152,7 @@
         "U+1F6D2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8248,6 +9162,7 @@
         "U+1F6D5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8258,6 +9173,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -8268,6 +9184,7 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
       "answered": true
     },
@@ -8278,9 +9195,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🛩️": {
       "glyph": "🛩️",
@@ -8289,9 +9206,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🛫": {
       "glyph": "🛫",
@@ -8299,6 +9216,7 @@
         "U+1F6EB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8308,6 +9226,7 @@
         "U+1F6EC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8318,9 +9237,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🛳️": {
       "glyph": "🛳️",
@@ -8329,9 +9248,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 3,
-      "answered": true,
-      "comment": "3 correct, 2ch wide"
+      "answered": true
     },
     "🛴": {
       "glyph": "🛴",
@@ -8339,6 +9258,7 @@
         "U+1F6F4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8348,6 +9268,7 @@
         "U+1F6F5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8357,6 +9278,7 @@
         "U+1F6F6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8366,6 +9288,7 @@
         "U+1F6F7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8375,6 +9298,7 @@
         "U+1F6F8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8384,6 +9308,7 @@
         "U+1F6F9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8393,6 +9318,7 @@
         "U+1F6FA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8402,6 +9328,7 @@
         "U+1F6FB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8411,6 +9338,7 @@
         "U+1F6FC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8420,6 +9348,7 @@
         "U+1F7F0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8429,6 +9358,7 @@
         "U+1F90C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8438,6 +9368,7 @@
         "U+1F90D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8447,6 +9378,7 @@
         "U+1F90E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8456,6 +9388,7 @@
         "U+1F90F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8465,6 +9398,7 @@
         "U+1F914"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8474,6 +9408,7 @@
         "U+1F916"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8483,6 +9418,7 @@
         "U+1F917"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8492,6 +9428,7 @@
         "U+1F918"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8501,6 +9438,7 @@
         "U+1F919"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8510,6 +9448,7 @@
         "U+1F91A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8519,6 +9458,7 @@
         "U+1F91B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8528,6 +9468,7 @@
         "U+1F91C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8537,6 +9478,7 @@
         "U+1F91D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8546,6 +9488,7 @@
         "U+1F91E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8555,6 +9498,7 @@
         "U+1F91F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8564,6 +9508,7 @@
         "U+1F921"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8573,6 +9518,7 @@
         "U+1F923"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8582,6 +9528,7 @@
         "U+1F924"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8591,6 +9538,7 @@
         "U+1F928"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8600,6 +9548,7 @@
         "U+1F929"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8609,6 +9558,7 @@
         "U+1F92A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8618,6 +9568,7 @@
         "U+1F92C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8627,6 +9578,7 @@
         "U+1F92F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8636,6 +9588,7 @@
         "U+1F932"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8645,6 +9598,7 @@
         "U+1F933"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8654,6 +9608,7 @@
         "U+1F938"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8663,6 +9618,7 @@
         "U+1F939"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8672,6 +9628,7 @@
         "U+1F93A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8681,6 +9638,7 @@
         "U+1F93C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8690,6 +9648,7 @@
         "U+1F93D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8699,6 +9658,7 @@
         "U+1F93E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8708,6 +9668,7 @@
         "U+1F93F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8717,6 +9678,7 @@
         "U+1F940"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8726,6 +9688,7 @@
         "U+1F941"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8735,6 +9698,7 @@
         "U+1F942"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8744,6 +9708,7 @@
         "U+1F943"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8753,6 +9718,7 @@
         "U+1F945"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8762,6 +9728,7 @@
         "U+1F947"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8771,6 +9738,7 @@
         "U+1F948"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8780,6 +9748,7 @@
         "U+1F949"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8789,6 +9758,7 @@
         "U+1F94A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8798,6 +9768,7 @@
         "U+1F94B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8807,6 +9778,7 @@
         "U+1F94C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8816,6 +9788,7 @@
         "U+1F94D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8825,6 +9798,7 @@
         "U+1F94E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8834,6 +9808,7 @@
         "U+1F94F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8843,6 +9818,7 @@
         "U+1F950"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8852,6 +9828,7 @@
         "U+1F951"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8861,6 +9838,7 @@
         "U+1F952"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8870,6 +9848,7 @@
         "U+1F953"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8879,6 +9858,7 @@
         "U+1F954"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8888,6 +9868,7 @@
         "U+1F955"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8897,6 +9878,7 @@
         "U+1F956"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8906,6 +9888,7 @@
         "U+1F957"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8915,6 +9898,7 @@
         "U+1F958"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8924,6 +9908,7 @@
         "U+1F959"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8933,6 +9918,7 @@
         "U+1F95A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8942,6 +9928,7 @@
         "U+1F95B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8951,6 +9938,7 @@
         "U+1F95C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8960,6 +9948,7 @@
         "U+1F95D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8969,6 +9958,7 @@
         "U+1F95E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8978,6 +9968,7 @@
         "U+1F95F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8987,6 +9978,7 @@
         "U+1F960"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -8996,6 +9988,7 @@
         "U+1F964"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9005,6 +9998,7 @@
         "U+1F965"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9014,6 +10008,7 @@
         "U+1F966"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9023,6 +10018,7 @@
         "U+1F967"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9032,6 +10028,7 @@
         "U+1F968"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9041,6 +10038,7 @@
         "U+1F969"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9050,6 +10048,7 @@
         "U+1F96A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9059,6 +10058,7 @@
         "U+1F96B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9068,6 +10068,7 @@
         "U+1F96C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9077,6 +10078,7 @@
         "U+1F96D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9086,6 +10088,7 @@
         "U+1F96E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9095,6 +10098,7 @@
         "U+1F96F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9104,6 +10108,7 @@
         "U+1F970"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9113,6 +10118,7 @@
         "U+1F971"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9122,6 +10128,7 @@
         "U+1F973"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9131,6 +10138,7 @@
         "U+1F975"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9140,6 +10148,7 @@
         "U+1F976"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9149,6 +10158,7 @@
         "U+1F978"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9158,6 +10168,7 @@
         "U+1F97A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9167,6 +10178,7 @@
         "U+1F980"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9176,6 +10188,7 @@
         "U+1F981"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9185,6 +10198,7 @@
         "U+1F982"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9194,6 +10208,7 @@
         "U+1F983"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9203,6 +10218,7 @@
         "U+1F984"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9212,6 +10228,7 @@
         "U+1F985"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9221,6 +10238,7 @@
         "U+1F986"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9230,6 +10248,7 @@
         "U+1F987"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9239,6 +10258,7 @@
         "U+1F988"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9248,6 +10268,7 @@
         "U+1F989"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9257,6 +10278,7 @@
         "U+1F98A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9266,6 +10288,7 @@
         "U+1F98B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9275,6 +10298,7 @@
         "U+1F98C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9284,6 +10308,7 @@
         "U+1F98D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9293,6 +10318,7 @@
         "U+1F98E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9302,6 +10328,7 @@
         "U+1F98F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9311,6 +10338,7 @@
         "U+1F990"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9320,6 +10348,7 @@
         "U+1F991"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9329,6 +10358,7 @@
         "U+1F992"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9338,6 +10368,7 @@
         "U+1F993"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9347,6 +10378,7 @@
         "U+1F994"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9356,6 +10388,7 @@
         "U+1F995"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9365,6 +10398,7 @@
         "U+1F996"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9374,6 +10408,7 @@
         "U+1F997"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9383,6 +10418,7 @@
         "U+1F998"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9392,6 +10428,7 @@
         "U+1F999"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9401,6 +10438,7 @@
         "U+1F99A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9410,6 +10448,7 @@
         "U+1F99B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9419,6 +10458,7 @@
         "U+1F99C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9428,6 +10468,7 @@
         "U+1F99D"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9437,6 +10478,7 @@
         "U+1F99E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9446,6 +10488,7 @@
         "U+1F99F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9455,6 +10498,7 @@
         "U+1F9A1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9464,6 +10508,7 @@
         "U+1F9A2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9473,6 +10518,7 @@
         "U+1F9A3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9482,6 +10528,7 @@
         "U+1F9A4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9491,6 +10538,7 @@
         "U+1F9A5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9500,6 +10548,7 @@
         "U+1F9A6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9509,6 +10558,7 @@
         "U+1F9A7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9518,6 +10568,7 @@
         "U+1F9A8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9527,6 +10578,7 @@
         "U+1F9A9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9536,6 +10588,7 @@
         "U+1F9AA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9545,6 +10598,7 @@
         "U+1F9AB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9554,6 +10608,7 @@
         "U+1F9AC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9563,6 +10618,7 @@
         "U+1F9AE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9572,6 +10628,7 @@
         "U+1F9AF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9581,6 +10638,7 @@
         "U+1F9B4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9590,6 +10648,7 @@
         "U+1F9B5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9599,6 +10658,7 @@
         "U+1F9B6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9608,6 +10668,7 @@
         "U+1F9B7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9617,6 +10678,7 @@
         "U+1F9BB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9626,6 +10688,7 @@
         "U+1F9BC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9635,6 +10698,7 @@
         "U+1F9BD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9644,6 +10708,7 @@
         "U+1F9BE"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9653,6 +10718,7 @@
         "U+1F9BF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9662,6 +10728,7 @@
         "U+1F9C0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9671,6 +10738,7 @@
         "U+1F9C1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9680,6 +10748,7 @@
         "U+1F9C3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9689,6 +10758,7 @@
         "U+1F9C4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9698,6 +10768,7 @@
         "U+1F9C5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9707,6 +10778,7 @@
         "U+1F9C6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9716,6 +10788,7 @@
         "U+1F9C7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9725,6 +10798,7 @@
         "U+1F9C8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9734,6 +10808,7 @@
         "U+1F9C9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9743,6 +10818,7 @@
         "U+1F9CA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9752,6 +10828,7 @@
         "U+1F9CB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9761,6 +10838,7 @@
         "U+1F9D7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9770,6 +10848,7 @@
         "U+1F9D8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9779,6 +10858,7 @@
         "U+1F9E0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9788,6 +10868,7 @@
         "U+1F9E1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9797,6 +10878,7 @@
         "U+1F9E8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9806,6 +10888,7 @@
         "U+1F9E9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9815,6 +10898,7 @@
         "U+1F9EA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9824,6 +10908,7 @@
         "U+1F9EB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9833,6 +10918,7 @@
         "U+1F9EC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9842,6 +10928,7 @@
         "U+1F9EF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9851,6 +10938,7 @@
         "U+1F9F0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9860,6 +10948,7 @@
         "U+1F9F1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9869,6 +10958,7 @@
         "U+1F9F2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9878,6 +10968,7 @@
         "U+1F9F9"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9887,6 +10978,7 @@
         "U+1F9FA"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9896,6 +10988,7 @@
         "U+1F9FB"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9905,6 +10998,7 @@
         "U+1F9FC"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9914,6 +11008,7 @@
         "U+1F9FD"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9923,6 +11018,7 @@
         "U+1F9FF"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9932,6 +11028,7 @@
         "U+1FA70"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9941,6 +11038,7 @@
         "U+1FA75"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9950,6 +11048,7 @@
         "U+1FA76"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9959,6 +11058,7 @@
         "U+1FA77"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9968,6 +11068,7 @@
         "U+1FA79"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9977,6 +11078,7 @@
         "U+1FA7A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9986,6 +11088,7 @@
         "U+1FA80"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -9995,6 +11098,7 @@
         "U+1FA81"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10004,6 +11108,7 @@
         "U+1FA82"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10013,6 +11118,7 @@
         "U+1FA83"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10022,6 +11128,7 @@
         "U+1FA90"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10031,6 +11138,7 @@
         "U+1FA91"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10040,6 +11148,7 @@
         "U+1FA93"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10049,6 +11158,7 @@
         "U+1FA94"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10058,6 +11168,7 @@
         "U+1FA95"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10067,6 +11178,7 @@
         "U+1FA97"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10076,6 +11188,7 @@
         "U+1FA98"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10085,6 +11198,7 @@
         "U+1FA99"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10094,6 +11208,7 @@
         "U+1FA9A"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10103,6 +11218,7 @@
         "U+1FA9B"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10112,6 +11228,7 @@
         "U+1FA9C"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10121,6 +11238,7 @@
         "U+1FA9E"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10130,6 +11248,7 @@
         "U+1FA9F"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10139,6 +11258,7 @@
         "U+1FAA0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10148,6 +11268,7 @@
         "U+1FAA3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10157,6 +11278,7 @@
         "U+1FAA5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10166,6 +11288,7 @@
         "U+1FAA6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10175,6 +11298,7 @@
         "U+1FAA8"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10184,6 +11308,7 @@
         "U+1FAB0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10193,6 +11318,7 @@
         "U+1FAB1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10202,6 +11328,7 @@
         "U+1FAB2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10211,6 +11338,7 @@
         "U+1FAB3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10220,6 +11348,7 @@
         "U+1FAB4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10229,6 +11358,7 @@
         "U+1FAB5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10238,6 +11368,7 @@
         "U+1FAB6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10247,6 +11378,7 @@
         "U+1FAC0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10256,6 +11388,7 @@
         "U+1FAC1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10265,6 +11398,7 @@
         "U+1FAD0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10274,6 +11408,7 @@
         "U+1FAD1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10283,6 +11418,7 @@
         "U+1FAD2"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10292,6 +11428,7 @@
         "U+1FAD3"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10301,6 +11438,7 @@
         "U+1FAD4"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10310,6 +11448,7 @@
         "U+1FAD5"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10319,6 +11458,7 @@
         "U+1FAD6"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10328,6 +11468,7 @@
         "U+1FAE0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10337,6 +11478,7 @@
         "U+1FAE1"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10346,6 +11488,7 @@
         "U+1FAE7"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     },
@@ -10355,6 +11498,7 @@
         "U+1FAF0"
       ],
       "computed_width": 2,
+      "vte_width": 2,
       "measured_width": 2,
       "answered": true
     }
