@@ -76,3 +76,7 @@ and this ticket validates it rather than designing it.
 ## Sprint notes
 
 Preflight (HEAD 4aed432): `ApplyTheme` (browser.go:96) and `ConsumeKey` (browser.go:233) exist; shared `NavigationPane` from 105 is in place. Missing: exported `NewWidget`, `PaneRequester`, `examplesreg` factory + loom-demo hosted tab, and `DisableDefaultQuit` is still set (filebrowser.go:69).
+
+Pre-Work / Required Refinements (063, host run on luna WIP):
+
+- Only failure: `TestBrowserUsesAnimatedBackground` (browser_test.go:192, "filebrowser pane has no animated background"). The pane setup that moved out of `Run` lost the animated background; restore it for standalone and hosted use (widget-owned background, not a pane call only in `Run`). Do not weaken the test.
