@@ -42,8 +42,8 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 	}
 	w.HandleKey(loom.KeyEvent{Key: "down"})
 	w.HandleKey(loom.KeyEvent{Text: "?"})
-	if got := w.PageMeasurement(1); got.MeasuredWidth != 0 || got.Answered {
-		t.Fatalf("staged unsure row = %#v, want unconfirmed unsure answer", got)
+	if got := w.PageMeasurement(1); got.MeasuredWidth != 0 || !got.Answered {
+		t.Fatalf("staged unsure row = %#v, want confirmed unsure answer", got)
 	}
 	w.HandleKey(loom.KeyEvent{Text: "c"})
 	w.HandleKey(loom.KeyEvent{Text: "manual observation"})
@@ -63,19 +63,16 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 	w.HandleKey(loom.KeyEvent{Text: "manual observation"})
 	w.HandleKey(loom.KeyEvent{Key: "enter"})
 
-	if len(store.Entries) != 0 {
-		t.Fatalf("unconfirmed page saved entries: %#v", store.Entries)
+	if got := store.Entries[page[0]]; !got.Answered || got.MeasuredWidth != 2 {
+		t.Fatalf("first row in store = %#v", got)
+	}
+	if got := store.Entries[page[1]]; !got.Answered || got.MeasuredWidth != 0 || got.Comment != "manual observation" {
+		t.Fatalf("unsure row in store = %#v", got)
 	}
 
 	w.HandleKey(loom.KeyEvent{Key: "enter"})
 	if got, want := w.page, 1; got != want {
 		t.Fatalf("page after confirmation = %d, want %d", got, want)
-	}
-	if got := store.Entries[page[0]]; !got.Answered || got.MeasuredWidth != 2 {
-		t.Fatalf("confirmed first row = %#v", got)
-	}
-	if got := store.Entries[page[1]]; !got.Answered || got.MeasuredWidth != 0 || got.Comment != "manual observation" {
-		t.Fatalf("confirmed unsure row = %#v", got)
 	}
 	if _, err := os.Stat(jsonPath); err != nil {
 		t.Fatalf("page confirmation did not save JSON: %v", err)
@@ -170,17 +167,21 @@ func TestEvaluateVTEModeAndWidth(t *testing.T) {
 	}
 }
 
-func TestMeasureWidgetQuitLeavesUnconfirmedPageUnmeasured(t *testing.T) {
+func TestMeasureWidgetQuitSavesPendingEdits(t *testing.T) {
 	dir := t.TempDir()
+	jsonPath := filepath.Join(dir, "measurements.json")
 	store := NewMeasurementStore(TerminalProfile{})
-	w := NewMeasureWidget(store, filepath.Join(dir, "measurements.json"), "")
+	w := NewMeasureWidget(store, jsonPath, "")
 	glyph := w.CurrentGlyph()
 	w.HandleKey(loom.KeyEvent{Key: "right"})
 	if !w.HandleKey(loom.KeyEvent{Text: "q"}) {
 		t.Fatal("q did not request quit")
 	}
-	if _, exists := store.Entries[glyph]; exists {
-		t.Fatalf("q saved unconfirmed row %q", glyph)
+	if entry, exists := store.Entries[glyph]; !exists || !entry.Answered {
+		t.Fatalf("q did not save edited row %q: %#v", glyph, entry)
+	}
+	if _, err := os.Stat(jsonPath); err != nil {
+		t.Fatalf("q did not persist JSON to disk: %v", err)
 	}
 }
 

@@ -175,10 +175,12 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 		return w.handleCommentKey(key, e.Text)
 	}
 	if key == "esc" || key == "ctrl-c" || key == "q" {
+		w.flushPending()
 		return true
 	}
 	switch key {
 	case "tab", "f":
+		w.flushPending()
 		w.filter = nextMeasureFilter(w.filter)
 		w.refreshGlyphs()
 		return false
@@ -257,12 +259,11 @@ func (w *MeasureWidget) measurement(glyph string) Measurement {
 		return m
 	}
 	if m, ok := w.store.Entries[glyph]; ok {
-		m.Answered = false
 		m.ComputedWidth = measure.StringWidth(glyph)
 		if m.RenderMode == "" {
-			m.RenderMode = RenderModeDefault
+			m.RenderMode = EvaluateVTEMode(glyph)
 		}
-		if m.MeasuredWidth == 0 {
+		if !m.Answered && m.MeasuredWidth == 0 {
 			rendered := ApplyRenderMode(glyph, m.RenderMode)
 			m.MeasuredWidth = measure.StringWidth(rendered)
 		}
@@ -297,8 +298,10 @@ func (w *MeasureWidget) cycleSelectedMode(direction int) {
 	m.RenderMode = modes[nextIdx]
 	rendered := ApplyRenderMode(glyph, m.RenderMode)
 	m.MeasuredWidth = measure.StringWidth(rendered)
-	m.Answered = false
-	w.pending[glyph] = m
+	m.Answered = true
+	w.store.Set(m)
+	delete(w.pending, glyph)
+	w.persist()
 }
 
 func (w *MeasureWidget) deleteSelectedComment() {
@@ -308,10 +311,11 @@ func (w *MeasureWidget) deleteSelectedComment() {
 	}
 	m := w.measurement(glyph)
 	m.Comment = ""
-	m.Answered = false
-	w.pending[glyph] = m
+	m.Answered = true
+	w.store.Set(m)
+	delete(w.pending, glyph)
+	w.persist()
 }
-
 
 func (w *MeasureWidget) setSelectedWidth(width int) {
 	glyph := w.CurrentGlyph()
@@ -320,8 +324,10 @@ func (w *MeasureWidget) setSelectedWidth(width int) {
 	}
 	m := w.measurement(glyph)
 	m.MeasuredWidth = width
-	m.Answered = false
-	w.pending[glyph] = m
+	m.Answered = true
+	w.store.Set(m)
+	delete(w.pending, glyph)
+	w.persist()
 }
 
 func (w *MeasureWidget) beginComment() {
@@ -341,8 +347,10 @@ func (w *MeasureWidget) handleCommentKey(key, text string) bool {
 		glyph := w.CurrentGlyph()
 		m := w.measurement(glyph)
 		m.Comment = string(w.comment)
-		m.Answered = false
-		w.pending[glyph] = m
+		m.Answered = true
+		w.store.Set(m)
+		delete(w.pending, glyph)
+		w.persist()
 		w.editingComment = false
 	case "backspace":
 		if len(w.comment) > 0 {
@@ -352,6 +360,18 @@ func (w *MeasureWidget) handleCommentKey(key, text string) bool {
 		w.comment = append(w.comment, []rune(text)...)
 	}
 	return false
+}
+
+func (w *MeasureWidget) flushPending() {
+	if len(w.pending) == 0 {
+		return
+	}
+	for glyph, m := range w.pending {
+		m.Answered = true
+		w.store.Set(m)
+		delete(w.pending, glyph)
+	}
+	w.persist()
 }
 
 func (w *MeasureWidget) confirmPage() {
@@ -371,6 +391,7 @@ func (w *MeasureWidget) confirmPage() {
 }
 
 func (w *MeasureWidget) previousPage() {
+	w.flushPending()
 	if w.page > 0 {
 		w.page--
 		w.selected = 0
