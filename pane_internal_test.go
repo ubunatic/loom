@@ -10,6 +10,47 @@ import (
 	"testing"
 )
 
+type paneSelectionWidget struct {
+	selection      int
+	consumeCalls   int
+	handleKeyCalls int
+}
+
+func (*paneSelectionWidget) Draw(*Canvas, Rect)          {}
+func (*paneSelectionWidget) HandleMouse(MouseEvent) bool { return false }
+
+func (w *paneSelectionWidget) HandleKey(KeyEvent) bool {
+	w.handleKeyCalls++
+	return false
+}
+
+func (w *paneSelectionWidget) ConsumeKey(e KeyEvent) (quit, consumed bool) {
+	w.consumeCalls++
+	if e.Key == "down" {
+		w.selection++
+		return false, true
+	}
+	return false, false
+}
+
+func TestPaneDispatchKeyConsumesSelectionKeyOnce(t *testing.T) {
+	p := &Pane{}
+	w := &paneSelectionWidget{}
+
+	if p.dispatchKey(w, KeyEvent{Key: "down"}) {
+		t.Fatal("down key unexpectedly requested quit")
+	}
+	if w.selection != 1 {
+		t.Fatalf("selection after one down key = %d, want 1", w.selection)
+	}
+	if w.consumeCalls != 1 {
+		t.Fatalf("ConsumeKey calls = %d, want 1", w.consumeCalls)
+	}
+	if w.handleKeyCalls != 0 {
+		t.Fatalf("HandleKey calls = %d, want 0 after consumed key", w.handleKeyCalls)
+	}
+}
+
 func TestPaneClickTrackingIsDisabledOnTeardown(t *testing.T) {
 	out, err := os.Create(filepath.Join(t.TempDir(), "mouse-sequences"))
 	if err != nil {

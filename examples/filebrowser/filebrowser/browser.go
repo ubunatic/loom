@@ -264,7 +264,7 @@ func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
 	// The Choice owns all text keys while filtering; consume them before the
 	// host can interpret q or another app-level binding.
 	if k.Text != "" || isBrowserListKey(key) {
-		quit = b.navigation.HandleKey(k)
+		quit = b.frame.HandleKey(k)
 		b.dir = b.navigation.Directory().Path
 		return quit || b.quit, true
 	}

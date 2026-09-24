@@ -1032,7 +1032,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				}
 				continue
 			}
-			if root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
+			if p.dispatchKey(root, ke) {
 				return nil
 			}
 		case rr := <-reads:
@@ -1103,7 +1103,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					}
 					continue
 				}
-				if root.HandleKey(ke) || p.handleKeyFallback(ke, root) {
+				if p.dispatchKey(root, ke) {
 					quit = true
 					break
 				}
@@ -1113,6 +1113,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 		}
 	}
+}
+
+func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
+	if c, ok := root.(KeyConsumer); ok {
+		if quit, consumed := c.ConsumeKey(ke); consumed {
+			return quit
+		}
+	}
+	return root.HandleKey(ke) || p.handleKeyFallback(ke)
 }
 
 func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {

@@ -54,6 +54,27 @@ func TestFilebrowser093PTYClick(t *testing.T) {
 	}
 }
 
+func TestFilebrowserPTYArrowMovesOneItem(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"alpha.txt", "beta.txt", "gamma.txt", "delta.txt"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	bin := filepath.Join(t.TempDir(), "filebrowser")
+	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/filebrowser").CombinedOutput(); err != nil {
+		t.Fatalf("build filebrowser: %v\n%s", err, out)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "--theme", "plain", dir)
+	s.WaitFor("▶ ..", 5*time.Second)
+	s.SendRaw([]byte("\x1b[B"))
+	time.Sleep(150 * time.Millisecond)
+	screen := strings.Join(s.Screen(), "\n")
+	if !strings.Contains(screen, "Name: alpha.txt") || !strings.Contains(screen, "▶ alpha.txt") {
+		t.Fatalf("one down arrow did not select alpha.txt; screen:\n%s", screen)
+	}
+}
+
 func findPTYText(t *testing.T, screen []string, text string) (row, col int) {
 	t.Helper()
 	for y, line := range screen {
