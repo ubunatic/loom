@@ -1,6 +1,6 @@
 # 101 — Lean-sprint leftovers: dead treemap block, gofmt, unproven Split capture test, thin evidence
 
-**Status**: Open — leftovers from lean sprints
+**Status**: Closed — M1 67d9145 (gofmt), M2 986ba16+cd4bb84 (Split capture red-proof), M3 ad7c323 (081 distinct s1/s2, 088 full 217-row audit); make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Hygiene
