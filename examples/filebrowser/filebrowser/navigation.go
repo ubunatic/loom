@@ -2,6 +2,7 @@ package filebrowser
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"codeberg.org/ubunatic/loom"
@@ -17,6 +18,9 @@ type NavigationPaneOptions struct {
 	OnOpen func(loom.Directory)
 	// OnQuit is called when ESC is pressed at the filesystem root.
 	OnQuit func()
+	// SelectParent keeps the parent-directory row selected when a directory opens.
+	// By default, the first non-parent entry is selected.
+	SelectParent bool
 	// Style overrides the default Choice appearance when non-zero.
 	Style loom.ChoiceStyle
 }
@@ -34,7 +38,48 @@ type NavigationPane struct {
 
 // NewNavigationPane reads dir and creates a navigation pane with an initial selection.
 func NewNavigationPane(dir string, options NavigationPaneOptions) (*NavigationPane, error) {
-	pane := &NavigationPane{options: options}
+	pane := &NavigationPane{
+		options: options,
+		list:    loom.NewChoice(nil),
+	}
+	pane.list.SelectOnlyOnClick = true
+	pane.list.MouseTextOnly = true
+	pane.list.Prompt = "filter> "
+	pane.list.Placeholder = "type to filter"
+	if pane.options.Style != (loom.ChoiceStyle{}) {
+		pane.list.Style = pane.options.Style
+	}
+	pane.list.OnSelect = func(item loom.Item) {
+		entry, ok := pane.entries[item.Name]
+		if !ok {
+			return
+		}
+		if entry.Kind == loom.FileKindDirectory {
+			name := ""
+			if entry.IsParent {
+				name = filepath.Base(pane.directory.Path)
+			}
+			if err := pane.open(entry.Path, name); err == nil {
+				if pane.options.OnOpen != nil {
+					pane.options.OnOpen(pane.directory)
+				}
+			}
+			return
+		}
+		if entry.Kind == loom.FileKindSymlink {
+			if info, err := os.Stat(entry.Path); err == nil && info.IsDir() {
+				if err := pane.open(entry.Path, ""); err == nil {
+					if pane.options.OnOpen != nil {
+						pane.options.OnOpen(pane.directory)
+					}
+				}
+				return
+			}
+		}
+		if pane.options.OnActivate != nil {
+			pane.options.OnActivate(entry)
+		}
+	}
 	if err := pane.open(dir, ""); err != nil {
 		return nil, err
 	}
@@ -45,6 +90,16 @@ func NewNavigationPane(dir string, options NavigationPaneOptions) (*NavigationPa
 
 // Directory returns the current directory and its entries.
 func (p *NavigationPane) Directory() loom.Directory { return p.directory }
+
+// SetRoot sets the directory where ESC requests a quit from the host.
+// Passing "" disables the root quit trigger.
+func (p *NavigationPane) SetRoot(dir string) {
+	if dir == "" {
+		p.rootDir = ""
+		return
+	}
+	p.rootDir = filepath.Clean(dir)
+}
 
 // List returns the underlying Choice for styling and host integration.
 func (p *NavigationPane) List() *loom.Choice { return p.list }
@@ -57,6 +112,33 @@ func (p *NavigationPane) Selected() (loom.FileEntry, bool) {
 	}
 	entry, ok := p.entries[item.Name]
 	return entry, ok
+}
+
+// Focused reports whether the underlying choice list has input focus.
+func (p *NavigationPane) Focused() bool {
+	return p.list != nil && p.list.Focused()
+}
+
+// SetFocus enables or disables input focus on the underlying choice list.
+func (p *NavigationPane) SetFocus(focused bool) {
+	if p.list != nil {
+		p.list.SetFocus(focused)
+	}
+}
+
+// ContentHeight estimates the required height of the navigation list.
+func (p *NavigationPane) ContentHeight() int {
+	if p.list != nil {
+		return p.list.ContentHeight()
+	}
+	return 1
+}
+
+// ApplyTheme updates the Choice style from the theme.
+func (p *NavigationPane) ApplyTheme(theme loom.ThemeColors) {
+	if p.list != nil {
+		p.list.ApplyTheme(theme)
+	}
 }
 
 func (p *NavigationPane) notifySelection() {
@@ -87,45 +169,18 @@ func (p *NavigationPane) open(dir, selectName string) error {
 		items = append(items, loom.Item{Name: name, Desc: desc})
 		entries[name] = entry
 	}
-	list := loom.NewChoice(items)
-	list.SelectOnlyOnClick = true
-	list.MouseTextOnly = true
-	list.Prompt = "filter> "
-	list.Placeholder = "type to filter"
-	if p.options.Style != (loom.ChoiceStyle{}) {
-		list.Style = p.options.Style
-	}
-	list.OnSelect = func(item loom.Item) {
-		entry, ok := entries[item.Name]
-		if !ok {
-			return
-		}
-		if entry.Kind == loom.FileKindDirectory {
-			name := ""
-			if entry.IsParent {
-				name = filepath.Base(directory.Path)
+	p.directory, p.entries = directory, entries
+	p.list.SetItems(items)
+	if selectName != "" {
+		for i, item := range items {
+			if item.Name == selectName {
+				p.list.SelectIndex(i)
+				break
 			}
-			if err := p.open(entry.Path, name); err == nil && p.options.OnOpen != nil {
-				p.options.OnOpen(p.directory)
-			}
-			return
 		}
-		if p.options.OnActivate != nil {
-			p.options.OnActivate(entry)
-		}
+	} else if !p.options.SelectParent && len(items) > 1 && items[0].Name == ".." {
+		p.list.SelectIndex(1)
 	}
-	for i, item := range items {
-		if item.Name == selectName {
-			for range i {
-				list.HandleKey(loom.KeyEvent{Key: "down"})
-			}
-			break
-		}
-	}
-	if selectName == "" && len(items) > 1 && items[0].Name == ".." {
-		list.HandleKey(loom.KeyEvent{Key: "down"})
-	}
-	p.directory, p.entries, p.list = directory, entries, list
 	p.notifySelection()
 	return nil
 }
@@ -139,7 +194,7 @@ func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) {
 // HandleKey processes navigation, filtering, directory opening, and selection.
 func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 	if e.Is("esc") {
-		if p.directory.Path == p.rootDir {
+		if p.rootDir != "" && p.directory.Path == p.rootDir {
 			if p.options.OnQuit != nil {
 				p.options.OnQuit()
 			}
@@ -147,10 +202,31 @@ func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 		}
 		parent, ok := p.directory.Parent()
 		if !ok || parent == p.directory.Path {
-			if p.options.OnQuit != nil {
-				p.options.OnQuit()
+			if p.rootDir != "" {
+				if p.options.OnQuit != nil {
+					p.options.OnQuit()
+				}
+				return true
 			}
-			return true
+			return false
+		}
+		if err := p.open(parent, filepath.Base(p.directory.Path)); err != nil {
+			return false
+		}
+		if p.options.OnOpen != nil {
+			p.options.OnOpen(p.directory)
+		}
+		return false
+	}
+	if e.Is("backspace") {
+		if p.list.Query() != "" {
+			quit := p.list.HandleKey(e)
+			p.notifySelection()
+			return quit
+		}
+		parent, ok := p.directory.Parent()
+		if !ok || parent == p.directory.Path {
+			return false
 		}
 		if err := p.open(parent, filepath.Base(p.directory.Path)); err != nil {
 			return false
@@ -161,31 +237,7 @@ func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 		return false
 	}
 	if e.Is("enter") {
-		item, ok := p.list.Selected()
-		if !ok {
-			return false
-		}
-		entry, ok := p.entries[item.Name]
-		if !ok {
-			return false
-		}
-		if entry.Kind == loom.FileKindDirectory {
-			name := ""
-			if entry.IsParent {
-				name = filepath.Base(p.directory.Path)
-			}
-			if err := p.open(entry.Path, name); err != nil {
-				return false
-			}
-			if p.options.OnOpen != nil {
-				p.options.OnOpen(p.directory)
-			}
-			return false
-		}
-		if p.options.OnActivate != nil {
-			p.options.OnActivate(entry)
-		}
-		return false
+		return p.list.HandleKey(e)
 	}
 	quit := p.list.HandleKey(e)
 	p.notifySelection()
@@ -202,10 +254,10 @@ func (p *NavigationPane) HandleMouse(e loom.MouseEvent) bool {
 }
 
 // ConsumeKey reports whether a key belongs to the navigation pane's host-level
-// navigation contract. ESC is consumed for both parent navigation and root quit.
+// navigation contract. ESC and backspace are consumed for parent navigation and root quit.
 func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	if !e.Is("esc") {
-		return false, false
+	if e.Is("esc") || e.Is("backspace") {
+		return p.HandleKey(e), true
 	}
-	return p.HandleKey(e), true
+	return false, false
 }

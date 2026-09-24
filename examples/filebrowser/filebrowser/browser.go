@@ -3,23 +3,22 @@ package filebrowser
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
 
 type browser struct {
-	frame     *loom.Frame
-	list      *loom.Choice
-	details   *detailView
-	dir       string
-	paths     map[string]string
-	entries   map[string]loom.FileEntry
-	notice    string
-	themeName string
-	theme     loom.ThemeColors
-	openFile  func(string) error
+	frame      *loom.Frame
+	navigation *NavigationPane
+	list       *loom.Choice
+	details    *detailView
+	dir        string
+	notice     string
+	themeName  string
+	theme      loom.ThemeColors
+	openFile   func(string) error
+	quit       bool
 }
 
 type detailView struct {
@@ -31,16 +30,39 @@ func (v *detailView) Focused() bool         { return v.focused }
 func (v *detailView) SetFocus(focused bool) { v.focused = focused }
 
 func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error) {
-	b := &browser{dir: path, details: &detailView{View: loom.NewView(nil)}, openFile: loom.OpenFile}
+	b := &browser{
+		dir:      path,
+		details:  &detailView{View: loom.NewView(nil)},
+		openFile: loom.OpenFile,
+	}
 	border := loom.BoxBorder{
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
 		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
 	}
+	navigation, err := NewNavigationPane(path, NavigationPaneOptions{
+		Style:        theme.ChoiceStyle(),
+		SelectParent: true,
+		OnSelection:  func(entry loom.FileEntry) { b.updateDetails(entry.Path) },
+		OnActivate:   b.activate,
+		OnOpen: func(directory loom.Directory) {
+			b.dir = directory.Path
+			b.notice = ""
+		},
+		OnQuit: func() { b.quit = true },
+	})
+	if err != nil {
+		return nil, err
+	}
+	navigation.SetRoot("") // Filebrowser allows navigating up without quitting on ESC.
+	b.navigation = navigation
+	b.list = navigation.List()
+	b.dir = navigation.Directory().Path
+
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
 		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme  •  F10/^Q quit",
 		Boxes: []loom.Box{
-			{ID: "files", Dynamic: true, FillHeight: true, MinWidth: 20, Height: 4, Border: border},
+			{ID: "files", Dynamic: true, FillHeight: true, MinWidth: 20, Height: 4, Border: border, Child: b.navigation},
 			{ID: "metadata", Dynamic: true, FillHeight: true, MinWidth: 25, Height: 4, Border: border, Child: b.details},
 		},
 		Actions: []loom.FrameAction{
@@ -49,8 +71,8 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 		},
 	}
 	b.applyTheme(themeName, theme)
-	if err := b.open(path, ""); err != nil {
-		return nil, err
+	if entry, ok := b.navigation.Selected(); ok {
+		b.updateDetails(entry.Path)
 	}
 	return b, nil
 }
@@ -63,8 +85,8 @@ func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
 	for i := range b.frame.Boxes {
 		b.frame.Boxes[i].Style = theme.BoxStyle()
 	}
-	if b.list != nil {
-		b.list.Style = theme.ChoiceStyle()
+	if b.navigation != nil {
+		b.navigation.ApplyTheme(theme)
 	}
 }
 
@@ -94,96 +116,37 @@ func (b *browser) cycleTheme() {
 	}
 }
 
-func (b *browser) open(dir, selectName string) error {
-	directory, err := loom.ReadDirectory(dir, loom.DirectoryOptions{IncludeParent: true})
-	if err != nil {
-		return err
-	}
-	items := make([]loom.Item, 0, len(directory.Entries))
-	paths := make(map[string]string, len(directory.Entries))
-	entries := make(map[string]loom.FileEntry, len(directory.Entries))
-	for _, entry := range directory.Entries {
-		name := entry.DisplayName()
-		desc := ""
-		if entry.IsParent {
-			desc = "parent directory"
-		} else if entry.Kind == loom.FileKindDirectory {
-			desc = "<dir>"
-		} else if entry.Kind == loom.FileKindSymlink {
-			desc = "<link>"
+func (b *browser) activate(entry loom.FileEntry) {
+	path := entry.Path
+	if entry.Kind == loom.FileKindRegular {
+		if err := b.openFile(path); err != nil {
+			b.notice = "Open failed: " + err.Error()
+		} else {
+			b.notice = "Opening file"
 		}
-		items = append(items, loom.Item{Name: name, Desc: desc})
-		paths[name] = entry.Path
-		entries[name] = entry
-	}
-	list := loom.NewChoice(items)
-	list.Style = b.theme.ChoiceStyle()
-	list.SelectOnlyOnClick = true
-	list.MouseTextOnly = true
-	list.Prompt = "filter> "
-	list.Placeholder = "type to filter"
-	list.OnSelect = func(item loom.Item) {
-		entry, ok := entries[item.Name]
-		if !ok {
-			b.notice = "Error: entry disappeared"
-			return
-		}
-		path := entry.Path
-		if entry.Kind == loom.FileKindDirectory {
-			nextSelection := ""
-			if item.Name == ".." {
-				nextSelection = loom.QuoteUnprintable(filepath.Base(dir))
-			}
-			if err := b.open(path, nextSelection); err != nil {
-				b.notice = "Error: " + err.Error()
-			}
-		} else if entry.Kind == loom.FileKindRegular {
+	} else if entry.Kind == loom.FileKindSymlink {
+		info, err := os.Stat(path)
+		if err == nil && info.Mode().IsRegular() {
 			if err := b.openFile(path); err != nil {
 				b.notice = "Open failed: " + err.Error()
 			} else {
 				b.notice = "Opening file"
 			}
-		} else if entry.Kind == loom.FileKindSymlink {
-			info, err := os.Stat(path)
-			if err == nil && info.IsDir() {
-				if err := b.open(path, ""); err != nil {
-					b.notice = "Error: " + err.Error()
-				}
-			} else if err == nil && info.Mode().IsRegular() {
-				if err := b.openFile(path); err != nil {
-					b.notice = "Open failed: " + err.Error()
-				} else {
-					b.notice = "Opening file"
-				}
-			} else {
-				b.notice = "Cannot open this file type"
-			}
 		} else {
 			b.notice = "Cannot open this file type"
 		}
+	} else {
+		b.notice = "Cannot open this file type"
 	}
-	for i, item := range items {
-		if item.Name == selectName {
-			for range i {
-				list.HandleKey(loom.KeyEvent{Key: "down"})
-			}
-			break
-		}
-	}
-	b.dir, b.paths, b.entries, b.list, b.notice = directory.Path, paths, entries, list, ""
-	b.frame.Boxes[0].Child = list
-	b.updateDetails()
-	return nil
+	b.updateDetails(path)
 }
 
-func (b *browser) updateDetails() {
-	item, ok := b.list.Selected()
-	if !ok {
+func (b *browser) updateDetails(path string) {
+	if path == "" {
 		b.details.Lines = []string{"No matching file"}
 		b.details.Scroll = 0
 		return
 	}
-	path := b.paths[item.Name]
 	lines := metadata(path)
 	if b.notice != "" {
 		lines = append([]string{b.notice, ""}, lines...)
@@ -250,50 +213,39 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	b.frame.Draw(c, r)
 }
 
+func (b *browser) syncDir() {
+	if b.navigation != nil && b.dir != "" && b.dir != b.navigation.Directory().Path {
+		_ = b.navigation.open(b.dir, "")
+	}
+}
+
 func (b *browser) HandleKey(k loom.KeyEvent) bool {
 	if k.Key == "f9" {
 		b.cycleTheme()
 		return false
 	}
-	if k.Is("backspace") {
-		if b.list != nil && b.list.Query() != "" {
-			quit := b.frame.HandleKey(k)
-			b.updateDetails()
-			return quit
-		}
-		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent != filepath.Clean(b.dir) {
-			if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
-				b.notice = "Error: " + err.Error()
-			}
-		}
-		b.updateDetails()
-		return false
-	}
-	if k.Is("esc") {
-		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent != filepath.Clean(b.dir) {
-			if err := b.open(parent, filepath.Base(filepath.Clean(b.dir))); err != nil {
-				b.notice = "Error: " + err.Error()
-			}
-		}
-		b.updateDetails()
-		return false
-	}
+	b.syncDir()
 	quit := b.frame.HandleKey(k)
-	b.updateDetails()
-	return quit
+	b.dir = b.navigation.Directory().Path
+	return quit || b.quit
 }
 
 func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
-	if !k.Is("esc") && !k.Is("backspace") {
-		return false, false
+	if k.Key == "f9" {
+		b.cycleTheme()
+		return false, true
 	}
-	return b.HandleKey(k), true
+	b.syncDir()
+	quit, consumed = b.navigation.ConsumeKey(k)
+	if consumed {
+		b.dir = b.navigation.Directory().Path
+		return quit || b.quit, true
+	}
+	return false, false
 }
 
 func (b *browser) HandleMouse(k loom.MouseEvent) bool {
 	quit := b.frame.HandleMouse(k)
-	b.updateDetails()
-	return quit
+	b.dir = b.navigation.Directory().Path
+	return quit || b.quit
 }

@@ -39,7 +39,7 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	}
 	b.HandleKey(loom.KeyEvent{Key: "down"}) // sub
 	b.HandleKey(loom.KeyEvent{Key: "enter"})
-	if b.dir != filepath.Join(dir, "sub") || b.frame.Boxes[0].Child != b.list {
+	if b.dir != filepath.Join(dir, "sub") || b.frame.Boxes[0].Child != b.navigation {
 		t.Fatalf("directory navigation failed: %q", b.dir)
 	}
 	if item, ok := b.list.Selected(); !ok || item.Name != ".." {

@@ -46,6 +46,31 @@ func TestChoiceRowTextPinsDisplayWidthTruncation(t *testing.T) {
 	}
 }
 
+func TestChoiceSetItemsAndSelectIndex(t *testing.T) {
+	c := NewChoice([]Item{{Name: "alpha"}, {Name: "beta"}})
+	c.HandleKey(KeyEvent{Text: "beta"})
+	if got := c.Query(); got != "beta" {
+		t.Fatalf("query = %q, want beta", got)
+	}
+
+	c.SetItems([]Item{{Name: "one"}, {Name: "two"}, {Name: "three"}})
+	if got := c.Query(); got != "" {
+		t.Fatalf("query after SetItems = %q, want empty", got)
+	}
+	if got, ok := c.Selected(); !ok || got.Name != "one" {
+		t.Fatalf("selection after SetItems = %+v, ok=%v; want one", got, ok)
+	}
+
+	c.SelectIndex(99)
+	if got, ok := c.Selected(); !ok || got.Name != "three" {
+		t.Fatalf("selection after high SelectIndex = %+v, ok=%v; want three", got, ok)
+	}
+	c.SelectIndex(-1)
+	if got, ok := c.Selected(); !ok || got.Name != "one" {
+		t.Fatalf("selection after low SelectIndex = %+v, ok=%v; want one", got, ok)
+	}
+}
+
 func TestChoiceDrawAndMouseUseSameRowText(t *testing.T) {
 	c := NewChoice([]Item{{Name: "alpha", Desc: "description"}})
 	c.MouseTextOnly = true

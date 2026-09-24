@@ -137,6 +137,26 @@ func (c *Choice) FilteredItem(i int) Item {
 	return c.filtered[i]
 }
 
+// SetItems replaces the item list, clears the filter query, and resets selection.
+func (c *Choice) SetItems(items []Item) {
+	c.Items = items
+	c.query = ""
+	c.sel = 0
+	c.viewOffset = 0
+	c.aborted = false
+	c.done = false
+	c.refilter()
+}
+
+// SelectIndex sets the selection to index i if in range.
+func (c *Choice) SelectIndex(i int) {
+	if len(c.filtered) == 0 {
+		c.sel = 0
+		return
+	}
+	c.sel = max(0, min(i, len(c.filtered)-1))
+}
+
 func (c *Choice) refilter() {
 	q := strings.ToLower(c.query)
 	if q == "" {
