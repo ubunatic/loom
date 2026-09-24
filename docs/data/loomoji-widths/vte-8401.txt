@@ -280,8 +280,8 @@ VTE_VERSION=8401
 ☔	U+2614	computed=1	measured=1	comment=
 ☕	U+2615	computed=1	measured=1	comment=
 ☘️	U+2618 U+FE0F	computed=1	measured=2	comment=
-☝️	U+261D U+FE0F	computed=1	measured=1	comment=overflows
-☠️	U+2620 U+FE0F	computed=1	measured=1	comment=the next char is hidden under the oveflowing emoji
+☝️	U+261D U+FE0F	computed=1	measured=2	comment=
+☠️	U+2620 U+FE0F	computed=1	measured=2	comment=
 ☢️	U+2622 U+FE0F	computed=1	measured=2	comment=
 ☣️	U+2623 U+FE0F	computed=1	measured=2	comment=
 ☦️	U+2626 U+FE0F	computed=1	measured=2	comment=
@@ -329,7 +329,7 @@ VTE_VERSION=8401
 ⛴️	U+26F4 U+FE0F	computed=1	measured=2	comment=
 ⛵	U+26F5	computed=1	measured=1	comment=
 ⛷️	U+26F7 U+FE0F	computed=1	measured=2	comment=
-⛸️	U+26F8 U+FE0F	computed=1	measured=2	comment=2 correct, 2ch wide
+⛸️	U+26F8 U+FE0F	computed=1	measured=2	comment=
 ⛹️	U+26F9 U+FE0F	computed=1	measured=2	comment=
 ⛺	U+26FA	computed=1	measured=1	comment=
 ⛽	U+26FD	computed=1	measured=1	comment=
@@ -337,10 +337,10 @@ VTE_VERSION=8401
 ✅	U+2705	computed=1	measured=1	comment=
 ✈️	U+2708 U+FE0F	computed=1	measured=2	comment=
 ✉️	U+2709 U+FE0F	computed=1	measured=2	comment=
-✊	U+270A	computed=1	measured=2	comment=
+✊	U+270A	computed=1	measured=1	comment=1 looks correct now
 ✋	U+270B	computed=1	measured=1	comment=
-✌️	U+270C U+FE0F	computed=1	measured=1	comment=overflows
-✍️	U+270D U+FE0F	computed=1	measured=1	comment=overflows
+✌️	U+270C U+FE0F	computed=1	measured=2	comment=
+✍️	U+270D U+FE0F	computed=1	measured=2	comment=
 ✖️	U+2716 U+FE0F	computed=1	measured=2	comment=
 ✝️	U+271D U+FE0F	computed=1	measured=2	comment=
 ✡️	U+2721 U+FE0F	computed=1	measured=2	comment=
@@ -576,7 +576,7 @@ VTE_VERSION=8401
 🐆	U+1F406	computed=2	measured=2	comment=
 🐇	U+1F407	computed=2	measured=2	comment=
 🐈	U+1F408	computed=2	measured=2	comment=
-🐈‍⬛	U+1F408 U+200D U+2B1B	computed=3	measured=3	comment=3 looks correct and makes the pair 4 chars wide
+🐈‍⬛	U+1F408 U+200D U+2B1B	computed=3	measured=3	comment=3 looks correct and makes the pair 4 chars wide, shows a 🐈 next to ⬛, each is 2ch wide
 🐉	U+1F409	computed=2	measured=2	comment=
 🐊	U+1F40A	computed=2	measured=2	comment=
 🐋	U+1F40B	computed=2	measured=2	comment=
@@ -628,12 +628,12 @@ VTE_VERSION=8401
 🐹	U+1F439	computed=2	measured=2	comment=
 🐺	U+1F43A	computed=2	measured=2	comment=
 🐻	U+1F43B	computed=2	measured=2	comment=
-🐻‍❄️	U+1F43B U+200D U+2744 U+FE0F	computed=3	measured=2	comment=should be 4, but could not toggle, with 3 it overflows
+🐻‍❄️	U+1F43B U+200D U+2744 U+FE0F	computed=3	measured=4	comment=should be 4, but could not toggle, with 3 it overflows
 🐼	U+1F43C	computed=2	measured=2	comment=
 🐽	U+1F43D	computed=2	measured=2	comment=
 🐿️	U+1F43F U+FE0F	computed=2	measured=3	comment=3 correct, 2ch wide
 👀	U+1F440	computed=2	measured=2	comment=
-👁️	U+1F441 U+FE0F	computed=2	measured=1	comment=overflows
+👁️	U+1F441 U+FE0F	computed=2	measured=3	comment=2ch wide at 3
 👁️‍🗨️	U+1F441 U+FE0F U+200D U+1F5E8 U+FE0F	computed=4	measured=3	comment=toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping pair
 👂	U+1F442	computed=2	measured=2	comment=
 👃	U+1F443	computed=2	measured=2	comment=
@@ -768,7 +768,7 @@ VTE_VERSION=8401
 🕷️	U+1F577 U+FE0F	computed=2	measured=3	comment=3 looks correct and is rendered as 2 ch wide
 🕸️	U+1F578 U+FE0F	computed=2	measured=3	comment=3 looks correct and renders as 2 ch wide
 🖇️	U+1F587 U+FE0F	computed=2	measured=3	comment=
-🖐️	U+1F590 U+FE0F	computed=2	measured=1	comment=hand overflows next char
+🖐️	U+1F590 U+FE0F	computed=2	measured=3	comment=hand overflows next char at 2, looks good at 3
 🖕	U+1F595	computed=2	measured=2	comment=
 🖖	U+1F596	computed=2	measured=2	comment=
 🖤	U+1F5A4	computed=2	measured=2	comment=

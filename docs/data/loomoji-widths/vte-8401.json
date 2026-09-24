@@ -2517,9 +2517,8 @@
         "U+FE0F"
       ],
       "computed_width": 1,
-      "measured_width": 1,
-      "answered": true,
-      "comment": "overflows"
+      "measured_width": 2,
+      "answered": true
     },
     "☠️": {
       "glyph": "☠️",
@@ -2528,9 +2527,8 @@
         "U+FE0F"
       ],
       "computed_width": 1,
-      "measured_width": 1,
-      "answered": true,
-      "comment": "the next char is hidden under the oveflowing emoji"
+      "measured_width": 2,
+      "answered": true
     },
     "☢️": {
       "glyph": "☢️",
@@ -2985,8 +2983,7 @@
       ],
       "computed_width": 1,
       "measured_width": 2,
-      "answered": true,
-      "comment": "2 correct, 2ch wide"
+      "answered": true
     },
     "⛹️": {
       "glyph": "⛹️",
@@ -3061,8 +3058,9 @@
         "U+270A"
       ],
       "computed_width": 1,
-      "measured_width": 2,
-      "answered": true
+      "measured_width": 1,
+      "answered": true,
+      "comment": "1 looks correct now"
     },
     "✋": {
       "glyph": "✋",
@@ -3080,9 +3078,8 @@
         "U+FE0F"
       ],
       "computed_width": 1,
-      "measured_width": 1,
-      "answered": true,
-      "comment": "overflows"
+      "measured_width": 2,
+      "answered": true
     },
     "✍️": {
       "glyph": "✍️",
@@ -3091,9 +3088,8 @@
         "U+FE0F"
       ],
       "computed_width": 1,
-      "measured_width": 1,
-      "answered": true,
-      "comment": "overflows"
+      "measured_width": 2,
+      "answered": true
     },
     "✖️": {
       "glyph": "✖️",
@@ -5282,7 +5278,7 @@
       "computed_width": 3,
       "measured_width": 3,
       "answered": true,
-      "comment": "3 looks correct and makes the pair 4 chars wide"
+      "comment": "3 looks correct and makes the pair 4 chars wide, shows a 🐈 next to ⬛, each is 2ch wide"
     },
     "🐉": {
       "glyph": "🐉",
@@ -5752,7 +5748,7 @@
         "U+FE0F"
       ],
       "computed_width": 3,
-      "measured_width": 2,
+      "measured_width": 4,
       "answered": true,
       "comment": "should be 4, but could not toggle, with 3 it overflows"
     },
@@ -5801,9 +5797,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
-      "measured_width": 1,
+      "measured_width": 3,
       "answered": true,
-      "comment": "overflows"
+      "comment": "2ch wide at 3"
     },
     "👁️‍🗨️": {
       "glyph": "👁️‍🗨️",
@@ -7033,9 +7029,9 @@
         "U+FE0F"
       ],
       "computed_width": 2,
-      "measured_width": 1,
+      "measured_width": 3,
       "answered": true,
-      "comment": "hand overflows next char"
+      "comment": "hand overflows next char at 2, looks good at 3"
     },
     "🖕": {
       "glyph": "🖕",
