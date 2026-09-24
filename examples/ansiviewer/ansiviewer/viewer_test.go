@@ -39,6 +39,38 @@ func TestBrowserListsTextAndANSI(t *testing.T) {
 	}
 }
 
+func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("alpha preview"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "beta.ansi"), []byte("\x1b[31mred preview\x1b[0m"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	framed := newFramedBrowser(b, nil)
+	if framed.frame.Boxes[0].Child != b.navigation {
+		t.Fatal("frame does not host the shared navigation pane")
+	}
+	stableChoice := b.navigation.List()
+	b.navigation.HandleKey(loom.KeyEvent{Key: "down"})
+	b.syncSelection()
+	if b.navigation.List() != stableChoice {
+		t.Fatal("navigation replaced its stable Choice")
+	}
+	if b.kind != KindANSI || !strings.Contains(strings.Join(b.lines, "\n"), "red preview") {
+		t.Fatalf("ANSI preview after shared selection = %q, %v", b.kind, b.lines)
+	}
+	b.navigation.HandleKey(loom.KeyEvent{Key: "/"})
+	b.navigation.HandleKey(loom.KeyEvent{Text: "alpha"})
+	if got := b.navigation.List().Query(); got != "alpha" {
+		t.Fatalf("shared filter query = %q, want alpha", got)
+	}
+}
+
 func TestANSIWriteClipsToBounds(t *testing.T) {
 	c := loom.NewCanvas(24, 2)
 	c.Write(0, 0, "LEFT", loom.Style{})
@@ -116,7 +148,9 @@ func TestBrowserEscapeGoesToParentDirectory(t *testing.T) {
 		t.Fatalf("selection after escape = %q, want child", b.files[b.selected].Name())
 	}
 
-	b.dir = string(filepath.Separator)
+	b.navigation.SetRoot("")
+	b.navigation.HandleKey(loom.KeyEvent{Key: "esc"})
+	b.syncSelection()
 	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
 		t.Fatal("escape from the filesystem root should not quit")
 	}
@@ -136,16 +170,19 @@ func TestBrowserFilterAndMouseSelection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b.HandleKey(loom.KeyEvent{Text: "/"})
-	b.HandleKey(loom.KeyEvent{Text: "beta"})
-	visible := b.visibleFiles()
-	if len(visible) != 1 || b.files[visible[0]].Name() != "beta.txt" {
-		t.Fatalf("filtered files = %v", visible)
+	b.navigation.HandleKey(loom.KeyEvent{Key: "/"})
+	b.navigation.HandleKey(loom.KeyEvent{Text: "beta"})
+	if got := b.navigation.List().Query(); got != "beta" {
+		t.Fatalf("filter query = %q, want beta", got)
 	}
 
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
-	if b.files[b.selected].Name() != "beta.txt" {
-		t.Fatalf("mouse selected %q, want beta.txt", b.files[b.selected].Name())
+	c := loom.NewCanvas(30, 8)
+	b.navigation.Draw(c, loom.Rect{W: 30, H: 8})
+	b.navigation.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 2})
+	b.syncSelection()
+	entry, ok := b.navigation.Selected()
+	if !ok || entry.Name != "beta.txt" {
+		t.Fatalf("mouse selection = %+v, ok=%v; want beta.txt", entry, ok)
 	}
 	framed := newFramedBrowser(b, &astraToggle{})
 	if quit, consumed := framed.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {

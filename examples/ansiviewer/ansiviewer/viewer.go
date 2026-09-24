@@ -11,13 +11,13 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
 )
 
 // Kind describes the content presentation selected for a path.
@@ -55,18 +55,25 @@ func Classify(path string) Kind {
 }
 
 type browser struct {
-	dir              string
-	files            []os.DirEntry
-	filter           string
-	selected, offset int
-	lines            []string
-	kind             Kind
-	metadata         string
+	dir        string
+	files      []os.DirEntry
+	selected   int
+	offset     int
+	lines      []string
+	kind       Kind
+	metadata   string
+	navigation *filebrowser.NavigationPane
+	quit       bool
+	focused    bool
 }
 
+func (b *browser) Focused() bool         { return b.focused }
+func (b *browser) SetFocus(focused bool) { b.focused = focused }
+
 type framedBrowser struct {
-	frame *loom.Frame
-	astra *astraToggle
+	frame   *loom.Frame
+	astra   *astraToggle
+	browser *browser
 }
 
 type astraToggle struct {
@@ -94,32 +101,64 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 		Horizontal: "─", Vertical: "│", TitlePrefix: " ", TitleSuffix: " ",
 	}
 	frame := &loom.Frame{
+		Gap:    1,
 		Title:  "ANSI Viewer",
-		Status: "↑↓ select  •  PgUp/PgDn scroll  •  Enter open directory  •  Esc back  •  a Astra  •  q quit",
-		Boxes: []loom.Box{{
-			ID: "viewer", FillHeight: true, Dynamic: true, Border: border, Child: b,
-		}},
+		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  a Astra  •  q quit",
+		Boxes: []loom.Box{
+			{ID: "files", Title: "Files", FillHeight: true, Dynamic: true, MinWidth: 20, Width: 32, Height: 4, Border: border, Child: b.navigation},
+			{ID: "viewer", Title: "Preview", FillHeight: true, Dynamic: true, MinWidth: 30, Height: 4, Border: border, Child: b},
+		},
+		Actions: []loom.FrameAction{
+			{ID: "quit_q", Action: "quit", Key: "q"},
+			{ID: "quit_ctrl_c", Action: "quit", Key: "ctrl-c"},
+		},
 		Style: theme.FrameStyle(),
 	}
 	frame.Boxes[0].Style = theme.BoxStyle()
-	return &framedBrowser{frame: frame, astra: astra}
+	frame.Boxes[1].Style = theme.BoxStyle()
+	if b.navigation != nil {
+		b.navigation.ApplyTheme(theme)
+	}
+	return &framedBrowser{frame: frame, astra: astra, browser: b}
 }
 
-func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) { b.frame.Draw(c, r) }
+func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) {
+	b.frame.Boxes[0].Title = "Files"
+	b.frame.Boxes[1].Title = "Preview"
+	if focused := b.frame.FocusedBox(); focused != nil {
+		if focused.ID == "files" {
+			b.frame.Boxes[0].Title = "▶ Files"
+		} else {
+			b.frame.Boxes[1].Title = "▶ Preview"
+		}
+	}
+	b.frame.Draw(c, r)
+}
+
 func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
 	if e.Is("a") && b.astra != nil {
 		b.astra.enabled = !b.astra.enabled
 		return false
 	}
-	return b.frame.HandleKey(e)
+	quit := b.frame.HandleKey(e)
+	b.browser.syncSelection()
+	return quit || b.browser.quit
 }
+
 func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	if !e.Is("esc") && !e.Is("backspace") {
-		return false, false
+	quit, consumed = b.browser.navigation.ConsumeKey(e)
+	if consumed {
+		b.browser.syncSelection()
+		return quit || b.browser.quit, true
 	}
-	return b.HandleKey(e), true
+	return false, false
 }
-func (b *framedBrowser) HandleMouse(e loom.MouseEvent) bool { return b.frame.HandleMouse(e) }
+
+func (b *framedBrowser) HandleMouse(e loom.MouseEvent) bool {
+	quit := b.frame.HandleMouse(e)
+	b.browser.syncSelection()
+	return quit || b.browser.quit
+}
 
 // New opens dir and returns an interactive viewer widget.
 func New(dir string) (*browser, error) { return newBrowser(dir) }
@@ -129,33 +168,70 @@ func newBrowser(dir string) (*browser, error) {
 }
 
 func newBrowserSelection(dir, selectName string) (*browser, error) {
-	entries, err := os.ReadDir(dir)
+	b := &browser{dir: dir}
+	var nav *filebrowser.NavigationPane
+	nav, err := filebrowser.NewNavigationPane(dir, filebrowser.NavigationPaneOptions{
+		OnSelection: func(entry loom.FileEntry) {
+			b.selectPath(entry.Path)
+		},
+		OnOpen: func(directory loom.Directory) {
+			b.dir = directory.Path
+			b.syncSelection()
+		},
+		OnQuit: func() {
+			b.quit = true
+		},
+	})
 	if err != nil {
 		return nil, fmt.Errorf("ansiviewer: read %s: %w", dir, err)
 	}
-	sort.Slice(entries, func(i, j int) bool { return entries[i].Name() < entries[j].Name() })
-	b := &browser{dir: dir, files: entries}
-	if len(entries) > 0 {
-		b.selectFile(0)
-		for i, entry := range entries {
-			if entry.Name() == selectName {
-				b.selectFile(i)
+	nav.SetRoot("")
+	b.navigation = nav
+	b.dir = nav.Directory().Path
+	if selectName != "" {
+		for i, item := range nav.List().Items {
+			if item.Name == selectName {
+				nav.List().SelectIndex(i)
 				break
 			}
 		}
 	}
+	b.syncSelection()
 	return b, nil
 }
 
-func (b *browser) visibleFiles() []int {
-	visible := make([]int, 0, len(b.files))
-	needle := strings.ToLower(b.filter)
-	for i, entry := range b.files {
-		if needle == "" || strings.Contains(strings.ToLower(entry.Name()), needle) {
-			visible = append(visible, i)
+func (b *browser) syncSelection() {
+	if b.navigation == nil {
+		return
+	}
+	entry, ok := b.navigation.Selected()
+	if !ok {
+		return
+	}
+	b.dir = b.navigation.Directory().Path
+	b.selectPath(entry.Path)
+}
+
+func (b *browser) selectPath(path string) {
+	if b.navigation != nil {
+		b.dir = b.navigation.Directory().Path
+	}
+	entries, err := os.ReadDir(b.dir)
+	if err != nil {
+		return
+	}
+	b.files = entries
+	for i, entry := range entries {
+		if filepath.Join(b.dir, entry.Name()) == path {
+			b.selectFile(i)
+			return
 		}
 	}
-	return visible
+	if filepath.Clean(path) == filepath.Clean(b.dir) || path == filepath.Dir(filepath.Clean(b.dir)) {
+		b.lines, b.metadata, b.kind = []string{"directory", "Press Enter to open"}, "", KindText
+		return
+	}
+	b.lines, b.metadata, b.kind = nil, "", KindText
 }
 
 func (b *browser) selectFile(i int) {
@@ -191,40 +267,15 @@ func (b *browser) selectFile(i int) {
 }
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
-	left := r.W / 3
-	if left < 12 {
-		left = 12
-	}
-	if left >= r.W {
-		left = r.W - 1
-	}
-	if left < 1 {
-		left = 1
-	}
-	c.Write(r.X, r.Y, "Files", loom.Style{Bold: true})
-	c.Write(r.X+left, r.Y, "Preview", loom.Style{Bold: true})
-	visible := b.visibleFiles()
-	for row, index := range visible {
-		if row+1 >= r.H {
-			break
-		}
-		f := b.files[index]
-		s := "  " + f.Name()
-		if index == b.selected {
-			s = "> " + f.Name()
-		}
-		c.Write(r.X, r.Y+row+1, s, loom.Style{})
-	}
-	view := r.H - 1
-	if view < 1 {
+	if r.H < 1 || r.W < 1 {
 		return
 	}
 	if b.kind == KindANSI {
-		writeANSI(c, loom.Rect{X: r.X + left + 1, Y: r.Y + 1, W: r.W - left - 1, H: view}, strings.Join(b.lines, "\n"))
+		writeANSI(c, r, strings.Join(b.lines, "\n"))
 		return
 	}
-	for i := 0; i < view && b.offset+i < len(b.lines); i++ {
-		writeANSI(c, loom.Rect{X: r.X + left + 1, Y: r.Y + i + 1, W: r.W - left - 1, H: 1}, b.lines[b.offset+i])
+	for i := 0; i < r.H && b.offset+i < len(b.lines); i++ {
+		writeANSI(c, loom.Rect{X: r.X, Y: r.Y + i, W: r.W, H: 1}, b.lines[b.offset+i])
 	}
 }
 
@@ -232,57 +283,12 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 	if e.Is("q", "ctrl-c") {
 		return true
 	}
-	if e.Is("backspace") {
-		if b.filter != "" {
-			runes := []rune(b.filter)
-			b.filter = string(runes[:len(runes)-1])
-			b.offset = 0
-			visible := b.visibleFiles()
-			if len(visible) > 0 {
-				b.selectFile(visible[0])
-			}
-			return false
-		}
-		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent != filepath.Clean(b.dir) {
-			if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
-				*b = *next
-			}
-		}
-		return false
-	}
-	if e.Is("esc") {
-		if b.filter != "" {
-			b.filter = ""
-			b.offset = 0
-			return false
-		}
-		parent := filepath.Dir(filepath.Clean(b.dir))
-		if parent != filepath.Clean(b.dir) {
-			if next, err := newBrowserSelection(parent, filepath.Base(filepath.Clean(b.dir))); err == nil {
-				*b = *next
-			}
-		}
-		return false
-	}
-	if e.Is("/") {
-		b.filter = ""
-		return false
-	}
-	if e.Text != "" {
-		b.filter += e.Text
-		b.offset = 0
-		visible := b.visibleFiles()
-		if len(visible) > 0 {
-			b.selectFile(visible[0])
-		}
-		return false
+	if e.Is("esc", "backspace") {
+		quit := b.navigation.HandleKey(e)
+		b.syncSelection()
+		return quit
 	}
 	switch {
-	case e.Is("up"):
-		b.selectFile(b.selected - 1)
-	case e.Is("down"):
-		b.selectFile(b.selected + 1)
 	case e.Is("pgup"):
 		b.offset -= 10
 		if b.offset < 0 {
@@ -302,25 +308,10 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 		if b.offset > 0 {
 			b.offset--
 		}
-	case e.Is("enter") && len(b.files) > 0 && b.files[b.selected].IsDir():
-		if next, err := newBrowser(filepath.Join(b.dir, b.files[b.selected].Name())); err == nil {
-			*b = *next
-		}
 	}
 	return false
 }
-func (b *browser) HandleMouse(e loom.MouseEvent) bool {
-	if e.Action != loom.MousePress || e.Button != loom.MouseLeft || e.Y < 1 {
-		return false
-	}
-	visible := b.visibleFiles()
-	row := e.Y - 1
-	if row >= len(visible) {
-		return false
-	}
-	b.selectFile(visible[row])
-	return false
-}
+func (b *browser) HandleMouse(e loom.MouseEvent) bool { return false }
 func max(a, b int) int {
 	if a > b {
 		return a
