@@ -1,6 +1,6 @@
 # 105 — Unify filebrowser navigation pane across examples
 
-**Status**: Open
+**Status**: Closed — M1 8e1105a (shared NavigationPane), M2 80d9e8d (filebrowser), M3 c046cc2 (ansiviewer), M4 1613ac2 (filter assertion + Widgets.md); suite green; manual smoke pending (user)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
