@@ -6,6 +6,7 @@ Adhere to the following conventions.
 ## Development Scripts
 
 Run from project root.
+Mouse events reaching widgets are 0-based and child-local; never subtract 1 again (see docs/Widgets.md).
 
 <!-- harnez:begin Language Conventions -->
 Adhere to the following conventions.
