@@ -172,3 +172,28 @@ func TestViewContentTruncatedToReserveIndicatorColumn(t *testing.T) {
 		t.Errorf("content column 4 = %q, want X", got)
 	}
 }
+
+// ── Benchmarks ──────────────────────────────────────────────────────────────
+
+func BenchmarkCanvasRow(b *testing.B) {
+	c := loom.NewCanvas(120, 40)
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 120; x++ {
+			c.Set(x, y, loom.Cell{
+				Text: "A",
+				Style: loom.Style{
+					FG:        loom.ColorRGB(uint8(x*2), uint8(y*5), uint8((x+y)*2)),
+					BG:        loom.ColorIndex(uint8((x + y) % 256)),
+					Bold:      x%2 == 0,
+					Underline: y%2 == 0,
+				},
+			})
+		}
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = c.Row(i % 40)
+	}
+}

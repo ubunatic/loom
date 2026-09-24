@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -18,6 +19,23 @@ func TestStyleResetANSI(t *testing.T) {
 	want := "\x1b[0m\x1b[39m\x1b[49m"
 	if got != want {
 		t.Errorf("Reset.ANSI() = %q, want %q", got, want)
+	}
+}
+
+func TestStyleAppendANSI(t *testing.T) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+
+	buf := s.AppendANSI(nil)
+	got := string(buf)
+	want := s.ANSI()
+
+	if got != want {
+		t.Errorf("AppendANSI() = %q, want %q", got, want)
 	}
 }
 
@@ -69,5 +87,64 @@ func TestColorResetSequences(t *testing.T) {
 	bg := loom.Style{BG: loom.ColorReset()}.ANSI()
 	if !strings.Contains(bg, "\x1b[49m") {
 		t.Errorf("default BG should emit 49m: %q", bg)
+	}
+}
+
+func TestFastANSIEnvVarToggleParity(t *testing.T) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(100, 150, 200),
+		BG:        loom.ColorIndex(50),
+		Bold:      true,
+		Underline: true,
+	}
+	c := loom.NewCanvas(10, 1)
+	c.Set(0, 0, loom.Cell{Text: "X", Style: s})
+
+	os.Unsetenv("LOOM_FAST_ANSI")
+	fastStyle := s.ANSI()
+	fastRow := c.Row(0)
+
+	os.Setenv("LOOM_FAST_ANSI", "0")
+	slowStyle := s.ANSI()
+	slowRow := c.Row(0)
+
+	os.Unsetenv("LOOM_FAST_ANSI")
+
+	if fastStyle != slowStyle {
+		t.Errorf("Style.ANSI mismatch fast=%q vs slow=%q", fastStyle, slowStyle)
+	}
+	if fastRow != slowRow {
+		t.Errorf("Canvas.Row mismatch fast=%q vs slow=%q", fastRow, slowRow)
+	}
+}
+
+// ── Benchmarks ──────────────────────────────────────────────────────────────
+
+func BenchmarkStyleANSI(b *testing.B) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = s.ANSI()
+	}
+}
+
+func BenchmarkStyleAppendANSI(b *testing.B) {
+	s := loom.Style{
+		FG:        loom.ColorRGB(120, 200, 50),
+		BG:        loom.ColorIndex(42),
+		Bold:      true,
+		Underline: true,
+	}
+	var buf [64]byte
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = s.AppendANSI(buf[:0])
 	}
 }
