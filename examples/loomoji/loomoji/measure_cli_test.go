@@ -79,7 +79,8 @@ func TestMeasureSessionLoadsProfileAndSkipsAnsweredGlyphs(t *testing.T) {
 	if widget.CurrentGlyph() == first {
 		t.Fatalf("session queued already answered glyph %q", first)
 	}
-	widget.HandleKey(keyText("1"))
+	widget.HandleKey(keyText("0"))
+	widget.HandleKey(loom.KeyEvent{Key: "enter"})
 	loaded, err := LoadMeasurementStore(jsonPath)
 	if err != nil {
 		t.Fatalf("LoadMeasurementStore() after answer error = %v", err)
