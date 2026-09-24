@@ -89,7 +89,7 @@ measurement.
 
 ## Running
 
-A hover probe that exposes an open bug fails by design. Keep it in its own
+A hover probe fails while its bug is open (107 → 108). Keep it in its own
 test function so `-run` can isolate it:
 
 ```sh
