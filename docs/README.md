@@ -7,6 +7,7 @@
 - [Graph primitives](Graph.md): determinate bars, rolling sparklines, 2D treemaps, and width padding invariants.
 - [Monitor example](../examples/monitor/README.md): show-once/watch, responsive boxes and controls.
 - [Geometry gate](Geometry.md): supported text policy, independent checks and ANSI replay evidence.
+- [Hover testing](HoverTesting.md): black-box PTY mouse-hover probes, colour-cell diffing and offset reporting.
 - [Terminal safety](TerminalSafety.md): the auto-wrap corruption trap, `loom.RawScreen`/`WriteRows`/`ClipRow`, and `x/term` coverage rules for any raw-ANSI terminal writer.
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
 - [Themes](Themes.md): spec-driven palettes, semantic roles, widget adapters, runtime switching, and known boundaries.
