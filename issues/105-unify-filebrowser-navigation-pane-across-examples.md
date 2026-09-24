@@ -84,3 +84,5 @@ Pre-Work / Required Refinements (M2):
 - Keep existing filebrowser tests unweakened; the M1 pane tests must stay green.
 
 M2 second pass (flash37, timed out at 10 min, uncommitted WIP): added `Choice.SetItems`/`SelectIndex` so the pane keeps one stable `Choice`; frame hosts the pane. Status unknown. Escalated to terra.
+
+M2 delivered (80d9e8d, terra): filebrowser hosts the shared pane; duplicate navigation removed; `Choice.SetItems`/`SelectIndex` with unit tests. Host suite green.
