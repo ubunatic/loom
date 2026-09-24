@@ -72,3 +72,7 @@ and this ticket validates it rather than designing it.
   boxes (the 059 regression case), and F9 rethemes the tab bar as well.
 - `loom-bench` renders it headlessly via `loom.Render` at 80x24 and tiny sizes.
 - `go test ./...` and `go vet ./...` pass; `make install` run afterwards.
+
+## Sprint notes
+
+Preflight (HEAD 4aed432): `ApplyTheme` (browser.go:96) and `ConsumeKey` (browser.go:233) exist; shared `NavigationPane` from 105 is in place. Missing: exported `NewWidget`, `PaneRequester`, `examplesreg` factory + loom-demo hosted tab, and `DisableDefaultQuit` is still set (filebrowser.go:69).
