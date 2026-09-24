@@ -58,6 +58,20 @@ func TestDebugCommandRequiresMeasureFlagAndNoExtraArguments(t *testing.T) {
 	}
 }
 
+func TestConfigureMeasurePaneUsesFullTerminalWidth(t *testing.T) {
+	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
+	configureMeasurePane(pane)
+	if pane.MaxCols != 0 {
+		t.Fatalf("measure pane MaxCols = %d, want 0 (terminal width)", pane.MaxCols)
+	}
+	if !pane.Resizeable {
+		t.Fatal("measure pane Resizeable = false, want true")
+	}
+	if !pane.DisableDefaultQuit {
+		t.Fatal("measure pane DisableDefaultQuit = false, want true")
+	}
+}
+
 func TestMeasureSessionLoadsProfileAndSkipsAnsweredGlyphs(t *testing.T) {
 	dir := t.TempDir()
 	profile := TerminalProfile{Term: "screen-256color", TermProgram: "tmux"}

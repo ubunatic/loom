@@ -57,12 +57,18 @@ func runMeasure(profile TerminalProfile) error {
 		return err
 	}
 	defer pane.Close()
-	pane.Resizeable = true
-	pane.DisableDefaultQuit = true
+	configureMeasurePane(pane)
 	if err := pane.Run(widget); err != nil {
 		return err
 	}
 	return widget.Err()
+}
+
+// configureMeasurePane gives the measurement table the terminal's full width.
+func configureMeasurePane(pane *loom.Pane) {
+	pane.MaxCols = 0
+	pane.Resizeable = true
+	pane.DisableDefaultQuit = true
 }
 
 func newMeasureSession(profile TerminalProfile, dataDir string) (*MeasureWidget, error) {
