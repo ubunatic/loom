@@ -111,3 +111,5 @@ splash first (simpler: one controller, no collectors), monitor second.
   inactive `Tabs` child gets no `Tick`.
 - **M3**: `examplesreg` factories, hosted splash+monitor tabs test.
 - Tests: `make test-q1` only (one run per code change); no separate `-race`/`go test` runs.
+
+M1 delivered (cfb915a, flash37): splash `NewWidget`, Ticker redraw, OnChildQuit containment, registry; green.

@@ -24,3 +24,5 @@ User smoke test after 105/063 (2026-09-24): up/down jumps several items per pres
 - Also check `examples/ansiviewer` (same pane since 105 M3).
 - Reproduction test first: send one "down" through the real key path (framed/hosted and
   standalone, ideally a PTY test) and assert the selection moves by one. It must fail before the fix.
+
+User smoke of 105 (2026-09-24): ESC back, parent reselect, `/` filter, click select all fine; only arrow multi-jump (this ticket).
