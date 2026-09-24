@@ -1,6 +1,6 @@
 # 110 — Detect loomoji row background bands overflowing the grid panel
 
-**Status**: Open
+**Status**: Closed — Fixed in f1d8042: elimination of emoji width drift prevents row background bands and borders from overflowing the panel
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Testing
