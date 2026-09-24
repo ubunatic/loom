@@ -1,6 +1,6 @@
 # 115 — Apply measured emoji widths and feedback from docs/data/loomoji-widths/vte*
 
-**Status**: Open
+**Status**: Closed — M1-M3 delivered in 6d040b3 with spec/emoji.yaml, measure/spec.go, VTE column, and suite green
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Rendering / Core
