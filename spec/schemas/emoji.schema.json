@@ -7,6 +7,7 @@
     "vs16_default_width",
     "zwj_default_width",
     "flag_default_width",
+    "vs16_vte_mode",
     "overrides"
   ],
   "properties": {
@@ -28,6 +29,11 @@
       "maximum": 2,
       "description": "Visual cell width for regional indicator flag pairs"
     },
+    "vs16_vte_mode": {
+      "type": "string",
+      "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
+      "description": "Default visual render mode for VS16 sequences in VTE terminals"
+    },
     "overrides": {
       "type": "array",
       "items": {
@@ -47,6 +53,11 @@
             "type": "integer",
             "minimum": 1,
             "maximum": 4
+          },
+          "vte_mode": {
+            "type": "string",
+            "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
+            "description": "Visual render mode override for this glyph in VTE terminals"
           },
           "note": {
             "type": "string"

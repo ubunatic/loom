@@ -1,6 +1,7 @@
 vs16_default_width: 2
 zwj_default_width: 2
 flag_default_width: 2
+vs16_vte_mode: pad-1
 overrides:
 - glyph: ' '
   codepoints:
@@ -1274,27 +1275,33 @@ overrides:
   codepoints:
   - U+27F5
   width: 2
+  vte_mode: pad-1
 - glyph: ⟶
   codepoints:
   - U+27F6
   width: 2
+  vte_mode: pad-1
 - glyph: ⟷
   codepoints:
   - U+27F7
   width: 2
+  vte_mode: pad-1
 - glyph: ⟹
   codepoints:
   - U+27F9
   width: 2
+  vte_mode: pad-1
 - glyph: ⟺
   codepoints:
   - U+27FA
   width: 2
+  vte_mode: pad-1
 - glyph: ⭐️
   codepoints:
   - U+2B50
   - U+FE0F
   width: 2
+  vte_mode: default
 - glyph: 🐈‍⬛
   codepoints:
   - U+1F408
@@ -1309,6 +1316,7 @@ overrides:
   - U+2744
   - U+FE0F
   width: 4
+  vte_mode: pad-1
   note: VTE:4, shows as two emoji
 - glyph: 👁️‍🗨️
   codepoints:
@@ -1318,6 +1326,7 @@ overrides:
   - U+1F5E8
   - U+FE0F
   width: 3
+  vte_mode: pad-1
   note: toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping
     pair, VTE:3, still broken
 - glyph: 😮‍💨

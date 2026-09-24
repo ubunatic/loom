@@ -83,43 +83,12 @@ func AvailableRenderModes(glyph string) []string {
 
 // ApplyRenderMode transforms a glyph string according to the requested mode.
 func ApplyRenderMode(glyph, mode string) string {
-	switch mode {
-	case RenderModePad1:
-		return glyph + " "
-	case RenderModeNoVS16:
-		return strings.ReplaceAll(glyph, "\uFE0F", "")
-	case RenderModeNoVS16Pad:
-		return strings.ReplaceAll(glyph, "\uFE0F", "") + " "
-	case RenderModeForceVS16:
-		if strings.ContainsRune(glyph, '\uFE0F') {
-			return glyph
-		}
-		return glyph + "\uFE0F"
-	case RenderModeSplitZWJ:
-		return strings.ReplaceAll(glyph, "\u200D", " ")
-	case RenderModeBaseOnly:
-		runes := []rune(glyph)
-		if len(runes) > 0 {
-			return string(runes[0])
-		}
-		return glyph
-	default:
-		return glyph
-	}
+	return measure.ApplyRenderMode(glyph, mode)
 }
 
-// EvaluateVTEMode returns the recommended rendering mode for a glyph in VTE terminals.
+// EvaluateVTEMode returns the recommended rendering mode for a glyph in VTE terminals from spec.
 func EvaluateVTEMode(glyph string) string {
-	if glyph == "" {
-		return RenderModeDefault
-	}
-	if glyph == "⟵" || glyph == "⟶" || glyph == "⟷" || glyph == "⟹" || glyph == "⟺" || glyph == "🐻‍❄️" || glyph == "👁️‍🗨️" {
-		return RenderModePad1
-	}
-	if strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') && glyph != "⭐️" {
-		return RenderModePad1
-	}
-	return RenderModeDefault
+	return measure.VTEMode(glyph)
 }
 
 // EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.

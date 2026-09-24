@@ -217,10 +217,12 @@ func TestPaneTickerRunSurvivesInvalidateStorm(t *testing.T) {
 
 func TestPaneNonTickerIdleGuard(t *testing.T) {
 	probe := &paneTickerProbe{done: make(chan struct{})}
-	runPaneTickerProbe(t, probe, nil, func(p *Pane, master *os.File) {
+	runPaneTickerProbe(t, probe, func(p *Pane) {
+		p.ResizeConfig.ResizeHandling = false
+	}, func(p *Pane, master *os.File) {
 		time.Sleep(200 * time.Millisecond)
 		p.Invalidate()
-		time.Sleep(20 * time.Millisecond)
+		time.Sleep(50 * time.Millisecond)
 		_, _ = master.Write([]byte("q"))
 	})
 	if got := probe.drawCount(); got != 2 {

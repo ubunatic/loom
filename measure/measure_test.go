@@ -70,6 +70,9 @@ func TestEmojiSpecLoadAndReconcile(t *testing.T) {
 	if spec.VS16DefaultWidth != 2 {
 		t.Errorf("VS16DefaultWidth = %d, want 2", spec.VS16DefaultWidth)
 	}
+	if spec.VS16VTEMode != "pad-1" {
+		t.Errorf("VS16VTEMode = %q, want %q", spec.VS16VTEMode, "pad-1")
+	}
 	if spec.ZWJDefaultWidth != 2 {
 		t.Errorf("ZWJDefaultWidth = %d, want 2", spec.ZWJDefaultWidth)
 	}
@@ -84,6 +87,22 @@ func TestEmojiSpecLoadAndReconcile(t *testing.T) {
 	}
 	if got := RuneWidth('⟷'); got != 2 {
 		t.Errorf("RuneWidth('⟷') = %d, want 2", got)
+	}
+	// Test VTEMode resolution from spec
+	if got := VTEMode("☠️"); got != "pad-1" {
+		t.Errorf("VTEMode('☠️') = %q, want 'pad-1'", got)
+	}
+	if got := VTEMode("⭐️"); got != "default" {
+		t.Errorf("VTEMode('⭐️') = %q, want 'default'", got)
+	}
+	if got := VTEMode("⟵"); got != "pad-1" {
+		t.Errorf("VTEMode('⟵') = %q, want 'pad-1'", got)
+	}
+	if got := VTEMode("🙂"); got != "default" {
+		t.Errorf("VTEMode('🙂') = %q, want 'default'", got)
+	}
+	if got := ApplyVTEMode("☠️"); got != "☠️ " {
+		t.Errorf("ApplyVTEMode('☠️') = %q, want '☠️ '", got)
 	}
 }
 
