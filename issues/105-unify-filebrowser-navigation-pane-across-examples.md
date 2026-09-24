@@ -96,3 +96,15 @@ Pre-Work / Required Refinements (M3):
   a non-root dir quits (`TestBrowserFilterAndMouseSelection` wants quit:false).
 - `q` no longer quits: `TestViewerPTYShowsFilesAndQuits` and the ansiviewer PTY smoke hang.
 - Luna routed navigation keys from the host around frame focus; prefer filebrowser's 80d9e8d wiring.
+
+M3 delivered (c046cc2, flash37 after luna): ansiviewer hosts the shared pane; duplicate navigation removed.
+
+Pre-Work / Required Refinements (M4):
+
+- `TestBrowserFilterAndMouseSelection` now only checks `Query() == "beta"`; restore the check that the
+  visible list is exactly `beta.txt` (via the pane's filtered items), and drive the filter through
+  the browser/frame boundary as before, not the pane directly.
+- Docs (see M1 note): `docs/Widgets.md` (shared `NavigationPane`, callbacks, `ConsumeKey`, the Choice
+  rect bridge, `Choice.SetItems`/`SelectIndex`), example READMEs if they describe navigation.
+- Write `docs/manual/105-smoke.md`-style checklist? No: list the manual smoke items for the user in
+  your report instead (ESC back, parent reselect, `/` filter, click select, in both examples).
