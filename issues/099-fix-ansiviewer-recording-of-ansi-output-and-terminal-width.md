@@ -1,6 +1,6 @@
 # 099 — Fix ansiviewer recording of ANSI output and terminal width
 
-**Status**: Open
+**Status**: Closed — already fixed in ce464f9/a0ba07d/17def88: repro at width 115 yields byte-identical copy of docs/data/harnez-usage.ansi; regression test testRecordFixture exists
 **Priority**: P1
 **Severity**: Major
 **Category**: Bug
