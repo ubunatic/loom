@@ -82,3 +82,5 @@ Pre-Work / Required Refinements (M2):
   and filebrowser treats the pane's start dir as quit root. Fix the ownership, e.g. the pane keeps one
   stable `Choice` (swap items, not the instance) and the frame hosts the pane itself, not `pane.List()`.
 - Keep existing filebrowser tests unweakened; the M1 pane tests must stay green.
+
+M2 second pass (flash37, timed out at 10 min, uncommitted WIP): added `Choice.SetItems`/`SelectIndex` so the pane keeps one stable `Choice`; frame hosts the pane. Status unknown. Escalated to terra.
