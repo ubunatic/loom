@@ -37,3 +37,9 @@ Issue 114 provided the interactive measurement and review tool, producing empiri
 - `debug --measure` includes a "VTE" column displaying Loom's predicted VTE width.
 - Unit and PTY tests pass and verify the updated width metrics and column rendering.
 - `make test-q1` and `make install` succeed.
+
+## Milestones (lean sprint, developer agy:flash37:med)
+
+- **M1 (VTE column in `debug --measure`)**: Add the "VTE" column to the `loomoji debug --measure` paged table and review UI, displaying what Loom predicts/evaluates for VTE terminals alongside computed width. Update table layout & widget tests.
+- **M2 (Width reconciliation & spec/measure overrides)**: Integrate measured terminal widths and annotations from `docs/data/loomoji-widths/vte-8401.json` into `spec/emoji.yaml` and `measure/` logic (handling VS16, ZWJ sequences, single/double width edge cases).
+- **M3 (End-to-end alignment & regression tests)**: Verify border alignment and rendering in widgets/PTY tests without drift. Ensure `make test-q1` and `make install` pass.
