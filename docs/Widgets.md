@@ -142,4 +142,8 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
 
 Mouse coordinates: events reaching widgets are 0-based, PTY SGR mouse reports are 1-based.
+Containers (`Split`, `Stack`, `Pane`, …) already translate events to the child's local
+0-based cells (059). Never subtract 1 again in widget code: loomoji's grid did (`e.Y-1`)
+and highlighted the row above the pointer (108). Verify hit-testing black-box with a
+[hover probe](HoverTesting.md).
 In tests locate screen text by runes or display width, never byte offsets.

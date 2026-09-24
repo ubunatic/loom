@@ -3,7 +3,9 @@
 How to prove in a black-box PTY test that a mouse hover at terminal cell
 (x, y) highlights the widget under (x, y), and how to report the offset if it
 doesn't. Reference implementation: `examples/loomoji/loomoji_107_pty_test.go`
-(issue 107).
+(issue 107). It measured a dy = −1 offset that 108 fixed (`e.Y-1` on an already
+0-based child-local Y, see 059 and [Widgets](Widgets.md)); the probe now passes
+and guards against regressions.
 
 ## Rules
 
@@ -96,3 +98,12 @@ go test -count=1 -run TestLoomoji107HoverProbe -v ./examples/loomoji/
 
 Under Quota-1, use `make test-q1`, write the output to a file and grep for
 `--- FAIL`.
+
+## Open items
+
+- The probe helpers (`sendAndSettle`, baseline diff, `findGridItems`) live in
+  the loomoji test. Move them to `internal/ptytest` when a second app needs
+  hover probes.
+- Blind spot: an off-grid hover doesn't clear loomoji's highlight, so a
+  second probe on the same item (right emoji half, gap) can't be measured.
+  Reset by hovering a different item instead.
