@@ -124,3 +124,4 @@ upkeep.
 | 111 | [111-add-an-image-media-widget-rendered-with-cati.md](111-add-an-image-media-widget-rendered-with-cati.md) | Add an Image/Media widget rendered with cati | Open |
 | 112 | [112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md](112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) | Add media controls: play/pause, zoom +/-, and panning for the Image/Media widget | Open |
 | 113 | [113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md](113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md) | Fix filebrowser arrow up/down jumping multiple items | Closed — verified single dispatch and filebrowser arrow navigation |
+| 114 | [114-loomoji-debug-measure-interactive-tui-to-record-real-terminal-emoji-widths.md](114-loomoji-debug-measure-interactive-tui-to-record-real-terminal-emoji-widths.md) | loomoji debug --measure: interactive TUI to record real terminal emoji widths | Open |
