@@ -198,6 +198,9 @@ func (v *VT) Write(p []byte) (int, error) {
 			}
 			cluster := string(data[i:j])
 			w := measure.StringWidth(cluster)
+			if measure.ActiveRenderPath() == measure.RenderPathVTE && measure.VTEMode(cluster) == "pad-1" {
+				w = max(1, w-1)
+			}
 			v.putCluster(r, w)
 			i = j
 		}

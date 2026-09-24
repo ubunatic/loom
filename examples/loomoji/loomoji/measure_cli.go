@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
 )
 
@@ -24,8 +25,8 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 			return runPicker()
 		},
 	}
-	var measure, review, grid, differsFromLoom, hasComment bool
-	var width string
+	var doMeasure, review, grid, differsFromLoom, hasComment bool
+	var width, renderPath string
 	debugCmd := &cobra.Command{
 		Use:           "debug",
 		Short:         "Debug loomoji terminal rendering",
@@ -33,6 +34,10 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(_ *cobra.Command, _ []string) error {
+			if renderPath != "" {
+				measure.SetRenderPath(measure.RenderPath(renderPath))
+				defer measure.ResetRenderPath()
+			}
 			if grid {
 				out, err := RenderEmojiGrid(uniqueGlyphs(), width)
 				if err != nil {
@@ -41,7 +46,7 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 				fmt.Println(out)
 				return nil
 			}
-			if !measure {
+			if !doMeasure {
 				return fmt.Errorf("loomoji debug: specify --measure or --grid")
 			}
 			filter, err := measureFilterFromWidth(width)
@@ -52,9 +57,10 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 		},
 	}
 	debugCmd.Flags().BoolVar(&grid, "grid", false, "show all emojis as grid")
-	debugCmd.Flags().BoolVar(&measure, "measure", false, "record rendered glyph widths for this terminal")
+	debugCmd.Flags().BoolVar(&doMeasure, "measure", false, "record rendered glyph widths for this terminal")
 	debugCmd.Flags().BoolVar(&review, "review", false, "review recorded glyph widths")
 	debugCmd.Flags().StringVarP(&width, "width", "W", "", "width 1, 2, 3, 4, or unsure")
+	debugCmd.Flags().StringVarP(&renderPath, "render-path", "R", "", "terminal render path: vte, standard, non-vte")
 	debugCmd.Flags().BoolVar(&differsFromLoom, "differs-from-loom", false, "review only: show widths that differ from Loom")
 	debugCmd.Flags().BoolVar(&hasComment, "has-comment", false, "review only: show glyphs with comments")
 	cmd.AddCommand(debugCmd)

@@ -374,9 +374,23 @@ func (c *Canvas) Row(y int) string {
 	}
 	var b strings.Builder
 	var cur Style
+	vteNeedPad := false
+	isVTE := measure.ActiveRenderPath() == measure.RenderPathVTE
 	for _, cell := range c.cells[y] {
 		if cell.Continuation {
+			if vteNeedPad {
+				if cell.Style != cur {
+					b.WriteString(cell.Style.ANSI())
+					cur = cell.Style
+				}
+				b.WriteByte(' ')
+				vteNeedPad = false
+			}
 			continue
+		}
+		vteNeedPad = false
+		if isVTE && measure.VTEMode(cell.Text) == "pad-1" {
+			vteNeedPad = true
 		}
 		if cell.Style != cur {
 			b.WriteString(cell.Style.ANSI())

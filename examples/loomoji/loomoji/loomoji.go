@@ -1401,7 +1401,7 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 	accent := loom.ColorRGB(32, 151, 185)
 	p.cellWidth = 1
 	for _, item := range p.items {
-		icon := ApplyRenderMode(p.entries[item].icon, EvaluateVTEMode(p.entries[item].icon))
+		icon := p.entries[item].icon
 		p.cellWidth = max(p.cellWidth, loom.StringWidth(icon))
 	}
 	p.cellWidth = max(1, p.cellWidth)
@@ -1420,7 +1420,7 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 		idx := start + n
 		x := 1 + (n%p.cols)*columnWidth
 		y := n / p.cols
-		icon := ApplyRenderMode(p.entries[p.items[idx]].icon, EvaluateVTEMode(p.entries[p.items[idx]].icon))
+		icon := p.entries[p.items[idx]].icon
 		style := loom.Style{FG: loom.ColorRGB(220, 200, 120)}
 		cellText := loom.TruncateText(icon, p.cellWidth, "")
 		if idx == p.index {

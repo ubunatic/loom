@@ -6,6 +6,7 @@ package measure
 
 import (
 	"fmt"
+	"os"
 	"strings"
 	"sync/atomic"
 
@@ -15,11 +16,12 @@ import (
 // Package measure defines and loads emoji/sequence specifications.
 // EmojiSpec defines specced emoji and sequence width policy.
 type EmojiSpec struct {
-	VS16DefaultWidth int             `yaml:"vs16_default_width"`
-	VS16VTEMode      string          `yaml:"vs16_vte_mode"`
-	ZWJDefaultWidth  int             `yaml:"zwj_default_width"`
-	FlagDefaultWidth int             `yaml:"flag_default_width"`
-	Overrides        []EmojiOverride `yaml:"overrides"`
+	VS16DefaultWidth  int             `yaml:"vs16_default_width"`
+	VS16VTEMode       string          `yaml:"vs16_vte_mode"`
+	VS16NonVTEMode    string          `yaml:"vs16_non_vte_mode,omitempty"`
+	ZWJDefaultWidth   int             `yaml:"zwj_default_width"`
+	FlagDefaultWidth  int             `yaml:"flag_default_width"`
+	Overrides         []EmojiOverride `yaml:"overrides"`
 }
 
 // EmojiOverride defines an explicit glyph-to-width mapping.
@@ -28,18 +30,38 @@ type EmojiOverride struct {
 	Codepoints []string `yaml:"codepoints"`
 	Width      int      `yaml:"width"`
 	VTEMode    string   `yaml:"vte_mode,omitempty"`
+	NonVTEMode string   `yaml:"non_vte_mode,omitempty"`
 	Note       string   `yaml:"note"`
 }
 
+// RenderPath identifies the terminal rendering strategy and width alignment profile.
+type RenderPath string
+
+const (
+	// RenderPathVTE targets VTE-based terminals (e.g. GNOME Terminal, Tilix, Ptyxis)
+	// which render VS16 emojis across 2 cells but only advance the cursor by 1 cell.
+	RenderPathVTE RenderPath = "vte"
+
+	// RenderPathStandard targets modern non-VTE / Wayland terminals (e.g. Foot, Alacritty, Kitty, WezTerm, Ghostty)
+	// which advance cursor by 2 cells natively for wide emoji.
+	RenderPathStandard RenderPath = "standard"
+
+	// RenderPathNonVTE is an alias for RenderPathStandard.
+	RenderPathNonVTE RenderPath = "non-vte"
+)
+
 type emojiRuntime struct {
-	spec           EmojiSpec
-	runeOverrides  map[rune]int
-	glyphOverrides map[string]int
-	vteModes       map[string]string
-	vs16VTEMode    string
+	spec            EmojiSpec
+	runeOverrides   map[rune]int
+	glyphOverrides  map[string]int
+	vteModes        map[string]string
+	nonVTEModes     map[string]string
+	vs16VTEMode     string
+	vs16NonVTEMode  string
 }
 
 var currentEmojiRuntime atomic.Pointer[emojiRuntime]
+var currentRenderPath atomic.Pointer[RenderPath]
 
 func init() {
 	def := defaultEmojiSpec()
@@ -48,16 +70,19 @@ func init() {
 		runeOverrides:  buildRuneOverrides(def.Overrides),
 		glyphOverrides: buildGlyphOverrides(def.Overrides),
 		vteModes:       buildVTEModes(def.Overrides),
+		nonVTEModes:    buildNonVTEModes(def.Overrides),
 		vs16VTEMode:    def.VS16VTEMode,
+		vs16NonVTEMode: def.VS16NonVTEMode,
 	})
 }
 
 func defaultEmojiSpec() EmojiSpec {
 	return EmojiSpec{
-		VS16DefaultWidth: 2,
-		VS16VTEMode:      "pad-1",
-		ZWJDefaultWidth:  2,
-		FlagDefaultWidth: 2,
+		VS16DefaultWidth:  2,
+		VS16VTEMode:       "pad-1",
+		VS16NonVTEMode:    "default",
+		ZWJDefaultWidth:   2,
+		FlagDefaultWidth:  2,
 	}
 }
 
@@ -92,6 +117,16 @@ func buildVTEModes(overrides []EmojiOverride) map[string]string {
 	return m
 }
 
+func buildNonVTEModes(overrides []EmojiOverride) map[string]string {
+	m := make(map[string]string, len(overrides))
+	for _, o := range overrides {
+		if o.Glyph != "" && o.NonVTEMode != "" {
+			m[o.Glyph] = o.NonVTEMode
+		}
+	}
+	return m
+}
+
 // LoadEmojiSpecYAML decodes and activates an emoji specification from YAML bytes.
 func LoadEmojiSpecYAML(data []byte) error {
 	var spec EmojiSpec
@@ -110,6 +145,9 @@ func LoadEmojiSpec(spec EmojiSpec) {
 	if spec.VS16VTEMode == "" {
 		spec.VS16VTEMode = "pad-1"
 	}
+	if spec.VS16NonVTEMode == "" {
+		spec.VS16NonVTEMode = "default"
+	}
 	if spec.ZWJDefaultWidth <= 0 {
 		spec.ZWJDefaultWidth = 2
 	}
@@ -121,7 +159,9 @@ func LoadEmojiSpec(spec EmojiSpec) {
 		runeOverrides:  buildRuneOverrides(spec.Overrides),
 		glyphOverrides: buildGlyphOverrides(spec.Overrides),
 		vteModes:       buildVTEModes(spec.Overrides),
+		nonVTEModes:    buildNonVTEModes(spec.Overrides),
 		vs16VTEMode:    spec.VS16VTEMode,
+		vs16NonVTEMode: spec.VS16NonVTEMode,
 	})
 }
 
@@ -132,6 +172,53 @@ func ActiveEmojiSpec() EmojiSpec {
 		return defaultEmojiSpec()
 	}
 	return rt.spec
+}
+
+// DetectRenderPath inspects the process environment and terminal variables to determine the active RenderPath.
+func DetectRenderPath() RenderPath {
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_RENDER_PATH"))); v != "" {
+		switch v {
+		case "vte":
+			return RenderPathVTE
+		case "standard", "non-vte", "foot", "modern":
+			return RenderPathStandard
+		}
+	}
+	// Detect foot terminal via dedicated environment variables
+	if os.Getenv("FOOT_TERMINAL_PID") != "" || os.Getenv("FOOT_APP_ID") != "" {
+		return RenderPathStandard
+	}
+	term := strings.ToLower(strings.TrimSpace(os.Getenv("TERM")))
+	if term == "foot" || term == "foot-extra" || term == "alacritty" || term == "xterm-kitty" || term == "ghostty" {
+		return RenderPathStandard
+	}
+	prog := strings.ToLower(strings.TrimSpace(os.Getenv("TERM_PROGRAM")))
+	if prog == "foot" || prog == "ghostty" || prog == "wezterm" || prog == "alacritty" || prog == "kitty" {
+		return RenderPathStandard
+	}
+	if os.Getenv("VTE_VERSION") != "" {
+		return RenderPathVTE
+	}
+	// Default to VTE path for current VTE-focused workloads
+	return RenderPathVTE
+}
+
+// ActiveRenderPath returns the currently active RenderPath (either manually overridden or autodetected).
+func ActiveRenderPath() RenderPath {
+	if p := currentRenderPath.Load(); p != nil {
+		return *p
+	}
+	return DetectRenderPath()
+}
+
+// SetRenderPath sets an explicit override for the active RenderPath.
+func SetRenderPath(p RenderPath) {
+	currentRenderPath.Store(&p)
+}
+
+// ResetRenderPath clears any explicit RenderPath override, reverting to autodetection.
+func ResetRenderPath() {
+	currentRenderPath.Store(nil)
 }
 
 // VTEMode returns the authoritative VTE rendering mode for a glyph from the spec.
@@ -153,6 +240,39 @@ func VTEMode(glyph string) string {
 		return "pad-1"
 	}
 	return "default"
+}
+
+// NonVTEMode returns the authoritative modern Non-VTE / standard rendering mode for a glyph from the spec.
+func NonVTEMode(glyph string) string {
+	if glyph == "" {
+		return "default"
+	}
+	rt := currentEmojiRuntime.Load()
+	if rt == nil {
+		return "default"
+	}
+	if mode, ok := rt.nonVTEModes[glyph]; ok {
+		return mode
+	}
+	if strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') {
+		if rt.vs16NonVTEMode != "" {
+			return rt.vs16NonVTEMode
+		}
+		return "default"
+	}
+	return "default"
+}
+
+// RenderMode returns the authoritative rendering mode for a glyph for the given RenderPath.
+func RenderMode(glyph string, path RenderPath) string {
+	switch path {
+	case RenderPathStandard, RenderPathNonVTE:
+		return NonVTEMode(glyph)
+	case RenderPathVTE:
+		fallthrough
+	default:
+		return VTEMode(glyph)
+	}
 }
 
 // ApplyRenderMode transforms a glyph string according to the requested mode.
@@ -185,6 +305,21 @@ func ApplyRenderMode(glyph, mode string) string {
 // ApplyVTEMode transforms a glyph string using its authoritative VTE mode from the spec.
 func ApplyVTEMode(glyph string) string {
 	return ApplyRenderMode(glyph, VTEMode(glyph))
+}
+
+// ApplyNonVTEMode transforms a glyph string using its authoritative Non-VTE mode from the spec.
+func ApplyNonVTEMode(glyph string) string {
+	return ApplyRenderMode(glyph, NonVTEMode(glyph))
+}
+
+// ApplyRenderPath transforms a glyph string according to the requested RenderPath.
+func ApplyRenderPath(glyph string, path RenderPath) string {
+	return ApplyRenderMode(glyph, RenderMode(glyph, path))
+}
+
+// ApplyAutoRenderMode transforms a glyph string according to the active RenderPath.
+func ApplyAutoRenderMode(glyph string) string {
+	return ApplyRenderPath(glyph, ActiveRenderPath())
 }
 
 func getRuneOverride(r rune) (int, bool) {

@@ -2,6 +2,7 @@ vs16_default_width: 2
 zwj_default_width: 2
 flag_default_width: 2
 vs16_vte_mode: pad-1
+vs16_non_vte_mode: default
 overrides:
 - glyph: ' '
   codepoints:

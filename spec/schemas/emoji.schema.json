@@ -34,6 +34,11 @@
       "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
       "description": "Default visual render mode for VS16 sequences in VTE terminals"
     },
+    "vs16_non_vte_mode": {
+      "type": "string",
+      "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
+      "description": "Default visual render mode for VS16 sequences in modern non-VTE terminals"
+    },
     "overrides": {
       "type": "array",
       "items": {
@@ -58,6 +63,11 @@
             "type": "string",
             "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
             "description": "Visual render mode override for this glyph in VTE terminals"
+          },
+          "non_vte_mode": {
+            "type": "string",
+            "enum": ["default", "pad-1", "no-vs16", "no-vs16-pad", "force-vs16", "split-zwj", "base-only"],
+            "description": "Visual render mode override for this glyph in non-VTE terminals"
           },
           "note": {
             "type": "string"

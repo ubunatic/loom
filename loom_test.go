@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 // ── Widget interface conformance ──────────────────────────────────────────────
@@ -708,6 +709,25 @@ func TestWideCharactersAndDebugBorders(t *testing.T) {
 	if row != expected {
 		t.Errorf("Row(0) = %q, want %q", row, expected)
 	}
+
+	// 2b. Test Canvas.Row rendering with VS16 pad-1 glyph in VTE vs Standard path
+	cVTE := loom.NewCanvas(4, 1)
+	cVTE.Write(0, 0, "✈️X", loom.Style{}) // ✈️ occupies col 0, continuation col 1; X occupies col 2; blank col 3
+
+	measure.SetRenderPath(measure.RenderPathVTE)
+	rowVTE := cVTE.Row(0)
+	expectedVTE := "✈️ X \x1b[0m" // continuation cell emits space for VTE pad-1
+	if rowVTE != expectedVTE {
+		t.Errorf("VTE Row(0) = %q, want %q", rowVTE, expectedVTE)
+	}
+
+	measure.SetRenderPath(measure.RenderPathStandard)
+	rowStd := cVTE.Row(0)
+	expectedStd := "✈️X \x1b[0m" // standard path skips continuation cell without pad
+	if rowStd != expectedStd {
+		t.Errorf("Standard Row(0) = %q, want %q", rowStd, expectedStd)
+	}
+	measure.ResetRenderPath()
 
 	// 3. Test drawDebugBorder not overpainting continuation cells
 	c2 := loom.NewCanvas(3, 3)

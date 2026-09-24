@@ -60,4 +60,17 @@ func TestRenderEmojiGrid(t *testing.T) {
 	if _, err := RenderEmojiGrid(glyphs, "99"); err == nil {
 		t.Error("RenderEmojiGrid(w=99) expected error, got nil")
 	}
+
+	// Test RenderEmojiGridWithPath for standard / non-vte path
+	stdOut, err := RenderEmojiGridWithPath(glyphs, "2", "standard")
+	if err != nil {
+		t.Fatalf("RenderEmojiGridWithPath(standard) err: %v", err)
+	}
+	if !strings.Contains(stdOut, "STANDARD Width 2:") {
+		t.Errorf("RenderEmojiGridWithPath(standard) missing STANDARD header:\n%s", stdOut)
+	}
+	// For standard path, ☠️ is not padded with trailing space
+	if !strings.Contains(stdOut, "☠️|") {
+		t.Errorf("RenderEmojiGridWithPath(standard) expected unpadded '☠️|':\n%s", stdOut)
+	}
 }

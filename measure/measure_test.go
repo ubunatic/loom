@@ -104,6 +104,91 @@ func TestEmojiSpecLoadAndReconcile(t *testing.T) {
 	if got := ApplyVTEMode("☠️"); got != "☠️ " {
 		t.Errorf("ApplyVTEMode('☠️') = %q, want '☠️ '", got)
 	}
+
+	// Test NonVTEMode resolution
+	if got := NonVTEMode("☠️"); got != "default" {
+		t.Errorf("NonVTEMode('☠️') = %q, want 'default'", got)
+	}
+	if got := ApplyNonVTEMode("☠️"); got != "☠️" {
+		t.Errorf("ApplyNonVTEMode('☠️') = %q, want '☠️'", got)
+	}
+
+	// Test RenderMode and ApplyRenderPath dispatch
+	if got := RenderMode("☠️", RenderPathVTE); got != "pad-1" {
+		t.Errorf("RenderMode('☠️', RenderPathVTE) = %q, want 'pad-1'", got)
+	}
+	if got := RenderMode("☠️", RenderPathStandard); got != "default" {
+		t.Errorf("RenderMode('☠️', RenderPathStandard) = %q, want 'default'", got)
+	}
+	if got := ApplyRenderPath("☠️", RenderPathVTE); got != "☠️ " {
+		t.Errorf("ApplyRenderPath('☠️', RenderPathVTE) = %q, want '☠️ '", got)
+	}
+	if got := ApplyRenderPath("☠️", RenderPathStandard); got != "☠️" {
+		t.Errorf("ApplyRenderPath('☠️', RenderPathStandard) = %q, want '☠️'", got)
+	}
+}
+
+func TestDetectRenderPath(t *testing.T) {
+	t.Run("explicit LOOM_RENDER_PATH=vte", func(t *testing.T) {
+		t.Setenv("LOOM_RENDER_PATH", "vte")
+		if got := DetectRenderPath(); got != RenderPathVTE {
+			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathVTE)
+		}
+	})
+
+	t.Run("explicit LOOM_RENDER_PATH=standard", func(t *testing.T) {
+		t.Setenv("LOOM_RENDER_PATH", "standard")
+		if got := DetectRenderPath(); got != RenderPathStandard {
+			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathStandard)
+		}
+	})
+
+	t.Run("foot terminal PID env", func(t *testing.T) {
+		t.Setenv("LOOM_RENDER_PATH", "")
+		t.Setenv("FOOT_TERMINAL_PID", "12345")
+		t.Setenv("VTE_VERSION", "")
+		if got := DetectRenderPath(); got != RenderPathStandard {
+			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathStandard)
+		}
+	})
+
+	t.Run("foot TERM env", func(t *testing.T) {
+		t.Setenv("LOOM_RENDER_PATH", "")
+		t.Setenv("FOOT_TERMINAL_PID", "")
+		t.Setenv("TERM", "foot")
+		t.Setenv("VTE_VERSION", "")
+		if got := DetectRenderPath(); got != RenderPathStandard {
+			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathStandard)
+		}
+	})
+
+	t.Run("vte terminal VTE_VERSION env", func(t *testing.T) {
+		t.Setenv("LOOM_RENDER_PATH", "")
+		t.Setenv("FOOT_TERMINAL_PID", "")
+		t.Setenv("TERM", "xterm-256color")
+		t.Setenv("TERM_PROGRAM", "")
+		t.Setenv("VTE_VERSION", "8401")
+		if got := DetectRenderPath(); got != RenderPathVTE {
+			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathVTE)
+		}
+	})
+}
+
+func TestRenderPathOverride(t *testing.T) {
+	ResetRenderPath()
+	defer ResetRenderPath()
+
+	SetRenderPath(RenderPathStandard)
+	if got := ActiveRenderPath(); got != RenderPathStandard {
+		t.Errorf("ActiveRenderPath() = %v, want %v", got, RenderPathStandard)
+	}
+
+	SetRenderPath(RenderPathVTE)
+	if got := ActiveRenderPath(); got != RenderPathVTE {
+		t.Errorf("ActiveRenderPath() = %v, want %v", got, RenderPathVTE)
+	}
+
+	ResetRenderPath()
 }
 
 func TestLinesMeasuresVisibleBounds(t *testing.T) {
