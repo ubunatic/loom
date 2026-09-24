@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/measure"
 )
 
 const measurePageSize = 10
@@ -230,16 +231,14 @@ func (*MeasureWidget) HandleMouse(loom.MouseEvent) bool { return false }
 
 func (w *MeasureWidget) measurement(glyph string) Measurement {
 	if m, ok := w.pending[glyph]; ok {
-		if m.VTEWidth == 0 {
-			m.VTEWidth = EvaluateVTEWidth(glyph)
-		}
+		m.ComputedWidth = measure.StringWidth(glyph)
+		m.VTEWidth = EvaluateVTEWidth(glyph)
 		return m
 	}
 	if m, ok := w.store.Entries[glyph]; ok {
 		m.Answered = false
-		if m.VTEWidth == 0 {
-			m.VTEWidth = EvaluateVTEWidth(glyph)
-		}
+		m.ComputedWidth = measure.StringWidth(glyph)
+		m.VTEWidth = EvaluateVTEWidth(glyph)
 		return m
 	}
 	m := NewMeasurement(glyph)

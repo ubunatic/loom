@@ -49,8 +49,59 @@ type Measurement struct {
 	Comment       string   `json:"comment,omitempty"`
 }
 
+var vteSpecificWidths = map[string]int{
+	"😮‍💨": 4,
+	"😵‍💫": 4,
+	"🐻‍❄️": 4,
+	"🐈‍⬛": 4,
+	"❤️‍🔥": 3,
+	"❤️‍🩹": 3,
+	"👁️‍🗨️": 4,
+	"⛳":  2,
+	"♈":  2, "♉": 2, "♊": 2, "♋": 2, "♌": 2, "♍": 2,
+	"♎":  2, "♏": 2, "♐": 2, "♑": 2, "♒": 2, "♓": 2,
+	"♿":  2, "⚓": 2, "⛎": 2, "⛔": 2, "⛪": 2, "⛲": 2,
+	"⛵":  2, "⛺": 2, "⛽": 2, "✅": 2, "❌": 2, "❎": 2,
+	"❓":  2, "❔": 2, "❕": 2, "❗": 2, "➕": 2, "➖": 2,
+	"➗":  2,
+	"⟵":  3,
+	"⟶":  3,
+	"⟹":  3,
+	"⟷":  4,
+	"⟺":  4,
+	"⭐️":  1,
+}
+
 // EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.
 func EvaluateVTEWidth(glyph string) int {
+	if glyph == "" {
+		return 0
+	}
+	if w, ok := vteSpecificWidths[glyph]; ok {
+		return w
+	}
+	runes := []rune(glyph)
+	// Flag sequence: two regional indicator symbols (U+1F1E6..U+1F1FF)
+	if len(runes) == 2 && runes[0] >= 0x1F1E6 && runes[0] <= 0x1F1FF && runes[1] >= 0x1F1E6 && runes[1] <= 0x1F1FF {
+		return 2
+	}
+	// ZWJ sequence default
+	if strings.ContainsRune(glyph, '\u200D') {
+		return 2
+	}
+	// VS16 (Variation Selector-16) emoji presentation in VTE
+	if strings.ContainsRune(glyph, '\uFE0F') {
+		base := strings.ReplaceAll(glyph, "\uFE0F", "")
+		baseRunes := []rune(base)
+		if len(baseRunes) == 1 {
+			r := baseRunes[0]
+			if r >= 0x1F000 {
+				return 4
+			}
+			return 3
+		}
+		return measure.StringWidth(glyph) + 1
+	}
 	return measure.StringWidth(glyph)
 }
 
@@ -87,6 +138,9 @@ func (s *MeasurementStore) Merge(measurements ...Measurement) {
 	for _, m := range measurements {
 		if m.Glyph == "" {
 			continue
+		}
+		if m.ComputedWidth == 0 {
+			m.ComputedWidth = measure.StringWidth(m.Glyph)
 		}
 		if m.VTEWidth == 0 {
 			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
@@ -192,7 +246,8 @@ func LoadMeasurementStore(path string) (*MeasurementStore, error) {
 		store.Entries = make(map[string]Measurement)
 	}
 	for k, m := range store.Entries {
-		if m.VTEWidth == 0 && m.Glyph != "" {
+		if m.Glyph != "" {
+			m.ComputedWidth = measure.StringWidth(m.Glyph)
 			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
 			store.Entries[k] = m
 		}

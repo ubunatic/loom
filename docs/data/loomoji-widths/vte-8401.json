@@ -20,9 +20,9 @@
         "U+203C",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⁉️": {
@@ -31,9 +31,9 @@
         "U+2049",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "←": {
@@ -892,9 +892,9 @@
         "U+2328",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⏰": {
@@ -913,9 +913,9 @@
         "U+23F1",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⏲️": {
@@ -924,9 +924,9 @@
         "U+23F2",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⏳": {
@@ -945,9 +945,9 @@
         "U+24C2",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "─": {
@@ -2696,9 +2696,9 @@
         "U+2600",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☁️": {
@@ -2707,9 +2707,9 @@
         "U+2601",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☂️": {
@@ -2718,9 +2718,9 @@
         "U+2602",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☃️": {
@@ -2729,9 +2729,9 @@
         "U+2603",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☄️": {
@@ -2740,9 +2740,9 @@
         "U+2604",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☎️": {
@@ -2751,9 +2751,9 @@
         "U+260E",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☔": {
@@ -2762,7 +2762,7 @@
         "U+2614"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2772,7 +2772,7 @@
         "U+2615"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -2782,9 +2782,9 @@
         "U+2618",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☝️": {
@@ -2793,9 +2793,9 @@
         "U+261D",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☠️": {
@@ -2804,9 +2804,9 @@
         "U+2620",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☢️": {
@@ -2815,9 +2815,9 @@
         "U+2622",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☣️": {
@@ -2826,9 +2826,9 @@
         "U+2623",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☦️": {
@@ -2837,9 +2837,9 @@
         "U+2626",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☪️": {
@@ -2848,9 +2848,9 @@
         "U+262A",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☮️": {
@@ -2859,9 +2859,9 @@
         "U+262E",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☯️": {
@@ -2870,9 +2870,9 @@
         "U+262F",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "☸️": {
@@ -2881,9 +2881,9 @@
         "U+2638",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "♈": {
@@ -2892,7 +2892,7 @@
         "U+2648"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2903,7 +2903,7 @@
         "U+2649"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2914,7 +2914,7 @@
         "U+264A"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2925,7 +2925,7 @@
         "U+264B"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2936,7 +2936,7 @@
         "U+264C"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2947,7 +2947,7 @@
         "U+264D"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2958,7 +2958,7 @@
         "U+264E"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2969,7 +2969,7 @@
         "U+264F"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2980,7 +2980,7 @@
         "U+2650"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -2991,7 +2991,7 @@
         "U+2651"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3002,7 +3002,7 @@
         "U+2652"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3013,7 +3013,7 @@
         "U+2653"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3024,9 +3024,9 @@
         "U+265F",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "♨️": {
@@ -3035,9 +3035,9 @@
         "U+2668",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "♿": {
@@ -3046,7 +3046,7 @@
         "U+267F"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3057,9 +3057,9 @@
         "U+2692",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚓": {
@@ -3068,7 +3068,7 @@
         "U+2693"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3079,9 +3079,9 @@
         "U+2694",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚖️": {
@@ -3090,9 +3090,9 @@
         "U+2696",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚗️": {
@@ -3101,9 +3101,9 @@
         "U+2697",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚙️": {
@@ -3112,9 +3112,9 @@
         "U+2699",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚠️": {
@@ -3123,9 +3123,9 @@
         "U+26A0",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚡": {
@@ -3134,7 +3134,7 @@
         "U+26A1"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3144,9 +3144,9 @@
         "U+26B0",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚱️": {
@@ -3155,9 +3155,9 @@
         "U+26B1",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⚽": {
@@ -3166,7 +3166,7 @@
         "U+26BD"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3176,7 +3176,7 @@
         "U+26BE"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3186,7 +3186,7 @@
         "U+26C4"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3196,7 +3196,7 @@
         "U+26C5"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3206,7 +3206,7 @@
         "U+26CE"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3217,9 +3217,9 @@
         "U+26CF",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛔": {
@@ -3228,7 +3228,7 @@
         "U+26D4"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3239,9 +3239,9 @@
         "U+26E9",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛪": {
@@ -3250,7 +3250,7 @@
         "U+26EA"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3261,9 +3261,9 @@
         "U+26F0",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛲": {
@@ -3272,7 +3272,7 @@
         "U+26F2"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3283,7 +3283,7 @@
         "U+26F3"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3294,9 +3294,9 @@
         "U+26F4",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛵": {
@@ -3305,7 +3305,7 @@
         "U+26F5"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3316,9 +3316,9 @@
         "U+26F7",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛸️": {
@@ -3327,9 +3327,9 @@
         "U+26F8",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛹️": {
@@ -3338,9 +3338,9 @@
         "U+26F9",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⛺": {
@@ -3349,7 +3349,7 @@
         "U+26FA"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3360,7 +3360,7 @@
         "U+26FD"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3371,9 +3371,9 @@
         "U+2702",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✅": {
@@ -3382,7 +3382,7 @@
         "U+2705"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3393,9 +3393,9 @@
         "U+2708",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✉️": {
@@ -3404,9 +3404,9 @@
         "U+2709",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✊": {
@@ -3415,7 +3415,7 @@
         "U+270A"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3425,7 +3425,7 @@
         "U+270B"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3435,9 +3435,9 @@
         "U+270C",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✍️": {
@@ -3446,9 +3446,9 @@
         "U+270D",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✖️": {
@@ -3457,9 +3457,9 @@
         "U+2716",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✝️": {
@@ -3468,9 +3468,9 @@
         "U+271D",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✡️": {
@@ -3479,9 +3479,9 @@
         "U+2721",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "✨": {
@@ -3490,7 +3490,7 @@
         "U+2728"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3500,9 +3500,9 @@
         "U+2744",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "❌": {
@@ -3511,7 +3511,7 @@
         "U+274C"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3522,7 +3522,7 @@
         "U+274E"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3533,7 +3533,7 @@
         "U+2753"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3544,7 +3544,7 @@
         "U+2754"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3555,7 +3555,7 @@
         "U+2755"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3566,7 +3566,7 @@
         "U+2757"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3577,9 +3577,9 @@
         "U+2763",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "❤️": {
@@ -3588,9 +3588,9 @@
         "U+2764",
         "U+FE0F"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "❤️‍🔥": {
@@ -3602,7 +3602,7 @@
         "U+1F525"
       ],
       "computed_width": 3,
-      "vte_width": 2,
+      "vte_width": 3,
       "measured_width": 3,
       "answered": true,
       "comment": "3ch long overlapping pair, VTE:3"
@@ -3616,7 +3616,7 @@
         "U+1FA79"
       ],
       "computed_width": 3,
-      "vte_width": 2,
+      "vte_width": 3,
       "measured_width": 3,
       "answered": true,
       "comment": "3ch long overlapping pair, VTE:3"
@@ -3637,7 +3637,7 @@
         "U+2795"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3648,7 +3648,7 @@
         "U+2796"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3659,7 +3659,7 @@
         "U+2797"
       ],
       "computed_width": 1,
-      "vte_width": 1,
+      "vte_width": 2,
       "measured_width": 1,
       "answered": true,
       "comment": "VTE:2"
@@ -3669,9 +3669,9 @@
       "codepoints": [
         "U+27F5"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⟶": {
@@ -3679,9 +3679,9 @@
       "codepoints": [
         "U+27F6"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⟷": {
@@ -3689,9 +3689,9 @@
       "codepoints": [
         "U+27F7"
       ],
-      "computed_width": 1,
-      "vte_width": 3,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "⟹": {
@@ -3699,9 +3699,9 @@
       "codepoints": [
         "U+27F9"
       ],
-      "computed_width": 1,
-      "vte_width": 2,
-      "measured_width": 2,
+      "computed_width": 2,
+      "vte_width": 3,
+      "measured_width": 3,
       "answered": true
     },
     "⟺": {
@@ -3709,9 +3709,9 @@
       "codepoints": [
         "U+27FA"
       ],
-      "computed_width": 1,
-      "vte_width": 3,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "⭐️": {
@@ -3721,7 +3721,7 @@
         "U+FE0F"
       ],
       "computed_width": 1,
-      "vte_width": 2,
+      "vte_width": 1,
       "measured_width": 1,
       "answered": true
     },
@@ -3731,9 +3731,9 @@
         "U+1F17F",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌀": {
@@ -3972,9 +3972,9 @@
         "U+1F324",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌥️": {
@@ -3983,9 +3983,9 @@
         "U+1F325",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌦️": {
@@ -3994,9 +3994,9 @@
         "U+1F326",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌧️": {
@@ -4005,9 +4005,9 @@
         "U+1F327",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌨️": {
@@ -4016,9 +4016,9 @@
         "U+1F328",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌩️": {
@@ -4027,9 +4027,9 @@
         "U+1F329",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌪️": {
@@ -4038,9 +4038,9 @@
         "U+1F32A",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌫️": {
@@ -4049,9 +4049,9 @@
         "U+1F32B",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌬️": {
@@ -4060,9 +4060,9 @@
         "U+1F32C",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌭": {
@@ -4151,9 +4151,9 @@
         "U+1F336",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🌷": {
@@ -4902,9 +4902,9 @@
         "U+1F396",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎗️": {
@@ -4913,9 +4913,9 @@
         "U+1F397",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎙️": {
@@ -4924,9 +4924,9 @@
         "U+1F399",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎚️": {
@@ -4935,9 +4935,9 @@
         "U+1F39A",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎛️": {
@@ -4946,9 +4946,9 @@
         "U+1F39B",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎞️": {
@@ -4957,9 +4957,9 @@
         "U+1F39E",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎟️": {
@@ -4968,9 +4968,9 @@
         "U+1F39F",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🎠": {
@@ -5359,9 +5359,9 @@
         "U+1F3CB",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏌️": {
@@ -5370,9 +5370,9 @@
         "U+1F3CC",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true,
       "comment": "3 correct, 2ch wide"
     },
@@ -5382,9 +5382,9 @@
         "U+1F3CD",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏎️": {
@@ -5393,9 +5393,9 @@
         "U+1F3CE",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏏": {
@@ -5454,9 +5454,9 @@
         "U+1F3D4",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏕️": {
@@ -5465,9 +5465,9 @@
         "U+1F3D5",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏖️": {
@@ -5476,9 +5476,9 @@
         "U+1F3D6",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏗️": {
@@ -5487,9 +5487,9 @@
         "U+1F3D7",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏘️": {
@@ -5498,9 +5498,9 @@
         "U+1F3D8",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏚️": {
@@ -5509,9 +5509,9 @@
         "U+1F3DA",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏛️": {
@@ -5520,9 +5520,9 @@
         "U+1F3DB",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏜️": {
@@ -5531,9 +5531,9 @@
         "U+1F3DC",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏝️": {
@@ -5542,9 +5542,9 @@
         "U+1F3DD",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏟️": {
@@ -5553,9 +5553,9 @@
         "U+1F3DF",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏠": {
@@ -5724,9 +5724,9 @@
         "U+1F3F5",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏷️": {
@@ -5735,9 +5735,9 @@
         "U+1F3F7",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🏸": {
@@ -5867,8 +5867,8 @@
         "U+200D",
         "U+2B1B"
       ],
-      "computed_width": 3,
-      "vte_width": 2,
+      "computed_width": 4,
+      "vte_width": 4,
       "measured_width": 4,
       "answered": true,
       "comment": "4ch wide: shows 🐈 (2ch) next to ⬛ (2ch)"
@@ -6391,11 +6391,11 @@
         "U+2744",
         "U+FE0F"
       ],
-      "computed_width": 3,
-      "vte_width": 2,
+      "computed_width": 4,
+      "vte_width": 4,
       "measured_width": 4,
       "answered": true,
-      "comment": "VTE:4, shows as two emoji"
+      "comment": "VTE:4, shows as two emoji, still broken, cannot change render via toggle"
     },
     "🐼": {
       "glyph": "🐼",
@@ -6423,9 +6423,9 @@
         "U+1F43F",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "👀": {
@@ -6444,9 +6444,9 @@
         "U+1F441",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "👁️‍🗨️": {
@@ -6458,9 +6458,9 @@
         "U+1F5E8",
         "U+FE0F"
       ],
-      "computed_width": 4,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true,
       "comment": "toggle 1-4 does not change aynthing, speech bubble overlaps next char, overlapping pair, VTE:3, still broken"
     },
@@ -7500,9 +7500,9 @@
         "U+1F4FD",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🔏": {
@@ -7701,9 +7701,9 @@
         "U+1F549",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🕊️": {
@@ -7712,9 +7712,9 @@
         "U+1F54A",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🕋": {
@@ -7763,9 +7763,9 @@
         "U+1F570",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🕷️": {
@@ -7774,9 +7774,9 @@
         "U+1F577",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true,
       "comment": "3 looks correct and is rendered as 2 ch wide"
     },
@@ -7786,9 +7786,9 @@
         "U+1F578",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true,
       "comment": "3 looks correct and renders as 2 ch wide"
     },
@@ -7798,9 +7798,9 @@
         "U+1F587",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🖐️": {
@@ -7809,9 +7809,9 @@
         "U+1F590",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🖕": {
@@ -7850,9 +7850,9 @@
         "U+1F5A5",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🖨️": {
@@ -7861,9 +7861,9 @@
         "U+1F5A8",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🖱️": {
@@ -7872,9 +7872,9 @@
         "U+1F5B1",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🖲️": {
@@ -7883,9 +7883,9 @@
         "U+1F5B2",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗂️": {
@@ -7894,9 +7894,9 @@
         "U+1F5C2",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗃️": {
@@ -7905,9 +7905,9 @@
         "U+1F5C3",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗄️": {
@@ -7916,9 +7916,9 @@
         "U+1F5C4",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗑️": {
@@ -7927,9 +7927,9 @@
         "U+1F5D1",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗒️": {
@@ -7938,9 +7938,9 @@
         "U+1F5D2",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗓️": {
@@ -7949,9 +7949,9 @@
         "U+1F5D3",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗝️": {
@@ -7960,9 +7960,9 @@
         "U+1F5DD",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗡️": {
@@ -7971,9 +7971,9 @@
         "U+1F5E1",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗯️": {
@@ -7982,9 +7982,9 @@
         "U+1F5EF",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗺️": {
@@ -7993,9 +7993,9 @@
         "U+1F5FA",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🗻": {
@@ -8326,7 +8326,7 @@
         "U+1F4A8"
       ],
       "computed_width": 4,
-      "vte_width": 2,
+      "vte_width": 4,
       "measured_width": 4,
       "answered": true,
       "comment": "consumes 4ch in VTE, shows as two emoji"
@@ -8359,7 +8359,7 @@
         "U+1F4AB"
       ],
       "computed_width": 4,
-      "vte_width": 2,
+      "vte_width": 4,
       "measured_width": 4,
       "answered": true,
       "comment": "consumes 4ch in VTE, shows as two emoji "
@@ -9110,9 +9110,9 @@
         "U+1F6CB",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛏️": {
@@ -9121,9 +9121,9 @@
         "U+1F6CF",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛐": {
@@ -9172,9 +9172,9 @@
         "U+1F6E0",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛡️": {
@@ -9183,9 +9183,9 @@
         "U+1F6E1",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛥️": {
@@ -9194,9 +9194,9 @@
         "U+1F6E5",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛩️": {
@@ -9205,9 +9205,9 @@
         "U+1F6E9",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛫": {
@@ -9236,9 +9236,9 @@
         "U+1F6F0",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛳️": {
@@ -9247,9 +9247,9 @@
         "U+1F6F3",
         "U+FE0F"
       ],
-      "computed_width": 2,
-      "vte_width": 2,
-      "measured_width": 3,
+      "computed_width": 3,
+      "vte_width": 4,
+      "measured_width": 4,
       "answered": true
     },
     "🛴": {
