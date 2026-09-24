@@ -1,6 +1,6 @@
 # 063 — Convert filebrowser example to a hostable widget
 
-**Status**: Open
+**Status**: Closed — c0612e0: NewWidget, PaneRequester, KeyConsumer (q filters, ctrl-q/F10 quit), DisableDefaultQuit removed, examplesreg factory; suite green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
