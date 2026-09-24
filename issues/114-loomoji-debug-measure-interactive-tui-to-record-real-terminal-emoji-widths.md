@@ -80,3 +80,9 @@ JSON and text save with atomic writes, and a format README. `0` = unsure. `make 
 Keyboard-only widget: answers, unsure, comments, going back, progress, incremental save. The pre-work
 (Update, empty store when the file is missing) is done. The fix was a test assertion only. The suite hasn't
 passed on 58ca4d0 yet; M3's test run must confirm M2.
+
+### M3 delivered: CLI wiring (7dc924b)
+`loomoji debug --measure` with a per-terminal profile, loading/saving only unmeasured glyphs. `make test-q1` green (confirms M2 too),
+`make install` done.
+Remaining: the user's manual smoke test in a real terminal (`go run ./examples/loomoji debug --measure`).
+Caveat: the data dir `docs/data/loomoji-widths` is relative to the current directory, so run it from the repo root.
