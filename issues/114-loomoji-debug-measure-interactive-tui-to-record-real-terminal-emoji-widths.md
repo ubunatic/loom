@@ -1,6 +1,6 @@
 # 114 — loomoji debug --measure: interactive TUI to record real terminal emoji widths
 
-**Status**: Open
+**Status**: Closed — M1-M7 delivered in 3e6940d and measurements recorded in vte-8401
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Tooling / Rendering
