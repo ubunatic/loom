@@ -43,3 +43,12 @@ Issue 114 provided the interactive measurement and review tool, producing empiri
 - **M1 (VTE column in `debug --measure`)**: Add the "VTE" column to the `loomoji debug --measure` paged table and review UI, displaying what Loom predicts/evaluates for VTE terminals alongside computed width. Update table layout & widget tests.
 - **M2 (Width reconciliation & spec/measure overrides)**: Integrate measured terminal widths and annotations from `docs/data/loomoji-widths/vte-8401.json` into `spec/emoji.yaml` and `measure/` logic (handling VS16, ZWJ sequences, single/double width edge cases).
 - **M3 (End-to-end alignment & regression tests)**: Verify border alignment and rendering in widgets/PTY tests without drift. Ensure `make test-q1` and `make install` pass.
+
+### M1 delivered: VTE column in debug --measure (ada9da8)
+Added `VTEWidth` to `Measurement` model, implemented `EvaluateVTEWidth` handling VS16/ZWJ/flags/explicit wide emojis, rendered `%3d` `VTE` column in `MeasureWidget`, added test cases in `measure_widget_test.go` and `measure_store_test.go`. `make test-q1` passed, `make install` complete.
+
+### M2 Pre-Work / Required Refinements
+- Inspect `docs/data/loomoji-widths/vte-8401.json` for discrepancies where `measured_width != computed_width` or `answered: true` with specific comments.
+- Update `spec/emoji.yaml` width annotations and `measure/measure.go` (or `measure/emoji.go`) width calculation functions so that sequence-aware width calculation correctly computes terminal display width for emojis, VS16 variations, flags, and ZWJ combinations.
+- Ensure backwards compatibility with standard rune width calculation for non-emoji text.
+
