@@ -125,3 +125,13 @@ The measure table fills the full terminal width. Columns stretch; the comment co
 `☝️ ☠️ ✌️ ✍️ 👁️ 🖐️ 🐻‍❄️` (all "overflows"; probably +1 like the rest of the VS16 group).
 Inconsistent: `🎫` has measured=2 but comment "3 correct". `👁️‍🗨️`: padding can't go below loom's width 4.
 Gaps: no way to re-measure one glyph; the terminal profile doesn't detect VTE (`$VTE_VERSION`).
+
+### M7: review mode with width filter + VTE profile (user request)
+- The review mode shows glyphs that are already measured, not just unmeasured ones, so the user can re-check and
+  correct any answer: arrows cycle 1-4, `?` marks unsure, `c` edits the comment, with the live render fix as in M6.
+- Filter by measured width: 1, 2, 3, 4 and unsure. Useful extras: "differs from loom", "has comment".
+  It must be switchable from inside the TUI (e.g. keys `f` or tab) and via CLI flag
+  (e.g. `debug --measure --review --width 2`).
+- The terminal profile detects VTE (`$VTE_VERSION`) and names the profile after it, e.g. `vte-8401`.
+  Migrate the existing `xterm-256color--unknown.*` file to it (current data is VTE 8401).
+- Edits are saved like before, JSON + text. No answer is final yet; the user is still reviewing.
