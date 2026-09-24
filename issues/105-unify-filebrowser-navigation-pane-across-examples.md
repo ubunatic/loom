@@ -49,3 +49,18 @@ filebrowser `browser.go` still carry duplicated navigation logic.
 - **M2 — filebrowser on the pane**: delete its duplicate navigation; keep metadata/theme.
 - **M3 — ansiviewer on the pane**: delete its duplicate navigation; keep ANSI preview.
 - **M4 — Validate**: standalone + hosted example tests; note manual smoke items for the user.
+
+M1 first pass (8e1105a, luna): shared `NavigationPane` with callbacks (OnSelection/OnActivate/OnOpen/OnQuit). Host suite run: 4 pane tests fail. Escalated to flash37.
+
+Pre-Work / Required Refinements (M1):
+
+- Make the four `TestNavigationPane*` tests green without weakening them; failures:
+
+```text
+    navigation_test.go:44: activation callback name = "..", want activated:beta
+    navigation_test.go:61: opened directory = "/tmp/TestNavigationPaneOpensDirectoryAndRestoresParentSelection1232952098", want "/tmp/TestNavigationPaneOpensDirectoryAndRestoresParentSelection1232952098/001/child"
+    navigation_test.go:81: root escape = quit:false consumed:true, want true,true
+    navigation_test.go:100: selection after local row 1 click = {Name:alpha Path:/tmp/TestNavigationPaneMouseSelectionUsesChildLocalCoordinates1360201472/001/alpha Kind:0 IsParent:false}, ok=true; want beta
+FAIL
+FAIL	codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser	0.606s
+```
