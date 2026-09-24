@@ -28,6 +28,7 @@ type Measurement struct {
 	Codepoints    []string `json:"codepoints"`
 	ComputedWidth int      `json:"computed_width"`
 	MeasuredWidth int      `json:"measured_width"`
+	Answered      bool     `json:"answered,omitempty"`
 	Comment       string   `json:"comment,omitempty"`
 }
 
@@ -66,11 +67,23 @@ func (s *MeasurementStore) Merge(measurements ...Measurement) {
 	}
 }
 
+// Set stores a measurement, replacing any previous record for its glyph.
+func (s *MeasurementStore) Set(measurement Measurement) {
+	if measurement.Glyph == "" {
+		return
+	}
+	if s.Entries == nil {
+		s.Entries = make(map[string]Measurement)
+	}
+	s.Entries[measurement.Glyph] = measurement
+}
+
 // Unmeasured returns glyphs without a saved result, preserving input order.
 func (s *MeasurementStore) Unmeasured(glyphs []string) []string {
 	result := make([]string, 0, len(glyphs))
 	for _, glyph := range glyphs {
-		if _, exists := s.Entries[glyph]; !exists {
+		measurement, exists := s.Entries[glyph]
+		if !exists || (!measurement.Answered && measurement.MeasuredWidth == 0) {
 			result = append(result, glyph)
 		}
 	}
@@ -81,6 +94,9 @@ func (s *MeasurementStore) Unmeasured(glyphs []string) []string {
 func LoadMeasurementStore(path string) (*MeasurementStore, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return NewMeasurementStore(TerminalProfile{}), nil
+		}
 		return nil, fmt.Errorf("loomoji: read measurement store: %w", err)
 	}
 	var store MeasurementStore
@@ -117,11 +133,16 @@ func (s *MeasurementStore) SaveTextReport(path string) error {
 	sort.Strings(glyphs)
 	for _, glyph := range glyphs {
 		m := s.Entries[glyph]
-		measured := fmt.Sprint(m.MeasuredWidth)
-		if m.MeasuredWidth == 0 {
-			measured = "other/unsure"
+		measured := "unanswered"
+		if m.Answered || m.MeasuredWidth != 0 {
+			if m.MeasuredWidth == 0 {
+				measured = "other/unsure"
+			} else {
+				measured = fmt.Sprint(m.MeasuredWidth)
+			}
 		}
-		fmt.Fprintf(&b, "%s\t%s\tcomputed=%d\tmeasured=%s\tcomment=%s\n", glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, measured, m.Comment)
+		comment := strings.NewReplacer("\t", " ", "\r", " ", "\n", " ").Replace(m.Comment)
+		fmt.Fprintf(&b, "%s\t%s\tcomputed=%d\tmeasured=%s\tcomment=%s\n", glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, measured, comment)
 	}
 	if err := writeAtomic(path, []byte(b.String())); err != nil {
 		return fmt.Errorf("loomoji: save measurement report: %w", err)

@@ -33,7 +33,7 @@ func TestMeasurementStoreRoundTripMergeAndUnmeasured(t *testing.T) {
 	}
 
 	loaded.Merge(Measurement{Glyph: "😀", Codepoints: []string{"U+1F600"}, ComputedWidth: 2, MeasuredWidth: 2})
-	loaded.Merge(Measurement{Glyph: "🚀", Codepoints: []string{"U+1F680"}, ComputedWidth: 2, MeasuredWidth: 0, Comment: "unsure"})
+	loaded.Merge(Measurement{Glyph: "🚀", Codepoints: []string{"U+1F680"}, ComputedWidth: 2, MeasuredWidth: 0, Answered: true, Comment: "unsure"})
 	if got := loaded.Entries["😀"]; !reflect.DeepEqual(got, want) {
 		t.Errorf("merge overwrote saved answer: got %#v, want %#v", got, want)
 	}
@@ -49,6 +49,24 @@ func TestMeasurementStoreRoundTripMergeAndUnmeasured(t *testing.T) {
 	}
 	if len(loadedAgain.Entries) != 2 {
 		t.Errorf("saved entries = %d, want 2", len(loadedAgain.Entries))
+	}
+}
+
+func TestMeasurementStoreSetUpdatesAndMissingFileLoadsEmpty(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "missing.json")
+	store, err := LoadMeasurementStore(path)
+	if err != nil {
+		t.Fatalf("LoadMeasurementStore() for missing path error = %v", err)
+	}
+	if len(store.Entries) != 0 {
+		t.Fatalf("missing file produced %d entries, want empty store", len(store.Entries))
+	}
+	first := Measurement{Glyph: "😀", MeasuredWidth: 1, Comment: "first"}
+	updated := Measurement{Glyph: "😀", MeasuredWidth: 2, Comment: "corrected"}
+	store.Set(first)
+	store.Set(updated)
+	if got := store.Entries["😀"]; !reflect.DeepEqual(got, updated) {
+		t.Errorf("Set() result = %#v, want %#v", got, updated)
 	}
 }
 
