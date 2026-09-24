@@ -96,3 +96,6 @@ Caveat: the data dir `docs/data/loomoji-widths` is relative to the current direc
 - Enter (or PgDn) saves the whole page as answered and moves to the next 10. PgUp goes back one page.
   `q` quits after saving the pages already confirmed.
 - Update the widget tests. Rows on a page that isn't confirmed stay unmeasured on disk.
+
+### M4 delivered: paged table (51d25ab)
+Test suite green on the rerun; make install done. User smoke pending.
