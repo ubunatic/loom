@@ -29,9 +29,11 @@ Issue 114 provided the interactive measurement and review tool, producing empiri
 - Integrate overrides or refined width lookup rules into `measure/` and/or `spec/emoji.yaml`.
 - Ensure padding/rendering helpers correctly align glyphs between box borders and grid cells.
 - Maintain consistency with automated test environments and terminal emulator VT models.
+- **TUI Addendum (`debug --measure`)**: Add a dedicated "VTE" column to the `loomoji debug --measure` table alongside Loom's generic computed width, showing what Loom predicts/evaluates the character width to be in VTE-based terminals.
 
 ## Done when
 
 - Measured widths and specific feedback annotations from `docs/data/loomoji-widths/vte*` are integrated into Loom's measurement logic or specs.
-- Unit and PTY tests pass and verify the updated width metrics.
+- `debug --measure` includes a "VTE" column displaying Loom's predicted VTE width.
+- Unit and PTY tests pass and verify the updated width metrics and column rendering.
 - `make test-q1` and `make install` succeed.
