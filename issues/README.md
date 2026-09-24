@@ -123,4 +123,4 @@ upkeep.
 | 110 | [110-detect-loomoji-row-background-bands-overflowing-the-grid-panel.md](110-detect-loomoji-row-background-bands-overflowing-the-grid-panel.md) | Detect loomoji row background bands overflowing the grid panel | Open |
 | 111 | [111-add-an-image-media-widget-rendered-with-cati.md](111-add-an-image-media-widget-rendered-with-cati.md) | Add an Image/Media widget rendered with cati | Open |
 | 112 | [112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md](112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) | Add media controls: play/pause, zoom +/-, and panning for the Image/Media widget | Open |
-| 113 | [113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md](113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md) | Fix filebrowser arrow up/down jumping multiple items | Open |
+| 113 | [113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md](113-fix-filebrowser-arrow-up-down-jumping-multiple-items.md) | Fix filebrowser arrow up/down jumping multiple items | Closed — verified single dispatch and filebrowser arrow navigation |

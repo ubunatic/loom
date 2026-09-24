@@ -1,6 +1,6 @@
 # 113 — Fix filebrowser arrow up/down jumping multiple items
 
-**Status**: Open
+**Status**: Closed — verified single dispatch and filebrowser arrow navigation
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
