@@ -75,3 +75,8 @@ JSON and text save with atomic writes, and a format README. `0` = unsure. `make 
   `Set`/`Update` (last write wins) for in-session edits and going back to the previous glyph. Keep `Merge` for load-time merging.
 - `LoadMeasurementStore` fails when the file is missing. On a first run, treat that as an empty store
   (needed for M3; add a test).
+
+### M2 delivered: measure widget (fa28ea7, 58ca4d0)
+Keyboard-only widget: answers, unsure, comments, going back, progress, incremental save. The pre-work
+(Update, empty store when the file is missing) is done. The fix was a test assertion only. The suite hasn't
+passed on 58ca4d0 yet; M3's test run must confirm M2.
