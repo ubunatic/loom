@@ -1380,7 +1380,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	// ── Status bar ────────────────────────────────────────────────────────────
 	statusY := r.Y + r.H - 1
 	c.PaintSurface(loom.Rect{X: r.X, Y: statusY, W: r.W, H: 1}, loom.Style{BG: panel})
-	footer := "↑↓←→ grid   Tab search   [ ] cycle   Enter copy   Esc quit"
+	footer := "↑↓←→ grid   Tab search   f/[ ] cycle   Enter copy   Esc quit"
 	if len(p.items) > 0 {
 		e := p.entries[p.items[p.index]]
 		cat := p.categories[e.group].label
@@ -1401,7 +1401,8 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 	accent := loom.ColorRGB(32, 151, 185)
 	p.cellWidth = 1
 	for _, item := range p.items {
-		p.cellWidth = max(p.cellWidth, loom.StringWidth(p.entries[item].icon))
+		icon := ApplyRenderMode(p.entries[item].icon, EvaluateVTEMode(p.entries[item].icon))
+		p.cellWidth = max(p.cellWidth, loom.StringWidth(icon))
 	}
 	p.cellWidth = max(1, p.cellWidth)
 	columnWidth := p.cellWidth + 1
@@ -1419,7 +1420,7 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 		idx := start + n
 		x := 1 + (n%p.cols)*columnWidth
 		y := n / p.cols
-		icon := p.entries[p.items[idx]].icon
+		icon := ApplyRenderMode(p.entries[p.items[idx]].icon, EvaluateVTEMode(p.entries[p.items[idx]].icon))
 		style := loom.Style{FG: loom.ColorRGB(220, 200, 120)}
 		cellText := loom.TruncateText(icon, p.cellWidth, "")
 		if idx == p.index {
@@ -1469,7 +1470,7 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 		p.index = min(max(0, len(p.items)-1), p.index+p.cols)
 	case "pgup", "shift-left":
 		p.prevCategory()
-	case "pgdown", "shift-right":
+	case "pgdown", "shift-right", "ctrl-f":
 		p.nextCategory()
 	case "enter":
 		if len(p.items) > 0 {
@@ -1482,8 +1483,8 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 			p.refresh()
 		}
 	default:
-		// [ and ] cycle categories when in grid mode.
-		if p.gridFocus && (key == "[" || key == "]") {
+		// [ / ] or f / F cycle categories when in grid mode.
+		if p.gridFocus && (key == "[" || key == "]" || key == "f" || key == "F") {
 			if key == "[" {
 				p.prevCategory()
 			} else {

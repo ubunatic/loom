@@ -57,6 +57,14 @@ func TestDebugMeasureRejectsInvalidReviewWidth(t *testing.T) {
 	}
 }
 
+func TestDebugGridCommand(t *testing.T) {
+	cmd := newCommand(func() error { return nil }, func(TerminalProfile, MeasureOptions) error { return nil })
+	cmd.SetArgs([]string{"debug", "--grid", "-W", "2"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("debug --grid -W 2 Execute() error = %v", err)
+	}
+}
+
 func TestDebugCommandRequiresMeasureFlagAndNoExtraArguments(t *testing.T) {
 	tests := []struct {
 		name string

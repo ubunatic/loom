@@ -169,8 +169,13 @@ func StringWidthNew(text string) int {
 	return w
 }
 
-func isFormatRune(r rune) bool {
+// IsFormatRune returns true for variation selectors and joiner formatting controls.
+func IsFormatRune(r rune) bool {
 	return r == 0xFE0F || r == 0xFE0E || r == 0x200D || r == 0x200C
+}
+
+func isFormatRune(r rune) bool {
+	return IsFormatRune(r)
 }
 
 func isRegionalIndicator(r rune) bool {

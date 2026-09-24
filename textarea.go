@@ -214,10 +214,7 @@ func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 			c.Write(r.X, y, t.Placeholder, Style{Dim: true})
 			continue
 		}
-		line := string(t.lines[li])
-		if len([]rune(line)) > r.W {
-			line = string([]rune(line)[:r.W])
-		}
+		line := TruncateText(string(t.lines[li]), r.W, "")
 		c.Write(r.X, y, line, Style{})
 	}
 

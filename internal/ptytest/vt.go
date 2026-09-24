@@ -15,6 +15,7 @@ package ptytest
 
 import (
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom/measure"
@@ -154,8 +155,51 @@ func (v *VT) Write(p []byte) (int, error) {
 				return len(p), nil
 			}
 			r, n := utf8.DecodeRune(data[i:])
-			v.put(r)
-			i += n
+			j := i + n
+			if r >= 0x1F1E6 && r <= 0x1F1FF {
+				if j < len(data) {
+					if !utf8.FullRune(data[j:]) {
+						v.pending = append([]byte(nil), data[i:]...)
+						return len(p), nil
+					}
+					r2, n2 := utf8.DecodeRune(data[j:])
+					if r2 >= 0x1F1E6 && r2 <= 0x1F1FF {
+						j += n2
+					}
+				}
+			} else {
+				for j < len(data) {
+					if data[j] == 0x1b || data[j] == '\r' || data[j] == '\n' {
+						break
+					}
+					if !utf8.FullRune(data[j:]) {
+						v.pending = append([]byte(nil), data[i:]...)
+						return len(p), nil
+					}
+					nr, nsz := utf8.DecodeRune(data[j:])
+					if nr == 0x200D {
+						j += nsz
+						if j < len(data) {
+							if !utf8.FullRune(data[j:]) {
+								v.pending = append([]byte(nil), data[i:]...)
+								return len(p), nil
+							}
+							_, jsz := utf8.DecodeRune(data[j:])
+							j += jsz
+						}
+						continue
+					}
+					if nr == 0xFE0F || nr == 0xFE0E || unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !measure.IsFormatRune(nr)) {
+						j += nsz
+						continue
+					}
+					break
+				}
+			}
+			cluster := string(data[i:j])
+			w := measure.StringWidth(cluster)
+			v.putCluster(r, w)
+			i = j
 		}
 	}
 	return len(p), nil
@@ -170,7 +214,13 @@ func (v *VT) lineFeed() {
 }
 
 func (v *VT) put(r rune) {
-	w := max(1, measure.RuneWidth(r))
+	v.putCluster(r, measure.RuneWidth(r))
+}
+
+func (v *VT) putCluster(r rune, w int) {
+	if w <= 0 {
+		return
+	}
 	if v.x+w > v.Cols {
 		if v.autoWrap {
 			v.x = 0
@@ -183,8 +233,8 @@ func (v *VT) put(r rune) {
 		return
 	}
 	v.cells[v.y][v.x] = Cell{Rune: r, Style: v.pen}
-	if w == 2 && v.x+1 < v.Cols {
-		v.cells[v.y][v.x+1] = Cell{Rune: 0, Style: v.pen}
+	for k := 1; k < w && v.x+k < v.Cols; k++ {
+		v.cells[v.y][v.x+k] = Cell{Rune: 0, Style: v.pen}
 	}
 	v.x += w
 }

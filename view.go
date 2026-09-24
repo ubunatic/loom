@@ -86,10 +86,7 @@ func (v *View) Draw(c *Canvas, r Rect) {
 		c.PaintSurface(Rect{r.X, y, r.W, 1}, lineStyle)
 		lineIdx := v.Scroll + row
 		if lineIdx >= 0 && lineIdx < total {
-			plain := stripANSI(v.Lines[lineIdx])
-			if len([]rune(plain)) > contentW {
-				plain = string([]rune(plain)[:contentW])
-			}
+			plain := TruncateText(stripANSI(v.Lines[lineIdx]), contentW, "")
 			c.Write(r.X, y, plain, lineStyle)
 		}
 		if scrollable {

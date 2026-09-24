@@ -44,10 +44,7 @@ func (n *Notif) Draw(c *Canvas, r Rect) {
 	y := r.Y + r.H - 1
 	c.PaintSurface(Rect{r.X, y, r.W, 1}, n.Style)
 	if n.visible() {
-		msg := n.Message
-		if len([]rune(msg)) > r.W {
-			msg = string([]rune(msg)[:r.W])
-		}
+		msg := TruncateText(n.Message, r.W, "")
 		c.Write(r.X, y, msg, n.Style)
 	}
 }

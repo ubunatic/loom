@@ -275,8 +275,8 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 		}
 
 		if c.Controls != "" {
-			ctrlW := len([]rune(c.Controls))
-			if drawW > ctrlW+len([]rune(c.Prompt)) {
+			ctrlW := StringWidth(c.Controls)
+			if drawW > ctrlW+StringWidth(c.Prompt) {
 				cv.Write(r.X+drawW-ctrlW, promptY, c.Controls, Style{Dim: true})
 			}
 		}

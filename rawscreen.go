@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"unicode"
 
 	"codeberg.org/ubunatic/loom/measure"
 	"golang.org/x/term"
@@ -171,22 +172,55 @@ func ClipRow(row string, width int) string {
 	var b strings.Builder
 	used, styled := 0, false
 	runes := []rune(row)
-	for i := 0; i < len(runes); i++ {
+	n := len(runes)
+	for i := 0; i < n; {
 		r := runes[i]
-		if r == 27 && i+1 < len(runes) && runes[i+1] == '[' { // CSI sequence, e.g. "\x1b[41m"
+		if r == 27 && i+1 < n && runes[i+1] == '[' { // CSI sequence, e.g. "\x1b[41m"
 			start := i
-			for i += 2; i < len(runes) && !(runes[i] >= '@' && runes[i] <= '~'); i++ {
+			for i += 2; i < n && !(runes[i] >= '@' && runes[i] <= '~'); i++ {
 			}
-			b.WriteString(string(runes[start : i+1]))
+			if i < n {
+				b.WriteString(string(runes[start : i+1]))
+				styled = true
+				i++
+				continue
+			}
+			b.WriteString(string(runes[start:n]))
 			styled = true
+			break
+		}
+		if unicode.IsControl(r) {
+			i++
 			continue
 		}
-		w := measure.RuneWidth(r)
+		j := i + 1
+		if r >= 0x1F1E6 && r <= 0x1F1FF && j < n && runes[j] >= 0x1F1E6 && runes[j] <= 0x1F1FF {
+			j++
+		} else {
+			for j < n {
+				next := runes[j]
+				if next == 0x200D {
+					j++
+					if j < n {
+						j++
+					}
+					continue
+				}
+				if next == 0xFE0F || next == 0xFE0E || unicode.Is(unicode.Mn, next) || unicode.Is(unicode.Me, next) || (unicode.Is(unicode.Cf, next) && !measure.IsFormatRune(next)) {
+					j++
+					continue
+				}
+				break
+			}
+		}
+		cluster := string(runes[i:j])
+		w := measure.StringWidth(cluster)
 		if used+w > width {
 			break
 		}
-		b.WriteRune(r)
+		b.WriteString(cluster)
 		used += w
+		i = j
 	}
 	if styled {
 		b.WriteString("\x1b[0m")

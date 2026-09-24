@@ -441,7 +441,7 @@ func (t *Tabs) ContentWidth() int {
 	barW := 0
 	maxChildW := 0
 	for _, tab := range t.Tabs {
-		barW += len(tab.Title) + 2
+		barW += StringWidth(tab.Title) + 2
 		w := 1
 		if cw, ok := tab.Widget.(ContentWidther); ok {
 			w = cw.ContentWidth()

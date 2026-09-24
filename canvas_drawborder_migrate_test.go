@@ -155,7 +155,7 @@ func TestGenerateM2PopupEvidence(t *testing.T) {
 			}
 		}
 		for _, caption := range captions {
-			for x := caption.x; x < caption.x+len([]rune(caption.text)); x++ {
+			for x := caption.x; x < caption.x+loom.StringWidth(caption.text); x++ {
 				if x >= rect.X && x < rect.X+rect.W && caption.y >= rect.Y && caption.y < rect.Y+rect.H {
 					t.Fatalf("caption %q cell (%d,%d) is inside popup rectangle %v", caption.text, x, caption.y, rect)
 				}

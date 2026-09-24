@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	_ "codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/measure"
 )
 
@@ -123,15 +124,6 @@ func EvaluateVTEMode(glyph string) string {
 
 // EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.
 func EvaluateVTEWidth(glyph string) int {
-	if glyph == "" {
-		return 0
-	}
-	switch glyph {
-	case "🐈‍⬛", "🐻‍❄️", "😮‍💨", "😵‍💫":
-		return 4
-	case "❤️‍🔥", "❤️‍🩹", "👁️‍🗨️":
-		return 3
-	}
 	return measure.StringWidth(glyph)
 }
 

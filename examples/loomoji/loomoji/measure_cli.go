@@ -24,7 +24,7 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 			return runPicker()
 		},
 	}
-	var measure, review, differsFromLoom, hasComment bool
+	var measure, review, grid, differsFromLoom, hasComment bool
 	var width string
 	debugCmd := &cobra.Command{
 		Use:           "debug",
@@ -33,8 +33,16 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		RunE: func(_ *cobra.Command, _ []string) error {
+			if grid {
+				out, err := RenderEmojiGrid(uniqueGlyphs(), width)
+				if err != nil {
+					return err
+				}
+				fmt.Println(out)
+				return nil
+			}
 			if !measure {
-				return fmt.Errorf("loomoji debug: specify --measure")
+				return fmt.Errorf("loomoji debug: specify --measure or --grid")
 			}
 			filter, err := measureFilterFromWidth(width)
 			if err != nil {
@@ -43,9 +51,10 @@ func newCommand(runPicker func() error, runMeasure func(TerminalProfile, Measure
 			return runMeasure(terminalProfileFromEnv(), MeasureOptions{Review: review, Filter: filter, DiffersFromLoom: differsFromLoom, HasComment: hasComment})
 		},
 	}
+	debugCmd.Flags().BoolVar(&grid, "grid", false, "show all emojis as grid")
 	debugCmd.Flags().BoolVar(&measure, "measure", false, "record rendered glyph widths for this terminal")
 	debugCmd.Flags().BoolVar(&review, "review", false, "review recorded glyph widths")
-	debugCmd.Flags().StringVar(&width, "width", "", "review only: width 1, 2, 3, 4, or unsure")
+	debugCmd.Flags().StringVarP(&width, "width", "W", "", "width 1, 2, 3, 4, or unsure")
 	debugCmd.Flags().BoolVar(&differsFromLoom, "differs-from-loom", false, "review only: show widths that differ from Loom")
 	debugCmd.Flags().BoolVar(&hasComment, "has-comment", false, "review only: show glyphs with comments")
 	cmd.AddCommand(debugCmd)
