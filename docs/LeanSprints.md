@@ -16,3 +16,4 @@ Source: [session report](studies/2026-09-21-lean-sprint-session-report.md). 12 t
 
 - **Model ladder (2026-09-24)**: luna, flash37, terra, opus. Escalate after one failed fix round; the host reruns the suite whenever code changed after the developer's single quota-1 run.
 - **Rate before delete**: `harnez agent rate --name <s> <1-5> "<reason>"` only works on a live session. Rate every developer session at milestone review, then delete it (2026-09-24: six ratings lost to early deletes).
+- **Where to start the ladder**: luna for hygiene, docs and single-file fixes; start at flash37 for refactors that move ownership between widgets (frame, pane, `Choice`). In the 105 sprint luna failed every such step ([report](studies/2026-09-24-roadmap-now-sprint-099-101-105.md)).
