@@ -24,8 +24,11 @@ Terminal emulators (particularly VTE-based terminals such as GNOME Terminal, Til
 
 ### A. Variation Selector-16 (`\uFE0F`) on Single-Cell Bases
 - **Behavior**: For base symbols (e.g. `☠`, `⌨`, `☀️`, `☁`, `⚠️`, `☢️`, `☣️`) followed by `\uFE0F`, VTE advances the cursor by the base glyph's `wcwidth` (1 cell), but the terminal font draws the emoji across 2 cells.
-- **Resulting Bug**: Without padding, subsequent characters in the row drift left by 1 column, causing right box borders to shift left and row ends to become ragged.
-- **Mitigation (`pad-1`)**: The spec configures `vs16_vte_mode: pad-1`. In VTE mode, `measure.ApplyVTEMode(glyph)` outputs `glyph + " "` (the glyph advances the cursor 1 cell, the trailing space advances 1 cell, totaling the 2 cells Loom allocated).
+- **Root Cause & Pitfall**: If `pad-1` is applied to string payloads inside widgets (e.g. `ApplyAutoRenderMode("✈️") -> "✈️ "`), `StringWidth` sees 2+1=3 cells, creating phantom canvas cells and desynchronizing the 2D grid from the physical terminal cursor.
+- **Architectural Mitigation (Canvas Serializer)**: 
+  - Widgets operate purely on logical visual width (2 columns per emoji) using unpadded strings.
+  - When [`Canvas.Row(y)`](../canvas.go) serializes cells in `RenderPathVTE`, it inspects lead cells requiring `pad-1` and emits a space `' '` on their continuation cell instead of skipping it.
+  - VTE advances 1 column for the glyph + 1 column for the continuation space = 2 columns, keeping the physical cursor in exact lockstep with the 2D canvas grid.
 
 ### B. Arrow Ligatures & Font Extensions
 - **Behavior**: Long arrows (`⟵`, `⟶`, `⟷`, `⟹`, `⟺`) have East Asian Width Neutral (1 cell in POSIX `wcwidth`), but monospace fonts render wide ligature extensions that clip or drift when rendered in 1 column.
@@ -49,11 +52,16 @@ flowchart TD
     Schema["spec/schemas/emoji.schema.json"] -.->|make validate-spec| SpecFile
 
     Runtime --> MeasureFuncs["measure.StringWidth / RuneWidth"]
-    Runtime --> ModeFuncs["measure.VTEMode / ApplyVTEMode"]
+    Runtime --> ModeFuncs["measure.VTEMode / ApplyRenderPath"]
 
-    App["Loom Application / Loomoji"] -->|Measure Bounds| MeasureFuncs
-    App -->|Transform for Terminal| ModeFuncs
-    ModeFuncs --> RenderOutput["Rendered ANSI Stream"]
+    Widget["UI Widgets / Loomoji"] -->|Measure Logical Width| MeasureFuncs
+    Widget -->|Write Raw Glyphs| Canvas["Canvas 2D Cell Grid"]
+
+    Canvas -->|Row Serializer| Serializer["Canvas.Row(y)"]
+    ModeFuncs -->|VTE pad-1 on Continuation Cell| Serializer
+    Serializer --> Terminal["Physical Terminal Output"]
+
+    RawCLI["Raw CLI Tools (debug --grid)"] -->|ApplyRenderPath| Stdout["Direct stdout Stream"]
 ```
 
 ### Key API Functions (`measure` package)
@@ -63,13 +71,15 @@ flowchart TD
 - `measure.VTEMode(glyph string) string`: Looks up the specced VTE render mode (`default`, `pad-1`, `no-vs16`, `no-vs16-pad`, `force-vs16`, `split-zwj`, `base-only`).
 - `measure.ApplyRenderMode(glyph string, mode string) string`: Applies a specific render transformation.
 - `measure.ApplyVTEMode(glyph string) string`: Applies the specced VTE render mode to `glyph`.
+- `measure.ApplyRenderPath(glyph string, path RenderPath) string`: Applies the authoritative transformation for non-canvas raw output streams.
 
 ---
 
 ## 4. Verification & Testing
 
 1. **Spec Validation**: `make validate-spec` validates `spec/emoji.yaml` against its JSON Schema, including negative control assertions.
-2. **Category Width PTY Test**: [`examples/loomoji/loomoji_category_width_pty_test.go`](../examples/loomoji/loomoji_category_width_pty_test.go) executes Loomoji across all categories in a real virtual terminal PTY, asserting that every line has uniform column width.
-3. **Debug Tools**:
+2. **Category Width PTY Test**: [`examples/loomoji/loomoji_category_width_pty_test.go`](../examples/loomoji/loomoji_category_width_pty_test.go) executes Loomoji across all categories in a real virtual terminal PTY, asserting that every line has uniform column width without horizontal drift or ragged edges.
+3. **PTY Virtual Terminal Emulator**: [`internal/ptytest/vt.go`](../internal/ptytest/vt.go) models VTE single-column cursor advance for `pad-1` glyphs to accurately verify terminal rendering behavior.
+4. **Debug Tools**:
    - `loomoji debug --grid -W <w>`: Renders all emojis partitioned by their VTE cell width (1, 2, 3, 4) in a grid to visually inspect column alignment.
    - `loomoji debug --measure`: Interactive TUI tool to measure glyph alignment against terminal cell columns.
