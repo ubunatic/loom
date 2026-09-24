@@ -325,4 +325,3 @@ func TestVTLineFeedPenBG(t *testing.T) {
 		}
 	}
 }
-
