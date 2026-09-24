@@ -3,6 +3,7 @@ package filebrowser
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
@@ -18,6 +19,7 @@ type browser struct {
 	themeName  string
 	theme      loom.ThemeColors
 	openFile   func(string) error
+	background loom.AnimatedBackground
 	quit       bool
 }
 
@@ -31,9 +33,10 @@ func (v *detailView) SetFocus(focused bool) { v.focused = focused }
 
 func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error) {
 	b := &browser{
-		dir:      path,
-		details:  &detailView{View: loom.NewView(nil)},
-		openFile: loom.OpenFile,
+		dir:        path,
+		details:    &detailView{View: loom.NewView(nil)},
+		openFile:   loom.OpenFile,
+		background: loom.NewAstraBackground(),
 	}
 	border := loom.BoxBorder{
 		TopLeft: "┌", TopRight: "┐", BottomLeft: "└", BottomRight: "┘",
@@ -70,14 +73,14 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 			{ID: "quit_ctrl_q", Action: "quit", Key: "ctrl-q"},
 		},
 	}
-	b.applyTheme(themeName, theme)
+	b.applyNamedTheme(themeName, theme)
 	if entry, ok := b.navigation.Selected(); ok {
 		b.updateDetails(entry.Path)
 	}
 	return b, nil
 }
 
-func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
+func (b *browser) applyNamedTheme(name string, theme loom.ThemeColors) {
 	b.themeName, b.theme = name, theme
 	b.details.Style = theme.ChoiceStyle().Normal
 	b.details.Scrollbar = theme.ScrollbarStyle()
@@ -97,12 +100,16 @@ func (b *browser) ApplyTheme(theme loom.ThemeColors) {
 	// Find the name by matching the theme's colors
 	for name, t := range loom.SpeccedThemes {
 		if t == theme {
-			b.applyTheme(name, theme)
+			b.applyNamedTheme(name, theme)
 			return
 		}
 	}
 	// If exact match not found, keep the current name and apply the theme
-	b.applyTheme(b.themeName, theme)
+	b.applyNamedTheme(b.themeName, theme)
+}
+
+func (b *browser) applyTheme(name string, theme loom.ThemeColors) {
+	b.applyNamedTheme(name, theme)
 }
 
 func (b *browser) cycleTheme() {
@@ -110,7 +117,7 @@ func (b *browser) cycleTheme() {
 	for i, name := range names {
 		if name == b.themeName {
 			next := names[(i+1)%len(names)]
-			b.applyTheme(next, loom.Theme(next))
+			b.applyNamedTheme(next, loom.Theme(next))
 			return
 		}
 	}
@@ -199,6 +206,9 @@ func metadata(path string) []string {
 }
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
+	if os.Getenv("LOOM_EVIDENCE") != "1" {
+		c.ComposeBackground(b.background, r, time.Now())
+	}
 	b.frame.Title = "Browse " + b.dir
 	b.frame.Status = fmt.Sprintf("Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:%s  •  F10/^Q quit", b.themeName)
 	b.frame.Boxes[0].Title = "Files"
@@ -231,7 +241,14 @@ func (b *browser) HandleKey(k loom.KeyEvent) bool {
 }
 
 func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
-	if k.Key == "f9" {
+	key := k.Key
+	if key == "" {
+		key = k.Text
+	}
+	if key == "f10" || key == "ctrl-q" {
+		return true, true
+	}
+	if key == "f9" {
 		b.cycleTheme()
 		return false, true
 	}
@@ -241,7 +258,31 @@ func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
 		b.dir = b.navigation.Directory().Path
 		return quit || b.quit, true
 	}
+	if key == "ctrl-c" || key == "ctrl-d" || key == "esc" {
+		return true, true
+	}
+	// The Choice owns all text keys while filtering; consume them before the
+	// host can interpret q or another app-level binding.
+	if k.Text != "" || isBrowserListKey(key) {
+		quit = b.navigation.HandleKey(k)
+		b.dir = b.navigation.Directory().Path
+		return quit || b.quit, true
+	}
 	return false, false
+}
+
+func isBrowserListKey(key string) bool {
+	switch strings.ToLower(key) {
+	case "up", "down", "left", "right", "pgup", "pgdown", "pgdn", "pageup", "pagedown", "home", "end", "backspace", "enter", "tab", "shift-tab":
+		return true
+	default:
+		return false
+	}
+}
+
+// PaneRequest declares the terminal capabilities required by the browser.
+func (b *browser) PaneRequest() loom.PaneRequest {
+	return loom.PaneRequest{Mouse: 1000, Resizeable: true, MaxCols: 0}
 }
 
 func (b *browser) HandleMouse(k loom.MouseEvent) bool {

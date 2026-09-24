@@ -54,6 +54,42 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	}
 }
 
+func TestNewWidgetPaneRequestAndHostedKeys(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "q-file.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	widget, err := NewWidget([]string{"--theme", "plain", dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, ok := widget.(*browser)
+	if !ok {
+		t.Fatalf("NewWidget returned %T, want *browser", widget)
+	}
+	if got, want := b.PaneRequest(), (loom.PaneRequest{Mouse: 1000, Resizeable: true, MaxCols: 0}); got != want {
+		t.Fatalf("PaneRequest() = %+v, want %+v", got, want)
+	}
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Text: "q"}); quit || !consumed {
+		t.Fatalf("q = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	}
+	if b.list.Query() != "q" {
+		t.Fatalf("filter query = %q, want q", b.list.Query())
+	}
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !quit || !consumed {
+		t.Fatalf("ctrl-q = quit:%v consumed:%v, want quit:true consumed:true", quit, consumed)
+	}
+	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "f10"}); !quit || !consumed {
+		t.Fatalf("f10 = quit:%v consumed:%v, want quit:true consumed:true", quit, consumed)
+	}
+}
+
+func TestNewWidgetRejectsUnknownTheme(t *testing.T) {
+	if _, err := NewWidget([]string{"--theme", "missing"}); err == nil {
+		t.Fatal("NewWidget accepted an unknown theme")
+	}
+}
+
 func TestBrowserNavigationToParentFallsBackToFirstItem(t *testing.T) {
 	dir := t.TempDir()
 	sub := filepath.Join(dir, "sub")

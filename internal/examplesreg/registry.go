@@ -67,6 +67,7 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/filebrowser",
 		Run:          filebrowser.Run,
 		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return filebrowser.NewWidget(args) },
 	},
 	{
 		Name:         "monitor",
