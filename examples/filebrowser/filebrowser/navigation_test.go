@@ -13,7 +13,7 @@ func TestNavigationPaneReadsAndSelectsEntries(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("a"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Mkdir(filepath.Join(dir, "beta"), 0o755); err != nil {
+	if err := os.WriteFile(filepath.Join(dir, "beta"), []byte("b"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	selected := ""
@@ -55,7 +55,6 @@ func TestNavigationPaneOpensDirectoryAndRestoresParentSelection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pane.HandleKey(loom.KeyEvent{Key: "down"}) // child after parent entry
 	pane.HandleKey(loom.KeyEvent{Key: "enter"})
 	if got := pane.Directory().Path; got != child {
 		t.Fatalf("opened directory = %q, want %q", got, child)

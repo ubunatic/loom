@@ -24,10 +24,12 @@ type NavigationPaneOptions struct {
 // NavigationPane provides a filterable, keyboard- and mouse-driven directory list.
 // Hosts can inspect Directory and Selected to update their own preview or metadata.
 type NavigationPane struct {
+	rootDir   string
 	directory loom.Directory
 	entries   map[string]loom.FileEntry
 	list      *loom.Choice
 	options   NavigationPaneOptions
+	lastRect  loom.Rect
 }
 
 // NewNavigationPane reads dir and creates a navigation pane with an initial selection.
@@ -36,6 +38,7 @@ func NewNavigationPane(dir string, options NavigationPaneOptions) (*NavigationPa
 	if err := pane.open(dir, ""); err != nil {
 		return nil, err
 	}
+	pane.rootDir = pane.directory.Path
 	pane.notifySelection()
 	return pane, nil
 }
@@ -128,19 +131,22 @@ func (p *NavigationPane) open(dir, selectName string) error {
 }
 
 // Draw renders the navigation list within r.
-func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) { p.list.Draw(c, r) }
+func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) {
+	p.lastRect = r
+	p.list.Draw(c, r)
+}
 
 // HandleKey processes navigation, filtering, directory opening, and selection.
 func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 	if e.Is("esc") {
-		parent, ok := p.directory.Parent()
-		if !ok {
+		if p.directory.Path == p.rootDir {
 			if p.options.OnQuit != nil {
 				p.options.OnQuit()
 			}
 			return true
 		}
-		if grandparent, ok := (loom.Directory{Path: parent}).Parent(); !ok || grandparent == parent {
+		parent, ok := p.directory.Parent()
+		if !ok || parent == p.directory.Path {
 			if p.options.OnQuit != nil {
 				p.options.OnQuit()
 			}
@@ -188,6 +194,8 @@ func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 
 // HandleMouse processes mouse selection and forwards quit requests.
 func (p *NavigationPane) HandleMouse(e loom.MouseEvent) bool {
+	e.X += p.lastRect.X
+	e.Y += p.lastRect.Y
 	quit := p.list.HandleMouse(e)
 	p.notifySelection()
 	return quit
