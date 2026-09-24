@@ -102,3 +102,12 @@ splash first (simpler: one controller, no collectors), monitor second.
   ticks its widgets asked for.
 - `go test ./...`, `go test -race ./...` and `go vet ./...` pass;
   `make install` run afterwards.
+
+## Sprint milestones (flash37 plan, host-approved)
+
+- **M1 splash**: options struct out of cobra, `NewWidget`, Ticker-driven redraw (no `RunWatch`),
+  show-once output unchanged, completion contained via `OnChildQuit` when hosted.
+- **M2 monitor**: same; collectors start on activation and stop on `Close()` (leak test);
+  inactive `Tabs` child gets no `Tick`.
+- **M3**: `examplesreg` factories, hosted splash+monitor tabs test.
+- Tests: `make test-q1` only (one run per code change); no separate `-race`/`go test` runs.
