@@ -76,6 +76,8 @@ P1 bug.
 - [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md) (P2): hostable `splash`/`monitor`. Moved up from Later because 060 shipped.
 - [099](../issues/099-fix-ansiviewer-recording-of-ansi-output-and-terminal-width.md) (P1, Bug): `ansiviewer --record` loses colour and wraps at the wrong width.
 - [101](../issues/101-lean-sprint-leftovers-dead-treemap-block-gofmt-unproven-split-capture-test-thin-evidence.md) (P3, Hygiene): small, headless lean-sprint leftovers. Cheap, and it keeps the suite honest before the next conversion wave.
+- [111](../issues/111-add-an-image-media-widget-rendered-with-cati.md) (P2, user-queued 2026-09-24): hostable Image/Media widget rendered with `../cati`; canary the cati v1 API first.
+- [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3, user-queued): play/pause, zoom +/-, panning. Depends on 111.
 
 ---
 
