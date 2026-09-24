@@ -5869,9 +5869,9 @@
       ],
       "computed_width": 3,
       "vte_width": 2,
-      "measured_width": 3,
+      "measured_width": 4,
       "answered": true,
-      "comment": "3 looks correct and makes the pair 4 chars wide, shows a 🐈 next to ⬛, each is 2ch wide"
+      "comment": "4ch wide: shows 🐈 (2ch) next to ⬛ (2ch)"
     },
     "🐉": {
       "glyph": "🐉",

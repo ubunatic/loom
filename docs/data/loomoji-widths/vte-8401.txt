@@ -576,7 +576,7 @@ VTE_VERSION=8401
 🐆	U+1F406	computed=2	measured=2	comment=
 🐇	U+1F407	computed=2	measured=2	comment=
 🐈	U+1F408	computed=2	measured=2	comment=
-🐈‍⬛	U+1F408 U+200D U+2B1B	computed=3	measured=3	comment=3 looks correct and makes the pair 4 chars wide, shows a 🐈 next to ⬛, each is 2ch wide
+🐈‍⬛	U+1F408 U+200D U+2B1B	computed=3	measured=4	comment=4ch wide: shows 🐈 (2ch) next to ⬛ (2ch)
 🐉	U+1F409	computed=2	measured=2	comment=
 🐊	U+1F40A	computed=2	measured=2	comment=
 🐋	U+1F40B	computed=2	measured=2	comment=
