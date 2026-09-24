@@ -72,3 +72,13 @@ Host suite green.
 Pre-Work for M4 (docs, user request): update the evergreen docs this touches — `docs/Widgets.md` (shared
 pane, callback API, the Choice rect bridge), example docs/READMEs, `docs/README.md` index if a doc is added.
 Only edit non-managed sections of AGENTS.md; harnez-managed blocks stay untouched.
+
+M2 first pass (luna, uncommitted WIP in `browser.go`/`navigation.go`): browser integration + PTY click
+tests red. Escalated to flash37.
+
+Pre-Work / Required Refinements (M2):
+
+- Root cause per luna: the pane replaces its `Choice` on navigation while the frame caches the old child,
+  and filebrowser treats the pane's start dir as quit root. Fix the ownership, e.g. the pane keeps one
+  stable `Choice` (swap items, not the instance) and the frame hosts the pane itself, not `pane.List()`.
+- Keep existing filebrowser tests unweakened; the M1 pane tests must stay green.
