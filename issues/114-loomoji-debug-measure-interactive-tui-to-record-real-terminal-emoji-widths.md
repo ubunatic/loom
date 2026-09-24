@@ -119,3 +119,9 @@ The measure table fills the full terminal width. Columns stretch; the comment co
   that is drawn 2 wide but advances 1 gets 1 extra space. The user picks the width at which the markers look right, and that
   answer is the fix to apply. Put the fix in one function (`measure`-adjacent) that 048 can reuse later.
 - Keep the stored data compatible: measured_width 1-4, 0 = unsure.
+
+### M6 delivered (7242281); second user run committed (33893be)
+1132 glyphs measured. Analysis is in 048 §5. Stale answers from before M6 (1↔2 only), which need re-measuring:
+`☝️ ☠️ ✌️ ✍️ 👁️ 🖐️ 🐻‍❄️` (all "overflows"; probably +1 like the rest of the VS16 group).
+Inconsistent: `🎫` has measured=2 but comment "3 correct". `👁️‍🗨️`: padding can't go below loom's width 4.
+Gaps: no way to re-measure one glyph; the terminal profile doesn't detect VTE (`$VTE_VERSION`).

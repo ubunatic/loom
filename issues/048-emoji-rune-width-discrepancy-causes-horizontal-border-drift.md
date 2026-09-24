@@ -46,3 +46,18 @@ Because Loom assumes the glyph takes 2 cells, it advances by 2 columns when buil
 `loom.StringWidth` reports a ZWJ family sequence as 6 columns and a regional-indicator flag as 4,
 while terminals show both as 2. The `examples/textrender` example records these as
 `knownDivergences`. Include ZWJ sequences and flag pairs in the audit in section 3.
+
+## 5. Measured data (issue 114, VTE 0.84 / xterm-256color, 2026-09-24)
+
+Data: `docs/data/loomoji-widths/xterm-256color--unknown.{json,txt}` (1132 glyphs). The measured value is
+"loom width + padding at which the next marker lines up". Findings:
+
+1. **VS16 on a base that is text by default** (`Emoji_Presentation=No` + U+FE0F), about 110 glyphs. VTE moves the cursor
+   by the base's width (1) and ignores VS16, but draws the glyph 2 wide. Loom is wrong both ways:
+   U+2xxx bases (`⚠️ ☀️ ❤️`) count 1 and need +1 padding; U+1F3xx-1F6xx bases (`🏖️ 🗂️ 🛠️`) count 2 but the terminal
+   advances 1, so they also need +1. Fix: width 2, emitted as `glyph + " "` (the terminal advances 1 for the glyph, plus 1 for the space).
+2. **`✊` U+270A** (`Emoji_Presentation=Yes`, EAW=W): true width 2, loom says 1. Plain table bug.
+3. **ZWJ sequences**: VTE doesn't join them. It advances by the sum of the parts and draws them overlapping
+   (`❤️‍🔥` = 3, `🐈‍⬛` looks right at 3). Width = sum of the parts' terminal advances, not 2.
+4. **Long arrows `⟵ ⟶ ⟷ ⟹ ⟺`** (EAW=N, width 1): the font draws them wider. Nothing lines up cleanly ("never centers");
+   avoid them in layout, or pad them.
