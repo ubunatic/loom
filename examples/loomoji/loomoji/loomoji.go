@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
-	"github.com/spf13/cobra"
 )
 
 // ── Data model ────────────────────────────────────────────────────────────────
@@ -1571,33 +1570,26 @@ func NewWidget(args []string) (loom.Widget, error) {
 
 // Run launches the interactive emoji and symbol picker.
 func Run(args []string) error {
-	cmd := &cobra.Command{
-		Use:           "loomoji",
-		Short:         "Inline searchable emoji and symbol picker",
-		Args:          cobra.NoArgs,
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		RunE: func(_ *cobra.Command, _ []string) error {
-			pane, err := loom.New(13)
-			if err != nil {
-				return err
-			}
-			defer pane.Close()
-			pane.Resizeable = true
-			pane.EnableMouse()
-			app := newPicker()
-			err = pane.Run(app)
-			pane.Close()
-			if err != nil {
-				return err
-			}
-			if app.chosen != "" {
-				_, err = fmt.Fprint(os.Stdout, app.chosen)
-				return err
-			}
-			return nil
-		},
-	}
+	cmd := newCommand(runPicker, runMeasure)
 	cmd.SetArgs(args)
 	return cmd.Execute()
+}
+
+func runPicker() error {
+	pane, err := loom.New(13)
+	if err != nil {
+		return err
+	}
+	defer pane.Close()
+	pane.Resizeable = true
+	pane.EnableMouse()
+	app := newPicker()
+	if err := pane.Run(app); err != nil {
+		return err
+	}
+	if app.chosen != "" {
+		_, err = fmt.Fprint(os.Stdout, app.chosen)
+		return err
+	}
+	return nil
 }
