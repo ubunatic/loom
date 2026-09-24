@@ -15,3 +15,4 @@ Source: [session report](studies/2026-09-21-lean-sprint-session-report.md). 12 t
 - **Close the loop**: file leftovers as tickets (101) and group human-only checks in one collection ticket (102) instead of leaving them in prose.
 
 - **Model ladder (2026-09-24)**: luna, flash37, terra, opus. Escalate after one failed fix round; the host reruns the suite whenever code changed after the developer's single quota-1 run.
+- **Rate before delete**: `harnez agent rate --name <s> <1-5> "<reason>"` only works on a live session. Rate every developer session at milestone review, then delete it (2026-09-24: six ratings lost to early deletes).
