@@ -11,7 +11,7 @@ import (
 	"codeberg.org/ubunatic/loom/measure"
 )
 
-const measurePageSize = 10
+const measurePageSize = 20
 
 // MeasureOptions selects either the normal unmeasured flow or recorded-glyph review.
 type MeasureOptions struct {
@@ -81,7 +81,7 @@ func (w *MeasureWidget) CurrentGlyph() string {
 	return page[w.selected]
 }
 
-// PageGlyphs returns up to ten unmeasured glyphs in the current page.
+// PageGlyphs returns up to twenty unmeasured glyphs in the current page.
 func (w *MeasureWidget) PageGlyphs() []string {
 	start := w.page * measurePageSize
 	if start < 0 || start >= len(w.glyphs) {
@@ -121,26 +121,37 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	w.center(c, r, 2, fmt.Sprintf("Page %d   %d glyphs remaining", w.page+1, w.Remaining()), loom.Style{FG: muted})
-	w.write(c, r, 3, "Row  Glyph       Codepoints                 Computed  VTE  Answer  Comment", loom.Style{FG: muted, Bold: true})
+	w.write(c, r, 3, "Row  Glyph     Codepoints                 Mode          Width  Comment", loom.Style{FG: muted, Bold: true})
 	for row, glyph := range page {
 		m := w.measurement(glyph)
-		answer := fmt.Sprint(m.MeasuredWidth)
-		if m.MeasuredWidth == 0 {
-			answer = "?"
+		mode := m.RenderMode
+		if mode == "" {
+			mode = RenderModeDefault
 		}
-		line := fmt.Sprintf("%d    |%s|  %-25s %8d  %3d  %6s  %s", row, measureGlyphWithPadding(glyph, m.ComputedWidth, m.MeasuredWidth), strings.Join(m.Codepoints, " "), m.ComputedWidth, m.VTEWidth, answer, m.Comment)
+		rendered := ApplyRenderMode(glyph, mode)
+		renderedWidth := measure.StringWidth(rendered)
+		visualWidth := m.MeasuredWidth
+		if visualWidth == 0 && !m.Answered {
+			visualWidth = renderedWidth
+		}
+		widthStr := fmt.Sprint(visualWidth)
+		if visualWidth == 0 {
+			widthStr = "?"
+		}
+		displayGlyph := fmt.Sprintf("|%s|", rendered)
+		line := fmt.Sprintf("%-3d  %-8s  %-25s %-12s %5s  %s", row, displayGlyph, strings.Join(m.Codepoints, " "), mode, widthStr, m.Comment)
 		style := loom.Style{FG: fg}
 		if row == w.selected {
 			style = loom.Style{FG: fg, BG: loom.ColorRGB(56, 62, 68), Bold: true}
 		}
 		w.write(c, r, 4+row, line, style)
 	}
-	comment := "c: edit selected comment"
+	comment := "c: edit selected comment  D: delete comment"
 	if w.editingComment {
 		comment = "Comment: " + string(w.comment) + "▏"
 	}
 	w.center(c, r, r.H-3, comment, loom.Style{FG: fg})
-	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  c: comment  Tab/f: filter (" + string(w.filter) + ")  Enter/PgDn: save page  PgUp: back  q: quit"
+	footer := "←/→: mode  1-4/?: width  ↑/↓: select  c/D: comment  Tab/f: filter (" + string(w.filter) + ")  Enter/PgDn: save page  PgUp: back  q: quit"
 	if w.saveErr != nil {
 		footer = "Save error: " + w.saveErr.Error()
 	}
@@ -174,11 +185,15 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 	}
 	switch key {
 	case "left":
-		w.cycleSelectedWidth(-1)
+		w.cycleSelectedMode(-1)
 	case "right":
-		w.cycleSelectedWidth(1)
-	case "?":
+		w.cycleSelectedMode(1)
+	case "1", "2", "3", "4":
+		w.setSelectedWidth(int(key[0] - '0'))
+	case "?", "0":
 		w.setSelectedWidth(0)
+	case "d", "D":
+		w.deleteSelectedComment()
 	case "c":
 		w.beginComment()
 	case "up":
@@ -232,46 +247,64 @@ func (*MeasureWidget) HandleMouse(loom.MouseEvent) bool { return false }
 func (w *MeasureWidget) measurement(glyph string) Measurement {
 	if m, ok := w.pending[glyph]; ok {
 		m.ComputedWidth = measure.StringWidth(glyph)
-		m.VTEWidth = EvaluateVTEWidth(glyph)
 		return m
 	}
 	if m, ok := w.store.Entries[glyph]; ok {
 		m.Answered = false
 		m.ComputedWidth = measure.StringWidth(glyph)
-		m.VTEWidth = EvaluateVTEWidth(glyph)
+		if m.RenderMode == "" {
+			m.RenderMode = RenderModeDefault
+		}
+		if m.MeasuredWidth == 0 {
+			rendered := ApplyRenderMode(glyph, m.RenderMode)
+			m.MeasuredWidth = measure.StringWidth(rendered)
+		}
 		return m
 	}
 	m := NewMeasurement(glyph)
-	m.MeasuredWidth = m.ComputedWidth
 	return m
 }
 
-func (w *MeasureWidget) cycleSelectedWidth(direction int) {
+func (w *MeasureWidget) cycleSelectedMode(direction int) {
 	glyph := w.CurrentGlyph()
 	if glyph == "" {
 		return
 	}
 	m := w.measurement(glyph)
-	if m.MeasuredWidth == 0 {
-		m.MeasuredWidth = 1
-	} else {
-		m.MeasuredWidth += direction
-		if m.MeasuredWidth < 1 {
-			m.MeasuredWidth = 4
-		}
-		if m.MeasuredWidth > 4 {
-			m.MeasuredWidth = 1
+	modes := AvailableRenderModes(glyph)
+	if len(modes) <= 1 {
+		return
+	}
+	currentMode := m.RenderMode
+	if currentMode == "" {
+		currentMode = RenderModeDefault
+	}
+	idx := 0
+	for i, mode := range modes {
+		if mode == currentMode {
+			idx = i
+			break
 		}
 	}
+	nextIdx := (idx + direction + len(modes)) % len(modes)
+	m.RenderMode = modes[nextIdx]
+	rendered := ApplyRenderMode(glyph, m.RenderMode)
+	m.MeasuredWidth = measure.StringWidth(rendered)
 	m.Answered = false
-	w.pending[m.Glyph] = m
+	w.pending[glyph] = m
 }
 
-// measureGlyphWithPadding compensates for a terminal glyph that draws wider
-// than Loom advances the cursor, so the closing marker lands at measuredWidth.
-func measureGlyphWithPadding(glyph string, computedWidth, measuredWidth int) string {
-	return glyph + strings.Repeat(" ", max(0, measuredWidth-computedWidth))
+func (w *MeasureWidget) deleteSelectedComment() {
+	glyph := w.CurrentGlyph()
+	if glyph == "" {
+		return
+	}
+	m := w.measurement(glyph)
+	m.Comment = ""
+	m.Answered = false
+	w.pending[glyph] = m
 }
+
 
 func (w *MeasureWidget) setSelectedWidth(width int) {
 	glyph := w.CurrentGlyph()

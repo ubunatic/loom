@@ -30,22 +30,15 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 		t.Fatalf("initial row answer = %d, want computed width %d", got, want)
 	}
 
-	w.setSelectedWidth(1)
-	w.HandleKey(loom.KeyEvent{Key: "left"})
-	if got := w.PageMeasurement(0).MeasuredWidth; got != 4 {
-		t.Fatalf("left from width 1 = %d, want 4", got)
+	// Pressing numeric key 3 sets width to 3
+	w.HandleKey(loom.KeyEvent{Text: "3"})
+	if got := w.PageMeasurement(0).MeasuredWidth; got != 3 {
+		t.Fatalf("numeric key 3 set width = %d, want 3", got)
 	}
-	w.HandleKey(loom.KeyEvent{Key: "right"})
-	if got := w.PageMeasurement(0).MeasuredWidth; got != 1 {
-		t.Fatalf("right from width 4 = %d, want 1", got)
-	}
-	w.HandleKey(loom.KeyEvent{Key: "right"})
+	// Pressing numeric key 2 sets width to 2
+	w.HandleKey(loom.KeyEvent{Text: "2"})
 	if got := w.PageMeasurement(0).MeasuredWidth; got != 2 {
-		t.Fatalf("right from width 1 = %d, want 2", got)
-	}
-	w.HandleKey(loom.KeyEvent{Text: "0"})
-	if got := w.PageMeasurement(0).MeasuredWidth; got != 2 {
-		t.Fatalf("numeric key changed selected width to %d, want 2", got)
+		t.Fatalf("numeric key 2 set width = %d, want 2", got)
 	}
 	w.HandleKey(loom.KeyEvent{Key: "down"})
 	w.HandleKey(loom.KeyEvent{Text: "?"})
@@ -58,6 +51,18 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 	if got := w.PageMeasurement(1).Comment; got != "manual observation" {
 		t.Fatalf("staged comment = %q, want manual observation", got)
 	}
+	// Test D deletes comment
+	w.HandleKey(loom.KeyEvent{Text: "c"})
+	w.HandleKey(loom.KeyEvent{Text: "temporary note"})
+	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	w.HandleKey(loom.KeyEvent{Text: "D"})
+	if got := w.PageMeasurement(1).Comment; got != "" {
+		t.Fatalf("D key did not clear comment: %q", got)
+	}
+	w.HandleKey(loom.KeyEvent{Text: "c"})
+	w.HandleKey(loom.KeyEvent{Text: "manual observation"})
+	w.HandleKey(loom.KeyEvent{Key: "enter"})
+
 	if len(store.Entries) != 0 {
 		t.Fatalf("unconfirmed page saved entries: %#v", store.Entries)
 	}
@@ -98,58 +103,70 @@ func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 	}
 	w.setSelectedWidth(NewMeasurement(first).ComputedWidth + 1)
 
-	canvas := loom.NewCanvas(120, 18)
-	w.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 120, H: 18})
-	rows := make([]string, 18)
+	canvas := loom.NewCanvas(120, 28)
+	w.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 120, H: 28})
+	rows := make([]string, 28)
 	for i := range rows {
 		rows[i] = canvas.Row(i)
 	}
 	rendered := strings.Join(rows, "\n")
-	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + " |", "Computed", "VTE", "Answer", "←/→: width 1-4"} {
+	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + "|", "Mode", "Width", "Comment", "←/→: mode"} {
 		if !strings.Contains(rendered, want) {
 			t.Errorf("measure widget rendering missing %q:\n%s", want, rendered)
 		}
 	}
 }
 
-func TestEvaluateVTEWidth(t *testing.T) {
+func TestApplyRenderMode(t *testing.T) {
 	tests := []struct {
-		glyph    string
-		computed int
-		wantVTE  int
+		glyph string
+		mode  string
+		want  string
 	}{
-		{glyph: "‼️", computed: 2, wantVTE: 3},
-		{glyph: "⁉️", computed: 2, wantVTE: 3},
-		{glyph: "⚠️", computed: 2, wantVTE: 3},
-		{glyph: "☀️", computed: 2, wantVTE: 3},
-		{glyph: "☝️", computed: 2, wantVTE: 3},
-		{glyph: "🇩🇪", computed: 2, wantVTE: 2},
-		{glyph: "👨‍👩‍👧", computed: 2, wantVTE: 2},
-		{glyph: "✊", computed: 1, wantVTE: 1},
-		{glyph: "⛳", computed: 1, wantVTE: 2},
-		{glyph: "😮‍💨", computed: 4, wantVTE: 4},
-		{glyph: "😵‍💫", computed: 4, wantVTE: 4},
-		{glyph: "🐈‍⬛", computed: 4, wantVTE: 4},
-		{glyph: "🐻‍❄️", computed: 4, wantVTE: 4},
-		{glyph: "❤️‍🔥", computed: 3, wantVTE: 3},
-		{glyph: "🅿️", computed: 3, wantVTE: 4},
-		{glyph: "😀", computed: 2, wantVTE: 2},
-		{glyph: "←", computed: 1, wantVTE: 1},
-		{glyph: "a", computed: 1, wantVTE: 1},
+		{glyph: "☠️", mode: RenderModeDefault, want: "☠️"},
+		{glyph: "☠️", mode: RenderModePad1, want: "☠️ "},
+		{glyph: "☠️", mode: RenderModeNoVS16, want: "☠"},
+		{glyph: "☠️", mode: RenderModeNoVS16Pad, want: "☠ "},
+		{glyph: "🏘️", mode: RenderModeDefault, want: "🏘️"},
+		{glyph: "🏘️", mode: RenderModeNoVS16, want: "🏘"},
+		{glyph: "🐈‍⬛", mode: RenderModeSplitZWJ, want: "🐈 ⬛"},
+		{glyph: "🐈‍⬛", mode: RenderModeBaseOnly, want: "🐈"},
 	}
 	for _, tt := range tests {
-		t.Run(tt.glyph, func(t *testing.T) {
-			m := NewMeasurement(tt.glyph)
-			if m.ComputedWidth != tt.computed {
-				t.Errorf("NewMeasurement(%q).ComputedWidth = %d, want %d", tt.glyph, m.ComputedWidth, tt.computed)
-			}
-			if m.VTEWidth != tt.wantVTE {
-				t.Errorf("NewMeasurement(%q).VTEWidth = %d, want %d", tt.glyph, m.VTEWidth, tt.wantVTE)
-			}
-			if got := EvaluateVTEWidth(tt.glyph); got != tt.wantVTE {
-				t.Errorf("EvaluateVTEWidth(%q) = %d, want %d", tt.glyph, got, tt.wantVTE)
-			}
-		})
+		if got := ApplyRenderMode(tt.glyph, tt.mode); got != tt.want {
+			t.Errorf("ApplyRenderMode(%q, %q) = %q, want %q", tt.glyph, tt.mode, got, tt.want)
+		}
+	}
+}
+
+func TestEvaluateVTEModeAndWidth(t *testing.T) {
+	tests := []struct {
+		glyph     string
+		wantMode  string
+		wantWidth int
+	}{
+		{glyph: "☠️", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "🏘️", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "⟵", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "⟷", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "🐻‍❄️", wantMode: RenderModePad1, wantWidth: 4},
+		{glyph: "👁️‍🗨️", wantMode: RenderModePad1, wantWidth: 3},
+		{glyph: "🐈‍⬛", wantMode: RenderModeDefault, wantWidth: 4},
+		{glyph: "😮‍💨", wantMode: RenderModeDefault, wantWidth: 4},
+		{glyph: "😵‍💫", wantMode: RenderModeDefault, wantWidth: 4},
+		{glyph: "❤️‍🔥", wantMode: RenderModeDefault, wantWidth: 3},
+		{glyph: "❤️‍🩹", wantMode: RenderModeDefault, wantWidth: 3},
+		{glyph: "⭐️", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "😀", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "←", wantMode: RenderModeDefault, wantWidth: 1},
+	}
+	for _, tt := range tests {
+		if got := EvaluateVTEMode(tt.glyph); got != tt.wantMode {
+			t.Errorf("EvaluateVTEMode(%q) = %q, want %q", tt.glyph, got, tt.wantMode)
+		}
+		if got := EvaluateVTEWidth(tt.glyph); got != tt.wantWidth {
+			t.Errorf("EvaluateVTEWidth(%q) = %d, want %d", tt.glyph, got, tt.wantWidth)
+		}
 	}
 }
 
@@ -177,7 +194,7 @@ func TestMeasureWidgetReviewModeFiltersAndSavesEdits(t *testing.T) {
 	if got := w.PageGlyphs(); !reflect.DeepEqual(got, []string{glyphs[1]}) {
 		t.Fatalf("review width-2 page = %#v, want %#v", got, []string{glyphs[1]})
 	}
-	w.HandleKey(loom.KeyEvent{Key: "left"})
+	w.HandleKey(loom.KeyEvent{Text: "1"})
 	w.HandleKey(loom.KeyEvent{Key: "enter"})
 	if got := store.Entries[glyphs[1]]; got.MeasuredWidth != 1 || !got.Answered {
 		t.Fatalf("saved review edit = %#v, want answered width 1", got)
@@ -185,27 +202,5 @@ func TestMeasureWidgetReviewModeFiltersAndSavesEdits(t *testing.T) {
 	w.HandleKey(loom.KeyEvent{Key: "tab"})
 	if w.filter != MeasureFilterWidth3 {
 		t.Fatalf("Tab filter = %s, want %s", w.filter, MeasureFilterWidth3)
-	}
-}
-
-func TestMeasureGlyphWithPadding(t *testing.T) {
-	tests := []struct {
-		name          string
-		glyph         string
-		computedWidth int
-		measuredWidth int
-		want          string
-	}{
-		{name: "matching widths", glyph: "👍", computedWidth: 2, measuredWidth: 2, want: "👍"},
-		{name: "terminal draws wider", glyph: "☝️", computedWidth: 1, measuredWidth: 2, want: "☝️ "},
-		{name: "chosen width is narrower", glyph: "👍", computedWidth: 2, measuredWidth: 1, want: "👍"},
-		{name: "unsure", glyph: "👍", computedWidth: 2, measuredWidth: 0, want: "👍"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := measureGlyphWithPadding(tt.glyph, tt.computedWidth, tt.measuredWidth); got != tt.want {
-				t.Errorf("measureGlyphWithPadding() = %q, want %q", got, tt.want)
-			}
-		})
 	}
 }

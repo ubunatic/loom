@@ -65,8 +65,15 @@ func defaultEmojiSpec() EmojiSpec {
 			{Glyph: "⟵", Codepoints: []string{"U+27F5"}, Width: 2, Note: "long leftwards arrow"},
 			{Glyph: "⟶", Codepoints: []string{"U+27F6"}, Width: 2, Note: "long rightwards arrow"},
 			{Glyph: "⟹", Codepoints: []string{"U+27F9"}, Width: 2, Note: "long rightwards double arrow"},
-			{Glyph: "⟷", Codepoints: []string{"U+27F7"}, Width: 3, Note: "long left right arrow"},
-			{Glyph: "⟺", Codepoints: []string{"U+27FA"}, Width: 3, Note: "long left right double arrow"},
+			{Glyph: "⟷", Codepoints: []string{"U+27F7"}, Width: 2, Note: "long left right arrow"},
+			{Glyph: "⟺", Codepoints: []string{"U+27FA"}, Width: 2, Note: "long left right double arrow"},
+			{Glyph: "🐈‍⬛", Codepoints: []string{"U+1F408", "U+200D", "U+2B1B"}, Width: 4, Note: "black cat"},
+			{Glyph: "🐻‍❄️", Codepoints: []string{"U+1F43B", "U+200D", "U+2744", "U+FE0F"}, Width: 4, Note: "polar bear"},
+			{Glyph: "😮‍💨", Codepoints: []string{"U+1F62E", "U+200D", "U+1F4A8"}, Width: 4, Note: "face exhaling"},
+			{Glyph: "😵‍💫", Codepoints: []string{"U+1F635", "U+200D", "U+1F4AB"}, Width: 4, Note: "face with spiral eyes"},
+			{Glyph: "❤️‍🔥", Codepoints: []string{"U+2764", "U+FE0F", "U+200D", "U+1F525"}, Width: 3, Note: "heart on fire"},
+			{Glyph: "❤️‍🩹", Codepoints: []string{"U+2764", "U+FE0F", "U+200D", "U+1FA79"}, Width: 3, Note: "mending heart"},
+			{Glyph: "👁️‍🗨️", Codepoints: []string{"U+1F441", "U+FE0F", "U+200D", "U+1F5E8", "U+FE0F"}, Width: 3, Note: "eye in speech bubble"},
 		},
 	}
 }

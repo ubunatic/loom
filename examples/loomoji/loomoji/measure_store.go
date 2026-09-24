@@ -45,31 +45,80 @@ type Measurement struct {
 	ComputedWidth int      `json:"computed_width"`
 	VTEWidth      int      `json:"vte_width,omitempty"`
 	MeasuredWidth int      `json:"measured_width"`
+	RenderMode    string   `json:"render_mode,omitempty"`
 	Answered      bool     `json:"answered,omitempty"`
 	Comment       string   `json:"comment,omitempty"`
 }
 
-var vteSpecificWidths = map[string]int{
-	"😮‍💨": 4,
-	"😵‍💫": 4,
-	"🐻‍❄️": 4,
-	"🐈‍⬛": 4,
-	"❤️‍🔥": 3,
-	"❤️‍🩹": 3,
-	"👁️‍🗨️": 4,
-	"⛳":  2,
-	"♈":  2, "♉": 2, "♊": 2, "♋": 2, "♌": 2, "♍": 2,
-	"♎":  2, "♏": 2, "♐": 2, "♑": 2, "♒": 2, "♓": 2,
-	"♿":  2, "⚓": 2, "⛎": 2, "⛔": 2, "⛪": 2, "⛲": 2,
-	"⛵":  2, "⛺": 2, "⛽": 2, "✅": 2, "❌": 2, "❎": 2,
-	"❓":  2, "❔": 2, "❕": 2, "❗": 2, "➕": 2, "➖": 2,
-	"➗":  2,
-	"⟵":  3,
-	"⟶":  3,
-	"⟹":  3,
-	"⟷":  4,
-	"⟺":  4,
-	"⭐️":  1,
+// Render mode identifiers
+const (
+	RenderModeDefault   = "default"
+	RenderModePad1      = "pad-1"
+	RenderModeNoVS16    = "no-vs16"
+	RenderModeNoVS16Pad = "no-vs16-pad"
+	RenderModeForceVS16 = "force-vs16"
+	RenderModeSplitZWJ  = "split-zwj"
+	RenderModeBaseOnly  = "base-only"
+)
+
+// AvailableRenderModes returns the rendering modes applicable to a glyph.
+func AvailableRenderModes(glyph string) []string {
+	modes := []string{RenderModeDefault, RenderModePad1}
+	if strings.ContainsRune(glyph, '\uFE0F') {
+		modes = append(modes, RenderModeNoVS16, RenderModeNoVS16Pad)
+	}
+	if !strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') && len([]rune(glyph)) == 1 {
+		modes = append(modes, RenderModeForceVS16)
+	}
+	if strings.ContainsRune(glyph, '\u200D') {
+		modes = append(modes, RenderModeSplitZWJ)
+	}
+	runes := []rune(glyph)
+	if len(runes) > 1 && (strings.ContainsRune(glyph, '\u200D') || strings.ContainsRune(glyph, '\uFE0F') || len(runes) > 2) {
+		modes = append(modes, RenderModeBaseOnly)
+	}
+	return modes
+}
+
+// ApplyRenderMode transforms a glyph string according to the requested mode.
+func ApplyRenderMode(glyph, mode string) string {
+	switch mode {
+	case RenderModePad1:
+		return glyph + " "
+	case RenderModeNoVS16:
+		return strings.ReplaceAll(glyph, "\uFE0F", "")
+	case RenderModeNoVS16Pad:
+		return strings.ReplaceAll(glyph, "\uFE0F", "") + " "
+	case RenderModeForceVS16:
+		if strings.ContainsRune(glyph, '\uFE0F') {
+			return glyph
+		}
+		return glyph + "\uFE0F"
+	case RenderModeSplitZWJ:
+		return strings.ReplaceAll(glyph, "\u200D", " ")
+	case RenderModeBaseOnly:
+		runes := []rune(glyph)
+		if len(runes) > 0 {
+			return string(runes[0])
+		}
+		return glyph
+	default:
+		return glyph
+	}
+}
+
+// EvaluateVTEMode returns the recommended rendering mode for a glyph in VTE terminals.
+func EvaluateVTEMode(glyph string) string {
+	if glyph == "" {
+		return RenderModeDefault
+	}
+	if glyph == "⟵" || glyph == "⟶" || glyph == "⟷" || glyph == "⟹" || glyph == "⟺" || glyph == "🐻‍❄️" || glyph == "👁️‍🗨️" {
+		return RenderModePad1
+	}
+	if strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') && glyph != "⭐️" {
+		return RenderModePad1
+	}
+	return RenderModeDefault
 }
 
 // EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.
@@ -77,45 +126,28 @@ func EvaluateVTEWidth(glyph string) int {
 	if glyph == "" {
 		return 0
 	}
-	if w, ok := vteSpecificWidths[glyph]; ok {
-		return w
-	}
-	runes := []rune(glyph)
-	// Flag sequence: two regional indicator symbols (U+1F1E6..U+1F1FF)
-	if len(runes) == 2 && runes[0] >= 0x1F1E6 && runes[0] <= 0x1F1FF && runes[1] >= 0x1F1E6 && runes[1] <= 0x1F1FF {
-		return 2
-	}
-	// ZWJ sequence default
-	if strings.ContainsRune(glyph, '\u200D') {
-		return 2
-	}
-	// VS16 (Variation Selector-16) emoji presentation in VTE
-	if strings.ContainsRune(glyph, '\uFE0F') {
-		base := strings.ReplaceAll(glyph, "\uFE0F", "")
-		baseRunes := []rune(base)
-		if len(baseRunes) == 1 {
-			r := baseRunes[0]
-			if r >= 0x1F000 {
-				return 4
-			}
-			return 3
-		}
-		return measure.StringWidth(glyph) + 1
+	switch glyph {
+	case "🐈‍⬛", "🐻‍❄️", "😮‍💨", "😵‍💫":
+		return 4
+	case "❤️‍🔥", "❤️‍🩹", "👁️‍🗨️":
+		return 3
 	}
 	return measure.StringWidth(glyph)
 }
 
-// NewMeasurement creates an unanswered record using Loom's current width policy and VTE prediction.
+// NewMeasurement creates an unanswered record using Loom's current width policy and VTE evaluation.
 func NewMeasurement(glyph string) Measurement {
 	codepoints := make([]string, 0, len([]rune(glyph)))
 	for _, r := range glyph {
 		codepoints = append(codepoints, fmt.Sprintf("U+%04X", r))
 	}
+	mode := EvaluateVTEMode(glyph)
 	return Measurement{
 		Glyph:         glyph,
 		Codepoints:    codepoints,
 		ComputedWidth: measure.StringWidth(glyph),
-		VTEWidth:      EvaluateVTEWidth(glyph),
+		RenderMode:    mode,
+		MeasuredWidth: EvaluateVTEWidth(glyph),
 	}
 }
 
@@ -142,8 +174,8 @@ func (s *MeasurementStore) Merge(measurements ...Measurement) {
 		if m.ComputedWidth == 0 {
 			m.ComputedWidth = measure.StringWidth(m.Glyph)
 		}
-		if m.VTEWidth == 0 {
-			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
+		if m.RenderMode == "" {
+			m.RenderMode = RenderModeDefault
 		}
 		if _, exists := s.Entries[m.Glyph]; !exists {
 			s.Entries[m.Glyph] = m
@@ -156,8 +188,8 @@ func (s *MeasurementStore) Set(measurement Measurement) {
 	if measurement.Glyph == "" {
 		return
 	}
-	if measurement.VTEWidth == 0 {
-		measurement.VTEWidth = EvaluateVTEWidth(measurement.Glyph)
+	if measurement.RenderMode == "" {
+		measurement.RenderMode = RenderModeDefault
 	}
 	if s.Entries == nil {
 		s.Entries = make(map[string]Measurement)
@@ -248,7 +280,9 @@ func LoadMeasurementStore(path string) (*MeasurementStore, error) {
 	for k, m := range store.Entries {
 		if m.Glyph != "" {
 			m.ComputedWidth = measure.StringWidth(m.Glyph)
-			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
+			if m.RenderMode == "" {
+				m.RenderMode = RenderModeDefault
+			}
 			store.Entries[k] = m
 		}
 	}
@@ -288,7 +322,15 @@ func (s *MeasurementStore) SaveTextReport(path string) error {
 			}
 		}
 		comment := strings.NewReplacer("\t", " ", "\r", " ", "\n", " ").Replace(m.Comment)
-		fmt.Fprintf(&b, "%s\t%s\tcomputed=%d\tmeasured=%s\tcomment=%s\n", glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, measured, comment)
+		mode := m.RenderMode
+		if mode == "" {
+			mode = RenderModeDefault
+		}
+		if mode != RenderModeDefault {
+			fmt.Fprintf(&b, "%s\t%s\tcomputed=%d\tmeasured=%s\tmode=%s\tcomment=%s\n", glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, measured, mode, comment)
+		} else {
+			fmt.Fprintf(&b, "%s\t%s\tcomputed=%d\tmeasured=%s\tcomment=%s\n", glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, measured, comment)
+		}
 	}
 	if err := writeAtomic(path, []byte(b.String())); err != nil {
 		return fmt.Errorf("loomoji: save measurement report: %w", err)
