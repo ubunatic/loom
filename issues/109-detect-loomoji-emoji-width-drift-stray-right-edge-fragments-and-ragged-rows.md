@@ -1,6 +1,6 @@
 # 109 — Detect loomoji emoji-width drift: stray right-edge fragments and ragged rows
 
-**Status**: Open
+**Status**: Closed — Fixed in f1d8042: Canvas.Row continuation pad-1 emission keeps terminal cursor in sync with canvas grid; verified by category width PTY test
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Testing
