@@ -22,7 +22,7 @@ type TerminalProfile struct {
 }
 
 // Measurement contains the observed and computed width of one glyph.
-// MeasuredWidth is 1 or 2 for a confirmed result and 0 for unsure/other.
+// MeasuredWidth is 1 through 4 for a confirmed result and 0 for unsure/other.
 type Measurement struct {
 	Glyph         string   `json:"glyph"`
 	Codepoints    []string `json:"codepoints"`

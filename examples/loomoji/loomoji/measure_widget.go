@@ -98,7 +98,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		if m.MeasuredWidth == 0 {
 			answer = "?"
 		}
-		line := fmt.Sprintf("%d    |%s|  %-25s %8d  %6s  %s", row, glyph, strings.Join(m.Codepoints, " "), m.ComputedWidth, answer, m.Comment)
+		line := fmt.Sprintf("%d    |%s|  %-25s %8d  %6s  %s", row, measureGlyphWithPadding(glyph, m.ComputedWidth, m.MeasuredWidth), strings.Join(m.Codepoints, " "), m.ComputedWidth, answer, m.Comment)
 		style := loom.Style{FG: fg}
 		if row == w.selected {
 			style = loom.Style{FG: fg, BG: loom.ColorRGB(56, 62, 68), Bold: true}
@@ -110,7 +110,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		comment = "Comment: " + string(w.comment) + "▏"
 	}
 	w.center(c, r, r.H-3, comment, loom.Style{FG: fg})
-	footer := "0-9: toggle row  ↑/↓: select  ?: unsure  Enter/PgDn: confirm page  PgUp: back  q: quit"
+	footer := "←/→: width 1-4  ↑/↓: select  ?: unsure  Enter/PgDn: confirm page  PgUp: back  q: quit"
 	if w.saveErr != nil {
 		footer = "Save error: " + w.saveErr.Error()
 	}
@@ -137,8 +137,10 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 		return false
 	}
 	switch key {
-	case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
-		w.toggleRow(int(key[0] - '0'))
+	case "left":
+		w.cycleSelectedWidth(-1)
+	case "right":
+		w.cycleSelectedWidth(1)
 	case "?":
 		w.setSelectedWidth(0)
 	case "c":
@@ -171,19 +173,31 @@ func (w *MeasureWidget) measurement(glyph string) Measurement {
 	return m
 }
 
-func (w *MeasureWidget) toggleRow(row int) {
-	page := w.PageGlyphs()
-	if row < 0 || row >= len(page) {
+func (w *MeasureWidget) cycleSelectedWidth(direction int) {
+	glyph := w.CurrentGlyph()
+	if glyph == "" {
 		return
 	}
-	m := w.measurement(page[row])
-	if m.MeasuredWidth == 1 {
-		m.MeasuredWidth = 2
-	} else {
+	m := w.measurement(glyph)
+	if m.MeasuredWidth == 0 {
 		m.MeasuredWidth = 1
+	} else {
+		m.MeasuredWidth += direction
+		if m.MeasuredWidth < 1 {
+			m.MeasuredWidth = 4
+		}
+		if m.MeasuredWidth > 4 {
+			m.MeasuredWidth = 1
+		}
 	}
 	m.Answered = false
 	w.pending[m.Glyph] = m
+}
+
+// measureGlyphWithPadding compensates for a terminal glyph that draws wider
+// than Loom advances the cursor, so the closing marker lands at measuredWidth.
+func measureGlyphWithPadding(glyph string, computedWidth, measuredWidth int) string {
+	return glyph + strings.Repeat(" ", max(0, measuredWidth-computedWidth))
 }
 
 func (w *MeasureWidget) setSelectedWidth(width int) {

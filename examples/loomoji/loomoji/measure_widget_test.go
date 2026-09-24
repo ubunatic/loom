@@ -29,21 +29,22 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 		t.Fatalf("initial row answer = %d, want computed width %d", got, want)
 	}
 
+	w.setSelectedWidth(1)
+	w.HandleKey(loom.KeyEvent{Key: "left"})
+	if got := w.PageMeasurement(0).MeasuredWidth; got != 4 {
+		t.Fatalf("left from width 1 = %d, want 4", got)
+	}
+	w.HandleKey(loom.KeyEvent{Key: "right"})
+	if got := w.PageMeasurement(0).MeasuredWidth; got != 1 {
+		t.Fatalf("right from width 4 = %d, want 1", got)
+	}
+	w.HandleKey(loom.KeyEvent{Key: "right"})
+	if got := w.PageMeasurement(0).MeasuredWidth; got != 2 {
+		t.Fatalf("right from width 1 = %d, want 2", got)
+	}
 	w.HandleKey(loom.KeyEvent{Text: "0"})
-	firstToggle := 1
-	if NewMeasurement(page[0]).ComputedWidth == 1 {
-		firstToggle = 2
-	}
-	if got := w.PageMeasurement(0).MeasuredWidth; got != firstToggle {
-		t.Fatalf("first 0 toggle = %d, want %d", got, firstToggle)
-	}
-	w.HandleKey(loom.KeyEvent{Text: "0"})
-	secondToggle := 1
-	if firstToggle == 1 {
-		secondToggle = 2
-	}
-	if got := w.PageMeasurement(0).MeasuredWidth; got != secondToggle {
-		t.Fatalf("second 0 toggle = %d, want %d", got, secondToggle)
+	if got := w.PageMeasurement(0).MeasuredWidth; got != 2 {
+		t.Fatalf("numeric key changed selected width to %d, want 2", got)
 	}
 	w.HandleKey(loom.KeyEvent{Key: "down"})
 	w.HandleKey(loom.KeyEvent{Text: "?"})
@@ -64,7 +65,7 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 	if got, want := w.page, 1; got != want {
 		t.Fatalf("page after confirmation = %d, want %d", got, want)
 	}
-	if got := store.Entries[page[0]]; !got.Answered || got.MeasuredWidth != secondToggle {
+	if got := store.Entries[page[0]]; !got.Answered || got.MeasuredWidth != 2 {
 		t.Fatalf("confirmed first row = %#v", got)
 	}
 	if got := store.Entries[page[1]]; !got.Answered || got.MeasuredWidth != 0 || got.Comment != "manual observation" {
@@ -94,6 +95,7 @@ func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 	if got := w.CurrentGlyph(); got != first {
 		t.Fatalf("PgUp current glyph = %q, want %q", got, first)
 	}
+	w.setSelectedWidth(NewMeasurement(first).ComputedWidth + 1)
 
 	canvas := loom.NewCanvas(120, 18)
 	w.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 120, H: 18})
@@ -102,7 +104,7 @@ func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 		rows[i] = canvas.Row(i)
 	}
 	rendered := strings.Join(rows, "\n")
-	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + "|", "Computed", "Answer", "0-9: toggle"} {
+	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + " |", "Computed", "Answer", "←/→: width 1-4"} {
 		if !strings.Contains(rendered, want) {
 			t.Errorf("measure widget rendering missing %q:\n%s", want, rendered)
 		}
@@ -114,11 +116,33 @@ func TestMeasureWidgetQuitLeavesUnconfirmedPageUnmeasured(t *testing.T) {
 	store := NewMeasurementStore(TerminalProfile{})
 	w := NewMeasureWidget(store, filepath.Join(dir, "measurements.json"), "")
 	glyph := w.CurrentGlyph()
-	w.HandleKey(loom.KeyEvent{Text: "0"})
+	w.HandleKey(loom.KeyEvent{Key: "right"})
 	if !w.HandleKey(loom.KeyEvent{Text: "q"}) {
 		t.Fatal("q did not request quit")
 	}
 	if _, exists := store.Entries[glyph]; exists {
 		t.Fatalf("q saved unconfirmed row %q", glyph)
+	}
+}
+
+func TestMeasureGlyphWithPadding(t *testing.T) {
+	tests := []struct {
+		name          string
+		glyph         string
+		computedWidth int
+		measuredWidth int
+		want          string
+	}{
+		{name: "matching widths", glyph: "👍", computedWidth: 2, measuredWidth: 2, want: "👍"},
+		{name: "terminal draws wider", glyph: "☝️", computedWidth: 1, measuredWidth: 2, want: "☝️ "},
+		{name: "chosen width is narrower", glyph: "👍", computedWidth: 2, measuredWidth: 1, want: "👍"},
+		{name: "unsure", glyph: "👍", computedWidth: 2, measuredWidth: 0, want: "👍"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := measureGlyphWithPadding(tt.glyph, tt.computedWidth, tt.measuredWidth); got != tt.want {
+				t.Errorf("measureGlyphWithPadding() = %q, want %q", got, tt.want)
+			}
+		})
 	}
 }
