@@ -29,3 +29,7 @@ A black-box test that **detects and reports** the loomoji grid artifacts seen in
 - Open question: `ptytest.VT` uses loom's own width function, so it may not reproduce the drift.
   The test may need a reference width (e.g. a VT width table separate from loom's own, or a
   cursor position report `CSI 6n` from a real terminal). Record which method you picked and why.
+
+## Status & Progress (2026-09-24)
+
+- Added [`examples/loomoji/loomoji_category_width_pty_test.go`](../examples/loomoji/loomoji_category_width_pty_test.go), executing `loomoji` in a 64x18 PTY across all emoji categories (via `f` key cycling) and asserting that every non-empty line has uniform length matching the expected 64-column layout without ragged edges.

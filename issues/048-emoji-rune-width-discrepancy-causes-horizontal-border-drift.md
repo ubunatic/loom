@@ -61,3 +61,11 @@ Data: `docs/data/loomoji-widths/xterm-256color--unknown.{json,txt}` (1132 glyphs
    (`❤️‍🔥` = 3, `🐈‍⬛` looks right at 3). Width = sum of the parts' terminal advances, not 2.
 4. **Long arrows `⟵ ⟶ ⟷ ⟹ ⟺`** (EAW=N, width 1): the font draws them wider. Nothing lines up cleanly ("never centers");
    avoid them in layout, or pad them.
+
+## 6. Resolution & Authoritative Spec Architecture (2026-09-24)
+
+- Specced `vs16_vte_mode: pad-1` in `spec/emoji.yaml` and schema `spec/schemas/emoji.schema.json`.
+- Implemented `measure.VTEMode`, `measure.ApplyRenderMode`, and `measure.ApplyVTEMode` in `measure/spec.go`.
+- Unified Loomoji with Loom's `measure` package, eliminating shadow tables.
+- Added PTY category width test in `examples/loomoji/loomoji_category_width_pty_test.go`.
+- Documented in [`docs/EmojiWidth.md`](../docs/EmojiWidth.md).

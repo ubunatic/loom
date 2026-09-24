@@ -16,6 +16,7 @@
 - [Root overlays](RootOverlays.md): the root-level-overlay hook pattern (`paneHelpRequest`) for modals that must draw over an entire split layout, not just a `paintClipped` child.
 - [Key defaults](KeyDefaults.md): decoded keys, default actions per library widget, terminal limitations.
 - [Progress evidence](progress/): `.ansi` frames per ticket; view with `for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done`.
+- [Emoji & Unicode measurement](EmojiWidth.md): authoritative spec system, VTE render modes (pad-1), cluster parsing, and PTY width invariants.
 - [Widgets & framework primitives](Widgets.md): split layout, dynamic tabs, metric stores, directory navigation, and startup transition runners.
 
 ## Case Studies
@@ -45,6 +46,7 @@
 | [studies/2026-09-20-luna-lean-sprint-candidates.md](studies/2026-09-20-luna-lean-sprint-candidates.md) | Roadmap Items Suited to `codex:luna:low` Lean Sprints |
 | [studies/2026-09-20-session-token-usage-and-cost-analysis.md](studies/2026-09-20-session-token-usage-and-cost-analysis.md) | Session Token Usage and Cost Analysis |
 | [studies/2026-09-21-lean-sprint-session-report.md](studies/2026-09-21-lean-sprint-session-report.md) | Lean Sprint Session Report: Roadmap Items with Cheap Developer Agents |
+| [studies/2026-09-24-emoji-width-measurement-consolidation-and-vte-modes.md](studies/2026-09-24-emoji-width-measurement-consolidation-and-vte-modes.md) | Emoji Width Measurement Consolidation and VTE Modes |
 | [studies/2026-09-24-roadmap-now-sprint-099-101-105.md](studies/2026-09-24-roadmap-now-sprint-099-101-105.md) | Roadmap "Now" sprint: 099, 101, 105 |
 
 Study files are the source of truth for this table.
