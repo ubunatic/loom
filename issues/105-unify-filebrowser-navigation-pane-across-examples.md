@@ -36,3 +36,16 @@ not diverge between `ansiviewer`, `filebrowser`, and future consumers.
 
 When work starts, verify the live implementations and recent history first;
 the current examples may have evolved beyond the paths listed above.
+
+## Milestones (lean sprint, developer luna → flash37 → terra → opus ladder)
+
+Preflight (HEAD 505455e): 777b664 aligned behavior, but ansiviewer `viewer.go` and
+filebrowser `browser.go` still carry duplicated navigation logic.
+
+- **M1 — Shared pane** in `examples/filebrowser/filebrowser` (063 builds on it): navigation,
+  selection, `/` filter, ESC back + parent-selection restore, mouse select (0-based child-local),
+  quit request, key-consumption report. API: follow existing loom widget conventions (callbacks vs
+  observable state — pick the one the repo already uses and say which). Pane-level unit tests.
+- **M2 — filebrowser on the pane**: delete its duplicate navigation; keep metadata/theme.
+- **M3 — ansiviewer on the pane**: delete its duplicate navigation; keep ANSI preview.
+- **M4 — Validate**: standalone + hosted example tests; note manual smoke items for the user.
