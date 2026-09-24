@@ -105,10 +105,44 @@ func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 		rows[i] = canvas.Row(i)
 	}
 	rendered := strings.Join(rows, "\n")
-	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + " |", "Computed", "Answer", "←/→: width 1-4"} {
+	for _, want := range []string{"Terminal emoji width measurement", "Row  Glyph", "|" + first + " |", "Computed", "VTE", "Answer", "←/→: width 1-4"} {
 		if !strings.Contains(rendered, want) {
 			t.Errorf("measure widget rendering missing %q:\n%s", want, rendered)
 		}
+	}
+}
+
+func TestEvaluateVTEWidth(t *testing.T) {
+	tests := []struct {
+		glyph    string
+		computed int
+		wantVTE  int
+	}{
+		{glyph: "‼️", computed: 1, wantVTE: 2},
+		{glyph: "⁉️", computed: 1, wantVTE: 2},
+		{glyph: "⚠️", computed: 1, wantVTE: 2},
+		{glyph: "☀️", computed: 1, wantVTE: 2},
+		{glyph: "☝️", computed: 1, wantVTE: 2},
+		{glyph: "🇩🇪", computed: 4, wantVTE: 2},
+		{glyph: "👨‍👩‍👧", computed: 6, wantVTE: 2},
+		{glyph: "✊", computed: 1, wantVTE: 2},
+		{glyph: "😀", computed: 2, wantVTE: 2},
+		{glyph: "←", computed: 1, wantVTE: 1},
+		{glyph: "a", computed: 1, wantVTE: 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.glyph, func(t *testing.T) {
+			m := NewMeasurement(tt.glyph)
+			if m.ComputedWidth != tt.computed {
+				t.Errorf("NewMeasurement(%q).ComputedWidth = %d, want %d", tt.glyph, m.ComputedWidth, tt.computed)
+			}
+			if m.VTEWidth != tt.wantVTE {
+				t.Errorf("NewMeasurement(%q).VTEWidth = %d, want %d", tt.glyph, m.VTEWidth, tt.wantVTE)
+			}
+			if got := EvaluateVTEWidth(tt.glyph); got != tt.wantVTE {
+				t.Errorf("EvaluateVTEWidth(%q) = %d, want %d", tt.glyph, got, tt.wantVTE)
+			}
+		})
 	}
 }
 

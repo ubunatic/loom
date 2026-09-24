@@ -120,14 +120,14 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	w.center(c, r, 2, fmt.Sprintf("Page %d   %d glyphs remaining", w.page+1, w.Remaining()), loom.Style{FG: muted})
-	w.write(c, r, 3, "Row  Glyph       Codepoints                 Computed  Answer  Comment", loom.Style{FG: muted, Bold: true})
+	w.write(c, r, 3, "Row  Glyph       Codepoints                 Computed  VTE  Answer  Comment", loom.Style{FG: muted, Bold: true})
 	for row, glyph := range page {
 		m := w.measurement(glyph)
 		answer := fmt.Sprint(m.MeasuredWidth)
 		if m.MeasuredWidth == 0 {
 			answer = "?"
 		}
-		line := fmt.Sprintf("%d    |%s|  %-25s %8d  %6s  %s", row, measureGlyphWithPadding(glyph, m.ComputedWidth, m.MeasuredWidth), strings.Join(m.Codepoints, " "), m.ComputedWidth, answer, m.Comment)
+		line := fmt.Sprintf("%d    |%s|  %-25s %8d  %3d  %6s  %s", row, measureGlyphWithPadding(glyph, m.ComputedWidth, m.MeasuredWidth), strings.Join(m.Codepoints, " "), m.ComputedWidth, m.VTEWidth, answer, m.Comment)
 		style := loom.Style{FG: fg}
 		if row == w.selected {
 			style = loom.Style{FG: fg, BG: loom.ColorRGB(56, 62, 68), Bold: true}
@@ -240,10 +240,16 @@ func (*MeasureWidget) HandleMouse(loom.MouseEvent) bool { return false }
 
 func (w *MeasureWidget) measurement(glyph string) Measurement {
 	if m, ok := w.pending[glyph]; ok {
+		if m.VTEWidth == 0 {
+			m.VTEWidth = EvaluateVTEWidth(glyph)
+		}
 		return m
 	}
 	if m, ok := w.store.Entries[glyph]; ok {
 		m.Answered = false
+		if m.VTEWidth == 0 {
+			m.VTEWidth = EvaluateVTEWidth(glyph)
+		}
 		return m
 	}
 	m := NewMeasurement(glyph)

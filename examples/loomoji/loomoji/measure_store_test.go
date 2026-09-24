@@ -27,7 +27,7 @@ func TestMeasurementStoreRoundTripMergeAndUnmeasured(t *testing.T) {
 	if !reflect.DeepEqual(loaded.Profile, profile) {
 		t.Errorf("loaded profile = %#v, want %#v", loaded.Profile, profile)
 	}
-	want := Measurement{Glyph: "😀", Codepoints: []string{"U+1F600"}, ComputedWidth: 2, MeasuredWidth: 1, Comment: "narrow here"}
+	want := Measurement{Glyph: "😀", Codepoints: []string{"U+1F600"}, ComputedWidth: 2, VTEWidth: 2, MeasuredWidth: 1, Comment: "narrow here"}
 	if got := loaded.Entries[want.Glyph]; !reflect.DeepEqual(got, want) {
 		t.Errorf("loaded entry = %#v, want %#v", got, want)
 	}
@@ -65,8 +65,9 @@ func TestMeasurementStoreSetUpdatesAndMissingFileLoadsEmpty(t *testing.T) {
 	updated := Measurement{Glyph: "😀", MeasuredWidth: 2, Comment: "corrected"}
 	store.Set(first)
 	store.Set(updated)
-	if got := store.Entries["😀"]; !reflect.DeepEqual(got, updated) {
-		t.Errorf("Set() result = %#v, want %#v", got, updated)
+	wantUpdated := Measurement{Glyph: "😀", VTEWidth: 2, MeasuredWidth: 2, Comment: "corrected"}
+	if got := store.Entries["😀"]; !reflect.DeepEqual(got, wantUpdated) {
+		t.Errorf("Set() result = %#v, want %#v", got, wantUpdated)
 	}
 }
 

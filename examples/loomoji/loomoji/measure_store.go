@@ -42,18 +42,54 @@ type Measurement struct {
 	Glyph         string   `json:"glyph"`
 	Codepoints    []string `json:"codepoints"`
 	ComputedWidth int      `json:"computed_width"`
+	VTEWidth      int      `json:"vte_width,omitempty"`
 	MeasuredWidth int      `json:"measured_width"`
 	Answered      bool     `json:"answered,omitempty"`
 	Comment       string   `json:"comment,omitempty"`
 }
 
-// NewMeasurement creates an unanswered record using Loom's current width policy.
+// EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in VTE-based terminals.
+func EvaluateVTEWidth(glyph string) int {
+	if glyph == "" {
+		return 0
+	}
+	runes := []rune(glyph)
+	// Flag sequence: two regional indicator symbols (U+1F1E6..U+1F1FF)
+	if len(runes) == 2 && runes[0] >= 0x1F1E6 && runes[0] <= 0x1F1FF && runes[1] >= 0x1F1E6 && runes[1] <= 0x1F1FF {
+		return 2
+	}
+	// ZWJ sequences: rendered in modern terminal emoji presentation as width 2
+	if strings.ContainsRune(glyph, '\u200D') {
+		return 2
+	}
+	// VS16 (Variation Selector-16) emoji presentation: width 2
+	if strings.ContainsRune(glyph, '\uFE0F') {
+		return 2
+	}
+	// Explicit emoji presentation runes that standard wcwidth/measure might count as 1
+	for _, r := range runes {
+		if r == 0x270A || r == 0x270B || r == 0x270C || r == 0x270D || r == 0x2728 || r == 0x26A1 || r == 0x26BD || r == 0x26BE || r == 0x26C4 || r == 0x26C5 || r == 0x2615 || r == 0x2600 || r == 0x2601 || r == 0x2614 || r == 0x26A0 {
+			return 2
+		}
+		if measure.RuneWidth(r) == 2 {
+			return 2
+		}
+	}
+	return measure.StringWidth(glyph)
+}
+
+// NewMeasurement creates an unanswered record using Loom's current width policy and VTE prediction.
 func NewMeasurement(glyph string) Measurement {
 	codepoints := make([]string, 0, len([]rune(glyph)))
 	for _, r := range glyph {
 		codepoints = append(codepoints, fmt.Sprintf("U+%04X", r))
 	}
-	return Measurement{Glyph: glyph, Codepoints: codepoints, ComputedWidth: measure.StringWidth(glyph)}
+	return Measurement{
+		Glyph:         glyph,
+		Codepoints:    codepoints,
+		ComputedWidth: measure.StringWidth(glyph),
+		VTEWidth:      EvaluateVTEWidth(glyph),
+	}
 }
 
 // MeasurementStore holds observed widths for one terminal profile.
@@ -76,6 +112,9 @@ func (s *MeasurementStore) Merge(measurements ...Measurement) {
 		if m.Glyph == "" {
 			continue
 		}
+		if m.VTEWidth == 0 {
+			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
+		}
 		if _, exists := s.Entries[m.Glyph]; !exists {
 			s.Entries[m.Glyph] = m
 		}
@@ -86,6 +125,9 @@ func (s *MeasurementStore) Merge(measurements ...Measurement) {
 func (s *MeasurementStore) Set(measurement Measurement) {
 	if measurement.Glyph == "" {
 		return
+	}
+	if measurement.VTEWidth == 0 {
+		measurement.VTEWidth = EvaluateVTEWidth(measurement.Glyph)
 	}
 	if s.Entries == nil {
 		s.Entries = make(map[string]Measurement)
@@ -158,6 +200,12 @@ func LoadMeasurementStore(path string) (*MeasurementStore, error) {
 	}
 	if store.Entries == nil {
 		store.Entries = make(map[string]Measurement)
+	}
+	for k, m := range store.Entries {
+		if m.VTEWidth == 0 && m.Glyph != "" {
+			m.VTEWidth = EvaluateVTEWidth(m.Glyph)
+			store.Entries[k] = m
+		}
 	}
 	return &store, nil
 }
