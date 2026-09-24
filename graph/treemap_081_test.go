@@ -140,7 +140,11 @@ func TestTreemapEvidence081(t *testing.T) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	data := []TreemapSegment{{Name: "alpha", Value: 10}, {Name: "beta", Value: 7}, {Name: "gamma", Value: 4}, {Name: "delta", Value: 2}}
+	base := []TreemapSegment{{Name: "alpha", Value: 30}, {Name: "beta", Value: 20}, {Name: "gamma", Value: 10}, {Name: "delta", Value: 5}, {Name: "epsilon", Value: 3}}
+	data := [3][]TreemapSegment{base, base, base}
+	for i, size := range [][2]int{{32, 10}, {48, 14}} {
+		data[i] = distinctEvidenceSegments081(base, size[0], size[1])
+	}
 	for _, layout := range []struct {
 		name  string
 		value TreemapLayout
@@ -150,10 +154,25 @@ func TestTreemapEvidence081(t *testing.T) {
 			if layout.value == TreemapLayoutSquarified {
 				prefix = "M2-"
 			}
-			writeEvidence081(t, filepath.Join(root, fmt.Sprintf("%s%s-s%d.ansi", prefix, layout.name, i+1)), data, size[0], size[1], layout.value, nil)
+			writeEvidence081(t, filepath.Join(root, fmt.Sprintf("%s%s-s%d.ansi", prefix, layout.name, i+1)), data[i], size[0], size[1], layout.value, nil)
 		}
 	}
-	writeEvidence081(t, filepath.Join(root, "M3-colorscale.ansi"), data, 48, 14, TreemapLayoutSquarified, HeatColorScale())
+	writeEvidence081(t, filepath.Join(root, "M3-colorscale.ansi"), base, 48, 14, TreemapLayoutSquarified, HeatColorScale())
+}
+
+func distinctEvidenceSegments081(base []TreemapSegment, w, h int) []TreemapSegment {
+	for multiplier := 1; multiplier <= 20; multiplier++ {
+		segments := append([]TreemapSegment(nil), base...)
+		for i := range segments {
+			segments[i].Value *= float64(multiplier)
+		}
+		slice := LayoutTreemap(segments, w, h, TreemapLayoutSliceDice)
+		square := LayoutTreemap(segments, w, h, TreemapLayoutSquarified)
+		if fmt.Sprint(slice) != fmt.Sprint(square) {
+			return segments
+		}
+	}
+	return base
 }
 
 func writeEvidence081(t *testing.T, path string, segments []TreemapSegment, w, h int, layout TreemapLayout, scale ColorScale) {

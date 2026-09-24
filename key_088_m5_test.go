@@ -127,17 +127,31 @@ func TestKey088M5Evidence(t *testing.T) {
 	for _, group := range []string{"letters-digits", "punct-umlauts", "ctrl-alt", "function-nav", "modified-arrows"} {
 		var b strings.Builder
 		b.WriteString("key                         bytes                 decoded             status\n")
+		page := 1
 		n := 0
 		for _, row := range rows {
-			if row.group != group || n == 24 {
+			if row.group != group {
 				continue
+			}
+			if n == 24 {
+				name := fmt.Sprintf("M5-decode-%s-p%d.ansi", group, page)
+				if group == "punct-umlauts" {
+					name = fmt.Sprintf("M5-decode-punct-umlauts-p%d.ansi", page)
+				}
+				if err := os.WriteFile(filepath.Join(dir, name), []byte(b.String()), 0o644); err != nil {
+					t.Fatal(err)
+				}
+				page++
+				n = 0
+				b.Reset()
+				b.WriteString("key                         bytes                 decoded             status\n")
 			}
 			fmt.Fprintf(&b, "%-27s %-21s %-19s %s\n", row.name, hex.EncodeToString(row.bytes), DecodeKey(row.bytes).Name(), row.status)
 			n++
 		}
-		name := "M5-decode-" + group + ".ansi"
+		name := fmt.Sprintf("M5-decode-%s-p%d.ansi", group, page)
 		if group == "punct-umlauts" {
-			name = "M5-decode-punct-umlauts.ansi"
+			name = fmt.Sprintf("M5-decode-punct-umlauts-p%d.ansi", page)
 		}
 		if err := os.WriteFile(filepath.Join(dir, name), []byte(b.String()), 0o644); err != nil {
 			t.Fatal(err)

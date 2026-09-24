@@ -1,0 +1,5 @@
+key                         bytes                 decoded             status
+ctrl-shift-alt-up           1b5b313b3841          ctrl-shift-alt-up   OK
+ctrl-shift-alt-down         1b5b313b3842          ctrl-shift-alt-down OK
+ctrl-shift-alt-right        1b5b313b3843          ctrl-shift-alt-right OK
+ctrl-shift-alt-left         1b5b313b3844          ctrl-shift-alt-left OK
