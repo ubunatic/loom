@@ -29,6 +29,23 @@ small, testable and need no human. Source: `docs/studies/2026-09-21-lean-sprint-
   fails, restore the fix, and record the failing output in the ticket. If it does not fail,
   strengthen the test until it does.
 
+#### M2 red proof (HEAD 67d9145)
+
+Strengthened `TestSplitCapturesDragAndReleaseOutsideChild` to assert the initial press, captured
+drag and release, and that a drag after release is no longer captured. Temporarily removed only
+the `Split.HandleMouse` drag/release capture routing, then ran:
+
+```text
+$ go test . -run '^TestSplitCapturesDragAndReleaseOutsideChild$' -count=1
+--- FAIL: TestSplitCapturesDragAndReleaseOutsideChild (0.00s)
+    split_test.go:175: left=0 right=1 events, want 0 and 4 (press, captured drag, release, uncaptured drag)
+FAIL
+FAIL	codeberg.org/ubunatic/loom	0.004s
+FAIL
+```
+
+Restored `split.go`; the red run confirms the regression test depends on the capture fix.
+
 ### M3 - Evidence that proves something
 - 081: frames s1 and s2 are identical for slice-dice and squarified. Choose inputs where the
   layouts differ (aspect ratios differ) for s1 and s2, keep s3.

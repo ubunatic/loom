@@ -171,10 +171,19 @@ func TestSplitCapturesDragAndReleaseOutsideChild(t *testing.T) {
 	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
 	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 3, Y: 9})
 	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
-	if len(left.mice) != 0 || len(right.mice) != 3 {
-		t.Fatalf("left=%d right=%d events, want 0 and 3 (press, drag, release)", len(left.mice), len(right.mice))
+	if len(left.mice) != 0 || len(right.mice) != 4 {
+		t.Fatalf("left=%d right=%d events, want 0 and 4 (press, captured drag, release, uncaptured drag)", len(left.mice), len(right.mice))
 	}
-	if got := right.mice[1]; got.X != -8 || got.Y != 9 {
+	if right.mice[0].Action != MousePress {
+		t.Fatalf("initial event = %+v, want press", right.mice[0])
+	}
+	if got := right.mice[1]; got.Action != MouseDrag || got.X != -8 || got.Y != 9 {
 		t.Fatalf("captured drag = %+v, want child-relative X=-8 Y=9", got)
+	}
+	if right.mice[2].Action != MouseRelease {
+		t.Fatalf("release event = %+v, want release", right.mice[2])
+	}
+	if right.mice[3].Action != MouseDrag || right.mice[3].X != 3 || right.mice[3].Y != 9 {
+		t.Fatalf("post-release drag = %+v, want uncaptured coordinates X=3 Y=9", right.mice[3])
 	}
 }
