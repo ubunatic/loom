@@ -102,3 +102,20 @@ Test suite green on the rerun; make install done. User smoke pending.
 
 ### M5: full-width table (user request)
 The measure table fills the full terminal width. Columns stretch; the comment column takes the remaining space. It adapts on resize.
+
+### First user run: findings (xterm-256color, TERM_PROGRAM unset), 142 glyphs
+- 131 agree at 2 and 5 agree at 1, so most glyphs match loom.
+- They disagree on `✊` U+270A (loom 1, seen 2), `🐻‍❄️` (loom 3, "should be 4", and 3 overflows),
+  and `👁️` and `🖐️` (loom 2, marked 1, "overflows").
+- VS16 on a base that is text by default (`☝️ ☠️ ✌️ ✍️`, and likely `👁️ 🖐️`): the terminal draws the glyph
+  2 columns wide but moves the cursor by only 1, so the glyph covers the next character. A 1-or-2 answer can't express
+  this; it's "draw width ≠ cursor advance".
+- The 0-9 toggle only allowed 1↔2, so 3/4 couldn't be entered.
+
+### M6: arrow-key widths + live render fix (user request)
+- Remove keys 0-9. Left/right on the selected row cycles the width 1→2→3→4.
+- As the width changes, the row renders the glyph with the matching fix so it sits correctly between `| |`.
+  For example, pad with spaces up to the chosen width after the glyph, based on loom's computed advance, so a glyph
+  that is drawn 2 wide but advances 1 gets 1 extra space. The user picks the width at which the markers look right, and that
+  answer is the fix to apply. Put the fix in one function (`measure`-adjacent) that 048 can reuse later.
+- Keep the stored data compatible: measured_width 1-4, 0 = unsure.
