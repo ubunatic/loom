@@ -16,6 +16,7 @@ import (
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/measure"
+	"codeberg.org/ubunatic/loom/syntax"
 	"github.com/spf13/cobra"
 )
 
@@ -57,7 +58,6 @@ func (ew *editorWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	for i := 0; i < r.H; i++ {
 		c.Write(r.X, r.Y+i, fmt.Sprintf("%2d │ ", i+1), loom.Style{Dim: true, FG: loom.ColorIndex(8)})
 	}
-	ew.app.applySyntaxHighlighting(c, textRect)
 }
 
 func (ew *editorWidget) HandleKey(e loom.KeyEvent) bool {
@@ -288,6 +288,22 @@ func (tw *terminalWidget) execCommand(cmd string) {
 	}
 }
 
+func engineForPath(path string) syntax.Engine {
+	ext := strings.ToLower(filepath.Ext(path))
+	switch ext {
+	case ".go":
+		return syntax.NewLexicalEngine("go")
+	case ".md":
+		return syntax.NewLexicalEngine("markdown")
+	case ".json":
+		return syntax.NewLexicalEngine("json")
+	case ".yaml", ".yml":
+		return syntax.NewLexicalEngine("yaml")
+	default:
+		return nil
+	}
+}
+
 // NewApp initializes and returns a new TextEditApp.
 func NewApp() *TextEditApp {
 	app := &TextEditApp{
@@ -307,6 +323,7 @@ func main() {
 	fmt.Println("Hello, Loom!")
 }`
 	app.editor = loom.NewTextArea(initialContent)
+	app.editor.SetHighlighter(engineForPath(app.activePath))
 	app.editorW = &editorWidget{app: app}
 	app.fileBrowser = newFileBrowser(".", app)
 	app.terminal = newTerminal(app)
@@ -357,6 +374,7 @@ func (app *TextEditApp) OpenFile(path string) {
 	}
 	app.activePath = path
 	app.editor.SetValue(string(data))
+	app.editor.SetHighlighter(engineForPath(path))
 	app.modified = false
 	app.touchMRU(path)
 	app.statusMsg = "Opened " + filepath.Base(path)
@@ -376,6 +394,7 @@ func (app *TextEditApp) SaveFile(path string) {
 		return
 	}
 	app.activePath = path
+	app.editor.SetHighlighter(engineForPath(path))
 	app.modified = false
 	app.touchMRU(path)
 	app.statusMsg = "Saved " + filepath.Base(path)
@@ -452,73 +471,6 @@ func (app *TextEditApp) drawStatus(c *loom.Canvas, r loom.Rect) {
 		}
 		c.Write(x, r.Y, text, loom.Style{FG: loom.ColorIndex(15), BG: loom.ColorIndex(239), Bold: true})
 		x += len([]rune(text)) + 1
-	}
-}
-
-func (app *TextEditApp) applySyntaxHighlighting(c *loom.Canvas, r loom.Rect) {
-	// Re-style keywords/comments/strings on top of the rendered editor area
-	val := app.editor.Value()
-	lines := strings.Split(val, "\n")
-	keywords := map[string]bool{
-		"package": true, "import": true, "func": true, "return": true,
-		"if": true, "else": true, "for": true, "range": true, "var": true,
-		"type": true, "struct": true, "const": true, "def": true, "class": true,
-	}
-
-	for lineIdx, line := range lines {
-		y := r.Y + lineIdx
-		if y >= r.Y+r.H {
-			break
-		}
-		words := strings.Fields(line)
-		for _, w := range words {
-			if keywords[w] {
-				// Highlight keyword
-				idx := strings.Index(line, w)
-				if idx >= 0 && r.X+idx < r.X+r.W {
-					c.Write(r.X+idx, y, w, loom.Style{Bold: true, FG: loom.ColorIndex(4)}) // Cyan bold keyword
-				}
-			}
-		}
-		// Highlight quoted strings, including escaped quotes.
-		for i := 0; i < len(line); {
-			if line[i] != '"' {
-				i++
-				continue
-			}
-			start, j := i, i+1
-			for j < len(line) {
-				if line[j] == '\\' {
-					j += 2
-					continue
-				}
-				if line[j] == '"' {
-					j++
-					break
-				}
-				j++
-			}
-			if r.X+start < r.X+r.W {
-				c.Write(r.X+start, y, line[start:min(j, len(line))], loom.Style{FG: loom.ColorIndex(2)})
-			}
-			i = j
-		}
-		if idx := strings.Index(line, "func "); idx >= 0 {
-			start := idx + 5
-			end := start
-			for end < len(line) && (line[end] == '_' || line[end] >= 'a' && line[end] <= 'z' || line[end] >= 'A' && line[end] <= 'Z' || line[end] >= '0' && line[end] <= '9') {
-				end++
-			}
-			if end > start {
-				c.Write(r.X+start, y, line[start:end], loom.Style{FG: loom.ColorIndex(15), Bold: true})
-			}
-		}
-		// Comment highlight
-		if cIdx := strings.Index(line, "//"); cIdx >= 0 {
-			if r.X+cIdx < r.X+r.W {
-				c.Write(r.X+cIdx, y, line[cIdx:], loom.Style{FG: loom.ColorIndex(8), Dim: true}) // Gray comment
-			}
-		}
 	}
 }
 

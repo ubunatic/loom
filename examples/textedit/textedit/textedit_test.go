@@ -242,3 +242,84 @@ func TestFileBrowserNavigation(t *testing.T) {
 		t.Fatalf("fb2.dir after backspace = %q, want %q", fb2.dir, tmpDir)
 	}
 }
+
+func TestLanguageEngineSelection(t *testing.T) {
+	app := NewApp()
+	if app.editor.Highlighter() == nil {
+		t.Fatalf("expected NewApp editor to have highlighter for demo.go")
+	}
+	if got := app.editor.Highlighter().Language(); got != "go" {
+		t.Errorf("demo.go language = %q, want \"go\"", got)
+	}
+
+	tmpDir := t.TempDir()
+	tests := []struct {
+		name     string
+		file     string
+		content  string
+		wantLang string
+		hasHL    bool
+	}{
+		{"json file", "config.json", `{"key": "value"}`, "json", true},
+		{"markdown file", "doc.md", "# Title\n`code`", "markdown", true},
+		{"yaml file", "deploy.yaml", "app: test\nversion: 1", "yaml", true},
+		{"yml file", "deploy.yml", "app: test\nversion: 1", "yaml", true},
+		{"unknown file", "notes.txt", "just plain text", "", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filePath := filepath.Join(tmpDir, tt.file)
+			if err := os.WriteFile(filePath, []byte(tt.content), 0644); err != nil {
+				t.Fatalf("failed to write %s: %v", filePath, err)
+			}
+			app.OpenFile(filePath)
+			hl := app.editor.Highlighter()
+			if !tt.hasHL {
+				if hl != nil {
+					t.Errorf("expected no highlighter for %s, got %v", tt.file, hl)
+				}
+				return
+			}
+			if hl == nil {
+				t.Fatalf("expected highlighter for %s, got nil", tt.file)
+			}
+			if hl.Language() != tt.wantLang {
+				t.Errorf("%s language = %q, want %q", tt.file, hl.Language(), tt.wantLang)
+			}
+		})
+	}
+}
+
+func TestSinglePassSyntaxHighlightingInTextEdit(t *testing.T) {
+	app := NewApp()
+	frames := loom.Render(app, 80, 24)
+	joined := strings.Join(frames, "\n")
+	if !strings.Contains(joined, "package") || !strings.Contains(joined, "main") {
+		t.Fatalf("expected rendered editor to contain keywords: %q", joined)
+	}
+
+	// Verify syntax highlighting renders via canvas cells
+	c := loom.NewCanvas(80, 24)
+	app.Draw(c, c.Bounds())
+
+	// Caret/editor line 0 has "package main" inside textRect (x starts at 5 + borders)
+	// Find cell containing 'p' of "package"
+	found := false
+	for y := 0; y < 10; y++ {
+		for x := 0; x < 40; x++ {
+			cell := c.Get(x, y)
+			if cell.Text == "p" && cell.Style.Bold && cell.Style.FG == loom.ColorIndex(5) {
+				found = true
+				break
+			}
+		}
+		if found {
+			break
+		}
+	}
+	if !found {
+		t.Errorf("expected to find syntax-highlighted 'p' cell with Bold and ColorIndex(5)")
+	}
+}
+
