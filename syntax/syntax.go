@@ -29,3 +29,28 @@ type Engine interface {
 	HighlightLine(line int) []Span
 	HighlightViewport(startLine, endLine int) map[int][]Span
 }
+
+// Symbol identifies a recognized code entity (function, method, type, heading, key, etc.).
+type Symbol struct {
+	Name    string
+	Kind    string
+	Line    int // 0-based start line
+	Column  int // 0-based start column
+	EndLine int // 0-based end line
+}
+
+// OutlineProvider supplies document symbols, breadcrumbs, and fold ranges.
+type OutlineProvider interface {
+	Symbols() []Symbol
+	Breadcrumb(line, col int) []string
+	Folds() [][2]int
+}
+
+// Navigator provides structural navigation, breadcrumbs, and fold ranges.
+type Navigator interface {
+	OutlineProvider
+	Symbols() []Symbol
+	Breadcrumb(line, col int) []string
+	Folds() [][2]int
+}
+

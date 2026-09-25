@@ -36,6 +36,7 @@ type TextEditApp struct {
 	editor      *loom.TextArea
 	editorW     *editorWidget
 	fileBrowser *fileBrowserWidget
+	sidebar     *sidebarWidget
 	terminal    *terminalWidget
 
 	activePath  string
@@ -55,8 +56,34 @@ func (ew *editorWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	focused := ew.app.activeFocus == focusEditor
 	textRect := loom.Rect{X: r.X + 5, Y: r.Y, W: max(0, r.W-5), H: r.H}
 	ew.app.editor.Draw(c, textRect, focused)
+
+	vis := ew.app.editor.VisibleLines()
+	scroll := ew.app.editor.Scroll()
+
+	foldStarts := make(map[int]int)
+	if nav, ok := ew.app.editor.Highlighter().(syntax.Navigator); ok {
+		for _, f := range nav.Folds() {
+			foldStarts[f[0]] = f[1]
+		}
+	}
+
 	for i := 0; i < r.H; i++ {
-		c.Write(r.X, r.Y+i, fmt.Sprintf("%2d │ ", i+1), loom.Style{Dim: true, FG: loom.ColorIndex(8)})
+		visIdx := scroll + i
+		if visIdx < len(vis) {
+			docLine := vis[visIdx]
+			icon := " "
+			if end, isFold := foldStarts[docLine]; isFold && end > docLine {
+				if ew.app.editor.IsFolded(docLine) {
+					icon = "▸"
+				} else {
+					icon = "▾"
+				}
+			}
+			gutter := fmt.Sprintf("%2d%s│ ", docLine+1, icon)
+			c.Write(r.X, r.Y+i, gutter, loom.Style{Dim: true, FG: loom.ColorIndex(8)})
+		} else {
+			c.Write(r.X, r.Y+i, "   │ ", loom.Style{Dim: true, FG: loom.ColorIndex(8)})
+		}
 	}
 }
 
@@ -69,7 +96,200 @@ func (ew *editorWidget) HandleKey(e loom.KeyEvent) bool {
 	return handled
 }
 
-func (ew *editorWidget) HandleMouse(e loom.MouseEvent) bool { return false }
+func (ew *editorWidget) HandleMouse(e loom.MouseEvent) bool {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.X < 5 {
+		vis := ew.app.editor.VisibleLines()
+		visIdx := ew.app.editor.Scroll() + e.Y
+		if visIdx >= 0 && visIdx < len(vis) {
+			docLine := vis[visIdx]
+			if nav, ok := ew.app.editor.Highlighter().(syntax.Navigator); ok {
+				for _, f := range nav.Folds() {
+					if f[0] == docLine {
+						ew.app.editor.ToggleFold(f[0], f[1])
+						return true
+					}
+				}
+			}
+		}
+	}
+	return false
+}
+
+// SidebarMode defines the active tab in the left sidebar.
+type SidebarMode int
+
+const (
+	SidebarFiles SidebarMode = iota
+	SidebarOutline
+)
+
+type sidebarWidget struct {
+	app     *TextEditApp
+	browser *fileBrowserWidget
+	outline *outlineWidget
+	mode    SidebarMode
+}
+
+func newSidebar(dir string, app *TextEditApp) *sidebarWidget {
+	return &sidebarWidget{
+		app:     app,
+		browser: newFileBrowser(dir, app),
+		outline: &outlineWidget{app: app},
+		mode:    SidebarFiles,
+	}
+}
+
+func (sb *sidebarWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	c.PaintSurface(r, loom.Style{})
+	if r.H <= 0 || r.W <= 0 {
+		return
+	}
+	filesStyle := loom.Style{FG: loom.ColorIndex(8), Dim: true}
+	outlineStyle := loom.Style{FG: loom.ColorIndex(8), Dim: true}
+	if sb.mode == SidebarFiles {
+		filesStyle = loom.Style{Bold: true, FG: loom.ColorIndex(15), BG: loom.ColorIndex(238)}
+	} else {
+		outlineStyle = loom.Style{Bold: true, FG: loom.ColorIndex(15), BG: loom.ColorIndex(238)}
+	}
+	c.Write(r.X, r.Y, "📁 Explorer", filesStyle)
+	c.Write(r.X+12, r.Y, "📋 Outline", outlineStyle)
+
+	contentRect := loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: max(0, r.H-1)}
+	if sb.mode == SidebarFiles {
+		sb.browser.DrawEntries(c, contentRect)
+	} else {
+		sb.outline.Draw(c, contentRect)
+	}
+}
+
+func (sb *sidebarWidget) HandleKey(e loom.KeyEvent) bool {
+	if e.Is("ctrl-t", "alt-o", "o", "f") {
+		if sb.mode == SidebarFiles {
+			sb.mode = SidebarOutline
+		} else {
+			sb.mode = SidebarFiles
+		}
+		return true
+	}
+	if sb.mode == SidebarFiles {
+		return sb.browser.HandleKey(e)
+	}
+	return sb.outline.HandleKey(e)
+}
+
+func (sb *sidebarWidget) HandleMouse(e loom.MouseEvent) bool {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
+		if e.X < 12 {
+			sb.mode = SidebarFiles
+		} else {
+			sb.mode = SidebarOutline
+		}
+		return true
+	}
+	childEv := e
+	childEv.Y = e.Y - 1
+	if childEv.Y < 0 {
+		return false
+	}
+	if sb.mode == SidebarFiles {
+		return sb.browser.HandleMouse(e)
+	}
+	return sb.outline.HandleMouse(childEv)
+}
+
+type outlineWidget struct {
+	app      *TextEditApp
+	symbols  []syntax.Symbol
+	selected int
+}
+
+func (ow *outlineWidget) refresh() {
+	if nav, ok := ow.app.editor.Highlighter().(syntax.Navigator); ok {
+		ow.symbols = nav.Symbols()
+	} else {
+		ow.symbols = nil
+	}
+	if ow.selected >= len(ow.symbols) {
+		ow.selected = max(0, len(ow.symbols)-1)
+	}
+}
+
+func (ow *outlineWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	ow.refresh()
+	if len(ow.symbols) == 0 {
+		c.Write(r.X, r.Y, "  No symbols", loom.Style{Dim: true, FG: loom.ColorIndex(8)})
+		return
+	}
+	for i, sym := range ow.symbols {
+		if i >= r.H {
+			break
+		}
+		icon := "▪ "
+		switch sym.Kind {
+		case "function", "method":
+			icon = "🔧 "
+		case "type":
+			icon = "🔷 "
+		case "heading":
+			icon = "📄 "
+		case "key":
+			icon = "🔑 "
+		}
+		prefix := "  "
+		if i == ow.selected {
+			prefix = "▸ "
+		}
+		style := loom.Style{}
+		if i == ow.selected {
+			style = loom.Style{Bold: true, FG: loom.ColorIndex(15), BG: loom.ColorIndex(24)}
+		}
+		line := loom.TruncateText(prefix+icon+sym.Name, r.W, "")
+		if i == ow.selected {
+			line += strings.Repeat(" ", max(0, r.W-measure.StringWidth(line)))
+		}
+		c.Write(r.X, r.Y+i, line, style)
+	}
+}
+
+func (ow *outlineWidget) HandleKey(e loom.KeyEvent) bool {
+	ow.refresh()
+	switch {
+	case e.Is("up", "k"):
+		if ow.selected > 0 {
+			ow.selected--
+		}
+		return true
+	case e.Is("down", "j"):
+		if ow.selected < len(ow.symbols)-1 {
+			ow.selected++
+		}
+		return true
+	case e.Is("enter"):
+		if len(ow.symbols) > 0 && ow.selected >= 0 && ow.selected < len(ow.symbols) {
+			sym := ow.symbols[ow.selected]
+			ow.app.editor.SetCaret(sym.Line, sym.Column)
+			ow.app.activeFocus = focusEditor
+			ow.app.statusMsg = fmt.Sprintf("Jumped to %s (line %d)", sym.Name, sym.Line+1)
+		}
+		return true
+	}
+	return false
+}
+
+func (ow *outlineWidget) HandleMouse(e loom.MouseEvent) bool {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
+		ow.refresh()
+		if e.Y >= 0 && e.Y < len(ow.symbols) {
+			ow.selected = e.Y
+			sym := ow.symbols[ow.selected]
+			ow.app.editor.SetCaret(sym.Line, sym.Column)
+			ow.app.activeFocus = focusEditor
+			ow.app.statusMsg = fmt.Sprintf("Jumped to %s (line %d)", sym.Name, sym.Line+1)
+			return true
+		}
+	}
+	return false
+}
 
 type fileBrowserWidget struct {
 	dir      string
@@ -105,8 +325,12 @@ func (fb *fileBrowserWidget) reload() {
 func (fb *fileBrowserWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{})
 	c.Write(r.X, r.Y, "📁 Explorer", loom.Style{Bold: true, FG: loom.ColorIndex(7)})
+	fb.DrawEntries(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: max(0, r.H-1)})
+}
+
+func (fb *fileBrowserWidget) DrawEntries(c *loom.Canvas, r loom.Rect) {
 	for i, entry := range fb.files {
-		if i+1 >= r.H {
+		if i >= r.H {
 			break
 		}
 		prefix := "  "
@@ -127,7 +351,7 @@ func (fb *fileBrowserWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		if i == fb.selected {
 			line += strings.Repeat(" ", max(0, r.W-measure.StringWidth(line)))
 		}
-		c.Write(r.X, r.Y+i+1, line, style)
+		c.Write(r.X, r.Y+i, line, style)
 	}
 }
 
@@ -325,7 +549,8 @@ func main() {
 	app.editor = loom.NewTextArea(initialContent)
 	app.editor.SetHighlighter(engineForPath(app.activePath))
 	app.editorW = &editorWidget{app: app}
-	app.fileBrowser = newFileBrowser(".", app)
+	app.sidebar = newSidebar(".", app)
+	app.fileBrowser = app.sidebar.browser
 	app.terminal = newTerminal(app)
 
 	app.vSplit = loom.NewSplit(app.editorW, app.terminal)
@@ -334,7 +559,7 @@ func main() {
 	app.vSplit.MinFirst = 5
 	app.vSplit.MinSecond = 3
 
-	app.hSplit = loom.NewSplit(app.fileBrowser, app.vSplit)
+	app.hSplit = loom.NewSplit(app.sidebar, app.vSplit)
 	app.hSplit.Orientation = loom.Horizontal
 	app.hSplit.Ratio = 0.25
 	app.hSplit.MinFirst = 12
@@ -353,6 +578,7 @@ func main() {
 		Actions: []loom.FrameAction{
 			{ID: "save", Action: "save", Key: "ctrl-s", Hint: "C-s: Save"},
 			{ID: "open", Action: "open", Key: "ctrl-o", Hint: "C-o: Open"},
+			{ID: "fold", Action: "fold", Key: "f2", Hint: "F2: Fold"},
 			{ID: "clip", Action: "clip", Key: "ctrl-c", Hint: "C-c/v/x: Clip"},
 			{ID: "sidebar", Action: "sidebar", Key: "ctrl-b", Hint: "C-b: Sidebar"},
 			{ID: "focus", Action: "focus", Key: "tab", Hint: "Tab: Focus"},
@@ -413,6 +639,64 @@ func (app *TextEditApp) touchMRU(path string) {
 	app.mruList = newMRU
 }
 
+// SidebarMode returns the active sidebar tab.
+func (app *TextEditApp) SidebarMode() SidebarMode {
+	if app.sidebar != nil {
+		return app.sidebar.mode
+	}
+	return SidebarFiles
+}
+
+// SetSidebarMode sets the active sidebar tab.
+func (app *TextEditApp) SetSidebarMode(mode SidebarMode) {
+	if app.sidebar != nil {
+		app.sidebar.mode = mode
+	}
+}
+
+// ToggleSidebarMode toggles between Explorer and Outline tabs.
+func (app *TextEditApp) ToggleSidebarMode() {
+	if app.sidebar != nil {
+		if app.sidebar.mode == SidebarFiles {
+			app.sidebar.mode = SidebarOutline
+		} else {
+			app.sidebar.mode = SidebarFiles
+		}
+	}
+}
+
+// Outline returns the outline widget.
+func (app *TextEditApp) Outline() *outlineWidget {
+	if app.sidebar != nil {
+		return app.sidebar.outline
+	}
+	return nil
+}
+
+// ToggleFold toggles folding on the given start and end lines.
+func (app *TextEditApp) ToggleFold(startLine, endLine int) {
+	app.editor.ToggleFold(startLine, endLine)
+}
+
+func (app *TextEditApp) toggleFoldAtCaret() {
+	row, _ := app.editor.Caret()
+	if nav, ok := app.editor.Highlighter().(syntax.Navigator); ok {
+		for _, fold := range nav.Folds() {
+			start, end := fold[0], fold[1]
+			if row == start || (row > start && row <= end) {
+				app.editor.ToggleFold(start, end)
+				if app.editor.IsFolded(start) {
+					app.statusMsg = fmt.Sprintf("Folded lines %d-%d", start+1, end+1)
+				} else {
+					app.statusMsg = fmt.Sprintf("Unfolded lines %d-%d", start+1, end+1)
+				}
+				return
+			}
+		}
+	}
+	app.statusMsg = "No foldable block at caret"
+}
+
 func (app *TextEditApp) Draw(c *loom.Canvas, r loom.Rect) {
 	focusName := "Editor"
 	switch app.activeFocus {
@@ -440,7 +724,18 @@ func (app *TextEditApp) Draw(c *loom.Canvas, r loom.Rect) {
 	if app.modified {
 		mark = " ●"
 	}
-	x += c.Write(x, r.Y, "["+file+mark+"]", loom.Style{FG: loom.ColorIndex(7), Bold: true, BG: loom.ColorIndex(238)}) + 2
+
+	crumb := "📁 " + file
+	if nav, ok := app.editor.Highlighter().(syntax.Navigator); ok {
+		row, col := app.editor.Caret()
+		crumbs := nav.Breadcrumb(row, col)
+		for _, c := range crumbs {
+			crumb += " › 🔧 " + c
+		}
+	}
+	crumb += mark
+
+	x += c.Write(x, r.Y, "["+crumb+"]", loom.Style{FG: loom.ColorIndex(7), Bold: true, BG: loom.ColorIndex(238)}) + 2
 	x += c.Write(x, r.Y, "[Focus: ", loom.Style{FG: loom.ColorIndex(7), BG: loom.ColorIndex(238)})
 	x += c.Write(x, r.Y, focusName, loom.Style{FG: loom.ColorIndex(14), Bold: true, BG: loom.ColorIndex(238)})
 	x += c.Write(x, r.Y, "]", loom.Style{FG: loom.ColorIndex(7), BG: loom.ColorIndex(238)}) + 2
@@ -463,7 +758,7 @@ func (app *TextEditApp) drawStatus(c *loom.Canvas, r loom.Rect) {
 	}
 	pill := "● " + label
 	x += c.Write(x, r.Y, loom.TruncateText(" "+pill+" ", min(r.W, 22), ""), loom.Style{FG: loom.ColorIndex(2), BG: loom.ColorIndex(236), Bold: true}) + 1
-	keys := [][2]string{{"C-s", "Save"}, {"C-o", "Open"}, {"C-c/v", "Clip"}, {"Tab", "Focus"}, {"C-b", "Tree"}, {"F10", "Quit"}}
+	keys := [][2]string{{"C-s", "Save"}, {"C-o", "Open"}, {"F2", "Fold"}, {"C-c/v", "Clip"}, {"Tab", "Focus"}, {"C-b", "Tree"}, {"F10", "Quit"}}
 	for _, key := range keys {
 		text := " " + key[0] + " " + key[1] + " "
 		if x+len([]rune(text)) > r.X+r.W {
@@ -482,6 +777,9 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 
 	// Global Keybindings
 	switch {
+	case e.Is("f2", "F2"):
+		app.toggleFoldAtCaret()
+		return false
 	case e.Is("ctrl-s", "ctrl-S"):
 		app.SaveFile(app.activePath)
 		return false
@@ -547,7 +845,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 	// Dispatch to active focus area
 	switch app.activeFocus {
 	case focusBrowser:
-		if fbHandled := app.fileBrowser.HandleKey(e); fbHandled {
+		if sbHandled := app.sidebar.HandleKey(e); sbHandled {
 			return false
 		}
 	case focusTerminal:

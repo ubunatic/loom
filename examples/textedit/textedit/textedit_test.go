@@ -323,3 +323,125 @@ func TestSinglePassSyntaxHighlightingInTextEdit(t *testing.T) {
 	}
 }
 
+func TestTopBarBreadcrumbs(t *testing.T) {
+	app := NewApp()
+	// Default demo.go has caret on line 6 (inside func main)
+	frames := loom.Render(app, 100, 24)
+	topLine := frames[0]
+	if !strings.Contains(topLine, "📁 demo.go › 🔧 main") {
+		t.Errorf("top bar missing breadcrumb '📁 demo.go › 🔧 main', got: %q", topLine)
+	}
+
+	// Move caret to line 0 (package main)
+	app.editor.SetCaret(0, 0)
+	frames = loom.Render(app, 100, 24)
+	topLine = frames[0]
+	if strings.Contains(topLine, "› 🔧 main") {
+		t.Errorf("top bar should not show main when caret at line 0, got: %q", topLine)
+	}
+	if !strings.Contains(topLine, "📁 demo.go") {
+		t.Errorf("top bar should show 📁 demo.go, got: %q", topLine)
+	}
+
+	// Move caret back to line 5 (inside func main)
+	app.editor.SetCaret(5, 0)
+	frames = loom.Render(app, 100, 24)
+	topLine = frames[0]
+	if !strings.Contains(topLine, "📁 demo.go › 🔧 main") {
+		t.Errorf("top bar missing restored breadcrumb '📁 demo.go › 🔧 main', got: %q", topLine)
+	}
+}
+
+func TestSidebarOutlineAndJumpCaret(t *testing.T) {
+	app := NewApp()
+	if app.SidebarMode() != SidebarFiles {
+		t.Errorf("default sidebar mode = %v, want SidebarFiles", app.SidebarMode())
+	}
+
+	// Toggle to Outline
+	app.ToggleSidebarMode()
+	if app.SidebarMode() != SidebarOutline {
+		t.Errorf("sidebar mode after toggle = %v, want SidebarOutline", app.SidebarMode())
+	}
+
+	frames := loom.Render(app, 100, 24)
+	joined := strings.Join(frames, "\n")
+	if !strings.Contains(joined, "📋 Outline") || !strings.Contains(joined, "🔧 main") {
+		t.Fatalf("outline rendering missing symbols: %q", joined)
+	}
+
+	// Set caret to top of document
+	app.editor.SetCaret(0, 0)
+	row, col := app.editor.Caret()
+	if row != 0 || col != 0 {
+		t.Fatalf("caret = (%d, %d), want (0, 0)", row, col)
+	}
+
+	// Select symbol in outline and press Enter
+	app.activeFocus = focusBrowser
+	app.HandleKey(loom.KeyEvent{Key: "enter"})
+
+	row, _ = app.editor.Caret()
+	if row != 5 { // func main() is at line index 5 (gutter line 6)
+		t.Errorf("caret row after jumping to main = %d, want 5", row)
+	}
+	if app.activeFocus != focusEditor {
+		t.Errorf("activeFocus after jump = %v, want %v", app.activeFocus, focusEditor)
+	}
+}
+
+func TestCodeFoldingInTextEdit(t *testing.T) {
+	app := NewApp()
+	originalText := app.editor.Value()
+
+	// Initial render: gutter should show unfolded fold icon ▾ at line 6 (index 5)
+	frames := loom.Render(app, 100, 24)
+	joined := strings.Join(frames, "\n")
+	if !strings.Contains(joined, " 6▾│ ") {
+		t.Fatalf("expected 6▾│ fold indicator in gutter: %q", joined)
+	}
+	if !strings.Contains(joined, "Hello, Loom!") {
+		t.Fatalf("expected Hello, Loom! to be visible before folding")
+	}
+
+	// Move caret to line 5 (func main() {)
+	app.editor.SetCaret(5, 0)
+
+	// Press F2 to fold
+	app.HandleKey(loom.KeyEvent{Key: "f2"})
+	if !app.editor.IsFolded(5) {
+		t.Fatalf("expected line 5 to be folded after F2")
+	}
+
+	// Render after folding: gutter should show folded icon ▸ at line 6
+	frames = loom.Render(app, 100, 24)
+	joined = strings.Join(frames, "\n")
+	if !strings.Contains(joined, " 6▸│ ") {
+		t.Fatalf("expected 6▸│ fold indicator in gutter after folding: %q", joined)
+	}
+	if strings.Contains(joined, "Hello, Loom!") {
+		t.Fatalf("expected Hello, Loom! to be collapsed inside fold")
+	}
+
+	// Buffer must remain intact!
+	if app.editor.Value() != originalText {
+		t.Fatalf("editor buffer was modified/corrupted by folding!")
+	}
+
+	// Press F2 again to unfold
+	app.HandleKey(loom.KeyEvent{Key: "f2"})
+	if app.editor.IsFolded(5) {
+		t.Fatalf("expected line 5 to be unfolded after second F2")
+	}
+
+	frames = loom.Render(app, 100, 24)
+	joined = strings.Join(frames, "\n")
+	if !strings.Contains(joined, " 6▾│ ") {
+		t.Fatalf("expected 6▾│ fold indicator in gutter after unfolding: %q", joined)
+	}
+	if !strings.Contains(joined, "Hello, Loom!") {
+		t.Fatalf("expected Hello, Loom! to be visible again after unfolding")
+	}
+}
+
+

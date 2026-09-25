@@ -28,6 +28,7 @@ type TextArea struct {
 	scroll      int // first visible line index
 	lastH       int // visible height from the last Draw
 	highlighter syntax.Engine
+	folds       map[int]int // startLine -> endLine (inclusive) for collapsed blocks
 }
 
 // NewTextArea creates a TextArea seeded with value (split on "\n").
@@ -72,6 +73,7 @@ func (t *TextArea) SetValue(s string) {
 	t.row = len(t.lines) - 1
 	t.col = len(t.lines[t.row])
 	t.scroll = 0
+	t.folds = nil
 	if t.highlighter != nil {
 		_ = t.highlighter.Parse([]byte(s))
 	}
@@ -80,8 +82,89 @@ func (t *TextArea) SetValue(s string) {
 // Caret returns the caret position as (row, col), both rune offsets.
 func (t *TextArea) Caret() (row, col int) { return t.row, t.col }
 
+// SetCaret moves the caret to (row, col), clamping to valid ranges.
+func (t *TextArea) SetCaret(row, col int) {
+	if len(t.lines) == 0 {
+		t.row = 0
+		t.col = 0
+		return
+	}
+	if row < 0 {
+		row = 0
+	}
+	if row >= len(t.lines) {
+		row = len(t.lines) - 1
+	}
+	t.row = row
+	if col < 0 {
+		col = 0
+	}
+	if col > len(t.lines[t.row]) {
+		col = len(t.lines[t.row])
+	}
+	t.col = col
+}
+
+// Scroll returns the vertical scroll offset in visible rows.
+func (t *TextArea) Scroll() int { return t.scroll }
+
 // LineCount returns the number of text lines.
 func (t *TextArea) LineCount() int { return len(t.lines) }
+
+// visibleLines returns the 0-based document line indices currently visible (not collapsed).
+func (t *TextArea) visibleLines() []int {
+	var res []int
+	i := 0
+	for i < len(t.lines) {
+		res = append(res, i)
+		if end, ok := t.folds[i]; ok && end > i {
+			i = end + 1
+		} else {
+			i++
+		}
+	}
+	return res
+}
+
+// VisibleLines returns the slice of document line indices currently visible.
+func (t *TextArea) VisibleLines() []int {
+	return t.visibleLines()
+}
+
+// ToggleFold collapses or expands the fold range starting at startLine.
+func (t *TextArea) ToggleFold(startLine, endLine int) {
+	if t.folds == nil {
+		t.folds = make(map[int]int)
+	}
+	if _, exists := t.folds[startLine]; exists {
+		delete(t.folds, startLine)
+	} else if endLine > startLine {
+		t.folds[startLine] = endLine
+		if t.row > startLine && t.row <= endLine {
+			t.row = startLine
+			t.clampCol()
+		}
+	}
+}
+
+// IsFolded reports whether a fold starting at startLine is currently collapsed.
+func (t *TextArea) IsFolded(startLine int) bool {
+	if t.folds == nil {
+		return false
+	}
+	_, ok := t.folds[startLine]
+	return ok
+}
+
+// FoldedRanges returns a copy of active fold ranges (startLine -> endLine).
+func (t *TextArea) FoldedRanges() map[int]int {
+	out := make(map[int]int, len(t.folds))
+	for k, v := range t.folds {
+		out[k] = v
+	}
+	return out
+}
+
 
 // HandleKey applies an editing key, returning consumed=true when it acted.
 func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
@@ -93,15 +176,45 @@ func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
 		t.moveRight()
 		return true
 	case "up":
-		if t.row > 0 {
-			t.row--
-			t.clampCol()
+		if len(t.folds) > 0 {
+			vis := t.visibleLines()
+			visRow := 0
+			for idx, ln := range vis {
+				if ln == t.row {
+					visRow = idx
+					break
+				}
+			}
+			if visRow > 0 {
+				t.row = vis[visRow-1]
+				t.clampCol()
+			}
+		} else {
+			if t.row > 0 {
+				t.row--
+				t.clampCol()
+			}
 		}
 		return true
 	case "down":
-		if t.row < len(t.lines)-1 {
-			t.row++
-			t.clampCol()
+		if len(t.folds) > 0 {
+			vis := t.visibleLines()
+			visRow := 0
+			for idx, ln := range vis {
+				if ln == t.row {
+					visRow = idx
+					break
+				}
+			}
+			if visRow < len(vis)-1 {
+				t.row = vis[visRow+1]
+				t.clampCol()
+			}
+		} else {
+			if t.row < len(t.lines)-1 {
+				t.row++
+				t.clampCol()
+			}
 		}
 		return true
 	case "home":
@@ -352,37 +465,54 @@ func (t *TextArea) resolveStyle(capture string) Style {
 // shows only when the entire buffer is empty.
 func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 	t.lastH = r.H
-	// Scroll so the caret row is within [scroll, scroll+r.H).
-	if t.row < t.scroll {
-		t.scroll = t.row
+	vis := t.visibleLines()
+	visRow := t.row
+	if len(t.folds) > 0 {
+		visRow = 0
+		for idx, ln := range vis {
+			if ln == t.row {
+				visRow = idx
+				break
+			}
+			if ln > t.row {
+				visRow = max(0, idx-1)
+				break
+			}
+		}
 	}
-	if r.H > 0 && t.row >= t.scroll+r.H {
-		t.scroll = t.row - r.H + 1
+
+	// Scroll so the caret row is within [scroll, scroll+r.H).
+	if visRow < t.scroll {
+		t.scroll = visRow
+	}
+	if r.H > 0 && visRow >= t.scroll+r.H {
+		t.scroll = visRow - r.H + 1
 	}
 	if t.scroll < 0 {
 		t.scroll = 0
 	}
 
 	var spansByLine map[int][]syntax.Span
-	if t.highlighter != nil && r.H > 0 {
-		spansByLine = t.highlighter.HighlightViewport(t.scroll, t.scroll+r.H)
-	}
-
-	lineStartRune := 0
-	for i := 0; i < t.scroll && i < len(t.lines); i++ {
-		lineStartRune += len(t.lines[i]) + 1
+	if t.highlighter != nil && r.H > 0 && len(vis) > 0 {
+		startIdx := min(len(vis)-1, t.scroll)
+		endIdx := min(len(vis)-1, t.scroll+r.H-1)
+		spansByLine = t.highlighter.HighlightViewport(vis[startIdx], vis[endIdx]+1)
 	}
 
 	empty := len(t.lines) == 1 && len(t.lines[0]) == 0
 	for row := 0; row < r.H; row++ {
 		y := r.Y + row
 		c.PaintSurface(Rect{r.X, y, r.W, 1}, Style{})
-		li := t.scroll + row
-		if li >= len(t.lines) {
+		visIdx := t.scroll + row
+		if visIdx >= len(vis) {
 			continue
 		}
-		curLineStartRune := lineStartRune
-		lineStartRune += len(t.lines[li]) + 1
+		li := vis[visIdx]
+
+		curLineStartRune := 0
+		for i := 0; i < li && i < len(t.lines); i++ {
+			curLineStartRune += len(t.lines[i]) + 1
+		}
 
 		if row == 0 && empty && t.Placeholder != "" {
 			c.Write(r.X, y, t.Placeholder, Style{Dim: true})
@@ -390,7 +520,8 @@ func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 		}
 
 		runes := t.lines[li]
-		if len(runes) == 0 {
+		foldedEnd, isFolded := t.folds[li]
+		if len(runes) == 0 && (!isFolded || foldedEnd <= li) {
 			continue
 		}
 
@@ -401,7 +532,10 @@ func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 
 		if len(spans) == 0 {
 			line := TruncateText(string(runes), r.W, "")
-			c.Write(r.X, y, line, Style{})
+			col := r.X + c.Write(r.X, y, line, Style{})
+			if isFolded && foldedEnd > li && col < r.X+r.W {
+				c.Write(col, y, " ... }", Style{Dim: true, FG: ColorIndex(8)})
+			}
 			continue
 		}
 
@@ -447,10 +581,13 @@ func (t *TextArea) Draw(c *Canvas, r Rect, focused bool) {
 			col += n
 			start = end
 		}
+		if isFolded && foldedEnd > li && col < r.X+r.W {
+			c.Write(col, y, " ... }", Style{Dim: true, FG: ColorIndex(8)})
+		}
 	}
 
 	if focused {
-		cy := t.row - t.scroll
+		cy := visRow - t.scroll
 		if cy >= 0 && cy < r.H {
 			c.CursorX = r.X + StringWidth(string(t.lines[t.row][:t.col]))
 			c.CursorY = r.Y + cy
