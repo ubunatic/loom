@@ -1,0 +1,20 @@
+[36m┌[0m [1m[97mLoom Syntax Engine — Milestone 1 Spike Report[0m [36m────────────────────────────────┐[0m
+[36m│[0m [1m[37mSpike Feasibility: Pure-Go / WebAssembly (wazero)[0m                              [36m│[0m
+[36m│[0m [2m[90mEvaluated: github.com/malivvan/tree-sitter (Tree-sitter v0.24.7 + wazero)[0m      [36m│[0m
+[36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
+[36m│[0m  [1m[32m✔  Zero-CGO Execution:[0m CGO_ENABLED=0 builds & runs seamlessly on Go 1.25     [36m│[0m
+[36m│[0m  [1m[32m✔  Wasm Module Load:[0m   ~225 ms startup, 78.3 MB Go heap delta                [36m│[0m
+[36m│[0m  [1m[32m✔  Tree-Sitter Query:[0m   (function_definition) @function parsed & matched     [36m│[0m
+[36m│[0m  [1m[33m⚠  Parse Latencies:[0m     100 lines: 1.9ms │ 1k lines: 18.9ms │ 10k: 230ms      [36m│[0m
+[36m│[0m  [1m[31m✖  Binding Gaps:[0m        Pre-release wrapper lacks ts_tree_edit / Go grammars  [36m│[0m
+[36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
+[36m│[0m [1m[96mRoadmap Status & Next Actions:[0m                                                 [36m│[0m
+[36m│[0m   [#118] [1m[32m✔ COMPLETE[0m   wazero canary spike in internal/canary/treesitter       [36m│[0m
+[36m│[0m   [#119] [1m[33m⏳ IN PROGRESS[0m Decoupled UI-neutral syntax package & LexicalEngine    [36m│[0m
+[36m│[0m   [#120] [2m⏳ PENDING[0m     Production Tree-Sitter engine with pinned Wasm grammars [36m│[0m
+[36m│[0m   [#121] [2m⏳ PENDING[0m     TextArea single-pass viewport rendering integration    [36m│[0m
+[36m│[0m   [#122] [2m⏳ PENDING[0m     AST scope breadcrumbs, code folding & symbol outline   [36m│[0m
+[36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
+[36m│[0m [2m[90mStudy Reference: docs/studies/2026-09-treesitter-syntax-engine.md[0m              [36m│[0m
+[36m└──────────────────────────────────────────────────────────────────────────────┘[0m
+[48;5;236m [1m[32m●[0m [97mMilestone 1 Green[0m  [48;5;239m[1m[97m terra:med [0m[48;5;236m [37mReview: Approved with Engine-Agnostic Guidance[0m [0m
