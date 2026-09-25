@@ -1,6 +1,6 @@
 # 121 — Integrate syntax engine into textedit and TextArea for viewport-bounded AST highlighting
 
-**Status**: Open
+**Status**: Closed — Implemented single-pass viewport-bounded syntax highlighting in TextArea.Draw, connected dynamic language engines in examples/textedit, added tests, and approved in review
 **Priority**: P2
 **Severity**: Minor
 **Category**: Feature / UI Integration
