@@ -171,8 +171,6 @@ In Loom's application event loop contract:
 - Returning `true` from a root widget's `HandleKey` or `HandleMouse` signals a **request to quit the application event loop**, not merely that the event was consumed.
 - Child widgets and application containers (`TextEditApp`, custom layouts) must return `false` after handling ordinary keystrokes, navigation, or mouse clicks.
 - Returning `true` upon handling a keystroke (such as typing a character or clicking a pane) will cause the application to immediately terminate.
-- Reserved exit keys (`F10`, `ctrl-q`) should be intercepted at the application root and explicitly return `true` (or delegate to `Frame.HandleKey(e)` with a quit action), ensuring global quit capability across all focused children.
-
 ## 8. Mouse Coordinate Invariants
 
 Mouse coordinates: events reaching widgets are 0-based, PTY SGR mouse reports are 1-based.
@@ -181,4 +179,28 @@ Containers (`Split`, `Stack`, `Pane`, …) already translate events to the child
 and highlighted the row above the pointer (108). Verify hit-testing black-box with a
 [hover probe](HoverTesting.md).
 In tests locate screen text by runes or display width, never byte offsets.
+
+## 9. Syntax Highlighting and Navigation Engine (`syntax/`, `TextArea`)
+
+Loom provides a UI-neutral syntax highlighting and structural navigation framework (`codeberg.org/ubunatic/loom/syntax`):
+
+### Core Architecture & Separation of Concerns
+- **UI-Neutral Coordinates**: `syntax.Point` (0-based line and column), `syntax.Edit` (delta ranges and replacement text), and `syntax.Span` (named token captures like `"keyword"`, `"string"`, `"comment"`). The syntax engine has zero terminal or UI dependencies.
+- **Engine Contract (`syntax.Engine`)**:
+  - `SetSource(src []byte, path string)`: Full buffer initialization.
+  - `ApplyEdit(e Edit)`: Incremental synchronization for responsive typing.
+  - `HighlightViewport(startLine, endLine int) []Span`: Viewport-bounded token queries preventing full-buffer highlighting overhead.
+- **Theme & Styling (`syntax.ThemeMap`, `syntax.StyleResolver`)**: Maps capture IDs to `loom.Style` (`Fg`, `Bg`, `Attrs`).
+- **Single-Pass Viewport Rendering in `TextArea`**: `loom.TextArea` queries `HighlightViewport` during `Draw(rect, canvas)` and directly formats canvas cells without intermediate multi-pass color overlays.
+
+### Structural Code Navigation & Folding (`syntax.Navigator`, `syntax.OutlineProvider`)
+- **Symbol Outline & Breadcrumbs**: `syntax.Symbol` represents hierarchical code elements (`KindPackage`, `KindFunction`, `KindType`, `KindMethod`, etc.).
+- **Scope Detection (`ScopeAt(point)`)**: Detects enclosing function/type hierarchy for real-time status bar breadcrumbs (`pkg > Type > Method()`).
+- **Code Folding**: `FoldRanges()` computes foldable block boundaries; `TextArea.SetFolded(line, true)` hides collapsed lines while maintaining accurate cursor and line gutter mapping.
+
+### Engines Available
+- **`syntax.LexicalEngine`**: Fast, pure-Go regexp/scanner engine with syntax rules for Go, Markdown, JSON, and YAML.
+- **`syntax.NullEngine`**: Zero-allocation no-op engine for plain text.
+- **Wasm Tree-Sitter Integration**: Extensible through WebAssembly (`wazero`) runtime bindings.
+
 

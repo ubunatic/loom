@@ -33,16 +33,14 @@ Since the 2026-09-20 pass, lean sprints closed most of the former Now and Next
 buckets, and a hover-testing session closed a real mouse-correctness bug in the
 loomoji example.
 
-| Issue | What landed | Why it matters downstream |
-|---|---|---|
-| [107](../issues/107-pty-mouse-test-system-detect-loomoji-hover-vs-highlight-offset-via-rendered-fg-bg-cells.md) | `internal/ptytest` tracks SGR colour cells; black-box loomoji hover probe (measured dx=0, dy=-1) | First PTY test that proves a hover lands on the cell under the pointer; method in [`HoverTesting.md`](HoverTesting.md) |
-| [108](../issues/108-fix-loomoji-hover-highlight-one-row-above-pointer-dy-1.md) | Removed leftover `e.Y-1` on 0-based child-local grid coordinates (aea1135) | Closes the last known violation of the 059 coordinate convention; the 107 probe now guards it, and [`Widgets.md`](Widgets.md) documents the convention |
-| [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md) | `NewWidget` factories for `split`/`tabs`, hosted `loom-demo` mode, headless bench smoke | End-to-end proof of the 057/058 hosted-widget contract |
-| [060](../issues/060-periodic-redraw-without-pane-ownership-ticker-interface-and-pane-invalidate.md), [061](../issues/061-themeable-host-provided-theme-propagation-through-composite-widgets.md) | `Ticker` + `Pane.Invalidate`; `Themeable` propagation through composites | Removes the gates on 063 and 064 |
-| [034](../issues/034-ansi-sgr-escape-sequence-parsing-and-writeansi-canvas-helper.md), [081](../issues/081-expose-treemapcell-layout-models-squarified-partitioning-and-value-based-color-scales.md) | `ParseANSI`/`Canvas.WriteANSI`; `TreemapCell`, squarified layout, `ColorScale` | Removes both gates on 065 |
-| [088](../issues/088-extend-loom-key-capture-coverage-and-sane-action-defaults.md), [092](../issues/092-add-mouse-drag-support-for-scrollbars.md), [093](../issues/093-restrict-filebrowser-mouse-interaction-to-item-content.md), [094](../issues/094-keep-filebrowser-help-modal-in-control-of-keyboard-input.md) | Wider key capture, scrollbar drag, content-only filebrowser hit-testing, modal help keyboard trap | Former Now input/modal work is done |
-| [037](../issues/037-canvas-drawborder-and-drawbox-primitives-with-configurable-boxstyles.md), [051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md), [096](../issues/096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md), [097](../issues/097-add-ansi-viewer-example-with-tui-recording.md) | `DrawBorder`/`DrawBox`, fill-height frames, `textrender` and `ansiviewer` examples | Geometry and rendering primitives, plus visual regression surfaces |
+| [123](../issues/123-bug-textedit-immediate-exit-on-clicks-keystrokes-due-to-unhandled-root-return-contract.md) | Fixed event return loop contract (`false` = continue, `true` = quit), global `F10`/`Ctrl-Q` quit | Solves critical interactive crash across TUI applications |
+| [117](../issues/117-textedit-tui-visual-hierarchy-refinement-and-ansi-mockup.md) | Line gutters, active line indicator, status bar hints matching `.ansi` mockup | Clean visual hierarchy and production TUI standard |
+| [118](../issues/118-spike-tree-sitter-wasm-runtime-in-internal-canary-treesitter.md) | Pure-Go Wasm Tree-Sitter runtime evaluation in `internal/canary/treesitter` | Establishes zero-CGO Wasm parsing benchmark |
+| [119](../issues/119-ui-neutral-syntax-package-ast-point-span-and-tree-sitter-binding.md) | `syntax/` package (`Point`, `Edit`, `Span`, `Engine`, `ThemeMap`, `StyleResolver`, `LexicalEngine`) | UI-neutral coordinates, single-pass highlighting architecture |
+| [121](../issues/121-integrate-syntax-engine-into-loom-textarea-and-textedit.md) | Viewport-bounded single-pass syntax rendering in `loom.TextArea` | Zero-overhead syntax highlighting during rendering |
+| [122](../issues/122-ast-driven-code-navigation-symbol-outline-breadcrumbs-folding-in-textedit.md) | Scope breadcrumbs (`ScopeAt`), symbol outline sidebar (`Navigator`), code folding (`FoldRanges`) | Full structural code editing and navigation |
 
+Earlier pass (2026-09-24): 034, 037, 051, 060, 061, 062, 081, 088, 092, 093, 094, 096, 097, 107, 108.
 Earlier pass (2026-09-20): 036, 038, 057, 058, 059, 085. See the stage table.
 
 ---
