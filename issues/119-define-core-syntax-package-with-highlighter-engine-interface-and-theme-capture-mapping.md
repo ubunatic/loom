@@ -21,19 +21,20 @@ The syntax package should define lightweight data structures for styled spans, i
 ## 2. Technical Specification
 
 1. **Package Location**: `codeberg.org/ubunatic/loom/syntax`.
-2. **Core Types**:
-   - `Point{Row, Column int}`: Position in a source document.
+2. **Core Types (UI-Neutral)**:
+   - `Point{Row, Column int}`: 0-based row and byte column position in a source document.
    - `Edit{StartByte, OldEndByte, NewEndByte int, StartPoint, OldEndPoint, NewEndPoint Point}`: Document edit descriptor for incremental parsers.
-   - `Span{StartCol, EndCol int, Style loom.Style, Capture string}`: Line-local styled token span.
+   - `Span{StartByte, EndByte, StartRune, EndRune int, Capture string}`: Document/line-level token span carrying capture name (e.g. `"keyword"`, `"string"`, `"function"`).
    - `Engine interface`:
      - `Language() string`
      - `NotifyEdit(edit Edit)`
      - `Parse(source []byte) error`
      - `HighlightLine(source []byte, line int) []Span`
      - `HighlightViewport(source []byte, startLine, endLine int) map[int][]Span`
-3. **Capture Mapping & Theming**:
-   - Standard Tree-Sitter capture taxonomy (`@keyword`, `@function`, `@function.call`, `@type`, `@string`, `@number`, `@comment`, `@punctuation.bracket`, etc.).
-   - `ThemeMap`: Resolves capture identifiers to `loom.Style` based on the active Loom theme (`spec/themes.yaml`).
+3. **Decoupled Capture Mapping & Coordinates**:
+   - Standard Tree-Sitter capture taxonomy (`keyword`, `function`, `function.call`, `type`, `string`, `number`, `comment`, `punctuation.bracket`, etc.).
+   - UI adaptors in `loom` resolve capture strings to `loom.Style` (`spec/themes.yaml`) during rendering.
+   - Coordinate conversion functions (`ByteToRune`, `RuneToDisplayCol`, etc.) with comprehensive test cases.
    - Fallback `NullEngine` and `LexicalEngine` for environments where heavy parsing is disabled.
 
 ## 3. Acceptance Criteria
