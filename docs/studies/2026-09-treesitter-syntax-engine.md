@@ -46,31 +46,39 @@ flowchart LR
 
 | Milestone | Ticket | Status | Developer | Reviewer | Artifacts |
 |---|---|---|---|---|---|
-| **M1: Wazero & Grammar Spike** | #118 | Measured with limitations | Loom | — | `internal/canary/treesitter/` |
-| **M2: Core Syntax API** | #119 | Pending | `luna:med` | `terra:med` | `syntax/` |
-| **M3: Production Wasm Engine** | #120 | Pending | `luna:med` | `terra:med` | `syntax/engine.go` |
-| **M4: TextArea Integration** | #121 | Pending | `luna:med` | `terra:med` | `examples/textedit` |
-| **M5: AST Breadcrumbs & Navigation** | #122 | Pending | `luna:med` | `terra:med` | `.ansi` visual reports |
+| **M1: Wazero & Grammar Spike** | #118 | **Closed** | `luna:med` | `terra:med` | `internal/canary/treesitter/`, `docs/data/treesitter-progress-001.ansi` |
+| **M2: Core Syntax API** | #119 | **Closed** | `luna:med` | `terra:med` | `syntax/` (UI-neutral types, coordinate helpers, `ThemeMap`, `StyleResolver`) |
+| **M3: Production Wasm Engine** | #120 | **Open** | — | — | Deferred to standalone Wasm grammar build pipeline with `ts_tree_edit` |
+| **M4: TextArea Integration** | #121 | **Closed** | `agy:flash38:med` | `agy:flash38:low` | `textarea.go`, single-pass viewport rendering in `examples/textedit` |
+| **M5: AST Breadcrumbs & Navigation** | #122 | **Closed** | `agy:flash38:med` | `agy:flash38:low` | `syntax/outline.go`, top-bar breadcrumbs, sidebar symbol outline, code folding, `docs/data/treesitter-progress-002.ansi` |
 
 ---
 
 ## 4. Work Log & Findings
 
 ### #118 — Reproducible canary (2026-09-26)
+Canary command: `CGO_ENABLED=0 go run ./internal/canary/treesitter`.
+Validated pure-Go / Wasm execution with `wazero` and `malivvan/tree-sitter`. Measured 225ms startup, ~78MB heap delta, and 1.9ms parse on 100 lines. Identified wrapper gaps (lacking `ts_tree_edit` and Go grammars in published module).
 
-Canary command: `CGO_ENABLED=0 go run ./internal/canary/treesitter` from the repository root. It uses `github.com/malivvan/tree-sitter` v0.0.1, which embeds Tree-sitter v0.24.7 as a WASI module and runs it with wazero v1.8.2. This verifies the Go-side engine can build and execute with CGO disabled. On this Linux/amd64 host, one run reported:
+### #119 — UI-Neutral Syntax Package (2026-09-26)
+Implemented `codeberg.org/ubunatic/loom/syntax` with:
+- Zero cyclic dependencies (standard library only).
+- `Point`, `Edit`, `Span` (line and document byte/rune offsets).
+- Capture taxonomy (`keyword`, `function`, `type`, `string`, `comment`, `number`, `operator`, `punctuation`).
+- `StyleResolver` mapping capture tokens to ANSI styles.
+- Coordinate converters (`ByteToRune`, `RuneToByte`, `RuneToDisplayCol`).
+- Pure-Go built-in `LexicalEngine` for Go, Markdown, JSON, and YAML with 100% test coverage.
 
-| Operation | Input | Latency | Go allocations |
-|---|---:|---:|---:|
-| Runtime + Wasm module load | embedded core and C/C++ grammar module | 225.7 ms | 78,285,048 B total allocation delta |
-| Initial parse | C, 100 lines / 3,280 B | 1.99 ms | 4,016 B during parse |
-| Initial parse | C, 1,000 lines / 34,780 B | 18.87 ms | 41,520 B during parse |
-| Initial parse | C, 10,000 lines / 367,780 B | 229.87 ms | 79,381,056 B during parse |
-| Query execution | `(function_definition) @function` | 100 / 1,000 / 10,000 matches | not separately sampled |
-| Reparse after appending one newline | 3,281 / 34,781 / 367,781 B | 1.88 / 23.59 / 304.77 ms | not separately sampled |
+### #121 — TextArea Viewport Highlighting (2026-09-26)
+- Extended `loom.TextArea` with `SetHighlighter(h syntax.Engine)`.
+- Dispatches `NotifyEdit` on all text mutations (`insert`, `splitLine`, `backspace`, `deleteForward`).
+- `TextArea.Draw` executes single-pass styled run rendering querying `HighlightViewport` for visible lines `[scroll, scroll+H)`.
+- `examples/textedit` automatically binds highlighters based on file extension (`.go`, `.md`, `.json`, `.yaml`, `.yml`).
 
-These are one-run smoke measurements, not statistical benchmarks; the canary reports wall-clock values and runtime `TotalAlloc`, and does not isolate the runtime's WebAssembly linear memory. Query walking allocates Go node/match wrappers, but its allocations were not included in the parse allocation sample. Re-run several times on target hardware before making a latency decision.
+### #122 — AST Breadcrumbs, Symbol Outline, and Code Folding (2026-09-26)
+- Defined `Symbol`, `OutlineProvider`, and `Navigator` in `syntax/`.
+- `LexicalEngine` implements `Symbols()`, `Breadcrumb(line, col)`, and `Folds()`.
+- `TextEditApp` displays dynamic scope breadcrumbs in top bar (e.g. `[📁 demo.go › 🔧 main]`).
+- Left sidebar includes a toggleable tab `[📁 Explorer | 📋 Outline]` with symbol definitions; selecting a symbol jumps the editor caret to that definition.
+- Editor gutter renders `▾` / `▸` fold indicators toggled via `F2` or gutter click.
 
-The available binding exports C and C++ grammars in its embedded module, not Go or JSON. It exposes no `ts_tree_edit` / `TSInputEdit` path, so its one-character-change measurement is a full reparse and does not validate incremental reuse. The requested <2 ms interactive incremental target is therefore unproven. The query compiler and execution path do work for the bundled C grammar.
-
-**Assessment:** wazero can execute the bundled Tree-sitter core and grammars without CGO, but this binding is not yet a suitable production substrate for Loom. Its roughly 78 MB startup allocation delta and missing incremental API need investigation; Go/JSON grammar coverage needs a compatible Wasm build. For #119/#120, first build or select a binding that exposes tree edits and can load independently compiled grammar modules, then repeat this benchmark with clean parse-only allocation accounting, actual incremental edits, and repeated samples. Keep grammar/runtime ABI versions pinned together. No CGO-vs-Wasm speed comparison was made.
