@@ -165,9 +165,20 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
 
+## 7. Root Event Loop Contract: Quit vs Consumption Invariants
+
+In Loom's application event loop contract:
+- Returning `true` from a root widget's `HandleKey` or `HandleMouse` signals a **request to quit the application event loop**, not merely that the event was consumed.
+- Child widgets and application containers (`TextEditApp`, custom layouts) must return `false` after handling ordinary keystrokes, navigation, or mouse clicks.
+- Returning `true` upon handling a keystroke (such as typing a character or clicking a pane) will cause the application to immediately terminate.
+- Reserved exit keys (`F10`, `ctrl-q`) should be intercepted at the application root and explicitly return `true` (or delegate to `Frame.HandleKey(e)` with a quit action), ensuring global quit capability across all focused children.
+
+## 8. Mouse Coordinate Invariants
+
 Mouse coordinates: events reaching widgets are 0-based, PTY SGR mouse reports are 1-based.
 Containers (`Split`, `Stack`, `Pane`, …) already translate events to the child's local
 0-based cells (059). Never subtract 1 again in widget code: loomoji's grid did (`e.Y-1`)
 and highlighted the row above the pointer (108). Verify hit-testing black-box with a
 [hover probe](HoverTesting.md).
 In tests locate screen text by runes or display width, never byte offsets.
+
