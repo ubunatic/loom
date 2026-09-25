@@ -1,6 +1,6 @@
 # 122 — Add AST-driven breadcrumbs, symbol outline, and code folding to textedit
 
-**Status**: Open
+**Status**: Closed — implemented in b23e606
 **Priority**: P3
 **Severity**: Minor
 **Category**: Feature / Ergonomics
