@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
 )
 
@@ -51,8 +52,12 @@ type editorWidget struct {
 
 func (ew *editorWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	focused := ew.app.activeFocus == focusEditor
-	ew.app.editor.Draw(c, r, focused)
-	ew.app.applySyntaxHighlighting(c, r)
+	textRect := loom.Rect{X: r.X + 5, Y: r.Y, W: max(0, r.W-5), H: r.H}
+	ew.app.editor.Draw(c, textRect, focused)
+	for i := 0; i < r.H; i++ {
+		c.Write(r.X, r.Y+i, fmt.Sprintf("%2d │ ", i+1), loom.Style{Dim: true, FG: loom.ColorIndex(8)})
+	}
+	ew.app.applySyntaxHighlighting(c, textRect)
 }
 
 func (ew *editorWidget) HandleKey(e loom.KeyEvent) bool {
@@ -99,26 +104,30 @@ func (fb *fileBrowserWidget) reload() {
 
 func (fb *fileBrowserWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{})
-	c.Write(r.X, r.Y, "Files", loom.Style{Bold: true})
+	c.Write(r.X, r.Y, "📁 Explorer", loom.Style{Bold: true, FG: loom.ColorIndex(7)})
 	for i, entry := range fb.files {
 		if i+1 >= r.H {
 			break
 		}
 		prefix := "  "
-		if i == fb.selected {
-			prefix = "> "
-		}
 		name := entry.Name()
 		if entry.IsDir() {
-			name += "/"
+			prefix = "▸ "
+		}
+		if i == fb.selected {
+			prefix = "▸ "
 		}
 		style := loom.Style{}
 		if i == fb.selected {
-			style = loom.Style{Bold: true, FG: loom.ColorIndex(4)} // Cyan
+			style = loom.Style{Bold: true, FG: loom.ColorIndex(15), BG: loom.ColorIndex(24)}
 		} else if entry.IsDir() {
 			style = loom.Style{FG: loom.ColorIndex(4)}
 		}
-		c.Write(r.X, r.Y+i+1, prefix+name, style)
+		line := loom.TruncateText(prefix+name, r.W, "")
+		if i == fb.selected {
+			line += strings.Repeat(" ", max(0, r.W-measure.StringWidth(line)))
+		}
+		c.Write(r.X, r.Y+i+1, line, style)
 	}
 }
 
@@ -185,13 +194,13 @@ func newTerminal(app *TextEditApp) *terminalWidget {
 		input: loom.NewTextInput(""),
 		app:   app,
 	}
-	t.input.Prompt = "$ "
+	t.input.Prompt = "❯ "
 	return t
 }
 
 func (tw *terminalWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{})
-	c.Write(r.X, r.Y, "Terminal Output", loom.Style{Bold: true, Dim: true})
+	c.Write(r.X, r.Y, "💻 Terminal", loom.Style{Bold: true, FG: loom.ColorIndex(7)})
 	maxLogs := r.H - 2
 	if maxLogs < 0 {
 		maxLogs = 0
@@ -199,12 +208,22 @@ func (tw *terminalWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	startLog := max(0, len(tw.logs)-maxLogs)
 	visibleLogs := tw.logs[startLog:]
 	for i, logLine := range visibleLogs {
-		c.Write(r.X, r.Y+1+i, logLine, loom.Style{FG: loom.ColorIndex(2)}) // Green logs
+		style := loom.Style{FG: loom.ColorIndex(7)}
+		if strings.HasPrefix(logLine, "$ ") {
+			style = loom.Style{FG: loom.ColorIndex(2), Bold: true}
+		} else if strings.HasPrefix(logLine, "Loom Embedded") || strings.HasPrefix(logLine, "Type ") {
+			style = loom.Style{FG: loom.ColorIndex(8), Dim: true}
+		}
+		c.Write(r.X, r.Y+1+i, logLine, style)
 	}
 
 	if r.H > 1 {
 		inputRect := loom.Rect{X: r.X, Y: r.Y + r.H - 1, W: r.W, H: 1}
 		focused := tw.app.activeFocus == focusTerminal
+		c.Write(inputRect.X, inputRect.Y, "❯ ", loom.Style{FG: loom.ColorIndex(2), Bold: true})
+		inputRect.X += 2
+		inputRect.W = max(0, inputRect.W-2)
+		tw.input.Prompt = ""
 		tw.input.Draw(c, inputRect, focused)
 	}
 }
@@ -276,7 +295,7 @@ func NewApp() *TextEditApp {
 		mruList:     []string{"demo.go", "README.md", "go.mod"},
 		showBrowser: true,
 		activeFocus: focusEditor,
-		statusMsg:   "Ready. C-s: Save • C-S-s: SaveAs • C-o: Open • C-c/C-v/C-x: Clip • C-b: Sidebar",
+		statusMsg:   "Ready",
 	}
 
 	initialContent := `package main
@@ -315,8 +334,15 @@ func main() {
 			{ID: "main", Title: "Text Editor Workspace", Dynamic: true, FillHeight: true, Border: border, Child: app.hSplit},
 		},
 		Actions: []loom.FrameAction{
-			{ID: "quit", Action: "quit", Key: "q"},
+			{ID: "save", Action: "save", Key: "ctrl-s", Hint: "C-s: Save"},
+			{ID: "open", Action: "open", Key: "ctrl-o", Hint: "C-o: Open"},
+			{ID: "clip", Action: "clip", Key: "ctrl-c", Hint: "C-c/v/x: Clip"},
+			{ID: "sidebar", Action: "sidebar", Key: "ctrl-b", Hint: "C-b: Sidebar"},
+			{ID: "focus", Action: "focus", Key: "tab", Hint: "Tab: Focus"},
+			{ID: "quit_f10", Action: "quit", Key: "f10", Hint: "F10/C-q: Quit"},
+			{ID: "quit_ctrl_q", Action: "quit", Key: "ctrl-q"},
 		},
+		ControlSeparator: " • ",
 	}
 
 	return app
@@ -326,14 +352,14 @@ func main() {
 func (app *TextEditApp) OpenFile(path string) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		app.statusMsg = "Error reading " + path + ": " + err.Error()
+		app.statusMsg = "Error reading " + filepath.Base(path) + ": " + err.Error()
 		return
 	}
 	app.activePath = path
 	app.editor.SetValue(string(data))
 	app.modified = false
 	app.touchMRU(path)
-	app.statusMsg = "Opened " + path
+	app.statusMsg = "Opened " + filepath.Base(path)
 }
 
 // SaveFile writes active editor contents to disk.
@@ -352,7 +378,7 @@ func (app *TextEditApp) SaveFile(path string) {
 	app.activePath = path
 	app.modified = false
 	app.touchMRU(path)
-	app.statusMsg = "Saved " + path
+	app.statusMsg = "Saved " + filepath.Base(path)
 }
 
 func (app *TextEditApp) touchMRU(path string) {
@@ -369,15 +395,6 @@ func (app *TextEditApp) touchMRU(path string) {
 }
 
 func (app *TextEditApp) Draw(c *loom.Canvas, r loom.Rect) {
-	modStr := ""
-	if app.modified {
-		modStr = " *"
-	}
-	mruStr := strings.Join(app.mruList, ", ")
-	if len(mruStr) > 40 {
-		mruStr = mruStr[:37] + "..."
-	}
-
 	focusName := "Editor"
 	switch app.activeFocus {
 	case focusBrowser:
@@ -386,9 +403,56 @@ func (app *TextEditApp) Draw(c *loom.Canvas, r loom.Rect) {
 		focusName = "Terminal"
 	}
 
-	app.frame.Boxes[0].Title = fmt.Sprintf("File: %s%s  | MRU: [%s]  | Focus: %s", app.activePath, modStr, mruStr, focusName)
-	app.frame.Status = app.statusMsg
+	app.frame.Boxes[0].Title = ""
+	app.frame.Status = ""
 	app.frame.Draw(c, r)
+	if r.H == 0 || r.W == 0 {
+		return
+	}
+	// Header badges are drawn over the frame title row.
+	c.Fill(loom.Rect{X: r.X, Y: r.Y, W: r.W, H: 1}, loom.Cell{Text: " ", Style: loom.Style{FG: loom.ColorIndex(6)}})
+	x := r.X + 2
+	x += c.Write(x, r.Y, "Loom TextEdit", loom.Style{FG: loom.ColorIndex(7), Bold: true}) + 2
+	file := filepath.Base(app.activePath)
+	if file == "." || file == "" {
+		file = "untitled"
+	}
+	mark := ""
+	if app.modified {
+		mark = " ●"
+	}
+	x += c.Write(x, r.Y, "["+file+mark+"]", loom.Style{FG: loom.ColorIndex(7), Bold: true, BG: loom.ColorIndex(238)}) + 2
+	x += c.Write(x, r.Y, "[Focus: ", loom.Style{FG: loom.ColorIndex(7), BG: loom.ColorIndex(238)})
+	x += c.Write(x, r.Y, focusName, loom.Style{FG: loom.ColorIndex(14), Bold: true, BG: loom.ColorIndex(238)})
+	x += c.Write(x, r.Y, "]", loom.Style{FG: loom.ColorIndex(7), BG: loom.ColorIndex(238)}) + 2
+	c.Write(x, r.Y, "[v1.0]", loom.Style{FG: loom.ColorIndex(8), Dim: true})
+	if r.H > 1 {
+		app.drawStatus(c, loom.Rect{X: r.X, Y: r.Y + r.H - 1, W: r.W, H: 1})
+	}
+}
+
+func (app *TextEditApp) drawStatus(c *loom.Canvas, r loom.Rect) {
+	bg := loom.Style{BG: loom.ColorIndex(236)}
+	c.Fill(r, loom.Cell{Text: " ", Style: bg})
+	x := r.X
+	label := "Ready"
+	if app.statusMsg != "" {
+		label = app.statusMsg
+	}
+	if app.modified {
+		label = "Modified"
+	}
+	pill := "● " + label
+	x += c.Write(x, r.Y, loom.TruncateText(" "+pill+" ", min(r.W, 22), ""), loom.Style{FG: loom.ColorIndex(2), BG: loom.ColorIndex(236), Bold: true}) + 1
+	keys := [][2]string{{"C-s", "Save"}, {"C-o", "Open"}, {"C-c/v", "Clip"}, {"Tab", "Focus"}, {"C-b", "Tree"}, {"F10", "Quit"}}
+	for _, key := range keys {
+		text := " " + key[0] + " " + key[1] + " "
+		if x+len([]rune(text)) > r.X+r.W {
+			break
+		}
+		c.Write(x, r.Y, text, loom.Style{FG: loom.ColorIndex(15), BG: loom.ColorIndex(239), Bold: true})
+		x += len([]rune(text)) + 1
+	}
 }
 
 func (app *TextEditApp) applySyntaxHighlighting(c *loom.Canvas, r loom.Rect) {
@@ -416,6 +480,39 @@ func (app *TextEditApp) applySyntaxHighlighting(c *loom.Canvas, r loom.Rect) {
 				}
 			}
 		}
+		// Highlight quoted strings, including escaped quotes.
+		for i := 0; i < len(line); {
+			if line[i] != '"' {
+				i++
+				continue
+			}
+			start, j := i, i+1
+			for j < len(line) {
+				if line[j] == '\\' {
+					j += 2
+					continue
+				}
+				if line[j] == '"' {
+					j++
+					break
+				}
+				j++
+			}
+			if r.X+start < r.X+r.W {
+				c.Write(r.X+start, y, line[start:min(j, len(line))], loom.Style{FG: loom.ColorIndex(2)})
+			}
+			i = j
+		}
+		if idx := strings.Index(line, "func "); idx >= 0 {
+			start := idx + 5
+			end := start
+			for end < len(line) && (line[end] == '_' || line[end] >= 'a' && line[end] <= 'z' || line[end] >= 'A' && line[end] <= 'Z' || line[end] >= '0' && line[end] <= '9') {
+				end++
+			}
+			if end > start {
+				c.Write(r.X+start, y, line[start:end], loom.Style{FG: loom.ColorIndex(15), Bold: true})
+			}
+		}
 		// Comment highlight
 		if cIdx := strings.Index(line, "//"); cIdx >= 0 {
 			if r.X+cIdx < r.X+r.W {
@@ -426,15 +523,20 @@ func (app *TextEditApp) applySyntaxHighlighting(c *loom.Canvas, r loom.Rect) {
 }
 
 func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
+	// F10 and Ctrl-Q always exit immediately, regardless of focus.
+	if e.Is("f10", "F10", "ctrl-q", "ctrl-Q") {
+		return true
+	}
+
 	// Global Keybindings
 	switch {
 	case e.Is("ctrl-s", "ctrl-S"):
 		app.SaveFile(app.activePath)
-		return true
+		return false
 	case e.Is("ctrl-shift-s"):
 		saveAsPath := app.activePath + ".bak"
 		app.SaveFile(saveAsPath)
-		return true
+		return false
 	case e.Is("ctrl-o"):
 		// Open next file from MRU list
 		if len(app.mruList) > 1 {
@@ -443,7 +545,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 		} else {
 			app.statusMsg = "MRU list empty"
 		}
-		return true
+		return false
 	case e.Is("ctrl-c"):
 		val := app.editor.Value()
 		lines := strings.Split(val, "\n")
@@ -452,7 +554,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.clipboard = lines[row]
 			app.statusMsg = "Copied line to clipboard"
 		}
-		return true
+		return false
 	case e.Is("ctrl-v"):
 		if app.clipboard != "" {
 			for _, ch := range app.clipboard {
@@ -461,7 +563,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.modified = true
 			app.statusMsg = "Pasted from clipboard"
 		}
-		return true
+		return false
 	case e.Is("ctrl-x"):
 		val := app.editor.Value()
 		lines := strings.Split(val, "\n")
@@ -473,7 +575,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.modified = true
 			app.statusMsg = "Cut line to clipboard"
 		}
-		return true
+		return false
 	case e.Is("ctrl-b"):
 		app.showBrowser = !app.showBrowser
 		if app.showBrowser {
@@ -483,34 +585,38 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.hSplit.SetRatio(0.0)
 			app.statusMsg = "Sidebar collapsed"
 		}
-		return true
+		return false
 	case e.Is("tab", "f6"):
 		app.activeFocus = (app.activeFocus + 1) % 3
 		app.statusMsg = fmt.Sprintf("Switched focus to %v", app.activeFocus)
-		return true
+		return false
 	}
 
 	// Dispatch to active focus area
 	switch app.activeFocus {
 	case focusBrowser:
 		if fbHandled := app.fileBrowser.HandleKey(e); fbHandled {
-			return true
+			return false
 		}
 	case focusTerminal:
 		if termHandled := app.terminal.HandleKey(e); termHandled {
-			return true
+			return false
 		}
 	case focusEditor:
 		if edHandled := app.editorW.HandleKey(e); edHandled {
-			return true
+			return false
 		}
 	}
 
-	return app.frame.HandleKey(e)
+	// The frame has its own focus tree, which is not the same as activeFocus.
+	// Forwarding an unhandled key would send it to a second widget and turn that
+	// widget's consumed result into quit.
+	return false
 }
 
 func (app *TextEditApp) HandleMouse(e loom.MouseEvent) bool {
-	return app.frame.HandleMouse(e)
+	app.frame.HandleMouse(e)
+	return false
 }
 
 // PaneRequest declares terminal requirements.

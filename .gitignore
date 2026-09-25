@@ -11,3 +11,6 @@ dist/
 
 # random
 comments.txt
+
+# vendors
+.vendor

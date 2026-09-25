@@ -60,8 +60,8 @@ func TestRegisteredExamplesPTYSmoke(t *testing.T) {
 			time.Sleep(50 * time.Millisecond)
 			assertRowsFit(t, s, "interactive screen")
 			quit := "q"
-			if example.Name == "filebrowser" {
-				quit = "\x11" // Ctrl-Q; q starts the file filter in this app.
+			if example.Name == "filebrowser" || example.Name == "textedit" {
+				quit = "\x11" // Ctrl-Q; q starts the file filter in filebrowser or is typed into editor in textedit.
 			}
 			s.Send(quit)
 			if err := s.Wait(5 * time.Second); err != nil {

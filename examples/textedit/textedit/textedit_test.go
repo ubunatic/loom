@@ -23,8 +23,14 @@ func TestNewAppAndRender(t *testing.T) {
 		t.Errorf("rendered %d lines, want 24", len(frames))
 	}
 	firstLine := frames[0]
-	if !strings.Contains(firstLine, "Text Editor") {
-		t.Errorf("expected Title 'Text Editor' in frame line 0: %q", firstLine)
+	if !strings.Contains(firstLine, "Loom TextEdit") {
+		t.Errorf("expected Loom TextEdit title in frame line 0: %q", firstLine)
+	}
+	joined := strings.Join(frames, "\n")
+	for _, want := range []string{"Loom TextEdit", "demo.go", "Focus: ", "Explorer", "1 │", "package", "💻 Terminal", "❯"} {
+		if !strings.Contains(joined, want) {
+			t.Errorf("render missing %q", want)
+		}
 	}
 }
 
@@ -109,6 +115,78 @@ func TestKeybindingsClipboardAndSidebar(t *testing.T) {
 	app.HandleKey(loom.KeyEvent{Key: "tab"})
 	if app.activeFocus == f0 {
 		t.Errorf("Tab did not change focus area")
+	}
+}
+
+func TestInputDoesNotTreatConsumedEventsAsQuit(t *testing.T) {
+	app := NewApp()
+	original := app.editor.Value()
+	app.activeFocus = focusBrowser
+
+	if app.HandleKey(loom.KeyEvent{Text: "x"}) {
+		t.Fatal("ordinary key was treated as a quit request")
+	}
+	if app.editor.Value() != original {
+		t.Fatal("key for the file browser was dispatched a second time to the editor")
+	}
+
+	loom.Render(app, 80, 24)
+	if app.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 5}) {
+		t.Fatal("mouse click was treated as a quit request")
+	}
+
+	// When browser is focused, 'q' is unhandled and does not quit
+	if app.HandleKey(loom.KeyEvent{Text: "q"}) {
+		t.Fatal("unhandled 'q' in browser quit unexpectedly")
+	}
+}
+
+func TestF10AndCtrlQAlwaysQuitWhenEditorFocused(t *testing.T) {
+	app := NewApp()
+	app.activeFocus = focusEditor
+	valBefore := app.editor.Value()
+
+	// Typing 'q' into editor should insert 'q' without quitting
+	if app.HandleKey(loom.KeyEvent{Text: "q"}) {
+		t.Fatal("typing 'q' in editor caused app to quit")
+	}
+	if app.editor.Value() == valBefore || !strings.Contains(app.editor.Value(), "q") {
+		t.Fatal("typing 'q' in editor did not update buffer")
+	}
+
+	// F10 and Ctrl-Q must quit even with focus in editor
+	if !app.HandleKey(loom.KeyEvent{Key: "f10"}) {
+		t.Fatal("F10 did not quit when editor was focused")
+	}
+	if !app.HandleKey(loom.KeyEvent{Key: "ctrl-q"}) {
+		t.Fatal("Ctrl-Q did not quit when editor was focused")
+	}
+}
+
+func TestHotkeysStayVisibleAfterSave(t *testing.T) {
+	app := NewApp()
+	tmpFile := filepath.Join(t.TempDir(), "test.txt")
+	app.SaveFile(tmpFile)
+
+	frames := loom.Render(app, 120, 24)
+	statusLine := frames[len(frames)-1]
+	if !strings.Contains(statusLine, "Saved") {
+		t.Fatalf("status line did not report Saved: %q", statusLine)
+	}
+	if !strings.Contains(statusLine, "C-s Save") || !strings.Contains(statusLine, "F10 Quit") {
+		t.Fatalf("status line did not keep hotkeys visible after save: %q", statusLine)
+	}
+}
+
+func TestEditorGutterAndExplorerSelection(t *testing.T) {
+	app := NewApp()
+	frames := loom.Render(app, 100, 24)
+	all := strings.Join(frames, "\n")
+	if !strings.Contains(all, " 1 │") || !strings.Contains(all, " 2 │") {
+		t.Fatalf("editor line number gutter missing: %q", frames[1])
+	}
+	if !strings.Contains(all, "▸ ") {
+		t.Fatalf("explorer directory/file indicator missing")
 	}
 }
 
