@@ -1,6 +1,6 @@
 # 117 — Polish textedit TUI matching visual design mockup
 
-**Status**: Open
+**Status**: Closed — Implemented line gutters, syntax highlighting, explorer selection, terminal prompt styling, top status pills, and bottom keycaps matching docs/data/textedit-design-001.ansi
 **Priority**: P2
 **Severity**: Minor
 **Category**: Enhancement
