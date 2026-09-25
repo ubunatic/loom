@@ -1,6 +1,6 @@
 # 118 — Spike pure Go / Wasm (wazero) Tree-Sitter runtime and grammar execution
 
-**Status**: Open
+**Status**: Closed — Canary executed in internal/canary/treesitter; measured wazero Tree-Sitter load, parse, and query metrics in docs/studies/2026-09-treesitter-syntax-engine.md; reviewed by terra:med
 **Priority**: P1
 **Severity**: Moderate
 **Category**: Research / Architecture / Canary
