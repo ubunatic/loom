@@ -1,6 +1,6 @@
 # 119 — Define core syntax package with highlighter engine interface and theme capture mapping
 
-**Status**: Open
+**Status**: Closed — Implemented syntax subpackage with Point, Edit, Span, Engine interface, capture taxonomy, StyleResolver, coordinate helpers, NullEngine, and pure-Go LexicalEngine with 100% tests
 **Priority**: P2
 **Severity**: Minor
 **Category**: Architecture / API Design
