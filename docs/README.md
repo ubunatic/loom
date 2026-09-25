@@ -48,5 +48,6 @@
 | [studies/2026-09-21-lean-sprint-session-report.md](studies/2026-09-21-lean-sprint-session-report.md) | Lean Sprint Session Report: Roadmap Items with Cheap Developer Agents |
 | [studies/2026-09-24-emoji-width-measurement-consolidation-and-vte-modes.md](studies/2026-09-24-emoji-width-measurement-consolidation-and-vte-modes.md) | Emoji Width Measurement Consolidation and VTE Modes |
 | [studies/2026-09-24-roadmap-now-sprint-099-101-105.md](studies/2026-09-24-roadmap-now-sprint-099-101-105.md) | Roadmap "Now" sprint: 099, 101, 105 |
+| [studies/2026-09-treesitter-syntax-engine.md](studies/2026-09-treesitter-syntax-engine.md) | Pure-Go / Wasm (wazero) Tree-Sitter Syntax Engine for Loom |
 
 Study files are the source of truth for this table.
