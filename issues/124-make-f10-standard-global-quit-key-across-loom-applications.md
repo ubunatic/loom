@@ -1,6 +1,6 @@
 # 124 — Make F10 standard global quit key across loom applications
 
-**Status**: Open
+**Status**: Closed — pane-level global F10 quit with opt-out, focus-state tests, hint audit (4a1b668)
 **Priority**: P1 (High)
 **Severity**: Normal
 **Category**: Architecture / Usability
