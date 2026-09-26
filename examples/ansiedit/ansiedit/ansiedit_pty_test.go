@@ -67,3 +67,39 @@ func TestAnsiEditPTYTypingAndSaving(t *testing.T) {
 		t.Fatalf("ansiedit did not exit: %v", err)
 	}
 }
+
+func TestAnsiEditPTYArrowNavigationDoesNotQuit(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "nav.ansi")
+	bin := buildAnsiEdit(t)
+
+	s := ptytest.Start(t, 80, 24, bin, file)
+	s.WaitFor("Loom AnsiEdit", 5*time.Second)
+
+	// Send extensive arrow and navigation keys (Up, Down, Left, Right, Tab, Backspace)
+	for i := 0; i < 5; i++ {
+		s.Send("\x1b[A") // Up
+		s.Send("\x1b[B") // Down
+		s.Send("\x1b[C") // Right
+		s.Send("\x1b[D") // Left
+		s.Send("\t")     // Tab (focus switch)
+		s.Send("\x7f")   // Backspace
+	}
+
+	time.Sleep(200 * time.Millisecond)
+
+	// Verify the process is still running and drawing
+	screen := strings.Join(s.Screen(), "\n")
+	if !strings.Contains(screen, "Loom AnsiEdit") {
+		t.Fatalf("expected AnsiEdit to remain running after arrow navigation, got screen:\n%s", screen)
+	}
+
+	// Exit cleanly with F10
+	s.Send("\x1b[21~")
+	if err := s.Wait(3 * time.Second); err != nil {
+		s.Send("\x11") // Ctrl-Q fallback
+		if err2 := s.Wait(2 * time.Second); err2 != nil {
+			t.Fatalf("ansiedit did not exit cleanly: %v / %v", err, err2)
+		}
+	}
+}
+

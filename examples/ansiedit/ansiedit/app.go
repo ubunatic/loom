@@ -608,45 +608,62 @@ func (app *AnsiEditApp) drawFooter(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-// HandleKey handles keyboard events.
-func (app *AnsiEditApp) HandleKey(e loom.KeyEvent) bool {
+// ConsumeKey processes keyboard events, returning an EventResult value struct.
+// Navigation and editing keys are consumed without quitting.
+// Explicit exit keys (F10, Ctrl-Q) signal quit.
+func (app *AnsiEditApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	// Global quit keys
+	if e.Is("f10", "ctrl-q") {
+		app.quit = true
+		return loom.QuitResult()
+	}
+
 	// Global keybindings
 	switch {
-	case e.Is("f10", "ctrl-q"):
-		app.quit = true
-		return true
 	case e.Is("f1"):
 		app.panelMode = PanelInfo
-		return true
+		return loom.Handled()
 	case e.Is("f2"):
 		app.panelMode = PanelPalette
-		return true
+		return loom.Handled()
 	case e.Is("f8"):
 		app.panelMode = PanelKeys
-		return true
+		return loom.Handled()
 	case e.Is("f9"):
 		app.panelMode = PanelTheme
-		return true
+		return loom.Handled()
 	case e.Is("tab"):
 		if app.activeFocus == FocusCanvas {
 			app.activeFocus = FocusSidePanel
 		} else {
 			app.activeFocus = FocusCanvas
 		}
-		return true
+		return loom.Handled()
 	case e.Is("ctrl-s"):
 		if app.buffer.Path() != "" {
 			_ = app.buffer.SaveFile(app.buffer.Path())
 			app.statusMsg = "Saved file successfully"
 		}
-		return true
+		return loom.Handled()
 	}
 
 	// Focus-specific key handling
 	if app.activeFocus == FocusSidePanel {
-		return app.handleSidePanelKey(e)
+		if app.handleSidePanelKey(e) {
+			return loom.Handled()
+		}
+		return loom.Ignored()
 	}
-	return app.handleCanvasKey(e)
+	if app.handleCanvasKey(e) {
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+// HandleKey handles keyboard events and reports whether the event loop should quit.
+func (app *AnsiEditApp) HandleKey(e loom.KeyEvent) bool {
+	res := app.ConsumeKey(e)
+	return res.Quit
 }
 
 func (app *AnsiEditApp) handleSidePanelKey(e loom.KeyEvent) bool {

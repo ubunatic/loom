@@ -181,3 +181,67 @@ func TestThemeSwitching(t *testing.T) {
 		t.Fatalf("expected theme to change on down arrow")
 	}
 }
+
+func TestAnsiEditNavigationKeysNeverQuit(t *testing.T) {
+	buf := NewBuffer(54, 22)
+	app := NewAnsiEditApp(buf)
+
+	navKeys := []loom.KeyEvent{
+		{Key: "up"},
+		{Key: "down"},
+		{Key: "left"},
+		{Key: "right"},
+		{Key: "ctrl-up"},
+		{Key: "ctrl-down"},
+		{Key: "ctrl-left"},
+		{Key: "ctrl-right"},
+		{Key: "tab"},
+		{Key: "backspace"},
+		{Key: "delete"},
+		{Key: "insert"},
+		{Key: "enter"},
+		{Key: "f1"},
+		{Key: "f2"},
+		{Key: "f8"},
+		{Key: "f9"},
+		{Key: "ctrl-s"},
+		{Text: "a"},
+		{Text: " "},
+	}
+
+	for _, k := range navKeys {
+		// ConsumeKey must return Consumed: true, Quit: false
+		res := app.ConsumeKey(k)
+		if !res.Consumed || res.Quit {
+			t.Errorf("ConsumeKey(%+v) = %+v, want Consumed:true, Quit:false", k, res)
+		}
+		// HandleKey must return false (meaning do not quit)
+		if quit := app.HandleKey(k); quit {
+			t.Errorf("HandleKey(%+v) = true (quit), want false", k)
+		}
+		if app.Quit() {
+			t.Errorf("app.Quit() became true after key %+v", k)
+		}
+	}
+
+	// Explicit quit keys
+	quitKeys := []loom.KeyEvent{
+		{Key: "f10"},
+		{Key: "ctrl-q"},
+	}
+
+	for _, k := range quitKeys {
+		app.quit = false
+		res := app.ConsumeKey(k)
+		if !res.Consumed || !res.Quit {
+			t.Errorf("ConsumeKey(%+v) = %+v, want Consumed:true, Quit:true", k, res)
+		}
+		if !app.Quit() {
+			t.Errorf("app.Quit() = false after quit key %+v, want true", k)
+		}
+		if quit := app.HandleKey(k); !quit {
+			t.Errorf("HandleKey(%+v) = false, want true", k)
+		}
+	}
+}
+

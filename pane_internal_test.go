@@ -212,3 +212,80 @@ func TestPaneHelpOverlayUsesRootCanvasAndCapturesInput(t *testing.T) {
 		t.Fatal("help overlay remained open after dismissal key")
 	}
 }
+
+type paneEventConsumerProbe struct {
+	handledKeys []KeyEvent
+	quitKey     string
+}
+
+func (*paneEventConsumerProbe) Draw(*Canvas, Rect)          {}
+func (*paneEventConsumerProbe) HandleKey(KeyEvent) bool     { return false }
+func (*paneEventConsumerProbe) HandleMouse(MouseEvent) bool { return false }
+func (p *paneEventConsumerProbe) ConsumeKey(e KeyEvent) EventResult {
+	if e.Key == p.quitKey {
+		return QuitResult()
+	}
+	p.handledKeys = append(p.handledKeys, e)
+	return Handled()
+}
+
+func TestPaneDispatchKeyEventConsumer(t *testing.T) {
+	p := &Pane{}
+	probe := &paneEventConsumerProbe{quitKey: "f10"}
+
+	// Arrow keys navigate and do not quit
+	navKeys := []KeyEvent{
+		{Key: "up"},
+		{Key: "down"},
+		{Key: "left"},
+		{Key: "right"},
+		{Key: "home"},
+		{Key: "end"},
+	}
+
+	for _, k := range navKeys {
+		if p.dispatchKey(probe, k) {
+			t.Fatalf("dispatchKey(%+v) requested quit, want false", k)
+		}
+	}
+
+	if len(probe.handledKeys) != len(navKeys) {
+		t.Fatalf("handledKeys len = %d, want %d", len(probe.handledKeys), len(navKeys))
+	}
+
+	// F10 requests quit
+	if !p.dispatchKey(probe, KeyEvent{Key: "f10"}) {
+		t.Fatal("dispatchKey(f10) = false, want true")
+	}
+}
+
+func TestPaneNavigationFallbackNeverQuits(t *testing.T) {
+	p := &Pane{}
+	// Passive widget returning false on everything
+	w := &focusProbe{}
+
+	navKeys := []KeyEvent{
+		{Key: "up"},
+		{Key: "down"},
+		{Key: "left"},
+		{Key: "right"},
+		{Key: "home"},
+		{Key: "end"},
+		{Key: "pgup"},
+		{Key: "pgdn"},
+		{Key: "delete"},
+		{Key: "insert"},
+		{Key: "backspace"},
+		{Key: "tab"},
+		{Key: "shift-tab"},
+		{Key: "ctrl-left"},
+		{Key: "ctrl-right"},
+	}
+
+	for _, k := range navKeys {
+		if p.dispatchKey(w, k) {
+			t.Fatalf("dispatchKey(%+v) on passive widget requested quit", k)
+		}
+	}
+}
+
