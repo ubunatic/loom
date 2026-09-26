@@ -105,3 +105,17 @@ not a replacement.
   called done (AgenticLoop Invariant 7); standalone `--ansi` output is
   unchanged.
 - `go test ./...`, `go test -race ./...` and `go vet ./...` pass.
+
+## Sprint Log
+
+**M1 delivered (44c11c0): StyledRows widget** — `styledrows.go` parses SGR via `ParseANSI` and clips whole clusters at the rect edge; tests cover a per-row style reset, width clipping and height clipping.
+
+### M2 — hosted treemap
+
+**Pre-Work / Required Refinements (from M1 review):**
+1. Add the acceptance round-trip test: colored input drawn to a canvas, `Row(y)` carries the same visible text (stripANSI equal) and the equivalent SGR color.
+2. Unterminated sequence: assert that cells in the rect *after* the text (e.g. `(3,0)` for `"\x1b[31mred"`) are not red, and that a truncated escape at the end of a line (`"ab\x1b[3"`) draws no literal escape bytes.
+3. Unsupported sequences (`"\x1b[2Jab"`, OSC `"\x1b]0;t\x07ab"`) are dropped, not drawn as text.
+4. Rows shorter than the rect and rect rows past `len(Lines)` must be cleared (blank, Reset style), so a redraw with fewer or shorter lines leaves no stale cells. Add a test that draws twice on the same canvas.
+
+**M2 scope:** follows the plan — `Options` struct, `NewWidget(args)`, key handling via `HandleKey`, refresh via `Ticker`, no tty, signal or stdout/stderr access while hosted (capture test), `examplesreg` registration.
