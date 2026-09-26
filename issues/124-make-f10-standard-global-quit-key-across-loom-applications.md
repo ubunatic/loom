@@ -29,3 +29,7 @@
 
 3. **Automated Testing**:
    - Add unit/regression tests verifying `F10` key events request termination across diverse focus states.
+
+## Delivered
+
+- Added pre-dispatch Pane F10 quit handling with an opt-out, focus-state regressions, and `F10 Quit` hints across the example apps.

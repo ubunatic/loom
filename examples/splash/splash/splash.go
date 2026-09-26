@@ -235,7 +235,7 @@ func newInteractiveDestination() loom.Widget {
 	choice := loom.NewChoice(items)
 	return &loom.Frame{
 		Title:  "harnez usage",
-		Status: "↑↓ select  •  Enter activate  •  q / Esc exit",
+		Status: "↑↓ select  •  Enter activate  •  F10 Quit",
 		Boxes: []loom.Box{
 			{ID: "providers", Title: "Initialized Providers", Dynamic: true, FillHeight: true, Child: choice},
 		},

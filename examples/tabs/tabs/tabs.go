@@ -75,7 +75,7 @@ func (a *tabsApp) Draw(c *loom.Canvas, r loom.Rect) {
 	if maxSelect > 9 {
 		maxSelect = 9
 	}
-	legend := fmt.Sprintf(" 1..%d: select  •  ←/→/Ctrl-T: cycle  •  +/a: add  •  x/d: close  •  q: quit", maxSelect)
+	legend := fmt.Sprintf(" 1..%d: select  •  ←/→/Ctrl-T: cycle  •  +/a: add  •  x/d: close  •  F10 Quit", maxSelect)
 	c.Write(r.X, footerY, legend, loom.Style{Dim: true})
 }
 

@@ -259,6 +259,75 @@ func TestPaneDispatchKeyEventConsumer(t *testing.T) {
 	}
 }
 
+type f10SwallowProbe struct{ calls int }
+
+func (*f10SwallowProbe) Draw(*Canvas, Rect)          {}
+func (*f10SwallowProbe) HandleKey(KeyEvent) bool     { return false }
+func (*f10SwallowProbe) HandleMouse(MouseEvent) bool { return false }
+func (p *f10SwallowProbe) ConsumeKey(KeyEvent) EventResult {
+	p.calls++
+	return Handled()
+}
+
+func TestPaneGlobalF10PrecedesFocusedWidgetDispatch(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		root func(*f10SwallowProbe) Widget
+	}{
+		{name: "root consumer", root: func(p *f10SwallowProbe) Widget { return p }},
+		{name: "focused frame child", root: func(p *f10SwallowProbe) Widget {
+			frame := &Frame{Boxes: []Box{{ID: "input", Child: p}}}
+			frame.focusFirst()
+			return frame
+		}},
+		{name: "active tab child", root: func(p *f10SwallowProbe) Widget {
+			return NewTabs(Tab{Title: "Input", Widget: p})
+		}},
+		{name: "nested tab and frame child", root: func(p *f10SwallowProbe) Widget {
+			frame := &Frame{Boxes: []Box{{ID: "input", Child: p}}}
+			frame.focusFirst()
+			return NewTabs(Tab{Title: "Editor", Widget: frame})
+		}},
+		{name: "popup child", root: func(p *f10SwallowProbe) Widget {
+			return &Popup{Open: true, Inner: p}
+		}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := &f10SwallowProbe{}
+			pane := &Pane{}
+			if !pane.dispatchKey(tc.root(p), KeyEvent{Key: "f10"}) {
+				t.Fatal("F10 did not request global quit")
+			}
+			if p.calls != 0 {
+				t.Fatalf("focused child saw F10 %d times, want 0", p.calls)
+			}
+		})
+	}
+}
+
+func TestPaneGlobalF10OptOut(t *testing.T) {
+	probe := &paneEventConsumerProbe{quitKey: "never"}
+	pane := &Pane{DisableGlobalF10Quit: true}
+	if pane.dispatchKey(probe, KeyEvent{Text: "F10"}) {
+		t.Fatal("opted-out F10 requested global quit")
+	}
+	if len(probe.handledKeys) != 1 {
+		t.Fatalf("opted-out child handled %d keys, want 1", len(probe.handledKeys))
+	}
+}
+
+func TestPaneGlobalF10BypassesHelpOverlay(t *testing.T) {
+	probe := &f10SwallowProbe{}
+	pane := &Pane{help: NewPopup("Help", probe)}
+	quit, handled := pane.handleHelpKey(KeyEvent{Key: "f10"})
+	if !quit || !handled {
+		t.Fatalf("handleHelpKey(f10) = quit:%v handled:%v, want true,true", quit, handled)
+	}
+	if probe.calls != 0 {
+		t.Fatalf("help child saw F10 %d times, want 0", probe.calls)
+	}
+}
+
 func TestPaneNavigationFallbackNeverQuits(t *testing.T) {
 	p := &Pane{}
 	// Passive widget returning false on everything
@@ -288,4 +357,3 @@ func TestPaneNavigationFallbackNeverQuits(t *testing.T) {
 		}
 	}
 }
-

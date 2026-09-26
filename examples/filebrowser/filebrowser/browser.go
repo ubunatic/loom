@@ -63,7 +63,7 @@ func newBrowser(path, themeName string, theme loom.ThemeColors) (*browser, error
 
 	b.frame = &loom.Frame{
 		Gap: 1, Breakpoint: 65,
-		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme  •  F10/^Q quit",
+		Status: "Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme  •  F10 Quit",
 		Boxes: []loom.Box{
 			{ID: "files", Dynamic: true, FillHeight: true, MinWidth: 20, Height: 4, Border: border, Child: b.navigation},
 			{ID: "metadata", Dynamic: true, FillHeight: true, MinWidth: 25, Height: 4, Border: border, Child: b.details},
@@ -210,7 +210,7 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 		c.ComposeBackground(b.background, r, time.Now())
 	}
 	b.frame.Title = "Browse " + b.dir
-	b.frame.Status = fmt.Sprintf("Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:%s  •  F10/^Q quit", b.themeName)
+	b.frame.Status = fmt.Sprintf("Tab pane  •  ↑↓ select  •  Enter open  •  F9 theme:%s  •  F10 Quit", b.themeName)
 	b.frame.Boxes[0].Title = "Files"
 	b.frame.Boxes[1].Title = "Metadata"
 	if focused := b.frame.FocusedBox(); focused != nil {

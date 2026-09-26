@@ -433,7 +433,7 @@ func (app *AnsiEditApp) drawPalettePanel(c *loom.Canvas, r loom.Rect) {
 	y++
 	c.Write(r.X+1, y, "F8:Keys  F9:Theme", loom.Style{Dim: true, FG: loom.ColorIndex(244)})
 	y++
-	c.Write(r.X+1, y, "F10:Quit Tab:Focus", loom.Style{Dim: true, FG: loom.ColorIndex(244)})
+	c.Write(r.X+1, y, "F10 Quit  Tab Focus", loom.Style{Dim: true, FG: loom.ColorIndex(244)})
 }
 
 // drawKeysPanel renders the F8 Keybindings reference sheet.

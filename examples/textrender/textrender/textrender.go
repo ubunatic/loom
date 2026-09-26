@@ -161,7 +161,7 @@ func (a *textRenderApp) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	footerY := r.Y + tabsH
 	c.PaintSurface(loom.Rect{X: r.X, Y: footerY, W: r.W, H: 1}, loom.Style{Dim: true})
-	legend := " ←/→: cycle tabs  •  q: quit"
+	legend := " ←/→: cycle tabs  •  F10 Quit"
 	c.Write(r.X, footerY, legend, loom.Style{Dim: true})
 }
 

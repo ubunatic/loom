@@ -103,7 +103,7 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 	frame := &loom.Frame{
 		Gap:    1,
 		Title:  "ANSI Viewer",
-		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  a Astra  •  q quit",
+		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  a Astra  •  F10 Quit",
 		Boxes: []loom.Box{
 			{ID: "files", Title: "Files", FillHeight: true, Dynamic: true, MinWidth: 20, Width: 32, Height: 4, Border: border, Child: b.navigation},
 			{ID: "viewer", Title: "Preview", FillHeight: true, Dynamic: true, MinWidth: 30, Height: 4, Border: border, Child: b},

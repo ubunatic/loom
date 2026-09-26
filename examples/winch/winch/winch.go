@@ -116,7 +116,7 @@ func (a *App) Draw(c *loom.Canvas, r loom.Rect) {
 
 	// Status bar at bottom row
 	if r.H > 1 {
-		status := fmt.Sprintf(" Winch Diagnostic • Theme: %s • Frames: %d • [G] Astra [Q] Quit", a.themeName, a.frameCount)
+		status := fmt.Sprintf(" Winch Diagnostic • Theme: %s • Frames: %d • [G] Astra [F10] Quit", a.themeName, a.frameCount)
 		status = loom.TruncateText(status, r.W, "")
 		c.Write(r.X, r.Y+r.H-1, status, statusStyle)
 	}

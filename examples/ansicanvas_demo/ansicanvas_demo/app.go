@@ -74,7 +74,7 @@ func (a *DemoApp) Editor() *loom.AnsiEditor {
 // Draw renders the frame with live cursor coordinates in the status footer.
 func (a *DemoApp) Draw(c *loom.Canvas, r loom.Rect) {
 	curX, curY := a.editor.Cursor()
-	a.frame.Status = fmt.Sprintf("Cursor: (%d,%d) • Mode: %s • F10/q: Quit", curX, curY, a.editor.EditMode)
+	a.frame.Status = fmt.Sprintf("Cursor: (%d,%d) • Mode: %s • F10 Quit • q Quit", curX, curY, a.editor.EditMode)
 	a.frame.Draw(c, r)
 }
 

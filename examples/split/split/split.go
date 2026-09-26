@@ -61,6 +61,7 @@ func newSplitApp() *splitApp {
 		},
 		Actions: []loom.FrameAction{
 			{ID: "quit", Action: "quit", Key: "q"},
+			{ID: "quit_f10", Action: "quit", Key: "f10"},
 		},
 	}
 
@@ -75,7 +76,7 @@ func (a *splitApp) Draw(c *loom.Canvas, r loom.Rect) {
 	hRatio := int(math.Round(a.hSplit.Ratio * 100))
 	vRatio := int(math.Round(a.vSplit.Ratio * 100))
 	a.frame.Boxes[0].Title = fmt.Sprintf("Nested Split (H: %02d/%02d • V: %02d/%02d)", hRatio, 100-hRatio, vRatio, 100-vRatio)
-	a.frame.Status = fmt.Sprintf("Ratio: H %d%% V %d%%  •  Tab: focus  •  [ / ]: ratio  •  drag divider  •  q: quit", hRatio, vRatio)
+	a.frame.Status = fmt.Sprintf("Ratio: H %d%% V %d%%  •  Tab: focus  •  [ / ]: ratio  •  drag divider  •  F10 Quit", hRatio, vRatio)
 	a.frame.Draw(c, r)
 }
 

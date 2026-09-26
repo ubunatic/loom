@@ -180,7 +180,7 @@ func (a *App) rows(termCols, termRows int, pane loom.Rect) [][]seg {
 			[]seg{{text: fmt.Sprintf("(0 = off, now %d%%)", pctOf(a.height, termRows))}}),
 		join(toggle("Leak guard ", "r", cfg.FullLeakGuard)),
 		separator,
-		{{text: "f full screen (alt)  n primary full (demo)  q quit"}},
+		{{text: "f full screen (alt)  n primary full (demo)  F10 Quit"}},
 	}
 }
 

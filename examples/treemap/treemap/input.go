@@ -19,6 +19,7 @@ var quitKeys = func() map[string]bool {
 	for _, k := range loom.SpeccedDefaults.FallbackQuitKeys {
 		m[k] = true
 	}
+	m["f10"] = true
 	return m
 }()
 

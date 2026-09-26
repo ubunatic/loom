@@ -158,7 +158,7 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 		comment = "Comment: " + string(w.comment) + "▏"
 	}
 	w.center(c, r, r.H-3, comment, loom.Style{FG: fg})
-	footer := "←/→: mode  1-4/?: width  ↑/↓: select  c/D: comment  Tab/f: filter (" + string(w.filter) + ")  Enter/PgDn: save page  PgUp: back  q: quit"
+	footer := "←/→: mode  1-4/?: width  ↑/↓: select  c/D: comment  Tab/f: filter (" + string(w.filter) + ")  Enter/PgDn: save page  PgUp: back  F10 Quit"
 	if w.saveErr != nil {
 		footer = "Save error: " + w.saveErr.Error()
 	}

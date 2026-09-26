@@ -73,6 +73,9 @@ type Pane struct {
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
 	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
 	DisableDefaultQuit bool
+	// DisableGlobalF10Quit lets a pane keep F10 within its widget tree.
+	// The default is to quit before dispatching F10 to any widget.
+	DisableGlobalF10Quit bool
 
 	// Background is composited after the root widget on every frame.
 	Background Background
@@ -665,6 +668,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 		if request.OwnsQuit {
 			p.DisableDefaultQuit = true
+			p.DisableGlobalF10Quit = true
 		}
 	}
 	previousHelpRequest := paneHelpRequest
@@ -1116,6 +1120,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 }
 
 func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
+	if p.globalF10Quit(ke) {
+		return true
+	}
 	res := DispatchKeyEvent(root, ke)
 	if res.Consumed {
 		return res.Quit
@@ -1123,11 +1130,18 @@ func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
 	return p.handleKeyFallback(ke)
 }
 
+func (p *Pane) globalF10Quit(ke KeyEvent) bool {
+	return !p.DisableGlobalF10Quit && strings.EqualFold(ke.Name(), "f10")
+}
+
 func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
 	return DispatchMouseEvent(root, me)
 }
 
 func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
+	if p.globalF10Quit(e) {
+		return true, true
+	}
 	if p.help == nil {
 		return false, false
 	}

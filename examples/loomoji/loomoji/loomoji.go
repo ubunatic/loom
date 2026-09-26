@@ -1380,7 +1380,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	// ── Status bar ────────────────────────────────────────────────────────────
 	statusY := r.Y + r.H - 1
 	c.PaintSurface(loom.Rect{X: r.X, Y: statusY, W: r.W, H: 1}, loom.Style{BG: panel})
-	footer := "↑↓←→ grid   Tab search   f/[ ] cycle   Enter copy   Esc quit"
+	footer := "↑↓←→ grid   Tab search   f/[ ] cycle   Enter copy   F10 Quit"
 	if len(p.items) > 0 {
 		e := p.entries[p.items[p.index]]
 		cat := p.categories[e.group].label

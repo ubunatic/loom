@@ -94,7 +94,7 @@ func demoFrame() *loom.Frame {
 	split.Ratio = 0.45
 	split.MinFirst, split.MinSecond = 18, 24
 	return &loom.Frame{
-		Title: "Composition test area", Status: "Tab: focus  •  arrows: scroll  •  q: quit",
+		Title: "Composition test area", Status: "Tab: focus  •  arrows: scroll  •  F10 Quit",
 		Gap: 1, Breakpoint: 70,
 		Boxes:   []loom.Box{{ID: "panels", Title: "Interactive split (drag divider)", Dynamic: true, FillHeight: true, MinWidth: 42, Height: 12, Child: split}},
 		Actions: []loom.FrameAction{{ID: "quit", Action: "quit", Key: "q"}},

@@ -582,7 +582,7 @@ func main() {
 			{ID: "clip", Action: "clip", Key: "ctrl-c", Hint: "C-c/v/x: Clip"},
 			{ID: "sidebar", Action: "sidebar", Key: "ctrl-b", Hint: "C-b: Sidebar"},
 			{ID: "focus", Action: "focus", Key: "tab", Hint: "Tab: Focus"},
-			{ID: "quit_f10", Action: "quit", Key: "f10", Hint: "F10/C-q: Quit"},
+			{ID: "quit_f10", Action: "quit", Key: "f10", Hint: "F10 Quit"},
 			{ID: "quit_ctrl_q", Action: "quit", Key: "ctrl-q"},
 		},
 		ControlSeparator: " • ",
