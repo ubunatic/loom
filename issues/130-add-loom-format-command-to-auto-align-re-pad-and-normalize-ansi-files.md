@@ -24,3 +24,15 @@
   - `--align-box`: Detects boxed lines (`│...│`) and pads inner content so closing right borders align at the target column.
   - `--write` / `-w`: Modifies file in-place (defaults to writing formatted ANSI to stdout).
   - `--trim-trailing`: Strips redundant trailing whitespace before newline or EOF.
+
+## Delivered
+
+`loom format` pads or cell-safely truncates rows to `--width N`; `--align-box`
+aligns complete rows bounded by vertical box edges. Trailing spaces and tabs
+are removed before preserved trailing SGR sequences with `--trim-trailing`.
+`--write` / `-w` atomically replaces the input while preserving its permission
+mode; stdout remains the default. Width must be positive when specified.
+
+Verification: command package tests pass. `make test-q1` reaches Go tests but
+fails the pre-existing `TestAllAnsiAssetsHaveValidBoxes` fixture audit on
+several tracked ANSI assets.
