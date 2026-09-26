@@ -7,6 +7,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -14,6 +16,7 @@ import (
 
 	"codeberg.org/ubunatic/loom/collector"
 	"codeberg.org/ubunatic/loom/graph"
+	"codeberg.org/ubunatic/loom/internal/ptytest"
 )
 
 type blockingCollector struct {
@@ -82,6 +85,60 @@ func waitCollectorStart(t *testing.T, c *blockingCollector, count int) {
 		time.Sleep(time.Millisecond)
 	}
 	t.Fatalf("collector starts = %d, want %d", c.started, count)
+}
+
+type markerCollector struct{ marker string }
+
+func (*markerCollector) Type() collector.Type { return collector.TypeFile }
+func (c *markerCollector) Collect(ctx context.Context, at time.Time) (collector.Record, error) {
+	<-ctx.Done()
+	if err := os.WriteFile(c.marker, []byte("stopped"), 0600); err != nil {
+		return collector.Record{}, err
+	}
+	return collector.Record{}, ctx.Err()
+}
+
+func TestRunWatchShutdownHelper(t *testing.T) {
+	marker := os.Getenv("LOOM_MONITOR_STOP_MARKER")
+	if marker == "" {
+		return
+	}
+	spec, err := loadWatch()
+	if err != nil {
+		t.Fatal(err)
+	}
+	history, err := collector.NewHistory(time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	spec.sources = []configuredSource{{collector: &markerCollector{marker: marker}, interval: time.Hour, history: history}}
+	if err := runWatch(context.Background(), spec); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestRunWatchClosesCollectorsOnF10(t *testing.T) {
+	marker := filepath.Join(t.TempDir(), "collector-stopped")
+	old, hadOld := os.LookupEnv("LOOM_MONITOR_STOP_MARKER")
+	if err := os.Setenv("LOOM_MONITOR_STOP_MARKER", marker); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if hadOld {
+			_ = os.Setenv("LOOM_MONITOR_STOP_MARKER", old)
+		} else {
+			_ = os.Unsetenv("LOOM_MONITOR_STOP_MARKER")
+		}
+	}()
+	session := ptytest.Start(t, 100, 30, os.Args[0], "-test.run=^TestRunWatchShutdownHelper$")
+	session.WaitFor("Loom monitor", 3*time.Second)
+	session.Send("\x1b[21~")
+	if err := session.Wait(3 * time.Second); err != nil {
+		t.Fatalf("monitor did not exit after F10: %v", err)
+	}
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatalf("collector was not stopped during runWatch shutdown: %v", err)
+	}
 }
 
 func TestShowOnce(t *testing.T) {

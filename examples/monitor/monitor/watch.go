@@ -76,6 +76,7 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	if err != nil {
 		return err
 	}
+	defer w.Close()
 	pane, err := loom.New(10)
 	if err != nil {
 		return err
