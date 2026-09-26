@@ -40,3 +40,10 @@
 1. Blocker: remove the global early returns in `ValidateAnsiBox` for junction runes and non-SGR escapes. Treat `├──┤`/`╟──╢` rows as framed middle rows and validate them. Skip only segments that are cursor-addressed and cannot be measured, not the whole file. Add a test showing that a misaligned `├──┤` divider fails.
 2. Blocker: restore visual line-width comparison (including trailing display columns) alongside the border columns. The "padding outside box" test case must fail on a ragged row.
 3. Should-fix: select the asset set with a deterministic filesystem walk (skipping .git and vendored/build dirs), not `git ls-files`.
+
+## M3 — Pre-Work / Required Refinements (host review of 1d3b686)
+
+M2 delivered: divider rows and line widths are validated, and no whole-file bypasses remain.
+
+1. The asset walk must skip the gitignored scratch dir `.loom/` (and other dot-dirs), not only .git/vendor. Add a test showing that a broken .ansi under `.loom/` is not scanned.
+2. Untrack `.loom/sprint-dumps/render.ansi` (`git rm --cached`); it is gitignored scratch output that was force-added in 1d3b686.
