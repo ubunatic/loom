@@ -1,6 +1,6 @@
 # 128 — Add box frame geometry and line-width validator for ANSI assets
 
-**Status**: Open
+**Status**: Closed — tracked .ansi assets validated incl. divider rows and line widths (c5c6005, 1d3b686, f99bb8a)
 **Priority**: P1 (High)
 **Severity**: Normal
 **Category**: Tooling / Quality Gate
