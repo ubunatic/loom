@@ -39,3 +39,10 @@ while preserving its permission mode; stdout is the default.
 Verification: command package tests pass. `make test-q1` reaches Go tests but
 fails the pre-existing `TestAllAnsiAssetsHaveValidBoxes` fixture audit on
 several tracked ANSI assets.
+
+## M3 — Pre-Work / Required Refinements (host review of M2)
+
+M2 delivered: frame command with 4 styles, padding, title, color, atomic --write.
+
+1. Title must keep at least one horizontal border glyph on each side (`╭─ Hello World ─╮`); widen the frame accordingly. Add a test asserting this for a title wider than the body.
+2. Colorize each contiguous border run once (`ESC[38;5;208m╰─────╯ESC[0m`), not per glyph. Add a test asserting the escape count of the bottom border.
