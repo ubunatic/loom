@@ -4,13 +4,13 @@
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Architecture / Component
-**Related**: `examples/ansiedit/ansiedit/buffer.go`, `canvas.go`, `parse_ansi.go`, `widget.go`, `docs/Widgets.md`
+**Related**: `examples/ansiedit/ansiedit/buffer.go`, `examples/ansicanvas_demo/`, `canvas.go`, `parse_ansi.go`, `widget.go`, `docs/Widgets.md`
 
 ---
 
 ## Goal
 
-`/goal`: Extract the 2D spatial ANSI cell buffer model, SGR/CSI parser, ANSI serializer, and 2D overtype graphic editor from `examples/ansiedit` into a first-class standard Loom widget (`loom.AnsiCanvas` / `loom.AnsiEditor`), enabling reusable 2D diagramming, terminal art creation, and interactive ANSI canvas editing across Loom applications.
+`/goal`: Extract the 2D spatial ANSI cell buffer model, SGR/CSI parser, ANSI serializer, and 2D overtype graphic editor from `examples/ansiedit` into a first-class standard Loom SDK component (`loom.AnsiBuffer` and `loom.AnsiEditor` in `ansibuffer.go` / `ansieditor.go`), and create a super simple standalone example app (`examples/ansicanvas_demo/` or `examples/ansicanvas/`) to test and demonstrate its standalone widget embedding.
 
 ## 1. Context & Motivation
 
@@ -19,19 +19,19 @@
   - Persistent per-cell styling (FG, BG, bold, underline, invert attributes stored directly on each cell).
   - 2D Overtype & Paint modes with free coordinate cursor navigation without line-reflow.
   - SGR/CSI escape-sequence serialization and parsing roundtrips.
-- Rather than leaving this logic isolated inside `examples/ansiedit/ansiedit/buffer.go`, promoting it to a standard Loom SDK widget provides a foundational component for ANSI artwork, diagramming tools, and terminal graphics.
+- Promoting it to a standard Loom SDK widget provides a foundational component for ANSI artwork, diagramming tools, and terminal graphics.
 
-## 2. Scope & Acceptance Criteria
+## 2. Milestones
 
-1. **SDK Component (`loom.AnsiBuffer` & `loom.AnsiEditor`)**:
-   - Promote the 2D cell grid buffer (`AnsiBuffer`, `BufferCell`) into the Loom package.
-   - Standardize `LoadBuffer(path/reader)`, `SaveBuffer(path/writer)`, and `ParseBuffer(data)`.
-   - Provide an `AnsiEditor` widget implementing `loom.Widget`, `loom.EventConsumer`, and `loom.MouseConsumer`.
+- **M1 (Core SDK `AnsiBuffer` & `AnsiEditor`)**:
+  - Implement `AnsiBuffer` and `AnsiEditor` in root package (`ansibuffer.go` / `ansieditor.go` or `ansicanvas.go`).
+  - Support `LoadAnsiBuffer`, `SaveAnsiBuffer`, `ParseAnsiBuffer`, and full 2D editing operations (put, cut, copy, paste, delete, backspace, overtype/insert).
+  - Implement `loom.Widget`, `loom.EventConsumer`, and `loom.MouseConsumer` on `AnsiEditor`.
+  - Add core unit tests in `ansibuffer_test.go` and `ansieditor_test.go`.
 
-2. **Refactor Examples**:
-   - Refactor `examples/ansiedit` to embed and compose the standard `loom.AnsiEditor` component.
-   - Ensure compatibility with `examples/ansiviewer` for static or animated ANSI inspection.
+- **M2 (Super Simple Example App)**:
+  - Create a lightweight example in `examples/ansicanvas_demo/main.go` demonstrating embedding `loom.AnsiEditor` in a minimal Loom frame with simple navigation and quit keys.
+  - Refactor `examples/ansiedit` to reuse the core `loom.AnsiBuffer` / `loom.AnsiEditor` components.
 
-3. **Automated Testing & Documentation**:
-   - Move unit tests and roundtrip ANSI encoding tests into the core test suite.
-   - Document `loom.AnsiEditor` in `docs/Widgets.md`.
+- **M3 (Verification, PTY Tests & make install)**:
+  - Add PTY tests for the new example and verify entire suite with `go test ./...` and `make install`.
