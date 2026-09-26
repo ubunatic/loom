@@ -177,30 +177,42 @@ func (r *startupRoot) Draw(c *Canvas, rect Rect) {
 	next.Draw(c, rect)
 }
 
-func (r *startupRoot) HandleKey(e KeyEvent) bool {
+func (r *startupRoot) ConsumeKey(e KeyEvent) EventResult {
 	r.mu.Lock()
 	active := r.active
 	transitionErr := r.transitionErr
+	next := r.next
+	view := r.view
 	r.mu.Unlock()
 	if transitionErr != nil {
-		return true
+		return QuitResult()
 	}
+	var target Widget = view
 	if active {
-		return r.next.HandleKey(e)
+		target = next
 	}
-	return r.view.HandleKey(e)
+	return DispatchKeyEvent(target, e)
+}
+
+func (r *startupRoot) HandleKey(e KeyEvent) bool {
+	res := r.ConsumeKey(e)
+	return res.Quit
 }
 
 func (r *startupRoot) HandleMouse(e MouseEvent) bool {
 	r.mu.Lock()
 	active := r.active
 	transitionErr := r.transitionErr
+	next := r.next
+	view := r.view
 	r.mu.Unlock()
 	if transitionErr != nil {
 		return true
 	}
+	var target Widget = view
 	if active {
-		return r.next.HandleMouse(e)
+		target = next
 	}
-	return r.view.HandleMouse(e)
+	res := DispatchMouseEvent(target, e)
+	return res.Quit
 }

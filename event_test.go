@@ -112,3 +112,101 @@ func TestKeyEventRune(t *testing.T) {
 		})
 	}
 }
+
+func TestEventResultConstructors(t *testing.T) {
+	if h := Handled(); !h.Consumed || h.Quit {
+		t.Errorf("Handled() = %+v, want Consumed:true, Quit:false", h)
+	}
+	if c := Consumed(); !c.Consumed || c.Quit {
+		t.Errorf("Consumed() = %+v, want Consumed:true, Quit:false", c)
+	}
+	if ig := Ignored(); ig.Consumed || ig.Quit {
+		t.Errorf("Ignored() = %+v, want Consumed:false, Quit:false", ig)
+	}
+	if un := Unhandled(); un.Consumed || un.Quit {
+		t.Errorf("Unhandled() = %+v, want Consumed:false, Quit:false", un)
+	}
+	if q := Quit(); !q.Consumed || !q.Quit {
+		t.Errorf("Quit() = %+v, want Consumed:true, Quit:true", q)
+	}
+	if qr := QuitResult(); !qr.Consumed || !qr.Quit {
+		t.Errorf("QuitResult() = %+v, want Consumed:true, Quit:true", qr)
+	}
+}
+
+type dummyEventConsumer struct {
+	onKey func(KeyEvent) EventResult
+}
+
+func (d *dummyEventConsumer) Draw(*Canvas, Rect)       {}
+func (d *dummyEventConsumer) HandleKey(KeyEvent) bool   { return false }
+func (d *dummyEventConsumer) HandleMouse(MouseEvent) bool { return false }
+func (d *dummyEventConsumer) ConsumeKey(e KeyEvent) EventResult {
+	if d.onKey != nil {
+		return d.onKey(e)
+	}
+	return Ignored()
+}
+
+type dummyMouseConsumer struct {
+	onMouse func(MouseEvent) EventResult
+}
+
+func (d *dummyMouseConsumer) Draw(*Canvas, Rect)       {}
+func (d *dummyMouseConsumer) HandleKey(KeyEvent) bool   { return false }
+func (d *dummyMouseConsumer) HandleMouse(MouseEvent) bool { return false }
+func (d *dummyMouseConsumer) ConsumeMouse(e MouseEvent) EventResult {
+	if d.onMouse != nil {
+		return d.onMouse(e)
+	}
+	return Ignored()
+}
+
+func TestDispatchKeyAndMouseEvent(t *testing.T) {
+	// 1. Nil root returns Ignored
+	if res := DispatchKeyEvent(nil, KeyEvent{Key: "up"}); res != Ignored() {
+		t.Errorf("DispatchKeyEvent(nil) = %+v, want Ignored", res)
+	}
+	if res := DispatchMouseEvent(nil, MouseEvent{}); res != Ignored() {
+		t.Errorf("DispatchMouseEvent(nil) = %+v, want Ignored", res)
+	}
+
+	// 2. EventConsumer takes precedence
+	ec := &dummyEventConsumer{
+		onKey: func(e KeyEvent) EventResult {
+			if e.Key == "up" {
+				return Handled()
+			}
+			if e.Key == "f10" {
+				return QuitResult()
+			}
+			return Ignored()
+		},
+	}
+	if res := DispatchKeyEvent(ec, KeyEvent{Key: "up"}); res != Handled() {
+		t.Errorf("DispatchKeyEvent(ec, up) = %+v, want Handled", res)
+	}
+	if res := DispatchKeyEvent(ec, KeyEvent{Key: "f10"}); res != QuitResult() {
+		t.Errorf("DispatchKeyEvent(ec, f10) = %+v, want QuitResult", res)
+	}
+	if res := DispatchKeyEvent(ec, KeyEvent{Key: "x"}); res != Ignored() {
+		t.Errorf("DispatchKeyEvent(ec, x) = %+v, want Ignored", res)
+	}
+
+	// 3. MouseConsumer takes precedence
+	mc := &dummyMouseConsumer{
+		onMouse: func(e MouseEvent) EventResult {
+			if e.Action == MousePress {
+				return Handled()
+			}
+			return Ignored()
+		},
+	}
+	if res := DispatchMouseEvent(mc, MouseEvent{Action: MousePress}); res != Handled() {
+		t.Errorf("DispatchMouseEvent(mc, press) = %+v, want Handled", res)
+	}
+	if res := DispatchMouseEvent(mc, MouseEvent{Action: MouseRelease}); res != Ignored() {
+		t.Errorf("DispatchMouseEvent(mc, release) = %+v, want Ignored", res)
+	}
+}
+

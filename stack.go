@@ -151,6 +151,11 @@ func (s *Stack) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	if len(s.Children) == 0 {
 		return false, false
 	}
+	if c, ok := s.Children[s.focus].(EventConsumer); ok {
+		if res := c.ConsumeKey(e); res.Consumed {
+			return res.Quit, true
+		}
+	}
 	if c, ok := s.Children[s.focus].(KeyConsumer); ok {
 		if quit, consumed = c.ConsumeKey(e); consumed {
 			return quit, true

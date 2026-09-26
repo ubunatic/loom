@@ -445,3 +445,91 @@ func parseInts(s string, dst ...*int) (int, error) {
 	}
 	return n, nil
 }
+
+// EventResult indicates whether an input event (keyboard or mouse) was consumed
+// and whether the application event loop should terminate.
+// EventResult is a small value struct and must always be returned by value (not pointer).
+type EventResult struct {
+	Consumed bool
+	Quit     bool
+}
+
+// Handled returns an EventResult indicating that the event was consumed without quitting.
+func Handled() EventResult {
+	return EventResult{Consumed: true, Quit: false}
+}
+
+// Consumed returns an EventResult indicating that the event was consumed without quitting.
+func Consumed() EventResult {
+	return EventResult{Consumed: true, Quit: false}
+}
+
+// Ignored returns an EventResult indicating that the event was not consumed and does not request quit.
+func Ignored() EventResult {
+	return EventResult{Consumed: false, Quit: false}
+}
+
+// Unhandled returns an EventResult indicating that the event was not handled.
+func Unhandled() EventResult {
+	return EventResult{Consumed: false, Quit: false}
+}
+
+// Quit returns an EventResult indicating that the event was consumed and requests application termination.
+func Quit() EventResult {
+	return EventResult{Consumed: true, Quit: true}
+}
+
+// QuitResult returns an EventResult indicating that the event was consumed and requests application termination.
+func QuitResult() EventResult {
+	return EventResult{Consumed: true, Quit: true}
+}
+
+// DispatchKeyEvent dispatches a key event to a widget, checking EventConsumer,
+// KeyConsumer, and Widget.HandleKey in order. Always returns an EventResult value struct.
+func DispatchKeyEvent(root Widget, ke KeyEvent) EventResult {
+	if root == nil {
+		return Ignored()
+	}
+	if c, ok := root.(EventConsumer); ok {
+		if res := c.ConsumeKey(ke); res.Consumed {
+			return res
+		}
+	}
+	if c, ok := root.(interface{ ConsumeKeyEvent(KeyEvent) EventResult }); ok {
+		if res := c.ConsumeKeyEvent(ke); res.Consumed {
+			return res
+		}
+	}
+	if c, ok := root.(KeyConsumer); ok {
+		if quit, consumed := c.ConsumeKey(ke); consumed {
+			return EventResult{Consumed: true, Quit: quit}
+		}
+	}
+	if root.HandleKey(ke) {
+		return QuitResult()
+	}
+	return Ignored()
+}
+
+// DispatchMouseEvent dispatches a mouse event to a widget, checking MouseConsumer,
+// MouseEventConsumer, and Widget.HandleMouse in order. Always returns an EventResult value struct.
+func DispatchMouseEvent(root Widget, me MouseEvent) EventResult {
+	if root == nil {
+		return Ignored()
+	}
+	if c, ok := root.(MouseConsumer); ok {
+		if res := c.ConsumeMouse(me); res.Consumed {
+			return res
+		}
+	}
+	if c, ok := root.(interface{ ConsumeMouseEvent(MouseEvent) EventResult }); ok {
+		if res := c.ConsumeMouseEvent(me); res.Consumed {
+			return res
+		}
+	}
+	if root.HandleMouse(me) {
+		return QuitResult()
+	}
+	return Ignored()
+}
+

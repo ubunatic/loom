@@ -340,8 +340,13 @@ func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 		}
 	}
 	if child := t.active(); child != nil {
-		if consumer, ok := child.(KeyConsumer); ok {
-			if quit, consumed = consumer.ConsumeKey(e); consumed {
+		if c, ok := child.(EventConsumer); ok {
+			if res := c.ConsumeKey(e); res.Consumed {
+				return res.Quit, true
+			}
+		}
+		if c, ok := child.(KeyConsumer); ok {
+			if quit, consumed = c.ConsumeKey(e); consumed {
 				return quit, true
 			}
 		}

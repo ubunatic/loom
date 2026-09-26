@@ -54,22 +54,30 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 
 // HandleKey forwards to Inner while Open; Esc closes the popup.
 func (p *Popup) HandleKey(e KeyEvent) (quit bool) {
-	if !p.Open {
+	if !p.Open || p.Inner == nil {
 		return false
 	}
 	if e.Key == "esc" {
 		p.Open = false
 		return false
 	}
-	return p.Inner.HandleKey(e)
+	res := DispatchKeyEvent(p.Inner, e)
+	if res.Consumed {
+		return res.Quit
+	}
+	return false
 }
 
 // HandleMouse forwards to Inner while Open.
 func (p *Popup) HandleMouse(e MouseEvent) (quit bool) {
-	if !p.Open {
+	if !p.Open || p.Inner == nil {
 		return false
 	}
-	return p.Inner.HandleMouse(e)
+	res := DispatchMouseEvent(p.Inner, e)
+	if res.Consumed {
+		return res.Quit
+	}
+	return false
 }
 
 func (p *Popup) dims(r Rect) (w, h int) {

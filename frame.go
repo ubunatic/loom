@@ -247,12 +247,20 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 
 // HandleKey forwards input to the child, if present.
 func (b *Box) HandleKey(k KeyEvent) bool {
+	if b.Child == nil {
+		return false
+	}
+	if c, ok := b.Child.(EventConsumer); ok {
+		if res := c.ConsumeKey(k); res.Consumed {
+			return res.Quit
+		}
+	}
 	if c, ok := b.Child.(KeyConsumer); ok {
 		if quit, consumed := c.ConsumeKey(k); consumed {
 			return quit
 		}
 	}
-	return b.Child != nil && b.Child.HandleKey(k)
+	return b.Child.HandleKey(k)
 }
 
 // HandleMouse forwards events inside the last drawn child bounds.
@@ -830,7 +838,12 @@ func (f *Frame) cycleFocus(direction int) {
 
 // HandleKey dispatches declared actions, focus keys, then the focused child.
 func (f *Frame) HandleKey(k KeyEvent) bool {
-	if box := f.FocusedBox(); box != nil {
+	if box := f.FocusedBox(); box != nil && box.Child != nil {
+		if c, ok := box.Child.(EventConsumer); ok {
+			if res := c.ConsumeKey(k); res.Consumed {
+				return res.Quit
+			}
+		}
 		if c, ok := box.Child.(KeyConsumer); ok {
 			if quit, consumed := c.ConsumeKey(k); consumed {
 				return quit
@@ -889,7 +902,12 @@ func (f *Frame) handleKey(k KeyEvent) bool {
 }
 
 func (f *Frame) ConsumeKey(k KeyEvent) (quit, consumed bool) {
-	if box := f.FocusedBox(); box != nil {
+	if box := f.FocusedBox(); box != nil && box.Child != nil {
+		if c, ok := box.Child.(EventConsumer); ok {
+			if res := c.ConsumeKey(k); res.Consumed {
+				return res.Quit, true
+			}
+		}
 		if c, ok := box.Child.(KeyConsumer); ok {
 			if quit, consumed = c.ConsumeKey(k); consumed {
 				return quit, true

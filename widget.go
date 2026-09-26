@@ -119,12 +119,25 @@ type Focusable interface {
 	SetFocus(bool)
 }
 
+// EventConsumer optionally lets a widget report key consumption and quit status
+// using the EventResult small value struct.
+type EventConsumer interface {
+	ConsumeKey(e KeyEvent) EventResult
+}
+
+// MouseConsumer optionally lets a widget report mouse event consumption and quit
+// status using the EventResult small value struct.
+type MouseConsumer interface {
+	ConsumeMouse(e MouseEvent) EventResult
+}
+
 // KeyConsumer optionally lets a widget report that it handled a key. The
 // signal allows hosted composites to give children first refusal while still
 // preserving Widget.HandleKey's historical quit-only API.
 type KeyConsumer interface {
 	ConsumeKey(e KeyEvent) (quit, consumed bool)
 }
+
 
 // FocusContainer is a focusable composite that can move focus within itself.
 // FocusNext and FocusPrevious return false when focus is already at the

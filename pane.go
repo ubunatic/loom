@@ -1064,7 +1064,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// 0-based coordinates.
 					me.X--
 					me.Y -= p.startRow
-					if p.handleHelpMouse(me) || root.HandleMouse(me) {
+					if p.handleHelpMouse(me) || p.dispatchMouse(root, me).Quit {
 						quit = true
 						break
 					}
@@ -1116,12 +1116,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 }
 
 func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
-	if c, ok := root.(KeyConsumer); ok {
-		if quit, consumed := c.ConsumeKey(ke); consumed {
-			return quit
-		}
+	res := DispatchKeyEvent(root, ke)
+	if res.Consumed {
+		return res.Quit
 	}
-	return root.HandleKey(ke) || p.handleKeyFallback(ke)
+	return p.handleKeyFallback(ke, root)
+}
+
+func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
+	return DispatchMouseEvent(root, me)
 }
 
 func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
@@ -1159,13 +1162,20 @@ var defaultQuitKeyMap = func() map[string]bool {
 // safeguard exit based on embedded spec/defaults.yaml.
 func (p *Pane) handleKeyFallback(ke KeyEvent, roots ...Widget) bool {
 	if len(roots) > 0 {
-		if c, ok := roots[0].(KeyConsumer); ok {
-			if _, consumed := c.ConsumeKey(ke); consumed {
-				return false
-			}
+		if res := DispatchKeyEvent(roots[0], ke); res.Consumed {
+			return false
 		}
 	}
 	if p.DisableDefaultQuit {
+		return false
+	}
+	// Safeguard: navigation and editing keys never trigger fallback quit.
+	switch ke.Key {
+	case "up", "down", "left", "right", "home", "end", "pgup", "pgdn", "pageup", "pagedown",
+		"shift-up", "shift-down", "shift-left", "shift-right",
+		"ctrl-up", "ctrl-down", "ctrl-left", "ctrl-right",
+		"alt-up", "alt-down", "alt-left", "alt-right",
+		"delete", "insert", "backspace", "tab", "shift-tab":
 		return false
 	}
 	key := ke.Key

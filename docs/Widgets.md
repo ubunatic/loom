@@ -165,12 +165,34 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
 
-## 7. Root Event Loop Contract: Quit vs Consumption Invariants
+## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 
-In Loom's application event loop contract:
-- Returning `true` from a root widget's `HandleKey` or `HandleMouse` signals a **request to quit the application event loop**, not merely that the event was consumed.
-- Child widgets and application containers (`TextEditApp`, custom layouts) must return `false` after handling ordinary keystrokes, navigation, or mouse clicks.
-- Returning `true` upon handling a keystroke (such as typing a character or clicking a pane) will cause the application to immediately terminate.
+Loom uses the small value struct `loom.EventResult` to cleanly distinguish whether an event was consumed from whether the application should terminate:
+
+```go
+type EventResult struct {
+    Consumed bool
+    Quit     bool
+}
+```
+
+Constructors and helpers (always returned by value):
+- `loom.Handled()` / `loom.Consumed()`: `EventResult{Consumed: true, Quit: false}`
+- `loom.Ignored()` / `loom.Unhandled()`: `EventResult{Consumed: false, Quit: false}`
+- `loom.Quit()` / `loom.QuitResult()`: `EventResult{Consumed: true, Quit: true}`
+
+### Event Handling Hierarchy
+When an event arrives at `Pane` (or composite containers `Frame`, `Tabs`, `Stack`, `Grid`, `Split`), `DispatchKeyEvent` and `DispatchMouseEvent` resolve the event in precedence order:
+1. `EventConsumer` (`ConsumeKey(e KeyEvent) EventResult`) / `MouseConsumer` (`ConsumeMouse(e MouseEvent) EventResult`).
+2. Legacy `KeyConsumer` (`ConsumeKey(e KeyEvent) (quit, consumed bool)`).
+3. Historical `Widget.HandleKey(e KeyEvent) bool` / `Widget.HandleMouse(e MouseEvent) bool`, where returning `true` signals a request to **quit the application**.
+4. Unhandled fallback quit keys (e.g. `Ctrl-C`, `Ctrl-Q`, `Esc`, `q` for non-text widgets). Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`, `backspace`) never trigger fallback quit.
+
+### Widget Implementation Contract
+- Widgets handling user input (e.g. navigation, typing, selection) should implement `EventConsumer` with `ConsumeKey(e KeyEvent) EventResult` and return `loom.Handled()` on consumed inputs.
+- If implementing historical `HandleKey(e KeyEvent) bool`, return `false` on ordinary keystrokes and `true` ONLY when requesting application termination.
+- Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.
+
 ## 8. Mouse Coordinate Invariants
 
 Mouse coordinates: events reaching widgets are 0-based, PTY SGR mouse reports are 1-based.

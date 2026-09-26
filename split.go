@@ -158,6 +158,16 @@ func (s *Split) HandleKey(e KeyEvent) bool {
 		return false
 	}
 	if child := s.focusedChild(); child != nil {
+		if c, ok := child.(EventConsumer); ok {
+			if res := c.ConsumeKey(e); res.Consumed {
+				return res.Quit
+			}
+		}
+		if c, ok := child.(KeyConsumer); ok {
+			if quit, consumed := c.ConsumeKey(e); consumed {
+				return quit
+			}
+		}
 		return child.HandleKey(e)
 	}
 	return false
