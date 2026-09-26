@@ -6,11 +6,15 @@
 package ansicanvas_demo
 
 import (
+	_ "embed"
 	"fmt"
 
 	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
 )
+
+//go:embed loom-logo.ansi
+var defaultLogoANSI []byte
 
 // DemoApp embeds loom.AnsiEditor inside a minimal Loom Frame.
 type DemoApp struct {
@@ -22,15 +26,14 @@ type DemoApp struct {
 // NewDemoApp creates a new DemoApp for the given ANSI buffer.
 func NewDemoApp(buf *loom.AnsiBuffer) *DemoApp {
 	if buf == nil {
-		buf = loom.NewAnsiBuffer(60, 18)
-		// Seed with a welcoming banner
-		title := "✨ Loom AnsiCanvas Demo ✨"
-		for i, r := range title {
-			buf.Put(i+2, 1, r, loom.ColorIndex(11), loom.ColorReset(), true, false, false, false)
+		if len(defaultLogoANSI) > 0 {
+			parsed, err := loom.ParseAnsiBuffer(string(defaultLogoANSI), 54, 14)
+			if err == nil {
+				buf = parsed
+			}
 		}
-		info := "Type anywhere to draw. Arrows to navigate. F10 / q to quit."
-		for i, r := range info {
-			buf.Put(i+2, 3, r, loom.ColorIndex(36), loom.ColorReset(), false, false, false, false)
+		if buf == nil {
+			buf = loom.NewAnsiBuffer(60, 18)
 		}
 		buf.SetModified(false)
 	}
