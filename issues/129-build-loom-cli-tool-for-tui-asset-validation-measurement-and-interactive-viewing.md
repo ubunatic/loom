@@ -1,6 +1,6 @@
 # 129 — Build loom CLI tool for TUI asset validation, measurement, and interactive viewing
 
-**Status**: Open
+**Status**: Closed — implemented loom CLI with view, measure, eval, and check-box commands, verified by reviewer
 **Priority**: P1 (High)
 **Severity**: Normal
 **Category**: Feature / CLI Tooling
