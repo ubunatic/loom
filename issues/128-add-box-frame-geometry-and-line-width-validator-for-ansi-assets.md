@@ -34,3 +34,9 @@
 ## Delivered
 
 - Added tracked-asset coverage with a source-walk fallback, table-driven geometry cases, path-specific errors, and aligned the two progress mockups flagged by the gate.
+
+## M2 — Pre-Work / Required Refinements (terra review of c5c6005)
+
+1. Blocker: remove the global early returns in `ValidateAnsiBox` for junction runes and non-SGR escapes. Treat `├──┤`/`╟──╢` rows as framed middle rows and validate them. Skip only segments that are cursor-addressed and cannot be measured, not the whole file. Add a test showing that a misaligned `├──┤` divider fails.
+2. Blocker: restore visual line-width comparison (including trailing display columns) alongside the border columns. The "padding outside box" test case must fail on a ragged row.
+3. Should-fix: select the asset set with a deterministic filesystem walk (skipping .git and vendored/build dirs), not `git ls-files`.

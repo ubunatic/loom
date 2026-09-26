@@ -118,3 +118,7 @@ M1 delivered (cfb915a, flash37): splash `NewWidget`, Ticker redraw, OnChildQuit 
 
 - M2 adds a declaration-backed monitor widget with focus-scoped collectors, ticker updates, and a cancellation/join regression test.
 - M3 registers the monitor widget factory and tests simultaneous splash/monitor tabs, including inactive-tab tick suppression.
+
+## M4 — Pre-Work / Required Refinements (terra review of d1148c4/9e2f4e4)
+
+1. Blocker: `examples/monitor/monitor/watch.go:83` standalone `runWatch` must also `defer w.Close()`; quitting with F10 currently leaves collector goroutines running. Add a test that drives the real `runWatch` shutdown path and asserts the collectors stopped.
