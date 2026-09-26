@@ -4,37 +4,41 @@
 package loom
 
 import (
+	"bytes"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 	"testing"
 )
 
 func TestValidateAnsiBox(t *testing.T) {
-	if err := ValidateAnsiBox("┌───┐\n│abc│\n└───┘\n"); err != nil {
-		t.Fatalf("valid box rejected: %v", err)
-	}
-	if err := ValidateAnsiBox("\x1b[31m┌───┐\x1b[0m\n│界 │\n└───┘"); err != nil {
-		t.Fatalf("valid ANSI box with a wide rune rejected: %v", err)
-	}
-	if err := ValidateAnsiBox("┌───┐\n│abc  │\n└───┘\n"); err == nil {
-		t.Fatal("misaligned box accepted")
-	}
-	if err := ValidateAnsiBox("plain text\nwith no box"); err != nil {
-		t.Fatalf("unboxed text rejected: %v", err)
+	for _, tc := range []struct {
+		name    string
+		text    string
+		wantErr bool
+	}{
+		{name: "valid box", text: "┌───┐\n│abc│\n└───┘\n"},
+		{name: "SGR and wide rune", text: "\x1b[31m┌───┐\x1b[0m\n│界 │\n└───┘"},
+		{name: "ragged box row", text: "┌───┐\n│abc  │\n└───┘\n", wantErr: true},
+		{name: "unboxed uneven text", text: "plain text\nshort"},
+		{name: "adjacent separate boxes", text: "┌──┐\n│a │\n└──┘\n┌────┐\n│ b  │\n└────┘"},
+		{name: "padding outside box", text: "┌───┐   \n│abc│\n└───┘"},
+		{name: "cursor-addressed recording", text: "\x1b[2;1H┌───┐\x1b[3;1H│abc│"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err := ValidateAnsiBox(tc.text)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("ValidateAnsiBox() error = %v, wantErr %v", err, tc.wantErr)
+			}
+		})
 	}
 }
 
 func TestAllAnsiAssetsHaveValidBoxes(t *testing.T) {
-	var files []string
-	err := filepath.WalkDir(".", func(path string, entry os.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !entry.IsDir() && filepath.Ext(path) == ".ansi" {
-			files = append(files, path)
-		}
-		return nil
-	})
+	files, err := ansiAssetFiles(".")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,9 +52,46 @@ func TestAllAnsiAssetsHaveValidBoxes(t *testing.T) {
 			continue
 		}
 		if err := ValidateAnsiBox(string(data)); err != nil {
-			t.Errorf("%s: %v", path, err)
+			t.Errorf("%s: invalid ANSI box: %v", path, err)
 		}
 	}
+}
+
+// ansiAssetFiles returns tracked ANSI assets. A source archive without Git uses
+// a filesystem walk, which keeps the test useful for vendored source copies.
+func ansiAssetFiles(root string) ([]string, error) {
+	if _, err := exec.LookPath("git"); err == nil {
+		cmd := exec.Command("git", "-C", root, "ls-files", "-z", "--", "*.ansi")
+		var stderr bytes.Buffer
+		cmd.Stderr = &stderr
+		output, err := cmd.Output()
+		if err != nil {
+			return nil, fmt.Errorf("list tracked ANSI assets: %w: %s", err, strings.TrimSpace(stderr.String()))
+		}
+		var files []string
+		for _, path := range strings.Split(string(output), "\x00") {
+			if path != "" {
+				files = append(files, filepath.Join(root, filepath.FromSlash(path)))
+			}
+		}
+		return files, nil
+	}
+
+	var files []string
+	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if entry.IsDir() {
+			return nil
+		}
+		if filepath.Ext(path) == ".ansi" {
+			files = append(files, path)
+		}
+		return nil
+	})
+	sort.Strings(files)
+	return files, err
 }
 
 func TestAnsiBufferCreation(t *testing.T) {

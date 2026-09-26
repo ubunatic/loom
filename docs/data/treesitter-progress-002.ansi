@@ -1,21 +1,21 @@
-[36m┌[0m [1m[97mLoom Syntax Engine & TextEdit — Final Delivery Report[0m [36m────────────────────────┐[0m
+[36m┌[0m [1m[97mLoom Syntax Engine & TextEdit — Final Delivery Report[0m [36m─────────────────────────┐[0m
 [36m│[0m [1m[37mSystem Status: Full Syntax Highlighting & Structural Navigation Delivered[0m      [36m│[0m
 [36m│[0m [2m[90mArchitectural Foundation: codeberg.org/ubunatic/loom/syntax[0m                    [36m│[0m
 [36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
-[36m│[0m  [1m[32m✔  UI-Neutral syntax package:[0m   Point, Edit, Span, ThemeMap, StyleResolver   [36m│[0m
-[36m│[0m  [1m[32m✔  Multi-Language Engines:[0m      Go, Markdown, JSON, YAML, plain text         [36m│[0m
-[36m│[0m  [1m[32m✔  Single-Pass Viewport Draw:[0m  TextArea renders styled runs at 60fps         [36m│[0m
-[36m│[0m  [1m[32m✔  Top Bar Scope Breadcrumbs:[0m  [📁 demo.go › 🔧 func main]                   [36m│[0m
-[36m│[0m  [1m[32m✔  Sidebar Symbol Outline:[0m     [📁 Explorer │ 📋 Outline] with jump navigation [36m│[0m
-[36m│[0m  [1m[32m✔  Gutter Code Folding:[0m        ▾ / ▸ toggleable fold blocks (F2 key)       [36m│[0m
+[36m│[0m  [1m[32m✔  UI-Neutral syntax package:[0m   Point, Edit, Span, ThemeMap, StyleResolver   [36m │[0m
+[36m│[0m  [1m[32m✔  Multi-Language Engines:[0m      Go, Markdown, JSON, YAML, plain text         [36m │[0m
+[36m│[0m  [1m[32m✔  Single-Pass Viewport Draw:[0m  TextArea renders styled runs at 60fps         [36m │[0m
+[36m│[0m  [1m[32m✔  Top Bar Scope Breadcrumbs:[0m  [📁 demo.go › 🔧 func main]                   [36m │[0m
+[36m│[0m  [1m[32m✔  Sidebar Symbol Outline:[0m     [📁 Explorer │ 📋 Outline] with jump navigation[36m│[0m
+[36m│[0m  [1m[32m✔  Gutter Code Folding:[0m        ▾ / ▸ toggleable fold blocks (F2 key)       [36m   │[0m
 [36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
 [36m│[0m [1m[96mCompleted Milestones & Ticket Status:[0m                                          [36m│[0m
-[36m│[0m   [#118] [1m[32m✔ CLOSED[0m  wazero Tree-Sitter canary spike & latency benchmarks       [36m│[0m
-[36m│[0m   [#119] [1m[32m✔ CLOSED[0m  Core syntax package API, taxonomy, and coordinate maps     [36m│[0m
+[36m│[0m   [#118] [1m[32m✔ CLOSED[0m  wazero Tree-Sitter canary spike & latency benchmarks       [36m │[0m
+[36m│[0m   [#119] [1m[32m✔ CLOSED[0m  Core syntax package API, taxonomy, and coordinate maps     [36m │[0m
 [36m│[0m   [#120] [1m[33m⏳ OPEN[0m    Wasm grammars with ts_tree_edit (deferred to custom Wasm)  [36m│[0m
-[36m│[0m   [#121] [1m[32m✔ CLOSED[0m  TextArea single-pass viewport rendering integration        [36m│[0m
-[36m│[0m   [#122] [1m[32m✔ CLOSED[0m  AST breadcrumbs, symbol outline, and code folding          [36m│[0m
+[36m│[0m   [#121] [1m[32m✔ CLOSED[0m  TextArea single-pass viewport rendering integration        [36m │[0m
+[36m│[0m   [#122] [1m[32m✔ CLOSED[0m  AST breadcrumbs, symbol outline, and code folding          [36m │[0m
 [36m│[0m [36m────────────────────────────────────────────────────────────────────────────[0m   [36m│[0m
 [36m│[0m [2m[90mVerification: make test-q1 passed (all 45+ packages), make install clean[0m       [36m│[0m
-[36m└──────────────────────────────────────────────────────────────────────────────┘[0m
+[36m└────────────────────────────────────────────────────────────────────────────────┘[0m
 [48;5;236m [1m[32m●[0m [97mGoal Complete[0m  [48;5;239m[1m[97m textedit [0m[48;5;236m [37mLive with full syntax, outline & folds[0m            [0m

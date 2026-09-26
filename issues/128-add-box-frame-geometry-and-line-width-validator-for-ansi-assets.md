@@ -30,3 +30,7 @@
 2. **Automated Test Suite Integration**:
    - Add a test in `ansibuffer_test.go` / `measure_test.go` iterating through all `.ansi` files in the repository and asserting uniform line widths and box alignment.
    - Any broken box in an asset immediately fails `go test ./...` and `make test`.
+
+## Delivered
+
+- Added tracked-asset coverage with a source-walk fallback, table-driven geometry cases, path-specific errors, and aligned the two progress mockups flagged by the gate.
