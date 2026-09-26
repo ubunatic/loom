@@ -9,6 +9,50 @@ import (
 	"testing"
 )
 
+func TestValidateAnsiBox(t *testing.T) {
+	if err := ValidateAnsiBox("┌───┐\n│abc│\n└───┘\n"); err != nil {
+		t.Fatalf("valid box rejected: %v", err)
+	}
+	if err := ValidateAnsiBox("\x1b[31m┌───┐\x1b[0m\n│界 │\n└───┘"); err != nil {
+		t.Fatalf("valid ANSI box with a wide rune rejected: %v", err)
+	}
+	if err := ValidateAnsiBox("┌───┐\n│abc  │\n└───┘\n"); err == nil {
+		t.Fatal("misaligned box accepted")
+	}
+	if err := ValidateAnsiBox("plain text\nwith no box"); err != nil {
+		t.Fatalf("unboxed text rejected: %v", err)
+	}
+}
+
+func TestAllAnsiAssetsHaveValidBoxes(t *testing.T) {
+	var files []string
+	err := filepath.WalkDir(".", func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !entry.IsDir() && filepath.Ext(path) == ".ansi" {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) == 0 {
+		t.Fatal("no ANSI assets found")
+	}
+	for _, path := range files {
+		data, err := os.ReadFile(path)
+		if err != nil {
+			t.Errorf("read %s: %v", path, err)
+			continue
+		}
+		if err := ValidateAnsiBox(string(data)); err != nil {
+			t.Errorf("%s: %v", path, err)
+		}
+	}
+}
+
 func TestAnsiBufferCreation(t *testing.T) {
 	buf := NewAnsiBuffer(50, 20)
 	if buf.Cols() != 50 || buf.Rows() != 20 {

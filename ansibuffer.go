@@ -12,6 +12,93 @@ import (
 	"codeberg.org/ubunatic/loom/measure"
 )
 
+// ValidateAnsiBox checks that rows which form a Unicode box have consistent
+// visual widths and aligned left and right borders. Text without box drawing
+// characters is accepted unchanged.
+func ValidateAnsiBox(text string) error {
+	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
+	type edge struct {
+		line, left, right, width int
+	}
+	var framed []edge
+	for i, line := range lines {
+		plain := stripANSIForBox(line)
+		width := measure.StringWidth(plain)
+		left, right := -1, -1
+		col := 0
+		for _, r := range plain {
+			if isBoxVertical(r) || isBoxCorner(r) {
+				if left < 0 {
+					left = col
+				}
+				right = col
+			}
+			col += measure.RuneWidth(r)
+		}
+		trimmed := strings.TrimSpace(plain)
+		if left >= 0 && len(trimmed) > 1 && isBoxEdge(firstRune(trimmed)) && isBoxEdge(lastRune(trimmed)) {
+			framed = append(framed, edge{line: i + 1, left: left, right: right, width: width})
+		}
+	}
+	if len(framed) < 2 {
+		return nil
+	}
+	// Compare adjacent framed rows only. ANSI files often contain independent
+	// boxes with different dimensions, so their geometry must not be combined.
+	for i := 1; i < len(framed); i++ {
+		base, row := framed[i-1], framed[i]
+		if row.line == base.line+1 && (row.left != base.left || row.right != base.right || row.width != base.width) {
+			return fmt.Errorf("boxed line %d: boundaries/width %d..%d (width %d), want %d..%d (width %d) from line %d", row.line, row.left, row.right, row.width, base.left, base.right, base.width, base.line)
+		}
+	}
+	return nil
+}
+
+func isBoxVertical(r rune) bool { return r == '│' || r == '║' || r == '┃' || r == '|' }
+func isBoxCorner(r rune) bool {
+	return strings.ContainsRune("┌┐└┘╔╗╚╝╭╮╰╯", r)
+}
+func isBoxEdge(r rune) bool { return isBoxVertical(r) || isBoxCorner(r) }
+func firstRune(s string) rune {
+	for _, r := range s {
+		return r
+	}
+	return 0
+}
+func lastRune(s string) rune {
+	var last rune
+	for _, r := range s {
+		last = r
+	}
+	return last
+}
+func stripANSIForBox(s string) string {
+	var b strings.Builder
+	for i := 0; i < len(s); {
+		if s[i] != 0x1b {
+			b.WriteByte(s[i])
+			i++
+			continue
+		}
+		i++
+		if i >= len(s) {
+			break
+		}
+		if s[i] == '[' {
+			i++
+			for i < len(s) && (s[i] < '@' || s[i] > '~') {
+				i++
+			}
+			if i < len(s) {
+				i++
+			}
+		} else {
+			i++
+		}
+	}
+	return b.String()
+}
+
 // AnsiEditMode represents character insertion vs overtype behavior in an ANSI buffer.
 type AnsiEditMode int
 
