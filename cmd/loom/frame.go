@@ -78,26 +78,26 @@ func frameText(text, styleName, title string, padding int, color string) (string
 	if inner < 1 {
 		inner = 1
 	}
-	if title != "" && measure.StringWidth(title)+2 > inner {
-		inner = measure.StringWidth(title) + 2
+	if title != "" && measure.StringWidth(title)+4 > inner {
+		inner = measure.StringWidth(title) + 4
 	}
 	var out []string
-	border := func(r rune) string { return colorizeBorder(string(r), colorCode) }
-	top := border(style.topLeft)
+	top := ""
 	if title == "" {
-		top += strings.Repeat(border(style.horizontal), inner)
+		top = colorizeBorder(string(style.topLeft)+strings.Repeat(string(style.horizontal), inner)+string(style.topRight), colorCode)
 	} else {
 		titleW := measure.StringWidth(title)
 		remaining := inner - titleW - 2
 		left := remaining / 2
 		right := remaining - left
-		top += strings.Repeat(border(style.horizontal), left) + " " + title + " " + strings.Repeat(border(style.horizontal), right)
+		leftRun := string(style.topLeft) + strings.Repeat(string(style.horizontal), left)
+		rightRun := strings.Repeat(string(style.horizontal), right) + string(style.topRight)
+		top = colorizeBorder(leftRun, colorCode) + " " + title + " " + colorizeBorder(rightRun, colorCode)
 	}
-	top += border(style.topRight)
 	out = append(out, top)
 	blank := strings.Repeat(" ", inner)
 	for i := 0; i < padding; i++ {
-		out = append(out, border(style.vertical)+blank+border(style.vertical))
+		out = append(out, colorizeBorder(string(style.vertical), colorCode)+blank+colorizeBorder(string(style.vertical), colorCode))
 	}
 	for _, line := range lines {
 		w := measure.StringWidth(line)
@@ -106,12 +106,12 @@ func frameText(text, styleName, title string, padding int, color string) (string
 		if right < 0 {
 			right = 0
 		}
-		out = append(out, border(style.vertical)+strings.Repeat(" ", left)+line+strings.Repeat(" ", right)+border(style.vertical))
+		out = append(out, colorizeBorder(string(style.vertical), colorCode)+strings.Repeat(" ", left)+line+strings.Repeat(" ", right)+colorizeBorder(string(style.vertical), colorCode))
 	}
 	for i := 0; i < padding; i++ {
-		out = append(out, border(style.vertical)+blank+border(style.vertical))
+		out = append(out, colorizeBorder(string(style.vertical), colorCode)+blank+colorizeBorder(string(style.vertical), colorCode))
 	}
-	bottom := border(style.bottomLeft) + strings.Repeat(border(style.horizontal), inner) + border(style.bottomRight)
+	bottom := colorizeBorder(string(style.bottomLeft)+strings.Repeat(string(style.horizontal), inner)+string(style.bottomRight), colorCode)
 	out = append(out, bottom)
 	result := strings.Join(out, "\n")
 	if finalNL {

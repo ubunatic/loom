@@ -46,3 +46,11 @@ M2 delivered: frame command with 4 styles, padding, title, color, atomic --write
 
 1. Title must keep at least one horizontal border glyph on each side (`╭─ Hello World ─╮`); widen the frame accordingly. Add a test asserting this for a title wider than the body.
 2. Colorize each contiguous border run once (`ESC[38;5;208m╰─────╯ESC[0m`), not per glyph. Add a test asserting the escape count of the bottom border.
+
+### M3 Delivered
+
+Titles now reserve at least one horizontal glyph between each corner and the
+title, expanding the frame to fit. Each uninterrupted border run uses one SGR
+color start and reset pair; corners and horizontal glyphs share a run when
+adjacent. Added regression tests for a title wider than the body and the exact
+escape count on a colored bottom border.

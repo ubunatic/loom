@@ -69,11 +69,40 @@ func TestFrameTitleAndColors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(plain, "\x1b[36m┌\x1b[0m") {
+	if !strings.Contains(plain, "\x1b[36m┌─┐\x1b[0m") {
 		t.Fatalf("color missing from border: %q", plain)
 	}
 	if _, err := frameText("x", "single", "", 0, "not-a-color"); err == nil {
 		t.Fatal("invalid color accepted")
+	}
+}
+
+func TestFrameWideTitleKeepsBorderGlyphOnBothSides(t *testing.T) {
+	got, err := frameText("x", "rounded", "Long title", 0, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	line := strings.Split(got, "\n")[0]
+	if !strings.Contains(line, "╭─ Long title ─╮") {
+		t.Fatalf("wide title lacks a horizontal glyph on each side: %q", line)
+	}
+	if measure.StringWidth(line) <= measure.StringWidth("x")+2 {
+		t.Fatalf("wide title did not expand beyond the body: %q", line)
+	}
+}
+
+func TestFrameColorUsesOneEscapePairPerBorderRun(t *testing.T) {
+	got, err := frameText("x", "rounded", "", 0, "208")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bottom := strings.Split(got, "\n")[2]
+	want := "\x1b[38;5;208m╰─╯\x1b[0m"
+	if bottom != want {
+		t.Fatalf("colored bottom border = %q, want one contiguous color run %q", bottom, want)
+	}
+	if strings.Count(bottom, "\x1b[") != 2 {
+		t.Fatalf("bottom border has %d ANSI sequences, want 2: %q", strings.Count(bottom, "\x1b["), bottom)
 	}
 }
 
