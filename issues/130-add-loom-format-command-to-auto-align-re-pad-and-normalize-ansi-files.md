@@ -1,6 +1,6 @@
 # 130 — Add loom format command to auto-align, re-pad, and normalize ANSI files
 
-**Status**: Open
+**Status**: Closed — loom format delivered (M1), 86% cmd/loom coverage
 **Priority**: P1 (High)
 **Severity**: Normal
 **Category**: Feature / CLI Tooling
