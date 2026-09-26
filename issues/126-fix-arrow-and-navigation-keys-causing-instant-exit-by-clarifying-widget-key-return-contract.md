@@ -4,55 +4,47 @@
 **Priority**: P0 (Urgent)
 **Severity**: Critical
 **Category**: Architecture / Bug
-**Related**: `pane.go`, `widget.go`, `docs/Widgets.md`, `examples/ansiedit/`, `examples/textedit/`, `examples/filebrowser/`
+**Related**: `pane.go`, `widget.go`, `event.go`, `docs/Widgets.md`, `examples/ansiedit/`, `examples/textedit/`, `examples/filebrowser/`
 
 ---
 
 ## Goal
 
-`/goal`: Fix the recurring architectural bug where arrow keys and navigation inputs cause applications and example widgets (such as `ansiedit`, `textedit`, etc.) to terminate immediately on key press. Implement framework-level prevention and clean contract ergonomics so widget authors cannot accidentally confuse event consumption (`consumed = true`) with application exit (`quit = true`).
+`/goal`: Fix the recurring architectural bug where arrow keys and navigation inputs cause applications and example widgets (such as `ansiedit`, `textedit`, etc.) to terminate immediately on key press. Replace ambiguous bool returns with a small, value-type struct (not a pointer) for event results (e.g. `EventResult` / `KeyResult` with `Consumed` and `Quit` flags), integrate with `KeyConsumer` / `Widget` event dispatch in `pane.go`, and update examples (`ansiedit`, etc.) so navigation keys work properly.
 
 ## 1. Problem & Root Cause
 
 1. **Boolean Ambiguity in `Widget.HandleKey(KeyEvent) bool`**:
-   - In Loom's standard `Widget` interface:
-     ```go
-     type Widget interface {
-         Draw(*Canvas, Rect)
-         HandleKey(KeyEvent) bool
-         HandleMouse(MouseEvent) bool
-     }
-     ```
-   - For a root widget run directly via `pane.Run(root)`, returning `true` from `HandleKey` signals **"Quit the application event loop"**, whereas returning `false` signals **"Keep the event loop running"**.
-   - Almost every developer and widget author intuitively assumes `return true` means **"I handled/consumed this event"** (e.g. "I processed the Up arrow key, don't pass it to fallbacks").
-   - When an author implements arrow key navigation, text insertion, or panel switching returning `true`, pressing any arrow key or handled hotkey immediately exits the whole program.
+   - Returning `bool` creates constant bugs because developers assume `true` = "consumed/handled", while `pane.Run` treated `true` = "quit application".
+   - When an author implements arrow key navigation or text editing returning `true`, pressing any arrow key or handled hotkey immediately exits the whole program.
 
 2. **Contrast with `KeyConsumer` interface**:
-   - Issue #057 / #063 introduced `KeyConsumer`:
+   - `KeyConsumer` returns `(quit bool, consumed bool)`. We should formalize event results as a small struct passed by value (not pointer):
      ```go
-     type KeyConsumer interface {
-         ConsumeKey(KeyEvent) (quit bool, consumed bool)
+     type EventResult struct {
+         Consumed bool
+         Quit     bool
      }
      ```
-   - `pane.dispatchKey` checks `KeyConsumer` first (`if quit, consumed := c.ConsumeKey(ke); consumed { return quit }`), but falls back to `root.HandleKey(ke)` where the boolean meaning is inverted between consumption and quitting.
+     With helper constructors/constants, e.g.:
+     - `Handled()` / `Consumed()` -> `EventResult{Consumed: true, Quit: false}`
+     - `Ignored()` / `Unhandled()` -> `EventResult{Consumed: false, Quit: false}`
+     - `Quit()` -> `EventResult{Consumed: true, Quit: true}`
 
-3. **Silent Fallback to Default Quit Keys**:
-   - When `HandleKey` returns `false` (meaning "event consumed, do not quit"), `pane.dispatchKey` executes:
-     ```go
-     return root.HandleKey(ke) || p.handleKeyFallback(ke)
-     ```
-   - If an unhandled key is passed, `handleKeyFallback` checks `defaultQuitKeyMap` (`q`, `esc`, `ctrl-c`, etc.), which can unintentionally terminate editing applications unless `OwnsQuit: true` / `DisableDefaultQuit: true` is explicitly configured.
+3. **Fallback Safety**:
+   - `pane.dispatchKey` must cleanly interpret `EventResult` or `KeyConsumer`, and never treat navigation keys (`up`, `down`, `left`, `right`, `home`, `end`, `pgup`, `pgdn`) as default quit triggers.
 
-## 2. Solution & Architectural Fixes
+## 2. Milestones
 
-1. **Framework-Level Contract / Widget Wrapper**:
-   - Clarify and document the root event dispatch contract across `docs/Widgets.md` and SDK docstrings.
-   - Prefer or encourage `KeyConsumer` / explicit `App` wrappers at the library level so `(quit bool, consumed bool)` is unambiguous for root applications.
-   - Ensure `ansiedit`, `textedit`, and any other interactive examples implement `KeyConsumer` or correct `HandleKey` return semantics (`return false` on normal handled keystrokes, `return true` only on explicit quit requests).
+- **M1 (EventResult Value Struct & Dispatch Contract)**:
+  - Define `EventResult` value-type struct (non-pointer) with `Consumed` and `Quit` booleans and standard helpers (`Handled()`, `Ignored()`, `Quit()`).
+  - Support `EventResult` / `KeyConsumer` in `pane.go` `dispatchKey` and `dispatchMouse`.
+  - Update `docs/Widgets.md` and SDK documentation to specify the contract clearly.
 
-2. **Library-Level Safety Guards**:
-   - Audit `pane.dispatchKey` to ensure standard navigation keys (`up`, `down`, `left`, `right`, `home`, `end`, `pgup`, `pgdn`) are never inadvertently treated as default quit triggers by fallback handlers.
-   - Verify `OwnsQuit` / `DisableDefaultQuit` interactions when `PaneRequest` is declared by widgets.
+- **M2 (Ansiedit & Examples Event Handler Update)**:
+  - Update `examples/ansiedit/ansiedit/app.go` to use `KeyConsumer` / `EventResult`, ensuring all navigation keys (`up`, `down`, `left`, `right`, `ctrl-arrows`, `tab`, `del`, `backspace`, etc.) consume the event (`Consumed: true, Quit: false`) without quitting.
+  - Verify `F10` and `Ctrl-Q` explicitly request quit (`Quit: true`).
 
-3. **Automated Regression Tests**:
-   - Add unit tests in `pane_test.go` and example tests (e.g., `ansiedit_test.go`) simulating arrow key presses, ensuring arrow navigation updates state and does NOT return `quit=true`.
+- **M3 (Tests & Verification)**:
+  - Add unit and PTY tests in `examples/ansiedit/` and `pane_test.go` asserting that arrow keys navigate and do not quit.
+  - Run full suite (`go test ./...`, `make test-q1`) and verify `make install`.
