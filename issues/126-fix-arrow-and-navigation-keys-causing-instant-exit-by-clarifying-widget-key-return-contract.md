@@ -1,6 +1,6 @@
 # 126 — Fix arrow and navigation keys causing instant exit by clarifying widget key return contract
 
-**Status**: Closed
+**Status**: Closed — implemented EventResult value struct, updated event dispatch in pane.go, and fixed arrow navigation in ansiedit
 **Resolution**: Implemented `EventResult` value struct and `EventConsumer`/`MouseConsumer` interfaces in `event.go` and `widget.go`, integrated with `pane.go` (`dispatchKey`, `dispatchMouse`) and fallback safety. Updated `ansiedit` and composite container widgets to consume navigation keys cleanly (`Handled()`), and verified through comprehensive unit and PTY tests.
 **Commits**: `de2b802` (M1), `ec8848a` (M2)
 **Related**: `pane.go`, `widget.go`, `event.go`, `docs/Widgets.md`, `examples/ansiedit/`, `examples/textedit/`, `examples/filebrowser/`
