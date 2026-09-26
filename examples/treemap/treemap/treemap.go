@@ -17,6 +17,7 @@ package treemap
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"syscall"
@@ -45,21 +46,21 @@ func buildOptions(width, height, theme int, ansi, showValues bool) graph.Treemap
 // renderOnce reads a fresh process tree and renders it. Width/height are
 // re-resolved against the current terminal size on every call, so watch
 // mode picks up terminal resizes between redraws.
-func renderOnce(ctx context.Context, width, height, maxNodes, theme int, ansi, showValues bool, legendPosition string, legendRows, legendWidth int, legendMinValue float64, excludeSelf bool) ([]string, error) {
-	root, err := readProcTree(ctx, excludeSelf)
+func renderOnce(ctx context.Context, opts Options, warnings io.Writer) ([]string, error) {
+	root, err := readProcTree(ctx, opts.ExcludeSelf)
 	if err != nil {
 		return nil, err
 	}
-	w, h := resolveDimensions(width, height)
-	segments := graph.AggregateTreemap(root, maxNodes)
-	opts := buildOptions(w, h, theme, ansi, showValues)
-	opts.LegendRows = legendRows
-	opts.LegendWidth = legendWidth
-	opts.LegendMinValue = legendMinValue
-	if legendPosition == "right" {
-		opts.LegendPosition = graph.TreemapLegendRight
+	w, h := resolveDimensionsWithOutput(opts.Width, opts.Height, warnings)
+	renderOpts := buildOptions(w, h, opts.Theme, opts.ANSI, opts.ShowValues)
+	renderOpts.LegendRows = opts.LegendRows
+	renderOpts.LegendWidth = opts.LegendWidth
+	renderOpts.LegendMinValue = opts.LegendMinValue
+	if opts.LegendPosition == "right" {
+		renderOpts.LegendPosition = graph.TreemapLegendRight
 	}
-	return graph.RenderTreemap(segments, opts), nil
+	segments := graph.AggregateTreemap(root, opts.MaxNodes)
+	return graph.RenderTreemap(segments, renderOpts), nil
 }
 
 // run prints the current process tree once and exits. It uses loom.WriteRows
@@ -69,8 +70,8 @@ func renderOnce(ctx context.Context, width, height, maxNodes, theme int, ansi, s
 // already has on screen above it. See loom.RawScreen's doc comment for why
 // that distinction matters (it was a real regression here, caught by PTY
 // testing).
-func run(width, height, maxNodes, theme int, ansi, showValues bool, legendPosition string, legendRows, legendWidth int, legendMinValue float64, excludeSelf bool) error {
-	rows, err := renderOnce(context.Background(), width, height, maxNodes, theme, ansi, showValues, legendPosition, legendRows, legendWidth, legendMinValue, excludeSelf)
+func run(opts Options) error {
+	rows, err := renderOnce(context.Background(), opts, os.Stderr)
 	if err != nil {
 		return err
 	}
@@ -86,8 +87,8 @@ func run(width, height, maxNodes, theme int, ansi, showValues bool, legendPositi
 // auto-wrap so an over-wide or stale-sized row can never wrap and cascade
 // into a whole-screen scramble, and it positions each row absolutely so a
 // bad row can only ever corrupt its own line. See rawscreen.go.
-func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, showValues bool, legendPosition string, legendRows, legendWidth int, legendMinValue float64, excludeSelf bool, interval time.Duration) error {
-	if interval <= 0 {
+func runWatch(ctx context.Context, opts Options) error {
+	if opts.Interval <= 0 {
 		return fmt.Errorf("treemap: --interval must be positive")
 	}
 	ctx, cancel := context.WithCancel(ctx)
@@ -99,7 +100,7 @@ func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, sho
 	defer screen.Close()
 
 	draw := func() error {
-		rows, err := renderOnce(ctx, width, height, maxNodes, theme, ansi, showValues, legendPosition, legendRows, legendWidth, legendMinValue, excludeSelf)
+		rows, err := renderOnce(ctx, opts, os.Stderr)
 		if err != nil {
 			return err
 		}
@@ -109,7 +110,7 @@ func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, sho
 		return err
 	}
 
-	ticker := time.NewTicker(interval)
+	ticker := time.NewTicker(opts.Interval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -127,12 +128,7 @@ func runWatch(ctx context.Context, width, height, maxNodes, theme int, ansi, sho
 // Run(args []string) error signature shared by the other examples for
 // loom-demo/loom-bench registration.
 func Run(args []string) error {
-	var width, height, maxNodes, theme int
-	var legendRows, legendWidth int
-	var legendMinValue float64
-	var legendPosition string
-	var ansi, showValues, watch, excludeSelf bool
-	var interval time.Duration
+	var opts Options
 	cmd := &cobra.Command{
 		Use:           "treemap",
 		Short:         "Render the live process CPU-usage tree as a graph.RenderTreemap box layout",
@@ -140,36 +136,36 @@ func Run(args []string) error {
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if err := parseTheme(theme, ansi); err != nil {
+			if err := parseTheme(opts.Theme, opts.ANSI); err != nil {
 				return err
 			}
-			if legendPosition != "bottom" && legendPosition != "right" {
+			if opts.LegendPosition != "bottom" && opts.LegendPosition != "right" {
 				return fmt.Errorf("treemap: --legend must be bottom or right")
 			}
-			if legendMinValue < 0 {
+			if opts.LegendMinValue < 0 {
 				return fmt.Errorf("treemap: --legend-min-value must be non-negative")
 			}
-			if !watch {
-				return run(width, height, maxNodes, theme, ansi, showValues, legendPosition, legendRows, legendWidth, legendMinValue, excludeSelf)
+			if !opts.Watch {
+				return run(opts)
 			}
 			ctx, stop := signal.NotifyContext(cmd.Context(), os.Interrupt, syscall.SIGTERM)
 			defer stop()
-			return runWatch(ctx, width, height, maxNodes, theme, ansi, showValues, legendPosition, legendRows, legendWidth, legendMinValue, excludeSelf, interval)
+			return runWatch(ctx, opts)
 		},
 	}
-	cmd.Flags().IntVarP(&width, "width", "W", 0, "canvas width in columns (default: terminal width)")
-	cmd.Flags().IntVarP(&height, "height", "H", 0, "canvas height in rows (default: terminal height - 2)")
-	cmd.Flags().IntVar(&maxNodes, "max-nodes", graph.MaxTreemapNodes, "node budget passed to AggregateTreemap")
-	cmd.Flags().BoolVar(&ansi, "ansi", false, "color each box with a cycling ANSI background")
-	cmd.Flags().BoolVar(&showValues, "values", true, "append each segment's %CPU to its label")
-	cmd.Flags().BoolVarP(&watch, "watch", "w", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
-	cmd.Flags().BoolVar(&excludeSelf, "exclude-self", false, "exclude this process, its children, and a direct go run launcher")
-	cmd.Flags().DurationVar(&interval, "interval", 2*time.Second, "redraw interval in --watch mode")
-	cmd.Flags().IntVar(&theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (thin edges + a corner number on every box, requires --ansi)")
-	cmd.Flags().StringVar(&legendPosition, "legend", "bottom", "legend position: bottom or right")
-	cmd.Flags().IntVar(&legendRows, "legend-rows", 2, "bottom legend rows (0: library default of two, negative: unlimited)")
-	cmd.Flags().IntVar(&legendWidth, "legend-width", 0, "right legend width in columns (default: one third of total width)")
-	cmd.Flags().Float64Var(&legendMinValue, "legend-min-value", 0, "omit legend entries below this value (percent CPU; boxes remain visible)")
+	cmd.Flags().IntVarP(&opts.Width, "width", "W", 0, "canvas width in columns (default: terminal width)")
+	cmd.Flags().IntVarP(&opts.Height, "height", "H", 0, "canvas height in rows (default: terminal height - 2)")
+	cmd.Flags().IntVar(&opts.MaxNodes, "max-nodes", graph.MaxTreemapNodes, "node budget passed to AggregateTreemap")
+	cmd.Flags().BoolVar(&opts.ANSI, "ansi", false, "color each box with a cycling ANSI background")
+	cmd.Flags().BoolVar(&opts.ShowValues, "values", true, "append each segment's %CPU to its label")
+	cmd.Flags().BoolVarP(&opts.Watch, "watch", "w", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
+	cmd.Flags().BoolVar(&opts.ExcludeSelf, "exclude-self", false, "exclude this process, its children, and a direct go run launcher")
+	cmd.Flags().DurationVar(&opts.Interval, "interval", 2*time.Second, "redraw interval in --watch mode")
+	cmd.Flags().IntVar(&opts.Theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (thin edges + a corner number on every box, requires --ansi)")
+	cmd.Flags().StringVar(&opts.LegendPosition, "legend", "bottom", "legend position: bottom or right")
+	cmd.Flags().IntVar(&opts.LegendRows, "legend-rows", 2, "bottom legend rows (0: library default of two, negative: unlimited)")
+	cmd.Flags().IntVar(&opts.LegendWidth, "legend-width", 0, "right legend width in columns (default: one third of total width)")
+	cmd.Flags().Float64Var(&opts.LegendMinValue, "legend-min-value", 0, "omit legend entries below this value (percent CPU; boxes remain visible)")
 	cmd.SetArgs(args)
 	return cmd.Execute()
 }

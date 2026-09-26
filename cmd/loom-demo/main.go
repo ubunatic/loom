@@ -119,7 +119,7 @@ func newHostedTabs() (*loom.Tabs, error) {
 		if e.NewWidget == nil {
 			continue
 		}
-		widget, err := e.NewWidget([]string{})
+		widget, err := e.NewWidget(e.DemoArgs)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create widget for %q: %v", e.Name, err)
 		}

@@ -5,6 +5,7 @@ package treemap
 
 import (
 	"fmt"
+	"io"
 	"os"
 
 	"codeberg.org/ubunatic/loom"
@@ -16,6 +17,10 @@ import (
 // 80x24 fallback when output is redirected. Explicit dimensions are clamped
 // to the terminal to prevent row wrapping from scrambling the grid.
 func resolveDimensions(width, height int) (int, int) {
+	return resolveDimensionsWithOutput(width, height, os.Stderr)
+}
+
+func resolveDimensionsWithOutput(width, height int, warnings io.Writer) (int, int) {
 	cols, rows, err := loom.TerminalSize()
 	ok := err == nil && cols > 0 && rows > 0
 	if !ok {
@@ -28,11 +33,11 @@ func resolveDimensions(width, height int) (int, int) {
 		return width, height
 	}
 	w, h, widthClamped, heightClamped := clampDimensions(width, height, cols, rows)
-	if widthClamped {
-		fmt.Fprintf(os.Stderr, "treemap: --width %d exceeds the terminal's %d columns; clamping to avoid line-wrap corruption\n", width, cols)
+	if widthClamped && warnings != nil {
+		fmt.Fprintf(warnings, "treemap: --width %d exceeds the terminal's %d columns; clamping to avoid line-wrap corruption\n", width, cols)
 	}
-	if heightClamped {
-		fmt.Fprintf(os.Stderr, "treemap: --height %d exceeds the usable terminal height %d; clamping\n", height, h)
+	if heightClamped && warnings != nil {
+		fmt.Fprintf(warnings, "treemap: --height %d exceeds the usable terminal height %d; clamping\n", height, h)
 	}
 	return w, h
 }

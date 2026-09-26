@@ -144,6 +144,7 @@ var Registry = []Example{
 		Run:          treemap.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch", "--ansi"},
+		NewWidget:    func(args []string) (interface{}, error) { return treemap.NewWidget(args) },
 	},
 	{
 		Name:         "screens",

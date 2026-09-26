@@ -4,10 +4,65 @@
 package treemap
 
 import (
+	"io"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
+	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/graph"
 )
+
+func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {
+	stdout, err := os.CreateTemp(t.TempDir(), "stdout")
+	if err != nil {
+		t.Fatal(err)
+	}
+	stderr, err := os.CreateTemp(t.TempDir(), "stderr")
+	if err != nil {
+		t.Fatal(err)
+	}
+	oldStdout, oldStderr := os.Stdout, os.Stderr
+	os.Stdout, os.Stderr = stdout, stderr
+	t.Cleanup(func() {
+		os.Stdout, os.Stderr = oldStdout, oldStderr
+		_ = stdout.Close()
+		_ = stderr.Close()
+	})
+
+	widget, err := NewWidget([]string{"--width=36", "--height=12", "--watch", "--ansi"})
+	if err != nil {
+		t.Fatalf("NewWidget: %v", err)
+	}
+	canvas := loom.NewCanvas(36, 12)
+	widget.Draw(canvas, canvas.Bounds())
+	loom.Render(widget, 36, 12)
+	ticker, ok := widget.(loom.Ticker)
+	if !ok {
+		t.Fatalf("widget %T does not implement loom.Ticker", widget)
+	}
+	if ticker.TickInterval() != 2*time.Second {
+		t.Fatalf("widget ticker interval = %v, want 2s", ticker.TickInterval())
+	}
+	ticker.Tick(time.Now())
+	if !widget.HandleKey(loom.KeyEvent{Key: "q"}) {
+		t.Fatal("q should request hosted child quit")
+	}
+
+	for name, file := range map[string]*os.File{"stdout": stdout, "stderr": stderr} {
+		if _, err := file.Seek(0, io.SeekStart); err != nil {
+			t.Fatal(err)
+		}
+		content, err := io.ReadAll(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.TrimSpace(string(content)) != "" {
+			t.Errorf("hosted widget wrote to %s: %q", name, content)
+		}
+	}
+}
 
 // TestClampDimensionsNeverExceedsTerminal is a regression test: an explicit
 // --width/--height wider/taller than the real terminal used to be honored
