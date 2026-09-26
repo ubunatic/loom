@@ -9,6 +9,8 @@
 package examplesreg
 
 import (
+	"codeberg.org/ubunatic/loom/examples/ansicanvas_demo/ansicanvas_demo"
+	"codeberg.org/ubunatic/loom/examples/ansiedit/ansiedit"
 	"codeberg.org/ubunatic/loom/examples/ansiviewer/ansiviewer"
 	"codeberg.org/ubunatic/loom/examples/background/background"
 	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
@@ -51,6 +53,22 @@ type Example struct {
 
 // Registry lists every examples/* program in a fixed, deterministic order.
 var Registry = []Example{
+	{
+		Name:         "ansicanvas_demo",
+		Description:  "Minimal demonstration of embedding loom.AnsiEditor",
+		Package:      "codeberg.org/ubunatic/loom/examples/ansicanvas_demo",
+		Run:          ansicanvas_demo.Run,
+		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return ansicanvas_demo.NewWidget(args) },
+	},
+	{
+		Name:         "ansiedit",
+		Description:  "Full-featured ANSI art and graphic cell editor",
+		Package:      "codeberg.org/ubunatic/loom/examples/ansiedit",
+		Run:          ansiedit.Run,
+		SupportsHelp: true,
+		NewWidget:    func(args []string) (interface{}, error) { return ansiedit.NewWidget(args) },
+	},
 	{
 		Name: "ansiviewer", Description: "Browse and render text, ANSI, and file metadata",
 		Package: "codeberg.org/ubunatic/loom/examples/ansiviewer",
