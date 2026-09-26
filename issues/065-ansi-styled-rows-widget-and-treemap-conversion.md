@@ -119,3 +119,16 @@ not a replacement.
 4. Rows shorter than the rect and rect rows past `len(Lines)` must be cleared (blank, Reset style), so a redraw with fewer or shorter lines leaves no stale cells. Add a test that draws twice on the same canvas.
 
 **M2 scope:** follows the plan — `Options` struct, `NewWidget(args)`, key handling via `HandleKey`, refresh via `Ticker`, no tty, signal or stdout/stderr access while hosted (capture test), `examplesreg` registration.
+
+**M2 pre-work delivered (8f883aa):** StyledRows round-trip test, escape filtering, and clearing of stale cells.
+**M2 delivered (f060955): hosted treemap** — `Options`, `NewWidget`, `Ticker` refresh, capture test showing Draw and Tick stay silent, registration in `examplesreg`, and loom-demo passing `DemoArgs`.
+
+### M3 — standalone decision, demo tab, visual check
+
+**Pre-Work / Required Refinements (from M2 review):**
+1. **Size from the rect, not the terminal.** The hosted widget renders at `opts.Width/Height` or, when those are 0, at the *terminal* size (`resolveDimensionsWithOutput` probes the tty). While hosted, render at `r.W x r.H` from `Draw`. Re-render whenever the rect size changes, with no tty probe on the hosted path. Test: `NewWidget(nil)` drawn into a 40x10 rect fills exactly 40x10, and a second Draw at 60x15 re-renders to the new size.
+2. **One flag definition.** `parseWidgetOptions` duplicates every cobra flag (names, defaults and help text). Define the flags once, for example a `bindFlags(fs *pflag.FlagSet, *Options)` used by both the cobra command and `NewWidget`. Also have the cobra `RunE` call `validateOptions` instead of repeating its inline checks.
+3. **Tick must not block the UI.** Tick scans `/proc` synchronously on the pane loop, and errors are silently dropped. Collect in the background like the monitor collectors from 064: Tick triggers or reads the latest result, and the widget provides `Close()`. Draw a collection error inside the rect instead of swallowing it.
+4. **Quit-key semantics.** `HandleKey` returns true for `q`, `esc`, `ctrl-c` and `ctrl-q`. Confirm this matches the monitor widget's hosted convention from 064. If "true" only means the key was consumed, a hosted tab would silently swallow `q`/`esc`. Align with monitor and state the convention in a comment.
+
+**M3 scope:** decide, with evidence, whether standalone `--watch` keeps `RawScreen` (compare output for the same data). Make sure treemap shows up as a loom-demo tab, and have `loom-bench` / `loom.Render` produce colored output for the user's visual check (write an `.ansi` snapshot to `/tmp` and report its path).
