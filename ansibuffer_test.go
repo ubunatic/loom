@@ -54,6 +54,30 @@ func TestAllAnsiAssetsHaveValidBoxes(t *testing.T) {
 	}
 }
 
+func TestAnsiAssetWalkSkipsDotDirectories(t *testing.T) {
+	root := t.TempDir()
+	for path, contents := range map[string]string{
+		"good.ansi":                 "plain",
+		".loom/broken.ansi":         "┌──┐\n│x │\n└─┘",
+		".cache/nested/broken.ansi": "┌──┐\n│x │\n└─┘",
+	} {
+		fullPath := filepath.Join(root, filepath.FromSlash(path))
+		if err := os.MkdirAll(filepath.Dir(fullPath), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(fullPath, []byte(contents), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	files, err := ansiAssetFiles(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || files[0] != filepath.Join(root, "good.ansi") {
+		t.Fatalf("ANSI assets = %v, want only %s", files, filepath.Join(root, "good.ansi"))
+	}
+}
+
 // ansiAssetFiles walks the checkout deterministically, including untracked
 // artwork while skipping repository metadata and generated/vendor trees.
 func ansiAssetFiles(root string) ([]string, error) {
@@ -63,6 +87,9 @@ func ansiAssetFiles(root string) ([]string, error) {
 			return err
 		}
 		if entry.IsDir() {
+			if filepath.Clean(path) != filepath.Clean(root) && len(entry.Name()) > 0 && entry.Name()[0] == '.' {
+				return filepath.SkipDir
+			}
 			switch entry.Name() {
 			case ".git", "vendor", "build", "dist", "node_modules":
 				return filepath.SkipDir
