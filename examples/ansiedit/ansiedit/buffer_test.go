@@ -1,0 +1,228 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package ansiedit
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+
+	"codeberg.org/ubunatic/loom"
+)
+
+func TestNewBuffer(t *testing.T) {
+	buf := NewBuffer(50, 20)
+	if buf.Cols() != 50 || buf.Rows() != 20 {
+		t.Fatalf("expected 50x20, got %dx%d", buf.Cols(), buf.Rows())
+	}
+	if buf.Modified() {
+		t.Fatalf("expected unmodified")
+	}
+	for y := 0; y < 20; y++ {
+		for x := 0; x < 50; x++ {
+			c := buf.Get(x, y)
+			if !c.IsBlank() {
+				t.Fatalf("expected blank cell at (%d,%d), got %+v", x, y, c)
+			}
+		}
+	}
+}
+
+func TestBufferEditing(t *testing.T) {
+	buf := NewBuffer(10, 5)
+
+	// Put in Overtype mode
+	buf.PutChar(0, 0, 'H', loom.ColorIndex(1), loom.ColorReset(), true, false, false, false, ModeOvertype)
+	buf.PutChar(1, 0, 'i', loom.ColorIndex(2), loom.ColorReset(), false, false, false, false, ModeOvertype)
+
+	if !buf.Modified() {
+		t.Fatalf("expected buffer to be modified")
+	}
+
+	c0 := buf.Get(0, 0)
+	if c0.Rune != 'H' || !c0.Bold || c0.FG != loom.ColorIndex(1) {
+		t.Fatalf("unexpected cell 0: %+v", c0)
+	}
+
+	c1 := buf.Get(1, 0)
+	if c1.Rune != 'i' || c1.FG != loom.ColorIndex(2) {
+		t.Fatalf("unexpected cell 1: %+v", c1)
+	}
+
+	// Insert mode: put 'X' at (0, 0) should shift 'H' to (1, 0) and 'i' to (2, 0)
+	buf.PutChar(0, 0, 'X', loom.ColorReset(), loom.ColorReset(), false, false, false, false, ModeInsert)
+	if buf.Get(0, 0).Rune != 'X' || buf.Get(1, 0).Rune != 'H' || buf.Get(2, 0).Rune != 'i' {
+		t.Fatalf("unexpected row 0 after insert: %c %c %c", buf.Get(0, 0).Rune, buf.Get(1, 0).Rune, buf.Get(2, 0).Rune)
+	}
+
+	// Delete in insert mode at (1, 0) should delete 'H' and shift 'i' left
+	buf.Delete(1, 0, ModeInsert)
+	if buf.Get(0, 0).Rune != 'X' || buf.Get(1, 0).Rune != 'i' || buf.Get(2, 0).Rune != ' ' {
+		t.Fatalf("unexpected row 0 after delete: %c %c %c", buf.Get(0, 0).Rune, buf.Get(1, 0).Rune, buf.Get(2, 0).Rune)
+	}
+
+	// Backspace in overtype mode at (1, 0) clears (0, 0)
+	newX := buf.Backspace(1, 0, ModeOvertype)
+	if newX != 0 || buf.Get(0, 0).Rune != ' ' {
+		t.Fatalf("unexpected row 0 after backspace: newX=%d, rune=%c", newX, buf.Get(0, 0).Rune)
+	}
+}
+
+func TestBufferClipboard(t *testing.T) {
+	buf := NewBuffer(10, 5)
+	buf.Put(3, 2, 'A', loom.ColorIndex(9), loom.ColorIndex(4), true, true, true, false)
+
+	copied := buf.Copy(3, 2)
+	if copied.Rune != 'A' || copied.FG != loom.ColorIndex(9) || copied.BG != loom.ColorIndex(4) || !copied.Bold {
+		t.Fatalf("unexpected copied cell: %+v", copied)
+	}
+
+	// Paste at (0, 0)
+	ok := buf.Paste(0, 0)
+	if !ok {
+		t.Fatalf("expected paste to succeed")
+	}
+	pasted := buf.Get(0, 0)
+	if pasted.Rune != 'A' || pasted.FG != loom.ColorIndex(9) || pasted.BG != loom.ColorIndex(4) {
+		t.Fatalf("unexpected pasted cell: %+v", pasted)
+	}
+
+	// Cut at (3, 2)
+	cut := buf.Cut(3, 2)
+	if cut.Rune != 'A' {
+		t.Fatalf("unexpected cut cell: %+v", cut)
+	}
+	if !buf.Get(3, 2).IsBlank() {
+		t.Fatalf("expected cell (3, 2) to be blank after cut")
+	}
+}
+
+func TestBufferNavigation(t *testing.T) {
+	buf := NewBuffer(20, 5)
+	// Line 0: "  Hello   World  "
+	buf.Put(2, 0, 'H', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(3, 0, 'e', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(4, 0, 'l', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(5, 0, 'l', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(6, 0, 'o', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+
+	buf.Put(10, 0, 'W', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(11, 0, 'o', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(12, 0, 'r', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(13, 0, 'l', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	buf.Put(14, 0, 'd', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+
+	// Next word from 0 -> 2 (start of Hello), from 2 -> 10 (start of World)
+	if next := buf.NextWord(0, 0); next != 2 {
+		t.Fatalf("expected next word at 2, got %d", next)
+	}
+	if next := buf.NextWord(2, 0); next != 10 {
+		t.Fatalf("expected next word at 10, got %d", next)
+	}
+
+	// Prev word from 14 -> 10, from 10 -> 2
+	if prev := buf.PrevWord(14, 0); prev != 10 {
+		t.Fatalf("expected prev word at 10, got %d", prev)
+	}
+	if prev := buf.PrevWord(10, 0); prev != 2 {
+		t.Fatalf("expected prev word at 2, got %d", prev)
+	}
+
+	// Line 2 has an object
+	buf.Put(5, 2, 'X', loom.ColorReset(), loom.ColorReset(), false, false, false, false)
+	// Object hopping
+	if row := buf.NextObjectRow(0); row != 2 {
+		t.Fatalf("expected next object row 2, got %d", row)
+	}
+	if row := buf.PrevObjectRow(2); row != 0 {
+		t.Fatalf("expected prev object row 0, got %d", row)
+	}
+}
+
+func TestBufferSerializeAndParse(t *testing.T) {
+	buf := NewBuffer(10, 3)
+	buf.Put(0, 0, 'A', loom.ColorIndex(1), loom.ColorReset(), true, false, false, false)
+	buf.Put(1, 0, 'B', loom.ColorIndex(2), loom.ColorIndex(4), false, false, true, false)
+	buf.Put(0, 1, 'C', loom.ColorRGB(100, 150, 200), loom.ColorReset(), false, true, false, false)
+
+	serialized := buf.Serialize()
+	if len(serialized) == 0 {
+		t.Fatalf("expected non-empty serialized ANSI")
+	}
+
+	parsed, err := ParseBuffer(serialized, 10, 3)
+	if err != nil {
+		t.Fatalf("parse failed: %v", err)
+	}
+
+	c00 := parsed.Get(0, 0)
+	if c00.Rune != 'A' || c00.FG != loom.ColorIndex(1) || !c00.Bold {
+		t.Fatalf("unexpected parsed (0,0): %+v", c00)
+	}
+
+	c10 := parsed.Get(1, 0)
+	if c10.Rune != 'B' || c10.FG != loom.ColorIndex(2) || c10.BG != loom.ColorIndex(4) || !c10.Underline {
+		t.Fatalf("unexpected parsed (1,0): %+v", c10)
+	}
+
+	c01 := parsed.Get(0, 1)
+	if c01.Rune != 'C' || c01.FG != loom.ColorRGB(100, 150, 200) || !c01.Dim {
+		t.Fatalf("unexpected parsed (0,1): %+v", c01)
+	}
+}
+
+func TestBufferSaveAndLoad(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "test.ansi")
+
+	buf := NewBuffer(12, 4)
+	buf.Put(0, 0, 'L', loom.ColorIndex(36), loom.ColorReset(), true, false, false, false)
+	buf.Put(1, 0, 'o', loom.ColorIndex(36), loom.ColorReset(), true, false, false, false)
+	buf.Put(2, 0, 'o', loom.ColorIndex(36), loom.ColorReset(), true, false, false, false)
+	buf.Put(3, 0, 'm', loom.ColorIndex(36), loom.ColorReset(), true, false, false, false)
+
+	if err := buf.SaveFile(filePath); err != nil {
+		t.Fatalf("save failed: %v", err)
+	}
+	if buf.Modified() {
+		t.Fatalf("expected unmodified after save")
+	}
+
+	loaded, err := LoadBuffer(filePath, 12, 4)
+	if err != nil {
+		t.Fatalf("load failed: %v", err)
+	}
+
+	if loaded.Get(0, 0).Rune != 'L' || loaded.Get(3, 0).Rune != 'm' {
+		t.Fatalf("unexpected loaded buffer content: %c %c", loaded.Get(0, 0).Rune, loaded.Get(3, 0).Rune)
+	}
+
+	// Non-existent file loads as blank buffer
+	nonExistent := filepath.Join(tmpDir, "non_existent.ansi")
+	blankBuf, err := LoadBuffer(nonExistent, 20, 10)
+	if err != nil {
+		t.Fatalf("expected success for non existent file, got %v", err)
+	}
+	if blankBuf.Cols() != 20 || blankBuf.Rows() != 10 {
+		t.Fatalf("expected 20x10, got %dx%d", blankBuf.Cols(), blankBuf.Rows())
+	}
+	if blankBuf.Path() != nonExistent {
+		t.Fatalf("expected path %s, got %s", nonExistent, blankBuf.Path())
+	}
+}
+
+func TestLoadExistingDesignFiles(t *testing.T) {
+	designPath := "../../../docs/data/ansiedit-design-004.ansi"
+	if _, err := os.Stat(designPath); err != nil {
+		t.Skip("design file not found")
+	}
+
+	buf, err := LoadBuffer(designPath, 80, 24)
+	if err != nil {
+		t.Fatalf("failed to load design file: %v", err)
+	}
+	if buf.Cols() < 80 || buf.Rows() < 24 {
+		t.Fatalf("expected at least 80x24, got %dx%d", buf.Cols(), buf.Rows())
+	}
+}
