@@ -1,6 +1,6 @@
 # 064 — Convert splash and monitor examples to hostable widgets
 
-**Status**: Open
+**Status**: Closed — monitor hostable widget, registry factories, hosted tabs test, standalone collector shutdown (d1148c4, 9e2f4e4, b1a0a90)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
