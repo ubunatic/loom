@@ -47,12 +47,18 @@ func buildOptions(width, height, theme int, ansi, showValues bool) graph.Treemap
 // re-resolved against the current terminal size on every call, so watch
 // mode picks up terminal resizes between redraws.
 func renderOnce(ctx context.Context, opts Options, warnings io.Writer) ([]string, error) {
+	w, h := resolveDimensionsWithOutput(opts.Width, opts.Height, warnings)
+	return renderAtDimensions(ctx, opts, w, h)
+}
+
+// renderAtDimensions is shared by standalone and hosted paths. The hosted
+// widget supplies its rect size directly and never probes terminal geometry.
+func renderAtDimensions(ctx context.Context, opts Options, width, height int) ([]string, error) {
 	root, err := readProcTree(ctx, opts.ExcludeSelf)
 	if err != nil {
 		return nil, err
 	}
-	w, h := resolveDimensionsWithOutput(opts.Width, opts.Height, warnings)
-	renderOpts := buildOptions(w, h, opts.Theme, opts.ANSI, opts.ShowValues)
+	renderOpts := buildOptions(width, height, opts.Theme, opts.ANSI, opts.ShowValues)
 	renderOpts.LegendRows = opts.LegendRows
 	renderOpts.LegendWidth = opts.LegendWidth
 	renderOpts.LegendMinValue = opts.LegendMinValue
@@ -128,7 +134,7 @@ func runWatch(ctx context.Context, opts Options) error {
 // Run(args []string) error signature shared by the other examples for
 // loom-demo/loom-bench registration.
 func Run(args []string) error {
-	var opts Options
+	opts := defaultOptions()
 	cmd := &cobra.Command{
 		Use:           "treemap",
 		Short:         "Render the live process CPU-usage tree as a graph.RenderTreemap box layout",
@@ -136,14 +142,8 @@ func Run(args []string) error {
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			if err := parseTheme(opts.Theme, opts.ANSI); err != nil {
+			if err := validateOptions(opts); err != nil {
 				return err
-			}
-			if opts.LegendPosition != "bottom" && opts.LegendPosition != "right" {
-				return fmt.Errorf("treemap: --legend must be bottom or right")
-			}
-			if opts.LegendMinValue < 0 {
-				return fmt.Errorf("treemap: --legend-min-value must be non-negative")
 			}
 			if !opts.Watch {
 				return run(opts)
@@ -153,19 +153,7 @@ func Run(args []string) error {
 			return runWatch(ctx, opts)
 		},
 	}
-	cmd.Flags().IntVarP(&opts.Width, "width", "W", 0, "canvas width in columns (default: terminal width)")
-	cmd.Flags().IntVarP(&opts.Height, "height", "H", 0, "canvas height in rows (default: terminal height - 2)")
-	cmd.Flags().IntVar(&opts.MaxNodes, "max-nodes", graph.MaxTreemapNodes, "node budget passed to AggregateTreemap")
-	cmd.Flags().BoolVar(&opts.ANSI, "ansi", false, "color each box with a cycling ANSI background")
-	cmd.Flags().BoolVar(&opts.ShowValues, "values", true, "append each segment's %CPU to its label")
-	cmd.Flags().BoolVarP(&opts.Watch, "watch", "w", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
-	cmd.Flags().BoolVar(&opts.ExcludeSelf, "exclude-self", false, "exclude this process, its children, and a direct go run launcher")
-	cmd.Flags().DurationVar(&opts.Interval, "interval", 2*time.Second, "redraw interval in --watch mode")
-	cmd.Flags().IntVar(&opts.Theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (thin edges + a corner number on every box, requires --ansi)")
-	cmd.Flags().StringVar(&opts.LegendPosition, "legend", "bottom", "legend position: bottom or right")
-	cmd.Flags().IntVar(&opts.LegendRows, "legend-rows", 2, "bottom legend rows (0: library default of two, negative: unlimited)")
-	cmd.Flags().IntVar(&opts.LegendWidth, "legend-width", 0, "right legend width in columns (default: one third of total width)")
-	cmd.Flags().Float64Var(&opts.LegendMinValue, "legend-min-value", 0, "omit legend entries below this value (percent CPU; boxes remain visible)")
+	bindFlags(cmd.Flags(), &opts)
 	cmd.SetArgs(args)
 	return cmd.Execute()
 }

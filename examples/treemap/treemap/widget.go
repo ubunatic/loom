@@ -5,13 +5,14 @@ package treemap
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/graph"
+	"github.com/spf13/pflag"
 )
 
 // Options configures standalone rendering and the hosted treemap widget.
@@ -31,10 +32,44 @@ type Options struct {
 	LegendMinValue float64
 }
 
+func defaultOptions() Options {
+	return Options{
+		MaxNodes: graph.MaxTreemapNodes, Theme: 1, ShowValues: true,
+		Interval: 2 * time.Second, LegendPosition: "bottom", LegendRows: 2,
+	}
+}
+
+// bindFlags defines the treemap flags for both Cobra and the hosted factory.
+func bindFlags(flags *pflag.FlagSet, opts *Options) {
+	flags.IntVarP(&opts.Width, "width", "W", 0, "canvas width in columns (default: terminal width)")
+	flags.IntVarP(&opts.Height, "height", "H", 0, "canvas height in rows (default: terminal height - 2)")
+	flags.IntVar(&opts.MaxNodes, "max-nodes", graph.MaxTreemapNodes, "node budget passed to AggregateTreemap")
+	flags.BoolVar(&opts.ANSI, "ansi", false, "color each box with a cycling ANSI background")
+	flags.BoolVar(&opts.ShowValues, "values", true, "append each segment's %CPU to its label")
+	flags.BoolVarP(&opts.Watch, "watch", "w", false, "keep redrawing in place on an interval until interrupted (Ctrl-C)")
+	flags.BoolVar(&opts.ExcludeSelf, "exclude-self", false, "exclude this process, its children, and a direct go run launcher")
+	flags.DurationVar(&opts.Interval, "interval", 2*time.Second, "redraw interval in --watch mode")
+	flags.IntVar(&opts.Theme, "theme", 1, "visual style: 1 (bordered boxes) or 2 (thin edges + a corner number on every box, requires --ansi)")
+	flags.StringVar(&opts.LegendPosition, "legend", "bottom", "legend position: bottom or right")
+	flags.IntVar(&opts.LegendRows, "legend-rows", 2, "bottom legend rows (0: library default of two, negative: unlimited)")
+	flags.IntVar(&opts.LegendWidth, "legend-width", 0, "right legend width in columns (default: one third of total width)")
+	flags.Float64Var(&opts.LegendMinValue, "legend-min-value", 0, "omit legend entries below this value (percent CPU; boxes remain visible)")
+}
+
 type treemapWidget struct {
+	mu sync.Mutex
+
 	opts   Options
 	rows   *loom.StyledRows
-	output func(context.Context, Options) ([]string, error)
+	err    error
+	output func(context.Context, Options, int, int) ([]string, error)
+
+	width, height                 int
+	renderedWidth, renderedHeight int
+	collecting, closed            bool
+	ctx                           context.Context
+	cancel                        context.CancelFunc
+	done                          sync.WaitGroup
 }
 
 // NewWidget parses command-line arguments and builds the hosted treemap.
@@ -43,39 +78,74 @@ func NewWidget(args []string) (loom.Widget, error) {
 	if err != nil {
 		return nil, err
 	}
-	return newWidgetFromOptions(opts, func(ctx context.Context, opts Options) ([]string, error) {
-		return renderOnce(ctx, opts, nil)
-	})
+	return newWidgetFromOptions(opts, renderAtDimensions)
 }
 
-func newWidgetFromOptions(opts Options, output func(context.Context, Options) ([]string, error)) (*treemapWidget, error) {
+func newWidgetFromOptions(opts Options, output func(context.Context, Options, int, int) ([]string, error)) (*treemapWidget, error) {
 	if err := validateOptions(opts); err != nil {
 		return nil, err
 	}
-	w := &treemapWidget{opts: opts, output: output}
-	if err := w.refresh(context.Background()); err != nil {
-		return nil, err
-	}
-	return w, nil
+	ctx, cancel := context.WithCancel(context.Background())
+	return &treemapWidget{
+		opts: opts, rows: loom.NewStyledRows("Collecting process tree…"), output: output,
+		ctx: ctx, cancel: cancel,
+	}, nil
 }
 
-func (w *treemapWidget) refresh(ctx context.Context) error {
-	lines, err := w.output(ctx, w.opts)
-	if err != nil {
-		return err
-	}
-	if w.rows == nil {
-		w.rows = loom.NewStyledRows(lines...)
-	} else {
-		w.rows.Lines = append(w.rows.Lines[:0], lines...)
-	}
-	return nil
-}
-
+// Draw requests data at the allocated size. Collection runs off the pane loop,
+// and rows from previous dimensions remain visible until the new frame arrives.
 func (w *treemapWidget) Draw(c *loom.Canvas, r loom.Rect) {
-	w.rows.Draw(c, r)
+	if c == nil || r.W <= 0 || r.H <= 0 {
+		return
+	}
+	w.mu.Lock()
+	if w.width != r.W || w.height != r.H {
+		w.width, w.height = r.W, r.H
+	}
+	if !w.collecting && (w.renderedWidth != w.width || w.renderedHeight != w.height) {
+		w.startCollectionLocked()
+	}
+	var lines []string
+	if w.err != nil {
+		lines = []string{"\x1b[31m" + w.err.Error() + "\x1b[0m"}
+	} else {
+		lines = append(lines, w.rows.Lines...)
+	}
+	w.mu.Unlock()
+	loom.NewStyledRows(lines...).Draw(c, r)
 }
 
+func (w *treemapWidget) startCollectionLocked() {
+	if w.closed || w.collecting || w.width <= 0 || w.height <= 0 {
+		return
+	}
+	w.collecting = true
+	width, height := w.width, w.height
+	opts := w.opts
+	opts.Width, opts.Height = width, height
+	w.done.Add(1)
+	go func() {
+		defer w.done.Done()
+		lines, err := w.output(w.ctx, opts, width, height)
+		w.mu.Lock()
+		defer w.mu.Unlock()
+		w.collecting = false
+		if w.closed {
+			return
+		}
+		w.renderedWidth, w.renderedHeight = width, height
+		w.err = err
+		if err == nil {
+			w.rows.Lines = append(w.rows.Lines[:0], lines...)
+		}
+		if w.width != width || w.height != height {
+			w.startCollectionLocked()
+		}
+	}()
+}
+
+// HandleKey's bool follows Widget semantics: true asks the host to quit this
+// child. A tabs host may consume that child quit through its OnChildQuit hook.
 func (w *treemapWidget) HandleKey(e loom.KeyEvent) bool {
 	key := e.Key
 	if key == "" {
@@ -98,8 +168,22 @@ func (w *treemapWidget) TickInterval() time.Duration {
 	return w.opts.Interval
 }
 
+// Tick starts collection without waiting for ps or graph rendering.
 func (w *treemapWidget) Tick(_ time.Time) {
-	_ = w.refresh(context.Background())
+	w.mu.Lock()
+	w.startCollectionLocked()
+	w.mu.Unlock()
+}
+
+// Close cancels and joins an in-flight process collection.
+func (w *treemapWidget) Close() {
+	w.mu.Lock()
+	if !w.closed {
+		w.closed = true
+		w.cancel()
+	}
+	w.mu.Unlock()
+	w.done.Wait()
 }
 
 func validateOptions(opts Options) error {
@@ -122,28 +206,10 @@ func validateOptions(opts Options) error {
 }
 
 func parseWidgetOptions(args []string) (Options, error) {
-	opts := Options{
-		MaxNodes: graph.MaxTreemapNodes, Theme: 1, ShowValues: true,
-		Interval: 2 * time.Second, LegendPosition: "bottom", LegendRows: 2,
-	}
-	flags := flag.NewFlagSet("treemap", flag.ContinueOnError)
+	opts := defaultOptions()
+	flags := pflag.NewFlagSet("treemap", pflag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	flags.IntVar(&opts.Width, "width", 0, "canvas width in columns")
-	flags.IntVar(&opts.Width, "W", 0, "canvas width in columns")
-	flags.IntVar(&opts.Height, "height", 0, "canvas height in rows")
-	flags.IntVar(&opts.Height, "H", 0, "canvas height in rows")
-	flags.IntVar(&opts.MaxNodes, "max-nodes", graph.MaxTreemapNodes, "node budget")
-	flags.IntVar(&opts.Theme, "theme", 1, "visual style")
-	flags.BoolVar(&opts.ANSI, "ansi", false, "color boxes")
-	flags.BoolVar(&opts.ShowValues, "values", true, "show values")
-	flags.BoolVar(&opts.Watch, "watch", false, "refresh periodically")
-	flags.BoolVar(&opts.Watch, "w", false, "refresh periodically")
-	flags.BoolVar(&opts.ExcludeSelf, "exclude-self", false, "exclude this process")
-	flags.DurationVar(&opts.Interval, "interval", 2*time.Second, "refresh interval")
-	flags.StringVar(&opts.LegendPosition, "legend", "bottom", "legend position")
-	flags.IntVar(&opts.LegendRows, "legend-rows", 2, "bottom legend rows")
-	flags.IntVar(&opts.LegendWidth, "legend-width", 0, "right legend width")
-	flags.Float64Var(&opts.LegendMinValue, "legend-min-value", 0, "minimum legend value")
+	bindFlags(flags, &opts)
 	if err := flags.Parse(args); err != nil {
 		return opts, err
 	}

@@ -4,6 +4,8 @@
 package treemap
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -35,6 +37,8 @@ func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewWidget: %v", err)
 	}
+	closer := widget.(interface{ Close() })
+	t.Cleanup(closer.Close)
 	canvas := loom.NewCanvas(36, 12)
 	widget.Draw(canvas, canvas.Bounds())
 	loom.Render(widget, 36, 12)
@@ -49,6 +53,7 @@ func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {
 	if !widget.HandleKey(loom.KeyEvent{Key: "q"}) {
 		t.Fatal("q should request hosted child quit")
 	}
+	closer.Close()
 
 	for name, file := range map[string]*os.File{"stdout": stdout, "stderr": stderr} {
 		if _, err := file.Seek(0, io.SeekStart); err != nil {
@@ -62,6 +67,119 @@ func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {
 			t.Errorf("hosted widget wrote to %s: %q", name, content)
 		}
 	}
+}
+
+func TestHostedWidgetSizesFromDrawRectAndRendersAgainOnResize(t *testing.T) {
+	widgetValue, err := NewWidget(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	widget := widgetValue.(*treemapWidget)
+	t.Cleanup(widget.Close)
+
+	draw := func(width, height int) {
+		widget.Draw(loom.NewCanvas(width, height), loom.Rect{W: width, H: height})
+	}
+	draw(40, 10)
+	waitForRenderedSize(t, widget, 40, 10)
+	assertRenderedDimensions(t, widget, 40, 10)
+	draw(60, 15)
+	waitForRenderedSize(t, widget, 60, 15)
+	assertRenderedDimensions(t, widget, 60, 15)
+}
+
+func TestHostedWidgetCollectsAsynchronouslyAndShowsErrors(t *testing.T) {
+	started := make(chan struct{}, 1)
+	finish := make(chan struct{})
+	widget, err := newWidgetFromOptions(defaultOptions(), func(ctx context.Context, _ Options, _, _ int) ([]string, error) {
+		started <- struct{}{}
+		select {
+		case <-finish:
+			return nil, fmt.Errorf("collection failed")
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	canvas := loom.NewCanvas(30, 4)
+	widget.Draw(canvas, canvas.Bounds())
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("background collection did not start")
+	}
+	close(finish)
+	waitForCollection(t, widget)
+	widget.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(canvas.Row(0), "collection failed") {
+		t.Fatalf("draw did not show collection error: %q", canvas.Row(0))
+	}
+	widget.Close()
+}
+
+func TestWidgetFlagBindingAndHostedQuitContract(t *testing.T) {
+	opts, err := parseWidgetOptions([]string{"--watch", "--ansi", "--width=40", "--legend=right"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !opts.Watch || !opts.ANSI || opts.Width != 40 || opts.LegendPosition != "right" {
+		t.Fatalf("parsed options = %#v", opts)
+	}
+	widget := &treemapWidget{}
+	for _, key := range []string{"q", "esc", "ctrl-c", "ctrl-q"} {
+		if !widget.HandleKey(loom.KeyEvent{Key: key}) {
+			t.Errorf("HandleKey(%q) should signal child quit", key)
+		}
+	}
+	if widget.HandleKey(loom.KeyEvent{Key: "x"}) {
+		t.Error("unhandled key should not signal quit")
+	}
+}
+
+func waitForRenderedSize(t *testing.T, widget *treemapWidget, width, height int) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		widget.mu.Lock()
+		ready := widget.renderedWidth == width && widget.renderedHeight == height
+		widget.mu.Unlock()
+		if ready {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("widget did not render at %dx%d", width, height)
+}
+
+func assertRenderedDimensions(t *testing.T, widget *treemapWidget, width, height int) {
+	t.Helper()
+	widget.mu.Lock()
+	defer widget.mu.Unlock()
+	if got := len(widget.rows.Lines); got != height {
+		t.Fatalf("rendered rows = %d, want %d", got, height)
+	}
+	for i, line := range widget.rows.Lines {
+		if got := loom.StringWidth(line); got != width {
+			t.Fatalf("rendered row %d width = %d, want %d", i, got, width)
+		}
+	}
+}
+
+func waitForCollection(t *testing.T, widget *treemapWidget) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		widget.mu.Lock()
+		ready := !widget.collecting
+		widget.mu.Unlock()
+		if ready {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatal("collection did not finish")
 }
 
 // TestClampDimensionsNeverExceedsTerminal is a regression test: an explicit
