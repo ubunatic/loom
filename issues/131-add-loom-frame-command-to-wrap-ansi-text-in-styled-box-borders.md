@@ -1,6 +1,6 @@
 # 131 — Add loom frame command to wrap ANSI text in styled box borders
 
-**Status**: Open
+**Status**: Closed — loom frame delivered (M2, M3 title margins + color runs)
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature / CLI Tooling
