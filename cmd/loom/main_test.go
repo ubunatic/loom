@@ -24,19 +24,28 @@ func writeFixture(t *testing.T, content string) string {
 
 func TestMeasureAndEval(t *testing.T) {
 	path := writeFixture(t, "\x1b[31m界a\x1b[0m  \ntiny\n")
-	for _, command := range []string{"measure", "eval"} {
-		t.Run(command, func(t *testing.T) {
-			var out bytes.Buffer
-			if err := execute([]string{command, path}, &out); err != nil {
-				t.Fatal(err)
-			}
-			got := out.String()
-			for _, want := range []string{"line 1: 5 columns", "line 2: 4 columns (ragged)", "bounding box: 5 columns x 2 lines", "trailing whitespace"} {
-				if !strings.Contains(got, want) {
-					t.Errorf("output %q does not contain %q", got, want)
-				}
-			}
-		})
+	var measured bytes.Buffer
+	if err := execute([]string{"measure", path}, &measured); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"line 1: 5 columns", "line 2: 4 columns (ragged)", "bounding box: 5 columns x 2 lines", "trailing whitespace"} {
+		if !strings.Contains(measured.String(), want) {
+			t.Errorf("measure output %q does not contain %q", measured.String(), want)
+		}
+	}
+	if strings.Contains(measured.String(), "boxes:") {
+		t.Fatalf("measure unexpectedly includes structural summary: %q", measured.String())
+	}
+
+	boxed := writeFixture(t, "┌──┐\n│ x│\n└──┘\n")
+	var evaluated bytes.Buffer
+	if err := execute([]string{"eval", boxed}, &evaluated); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"boxes: 1", "rows: 3", "columns: 4", "non-blank bounds: x=1..4 y=1..3 (4 x 3)", "ragged rows: 0", "min line width: 4", "max line width: 4"} {
+		if !strings.Contains(evaluated.String(), want) {
+			t.Errorf("eval output %q does not contain %q", evaluated.String(), want)
+		}
 	}
 }
 
@@ -52,6 +61,51 @@ func TestCheckBox(t *testing.T) {
 	}
 	if err := execute([]string{"check-box", valid, invalid}, &out); err == nil {
 		t.Fatal("misaligned box accepted")
+	} else if !strings.Contains(err.Error(), invalid) {
+		t.Fatalf("multi-file error %q omits invalid filename %q", err, invalid)
+	}
+}
+
+func TestCLIArityErrors(t *testing.T) {
+	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"check-box"}} {
+		var out bytes.Buffer
+		if err := execute(args, &out); err == nil {
+			t.Errorf("execute(%q) succeeded, want arity error", args)
+		}
+	}
+}
+
+func TestMissingFilesHaveCleanFilenameErrors(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "missing.ansi")
+	for _, command := range []string{"measure", "eval", "check-box", "view"} {
+		var out bytes.Buffer
+		err := execute([]string{command, missing}, &out)
+		if err == nil {
+			t.Errorf("%s unexpectedly read missing file", command)
+			continue
+		}
+		message := err.Error()
+		if !strings.Contains(message, missing) || !strings.Contains(message, "no such file") {
+			t.Errorf("%s error %q lacks filename or cause", command, message)
+		}
+		if strings.Count(message, missing) != 1 {
+			t.Errorf("%s error repeats filename: %q", command, message)
+		}
+	}
+}
+
+func TestCheckBoxReportsEveryFileError(t *testing.T) {
+	missingA := filepath.Join(t.TempDir(), "missing-a.ansi")
+	missingB := filepath.Join(t.TempDir(), "missing-b.ansi")
+	var out bytes.Buffer
+	err := execute([]string{"check-box", missingA, missingB}, &out)
+	if err == nil {
+		t.Fatal("check-box accepted missing files")
+	}
+	for _, path := range []string{missingA, missingB} {
+		if !strings.Contains(err.Error(), path) {
+			t.Errorf("multi-file error %q omits %q", err, path)
+		}
 	}
 }
 

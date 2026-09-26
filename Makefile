@@ -13,7 +13,6 @@ help: 🤖  # show this help
 
 build: ⚙️  ## compile the package
 	go build ./...
-	go build ./cmd/loom
 
 test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the test suite
 	go vet ./...

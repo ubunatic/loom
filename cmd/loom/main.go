@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/measure"
@@ -49,15 +50,15 @@ func evalCommand() *cobra.Command {
 		Use: "eval <file>", Short: "Evaluate terminal dimensions and row geometry",
 		Args: cobra.ExactArgs(1), SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return measureFile(cmd.OutOrStdout(), args[0])
+			return evaluateFile(cmd.OutOrStdout(), args[0])
 		},
 	}
 }
 
 func measureFile(out io.Writer, path string) error {
-	data, err := os.ReadFile(path)
+	data, err := readAsset(path)
 	if err != nil {
-		return fmt.Errorf("read %s: %w", path, err)
+		return err
 	}
 	text := strings.ReplaceAll(string(data), "\r\n", "\n")
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
@@ -86,6 +87,79 @@ func measureFile(out io.Writer, path string) error {
 		fmt.Fprintln(out, "warning: trailing whitespace detected")
 	}
 	return nil
+}
+
+func evaluateFile(out io.Writer, path string) error {
+	data, err := readAsset(path)
+	if err != nil {
+		return err
+	}
+	text := strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
+	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
+	minWidth, maxWidth := -1, 0
+	raggedRows, boxCount := 0, 0
+	minX, minY := -1, -1
+	maxX, maxY := -1, -1
+	for y, line := range lines {
+		width := measure.StringWidth(line)
+		if minWidth < 0 || width < minWidth {
+			minWidth = width
+		}
+		if width > maxWidth {
+			maxWidth = width
+		}
+		plain := stripANSI(line)
+		x := 0
+		for _, r := range plain {
+			if r == '┌' || r == '╔' {
+				boxCount++
+			}
+			w := measure.RuneWidth(r)
+			if w > 0 && !unicode.IsSpace(r) {
+				if minX < 0 || x < minX {
+					minX = x
+				}
+				if maxX < 0 || x+w-1 > maxX {
+					maxX = x + w - 1
+				}
+				if minY < 0 || y < minY {
+					minY = y
+				}
+				if y > maxY {
+					maxY = y
+				}
+			}
+			x += w
+		}
+	}
+	for _, line := range lines {
+		if measure.StringWidth(line) != maxWidth {
+			raggedRows++
+		}
+	}
+	fmt.Fprintf(out, "boxes: %d\nrows: %d\ncolumns: %d\n", boxCount, len(lines), maxWidth)
+	fmt.Fprintf(out, "non-blank bounds: %s\n", boundsString(minX, minY, maxX, maxY))
+	fmt.Fprintf(out, "ragged rows: %d\nmin line width: %d\nmax line width: %d\n", raggedRows, minWidth, maxWidth)
+	return nil
+}
+
+func boundsString(minX, minY, maxX, maxY int) string {
+	if minX < 0 {
+		return "empty"
+	}
+	// Coordinates use one-based terminal columns and rows for editor-friendly output.
+	return fmt.Sprintf("x=%d..%d y=%d..%d (%d x %d)", minX+1, maxX+1, minY+1, maxY+1, maxX-minX+1, maxY-minY+1)
+}
+
+func readAsset(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err == nil {
+		return data, nil
+	}
+	if pathErr, ok := err.(*os.PathError); ok {
+		err = pathErr.Err
+	}
+	return nil, fmt.Errorf("%s: %w", path, err)
 }
 
 func stripANSI(text string) string {
@@ -131,12 +205,15 @@ func checkBoxCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			var failures []string
 			for _, path := range args {
-				data, err := os.ReadFile(path)
+				data, err := readAsset(path)
 				if err == nil {
 					err = loom.ValidateAnsiBox(string(data))
 				}
 				if err != nil {
-					failures = append(failures, fmt.Sprintf("%s: %v", path, err))
+					if !strings.HasPrefix(err.Error(), path+":") {
+						err = fmt.Errorf("%s: %w", path, err)
+					}
+					failures = append(failures, err.Error())
 					continue
 				}
 				fmt.Fprintf(cmd.OutOrStdout(), "%s: ok\n", path)
@@ -158,9 +235,13 @@ func viewCommand() *cobra.Command {
 			if strings.ToLower(filepath.Ext(path)) != ".ansi" {
 				return fmt.Errorf("view supports .ansi files: %s", path)
 			}
-			buf, err := loom.LoadAnsiBuffer(path, 1, 1)
+			data, err := readAsset(path)
 			if err != nil {
 				return err
+			}
+			buf, err := loom.ParseAnsiBuffer(string(data), 1, 1)
+			if err != nil {
+				return fmt.Errorf("%s: %w", path, err)
 			}
 			pane, err := loom.New(24)
 			if err != nil {
