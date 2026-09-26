@@ -1,6 +1,6 @@
 # 125 — Build ansiedit standalone ANSI file editor example
 
-**Status**: Open
+**Status**: Closed — implemented ansiedit CLI example with buffer model, canvas viewport, and unified side panel (F1-F10)
 **Priority**: P1 (High)
 **Severity**: Normal
 **Category**: Feature
