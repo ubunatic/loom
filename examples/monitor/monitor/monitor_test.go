@@ -8,10 +8,81 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
+	"codeberg.org/ubunatic/loom/collector"
 	"codeberg.org/ubunatic/loom/graph"
 )
+
+type blockingCollector struct {
+	mu      sync.Mutex
+	started int
+	stopped chan struct{}
+}
+
+func (*blockingCollector) Type() collector.Type { return collector.TypeFile }
+func (c *blockingCollector) Collect(ctx context.Context, at time.Time) (collector.Record, error) {
+	c.mu.Lock()
+	c.started++
+	c.mu.Unlock()
+	<-ctx.Done()
+	select {
+	case c.stopped <- struct{}{}:
+	default:
+	}
+	return collector.Record{}, ctx.Err()
+}
+
+func TestMonitorCollectorsFollowFocusAndClose(t *testing.T) {
+	w, err := NewWidget([]string{"--watch"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := w.(*monitorWidget)
+	fake := &blockingCollector{stopped: make(chan struct{}, 2)}
+	history, err := collector.NewHistory(time.Minute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m.spec.sources = []configuredSource{{collector: fake, interval: time.Hour, history: history}}
+	m.SetFocus(false)
+	if m.runtime != nil {
+		t.Fatal("inactive monitor started collectors")
+	}
+	m.SetFocus(true)
+	waitCollectorStart(t, fake, 1)
+	m.SetFocus(false)
+	select {
+	case <-fake.stopped:
+	case <-time.After(time.Second):
+		t.Fatal("collector leaked after deactivation")
+	}
+	m.SetFocus(true)
+	waitCollectorStart(t, fake, 2)
+	m.Close()
+	select {
+	case <-fake.stopped:
+	case <-time.After(time.Second):
+		t.Fatal("collector leaked after Close")
+	}
+}
+
+func waitCollectorStart(t *testing.T, c *blockingCollector, count int) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		c.mu.Lock()
+		got := c.started
+		c.mu.Unlock()
+		if got >= count {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatalf("collector starts = %d, want %d", c.started, count)
+}
 
 func TestShowOnce(t *testing.T) {
 	var out bytes.Buffer

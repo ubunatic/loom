@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-	"text/template"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
@@ -17,17 +16,18 @@ import (
 )
 
 type watchSpec struct {
-	Collect     time.Duration    `yaml:"collect"`
-	Redraw      time.Duration    `yaml:"redraw"`
-	ClockFormat string           `yaml:"clock_format"`
-	Title       string           `yaml:"title"`
-	Status      string           `yaml:"status"`
-	Command     string           `yaml:"command"`
-	Description string           `yaml:"description"`
-	WatchHelp   string           `yaml:"watch_help"`
-	WidthHelp   string           `yaml:"width_help"`
-	Collectors  []collector.Spec `yaml:"collectors"`
-	sources     []configuredSource
+	Collect      time.Duration    `yaml:"collect"`
+	Redraw       time.Duration    `yaml:"redraw"`
+	ClockFormat  string           `yaml:"clock_format"`
+	Title        string           `yaml:"title"`
+	Status       string           `yaml:"status"`
+	Command      string           `yaml:"command"`
+	Description  string           `yaml:"description"`
+	WatchHelp    string           `yaml:"watch_help"`
+	WidthHelp    string           `yaml:"width_help"`
+	Collectors   []collector.Spec `yaml:"collectors"`
+	sources      []configuredSource
+	watchEnabled bool
 }
 
 type configuredSource struct {
@@ -71,71 +71,21 @@ func runWatch(ctx context.Context, spec watchSpec) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	data, err := documents.ReadFile("spec/monitor.yaml")
+	spec.watchEnabled = true
+	w, err := newMonitorWidget(spec)
 	if err != nil {
 		return err
 	}
-	root, cfg, err := loom.BuildWidget(bytes.NewReader(data))
-	if err != nil {
-		return err
-	}
-	frame, ok := root.(*loom.Frame)
-	if !ok {
-		return fmt.Errorf("watch: declared root must be a frame")
-	}
-	title, err := template.New("title").Option("missingkey=error").Parse(spec.Title)
-	if err != nil {
-		return err
-	}
-	baseTitle := frame.Title
-	frame.Status = spec.Status
-	if len(spec.sources) > 0 {
-		for i := range frame.Boxes {
-			if frame.Boxes[i].ID == "load" {
-				frame.Boxes[i].Footer = "(real collector data)"
-			}
-		}
-	}
-	state := newMonitorState(staticSnapshot, 32)
-	runtime := startSources(ctx, spec.sources)
-	defer runtime.Close()
-	collect := func(now time.Time) error {
-		if err := runtime.Err(); err != nil {
-			return err
-		}
-		state.SampleAt(now)
-		// If real collector data is available in history, apply parsed metrics.
-		for _, src := range spec.sources {
-			records := src.history.Snapshot()
-			if len(records) >= 2 {
-				s1, err1 := parseProcStat(records[len(records)-2].Data)
-				s2, err2 := parseProcStat(records[len(records)-1].Data)
-				if err1 == nil && err2 == nil {
-					pct := cpuPercentage(s1, s2)
-					state.metrics.Publish("cpu (16c)", pct, now)
-				}
-			}
-		}
-		applySnapshot(frame, state.Snapshot())
-		var b bytes.Buffer
-		if err := title.Execute(&b, struct{ Title, Time string }{baseTitle, now.Format(spec.ClockFormat)}); err != nil {
-			return err
-		}
-		frame.Title = b.String()
-		return nil
-	}
-	// Validate presentation before taking ownership of a terminal.
-	if err := collect(time.Now()); err != nil {
-		return err
-	}
-	pane, err := loom.New(cfg.Height(0))
+	pane, err := loom.New(10)
 	if err != nil {
 		return err
 	}
 	defer pane.Close()
-	pane.MaxCols = cfg.MaxWidth()
 	pane.Resizeable = true
-	return pane.RunWatch(ctx, frame, loom.Cadence{Collect: spec.Collect, Redraw: spec.Redraw}, collect)
+	if request := w.PaneRequest(); request.MaxCols > 0 {
+		pane.MaxCols = request.MaxCols
+	}
+	return pane.Run(w)
 }
 
 type cpuStat struct {

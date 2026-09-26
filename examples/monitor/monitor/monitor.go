@@ -5,12 +5,15 @@
 package monitor
 
 import (
+	"bytes"
 	"context"
 	"embed"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"strings"
+	"text/template"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
@@ -99,6 +102,153 @@ type monitorSnapshot struct {
 	load      map[string][]float64
 	vram      []float64
 	gtt       []float64
+}
+
+// Options configures the standalone command and hosted monitor widget.
+type Options struct {
+	Watch bool
+	Width int
+}
+
+type monitorWidget struct {
+	frame        *loom.Frame
+	spec         watchSpec
+	baseTitle    string
+	title        *template.Template
+	state        *monitorState
+	active       bool
+	focusManaged bool
+	runtime      *sourceRuntime
+}
+
+func (m *monitorWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	if !m.focusManaged {
+		m.SetFocus(true)
+	}
+	m.frame.Draw(c, r)
+}
+func (m *monitorWidget) HandleKey(e loom.KeyEvent) bool     { return m.frame.HandleKey(e) }
+func (m *monitorWidget) HandleMouse(e loom.MouseEvent) bool { return m.frame.HandleMouse(e) }
+func (m *monitorWidget) TickInterval() time.Duration {
+	if !m.active || !m.spec.watchEnabled {
+		return 0
+	}
+	return m.spec.Redraw
+}
+func (m *monitorWidget) Tick(now time.Time) {
+	if !m.active || !m.spec.watchEnabled {
+		return
+	}
+	m.state.SampleAt(now)
+	if m.runtime != nil {
+		if err := m.runtime.Err(); err == nil {
+			for _, src := range m.spec.sources {
+				records := src.history.Snapshot()
+				if len(records) >= 2 {
+					a, ea := parseProcStat(records[len(records)-2].Data)
+					b, eb := parseProcStat(records[len(records)-1].Data)
+					if ea == nil && eb == nil {
+						m.state.metrics.Publish("cpu (16c)", cpuPercentage(a, b), now)
+					}
+				}
+			}
+		}
+	}
+	applySnapshot(m.frame, m.state.Snapshot())
+	var b bytes.Buffer
+	if m.title.Execute(&b, struct{ Title, Time string }{m.baseTitle, now.Format(m.spec.ClockFormat)}) == nil {
+		m.frame.Title = b.String()
+	}
+}
+func (m *monitorWidget) Focused() bool { return m.active }
+func (m *monitorWidget) SetFocus(focused bool) {
+	m.focusManaged = true
+	if m.active == focused {
+		return
+	}
+	m.active = focused
+	if focused && m.spec.watchEnabled {
+		m.runtime = startSources(context.Background(), m.spec.sources)
+	}
+	if !focused && m.runtime != nil {
+		m.runtime.Close()
+		m.runtime = nil
+	}
+}
+func (m *monitorWidget) Close() {
+	m.active = false
+	if m.runtime != nil {
+		m.runtime.Close()
+		m.runtime = nil
+	}
+}
+func (m *monitorWidget) PaneRequest() loom.PaneRequest {
+	return loom.PaneRequest{Resizeable: true, MaxCols: 80}
+}
+
+// NewWidget parses monitor flags and constructs the corresponding root widget.
+func NewWidget(args []string) (loom.Widget, error) {
+	var opts Options
+	flags := flag.NewFlagSet("monitor", flag.ContinueOnError)
+	flags.BoolVar(&opts.Watch, "watch", false, "collect live monitor data")
+	flags.IntVar(&opts.Width, "width", 0, "explicit terminal width for show-once")
+	flags.IntVar(&opts.Width, "w", 0, "explicit terminal width for show-once")
+	if err := flags.Parse(args); err != nil {
+		return nil, err
+	}
+	if flags.NArg() > 0 {
+		return nil, fmt.Errorf("monitor: unexpected arguments: %v", flags.Args())
+	}
+	if opts.Width < 0 {
+		return nil, fmt.Errorf("width must be positive")
+	}
+	return NewWidgetFromOptions(opts)
+}
+
+// NewWidgetFromOptions constructs the declaration-backed monitor widget.
+func NewWidgetFromOptions(opts Options) (loom.Widget, error) {
+	spec, err := loadWatch()
+	if err != nil {
+		return nil, err
+	}
+	spec.watchEnabled = opts.Watch
+	return newMonitorWidget(spec)
+}
+
+func newMonitorWidget(spec watchSpec) (*monitorWidget, error) {
+	data, err := documents.ReadFile("spec/monitor.yaml")
+	if err != nil {
+		return nil, err
+	}
+	root, _, err := loom.BuildWidget(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	frame, ok := root.(*loom.Frame)
+	if !ok {
+		return nil, fmt.Errorf("monitor: declared root must be a frame")
+	}
+	title, err := template.New("title").Option("missingkey=error").Parse(spec.Title)
+	if err != nil {
+		return nil, err
+	}
+	baseTitle := frame.Title
+	frame.Status = spec.Status
+	if len(spec.sources) > 0 {
+		for i := range frame.Boxes {
+			if frame.Boxes[i].ID == "load" {
+				frame.Boxes[i].Footer = "(real collector data)"
+			}
+		}
+	}
+	m := &monitorWidget{frame: frame, spec: spec, baseTitle: baseTitle, title: title, state: newMonitorState(staticSnapshot, 32)}
+	applySnapshot(frame, m.state.Snapshot())
+	var initial bytes.Buffer
+	if err := title.Execute(&initial, struct{ Title, Time string }{baseTitle, time.Now().Format(spec.ClockFormat)}); err != nil {
+		return nil, err
+	}
+	frame.Title = initial.String()
+	return m, nil
 }
 
 var staticSnapshot = monitorSnapshot{

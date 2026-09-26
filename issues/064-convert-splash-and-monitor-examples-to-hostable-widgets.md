@@ -113,3 +113,7 @@ splash first (simpler: one controller, no collectors), monitor second.
 - Tests: `make test-q1` only (one run per code change); no separate `-race`/`go test` runs.
 
 M1 delivered (cfb915a, flash37): splash `NewWidget`, Ticker redraw, OnChildQuit containment, registry; green.
+
+## Delivered
+
+- M2 adds a declaration-backed monitor widget with focus-scoped collectors, ticker updates, and a cancellation/join regression test.
