@@ -4,7 +4,7 @@
 package loom
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -372,24 +372,24 @@ func (c *Canvas) Row(y int) string {
 	if y < 0 || y >= c.rows {
 		return ""
 	}
-	var b strings.Builder
+	buf := make([]byte, 0, c.cols*4)
 	var cur Style
 	for _, cell := range c.cells[y] {
 		if cell.Continuation {
 			continue
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSI())
+			buf = cell.Style.AppendANSI(buf)
 			cur = cell.Style
 		}
 		if cell.Text == "" {
-			b.WriteByte(' ')
+			buf = append(buf, ' ')
 		} else {
-			b.WriteString(cell.Text)
+			buf = append(buf, cell.Text...)
 		}
 	}
-	b.WriteString("\x1b[0m") // reset after every row so colors don't bleed
-	return b.String()
+	buf = append(buf, "\x1b[0m"...) // reset after every row so colors don't bleed
+	return string(buf)
 }
 
 // Flush writes all rows to out using absolute cursor positioning.
@@ -409,39 +409,90 @@ func (c *Canvas) FlushWithClear(out interface{ WriteString(string) (int, error) 
 // FlushWithConfig writes the canvas to out with the provided resize rendering
 // switches (atomic buffered flush, per-row clearing, synchronized output).
 func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error) }, startRow, clearRows int, cfg ResizeConfig) {
-	var b strings.Builder
-	var sink interface{ WriteString(string) (int, error) } = &b
-	if !cfg.AtomicFlush {
-		sink = out
+	if cfg.AtomicFlush {
+		buf := make([]byte, 0, c.rows*(c.cols*4+16))
+		if cfg.SynchronizedOutput {
+			buf = append(buf, "\x1b[?2026h"...)
+		}
+		for y := 0; y < c.rows; y++ {
+			buf = append(buf, "\x1b["...)
+			buf = strconv.AppendUint(buf, uint64(startRow+y), 10)
+			buf = append(buf, ";1H"...)
+
+			var cur Style
+			for _, cell := range c.cells[y] {
+				if cell.Continuation {
+					continue
+				}
+				if cell.Style != cur {
+					buf = cell.Style.AppendANSI(buf)
+					cur = cell.Style
+				}
+				if cell.Text == "" {
+					buf = append(buf, ' ')
+				} else {
+					buf = append(buf, cell.Text...)
+				}
+			}
+			buf = append(buf, "\x1b[0m"...)
+			if cfg.RowClear {
+				buf = append(buf, "\x1b[K"...)
+			}
+		}
+		for y := 0; y < clearRows; y++ {
+			buf = append(buf, "\x1b["...)
+			buf = strconv.AppendUint(buf, uint64(startRow+c.rows+y), 10)
+			buf = append(buf, ";1H\x1b[2K"...)
+		}
+		if c.CursorX >= 0 && c.CursorY >= 0 {
+			buf = append(buf, "\x1b["...)
+			buf = strconv.AppendUint(buf, uint64(startRow+c.CursorY), 10)
+			buf = append(buf, ';')
+			buf = strconv.AppendUint(buf, uint64(c.CursorX+1), 10)
+			buf = append(buf, 'H')
+			buf = append(buf, "\x1b[?25h"...)
+		} else {
+			buf = append(buf, "\x1b[?25l"...)
+		}
+		if cfg.SynchronizedOutput {
+			buf = append(buf, "\x1b[?2026l"...)
+		}
+		out.WriteString(string(buf)) //nolint:errcheck
+		return
 	}
 
 	if cfg.SynchronizedOutput {
-		sink.WriteString("\x1b[?2026h") //nolint:errcheck
+		out.WriteString("\x1b[?2026h") //nolint:errcheck
 	}
+	var rowBuf [32]byte
 	for y := 0; y < c.rows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
-		sink.WriteString(c.Row(y))                              //nolint:errcheck
+		b := append(rowBuf[:0], "\x1b["...)
+		b = strconv.AppendUint(b, uint64(startRow+y), 10)
+		b = append(b, ";1H"...)
+		out.WriteString(string(b)) //nolint:errcheck
+		out.WriteString(c.Row(y))  //nolint:errcheck
 		if cfg.RowClear {
-			sink.WriteString("\x1b[K") //nolint:errcheck
+			out.WriteString("\x1b[K") //nolint:errcheck
 		}
 	}
 	for y := 0; y < clearRows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", startRow+c.rows+y)) //nolint:errcheck
+		b := append(rowBuf[:0], "\x1b["...)
+		b = strconv.AppendUint(b, uint64(startRow+c.rows+y), 10)
+		b = append(b, ";1H\x1b[2K"...)
+		out.WriteString(string(b)) //nolint:errcheck
 	}
 	if c.CursorX >= 0 && c.CursorY >= 0 {
-		// Position and show the cursor only when a widget asked for it (a prompt).
-		sink.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1)) //nolint:errcheck
-		sink.WriteString("\x1b[?25h")                                                 //nolint:errcheck
+		b := append(rowBuf[:0], "\x1b["...)
+		b = strconv.AppendUint(b, uint64(startRow+c.CursorY), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.CursorX+1), 10)
+		b = append(b, "H\x1b[?25h"...)
+		out.WriteString(string(b)) //nolint:errcheck
 	} else {
-		// No prompt on this frame: hide the hardware cursor so it doesn't linger
-		// as a stray block after the last drawn cell.
-		sink.WriteString("\x1b[?25l") //nolint:errcheck
+		out.WriteString("\x1b[?25l") //nolint:errcheck
 	}
 	if cfg.SynchronizedOutput {
-		sink.WriteString("\x1b[?2026l") //nolint:errcheck
-	}
-	if cfg.AtomicFlush {
-		out.WriteString(b.String()) //nolint:errcheck
+		out.WriteString("\x1b[?2026l") //nolint:errcheck
 	}
 }
 
