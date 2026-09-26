@@ -1,6 +1,7 @@
 # 127 — Promote ANSI graphic cell buffer and canvas editor into standard Loom widget
 
-**Status**: Open
+**Status**: Closed
+**Resolution**: Implemented `loom.AnsiBuffer` and `loom.AnsiEditor` in root package (`ansibuffer.go`, `ansieditor.go`) with full unit test coverage (`ansibuffer_test.go`, `ansieditor_test.go`). Refactored `examples/ansiedit` to leverage the core components and created `examples/ansicanvas_demo/` with full PTY test coverage.
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Architecture / Component

@@ -225,4 +225,19 @@ Loom provides a UI-neutral syntax highlighting and structural navigation framewo
 - **`syntax.NullEngine`**: Zero-allocation no-op engine for plain text.
 - **Wasm Tree-Sitter Integration**: Extensible through WebAssembly (`wazero`) runtime bindings.
 
+---
+
+## 10. ANSI Graphic Cell Buffer and Editor (`loom.AnsiBuffer`, `loom.AnsiEditor`)
+
+Loom provides 2D spatial ANSI cell grid modeling and interactive overtype/insert graphic editing:
+
+- **`loom.AnsiBuffer`**: An in-memory 2D styled cell grid (`AnsiCell` storing `Rune`, `FG`, `BG`, `Bold`, `Dim`, `Underline`, `Invert`):
+  - **SGR/CSI Parser & Serializer**: `ParseAnsiBuffer`, `LoadAnsiBuffer`, `SerializeAnsiBuffer`, and `SaveAnsiBuffer` for lossless ANSI art roundtrips.
+  - **2D Editing Primitives**: `Put`, `PutChar` (overtype & insert modes), `Delete`, `Backspace`, `Copy`, `Cut`, `Paste`, `NextWord`, `PrevWord`, `NextObjectRow`, `PrevObjectRow`.
+- **`loom.AnsiEditor`**: Standard widget implementing `loom.Widget`, `loom.EventConsumer`, `loom.MouseConsumer`, `loom.Focusable`, and `loom.PaneRequester`:
+  - Interactive arrow/word/object navigation and character painting.
+  - Automatic viewport panning and focused cursor styling.
+  - Mouse click-to-focus/navigate and wheel scrolling.
+
+
 

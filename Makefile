@@ -37,7 +37,8 @@ vet: ⚙️  ## run go vet
 install: ⚙️
 	go install ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
 		./examples/ansiviewer ./examples/filebrowser/ ./examples/treemap \
-		./examples/loomoji ./examples/textedit ./examples/ansiedit
+		./examples/loomoji ./examples/textedit ./examples/ansiedit \
+		./examples/ansicanvas_demo
 	install -D -m 0644 examples/loomoji/loomoji.zsh "$(LOOMOJI_DIR)/loomoji.zsh"
 
 test-q1: 🤖  # run tests under Quota-1 enforcement
