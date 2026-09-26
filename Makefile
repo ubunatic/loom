@@ -13,6 +13,7 @@ help: 🤖  # show this help
 
 build: ⚙️  ## compile the package
 	go build ./...
+	go build ./cmd/loom
 
 test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the test suite
 	go vet ./...
@@ -35,7 +36,7 @@ vet: ⚙️  ## run go vet
 	go vet ./...
 
 install: ⚙️
-	go install ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
+	go install ./cmd/loom ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
 		./examples/ansiviewer ./examples/filebrowser/ ./examples/treemap \
 		./examples/loomoji ./examples/textedit ./examples/ansiedit \
 		./examples/ansicanvas_demo
