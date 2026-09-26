@@ -38,3 +38,9 @@ Whoever completes the last item closes this ticket.
   for the known defects (recording, terminal width, top-bar background).
 - [ ] **Two old processes**: `splash --watch` PIDs 920646 and 920686 predate the sprints and may
   still be running; confirm and kill them if unwanted.
+
+## Sprint 124/128/064 (2026-09-27)
+
+- [ ] **124 F10 global quit**: in textedit, ansiedit, ansiviewer, filebrowser and paint, press F10 while an editor or popup has focus. The app exits and the terminal is restored, and the footer shows "F10 Quit".
+- [ ] **064 hosted tabs**: in loom-demo, open splash and monitor as two tabs. Both redraw live, switching tabs works, and when splash finishes it closes only its own tab.
+- [ ] **064 standalone monitor**: `monitor --watch`, press F10, then check that no monitor process or collector is left running.
