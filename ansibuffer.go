@@ -16,24 +16,18 @@ import (
 // visual widths and aligned left and right borders. Text without box drawing
 // characters is accepted unchanged.
 func ValidateAnsiBox(text string) error {
-	// Cursor-addressed terminal recordings are not line-oriented box artwork.
-	// Their cursor motion has to be applied to a screen buffer before geometry
-	// can be measured, so leave them to the raw-screen/PTY validators.
-	if hasNonSGRANSI(text) {
-		return nil
-	}
-	// Connected pane layouts contain several independent borders and junctions;
-	// this line-oriented validator only handles standalone rectangle outlines.
-	if strings.ContainsAny(text, "├┤┬┴┼╟╢╤╧╪") {
-		return nil
-	}
 	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
 	type edge struct {
-		line, left, right int
-		kind              rune
+		line, left, right, width int
+		kind                     rune
 	}
 	var framed []edge
 	for i, line := range lines {
+		// Cursor motion changes where cells land on screen, so only that
+		// physical line is outside the scope of this line-oriented check.
+		if hasNonSGRANSI(line) {
+			continue
+		}
 		plain := stripANSIForBox(line)
 		left, right := -1, -1
 		col := 0
@@ -49,10 +43,7 @@ func ValidateAnsiBox(text string) error {
 		trimmed := strings.TrimSpace(plain)
 		if left >= 0 && len(trimmed) > 1 && isBoxEdge(firstRune(trimmed)) && isBoxEdge(lastRune(trimmed)) {
 			kind := boxRowKind(firstRune(trimmed), lastRune(trimmed))
-			if kind == 'm' && containsBoxCorner(trimmed) {
-				continue
-			}
-			framed = append(framed, edge{line: i + 1, left: left, right: right, kind: kind})
+			framed = append(framed, edge{line: i + 1, left: left, right: right, width: col, kind: kind})
 		}
 	}
 	if len(framed) < 2 {
@@ -65,8 +56,8 @@ func ValidateAnsiBox(text string) error {
 		if row.line != base.line+1 || base.kind == 'b' || row.kind == 't' {
 			continue
 		}
-		if row.left != base.left || row.right != base.right {
-			return fmt.Errorf("boxed line %d: boundaries %d..%d, want %d..%d from line %d", row.line, row.left, row.right, base.left, base.right, base.line)
+		if row.left != base.left || row.right != base.right || row.width != base.width {
+			return fmt.Errorf("boxed line %d: boundaries %d..%d width %d, want %d..%d width %d from line %d", row.line, row.left, row.right, row.width, base.left, base.right, base.width, base.line)
 		}
 	}
 	return nil
@@ -86,15 +77,6 @@ func isBoxTopLeft(r rune) bool     { return r == '┌' || r == '╔' }
 func isBoxTopRight(r rune) bool    { return r == '┐' || r == '╗' }
 func isBoxBottomLeft(r rune) bool  { return r == '└' || r == '╚' }
 func isBoxBottomRight(r rune) bool { return r == '┘' || r == '╝' }
-
-func containsBoxCorner(s string) bool {
-	for _, r := range s {
-		if isBoxCorner(r) {
-			return true
-		}
-	}
-	return false
-}
 
 func hasNonSGRANSI(s string) bool {
 	for i := 0; i < len(s); i++ {
@@ -118,7 +100,7 @@ func hasNonSGRANSI(s string) bool {
 
 func isBoxVertical(r rune) bool { return r == '│' || r == '║' || r == '┃' || r == '|' }
 func isBoxCorner(r rune) bool {
-	return strings.ContainsRune("┌┐└┘╔╗╚╝╭╮╰╯", r)
+	return strings.ContainsRune("┌┐└┘╔╗╚╝╭╮╰╯├┤┬┴┼╟╢╤╧╪", r)
 }
 func isBoxEdge(r rune) bool { return isBoxVertical(r) || isBoxCorner(r) }
 func firstRune(s string) rune {

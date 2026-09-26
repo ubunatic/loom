@@ -4,13 +4,9 @@
 package loom
 
 import (
-	"bytes"
-	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
-	"strings"
 	"testing"
 )
 
@@ -23,9 +19,10 @@ func TestValidateAnsiBox(t *testing.T) {
 		{name: "valid box", text: "┌───┐\n│abc│\n└───┘\n"},
 		{name: "SGR and wide rune", text: "\x1b[31m┌───┐\x1b[0m\n│界 │\n└───┘"},
 		{name: "ragged box row", text: "┌───┐\n│abc  │\n└───┘\n", wantErr: true},
+		{name: "misaligned divider", text: "┌───┐\n│abc│\n├──┤\n│def│\n└───┘\n", wantErr: true},
 		{name: "unboxed uneven text", text: "plain text\nshort"},
 		{name: "adjacent separate boxes", text: "┌──┐\n│a │\n└──┘\n┌────┐\n│ b  │\n└────┘"},
-		{name: "padding outside box", text: "┌───┐   \n│abc│\n└───┘"},
+		{name: "padding outside box", text: "┌───┐   \n│abc│\n└───┘", wantErr: true},
 		{name: "cursor-addressed recording", text: "\x1b[2;1H┌───┐\x1b[3;1H│abc│"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -57,32 +54,19 @@ func TestAllAnsiAssetsHaveValidBoxes(t *testing.T) {
 	}
 }
 
-// ansiAssetFiles returns tracked ANSI assets. A source archive without Git uses
-// a filesystem walk, which keeps the test useful for vendored source copies.
+// ansiAssetFiles walks the checkout deterministically, including untracked
+// artwork while skipping repository metadata and generated/vendor trees.
 func ansiAssetFiles(root string) ([]string, error) {
-	if _, err := exec.LookPath("git"); err == nil {
-		cmd := exec.Command("git", "-C", root, "ls-files", "-z", "--", "*.ansi")
-		var stderr bytes.Buffer
-		cmd.Stderr = &stderr
-		output, err := cmd.Output()
-		if err != nil {
-			return nil, fmt.Errorf("list tracked ANSI assets: %w: %s", err, strings.TrimSpace(stderr.String()))
-		}
-		var files []string
-		for _, path := range strings.Split(string(output), "\x00") {
-			if path != "" {
-				files = append(files, filepath.Join(root, filepath.FromSlash(path)))
-			}
-		}
-		return files, nil
-	}
-
 	var files []string
 	err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if entry.IsDir() {
+			switch entry.Name() {
+			case ".git", "vendor", "build", "dist", "node_modules":
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if filepath.Ext(path) == ".ansi" {

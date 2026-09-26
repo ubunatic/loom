@@ -1,0 +1,24 @@
+Popup title "Title" (6 columns)
+┌ Tit              ┐[0m
+│                  │[0m
+└────              ┘[0m
+
+Popup title "éé" (6 columns)
+┌ éé               ┐[0m
+│                  │[0m
+└────              ┘[0m
+
+Popup title "界界" (6 columns)
+┌ 界─              ┐[0m
+│                  │[0m
+└────              ┘[0m
+
+Popup title "📖" (6 columns)
+┌ 📖               ┐[0m
+│                  │[0m
+└────              ┘[0m
+
+Adjacent boxes: VS16 input is rendered as the bare 1-cell symbol
+┌🖼─────┐  ┌🖼─────┐[0m
+│       │  │       │[0m
+└───────┘  └───────┘[0m
