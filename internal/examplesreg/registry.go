@@ -94,6 +94,7 @@ var Registry = []Example{
 		Run:          monitor.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch"},
+		NewWidget:    func(args []string) (interface{}, error) { return monitor.NewWidget(args) },
 	},
 	{
 		Name:         "splash",

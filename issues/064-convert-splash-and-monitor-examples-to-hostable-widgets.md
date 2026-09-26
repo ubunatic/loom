@@ -117,3 +117,4 @@ M1 delivered (cfb915a, flash37): splash `NewWidget`, Ticker redraw, OnChildQuit 
 ## Delivered
 
 - M2 adds a declaration-backed monitor widget with focus-scoped collectors, ticker updates, and a cancellation/join regression test.
+- M3 registers the monitor widget factory and tests simultaneous splash/monitor tabs, including inactive-tab tick suppression.
