@@ -99,7 +99,11 @@ func (r *keyRecorder) HandleKey(e KeyEvent) bool {
 	n := len(r.keys)
 	r.mu.Unlock()
 	if n >= r.want {
-		close(r.done)
+		select {
+		case <-r.done:
+		default:
+			close(r.done)
+		}
 		return true
 	}
 	return false

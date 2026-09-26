@@ -1120,7 +1120,7 @@ func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
 	if res.Consumed {
 		return res.Quit
 	}
-	return p.handleKeyFallback(ke, root)
+	return p.handleKeyFallback(ke)
 }
 
 func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
