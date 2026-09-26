@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
@@ -19,6 +20,64 @@ func TestStyledRowsDrawsANSIStylesAndResetsEachRow(t *testing.T) {
 	}
 	if got := canvas.Get(0, 1).Style; got != loom.Reset {
 		t.Fatalf("style leaked into next row: got %#v, want reset", got)
+	}
+}
+
+func TestStyledRowsRoundTripsANSIStyle(t *testing.T) {
+	canvas := loom.NewCanvas(6, 1)
+	loom.NewStyledRows("\x1b[31mred\x1b[0m").Draw(canvas, canvas.Bounds())
+	rendered := loom.ParseANSI(canvas.Row(0))
+	var text strings.Builder
+	for _, cell := range rendered {
+		if !cell.Continuation {
+			text.WriteString(cell.Text)
+		}
+	}
+	if got := strings.TrimRight(text.String(), " "); got != "red" {
+		t.Fatalf("rendered text = %q, want %q", got, "red")
+	}
+	if got := canvas.Get(0, 0).Style.FG; got != loom.ColorIndex(1) {
+		t.Fatalf("rendered foreground = %#v, want red", got)
+	}
+}
+
+func TestStyledRowsDropsMalformedAndUnsupportedEscapes(t *testing.T) {
+	for _, input := range []string{
+		"\x1b[31mred",
+		"ab\x1b[3",
+		"\x1b[2Jab",
+		"\x1b]0;title\x07ab",
+	} {
+		t.Run(input, func(t *testing.T) {
+			canvas := loom.NewCanvas(8, 1)
+			loom.NewStyledRows(input).Draw(canvas, canvas.Bounds())
+			for x := 0; x < canvas.Cols(); x++ {
+				cell := canvas.Get(x, 0)
+				if strings.ContainsAny(cell.Text, "\x1b[]") {
+					t.Fatalf("escape syntax rendered as text at x=%d: %#v", x, cell)
+				}
+				if x >= 3 && cell.Style.FG == loom.ColorIndex(1) {
+					t.Fatalf("style leaked past visible text at x=%d: %#v", x, cell)
+				}
+			}
+		})
+	}
+}
+
+func TestStyledRowsRedrawClearsOldCells(t *testing.T) {
+	canvas := loom.NewCanvas(6, 2)
+	rows := loom.NewStyledRows("\x1b[31mlong", "second")
+	rows.Draw(canvas, canvas.Bounds())
+	rows.Lines = []string{"x"}
+	rows.Draw(canvas, canvas.Bounds())
+	for y := 0; y < canvas.Rows(); y++ {
+		for x := 0; x < canvas.Cols(); x++ {
+			cell := canvas.Get(x, y)
+			if (y == 0 && x == 0 && cell.Text != "x") ||
+				((y != 0 || x != 0) && (cell.Text != " " || cell.Style != loom.Reset)) {
+				t.Fatalf("stale cell at (%d,%d): %#v", x, y, cell)
+			}
+		}
 	}
 }
 
