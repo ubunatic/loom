@@ -56,3 +56,6 @@ Whoever completes the last item closes this ticket.
 - [ ] **132 flag row in ansiviewer:** `ansiviewer docs/progress/096`, open M2-clipping.ansi in tilix,
   alacritty and ptyxis. The flag row fills the full width with no default-background gap, and in
   ptyxis the label comes before the sample ("Flag DE"). If ptyxis still swaps the order, reopen 132.
+
+- [ ] **089 cursor effects:** run `ansicanvas_demo --cursor-fx` in tilix and foot. Check glow
+  strength, star trail, pulse, smooth motion without lag, and idle CPU near zero while the mouse rests.
