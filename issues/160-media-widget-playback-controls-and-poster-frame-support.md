@@ -47,6 +47,7 @@ Add native poster frame support and playback controls to `codeberg.org/ubunatic/
 - M1 (poster and playback API) implementation committed as `fbe08d1` (`feat(media): add video playback controls for issue 160`). It adds `NewVideoWithPoster`, `Play`, `Pause`, `IsPlaying`, and `Restart`, with focused tests in `media/widget_test.go`.
 - `gofmt`, `git diff --check`, and `make install` passed.
 - The one allowed `make test-q1` run failed: `TestMediaDemoPTYPlaysVideo` observed video content ending at column `-1`, before the expected column 50. The `media` package test process was later terminated after 99.448 seconds. No tests were rerun after follow-up edits, so the committed code is not fully verified.
+- A subsequent focused `go test ./media` attempt was interrupted before producing a result; no further tests were run this turn.
 - Status remains Open pending the required refinements below.
 
 ### M2 Pre-Work / Required Refinements
