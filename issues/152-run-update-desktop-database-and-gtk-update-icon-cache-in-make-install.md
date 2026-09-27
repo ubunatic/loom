@@ -1,6 +1,6 @@
 # 152 — Run update-desktop-database and gtk-update-icon-cache in make install
 
-**Status**: Open
+**Status**: Closed — Implemented in 7fb3331 (M1): invoke update-desktop-database and gtk-update-icon-cache automatically during make install
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature / Packaging
