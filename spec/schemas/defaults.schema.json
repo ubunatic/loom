@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["fallback_quit_keys", "pane", "scrollbar", "splash"],
+  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash"],
   "properties": {
     "fallback_quit_keys": {
       "type": "array",
@@ -28,6 +28,15 @@
       "properties": {
         "foreground_char": { "type": "string", "minLength": 1 },
         "background_char": { "type": "string", "minLength": 1 }
+      }
+    },
+    "mouse": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["double_click_interval", "movement_tolerance"],
+      "properties": {
+        "double_click_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "movement_tolerance": { "type": "integer", "minimum": 0 }
       }
     },
     "splash": {

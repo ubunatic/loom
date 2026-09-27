@@ -20,7 +20,24 @@ type LibDefaults struct {
 	FallbackQuitKeys []string          `yaml:"fallback_quit_keys"`
 	Pane             PaneDefaults      `yaml:"pane"`
 	Scrollbar        ScrollbarDefaults `yaml:"scrollbar"`
+	Mouse            MouseDefaults     `yaml:"mouse"`
 	Splash           SplashDefaults    `yaml:"splash"`
+}
+
+// MouseDefaults defines specced defaults for mouse gestures.
+type MouseDefaults struct {
+	DoubleClickInterval time.Duration `yaml:"double_click_interval"`
+	MovementTolerance   int           `yaml:"movement_tolerance"`
+}
+
+func (d MouseDefaults) validate() error {
+	if d.DoubleClickInterval <= 0 {
+		return fmt.Errorf("mouse.double_click_interval must be positive")
+	}
+	if d.MovementTolerance < 0 {
+		return fmt.Errorf("mouse.movement_tolerance must not be negative")
+	}
+	return nil
 }
 
 // ScrollbarDefaults defines the one-cell foreground and background glyphs.
@@ -63,6 +80,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: parse spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Scrollbar.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Mouse.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	return defs

@@ -13,6 +13,10 @@ scrollbar:
   foreground_char: "▓" # position marker (thumb)
   background_char: "░" # clickable track
 
+mouse:
+  double_click_interval: 400ms
+  movement_tolerance: 1
+
 splash:
   bracket_width: 24
   pill_gap: 2
