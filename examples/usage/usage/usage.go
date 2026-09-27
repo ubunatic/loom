@@ -112,6 +112,12 @@ func (u *usageWidget) collectLoop(ctx context.Context) {
 			u.mu.Lock()
 			u.snapshotData = cloneSnapshot(snapshot)
 			u.mu.Unlock()
+			u.invalidateMu.RLock()
+			invalidate := u.invalidate
+			u.invalidateMu.RUnlock()
+			if invalidate != nil {
+				invalidate()
+			}
 		}
 		select {
 		case <-ctx.Done():

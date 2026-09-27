@@ -54,6 +54,19 @@ Draw/Tick calls.
 Verification: `make test-q1` passed; output is
 `/tmp/loom-103-m1-test-q1.log` (no `--- FAIL` lines).
 
+### M2 delivered — async repaint and terminal evidence
+
+Successful background collection now invokes the Pane invalidation callback.
+The test keeps the redraw interval at one hour and proves collection completion
+repaints without waiting for a tick. A PTY test reads Loom's rendered color
+cells and checks the All Usage title RGB. The PTY snapshot is
+`/tmp/loom-103-usage.ansi`.
+
+Verification: `make test-q1` passed on rerun after changing the PTY test to wait
+for stable title/content rather than the transient collecting message. Output:
+`/tmp/loom-103-m2-test-q1.log` (no `--- FAIL` lines). A direct PTY capture of
+the built example also confirmed the RGB SGR and produced the reported snapshot.
+
 ### Reference behavior for M1–M3
 
 Source: `../harnez/internal/usage/watch.go`, `load.go`, `indicatorsspec.go`,
