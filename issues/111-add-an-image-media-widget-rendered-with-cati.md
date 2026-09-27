@@ -1,6 +1,6 @@
 # 111 — Add an Image/Media widget rendered with cati
 
-**Status**: Open
+**Status**: Closed — media.Widget via cati v0.2.6 (halfblock/quadblock/sextant, video on Ticker, aspect fit, cache, PTY rect check); visual check parked in 102 (8c06a7d, 6a65180, b3c6e71, 7ef3c86)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
