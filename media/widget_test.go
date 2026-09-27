@@ -6,7 +6,9 @@ package media
 import (
 	"image"
 	"image/color"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -45,6 +47,51 @@ func TestStillImageDrawModesFitAndStayInsideRect(t *testing.T) {
 				t.Fatal("image area was not painted")
 			}
 		})
+	}
+}
+
+func TestStillImagesDoNotTick(t *testing.T) {
+	widget, err := NewImage(image.NewRGBA(image.Rect(0, 0, 2, 2)), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := widget.TickInterval(); got != 0 {
+		t.Fatalf("still image tick interval = %s, want zero", got)
+	}
+}
+
+func TestVideoTicksAdvanceFramesAndStopAtEnd(t *testing.T) {
+	first := image.NewRGBA(image.Rect(0, 0, 2, 2))
+	second := image.NewRGBA(image.Rect(0, 0, 3, 2))
+	frames := make(chan image.Image, 2)
+	frames <- first
+	frames <- second
+	close(frames)
+	widget := newStreamingWidget(frames, 24, func() {})
+	if got := widget.TickInterval(); got != time.Second/24 {
+		t.Fatalf("video tick interval = %s, want %s", got, time.Second/24)
+	}
+
+	widget.Tick(time.Now())
+	if got := widget.image; got != second {
+		t.Fatalf("current frame = %v, want latest queued frame", got)
+	}
+	if got := widget.TickInterval(); got != 0 {
+		t.Fatalf("finished video tick interval = %s, want zero", got)
+	}
+}
+
+func TestCloseStopsVideoStreamOnce(t *testing.T) {
+	frames := make(chan image.Image)
+	var stops atomic.Int32
+	widget := newStreamingWidget(frames, 30, func() { stops.Add(1) })
+	widget.Close()
+	widget.Close()
+	if got := stops.Load(); got != 1 {
+		t.Fatalf("stream stop calls = %d, want 1", got)
+	}
+	if got := widget.TickInterval(); got != 0 {
+		t.Fatalf("closed video tick interval = %s, want zero", got)
 	}
 }
 
