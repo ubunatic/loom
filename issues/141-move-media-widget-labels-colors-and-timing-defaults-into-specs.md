@@ -1,6 +1,6 @@
 # 141 — Move media widget labels, colors, and timing defaults into specs
 
-**Status**: Open
+**Status**: Closed — Implemented in 6ba07a6 (M1): spec-driven media widget status labels, colors, and timing defaults
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
