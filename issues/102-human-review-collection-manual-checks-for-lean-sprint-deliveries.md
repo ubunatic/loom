@@ -52,3 +52,6 @@ Whoever completes the last item closes this ticket.
 
 - [ ] **111 media widget:** run `media` (examples/media) with a PNG, and with a video if ffmpeg is installed. Check that the image keeps its proportions and is centered, that colors look right in halfblock, quadblock and sextant, that nothing is painted outside the image area, and that quitting leaves no ffmpeg process behind.
 - [ ] **103 usage example:** run `usage` (examples/usage). Check the two boxes, that the heat colors match `harnez usage --compact --watch`, that the key switches between the plain and Loom views, and that resize and quit work.
+- [ ] **132 flag row in ansiviewer:** `ansiviewer docs/progress/096`, open M2-clipping.ansi in tilix,
+  alacritty and ptyxis. The flag row fills the full width with no default-background gap, and in
+  ptyxis the label comes before the sample ("Flag DE"). If ptyxis still swaps the order, reopen 132.
