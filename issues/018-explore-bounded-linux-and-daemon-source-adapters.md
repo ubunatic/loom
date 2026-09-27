@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 018 — Explore bounded Linux and daemon source adapters
 
-**Status**: Open
+**Status**: Closed — parked: hosts own data-source wiring (103)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Architecture
