@@ -87,3 +87,13 @@ Pre-Work for M2c: loom-probe prints results while still in raw mode (lines stair
 
 - The gap before `>` in `docs/progress/096/M2-buttons.ansi` on Tilix is consistent with a width mismatch: this three-person sample advances 6 cells when split, while the old joined-width policy reserved 2. M2c's split mode measures the three emoji separately (6); join mode measures the family as 2.
 - M2c restores raw mode before writing its summary, which ends with a newline.
+
+## M2c delivered: ZWJ width detection (81ea8c1), review
+
+Works: `LOOM_ZWJ=join|split`, split fallback, probe output fixed, PTY tests pinned to `join`.
+
+Pre-Work / Required Refinements for M2d:
+- The probe runs in `measure` package `init()`. Every program importing measure (the `loom` CLI, ansiviewer, tests run from a terminal) writes to the tty, switches raw mode and may wait 200 ms at import, before the app owns the terminal; typed-ahead input can be eaten. Move it to an explicit call (e.g. `measure.DetectZWJMode(in, out)`) that the App/Pane startup runs after it enters raw mode and alt screen; keep `init` env-only.
+- The probe must leave no glyphs on screen (carriage return + erase line after measuring).
+- Test: importing measure with a tty-like stdin performs no I/O.
+- Conventional commit (`feat: ... (issue 134 M2d)`).
