@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"codeberg.org/ubunatic/loom/media"
 )
 
 func buildMediaDemo(t *testing.T) string {
@@ -25,6 +26,49 @@ func buildMediaDemo(t *testing.T) string {
 		t.Fatalf("build media example: %v\n%s", err, out)
 	}
 	return bin
+}
+
+func TestMediaCommandHelp(t *testing.T) {
+	cmd := newCommand()
+	cmd.SetArgs([]string{"--help"})
+	var output strings.Builder
+	cmd.SetOut(&output)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("show help: %v", err)
+	}
+	for _, want := range []string{"loom-media <image-or-video> [mode]", "--mode", "--help"} {
+		if !strings.Contains(output.String(), want) {
+			t.Errorf("help output does not contain %q: %s", want, output.String())
+		}
+	}
+}
+
+func TestMediaCommandModeArgumentAndFlag(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "default", args: []string{"image.png"}, want: "halfblock"},
+		{name: "positional", args: []string{"image.png", "quadblock"}, want: "quadblock"},
+		{name: "flag", args: []string{"--mode", "sextant", "image.png"}, want: "sextant"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			mode := media.Mode("")
+			path := ""
+			cmd := newCommandWithRun(func(gotPath string, gotMode media.Mode) error {
+				path, mode = gotPath, gotMode
+				return nil
+			})
+			cmd.SetArgs(tc.args)
+			if err := cmd.Execute(); err != nil {
+				t.Fatalf("execute: %v", err)
+			}
+			if path != "image.png" || string(mode) != tc.want {
+				t.Fatalf("mode = %q, want %q", mode, tc.want)
+			}
+		})
+	}
 }
 
 func writeSolidPNG(t *testing.T) string {

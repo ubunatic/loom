@@ -13,6 +13,7 @@ import (
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/media"
+	"github.com/spf13/cobra"
 )
 
 type demo struct {
@@ -37,20 +38,13 @@ func (*demo) HandleMouse(loom.MouseEvent) bool { return false }
 func (d *demo) TickInterval() time.Duration { return d.image.TickInterval() }
 func (d *demo) Tick(now time.Time)          { d.image.Tick(now) }
 
-func run(args []string) error {
-	if len(args) < 1 || len(args) > 2 {
-		return fmt.Errorf("usage: loom-media <image-or-video> [halfblock|quadblock|sextant]")
-	}
-	mode := media.ModeHalfblock
-	if len(args) == 2 {
-		mode = media.Mode(args[1])
-	}
+func run(path string, mode media.Mode) error {
 	var widget *media.Widget
 	var err error
-	if isVideo(args[0]) {
-		widget, err = media.NewVideo(args[0], mode, 24)
+	if isVideo(path) {
+		widget, err = media.NewVideo(path, mode, 24)
 	} else {
-		widget, err = media.LoadImage(args[0], mode)
+		widget, err = media.LoadImage(path, mode)
 	}
 	if err != nil {
 		return err
@@ -62,7 +56,39 @@ func run(args []string) error {
 	}
 	pane.MaxCols = 0
 	defer pane.Close()
-	return pane.Run(&demo{image: widget, path: args[0], mode: mode})
+	return pane.Run(&demo{image: widget, path: path, mode: mode})
+}
+
+func newCommand() *cobra.Command {
+	return newCommandWithRun(run)
+}
+
+func newCommandWithRun(runMedia func(string, media.Mode) error) *cobra.Command {
+	var mode string
+	cmd := &cobra.Command{
+		Use:   "loom-media <image-or-video> [mode]",
+		Short: "Display an image or video in the terminal",
+		Long:  "Display an image or video in the terminal using Loom's media widget.",
+		Args: func(_ *cobra.Command, args []string) error {
+			if len(args) < 1 || len(args) > 2 {
+				return fmt.Errorf("requires an image or video path, optionally followed by a render mode")
+			}
+			if len(args) == 2 && mode != string(media.ModeHalfblock) {
+				return fmt.Errorf("render mode supplied both positionally and with --mode")
+			}
+			return nil
+		},
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(_ *cobra.Command, args []string) error {
+			if len(args) == 2 {
+				mode = args[1]
+			}
+			return runMedia(args[0], media.Mode(mode))
+		},
+	}
+	cmd.Flags().StringVar(&mode, "mode", string(media.ModeHalfblock), "render mode (halfblock, quadblock, sextant)")
+	return cmd
 }
 
 func isVideo(path string) bool {
@@ -75,7 +101,9 @@ func isVideo(path string) bool {
 }
 
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	cmd := newCommand()
+	cmd.SetArgs(os.Args[1:])
+	if err := cmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
