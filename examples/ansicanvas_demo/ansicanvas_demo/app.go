@@ -145,6 +145,7 @@ func NewWidget(args []string) (loom.Widget, error) {
 
 // Run executes the ansicanvas_demo command.
 func Run(args []string) error {
+	var cursorFX bool
 	cmd := &cobra.Command{
 		Use:           "ansicanvas_demo [file.ansi]",
 		Short:         "Minimal demonstration of embedding loom.AnsiEditor",
@@ -172,10 +173,15 @@ func Run(args []string) error {
 			defer pane.Close()
 			pane.Resizeable = true
 			pane.DisableDefaultQuit = true
-			pane.EnableMouse()
+			if cursorFX {
+				pane.EnableCursorStarTrail()
+			} else {
+				pane.EnableMouse()
+			}
 			return pane.Run(app)
 		},
 	}
+	cmd.Flags().BoolVar(&cursorFX, "cursor-fx", false, "show the cursor proximity glow and star trail")
 	cmd.SetArgs(args)
 	return cmd.Execute()
 }

@@ -3,3 +3,10 @@ proximity:
   enabled: true
   radius: 3
   brightness: 0.7
+star_trail:
+  enabled: true
+  glyph: "✦"
+  color: "#FFFFFF"
+  max_points: 8
+  lifetime_ms: 400
+  frame_ms: 40

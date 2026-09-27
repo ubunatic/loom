@@ -64,8 +64,10 @@ type Pane struct {
 	mouse           bool
 	mouseMode       int
 	cursorProximity bool
+	cursorStarTrail bool
 	mouseX, mouseY  int
 	mouseKnown      bool
+	cursorTrail     []CursorTrailPoint
 	Resizeable      bool
 
 	// InlineOnly opts out of the automatic switch to the alternate screen: the
@@ -375,6 +377,13 @@ func (p *Pane) EnableMouse() {
 func (p *Pane) EnableCursorProximity() {
 	p.cursorProximity = true
 	p.EnableMouse()
+}
+
+// EnableCursorStarTrail enables the spec-driven trailing star effect.
+// It also enables cursor proximity and any-motion mouse reports.
+func (p *Pane) EnableCursorStarTrail() {
+	p.cursorStarTrail = true
+	p.EnableCursorProximity()
 }
 
 // EnableMouseClicks tracks clicks and wheel events without any-motion reports.
@@ -734,6 +743,13 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			p.Metrics.AstraTargetFPS = 1 / interval.Seconds()
 		}
 	}
+	var cursorFrames <-chan time.Time
+	var cursorTicker *time.Ticker
+	if p.cursorStarTrail && SpeccedCursorStarTrail.Enabled && SpeccedCursorStarTrail.Frame > 0 {
+		cursorTicker = time.NewTicker(SpeccedCursorStarTrail.Frame)
+		cursorFrames = cursorTicker.C
+		defer cursorTicker.Stop()
+	}
 
 	// Read input in a goroutine and forward it on a channel so the main loop can
 	// select between input and SIGWINCH. os.File.Read retries EINTR via Go's poll
@@ -851,6 +867,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), drawn)
 		if p.cursorProximity {
 			canvas.ApplyCursorBrighten()
+		}
+		if p.cursorStarTrail {
+			canvas.ApplyCursorStarTrail(p.cursorTrail, time.Now())
 		}
 		composed := time.Now()
 		out := &countingWriter{w: p.tty}
@@ -978,6 +997,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-backgroundFrames:
 			dirty = true
 			animationDirty = true
+		case <-cursorFrames:
+			dirty = true
 		case <-guardTimerC:
 			guardTimerC = nil
 			p.widthGuardActive = false
@@ -1088,6 +1109,12 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					me.X--
 					me.Y -= p.startRow
 					if p.cursorProximity {
+						if p.cursorStarTrail && p.mouseKnown && (me.X != p.mouseX || me.Y != p.mouseY) {
+							p.cursorTrail = append(p.cursorTrail, CursorTrailPoint{X: p.mouseX, Y: p.mouseY, At: time.Now()})
+							if len(p.cursorTrail) > SpeccedCursorStarTrail.MaxPoints {
+								p.cursorTrail = append([]CursorTrailPoint(nil), p.cursorTrail[len(p.cursorTrail)-SpeccedCursorStarTrail.MaxPoints:]...)
+							}
+						}
 						p.mouseX, p.mouseY = me.X, me.Y
 						p.mouseKnown = me.X >= 0 && me.X < canvas.Cols() && me.Y >= 0 && me.Y < canvas.Rows()
 					}
