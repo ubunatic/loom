@@ -108,6 +108,19 @@ func TestANSIWriteFlagClusterKeepsLabelAndFillsRow(t *testing.T) {
 	}
 }
 
+func TestANSIReplayPreservesZWJFamily(t *testing.T) {
+	family := "👨‍👩‍👧‍👦"
+	canvas := loom.NewCanvas(12, 1)
+	writeANSI(canvas, loom.Rect{X: 0, Y: 0, W: 12, H: 1}, family)
+
+	if got := canvas.Get(0, 0).Text; got != family {
+		t.Fatalf("replayed cell text = %q, want family sequence %q", got, family)
+	}
+	if row := canvas.Row(0); !strings.Contains(row, family) {
+		t.Fatalf("replayed row = %q, want family sequence %q", row, family)
+	}
+}
+
 func TestClassifyBinaryAndImage(t *testing.T) {
 	dir := t.TempDir()
 	bin := filepath.Join(dir, "data.bin")

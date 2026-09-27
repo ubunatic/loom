@@ -4,10 +4,46 @@
 package loom_test
 
 import (
+	"bytes"
+	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
 )
+
+func TestCanvasPreservesZWJFamilyThroughRenderAndANSIReplay(t *testing.T) {
+	family := "👨‍👩‍👧‍👦"
+
+	canvas := loom.NewCanvas(12, 1)
+	canvas.Set(0, 0, loom.Cell{Text: family})
+	if got := canvas.Get(0, 0).Text; got != family {
+		t.Fatalf("Set cell text = %q, want family sequence %q", got, family)
+	}
+	if rendered := canvas.Row(0); !strings.Contains(rendered, family) {
+		t.Fatalf("Canvas.Row() = %q, want family sequence %q", rendered, family)
+	}
+
+	var flushed bytes.Buffer
+	canvas.Flush(&flushed, 1)
+	if !bytes.Contains(flushed.Bytes(), []byte(family)) {
+		t.Fatalf("Canvas.Flush() output = %q, want family sequence %q", flushed.String(), family)
+	}
+
+	writeCanvas := loom.NewCanvas(12, 1)
+	writeCanvas.Write(0, 0, family, loom.Style{})
+	if got := writeCanvas.Get(0, 0).Text; got != family {
+		t.Fatalf("Write cell text = %q, want family sequence %q", got, family)
+	}
+
+	ansiCanvas := loom.NewCanvas(12, 1)
+	ansiCanvas.WriteANSI(0, 0, family)
+	if got := ansiCanvas.Get(0, 0).Text; got != family {
+		t.Fatalf("WriteANSI cell text = %q, want family sequence %q", got, family)
+	}
+	if cells := loom.ParseANSI(ansiCanvas.Row(0)); len(cells) == 0 || cells[0].Text != family {
+		t.Fatalf("ParseANSI(Canvas.Row()) first cell = %#v, want family sequence %q", cells, family)
+	}
+}
 
 // ── M2: Canvas.WriteANSI basic functionality ──────────────────────────────────
 

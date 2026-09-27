@@ -588,7 +588,7 @@ func plainTerminalText(s string) string {
 	return strings.Join(measure.Clusters(s), "")
 }
 
-// textClusters supports base runes with combining marks, not emoji ZWJ clusters.
+// textClusters keeps base runes, combining marks, and emoji ZWJ sequences together.
 // Leading combining marks are dropped: they must not attach outside the region.
 func textClusters(text string) []string {
 	return measure.Clusters(text)
