@@ -41,3 +41,13 @@ Verify the filebrowser and any path-tree widget or example with mouse and
 keyboard interaction.
 Extend the PTY tests to send double-click input and prove files open and
 directories are entered through a real terminal session.
+
+## Plan (dev-091, reviewed by host)
+
+- M1 recognition tests: pair clicks by same button and target, movement tolerance and timing threshold; movement, timeout, other target or button break the pair.
+- M2 spec and recognizer: threshold in `spec/` plus schema; reusable recognizer with injectable clock (SGR has no click count).
+- M3 Choice dispatch: first click selects without activating; recognized second click activates once. Keep single-click confirm default, Enter, `SelectOnlyOnClick`.
+- M4 consumers: NavigationPane/filebrowser file open and dir entry; textedit outline jump.
+- M5 PTY: timed press/release pairs in filebrowser PTY test.
+
+Pre-Work: tests first per milestone; no double activation when Choice single-click confirm is enabled; threshold value must live only in spec (no Go duplicate).
