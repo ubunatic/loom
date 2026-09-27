@@ -46,3 +46,15 @@ behavior. Verify representative widgets or example apps show the effects while
 preserving their existing input behavior.
 Extend the PTY tests to drive mouse movement and button/key events and prove the
 cursor hints and visual effects work through a real terminal session.
+
+## Implementation Plan (dev-089, reviewed by the host)
+- M1: the hint (cursor dx,dy and radius; edges; no cursor) and the brighten theme, with spec/schema
+  fields for radius and brightness loaded like theme.go/resize.go. Tests first.
+- M2: trailing star. M3: press pulse, one-shot. M4: widget/app coverage and a PTY test.
+
+Pre-work / Required Refinements for M1:
+- Motion without a pressed button is only reported in any-event mouse mode (DECSET 1003). Check
+  which mode Pane enables; if only 1002, enable 1003 when an effect is on, and reset it on exit.
+- Effects are off by default: apps that don't opt in paint exactly as before (test it).
+- The effect must not change widget-local mouse coordinates or event dispatch.
+- The hint is cleared when the pointer leaves the window or no motion is known yet.
