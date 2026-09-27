@@ -46,3 +46,4 @@ Whoever completes the last item closes this ticket.
 - [ ] **064 standalone monitor**: `monitor --watch`, press F10, then check that no monitor process or collector is left running.
 
 - [ ] **111 media widget:** run `media` (examples/media) with a PNG, and with a video if ffmpeg is installed. Check that the image keeps its proportions and is centered, that colors look right in halfblock, quadblock and sextant, that nothing is painted outside the image area, and that quitting leaves no ffmpeg process behind.
+- [ ] **103 usage example:** run `usage` (examples/usage). Check the two boxes, that the heat colors match `harnez usage --compact --watch`, that the key switches between the plain and Loom views, and that resize and quit work.

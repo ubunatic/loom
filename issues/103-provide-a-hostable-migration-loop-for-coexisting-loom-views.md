@@ -115,3 +115,6 @@ Source: `../harnez/internal/usage/watch.go`, `load.go`, `indicatorsspec.go`,
   compact renderer draws titled box outlines and clips/pads inner rows
   (`watch.go:197-229, 692-705, 1017-1023`). Loom should express this through
   Loom widgets and styles, not by carrying over that renderer.
+
+**Delivered:** reference behavior (a537019). **M1 (8d78564):** `examples/usage` with All Usage (deterministic fake quotas) and Load (live CPU and RAM) boxes on a Loom `Frame`, using `StyledRows` and heat colors 34/32/33/31 at the Harnez thresholds; hostable and registered. **M2 (be9f193):** asynchronous collection with repaint through `InvalidationAware`. **M3 (c2c90d3):** a flag and a key switch between the plain rebuilt view and the Loom view, sharing one model. Host review: the snapshot `/tmp/loom-103-usage.ansi` shows correct heat bands (27% green, 38% green, 64% yellow, 81% red), titled boxes and the footer hint.
+**Simplified vs Harnez (acceptable for a minimal port):** one quota window per agent, and no CPU temperature, GPU/VRAM or Braille trend. **Visual check** is parked in 102. **Harnez-side integration** is tracked in the harnez tracker.
