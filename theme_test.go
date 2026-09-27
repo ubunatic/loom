@@ -45,6 +45,46 @@ func TestThemeUnknownFallsBackToPlain(t *testing.T) {
 	}
 }
 
+func TestThemeNames(t *testing.T) {
+	names := loom.ThemeNames()
+	if len(names) != len(loom.SpeccedThemes) {
+		t.Fatalf("ThemeNames() returned %d names, want %d", len(names), len(loom.SpeccedThemes))
+	}
+	for i, name := range names {
+		if !loom.ThemeExists(name) {
+			t.Errorf("ThemeNames()[%d] = %q, not found by ThemeExists", i, name)
+		}
+		if i > 0 && names[i-1] >= name {
+			t.Errorf("ThemeNames() is not strictly sorted at %q, %q", names[i-1], name)
+		}
+	}
+	for _, required := range []string{"plain", "mc", "mc-classic", "mc-dark", "julia256"} {
+		found := false
+		for _, name := range names {
+			if name == required {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Errorf("ThemeNames() missing required theme %q", required)
+		}
+	}
+}
+
+func TestThemeExists(t *testing.T) {
+	for _, name := range []string{"plain", "mc", "mc-classic", "mc-dark", "julia256"} {
+		if !loom.ThemeExists(name) {
+			t.Errorf("ThemeExists(%q) = false, want true", name)
+		}
+	}
+	for _, name := range []string{"", "does-not-exist"} {
+		if loom.ThemeExists(name) {
+			t.Errorf("ThemeExists(%q) = true, want false", name)
+		}
+	}
+}
+
 func TestThemeColorDistinguishesDefaultFromPaletteZero(t *testing.T) {
 	defaultColor := loom.DefaultThemeColor()
 	indexedZero := loom.ThemeColorIndex(0)

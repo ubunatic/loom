@@ -70,10 +70,27 @@ tabs.Style = theme.TabsStyle()
 
 ## Selection and Runtime Switching
 
-`Theme(name)` returns the named theme and falls back to `plain` for an unknown
-name. This is useful for tolerant library callers. User-facing selectors should
-instead validate membership in `SpeccedThemes` so a typo produces an actionable
-error and a list of available names.
+`ThemeNames()` returns all built-in names in sorted order, and
+`ThemeExists(name)` checks whether a name is supported. Validate names received
+from users before calling `Theme(name)`, because `Theme` deliberately falls back
+to `plain` for unknown names:
+
+```go
+names := loom.ThemeNames()
+name := userSelectedTheme
+if !loom.ThemeExists(name) {
+	return fmt.Errorf("unknown theme %q (available: %s)", name, strings.Join(names, ", "))
+}
+
+theme := loom.Theme(name)
+choice.ApplyTheme(theme)
+frame.ApplyTheme(theme)
+```
+
+For a selector, use `ThemeNames()` to populate its options and
+`ThemeExists()` to validate persisted or user-provided values. `ThemeNames()`
+returns a new slice, so callers may sort, filter, or otherwise modify it without
+changing the library's theme registry.
 
 Runtime theme switching is application orchestration. The application must:
 

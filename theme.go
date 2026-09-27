@@ -6,6 +6,7 @@ package loom
 import (
 	_ "embed"
 	"fmt"
+	"sort"
 	"strconv"
 
 	"gopkg.in/yaml.v3"
@@ -178,6 +179,23 @@ var SpeccedThemes = func() map[string]ThemeColors {
 	}
 	return f.Themes
 }()
+
+// ThemeNames returns the names of all themes loaded from spec/themes.yaml,
+// sorted in ascending order.
+func ThemeNames() []string {
+	names := make([]string, 0, len(SpeccedThemes))
+	for name := range SpeccedThemes {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// ThemeExists reports whether name is a theme loaded from spec/themes.yaml.
+func ThemeExists(name string) bool {
+	_, ok := SpeccedThemes[name]
+	return ok
+}
 
 // Theme returns the named theme from SpeccedThemes.
 // If name is not found, it falls back to the "plain" theme.
