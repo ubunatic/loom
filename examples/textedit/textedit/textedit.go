@@ -198,9 +198,10 @@ func (sb *sidebarWidget) HandleMouse(e loom.MouseEvent) bool {
 }
 
 type outlineWidget struct {
-	app      *TextEditApp
-	symbols  []syntax.Symbol
-	selected int
+	app         *TextEditApp
+	symbols     []syntax.Symbol
+	selected    int
+	doubleClick *loom.DoubleClickRecognizer
 }
 
 func (ow *outlineWidget) refresh() {
@@ -277,16 +278,25 @@ func (ow *outlineWidget) HandleKey(e loom.KeyEvent) bool {
 }
 
 func (ow *outlineWidget) HandleMouse(e loom.MouseEvent) bool {
-	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
-		ow.refresh()
-		if e.Y >= 0 && e.Y < len(ow.symbols) {
-			ow.selected = e.Y
+	ow.refresh()
+	if ow.doubleClick == nil {
+		ow.doubleClick = loom.NewDoubleClickRecognizer(nil)
+	}
+	target := ""
+	if e.Y >= 0 && e.Y < len(ow.symbols) {
+		sym := ow.symbols[e.Y]
+		target = fmt.Sprintf("%d:%d:%s", sym.Line, sym.Column, sym.Name)
+	}
+	doubleClick := ow.doubleClick.Handle(e, target)
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && target != "" {
+		ow.selected = e.Y
+		if doubleClick {
 			sym := ow.symbols[ow.selected]
 			ow.app.editor.SetCaret(sym.Line, sym.Column)
 			ow.app.activeFocus = focusEditor
 			ow.app.statusMsg = fmt.Sprintf("Jumped to %s (line %d)", sym.Name, sym.Line+1)
-			return true
 		}
+		return true
 	}
 	return false
 }

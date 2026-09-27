@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -102,6 +103,59 @@ func TestNavigationPaneMouseSelectionUsesChildLocalCoordinates(t *testing.T) {
 	pane.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 2})
 	if got, ok := pane.Selected(); !ok || got.Name != "beta" {
 		t.Fatalf("selection after local row 1 click = %+v, ok=%v; want beta", got, ok)
+	}
+}
+
+func TestNavigationPaneDoubleClickActivatesFile(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("a"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	activated := ""
+	pane, err := NewNavigationPane(dir, NavigationPaneOptions{
+		OnActivate: func(entry loom.FileEntry) { activated = entry.Name },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pane.Draw(loom.NewCanvas(40, 8), loom.Rect{W: 40, H: 8})
+	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 1}
+	pane.HandleMouse(click)
+	if got, ok := pane.Selected(); !ok || got.Name != "alpha.txt" || activated != "" {
+		t.Fatalf("first click selected %+v, ok=%v and activated %q; want alpha.txt selected only", got, ok, activated)
+	}
+	pane.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
+	time.Sleep(10 * time.Millisecond)
+	pane.HandleMouse(click)
+	if activated != "alpha.txt" {
+		t.Fatalf("double-click activated %q, want alpha.txt", activated)
+	}
+}
+
+func TestNavigationPaneDoubleClickEntersDirectory(t *testing.T) {
+	root := t.TempDir()
+	child := filepath.Join(root, "child")
+	if err := os.Mkdir(child, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	opened := 0
+	pane, err := NewNavigationPane(root, NavigationPaneOptions{
+		OnOpen: func(loom.Directory) { opened++ },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	pane.Draw(loom.NewCanvas(40, 8), loom.Rect{W: 40, H: 8})
+	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 1}
+	pane.HandleMouse(click)
+	if pane.Directory().Path != root || opened != 0 {
+		t.Fatalf("first click entered %q with %d open callbacks; want root and none", pane.Directory().Path, opened)
+	}
+	pane.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
+	time.Sleep(10 * time.Millisecond)
+	pane.HandleMouse(click)
+	if pane.Directory().Path != child || opened != 1 {
+		t.Fatalf("double-click entered %q with %d open callbacks; want %q and one", pane.Directory().Path, opened, child)
 	}
 }
 

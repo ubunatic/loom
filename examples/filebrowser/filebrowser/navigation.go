@@ -47,6 +47,7 @@ func NewNavigationPane(dir string, options NavigationPaneOptions) (*NavigationPa
 		list:    loom.NewChoice(nil),
 	}
 	pane.list.SelectOnlyOnClick = true
+	pane.list.DoubleClickToActivate = true
 	pane.list.MouseTextOnly = true
 	pane.list.Prompt = "filter> "
 	pane.list.Placeholder = "type to filter"

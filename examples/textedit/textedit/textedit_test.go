@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -390,6 +391,32 @@ func TestSidebarOutlineAndJumpCaret(t *testing.T) {
 	}
 }
 
+func TestOutlineDoubleClickJumpsToSelectedSymbol(t *testing.T) {
+	app := NewApp()
+	app.editor.SetCaret(0, 0)
+	app.activeFocus = focusBrowser
+	app.sidebar.outline.refresh()
+	if len(app.sidebar.outline.symbols) == 0 {
+		t.Fatal("outline has no symbols to select")
+	}
+	symbol := app.sidebar.outline.symbols[0]
+	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0}
+	app.sidebar.outline.HandleMouse(click)
+	row, col := app.editor.Caret()
+	if app.sidebar.outline.selected != 0 || row != 0 || col != 0 || app.activeFocus != focusBrowser {
+		t.Fatalf("first click selected %d, caret (%d,%d), focus %v; want selection only", app.sidebar.outline.selected, row, col, app.activeFocus)
+	}
+	app.sidebar.outline.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, Y: 0})
+	time.Sleep(10 * time.Millisecond)
+	app.sidebar.outline.HandleMouse(click)
+	if row, col := app.editor.Caret(); row != symbol.Line || col != symbol.Column {
+		t.Fatalf("double-click caret = (%d,%d), want symbol at (%d,%d)", row, col, symbol.Line, symbol.Column)
+	}
+	if app.activeFocus != focusEditor {
+		t.Fatalf("focus after double-click = %v, want editor", app.activeFocus)
+	}
+}
+
 func TestCodeFoldingInTextEdit(t *testing.T) {
 	app := NewApp()
 	originalText := app.editor.Value()
@@ -443,5 +470,3 @@ func TestCodeFoldingInTextEdit(t *testing.T) {
 		t.Fatalf("expected Hello, Loom! to be visible again after unfolding")
 	}
 }
-
-
