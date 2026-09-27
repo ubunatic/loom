@@ -255,25 +255,69 @@ func viewCommand() *cobra.Command {
 				return err
 			}
 			defer pane.Close()
+			configureViewPane(pane)
 			return pane.Run(&ansiView{buffer: buf})
 		},
 	}
 }
 
+func configureViewPane(pane *loom.Pane) {
+	pane.MaxCols = 0
+	pane.Resizeable = true
+}
+
 type ansiView struct {
-	buffer *loom.AnsiBuffer
-	offset int
+	buffer       *loom.AnsiBuffer
+	offsetX      int
+	offsetY      int
+	viewportCols int
+	viewportRows int
 }
 
 func (v *ansiView) Draw(canvas *loom.Canvas, rect loom.Rect) {
+	v.viewportCols = rect.W
+	v.viewportRows = rect.H
+	v.clampOffsets()
 	for y := 0; y < rect.H; y++ {
-		row := y + v.offset
+		row := y + v.offsetY
 		if row >= v.buffer.Rows() {
 			break
 		}
-		for x := 0; x < rect.W && x < v.buffer.Cols(); x++ {
-			canvas.Set(rect.X+x, rect.Y+y, v.buffer.Get(x, row).ToCell())
+		for x := 0; x < rect.W; x++ {
+			col := x + v.offsetX
+			if col >= v.buffer.Cols() {
+				break
+			}
+			canvas.Set(rect.X+x, rect.Y+y, v.buffer.Get(col, row).ToCell())
 		}
+	}
+}
+
+func (v *ansiView) clampOffsets() {
+	cols, rows := v.viewportCols, v.viewportRows
+	if cols < 1 {
+		cols = 1
+	}
+	if rows < 1 {
+		rows = 1
+	}
+	maxX := v.buffer.Cols() - cols
+	if maxX < 0 {
+		maxX = 0
+	}
+	maxY := v.buffer.Rows() - rows
+	if maxY < 0 {
+		maxY = 0
+	}
+	if v.offsetX < 0 {
+		v.offsetX = 0
+	} else if v.offsetX > maxX {
+		v.offsetX = maxX
+	}
+	if v.offsetY < 0 {
+		v.offsetY = 0
+	} else if v.offsetY > maxY {
+		v.offsetY = maxY
 	}
 }
 
@@ -281,25 +325,28 @@ func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
 	switch {
 	case event.Is("q", "f10", "ctrl-c"):
 		return true
+	case event.Is("shift-left", "["):
+		v.offsetX -= 10
+	case event.Is("shift-right", "]"):
+		v.offsetX += 10
+	case event.Is("left", "h"):
+		v.offsetX--
+	case event.Is("right", "l"):
+		v.offsetX++
+	case event.Is("home"):
+		v.offsetX = 0
+	case event.Is("end"):
+		v.offsetX = v.buffer.Cols()
 	case event.Is("up", "k"):
-		if v.offset > 0 {
-			v.offset--
-		}
+		v.offsetY--
 	case event.Is("down", "j"):
-		if v.offset < v.buffer.Rows()-1 {
-			v.offset++
-		}
+		v.offsetY++
 	case event.Is("pgup"):
-		v.offset -= 10
-		if v.offset < 0 {
-			v.offset = 0
-		}
+		v.offsetY -= 10
 	case event.Is("pgdn"):
-		v.offset += 10
-		if v.offset >= v.buffer.Rows() {
-			v.offset = v.buffer.Rows() - 1
-		}
+		v.offsetY += 10
 	}
+	v.clampOffsets()
 	return false
 }
 

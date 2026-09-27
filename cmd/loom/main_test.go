@@ -133,10 +133,51 @@ func TestANSIViewScrollAndQuit(t *testing.T) {
 		t.Fatal(err)
 	}
 	view := &ansiView{buffer: buffer}
-	if view.HandleKey(loom.KeyEvent{Key: "down"}) || view.offset != 1 {
-		t.Fatalf("down key did not scroll: offset=%d", view.offset)
+	if view.HandleKey(loom.KeyEvent{Key: "down"}) || view.offsetY != 1 {
+		t.Fatalf("down key did not scroll: offsetY=%d", view.offsetY)
 	}
 	if !view.HandleKey(loom.KeyEvent{Key: "f10"}) {
 		t.Fatal("F10 did not quit")
+	}
+}
+
+func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
+	buffer, err := loom.ParseAnsiBuffer("abcdefghijkl\nrow two\nrow three\nrow four", 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view := &ansiView{buffer: buffer}
+	canvas := loom.NewCanvas(4, 2)
+	view.Draw(canvas, loom.Rect{W: 4, H: 2})
+	view.HandleKey(loom.KeyEvent{Key: "right"})
+	view.HandleKey(loom.KeyEvent{Key: "right"})
+	view.Draw(canvas, loom.Rect{W: 4, H: 2})
+	if got := canvas.Get(0, 0).Text; got != "c" {
+		t.Fatalf("first rendered cell after horizontal pan = %q, want %q", got, "c")
+	}
+	view.HandleKey(loom.KeyEvent{Key: "end"})
+	if want := buffer.Cols() - 4; view.offsetX != want {
+		t.Fatalf("end horizontal offset = %d, want clamped offset %d", view.offsetX, want)
+	}
+	view.Draw(canvas, loom.Rect{W: 4, H: 2})
+	if got := canvas.Get(0, 0).Text; got != "i" {
+		t.Fatalf("first rendered cell at right edge = %q, want %q", got, "i")
+	}
+	view.HandleKey(loom.KeyEvent{Key: "right"})
+	if want := buffer.Cols() - 4; view.offsetX != want {
+		t.Fatalf("right edge offset = %d, want %d", view.offsetX, want)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "left"})
+	view.HandleKey(loom.KeyEvent{Key: "home"})
+	if view.offsetX != 0 {
+		t.Fatalf("home horizontal offset = %d, want 0", view.offsetX)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "pgdn"})
+	if want := buffer.Rows() - 2; view.offsetY != want {
+		t.Fatalf("page-down vertical offset = %d, want clamped offset %d", view.offsetY, want)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "down"})
+	if want := buffer.Rows() - 2; view.offsetY != want {
+		t.Fatalf("bottom vertical offset = %d, want %d", view.offsetY, want)
 	}
 }
