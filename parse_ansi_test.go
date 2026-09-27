@@ -306,6 +306,18 @@ func TestParseANSIWideCharacter(t *testing.T) {
 	}
 }
 
+func TestParseANSIRegionalIndicatorPairUsesTwoColumns(t *testing.T) {
+	for name, parse := range map[string]func(string) []loom.Cell{
+		"old": loom.ParseANSIOld,
+		"new": loom.ParseANSINew,
+	} {
+		cells := parse("🇩🇪X")
+		if len(cells) != 3 || cells[0].Text != "🇩🇪" || !cells[1].Continuation || cells[2].Text != "X" {
+			t.Errorf("%s parser cells = %#v, want flag lead, one continuation, and X", name, cells)
+		}
+	}
+}
+
 // ── Combining marks ──────────────────────────────────────────────────────────
 
 func TestParseANSICombiningMarks(t *testing.T) {

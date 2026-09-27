@@ -119,6 +119,20 @@ func fitANSIWidth(s string, target int) string {
 			continue
 		}
 		r, size := utf8.DecodeRuneInString(s[i:])
+		if r >= 0x1F1E6 && r <= 0x1F1FF && i+size < len(s) {
+			r2, size2 := utf8.DecodeRuneInString(s[i+size:])
+			if r2 >= 0x1F1E6 && r2 <= 0x1F1FF {
+				pair := s[i : i+size+size2]
+				rw := measure.StringWidth(pair)
+				if width+rw > target {
+					break
+				}
+				out.WriteString(pair)
+				width += rw
+				i += size + size2
+				continue
+			}
+		}
 		rw := measure.RuneWidth(r)
 		if width+rw > target {
 			break
@@ -139,7 +153,13 @@ func fitANSIWidth(s string, target int) string {
 func boxEdges(s string) (int, int, bool) {
 	plain := []rune(stripANSI(s))
 	left, right, col := -1, -1, 0
-	for _, r := range plain {
+	for i := 0; i < len(plain); {
+		r := plain[i]
+		if r >= 0x1F1E6 && r <= 0x1F1FF && i+1 < len(plain) && plain[i+1] >= 0x1F1E6 && plain[i+1] <= 0x1F1FF {
+			col += measure.StringWidth(string(plain[i : i+2]))
+			i += 2
+			continue
+		}
 		if isBoxVerticalRune(r) {
 			if left < 0 {
 				left = col
@@ -147,6 +167,7 @@ func boxEdges(s string) (int, int, bool) {
 			right = col
 		}
 		col += measure.RuneWidth(r)
+		i++
 	}
 	return left, right, left >= 0 && right > left
 }

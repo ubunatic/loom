@@ -52,6 +52,26 @@ func TestFormatWidthUsesDisplayColumns(t *testing.T) {
 	}
 }
 
+func TestFormatTextKeepsRegionalIndicatorPairAtWidthBoundary(t *testing.T) {
+	got, err := formatText("🇩🇪X", 3, false, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != "🇩🇪X" {
+		t.Fatalf("formatText() = %q, want complete two-column flag and X", got)
+	}
+}
+
+func TestFormatTextAlignsBoxEdgesAfterFlag(t *testing.T) {
+	got, err := formatText("│🇩🇪x│\n│x│", 0, false, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := "│🇩🇪x│\n│x  │"; got != want {
+		t.Fatalf("formatText() = %q, want %q", got, want)
+	}
+}
+
 func TestFormatCommandStdoutAndAtomicWriteMode(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "input.ansi")
 	if err := os.WriteFile(path, []byte("a\nb\n"), 0640); err != nil {

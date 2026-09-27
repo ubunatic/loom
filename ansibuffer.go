@@ -31,7 +31,14 @@ func ValidateAnsiBox(text string) error {
 		plain := stripANSIForBox(line)
 		left, right := -1, -1
 		col := 0
-		for _, r := range plain {
+		rs := []rune(plain)
+		for j := 0; j < len(rs); {
+			r := rs[j]
+			if r >= 0x1F1E6 && r <= 0x1F1FF && j+1 < len(rs) && rs[j+1] >= 0x1F1E6 && rs[j+1] <= 0x1F1FF {
+				col += measure.StringWidth(string(rs[j : j+2]))
+				j += 2
+				continue
+			}
 			if isBoxVertical(r) || isBoxCorner(r) {
 				if left < 0 {
 					left = col
@@ -39,6 +46,7 @@ func ValidateAnsiBox(text string) error {
 				right = col
 			}
 			col += measure.RuneWidth(r)
+			j++
 		}
 		trimmed := strings.TrimSpace(plain)
 		if left >= 0 && len(trimmed) > 1 && isBoxEdge(firstRune(trimmed)) && isBoxEdge(lastRune(trimmed)) {
@@ -739,6 +747,18 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 		}
 
 		r := rs[i]
+		if r >= 0x1F1E6 && r <= 0x1F1FF && i+1 < n && rs[i+1] >= 0x1F1E6 && rs[i+1] <= 0x1F1FF {
+			if x+1 < buf.cols && y < buf.rows {
+				first, second := curStyle, curStyle
+				first.Rune = r
+				second.Rune = rs[i+1]
+				buf.cells[y][x] = first
+				buf.cells[y][x+1] = second
+			}
+			x += measure.StringWidth(string(rs[i : i+2]))
+			i += 2
+			continue
+		}
 		w := measure.RuneWidth(r)
 		if w > 0 && x < buf.cols && y < buf.rows {
 			cell := curStyle

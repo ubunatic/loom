@@ -110,11 +110,17 @@ func evaluateFile(out io.Writer, path string) error {
 		}
 		plain := stripANSI(line)
 		x := 0
-		for _, r := range plain {
+		rs := []rune(plain)
+		for i := 0; i < len(rs); {
+			r := rs[i]
+			w := measure.RuneWidth(r)
+			if r >= 0x1F1E6 && r <= 0x1F1FF && i+1 < len(rs) && rs[i+1] >= 0x1F1E6 && rs[i+1] <= 0x1F1FF {
+				w = measure.StringWidth(string(rs[i : i+2]))
+				i++
+			}
 			if r == '┌' || r == '╔' {
 				boxCount++
 			}
-			w := measure.RuneWidth(r)
 			if w > 0 && !unicode.IsSpace(r) {
 				if minX < 0 || x < minX {
 					minX = x
@@ -130,6 +136,7 @@ func evaluateFile(out io.Writer, path string) error {
 				}
 			}
 			x += w
+			i++
 		}
 	}
 	for _, line := range lines {

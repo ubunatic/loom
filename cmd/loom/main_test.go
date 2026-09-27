@@ -49,6 +49,17 @@ func TestMeasureAndEval(t *testing.T) {
 	}
 }
 
+func TestEvalCountsRegionalIndicatorPairAsTwoColumns(t *testing.T) {
+	path := writeFixture(t, "🇩🇪X\n")
+	var out bytes.Buffer
+	if err := execute([]string{"eval", path}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "non-blank bounds: x=1..3 y=1..1 (3 x 1)") {
+		t.Fatalf("eval output = %q, want a three-column non-blank bound", out.String())
+	}
+}
+
 func TestCheckBox(t *testing.T) {
 	valid := writeFixture(t, "┌──┐\n│hi│\n└──┘\n")
 	invalid := writeFixture(t, "┌──┐\n│x│\n└─┘\n")

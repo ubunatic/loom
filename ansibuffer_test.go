@@ -17,6 +17,7 @@ func TestValidateAnsiBox(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "valid box", text: "┌───┐\n│abc│\n└───┘\n"},
+		{name: "valid box with flag", text: "┌────┐\n│🇩🇪  │\n└────┘", wantErr: false},
 		{name: "SGR and wide rune", text: "\x1b[31m┌───┐\x1b[0m\n│界 │\n└───┘"},
 		{name: "ragged box row", text: "┌───┐\n│abc  │\n└───┘\n", wantErr: true},
 		{name: "misaligned divider", text: "┌───┐\n│abc│\n├──┤\n│def│\n└───┘\n", wantErr: true},
@@ -31,6 +32,25 @@ func TestValidateAnsiBox(t *testing.T) {
 				t.Fatalf("ValidateAnsiBox() error = %v, wantErr %v", err, tc.wantErr)
 			}
 		})
+	}
+}
+
+func TestParseAnsiBufferKeepsRegionalIndicatorPairInTwoColumns(t *testing.T) {
+	buf, err := ParseAnsiBuffer("🇩🇪X", 5, 1)
+	if err != nil {
+		t.Fatalf("ParseAnsiBuffer() error = %v", err)
+	}
+	if got := buf.Get(0, 0).Rune; got != '🇩' {
+		t.Fatalf("cell 0 = %q, want first regional indicator", got)
+	}
+	if got := buf.Get(1, 0).Rune; got != '🇪' {
+		t.Fatalf("cell 1 = %q, want second regional indicator", got)
+	}
+	if got := buf.Get(2, 0).Rune; got != 'X' {
+		t.Fatalf("cell 2 = %q, want text immediately after two-column flag", got)
+	}
+	if got := buf.Serialize(); got != "🇩🇪X\x1b[0m" {
+		t.Fatalf("Serialize() = %q, want original flag and X followed by the serializer reset", got)
 	}
 }
 

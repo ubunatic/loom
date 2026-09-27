@@ -58,6 +58,17 @@ func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 	}
 }
 
+func TestRegionalIndicatorPairWidthInBothImplementations(t *testing.T) {
+	for name, measureWidth := range map[string]func(string) int{
+		"old": StringWidthOld,
+		"new": StringWidthNew,
+	} {
+		if got := measureWidth("🇩🇪"); got != 2 {
+			t.Errorf("%s StringWidth(flag) = %d, want 2", name, got)
+		}
+	}
+}
+
 func TestEmojiSpecLoadAndReconcile(t *testing.T) {
 	data, err := os.ReadFile("../spec/emoji.yaml")
 	if err != nil {
