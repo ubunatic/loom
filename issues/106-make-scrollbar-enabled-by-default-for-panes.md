@@ -25,3 +25,11 @@ automatically expose a scrollbar for long previews and file lists.
   unchanged.
 - Tests cover the default, explicit opt-out, rendering, and interaction paths;
   existing scrollbar and filebrowser tests continue to pass.
+
+## Plan (dev-106, reviewed by host)
+
+Finding: View and Choice already show scrollbars on overflow; ansiviewer preview has none.
+- M1: tests + spec `auto` default with explicit true/false override (value lives in spec/defaults.yaml only).
+- M2: widget tests: overflow reserves/renders a bar, fit reserves nothing, opt-out unchanged.
+- M3: ansiviewer preview scrollbar: long/short tests, track click and thumb drag move `b.offset`; implement.
+Pre-Work: conventional commits `(issue 106 Mn)`; `make test-q1` after the last edit.
