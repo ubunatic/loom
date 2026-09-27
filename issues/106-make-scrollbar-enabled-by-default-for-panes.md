@@ -33,3 +33,9 @@ Finding: View and Choice already show scrollbars on overflow; ansiviewer preview
 - M2: widget tests: overflow reserves/renders a bar, fit reserves nothing, opt-out unchanged.
 - M3: ansiviewer preview scrollbar: long/short tests, track click and thumb drag move `b.offset`; implement.
 Pre-Work: conventional commits `(issue 106 Mn)`; `make test-q1` after the last edit.
+
+## M1/M2 delivered: scrollbar mode (ea66279)
+
+`scrollbar.mode: auto|always|never` in spec; per-widget `ScrollbarMode` override on View and Choice. Host reran targeted tests: pass. Note: with `always` and fitting content the bar draws but track clicks are ignored (no offset to move) — correct.
+
+Pre-Work for M3: ansiviewer preview uses the same `scrollbarVisible`/thumb helpers, not a copy.
