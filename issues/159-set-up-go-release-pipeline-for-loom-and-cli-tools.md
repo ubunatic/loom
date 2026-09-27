@@ -1,6 +1,6 @@
 # 159 — Set up Go release pipeline for loom and CLI tools
 
-**Status**: Open
+**Status**: Closed — Implemented in 6d10dd5 (M1): configure .goreleaser.yaml, version.yaml, spec validation, Cobra version wiring, Makefile check and release targets, and minisign key
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
