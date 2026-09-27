@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 019 — Evaluate declarative source and action wiring
 
-**Status**: Open
+**Status**: Closed — parked: hosts own data-source and action wiring (103)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Architecture
