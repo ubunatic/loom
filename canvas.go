@@ -157,7 +157,9 @@ func (c *Canvas) setOld(x, y int, cell Cell, claim bool) {
 	if w >= 2 && x+w-1 >= c.cols {
 		return
 	}
-	if cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+	// A reset background inherits the surface below, except for cells painted
+	// with PaintForeground, which keep the terminal default.
+	if !cell.Claim && cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
 		cell.Style.BG = c.cells[y][x].Style.BG
 	}
 	clear := func(col int) {
@@ -233,7 +235,8 @@ func (c *Canvas) setNew(x, y int, cell Cell, claim bool) {
 	// A foreground cell without an explicit background inherits the surface
 	// already present at this coordinate. This is what lets a child canvas
 	// paint decoration without erasing its parent's colored surface.
-	if cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
+	// Same rule as setOld: PaintForeground keeps the terminal default background.
+	if !cell.Claim && cell.Style.BG == ColorReset() && c.cells[y][x].Style.BG != ColorReset() {
 		cell.Style.BG = c.cells[y][x].Style.BG
 	}
 	// Erase both halves of any previous wide glyph touched by this write.

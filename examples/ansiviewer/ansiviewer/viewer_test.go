@@ -345,3 +345,41 @@ func TestOpenRecorderPTYUsesRequestedGeometry(t *testing.T) {
 		t.Fatalf("recorder PTY geometry = %dx%d, want 115x37", ws.Col, ws.Row)
 	}
 }
+
+func TestRulerPadsPreviewWithDefaultBackground(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "a.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	b, err := newBrowser(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	framed := newFramedBrowser(b, &astraToggle{})
+	framed.HandleKey(loom.KeyEvent{Text: "r"})
+	if !b.ruler {
+		t.Fatal("r did not turn the ruler on")
+	}
+	b.lines, b.kind, b.offset = []string{"hello"}, KindText, 0
+	c := loom.NewCanvas(30, 6)
+	area := loom.Rect{W: 30, H: 6}
+	c.PaintSurface(area, loom.Style{BG: loom.ColorIndex(236)})
+	b.Draw(c, area)
+	if got := c.Get(1, 1).Text; got != "h" {
+		t.Fatalf("content starts with %q at (1,1), want h", got)
+	}
+	for _, p := range [][2]int{{0, 0}, {10, 0}, {0, 3}, {29, 3}, {15, 5}} {
+		if got := c.Get(p[0], p[1]).Style.BG; got != loom.ColorReset() {
+			t.Fatalf("ruler cell %v background = %+v, want terminal default", p, got)
+		}
+	}
+	if got := c.Get(10, 0).Text; got != "1" {
+		t.Fatalf("ruler mark at column 10 = %q, want 1", got)
+	}
+	framed.HandleKey(loom.KeyEvent{Text: "r"})
+	c = loom.NewCanvas(30, 6)
+	b.Draw(c, area)
+	if got := c.Get(0, 0).Text; got != "h" {
+		t.Fatalf("ruler off: content at (0,0) = %q, want h", got)
+	}
+}

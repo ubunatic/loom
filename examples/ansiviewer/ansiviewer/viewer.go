@@ -61,6 +61,7 @@ type browser struct {
 	offset     int
 	lines      []string
 	kind       Kind
+	ruler      bool
 	metadata   string
 	navigation *filebrowser.NavigationPane
 	quit       bool
@@ -106,7 +107,7 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 	frame := &loom.Frame{
 		Gap:    1,
 		Title:  "ANSI Viewer",
-		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  a Astra  •  F10 Quit",
+		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  r ruler  •  a Astra  •  F10 Quit",
 		Boxes: []loom.Box{
 			{ID: "files", Title: "Files", FillHeight: true, MinWidth: filesMinWidth, Width: filesMinWidth, Height: 4, Border: border, Child: b.navigation},
 			{ID: "viewer", Title: "Preview", FillHeight: true, Dynamic: true, MinWidth: 30, Height: 4, Border: border, Child: b},
@@ -142,6 +143,10 @@ func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
+	if e.Is("r") {
+		b.browser.ruler = !b.browser.ruler
+		return false
+	}
 	if e.Is("a") && b.astra != nil {
 		b.astra.enabled = !b.astra.enabled
 		return false
@@ -273,6 +278,10 @@ func (b *browser) selectFile(i int) {
 }
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
+	if b.ruler && r.W > 2 && r.H > 2 {
+		drawRuler(c, r)
+		r = loom.Rect{X: r.X + 1, Y: r.Y + 1, W: r.W - 2, H: r.H - 2}
+	}
 	if r.H < 1 || r.W < 1 {
 		return
 	}
@@ -590,4 +599,36 @@ func Record(ctx context.Context, out io.Writer, dir string, delay time.Duration,
 	case <-timer.C:
 	}
 	return Render(out, dir, cols, rows)
+}
+
+// drawRuler frames r with a 1-cell ruler on the terminal's default background,
+// so cells a snapshot leaves unpainted show through next to it.
+func drawRuler(c *loom.Canvas, r loom.Rect) {
+	dim := loom.Style{FG: loom.ColorIndex(244), BG: loom.ColorReset()}
+	hot := loom.Style{FG: loom.ColorIndex(214), BG: loom.ColorReset()}
+	// PaintForeground keeps the reset background instead of inheriting the box's.
+	put := func(x, y int, text string, style loom.Style) {
+		c.PaintForeground(x, y, loom.Cell{Text: text, Style: style})
+	}
+	for x := 0; x < r.W; x++ {
+		text, style := "·", dim
+		switch {
+		case x == 0 || x == r.W-1:
+			text = " "
+		case x%10 == 0:
+			text, style = strconv.Itoa(x/10%10), hot
+		case x%5 == 0:
+			text = "┊"
+		}
+		put(r.X+x, r.Y, text, style)
+		put(r.X+x, r.Y+r.H-1, text, style)
+	}
+	for y := 1; y < r.H-1; y++ {
+		style := dim
+		if y%5 == 0 {
+			style = hot
+		}
+		put(r.X, r.Y+y, strconv.Itoa(y%10), style)
+		put(r.X+r.W-1, r.Y+y, "│", dim)
+	}
 }
