@@ -41,6 +41,15 @@ func TestVTWideRuneAndSplitWrites(t *testing.T) {
 	}
 }
 
+func TestVTScreenPreservesZWJCluster(t *testing.T) {
+	const family = "👨\u200d👩\u200d👧"
+	v := NewVT(8, 1)
+	v.Write([]byte(family)) //nolint:errcheck
+	if got := v.Screen()[0]; got != family {
+		t.Fatalf("screen = %q, want ZWJ cluster %q", got, family)
+	}
+}
+
 func TestVTFrameSnapshotsAtSynchronizedEnd(t *testing.T) {
 	v := NewVT(5, 1)
 	v.Write([]byte("\x1b[?2026h\x1b[1;1Hone\x1b[?2026l\x1b[?2026h\x1b[1;1Htwo\x1b[K\x1b[?2026l")) //nolint:errcheck

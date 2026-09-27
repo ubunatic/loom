@@ -150,6 +150,7 @@ func (s Style) String() string {
 // while the right cell stores Rune=0 with the same Style.
 type Cell struct {
 	Rune  rune
+	Text  string // complete grapheme cluster; empty for ordinary single-rune cells
 	Style Style
 }
 

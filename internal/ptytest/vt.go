@@ -79,7 +79,11 @@ func (v *VT) Screen() []string {
 		var b strings.Builder
 		for _, cell := range row {
 			if cell.Rune != 0 {
-				b.WriteRune(cell.Rune)
+				if cell.Text != "" {
+					b.WriteString(cell.Text)
+				} else {
+					b.WriteRune(cell.Rune)
+				}
 			}
 		}
 		out[y] = strings.TrimRight(b.String(), " ")
@@ -201,7 +205,7 @@ func (v *VT) Write(p []byte) (int, error) {
 			if measure.ActiveRenderPath() == measure.RenderPathVTE && measure.VTEMode(cluster) == "pad-1" {
 				w = max(1, w-1)
 			}
-			v.putCluster(r, w)
+			v.putCluster(r, cluster, w)
 			i = j
 		}
 	}
@@ -217,10 +221,10 @@ func (v *VT) lineFeed() {
 }
 
 func (v *VT) put(r rune) {
-	v.putCluster(r, measure.RuneWidth(r))
+	v.putCluster(r, string(r), measure.RuneWidth(r))
 }
 
-func (v *VT) putCluster(r rune, w int) {
+func (v *VT) putCluster(r rune, text string, w int) {
 	if w <= 0 {
 		return
 	}
@@ -235,7 +239,7 @@ func (v *VT) putCluster(r rune, w int) {
 	if v.x < 0 || v.x >= v.Cols || v.y < 0 || v.y >= v.Rows {
 		return
 	}
-	v.cells[v.y][v.x] = Cell{Rune: r, Style: v.pen}
+	v.cells[v.y][v.x] = Cell{Rune: r, Text: text, Style: v.pen}
 	for k := 1; k < w && v.x+k < v.Cols; k++ {
 		v.cells[v.y][v.x+k] = Cell{Rune: 0, Style: v.pen}
 	}

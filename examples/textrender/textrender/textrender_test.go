@@ -31,6 +31,27 @@ func TestWidths(t *testing.T) {
 	}
 }
 
+func TestEveryTextrenderViewPreservesZWJ(t *testing.T) {
+	views := map[string]loom.Widget{
+		"borders":  newBordersView(),
+		"buttons":  newButtonsView(),
+		"clipping": newClippingView(),
+		"scroll":   newScrollView(),
+	}
+	for name, view := range views {
+		t.Run(name, func(t *testing.T) {
+			rows := 24
+			if name == "borders" {
+				rows = 40
+			}
+			frames := loom.Render(view, 80, rows)
+			if rendered := strings.Join(frames, "\n"); !strings.Contains(rendered, Cases[8].Text) {
+				t.Fatalf("rendered %s view contains no complete ZWJ sequence %q", name, Cases[8].Text)
+			}
+		})
+	}
+}
+
 func TestBordersKeepBodyInsideBox(t *testing.T) {
 	frames := loom.Render(newBordersView(), 80, 24)
 	for _, line := range frames {
@@ -287,6 +308,9 @@ func TestTextrenderPTYSession(t *testing.T) {
 
 	// Verify non-ASCII content is present in final screen
 	screenText := strings.Join(finalScreen, "\n")
+	if !strings.Contains(screenText, Cases[8].Text) {
+		t.Fatalf("final screen missing complete ZWJ sequence %q:\n%s", Cases[8].Text, screenText)
+	}
 	if !strings.Contains(screenText, "ASCII") && !strings.Contains(screenText, "中") {
 		t.Fatalf("final screen missing expected non-ASCII content:\n%s", screenText)
 	}

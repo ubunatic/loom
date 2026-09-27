@@ -1,16 +1,17 @@
- Borders  Choice list (no Button widget yet)  Clip
-──────────────────────────────────────────────────
-  ASCII  Hello [U+0048 U+0065 U+006C U+006C U+006F
-▶ Accented Latin  Café [U+0043 U+0061 U+0066 U+00E
-  German umlauts (precomposed)  Müller [U+004D U+0
-  German umlauts (decomposed)  Müller [U+004D U+0
+ Borders  Choice list (no Button widget yet)  Clipping  Scroll
+────────────────────────────────────────────────────────────────────────────────
+  ASCII  Hello [U+0048 U+0065 U+006C U+006C U+006F]
+▶ Accented Latin  Café [U+0043 U+0061 U+0066 U+00E9]
+  German umlauts (precomposed)  Müller [U+004D U+00FC U+006C U+006C U+0065 U+00…
+  German umlauts (decomposed)  Müller [U+004D U+0075 U+0308 U+006C U+006C U+006…
   CJK  中文 [U+4E2D U+6587]
   Combining marks  e̊ [U+0065 U+030A]
   Symbols  ♠♣♥♦ [U+2660 U+2663 U+2665 U+2666]
   Emoji  😀 [U+1F600]
-  ZWJ sequence  👨👩👧 [U+1F468 U+200D U+1F469 U+2
+  ZWJ sequence  👨‍👩‍👧 [U+1F468 U+200D U+1F469 U+200D U+1F467]
   Flag  🇩🇪 [U+1F1E9 U+1F1EA]
-  Mixed line  Test中文♠😀 [U+0054 U+0065 U+0073 U+
+  Mixed line  Test中文♠😀 [U+0054 U+0065 U+0073 U+0074 U+4E2D U+6587 U+2660 U+1…
+
 
 
 
@@ -20,5 +21,4 @@
 
 
 >
- ←/→: cycle tabs  •  q: quit
-
+ ←/→: cycle tabs  •  F10 Quit
