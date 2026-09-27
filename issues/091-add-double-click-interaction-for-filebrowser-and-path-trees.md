@@ -57,3 +57,9 @@ Pre-Work: tests first per milestone; no double activation when Choice single-cli
 `DoubleClickRecognizer` with injectable clock; `mouse.double_click_interval: 400ms` and `movement_tolerance` in spec/defaults.yaml. Host ran the double-click tests: pass.
 
 Pre-Work for M3: use conventional commit messages (`feat: ... (issue 091 M3)`); run `make test-q1` after the last code edit, not before.
+
+## M3 delivered: Choice double-click activation (4654608)
+
+Opt-in `DoubleClickToActivate`; first click selects, pair activates once; MultiSelect never pairs; scroll, drag, scrollbar and empty space break a pending pair. Host ran Choice tests: pass.
+
+Pre-Work for M4: enable it in NavigationPane/filebrowser (file opens, dir enters) and textedit outline; single click must not open.
