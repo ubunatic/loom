@@ -60,3 +60,16 @@ Revised plan:
   columns. The user runs it in tilix, foot, kitty, ptyxis and alacritty and pastes the output here.
 - M2c (after the probe results): startup detection and `LOOM_ZWJ=join|split` override.
 - M3: re-record the 096 frames for the user's ruler check.
+
+M1 (e2d4f56), M2 (5937073) and M2b (3815045) delivered. `loom-probe` is installed.
+
+Host review finding (contradicts M1's conclusion): the textrender sample source *does* contain
+U+200D (`textrender.go:32`), and the frames are rewritten by textrender_test on every test run, yet
+all six frames still have zero joiners. A host probe shows `Canvas.Write` and `loom.Render` keep the
+joiner for plain text. So a widget used by the textrender views (button, list, clipping or scroll
+path) drops it.
+
+Pre-Work / Required Refinements for M3:
+- Add a test per textrender view (borders, buttons, clipping, scroll) that renders it with
+  loom.Render and asserts the output contains U+200D; find and fix the widget that drops it.
+- Then commit the re-recorded 096 frames (they must contain U+200D).
