@@ -83,3 +83,16 @@ flowchart TD
 4. **Debug Tools**:
    - `loomoji debug --grid -W <w>`: Renders all emojis partitioned by their VTE cell width (1, 2, 3, 4) in a grid to visually inspect column alignment.
    - `loomoji debug --measure`: Interactive TUI tool to measure glyph alignment against terminal cell columns.
+
+## Terminal ZWJ Detection (issue 134)
+
+Terminals disagree on ZWJ sequences: foot and kitty join 👨‍👩‍👧‍👦 into one 2-column glyph; tilix, ptyxis
+and alacritty draw the parts separately (8 columns). Regional-indicator flags are 2 columns in all five.
+
+- `Pane.run` calls `measure.DetectZWJMode` after entering raw mode and the screen: it writes a ZWJ
+  family, reads the cursor column with `ESC[6n` (200 ms timeout), and erases the probe row.
+- Default without an answer is `split`. `LOOM_ZWJ=join|split` overrides detection; PTY tests pin `join`.
+- Importing `measure` does no terminal I/O.
+- `loom-probe` prints the measured advances for a terminal.
+- Recorded `.ansi` frames bake in the recorder's mode (`join`) and are only column-exact in joining
+  terminals.
