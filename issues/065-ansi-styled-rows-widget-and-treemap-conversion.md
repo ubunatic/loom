@@ -136,3 +136,12 @@ not a replacement.
 **Pre-work delivered (0a56571):** Hosted renders size from the Draw rect and refresh on resize without probing terminal dimensions; Cobra and `NewWidget` share `bindFlags`; collection runs asynchronously, exposes `Close`, and displays collection errors; `HandleKey` follows Widget quit semantics.
 
 **M3 delivered:** Kept `RawScreen` for standalone `--watch`. A deterministic same-row comparison verifies that redirected `RawScreen` output and `StyledRows` render equivalent text and per-cell SGR styles. `RawScreen` remains useful for standalone watch because it owns the physical screen, clips to its live width, and suppresses auto-wrap. loom-demo includes the live treemap tab and closes hosted widgets; loom-bench waits for its colored frame. Headless ANSI snapshot: `/tmp/loom-065-m3-treemap.ansi` (80x24). User visual verification of that snapshot remains outstanding.
+
+**M3 pre-work delivered (0a56571):** the widget renders at the rect size and re-collects when the size changes; one shared `bindFlags` for cobra and the widget; collection runs in the background with `Close()`; errors are drawn inside the rect; quit keys follow the Widget child-quit semantics.
+**M3 delivered (30a17e4):** standalone `--watch` keeps `RawScreen` (a parity test shows equal text and SGR, and RawScreen still owns full-screen positioning and auto-wrap suppression); `WaitReady` for headless renderers; loom-bench renders treemap; loom-demo closes hosted tabs on exit. Snapshot: `/tmp/loom-065-m3-treemap.ansi`.
+
+### M4 — repaint after background collection
+
+**Pre-Work / Required Refinements (from M3 review):**
+1. **No repaint when a collection finishes.** The goroutine updates rows, but nothing asks the pane to redraw. With `--watch`, the first real frame waits for the next tick (up to 2s after "Collecting…"). Without `--watch`, `TickInterval()==0`, so a hosted treemap shows "Collecting process tree…" until some unrelated event happens. Fix this with the existing mechanism (`Pane.Invalidate`, pane.go:625, or whatever widget-to-host redraw path 060 established). If widgets cannot reach it, use the smallest generic hook: for example, a short tick interval while a collection is pending. Test: a non-watch hosted widget under a pane or test host shows real rows without any key event or ticker.
+2. Check that the `closeHostedTabs` loop in loom-demo also covers the monitor from 064 (so no double Close with its own `defer w.Close()`), and that `Close` is idempotent. Add a test that calls it twice.
