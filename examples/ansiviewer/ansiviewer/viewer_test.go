@@ -135,6 +135,48 @@ func TestANSIWriteClipsToBounds(t *testing.T) {
 	}
 }
 
+func TestANSIWriteHorizontalOffsetPreservesStyles(t *testing.T) {
+	c := loom.NewCanvas(4, 1)
+	writeANSI(c, loom.Rect{W: 4, H: 1}, "\x1b[31mabcdef\x1b[0m", 2)
+	if got := c.Get(0, 0); got.Text != "c" || got.Style.FG != loom.ColorIndex(1) {
+		t.Fatalf("first offset ANSI cell = %+v, want red c", got)
+	}
+	if got := c.Get(1, 0).Text; got != "d" {
+		t.Fatalf("second offset ANSI cell = %q, want d", got)
+	}
+}
+
+func TestBrowserPansPreviewInTwoDimensions(t *testing.T) {
+	b := &browser{lines: []string{strings.Repeat("x", 40), "line 1", "line 2", "line 3", "line 4"}, kind: KindANSI}
+	b.Draw(loom.NewCanvas(12, 2), loom.Rect{W: 12, H: 2})
+	for _, key := range []string{"right", "l", "down", "j"} {
+		b.HandleKey(loom.KeyEvent{Key: key})
+	}
+	if b.offsetX != 2 || b.offset != 2 {
+		t.Fatalf("after right/down panning offset=(%d,%d), want (2,2)", b.offsetX, b.offset)
+	}
+	b.HandleKey(loom.KeyEvent{Key: "left"})
+	b.HandleKey(loom.KeyEvent{Key: "up"})
+	if b.offsetX != 1 || b.offset != 1 {
+		t.Fatalf("after left/up panning offset=(%d,%d), want (1,1)", b.offsetX, b.offset)
+	}
+	b.HandleKey(loom.KeyEvent{Key: "home"})
+	if b.offset != 0 {
+		t.Fatalf("home vertical offset=%d, want 0", b.offset)
+	}
+	b.HandleKey(loom.KeyEvent{Key: "end"})
+	if b.offset != len(b.lines)-2 {
+		t.Fatalf("end vertical offset=%d, want %d", b.offset, len(b.lines)-2)
+	}
+}
+
+func TestFramedBrowserStatusIncludesPanningHint(t *testing.T) {
+	framed := newFramedBrowser(&browser{}, nil)
+	if !strings.Contains(framed.frame.Status, "hjkl pan") {
+		t.Fatalf("status = %q, missing panning hint", framed.frame.Status)
+	}
+}
+
 func TestANSIWriteFlagClusterKeepsLabelAndFillsRow(t *testing.T) {
 	c := loom.NewCanvas(24, 1)
 	area := loom.Rect{X: 0, Y: 0, W: 24, H: 1}
@@ -205,9 +247,10 @@ func TestBrowserMetadataAndScroll(t *testing.T) {
 	for i := 0; i < 20; i++ {
 		b.lines = append(b.lines, "line")
 	}
+	b.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
 	b.HandleKey(loom.KeyEvent{Key: "pgdn"})
-	if b.offset == 0 {
-		t.Fatal("pgdn did not scroll")
+	if b.offset != 4 {
+		t.Fatalf("pgdn offset=%d, want viewport page 4", b.offset)
 	}
 }
 

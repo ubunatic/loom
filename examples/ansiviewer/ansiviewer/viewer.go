@@ -59,6 +59,7 @@ type browser struct {
 	files       []os.DirEntry
 	selected    int
 	offset      int
+	offsetX     int
 	lines       []string
 	kind        Kind
 	ruler       bool
@@ -108,7 +109,7 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 	frame := &loom.Frame{
 		Gap:    1,
 		Title:  "ANSI Viewer",
-		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  r ruler  •  a Astra  •  F10 Quit",
+		Status: "↑↓ select  •  preview: hjkl pan/arrows, PgUp/PgDn  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  r ruler  •  a Astra  •  F10 Quit",
 		Boxes: []loom.Box{
 			{ID: "files", Title: "Files", FillHeight: true, MinWidth: filesMinWidth, Width: filesMinWidth, Height: 4, Border: border, Child: b.navigation},
 			{ID: "viewer", Title: "Preview", FillHeight: true, Dynamic: true, MinWidth: 30, Height: 4, Border: border, Child: b},
@@ -252,6 +253,7 @@ func (b *browser) selectFile(i int) {
 	}
 	b.selected = i
 	b.offset = 0
+	b.offsetX = 0
 	path := filepath.Join(b.dir, b.files[i].Name())
 	info, err := b.files[i].Info()
 	if err != nil {
@@ -291,9 +293,11 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	b.previewView.Lines = b.lines
 	b.previewView.Scroll = b.offset
+	b.previewView.OffsetX = b.offsetX
 	barCanvas := loom.NewCanvas(r.W, r.H)
 	b.previewView.Draw(barCanvas, loom.Rect{W: r.W, H: r.H})
 	b.offset = b.previewView.Scroll
+	b.offsetX = b.previewView.OffsetX
 	barVisible := false
 	for y := 0; y < r.H; y++ {
 		cell := barCanvas.Get(r.W-1, y)
@@ -311,10 +315,10 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	end := min(len(b.lines), b.offset+r.H)
 	visibleLines := b.lines[start:end]
 	if b.kind == KindANSI {
-		writeANSI(c, contentRect, strings.Join(visibleLines, "\n"))
+		writeANSI(c, contentRect, strings.Join(visibleLines, "\n"), b.offsetX)
 	} else {
 		for i, line := range visibleLines {
-			writeANSI(c, loom.Rect{X: contentRect.X, Y: contentRect.Y + i, W: contentRect.W, H: 1}, line)
+			writeANSI(c, loom.Rect{X: contentRect.X, Y: contentRect.Y + i, W: contentRect.W, H: 1}, line, b.offsetX)
 		}
 	}
 	if barVisible {
@@ -333,27 +337,17 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 		b.syncSelection()
 		return quit
 	}
-	switch {
-	case e.Is("pgup"):
-		b.offset -= 10
-		if b.offset < 0 {
-			b.offset = 0
-		}
-	case e.Is("pgdn"):
-		b.offset += 10
-		if b.offset >= len(b.lines) {
-			b.offset = max(0, len(b.lines)-1)
-		}
-	case e.Is("j"):
-		b.offset++
-		if b.offset >= len(b.lines) {
-			b.offset = max(0, len(b.lines)-1)
-		}
-	case e.Is("k"):
-		if b.offset > 0 {
-			b.offset--
-		}
+	if b.previewView == nil {
+		b.previewView = loom.NewView(b.lines)
 	}
+	b.previewView.Lines = b.lines
+	b.previewView.Scroll = b.offset
+	b.previewView.OffsetX = b.offsetX
+	if b.previewView.HandleKey(e) {
+		return true
+	}
+	b.offset = b.previewView.Scroll
+	b.offsetX = b.previewView.OffsetX
 	return false
 }
 func (b *browser) HandleMouse(e loom.MouseEvent) bool {
@@ -362,6 +356,7 @@ func (b *browser) HandleMouse(e loom.MouseEvent) bool {
 	}
 	quit := b.previewView.HandleMouse(e)
 	b.offset = b.previewView.Scroll
+	b.offsetX = b.previewView.OffsetX
 	return quit
 }
 func max(a, b int) int {
@@ -371,11 +366,15 @@ func max(a, b int) int {
 	return b
 }
 
-func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
+func writeANSI(c *loom.Canvas, r loom.Rect, input string, offsetX ...int) {
 	baseStyle := initialANSIStyle(input)
 	style := baseStyle
 	claimANSIArea(c, r, baseStyle)
-	x, y := r.X, r.Y
+	horizontalOffset := 0
+	if len(offsetX) > 0 {
+		horizontalOffset = max(0, offsetX[0])
+	}
+	x, y := r.X-horizontalOffset, r.Y
 	rs := []rune(input)
 	for i := 0; i < len(rs) && y < r.Y+r.H; {
 		if rs[i] == '\x1b' && i+1 < len(rs) && rs[i+1] == '[' {
@@ -439,8 +438,10 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 			if w < 1 {
 				continue
 			}
-			if x+w <= r.X+r.W {
+			if x >= r.X && x+w <= r.X+r.W {
 				x += c.Write(x, y, cell.Text, style)
+			} else {
+				x += w
 			}
 		}
 		i = end
