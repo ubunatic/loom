@@ -1,6 +1,6 @@
 # 089 — Add mouse cursor position hints and configurable visual effects
 
-**Status**: Open
+**Status**: Closed — M1 hint+brighten (555ed4f), M2 star trail (cc18b91), M3 press pulse with idle-free ticker (f8f2c1c), M4 PTY coverage (80c5dd7); opt-in via Pane.EnableCursorEffects, demo: ansicanvas_demo --cursor-fx; manual check in 102.
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
