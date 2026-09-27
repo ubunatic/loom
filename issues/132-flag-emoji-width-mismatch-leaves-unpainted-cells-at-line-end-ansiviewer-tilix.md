@@ -29,3 +29,12 @@ not paint its full row breaks the look of any themed Loom app that shows flag te
    or clear the cells past a wide cluster so any mismatch shows the widget background.
 3. Add a regression test in which the flag line's row is fully painted with the widget background.
 4. The user checks it in tilix.
+
+## 4. More terminals (user screenshots in ansiviewer, 2026-09-27)
+- alacritty: same as tilix. The flag is drawn as the letters "DE", and the flag row ends early with
+  the default background at its end.
+- foot: the flag is drawn as a glyph, and the flag row still leaves an unpainted cell at its end.
+- ptyxis: the gap is there too, and in addition every sample row is drawn in the wrong order: the
+  sample text comes first and the label second ("DE Flag [...]" instead of "Flag DE [...]"). This
+  points to ansiviewer's cursor replay (column moves) and not only to width. Check whether the
+  frame uses absolute column moves (CSI G / CSI H) that ansiviewer replays differently from ptyxis.
