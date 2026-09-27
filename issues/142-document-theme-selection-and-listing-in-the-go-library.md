@@ -1,6 +1,6 @@
 # 142 — Document theme selection and listing in the Go library
 
-**Status**: Open
+**Status**: Closed — Implemented in 4ae804b (M1): added ThemeNames and ThemeExists helpers and updated docs/Themes.md with Go API examples
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Documentation
