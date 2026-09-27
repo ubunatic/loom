@@ -1,6 +1,6 @@
 # 134 — Loom output drops ZWJ joiners and pads flag rows 2 cells short
 
-**Status**: Open
+**Status**: Closed — M1-M3, M2b-M2d delivered (e2d4f56..013fa84): joiners kept, flags 2 cols, loom-probe, pane-startup ZWJ detection, LOOM_ZWJ override; manual check in 102
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
