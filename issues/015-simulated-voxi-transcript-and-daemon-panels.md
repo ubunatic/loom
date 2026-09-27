@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 015 — Simulated Voxi transcript and daemon panels
 
-**Status**: Open
+**Status**: Closed — parked: hosts own data-source wiring (103); simulated Voxi panels not a Loom concern
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature

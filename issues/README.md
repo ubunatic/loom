@@ -26,7 +26,7 @@ upkeep.
 | 012 | [012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md](012-copy-harnez-rograph-with-verified-provenance-and-bounded-adapters.md) | Copy Harnez rograph with verified provenance and bounded adapters | Closed |
 | 013 | [013-deterministic-live-snapshots-and-independent-rolling-histories.md](013-deterministic-live-snapshots-and-independent-rolling-histories.md) | Deterministic live snapshots and independent rolling histories | Closed |
 | 014 | [014-configurable-graph-colors-and-glyph-presentation.md](014-configurable-graph-colors-and-glyph-presentation.md) | Configurable graph colors and glyph presentation | Open |
-| 015 | [015-simulated-voxi-transcript-and-daemon-panels.md](015-simulated-voxi-transcript-and-daemon-panels.md) | Simulated Voxi transcript and daemon panels | Open |
+| 015 | [015-simulated-voxi-transcript-and-daemon-panels.md](015-simulated-voxi-transcript-and-daemon-panels.md) | Simulated Voxi transcript and daemon panels | Closed — parked: hosts own data-source wiring (103); simulated Voxi panels not a Loom concern |
 | 016 | [016-complete-harnez-and-voxi-simulated-ui-milestone.md](016-complete-harnez-and-voxi-simulated-ui-milestone.md) | Complete Harnez and Voxi simulated UI milestone | Closed — milestone superseded by 103, the real-host proof |
 | 017 | [017-external-file-and-socket-adapters-with-separate-producer-fixtures.md](017-external-file-and-socket-adapters-with-separate-producer-fixtures.md) | External file and socket adapters with separate producer fixtures | Open |
 | 018 | [018-explore-bounded-linux-and-daemon-source-adapters.md](018-explore-bounded-linux-and-daemon-source-adapters.md) | Explore bounded Linux and daemon source adapters | Open |
