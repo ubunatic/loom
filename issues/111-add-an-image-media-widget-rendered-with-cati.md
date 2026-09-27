@@ -38,3 +38,14 @@ rect, rendered through cati's public `v1` packages instead of loom's own rendere
 1. Put the widget in its own subpackage (e.g. `media/`), so the core `loom` package does not import cati. Check `go mod graph` for what cati pulls in transitively, and report any cgo or heavy dependencies in the commit message.
 2. Video tests must skip cleanly when the external tool that `OpenVideoStream` needs (e.g. ffmpeg) is missing.
 3. The stream stop func and goroutines are released by `Close()`, following the pattern from 064/065.
+
+**M1 delivered (8c06a7d):** `media.Widget` supports halfblock, quadblock and sextant, maps `RenderToGrid` cells into the Canvas, and core loom has no cati import. **M2 (6a65180):** `NewVideo` advances on Ticker to the newest frame, stops at end of stream, and has an idempotent `Close`; its test skips when ffmpeg is missing. **M3 (b3c6e71):** `examples/media` with a PTY check that truecolor cells stay inside the rect; it is included in `make install`. Dependencies: only `ubunatic.com/cati v0.2.6` was added (no cgo). At runtime, video needs ffmpeg/ffprobe and SVG needs rsvg-convert.
+
+### M4 — aspect, caching, robustness
+
+**Pre-Work / Required Refinements (from M1-M3 review):**
+1. **Aspect ratio is untested.** "Done when" requires fitting with the aspect ratio preserved. Add a test where a wide image drawn into a tall rect (and a tall image into a wide rect) keeps its proportions, within one cell, and is centered. Check whether cati's `RenderToGrid(img, cols, Options{Rows})` stretches when both are set, and compute the fitted cols and rows yourself if it does.
+2. **Clear letterbox areas.** Cells in the rect that the image does not cover must be reset (blank, Reset style), so a new frame or size leaves no stale pixels.
+3. **Do not rescale on every Draw.** `Draw` calls `RenderToGrid` on every repaint. Cache the grid, keyed by the image identity and the rect size, and re-render only when the frame or size changes.
+4. **Errors are swallowed.** When rendering fails, draw a short error message inside the rect instead of leaving it blank.
+5. The outside-rect assertion in `widget_test.go` only checks `Text != " "`. Also compare `Style` against Reset, so a background-only spill is caught.
