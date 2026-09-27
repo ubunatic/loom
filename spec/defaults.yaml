@@ -25,3 +25,8 @@ splash:
   step_text: "initializing..."
   tick_interval: 80ms
   hold_duration: 400ms
+
+media:
+  loading_label: "loading"
+  render_error_label: "render error"
+  loading_threshold: 50ms

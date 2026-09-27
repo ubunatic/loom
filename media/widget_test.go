@@ -150,6 +150,62 @@ func TestDrawShowsShortErrorMessage(t *testing.T) {
 	}
 }
 
+func TestDrawStatusIndicatorsUseThemeAndSpec(t *testing.T) {
+	img := solidImage(2, 2, color.RGBA{A: 255})
+	for _, tc := range []struct {
+		name  string
+		theme loom.ThemeColors
+		want  loom.Color
+	}{
+		{name: "plain", theme: loom.Theme("plain"), want: loom.ColorRGB(255, 96, 96)},
+		{name: "custom", theme: func() loom.ThemeColors {
+			theme := loom.Theme("plain")
+			theme.MediaLoadingFG = loom.ThemeColorRGB(1, 2, 3)
+			theme.MediaErrorFG = loom.ThemeColorRGB(4, 5, 6)
+			theme.MediaLoadingDim = false
+			return theme
+		}(), want: loom.ColorRGB(4, 5, 6)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			widget, err := NewImageWithTheme(img, ModeHalfblock, tc.theme)
+			if err != nil {
+				t.Fatal(err)
+			}
+			widget.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
+				return nil, errors.New("synthetic render failure")
+			}
+			canvas := loom.NewCanvas(20, 2)
+			r := loom.Rect{W: 16, H: 1}
+			widget.Draw(canvas, r)
+			if !canvasContainsText(canvas, r, loom.SpeccedDefaults.Media.RenderErrorLabel[:1]) {
+				t.Fatalf("render error label missing: %q", canvas.Row(0))
+			}
+			if got := canvas.Get(0, 0).Style.FG; got != tc.want {
+				t.Errorf("error foreground = %+v, want %+v", got, tc.want)
+			}
+		})
+	}
+
+	widget, err := NewImage(img, ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	widget.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
+		time.Sleep(100 * time.Millisecond)
+		return &core.Grid{Width: 1, Height: 1, Cells: [][]core.Cell{{{Ch: 'X'}}}}, nil
+	}
+	widget.ApplyTheme(loom.Theme("plain"))
+	canvas := loom.NewCanvas(12, 2)
+	r := loom.Rect{W: 10, H: 1}
+	widget.Draw(canvas, r)
+	if !canvasContainsText(canvas, r, loom.SpeccedDefaults.Media.LoadingLabel[:1]) {
+		t.Fatalf("loading label missing: %q", canvas.Row(0))
+	}
+	if got := canvas.Get(0, 0).Style; got.FG != loom.ColorRGB(128, 128, 128) || !got.Dim {
+		t.Errorf("plain loading style = %+v, want existing gray foreground and dim", got)
+	}
+}
+
 func TestDrawLoadsMediaImmediatelyOrInBackground(t *testing.T) {
 	for _, tc := range []struct {
 		name  string

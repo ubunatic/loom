@@ -37,6 +37,7 @@ type Widget struct {
 	load      *renderLoad
 	image     image.Image
 	mode      Mode
+	theme     loom.ThemeColors
 	frames    <-chan image.Image
 	interval  time.Duration
 	stop      func()
@@ -81,7 +82,27 @@ func NewImage(src image.Image, mode Mode) (*Widget, error) {
 	default:
 		return nil, fmt.Errorf("media: unsupported render mode %q", mode)
 	}
-	return &Widget{image: src, mode: mode}, nil
+	return &Widget{image: src, mode: mode, theme: loom.Theme("plain")}, nil
+}
+
+// NewImageWithTheme creates a still-image widget using the supplied theme.
+func NewImageWithTheme(src image.Image, mode Mode, theme loom.ThemeColors) (*Widget, error) {
+	w, err := NewImage(src, mode)
+	if err != nil {
+		return nil, err
+	}
+	w.theme = theme
+	return w, nil
+}
+
+// ApplyTheme updates the theme used for media status indicators.
+func (w *Widget) ApplyTheme(theme loom.ThemeColors) {
+	if w == nil {
+		return
+	}
+	w.mu.Lock()
+	w.theme = theme
+	w.mu.Unlock()
 }
 
 // LoadImage decodes a PNG, JPEG, or SVG image using cati's image loader.
@@ -145,6 +166,7 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	w.mu.RLock()
 	img := w.image
+	theme := w.theme
 	w.mu.RUnlock()
 	if img == nil {
 		return
@@ -156,19 +178,19 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	grid, err, loading := w.renderWithThreshold(img, r.W, r.H)
 	if loading {
-		label := "loading"
-		if len(label) > r.W {
-			label = label[:r.W]
+		label := loom.SpeccedDefaults.Media.LoadingLabel
+		if loom.StringWidth(label) > r.W {
+			label = loom.TruncateText(label, r.W, "")
 		}
-		c.Write(r.X, r.Y, label, loom.Style{FG: loom.ColorRGB(128, 128, 128), Dim: true})
+		c.Write(r.X, r.Y, label, loom.Style{FG: theme.MediaLoadingFG.Color(), Dim: theme.MediaLoadingDim})
 		return
 	}
 	if err != nil {
-		message := "render error"
-		if len(message) > r.W {
-			message = message[:r.W]
+		message := loom.SpeccedDefaults.Media.RenderErrorLabel
+		if loom.StringWidth(message) > r.W {
+			message = loom.TruncateText(message, r.W, "")
 		}
-		c.Write(r.X, r.Y, message, loom.Style{FG: loom.ColorRGB(255, 96, 96)})
+		c.Write(r.X, r.Y, message, loom.Style{FG: theme.MediaErrorFG.Color()})
 		return
 	}
 	if grid == nil {
@@ -207,7 +229,7 @@ func (w *Widget) renderWithThreshold(img image.Image, cols, rows int) (*core.Gri
 		grid, err := w.renderCached(img, cols, rows)
 		load.done <- renderResult{grid: grid, err: err}
 	}()
-	timer := time.NewTimer(50 * time.Millisecond)
+	timer := time.NewTimer(loom.SpeccedDefaults.Media.LoadingThreshold)
 	defer timer.Stop()
 	select {
 	case result := <-load.done:

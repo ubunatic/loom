@@ -38,6 +38,9 @@ themes:
     border_fg:        default
     border_bg:        default
     focus_bg:         238 # dark grey cell highlight; NewGrid's default sources this value
+    media_loading_fg: "#808080"
+    media_loading_dim: true
+    media_error_fg: "#ff6060"
 
   # mc — muted Midnight Commander blue-panel palette.
   # Panel body: soft white on saturated steel blue (indices 252 / 69).
@@ -71,6 +74,9 @@ themes:
     border_fg:        252 # soft white
     border_bg:        69  # medium steel blue
     focus_bg:         75  # bright sky blue (#5fafff) for focused grid cells
+    media_loading_fg: 243
+    media_loading_dim: true
+    media_error_fg: 203
 
   # mc-classic — vivid fixed-palette rendering of the classic MC colors.
   mc-classic:
@@ -100,6 +106,9 @@ themes:
     border_fg:        231
     border_bg:        27
     focus_bg:         33
+    media_loading_fg: 243
+    media_loading_dim: true
+    media_error_fg: 203
 
   # mc-dark — darker navy panels with restrained cyan accents.
   mc-dark:
@@ -129,6 +138,9 @@ themes:
     border_fg:        252
     border_bg:        19
     focus_bg:         25
+    media_loading_fg: 243
+    media_loading_dim: true
+    media_error_fg: 203
 
   # julia256 — MC upstream Julia256 skin: calm dark grey panel, cyan
   # selection and input, yellow headers.
@@ -166,3 +178,6 @@ themes:
     border_fg:        250
     border_bg:        237
     focus_bg:         240 # distinguishable dark grey: between color237 and cyan(51)
+    media_loading_fg: 243
+    media_loading_dim: true
+    media_error_fg: 203

@@ -1,6 +1,9 @@
 package loom
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestScrollbarSpecGlyphsFitOneCell(t *testing.T) {
 	if err := SpeccedDefaults.Scrollbar.validate(); err != nil {
@@ -29,5 +32,12 @@ func TestScrollbarModeDefaultsAndOverrides(t *testing.T) {
 	}
 	if err := (ScrollbarDefaults{Mode: "invalid", ForegroundChar: "▓", BackgroundChar: "░"}).validate(); err == nil {
 		t.Fatal("accepted invalid scrollbar mode")
+	}
+}
+
+func TestMediaDefaultsLoadFromSpec(t *testing.T) {
+	got := SpeccedDefaults.Media
+	if got.LoadingLabel != "loading" || got.RenderErrorLabel != "render error" || got.LoadingThreshold != 50*time.Millisecond {
+		t.Fatalf("media defaults = %+v, want loading/render error/50ms", got)
 	}
 }

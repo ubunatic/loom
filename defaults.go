@@ -22,6 +22,14 @@ type LibDefaults struct {
 	Scrollbar        ScrollbarDefaults `yaml:"scrollbar"`
 	Mouse            MouseDefaults     `yaml:"mouse"`
 	Splash           SplashDefaults    `yaml:"splash"`
+	Media            MediaDefaults     `yaml:"media"`
+}
+
+// MediaDefaults defines user-facing media status and rendering timing defaults.
+type MediaDefaults struct {
+	LoadingLabel     string        `yaml:"loading_label"`
+	RenderErrorLabel string        `yaml:"render_error_label"`
+	LoadingThreshold time.Duration `yaml:"loading_threshold"`
 }
 
 // MouseDefaults defines specced defaults for mouse gestures.

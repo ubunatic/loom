@@ -104,6 +104,9 @@ type ThemeColors struct {
 	BorderFG           ThemeColor `yaml:"border_fg"`
 	BorderBG           ThemeColor `yaml:"border_bg"`
 	FocusBG            ThemeColor `yaml:"focus_bg"`
+	MediaLoadingFG     ThemeColor `yaml:"media_loading_fg"`
+	MediaLoadingDim    bool       `yaml:"media_loading_dim"`
+	MediaErrorFG       ThemeColor `yaml:"media_error_fg"`
 }
 
 // themesFile is the YAML wrapper for spec/themes.yaml.
