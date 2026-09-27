@@ -46,3 +46,11 @@ func TestDemoAppKeyHandling(t *testing.T) {
 		t.Fatalf("expected 'q' to quit: %+v", res)
 	}
 }
+
+func TestDemoAppMouseStillScrollsEditor(t *testing.T) {
+	app := NewDemoApp(nil)
+	res := app.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
+	if !res.Consumed || app.editor.ScrollY != 1 {
+		t.Fatalf("mouse scroll result=%+v ScrollY=%d; want consumed and 1", res, app.editor.ScrollY)
+	}
+}

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"codeberg.org/ubunatic/loom/internal/ptytest"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
@@ -115,6 +116,215 @@ func (r *keyRecorder) snapshot() []KeyEvent {
 	out := make([]KeyEvent, len(r.keys))
 	copy(out, r.keys)
 	return out
+}
+
+type cursorEffectsPTYWidget struct {
+	hintUpdates chan CursorHint
+	mouseEvents chan MouseEvent
+	keyEvents   chan KeyEvent
+}
+
+func newCursorEffectsPTYWidget() *cursorEffectsPTYWidget {
+	return &cursorEffectsPTYWidget{
+		hintUpdates: make(chan CursorHint, 8),
+		mouseEvents: make(chan MouseEvent, 8),
+		keyEvents:   make(chan KeyEvent, 8),
+	}
+}
+
+func (w *cursorEffectsPTYWidget) Draw(c *Canvas, r Rect) {
+	base := Style{BG: ColorRGB(20, 40, 60)}
+	c.PaintSurface(r, base)
+	c.Set(1, 1, Cell{Text: "T", Style: Style{FG: ColorIndex(15), BG: base.BG}})
+	if hint, ok := c.CursorHintAt(2, 1); ok {
+		select {
+		case w.hintUpdates <- hint:
+		default:
+		}
+	}
+}
+
+func (w *cursorEffectsPTYWidget) HandleMouse(e MouseEvent) bool {
+	w.mouseEvents <- e
+	return false
+}
+
+func (w *cursorEffectsPTYWidget) HandleKey(e KeyEvent) bool {
+	w.keyEvents <- e
+	return e.Is("q")
+}
+
+func TestCursorEffectsThroughPTY(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 12, 4)
+	w := newCursorEffectsPTYWidget()
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 4, cols: 12, startRow: 1, DisableDefaultQuit: true}
+	p.EnableCursorEffects()
+
+	screenMu := sync.Mutex{}
+	screen := ptytest.NewVT(12, 4)
+	screenDone := make(chan struct{})
+	screenStop := make(chan struct{})
+	var stopScreen sync.Once
+	stopScreenReader := func() { stopScreen.Do(func() { close(screenStop) }) }
+	go func() {
+		defer close(screenDone)
+		buf := make([]byte, 4096)
+		for {
+			select {
+			case <-screenStop:
+				return
+			default:
+			}
+			fds := []unix.PollFd{{Fd: int32(master.Fd()), Events: unix.POLLIN}}
+			if _, err := unix.Poll(fds, 50); err != nil || fds[0].Revents&unix.POLLIN == 0 {
+				continue
+			}
+			n, err := master.Read(buf)
+			if n > 0 {
+				screenMu.Lock()
+				_, _ = screen.Write(buf[:n])
+				screenMu.Unlock()
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	errC := make(chan error, 1)
+	runDone := make(chan struct{})
+	go func() {
+		defer close(runDone)
+		errC <- p.Run(w)
+	}()
+	t.Cleanup(func() {
+		stopScreenReader()
+		_ = master.Close()
+		select {
+		case <-screenDone:
+		case <-time.After(2 * time.Second):
+			t.Error("PTY screen reader did not stop")
+		}
+		select {
+		case <-runDone:
+		case <-time.After(2 * time.Second):
+			t.Error("Pane.Run did not stop")
+		}
+	})
+
+	cellAt := func(x, y int) ptytest.Cell {
+		screenMu.Lock()
+		defer screenMu.Unlock()
+		return screen.Cell(x, y)
+	}
+	waitCell := func(x, y int, match func(ptytest.Cell) bool, what string) ptytest.Cell {
+		t.Helper()
+		deadline := time.Now().Add(3 * time.Second)
+		for time.Now().Before(deadline) {
+			cell := cellAt(x, y)
+			if match(cell) {
+				return cell
+			}
+			time.Sleep(5 * time.Millisecond)
+		}
+		cell := cellAt(x, y)
+		t.Fatalf("timed out waiting for %s at (%d,%d): %+v", what, x, y, cell)
+		return cell
+	}
+	waitCell(1, 1, func(cell ptytest.Cell) bool { return cell.Rune == 'T' }, "initial widget frame")
+	if len(w.hintUpdates) != 0 {
+		t.Fatal("cursor hint appeared before motion")
+	}
+
+	if _, err := master.WriteString("\x1b[<35;3;2M"); err != nil {
+		t.Fatalf("send motion: %v", err)
+	}
+	select {
+	case event := <-w.mouseEvents:
+		if event.Action != MouseHover || event.X != 2 || event.Y != 1 {
+			t.Fatalf("motion delivered as %+v; want hover at (2,1)", event)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for motion event")
+	}
+	select {
+	case hint := <-w.hintUpdates:
+		if hint.DX != 0 || hint.DY != 0 {
+			t.Fatalf("cursor cell hint = %+v; want zero delta", hint)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for draw-time cursor hint")
+	}
+	waitCell(1, 1, func(cell ptytest.Cell) bool {
+		return cell.Style.BG == ptytest.ColorRGB(143, 153, 162)
+	}, "brightened text background")
+
+	if _, err := master.WriteString("\x1b[<0;4;2M"); err != nil {
+		t.Fatalf("send click: %v", err)
+	}
+	select {
+	case event := <-w.mouseEvents:
+		if event.Action != MousePress || event.X != 3 || event.Y != 1 {
+			t.Fatalf("click delivered as %+v; want press at (3,1)", event)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for click event")
+	}
+	waitCell(2, 1, func(cell ptytest.Cell) bool { return cell.Rune == '✦' }, "trailing star")
+	waitCell(3, 1, func(cell ptytest.Cell) bool {
+		return cell.Style.BG == ptytest.ColorRGB(255, 255, 255)
+	}, "button pulse origin")
+
+	time.Sleep(SpeccedCursorPressPulse.Lifetime + 30*time.Millisecond)
+	waitCell(2, 1, func(cell ptytest.Cell) bool { return cell.Rune != '✦' }, "expired trail")
+	waitCell(3, 1, func(cell ptytest.Cell) bool {
+		return cell.Style.BG == ptytest.ColorRGB(185, 191, 197)
+	}, "expired button pulse")
+
+	if _, err := master.WriteString("k"); err != nil {
+		t.Fatalf("send key: %v", err)
+	}
+	select {
+	case key := <-w.keyEvents:
+		if key.Text != "k" {
+			t.Fatalf("key delivered as %+v; want text k", key)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for key event")
+	}
+	waitCell(3, 1, func(cell ptytest.Cell) bool {
+		return cell.Style.BG == ptytest.ColorRGB(255, 255, 255)
+	}, "key pulse origin")
+	time.Sleep(SpeccedCursorPressPulse.Lifetime + 30*time.Millisecond)
+	waitCell(3, 1, func(cell ptytest.Cell) bool {
+		return cell.Style.BG == ptytest.ColorRGB(185, 191, 197)
+	}, "expired key pulse")
+
+	if _, err := master.WriteString("q"); err != nil {
+		t.Fatalf("send quit: %v", err)
+	}
+	select {
+	case key := <-w.keyEvents:
+		if !key.Is("q") {
+			t.Fatalf("quit key delivered as %+v", key)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for quit key")
+	}
+	select {
+	case err := <-errC:
+		if err != nil {
+			t.Fatalf("Pane.Run: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Pane.Run did not exit after q")
+	}
+	stopScreenReader()
+	select {
+	case <-screenDone:
+	case <-time.After(2 * time.Second):
+		t.Fatal("PTY screen reader did not stop after q")
+	}
 }
 
 // TestPaneRunDecodesMultipleKeysFromOneRead is the ticket-053 acceptance
