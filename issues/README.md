@@ -160,3 +160,4 @@ upkeep.
 | 147 | [147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md](147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md) | Detect unclosed boxes and prioritize box validation errors | Open |
 | 148 | [148-open-ansiviewer-directly-on-a-file-argument.md](148-open-ansiviewer-directly-on-a-file-argument.md) | Open ansiviewer directly on a file argument | Closed — Implemented in b256610 (M1): ansiviewer opens file arguments directly in their parent directory with pre-selected preview |
 | 149 | [149-convert-the-media-example-to-a-cobra-cli-app.md](149-convert-the-media-example-to-a-cobra-cli-app.md) | Convert the media example to a Cobra CLI app | Open |
+| 150 | [150-register-ansiviewer-as-a-linux-desktop-viewing-tool.md](150-register-ansiviewer-as-a-linux-desktop-viewing-tool.md) | Register ansiviewer as a Linux desktop viewing tool | Open |
