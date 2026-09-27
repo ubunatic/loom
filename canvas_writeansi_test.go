@@ -318,6 +318,48 @@ func BenchmarkCanvasWriteANSI(b *testing.B) {
 	}
 }
 
+func BenchmarkCanvasRow(b *testing.B) {
+	canvas := loom.NewCanvas(80, 24)
+	style1 := loom.Style{FG: loom.ColorIndex(196), BG: loom.ColorIndex(234), Bold: true}
+	style2 := loom.Style{FG: loom.ColorRGB(100, 200, 255), Dim: true}
+	for x := 0; x < 80; x++ {
+		if x%2 == 0 {
+			canvas.Set(x, 0, loom.Cell{Text: "A", Style: style1})
+		} else {
+			canvas.Set(x, 0, loom.Cell{Text: "B", Style: style2})
+		}
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.Row(0)
+	}
+}
+
+func BenchmarkCanvasFlush(b *testing.B) {
+	canvas := loom.NewCanvas(80, 24)
+	style1 := loom.Style{FG: loom.ColorIndex(196), BG: loom.ColorIndex(234), Bold: true}
+	style2 := loom.Style{FG: loom.ColorRGB(100, 200, 255), Dim: true}
+	for y := 0; y < 24; y++ {
+		for x := 0; x < 80; x++ {
+			if (x+y)%2 == 0 {
+				canvas.Set(x, y, loom.Cell{Text: "X", Style: style1})
+			} else {
+				canvas.Set(x, y, loom.Cell{Text: "Y", Style: style2})
+			}
+		}
+	}
+
+	var out bytes.Buffer
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		out.Reset()
+		canvas.Flush(&out, 1)
+	}
+}
+
 // ── Parity tests between old and new Canvas WriteANSI / set paths ───────────
 
 func TestCanvasWriteANSIOldNewParity(t *testing.T) {

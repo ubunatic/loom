@@ -71,3 +71,20 @@ func TestColorResetSequences(t *testing.T) {
 		t.Errorf("default BG should emit 49m: %q", bg)
 	}
 }
+
+// ── Benchmarks ──────────────────────────────────────────────────────────────
+
+func BenchmarkStyleANSI(b *testing.B) {
+	styles := []loom.Style{
+		{},
+		{Bold: true, Underline: true},
+		{FG: loom.ColorIndex(196), BG: loom.ColorIndex(234)},
+		{FG: loom.ColorRGB(255, 128, 64), BG: loom.ColorRGB(10, 20, 30), Dim: true},
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		s := styles[i%len(styles)]
+		_ = s.ANSI()
+	}
+}
