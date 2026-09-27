@@ -1,6 +1,6 @@
 # 144 — Fix examples/media pane initialization to take full terminal size
 
-**Status**: Open
+**Status**: Closed — Implemented in 68ec76c (M1): changed examples/media to initialize full-screen pane (loom.New(1 << 16)) and updated PTY tests for large terminals
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
