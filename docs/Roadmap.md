@@ -73,11 +73,12 @@ which rests on the proven 107/108 hover baseline.
 
 ## Next: ANSI core, verification, media controls
 
-**Rationale.** 116 is a library-wide internals change (type aliases, zero-alloc
+**Rationale.** 133 comes first: a pane debug mode (ruler overlay) makes layout and width bugs such as 132 and 048 visible in every app, which speeds up the rest of this list. 116 is a library-wide internals change (type aliases, zero-alloc
 `Canvas.Row`) and is safer after the pointer work settles. 095 makes the
 growing set of PTY tests observable by a human. 112 builds directly on the
 shipped 111.
 
+- [133](../issues/133-pane-debug-mode-with-ruler-overlay-shift-f12-loom-debug.md) (P2): pane debug mode with a ruler overlay (Shift-F12, `LOOM_DEBUG`); added 2026-09-27 after ansiviewer's ruler.
 - [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; its predecessors 128 to 131 shipped.
 - [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode.
 - [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3): media play/pause, zoom and panning; 111 shipped. Video work should wait for cati 059.
