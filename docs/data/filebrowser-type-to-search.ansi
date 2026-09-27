@@ -1,23 +1,23 @@
 [2J[H[1;37;44m┌─ Browse /home/uwe/projects/loom · Type-to-search enabled ─────────────────────[0m
 │ ┌─ ▶ Files ─────────────────────────────┐ ┌─ Metadata ─────────────────────┐ │
-│ │ ..                                     │ │ Name: media/                  │ │
-│ │ cmd/                                   │ │ Path: /home/uwe/projects/loom │ │
-│ │ docs/                                  │ │ Type: directory               │ │
-│ │ examples/                              │ │                               │ │
-│ │ go.mod                                 │ │                               │ │
-│ │ go.sum                                 │ │                               │ │
-│ │ issues/                                │ │                               │ │
-│ │ > media/                               │ │                               │ │
-│ │ spec/                                  │ │                               │ │
-│ │ theme.go                               │ │                               │ │
-│ │ widget.go                              │ │                               │ │
-│ │ widgets.go                             │ │                               │ │
-│ │ README.md                              │ │                               │ │
-│ │ Makefile                               │ │                               │ │
-│ │ filter> ▏ type to filter              │ │                               │ │ 
+│ │ ..                                    │ │ Name: media/                   │ │
+│ │ cmd/                                  │ │ Path: /home/uwe/projects/loom  │ │
+│ │ docs/                                 │ │ Type: directory                │ │
+│ │ examples/                             │ │                                │ │
+│ │ go.mod                                │ │                                │ │
+│ │ go.sum                                │ │                                │ │
+│ │ issues/                               │ │                                │ │
+│ │ > media/                              │ │                                │ │
+│ │ spec/                                 │ │                                │ │
+│ │ theme.go                              │ │                                │ │
+│ │ widget.go                             │ │                                │ │
+│ │ widgets.go                            │ │                                │ │
+│ │ README.md                             │ │                                │ │
+│ │ Makefile                              │ │                                │ │
+│ │ filter> ▏ type to filter              │ │                                │ │ 
 │ └───────────────────────────────────────┘ └────────────────────────────────┘ │
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ Type to filter   Esc clear   Tab pane   ↑↓ move   Enter open   F9 theme │     
+│ Type to filter   Esc clear   Tab pane   ↑↓ move   Enter open   F9 theme      │     
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
