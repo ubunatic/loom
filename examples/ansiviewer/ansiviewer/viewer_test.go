@@ -86,6 +86,28 @@ func TestANSIWriteClipsToBounds(t *testing.T) {
 	}
 }
 
+func TestANSIWriteFlagClusterKeepsLabelAndFillsRow(t *testing.T) {
+	c := loom.NewCanvas(24, 1)
+	area := loom.Rect{X: 0, Y: 0, W: 24, H: 1}
+	style := loom.Style{BG: loom.ColorIndex(24)}
+	writeANSI(c, area, "\x1b[48;5;24mFlag 🇩🇪 tail")
+
+	if got := c.Get(0, 0).Text; got != "F" {
+		t.Fatalf("label starts with %q, want F", got)
+	}
+	if got := c.Get(5, 0).Text; got != "🇩🇪" {
+		t.Fatalf("flag cluster = %q, want one regional-indicator pair", got)
+	}
+	if got := c.Get(8, 0).Text; got != "t" {
+		t.Fatalf("text after flag starts at column 8 with %q, want t", got)
+	}
+	for x := 0; x < area.W; x++ {
+		if got := c.Get(x, 0).Style.BG; got != style.BG {
+			t.Fatalf("column %d background = %v, want %v", x, got, style.BG)
+		}
+	}
+}
+
 func TestClassifyBinaryAndImage(t *testing.T) {
 	dir := t.TempDir()
 	bin := filepath.Join(dir, "data.bin")
