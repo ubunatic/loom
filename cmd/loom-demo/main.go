@@ -154,6 +154,7 @@ func runHosted() error {
 	if err != nil {
 		return fmt.Errorf("loom-demo: %v", err)
 	}
+	defer closeHostedTabs(host)
 
 	pane, err := loom.New(1 << 16)
 	if err != nil {
@@ -163,4 +164,12 @@ func runHosted() error {
 	pane.Resizeable = true
 	pane.MaxCols = 0
 	return pane.Run(host)
+}
+
+func closeHostedTabs(host *loom.Tabs) {
+	for _, tab := range host.Tabs {
+		if closer, ok := tab.Widget.(interface{ Close() }); ok {
+			closer.Close()
+		}
+	}
 }

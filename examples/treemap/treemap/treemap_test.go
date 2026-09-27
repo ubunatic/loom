@@ -138,6 +138,52 @@ func TestWidgetFlagBindingAndHostedQuitContract(t *testing.T) {
 	}
 }
 
+func TestHostedStyledRowsMatchesStandaloneTreemapRows(t *testing.T) {
+	root := graph.TreemapNode{Name: "root", Children: []graph.TreemapNode{
+		{Name: "alpha", Value: 72, Children: []graph.TreemapNode{{Name: "worker", Value: 21}}},
+		{Name: "beta", Value: 28},
+	}}
+	opts := buildOptions(48, 14, 1, true, true)
+	standaloneRows := graph.RenderTreemap(graph.AggregateTreemap(root, 12), opts)
+	rawFile, err := os.CreateTemp(t.TempDir(), "rawscreen")
+	if err != nil {
+		t.Fatal(err)
+	}
+	screen := loom.OpenRawScreen(rawFile)
+	if err := screen.Draw(standaloneRows); err != nil {
+		t.Fatal(err)
+	}
+	if err := screen.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := rawFile.Seek(0, io.SeekStart); err != nil {
+		t.Fatal(err)
+	}
+	rawOutput, err := io.ReadAll(rawFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(rawOutput), strings.Join(standaloneRows, "\n")+"\n"; got != want {
+		t.Fatalf("RawScreen redirected output differed from renderer rows")
+	}
+	canvas := loom.NewCanvas(48, 14)
+	loom.NewStyledRows(standaloneRows...).Draw(canvas, canvas.Bounds())
+	for y, standalone := range standaloneRows {
+		rawCells := loom.ParseANSI(standalone)
+		hostedCells := loom.ParseANSI(canvas.Row(y))
+		if len(rawCells) != len(hostedCells) {
+			t.Fatalf("row %d parsed cell counts differ: raw=%d hosted=%d", y, len(rawCells), len(hostedCells))
+		}
+		for x := range rawCells {
+			if rawCells[x].Text != hostedCells[x].Text ||
+				rawCells[x].Continuation != hostedCells[x].Continuation ||
+				rawCells[x].Style != hostedCells[x].Style {
+				t.Fatalf("row %d cell %d differs: raw=%#v hosted=%#v", y, x, rawCells[x], hostedCells[x])
+			}
+		}
+	}
+}
+
 func waitForRenderedSize(t *testing.T, widget *treemapWidget, width, height int) {
 	t.Helper()
 	deadline := time.Now().Add(5 * time.Second)

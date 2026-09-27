@@ -70,6 +70,7 @@ type treemapWidget struct {
 	ctx                           context.Context
 	cancel                        context.CancelFunc
 	done                          sync.WaitGroup
+	changed                       chan struct{}
 }
 
 // NewWidget parses command-line arguments and builds the hosted treemap.
@@ -88,7 +89,7 @@ func newWidgetFromOptions(opts Options, output func(context.Context, Options, in
 	ctx, cancel := context.WithCancel(context.Background())
 	return &treemapWidget{
 		opts: opts, rows: loom.NewStyledRows("Collecting process tree…"), output: output,
-		ctx: ctx, cancel: cancel,
+		ctx: ctx, cancel: cancel, changed: make(chan struct{}, 1),
 	}, nil
 }
 
@@ -141,6 +142,10 @@ func (w *treemapWidget) startCollectionLocked() {
 		if w.width != width || w.height != height {
 			w.startCollectionLocked()
 		}
+		select {
+		case w.changed <- struct{}{}:
+		default:
+		}
 	}()
 }
 
@@ -184,6 +189,27 @@ func (w *treemapWidget) Close() {
 	}
 	w.mu.Unlock()
 	w.done.Wait()
+}
+
+// WaitReady waits for the most recently requested rectangle to finish its
+// initial render. It is useful to headless renderers that need a stable frame.
+func (w *treemapWidget) WaitReady(ctx context.Context) error {
+	for {
+		w.mu.Lock()
+		ready := w.width > 0 && w.height > 0 && !w.collecting &&
+			w.renderedWidth == w.width && w.renderedHeight == w.height
+		err := w.err
+		changed := w.changed
+		w.mu.Unlock()
+		if ready {
+			return err
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-changed:
+		}
+	}
 }
 
 func validateOptions(opts Options) error {

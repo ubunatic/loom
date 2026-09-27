@@ -21,6 +21,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"fmt"
@@ -115,7 +116,11 @@ func headlessSmoke(e examplesreg.Example) result {
 	start := time.Now()
 
 	// Create the widget
-	widget, err := e.NewWidget([]string{})
+	args := []string{}
+	if e.Name == "treemap" {
+		args = e.DemoArgs
+	}
+	widget, err := e.NewWidget(args)
 	if err != nil {
 		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("NewWidget failed: %v", err)}
 	}
@@ -125,9 +130,21 @@ func headlessSmoke(e examplesreg.Example) result {
 	if !ok {
 		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: "NewWidget did not return a loom.Widget"}
 	}
+	if closer, ok := w.(interface{ Close() }); ok {
+		defer closer.Close()
+	}
 
 	// Render at standard size (80x24)
 	frames80 := loom.Render(w, 80, 24)
+	if ready, ok := w.(interface{ WaitReady(context.Context) error }); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		err := ready.WaitReady(ctx)
+		cancel()
+		if err != nil {
+			return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: fmt.Sprintf("waiting for initial render: %v", err)}
+		}
+		frames80 = loom.Render(w, 80, 24)
+	}
 	if len(frames80) == 0 {
 		return result{name: e.Name, status: "FAIL", elapsed: time.Since(start), detail: "80x24 render produced no output"}
 	}

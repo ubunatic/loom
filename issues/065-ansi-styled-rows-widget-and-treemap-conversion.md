@@ -132,3 +132,7 @@ not a replacement.
 4. **Quit-key semantics.** `HandleKey` returns true for `q`, `esc`, `ctrl-c` and `ctrl-q`. Confirm this matches the monitor widget's hosted convention from 064. If "true" only means the key was consumed, a hosted tab would silently swallow `q`/`esc`. Align with monitor and state the convention in a comment.
 
 **M3 scope:** decide, with evidence, whether standalone `--watch` keeps `RawScreen` (compare output for the same data). Make sure treemap shows up as a loom-demo tab, and have `loom-bench` / `loom.Render` produce colored output for the user's visual check (write an `.ansi` snapshot to `/tmp` and report its path).
+
+**Pre-work delivered (0a56571):** Hosted renders size from the Draw rect and refresh on resize without probing terminal dimensions; Cobra and `NewWidget` share `bindFlags`; collection runs asynchronously, exposes `Close`, and displays collection errors; `HandleKey` follows Widget quit semantics.
+
+**M3 delivered:** Kept `RawScreen` for standalone `--watch`. A deterministic same-row comparison verifies that redirected `RawScreen` output and `StyledRows` render equivalent text and per-cell SGR styles. `RawScreen` remains useful for standalone watch because it owns the physical screen, clips to its live width, and suppresses auto-wrap. loom-demo includes the live treemap tab and closes hosted widgets; loom-bench waits for its colored frame. Headless ANSI snapshot: `/tmp/loom-065-m3-treemap.ansi` (80x24). User visual verification of that snapshot remains outstanding.

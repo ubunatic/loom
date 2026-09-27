@@ -4,10 +4,12 @@
 package main
 
 import (
+	"context"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/internal/examplesreg"
@@ -19,6 +21,7 @@ func TestHeadlessSmokeNewWidget(t *testing.T) {
 	}{
 		{"split"},
 		{"tabs"},
+		{"treemap"},
 	}
 
 	for _, tt := range tests {
@@ -32,7 +35,11 @@ func TestHeadlessSmokeNewWidget(t *testing.T) {
 			}
 
 			// Create widget
-			widget, err := example.NewWidget([]string{})
+			args := []string{}
+			if example.Name == "treemap" {
+				args = example.DemoArgs
+			}
+			widget, err := example.NewWidget(args)
 			if err != nil {
 				t.Fatalf("NewWidget failed: %v", err)
 			}
@@ -42,14 +49,39 @@ func TestHeadlessSmokeNewWidget(t *testing.T) {
 			if !ok {
 				t.Fatal("NewWidget did not return a loom.Widget")
 			}
+			if closer, ok := w.(interface{ Close() }); ok {
+				defer closer.Close()
+			}
 
 			// Test 80x24 render
 			frames80 := loom.Render(w, 80, 24)
+			if ready, ok := w.(interface{ WaitReady(context.Context) error }); ok {
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				if err := ready.WaitReady(ctx); err != nil {
+					cancel()
+					t.Fatalf("waiting for first render: %v", err)
+				}
+				cancel()
+				frames80 = loom.Render(w, 80, 24)
+			}
 			if len(frames80) != 24 {
 				t.Errorf("80x24 render produced %d lines, expected 24", len(frames80))
 			}
 			if frames80[0] == "" {
 				t.Error("80x24 first line is empty")
+			}
+			if example.Name == "treemap" {
+				colored := false
+				for _, row := range frames80 {
+					for _, cell := range loom.ParseANSI(row) {
+						if cell.Style.FG != loom.Reset.FG || cell.Style.BG != loom.Reset.BG {
+							colored = true
+						}
+					}
+				}
+				if !colored {
+					t.Error("treemap 80x24 render has no color styles")
+				}
 			}
 
 			// Test 20x5 render

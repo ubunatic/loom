@@ -17,6 +17,7 @@ func TestHostedModeSetup(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newHostedTabs failed: %v", err)
 	}
+	defer closeHostedTabs(host)
 
 	// Verify the hosted setup
 	if host.Focus() != 0 {
@@ -43,6 +44,7 @@ func TestNestedTabsMeta(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newHostedTabs failed: %v", err)
 	}
+	defer closeHostedTabs(host)
 
 	if len(host.Tabs) < 2 {
 		t.Fatalf("host must have at least 2 tabs for nested test, got %d", len(host.Tabs))
@@ -122,6 +124,7 @@ func TestQuitContainment(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newHostedTabs failed: %v", err)
 	}
+	defer closeHostedTabs(host)
 
 	// The OnChildQuit callback should return false (stay in hosted mode)
 	// when a child quits. Verify the callback is set.
@@ -137,6 +140,24 @@ func TestQuitContainment(t *testing.T) {
 	}
 }
 
+func TestHostedTabsIncludeLiveTreemap(t *testing.T) {
+	host, err := newHostedTabs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeHostedTabs(host)
+	for _, tab := range host.Tabs {
+		if tab.Title == "treemap" {
+			ticker, ok := tab.Widget.(loom.Ticker)
+			if !ok || ticker.TickInterval() <= 0 {
+				t.Fatalf("treemap tab is not live: widget=%T", tab.Widget)
+			}
+			return
+		}
+	}
+	t.Fatal("treemap tab is missing from loom-demo")
+}
+
 func TestGenerateM3HostedEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")
@@ -149,6 +170,7 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 	if err != nil {
 		t.Fatalf("newHostedTabs failed: %v", err)
 	}
+	defer closeHostedTabs(host)
 
 	// Render initial state (M3-hosted-split.ansi)
 	frames := loom.Render(host, 80, 24)
