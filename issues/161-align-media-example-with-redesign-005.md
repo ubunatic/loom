@@ -12,12 +12,13 @@
 The current `examples/media` layout does not match the selected design in `docs/data/media-demo-redesign-005.ansi`. Adopting that compact layout will make the media preview and its state and controls easier to scan without redundant chrome.
 
 ## 2. Technical Specification / Findings
-The mockup places the preview on the left and the filename, playback state, render mode, and `p`/`r`/`q` controls in a simple column on the right. It has no source panel, box borders, poster hint, or repeated labels. The example already uses `media.Widget` and supports playback controls.
+The mockup places the preview on the left and the filename, playback state, render mode, terminal size, and `p`/`r`/`q` controls in a simple column on the right. It has no source panel, box borders, poster hint, or repeated labels. The example already uses `media.Widget` and supports playback controls.
 
 ## 3. Implementation & Verification Plan
 **/goal**: Implement the selected 005 layout in `examples/media` and verify it at the mockup's terminal size, or stop and report when blocked on a user decision or denied permission.
 
 **Acceptance Criteria**
 - [ ] The example follows the selected mockup while retaining the media widget and its keyboard controls.
+- [ ] The info panel shows the current terminal columns and rows.
 - [ ] The layout adapts without clipping at smaller terminal sizes.
 - [ ] Relevant checks pass.
