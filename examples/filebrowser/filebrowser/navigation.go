@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -193,6 +194,19 @@ func (p *NavigationPane) open(dir, selectName string) error {
 // Draw renders the navigation list within r.
 func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) {
 	p.lastRect = r
+	if !p.options.TypeToSearch && !p.searching {
+		focused := p.list.Focused()
+		p.list.SetFocus(false)
+		p.list.Draw(c, r)
+		promptY := r.Y + r.H - 1
+		if p.list.PromptTop {
+			promptY = r.Y
+		}
+		c.Write(r.X, promptY, strings.Repeat(" ", r.W), p.list.Style.Placeholder)
+		c.Write(r.X, promptY, "/ search", p.list.Style.Placeholder)
+		p.list.SetFocus(focused)
+		return
+	}
 	p.list.Draw(c, r)
 }
 
@@ -285,6 +299,13 @@ func (p *NavigationPane) handleSearchKey(e loom.KeyEvent) (handled, quit bool) {
 		return false, false
 	case p.startsSearch(e):
 		p.searching = true
+		return true, false
+	case e.Is("esc") && p.list.Query() != "":
+		for p.list.Query() != "" {
+			p.list.HandleKey(loom.KeyEvent{Key: "backspace"})
+		}
+		p.searching = false
+		p.notifySelection()
 		return true, false
 	case !p.searching:
 		return e.Text != "" && e.Key == "", false

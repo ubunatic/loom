@@ -3,6 +3,7 @@ package filebrowser
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -191,4 +192,62 @@ func TestNavigationPaneSearchGate(t *testing.T) {
 	if got := typing.List().Query(); got != "b" {
 		t.Fatalf("TypeToSearch query = %q, want b", got)
 	}
+}
+
+func TestNavigationPaneSearchUIVisibility(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "alpha"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	pane, err := NewNavigationPane(dir, NavigationPaneOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := loom.Rect{W: 32, H: 4}
+	draw := func() (*loom.Canvas, string) {
+		canvas := loom.NewCanvas(r.W, r.H)
+		pane.Draw(canvas, r)
+		row := ""
+		for x := 0; x < r.W; x++ {
+			row += canvas.Get(x, r.H-1).Text
+		}
+		return canvas, row
+	}
+	canvas, row := draw()
+	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 {
+		t.Fatalf("idle search row=%q cursor=(%d,%d), want / search and hidden cursor", got, canvas.CursorX, canvas.CursorY)
+	}
+	pane.HandleKey(loom.KeyEvent{Text: "/"})
+	canvas, row = draw()
+	if !strings.HasPrefix(row, "filter> ") || canvas.CursorX < 0 {
+		t.Fatalf("active search row=%q cursor=(%d,%d), want editable filter and visible cursor", row, canvas.CursorX, canvas.CursorY)
+	}
+	pane.HandleKey(loom.KeyEvent{Text: "a"})
+	pane.HandleKey(loom.KeyEvent{Key: "enter"})
+	canvas, row = draw()
+	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 || pane.List().Query() != "a" {
+		t.Fatalf("applied search row=%q cursor=(%d,%d) query=%q, want idle hint, hidden cursor, retained query", got, canvas.CursorX, canvas.CursorY, pane.List().Query())
+	}
+	pane.HandleKey(loom.KeyEvent{Key: "esc"})
+	canvas, row = draw()
+	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 || pane.List().Query() != "" {
+		t.Fatalf("cleared search row=%q cursor=(%d,%d) query=%q, want idle hint, hidden cursor, empty query", got, canvas.CursorX, canvas.CursorY, pane.List().Query())
+	}
+	typing, err := NewNavigationPane(dir, NavigationPaneOptions{TypeToSearch: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	canvas = loom.NewCanvas(r.W, r.H)
+	typing.Draw(canvas, r)
+	if canvas.CursorX < 0 || !strings.HasPrefix(canvasRow(canvas, r.H-1, r.W), "filter> ") {
+		t.Fatalf("TypeToSearch row=%q cursor=(%d,%d), want visible input and cursor", canvasRow(canvas, r.H-1, r.W), canvas.CursorX, canvas.CursorY)
+	}
+}
+
+func canvasRow(canvas *loom.Canvas, y, width int) string {
+	row := ""
+	for x := 0; x < width; x++ {
+		row += canvas.Get(x, y).Text
+	}
+	return row
 }
