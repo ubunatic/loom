@@ -1,6 +1,6 @@
 # 143 — Make the media example full-width and play video
 
-**Status**: Open
+**Status**: Closed — Implemented in 307c426 (M1): made examples/media full width and added video playback and PTY test coverage
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
