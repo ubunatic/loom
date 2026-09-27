@@ -39,7 +39,7 @@ func TestANSIViewerIsRegistered(t *testing.T) {
 }
 
 func TestNewWidgetConverted(t *testing.T) {
-	examples := []string{"split", "tabs", "filebrowser", "splash", "monitor", "treemap"}
+	examples := []string{"split", "tabs", "filebrowser", "splash", "monitor", "treemap", "usage"}
 	for _, name := range examples {
 		example, ok := Find(name)
 		if !ok {

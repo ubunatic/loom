@@ -22,6 +22,7 @@ import (
 	"codeberg.org/ubunatic/loom/examples/textedit/textedit"
 	"codeberg.org/ubunatic/loom/examples/textrender/textrender"
 	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
+	"codeberg.org/ubunatic/loom/examples/usage/usage"
 	"codeberg.org/ubunatic/loom/examples/winch/winch"
 )
 
@@ -152,6 +153,15 @@ var Registry = []Example{
 		Package:      "codeberg.org/ubunatic/loom/examples/screens",
 		Run:          screens.Run,
 		SupportsHelp: true,
+	},
+	{
+		Name:         "usage",
+		Description:  "Compact colored All Usage and local Load watch",
+		Package:      "codeberg.org/ubunatic/loom/examples/usage",
+		Run:          usage.Run,
+		SupportsHelp: true,
+		DemoArgs:     []string{"--collect", "1s"},
+		NewWidget:    func(args []string) (interface{}, error) { return usage.NewWidget(args) },
 	},
 	{
 		Name:         "winch",

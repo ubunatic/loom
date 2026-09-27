@@ -42,6 +42,18 @@ collection and its behavior as the reference.
 1. The plan says `StyledRows` and `InvalidationAware` were not found. They exist: `styledrows.go` and `widget.go` (065). Use them rather than reinventing them.
 2. Before coding, write into this ticket the reference behavior taken from `../harnez` (what each box shows: fields, units, colors and thresholds), with file:line references, so the review can check parity.
 
+### M1 delivered — standalone Loom rebuild
+
+Added `examples/usage`: a hostable `Frame` with colored All Usage and Load boxes,
+deterministic quota samples, and asynchronous local CPU/memory sampling from
+procfs. The source is injectable, the pane redraw cadence is independent, and
+the example is registered for `loom-demo`/`loom-bench`. Tests cover initial
+collection, expected content, narrow and resized layouts, and silent hosted
+Draw/Tick calls.
+
+Verification: `make test-q1` passed; output is
+`/tmp/loom-103-m1-test-q1.log` (no `--- FAIL` lines).
+
 ### Reference behavior for M1–M3
 
 Source: `../harnez/internal/usage/watch.go`, `load.go`, `indicatorsspec.go`,
