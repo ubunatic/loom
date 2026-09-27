@@ -58,3 +58,14 @@ Pre-work / Required Refinements for M1:
 - Effects are off by default: apps that don't opt in paint exactly as before (test it).
 - The effect must not change widget-local mouse coordinates or event dispatch.
 - The hint is cleared when the pointer leaves the window or no motion is known yet.
+
+M1 delivered (555ed4f): hint and brighten theme. `Pane.EnableCursorProximity()` opts in (any-motion
+mode 1003); spec/cursor.yaml has radius 3 and brightness 0.7; off unless the app opts in.
+
+Pre-Work / Required Refinements for M2:
+- Brighten skips claimed cells, so the glow shows only on empty background, not behind text.
+  Brighten the background of text cells too, or state in the doc comment why not; test either way.
+- Indexed backgrounds get no glow (only RGB works). Convert indexed colors to RGB via the palette if
+  Loom has one; the terminal default background may stay unchanged, documented.
+- Add an opt-in flag to one example (e.g. loom-demo or paint: `--cursor-fx`) so the user can see the
+  effect early. The strength (0.7) is a user decision, checked by eye.
