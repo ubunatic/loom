@@ -1,6 +1,6 @@
 # 149 — Convert the media example to a Cobra CLI app
 
-**Status**: Open
+**Status**: Closed — Implemented in 83e49cf (M1): converted media example to Cobra CLI with --help, --mode flag, and backward-compatible positional mode
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature / CLI Tooling
