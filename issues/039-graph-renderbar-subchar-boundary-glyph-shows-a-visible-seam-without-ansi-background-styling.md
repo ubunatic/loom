@@ -1,6 +1,6 @@
 # 039 — `graph.RenderBar` `SubChar` boundary glyph shows a visible seam without ANSI background styling
 
-**Status**: Open
+**Status**: Closed — won't fix in code: seam comes from terminal font rendering
 **Priority**: P3 (Low)
 **Severity**: Cosmetic
 **Category**: Bug/Documentation
