@@ -25,3 +25,15 @@ resize lands while the Pane is starting up.
   Notify via a test hook) and asserts the first stable frame uses the new size.
 - Fix: after the SIGWINCH handler is installed (and after the ZWJ probe), always re-query the size and
   reflow if it changed, on every screen mode.
+
+## Plan (dev-136, Sonnet; reviewed by host)
+
+Race confirmed: `New()` reads the size (termSize, then a DSR round-trip) before `installSignalHandler`; a WINCH in that window is dropped. `run()` re-queries only when `full && !alt`, so inline and alt panes keep the stale size.
+- M1: red test via a same-package hook in `New()` between size read and `installSignalHandler`; the test resizes the pty inside the window.
+- M2: after the handler is installed and the ZWJ probe ran, re-query the size and reflow before the first canvas in every screen mode.
+
+Pre-Work (host):
+- No timing-dependent tests. Drop the "best-effort" ptytest resize-after-Start test unless it is deterministic (e.g. waits for the first frame, then asserts the frame after a known resize).
+- Inline mode: re-querying must not move `inlineStart` or clear scrollback; add a test that an inline pane with unchanged size produces no extra reflow.
+- The hook is test-only (unexported var, nil in production).
+- Commits: `test: ... (issue 136 M1)`, `fix: ... (issue 136 M2)`; `make test-q1` once after the last edit.
