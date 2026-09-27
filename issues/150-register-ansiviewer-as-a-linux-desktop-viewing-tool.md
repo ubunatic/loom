@@ -1,6 +1,6 @@
 # 150 — Register ansiviewer as a Linux desktop viewing tool
 
-**Status**: Open
+**Status**: Closed — Implemented in ff1e187 (M1): added ansiviewer.desktop file and installed it to ~/.local/share/applications via make install
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature / Packaging
