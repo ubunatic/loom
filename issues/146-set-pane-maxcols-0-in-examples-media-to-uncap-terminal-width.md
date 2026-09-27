@@ -1,6 +1,6 @@
 # 146 — Set pane.MaxCols = 0 in examples/media to uncap terminal width
 
-**Status**: Open
+**Status**: Closed — Implemented in 3bcf2b3 (M1): set pane.MaxCols = 0 to uncap media canvas width from default 50 columns
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
