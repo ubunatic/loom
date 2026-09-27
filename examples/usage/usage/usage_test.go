@@ -241,3 +241,67 @@ func checkUsageColor(t *testing.T, session *ptytest.Session) {
 	}
 	t.Fatalf("All Usage title cell not found in PTY screen:\n%s", strings.Join(rows, "\n"))
 }
+
+func TestUsageViewFlagAndInteractiveSwitch(t *testing.T) {
+	w, err := NewWidget([]string{"--view=plain", "--collect=1h", "--redraw=1h"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	widget := w.(*usageWidget)
+	defer widget.Close()
+	waitSnapshot(t, widget)
+	if widget.view != viewPlain {
+		t.Fatalf("initial view = %q, want plain", widget.view)
+	}
+	plain := strings.Join(loom.Render(widget, 100, 18), "\n")
+	for _, want := range []string{"All Usage", "Load", "Claude", "CPU", "plain view"} {
+		if !strings.Contains(plain, want) {
+			t.Errorf("plain view missing %q:\n%s", want, plain)
+		}
+	}
+	if !strings.Contains(plain, "38;2;185;125;255m") {
+		t.Fatal("plain All Usage panel lost its colored title")
+	}
+	if widget.HandleKey(loom.KeyEvent{Text: "v"}) {
+		t.Fatal("view switch unexpectedly quit the widget")
+	}
+	if widget.view != viewLoom {
+		t.Fatalf("view after v = %q, want Loom", widget.view)
+	}
+	loomView := strings.Join(loom.Render(widget, 100, 18), "\n")
+	if !strings.Contains(loomView, "Claude") || strings.Contains(loomView, "plain view") {
+		t.Fatalf("Loom view did not preserve shared usage data:\n%s", loomView)
+	}
+	widget.HandleKey(loom.KeyEvent{Text: "v"})
+	if widget.view != viewPlain {
+		t.Fatalf("view after second v = %q, want plain", widget.view)
+	}
+	if _, err := NewWidget([]string{"--view=unknown"}); err == nil {
+		t.Fatal("unknown view was accepted")
+	}
+}
+
+func TestPlainUsageViewFitsNarrowAndResizedRects(t *testing.T) {
+	w, err := NewWidget([]string{"--view=plain", "--collect=1h", "--redraw=1h"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.(*usageWidget).Close()
+	widget := w.(*usageWidget)
+	waitSnapshot(t, widget)
+	for _, size := range []struct{ width, height int }{{100, 18}, {54, 20}, {30, 24}, {72, 16}} {
+		rows := loom.Render(widget, size.width, size.height)
+		if len(rows) != size.height {
+			t.Fatalf("%dx%d rendered %d rows", size.width, size.height, len(rows))
+		}
+		for y, row := range rows {
+			if got := loom.StringWidth(row); got > size.width {
+				t.Errorf("%dx%d row %d width = %d", size.width, size.height, y, got)
+			}
+		}
+		text := strings.Join(rows, "\n")
+		if !strings.Contains(text, "All Usage") || !strings.Contains(text, "Load") {
+			t.Errorf("%dx%d lost a panel:\n%s", size.width, size.height, text)
+		}
+	}
+}

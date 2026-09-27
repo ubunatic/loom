@@ -12,6 +12,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) == 2 && (os.Args[1] == "--help" || os.Args[1] == "-h") {
+		fmt.Println("usage: loom-usage [--collect duration] [--redraw duration] [--view loom|plain]")
+		return
+	}
 	if err := usage.Run(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

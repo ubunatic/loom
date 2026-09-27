@@ -21,6 +21,8 @@ import (
 const (
 	defaultCollectInterval = time.Second
 	defaultRedrawInterval  = 100 * time.Millisecond
+	viewLoom               = "loom"
+	viewPlain              = "plain"
 )
 
 // Options configures collection and redraw cadence for a hosted widget.
@@ -28,6 +30,7 @@ type Options struct {
 	Source          DataSource
 	CollectInterval time.Duration
 	RedrawInterval  time.Duration
+	View            string
 }
 
 type usageWidget struct {
@@ -40,6 +43,8 @@ type usageWidget struct {
 	done         chan struct{}
 	frame        *loom.Frame
 	rows         [2]*loom.StyledRows
+	plain        *loom.StyledRows
+	view         string
 	invalidateMu sync.RWMutex
 	invalidate   func()
 	closeOnce    sync.Once
@@ -55,13 +60,14 @@ func NewWidget(args []string) (loom.Widget, error) {
 	flags.SetOutput(io.Discard)
 	collect := flags.Duration("collect", defaultCollectInterval, "local data collection cadence")
 	redraw := flags.Duration("redraw", defaultRedrawInterval, "independent pane redraw cadence")
+	view := flags.String("view", viewLoom, "initial view: loom or plain")
 	if err := flags.Parse(args); err != nil {
 		return nil, err
 	}
 	if flags.NArg() != 0 {
 		return nil, fmt.Errorf("usage: unexpected arguments: %s", strings.Join(flags.Args(), " "))
 	}
-	return NewWidgetFromOptions(Options{Source: &localSource{}, CollectInterval: *collect, RedrawInterval: *redraw})
+	return NewWidgetFromOptions(Options{Source: &localSource{}, CollectInterval: *collect, RedrawInterval: *redraw, View: *view})
 }
 
 // NewWidgetFromOptions creates a hostable widget with an injectable source.
@@ -72,10 +78,16 @@ func NewWidgetFromOptions(opts Options) (loom.Widget, error) {
 	if opts.RedrawInterval <= 0 {
 		return nil, fmt.Errorf("usage: redraw interval must be positive")
 	}
+	if opts.View == "" {
+		opts.View = viewLoom
+	}
+	if opts.View != viewLoom && opts.View != viewPlain {
+		return nil, fmt.Errorf("usage: view must be %q or %q", viewLoom, viewPlain)
+	}
 	if opts.Source == nil {
 		opts.Source = &localSource{}
 	}
-	u := &usageWidget{source: opts.Source, collect: opts.CollectInterval, redraw: opts.RedrawInterval, done: make(chan struct{})}
+	u := &usageWidget{source: opts.Source, collect: opts.CollectInterval, redraw: opts.RedrawInterval, done: make(chan struct{}), view: opts.View, plain: loom.NewStyledRows()}
 	u.frame, u.rows = makeFrame()
 	ctx, cancel := context.WithCancel(context.Background())
 	u.cancel = cancel
@@ -90,7 +102,7 @@ func makeFrame() (*loom.Frame, [2]*loom.StyledRows) {
 	cyan := loom.Style{FG: loom.ColorRGB(80, 190, 230)}
 	frame := &loom.Frame{
 		Title:      "Loom Usage",
-		Status:     "Live local Load · deterministic All Usage · q quit",
+		Status:     "Live local Load · deterministic All Usage · v switch · q quit",
 		Gap:        2,
 		Breakpoint: 96,
 		Style:      loom.FrameStyle{Title: loom.Style{FG: loom.ColorRGB(100, 210, 245), Bold: true}, Status: loom.Style{FG: loom.ColorRGB(145, 155, 170)}},
@@ -141,12 +153,25 @@ func (u *usageWidget) snapshot() Snapshot {
 
 func (u *usageWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	snapshot := u.snapshot()
+	if u.view == viewPlain {
+		u.plain.Lines = plainRows(snapshot, r.W, r.H)
+		u.plain.Draw(c, r)
+		return
+	}
 	u.rows[0].Lines = usageLines(snapshot)
 	u.rows[1].Lines = loadLines(snapshot)
 	u.frame.Draw(c, r)
 }
 
 func (u *usageWidget) HandleKey(e loom.KeyEvent) bool {
+	if e.Rune() == 'v' || e.Rune() == 'V' {
+		if u.view == viewPlain {
+			u.view = viewLoom
+		} else {
+			u.view = viewPlain
+		}
+		return false
+	}
 	if e.Rune() == 'q' || e.Rune() == 'Q' || e.Is("ctrl-c", "ctrl-q", "esc") {
 		return true
 	}
@@ -222,9 +247,67 @@ func heat(value string, percent float64) string {
 
 func dim(value string) string { return "\x1b[90m" + value + "\x1b[0m" }
 
+func plainRows(snapshot Snapshot, width, height int) []string {
+	if width <= 0 || height <= 0 {
+		return nil
+	}
+	rows := []string{"\x1b[38;2;100;210;245mLoom Usage — plain view  [v] switch  [q] quit\x1b[0m"}
+	usage := plainBox("All Usage", usageLines(snapshot), width, "38;2;185;125;255")
+	load := plainBox("Load", loadLines(snapshot), width, "38;2;80;220;150")
+	if width >= 76 {
+		leftWidth := (width - 2) / 2
+		rightWidth := width - 2 - leftWidth
+		usage = plainBox("All Usage", usageLines(snapshot), leftWidth, "38;2;185;125;255")
+		load = plainBox("Load", loadLines(snapshot), rightWidth, "38;2;80;220;150")
+		for row := 0; row < max(len(usage), len(load)); row++ {
+			left, right := "", ""
+			if row < len(usage) {
+				left = usage[row]
+			}
+			if row < len(load) {
+				right = load[row]
+			}
+			rows = append(rows, left+"  "+right)
+		}
+	} else {
+		rows = append(rows, usage...)
+		rows = append(rows, load...)
+	}
+	return rows
+}
+
+func plainBox(title string, content []string, width int, titleColor string) []string {
+	if width < 2 {
+		return nil
+	}
+	cyan := "\x1b[38;2;80;190;230m"
+	reset := "\x1b[0m"
+	inner := width - 2
+	prefix := cyan + "┌─" + "\x1b[" + titleColor + "m " + title + " " + cyan
+	remaining := width - loom.StringWidth(prefix) - 1
+	if remaining < 0 {
+		remaining = 0
+	}
+	rows := []string{prefix + strings.Repeat("─", remaining) + "┐" + reset}
+	for _, line := range content {
+		rows = append(rows, cyan+"│"+reset+fitStyled(line, inner)+cyan+"│"+reset)
+	}
+	rows = append(rows, cyan+"└"+strings.Repeat("─", inner)+"┘"+reset)
+	return rows
+}
+
+func fitStyled(line string, width int) string {
+	if width <= 0 {
+		return ""
+	}
+	canvas := loom.NewCanvas(width, 1)
+	loom.NewStyledRows(line).Draw(canvas, loom.Rect{W: width, H: 1})
+	return canvas.Row(0)
+}
+
 func Run(args []string) error {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		_, err := fmt.Fprintln(os.Stdout, "usage: loom-usage [--collect duration] [--redraw duration]")
+		_, err := fmt.Fprintln(os.Stdout, "usage: loom-usage [--collect duration] [--redraw duration] [--view loom|plain]")
 		return err
 	}
 	widget, err := NewWidget(args)

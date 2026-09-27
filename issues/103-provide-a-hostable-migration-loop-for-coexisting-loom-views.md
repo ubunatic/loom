@@ -67,6 +67,18 @@ for stable title/content rather than the transient collecting message. Output:
 `/tmp/loom-103-m2-test-q1.log` (no `--- FAIL` lines). A direct PTY capture of
 the built example also confirmed the RGB SGR and produced the reported snapshot.
 
+### M3 delivered — selectable plain and Loom views
+
+`--view=loom|plain` selects the initial view; `v` switches views while the
+example is running. Both views render the same collected snapshot. The plain
+view uses Loom `StyledRows` for ANSI styling and clipping, with the panels
+side-by-side at wide sizes and stacked at narrow sizes. The example README and
+help text document the switch.
+
+Verification: `make test-q1` passed; output is
+`/tmp/loom-103-m3-test-q1.log` (no `--- FAIL` lines). The PTY color-cell
+snapshot remains at `/tmp/loom-103-usage.ansi`.
+
 ### Reference behavior for M1–M3
 
 Source: `../harnez/internal/usage/watch.go`, `load.go`, `indicatorsspec.go`,
