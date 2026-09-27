@@ -51,3 +51,9 @@ directories are entered through a real terminal session.
 - M5 PTY: timed press/release pairs in filebrowser PTY test.
 
 Pre-Work: tests first per milestone; no double activation when Choice single-click confirm is enabled; threshold value must live only in spec (no Go duplicate).
+
+## M2 delivered: recognizer and spec threshold (6ed8f8d)
+
+`DoubleClickRecognizer` with injectable clock; `mouse.double_click_interval: 400ms` and `movement_tolerance` in spec/defaults.yaml. Host ran the double-click tests: pass.
+
+Pre-Work for M3: use conventional commit messages (`feat: ... (issue 091 M3)`); run `make test-q1` after the last code edit, not before.
