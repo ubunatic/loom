@@ -150,6 +150,63 @@ func TestDrawShowsShortErrorMessage(t *testing.T) {
 	}
 }
 
+func TestDrawLoadsMediaImmediatelyOrInBackground(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		delay time.Duration
+	}{
+		{name: "immediate", delay: 5 * time.Millisecond},
+		{name: "background", delay: 80 * time.Millisecond},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			widget, err := NewImage(solidImage(2, 2, color.RGBA{R: 200, A: 255}), ModeHalfblock)
+			if err != nil {
+				t.Fatal(err)
+			}
+			widget.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
+				time.Sleep(tc.delay)
+				return &core.Grid{Width: 1, Height: 1, Cells: [][]core.Cell{{{Ch: 'X'}}}}, nil
+			}
+			canvas := loom.NewCanvas(12, 3)
+			r := loom.Rect{X: 1, Y: 1, W: 10, H: 1}
+			widget.Draw(canvas, r)
+			if tc.delay < 50*time.Millisecond {
+				if !canvasContainsText(canvas, r, "X") {
+					t.Fatal("immediate draw did not render media")
+				}
+				return
+			}
+			loadingFound := false
+			for x := r.X; x < r.X+r.W; x++ {
+				cell := canvas.Get(x, r.Y)
+				if cell.Text == "l" && cell.Style.Dim {
+					loadingFound = true
+				}
+			}
+			if !loadingFound {
+				t.Fatal("delayed draw did not show a dim loading indicator")
+			}
+			time.Sleep(tc.delay)
+			canvas = loom.NewCanvas(12, 3)
+			widget.Draw(canvas, r)
+			if !canvasContainsText(canvas, r, "X") {
+				t.Fatal("completed draw did not render media")
+			}
+		})
+	}
+}
+
+func canvasContainsText(c *loom.Canvas, r loom.Rect, want string) bool {
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			if c.Get(x, y).Text == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func solidImage(width, height int, c color.RGBA) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 	for y := 0; y < height; y++ {

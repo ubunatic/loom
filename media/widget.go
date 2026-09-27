@@ -33,6 +33,8 @@ const (
 type Widget struct {
 	mu        sync.RWMutex
 	cacheMu   sync.Mutex
+	loadMu    sync.Mutex
+	load      *renderLoad
 	image     image.Image
 	mode      Mode
 	frames    <-chan image.Image
@@ -42,6 +44,18 @@ type Widget struct {
 	closeOnce sync.Once
 	renderer  func(image.Image, Mode, int, int) (*core.Grid, error)
 	cache     renderCache
+}
+
+type renderLoad struct {
+	image image.Image
+	cols  int
+	rows  int
+	done  chan renderResult
+}
+
+type renderResult struct {
+	grid *core.Grid
+	err  error
 }
 
 type renderCache struct {
@@ -140,7 +154,15 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 			c.Set(r.X+x, r.Y+y, loom.Cell{Text: " ", Style: loom.Reset})
 		}
 	}
-	grid, err := w.renderCached(img, r.W, r.H)
+	grid, err, loading := w.renderWithThreshold(img, r.W, r.H)
+	if loading {
+		label := "loading"
+		if len(label) > r.W {
+			label = label[:r.W]
+		}
+		c.Write(r.X, r.Y, label, loom.Style{FG: loom.ColorRGB(128, 128, 128), Dim: true})
+		return
+	}
 	if err != nil {
 		message := "render error"
 		if len(message) > r.W {
@@ -163,6 +185,48 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 			c.Set(dstX, dstY, canvasCell(cell))
 		}
 	}
+}
+
+func (w *Widget) renderWithThreshold(img image.Image, cols, rows int) (*core.Grid, error, bool) {
+	w.loadMu.Lock()
+	if load := w.load; load != nil && sameImage(load.image, img) && load.cols == cols && load.rows == rows {
+		select {
+		case result := <-load.done:
+			w.load = nil
+			w.loadMu.Unlock()
+			return w.storeRender(img, cols, rows, result.grid, result.err)
+		default:
+			w.loadMu.Unlock()
+			return nil, nil, true
+		}
+	}
+	load := &renderLoad{image: img, cols: cols, rows: rows, done: make(chan renderResult, 1)}
+	w.load = load
+	w.loadMu.Unlock()
+	go func() {
+		grid, err := w.renderCached(img, cols, rows)
+		load.done <- renderResult{grid: grid, err: err}
+	}()
+	timer := time.NewTimer(50 * time.Millisecond)
+	defer timer.Stop()
+	select {
+	case result := <-load.done:
+		w.loadMu.Lock()
+		if w.load == load {
+			w.load = nil
+		}
+		w.loadMu.Unlock()
+		return result.grid, result.err, false
+	case <-timer.C:
+		return nil, nil, true
+	}
+}
+
+func (w *Widget) storeRender(img image.Image, cols, rows int, grid *core.Grid, err error) (*core.Grid, error, bool) {
+	w.cacheMu.Lock()
+	w.cache = renderCache{image: img, cols: cols, rows: rows, grid: grid, err: err, valid: true}
+	w.cacheMu.Unlock()
+	return grid, err, false
 }
 
 func (w *Widget) renderCached(img image.Image, cols, rows int) (*core.Grid, error) {
