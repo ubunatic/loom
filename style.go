@@ -3,7 +3,10 @@
 
 package loom
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 type Color struct {
@@ -69,25 +72,75 @@ func xterm256RGB(idx uint8) (r, g, b uint8) {
 	}
 }
 
+var (
+	fgIndexSeq [256]string
+	bgIndexSeq [256]string
+)
+
+func init() {
+	for i := 0; i < 256; i++ {
+		fgIndexSeq[i] = fmt.Sprintf("\x1b[38;5;%dm", i)
+		bgIndexSeq[i] = fmt.Sprintf("\x1b[48;5;%dm", i)
+	}
+}
+
+// AppendFG appends the foreground ANSI escape sequence for c to b.
+func (c Color) AppendFG(b []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		return append(b, fgIndexSeq[c.index]...)
+	case colorRGB:
+		b = append(b, "\x1b[38;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		return append(b, 'm')
+	default:
+		return append(b, "\x1b[39m"...)
+	}
+}
+
+// AppendBG appends the background ANSI escape sequence for c to b.
+func (c Color) AppendBG(b []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		return append(b, bgIndexSeq[c.index]...)
+	case colorRGB:
+		b = append(b, "\x1b[48;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		return append(b, 'm')
+	default:
+		return append(b, "\x1b[49m"...)
+	}
+}
+
 func (c Color) fgSeq() string {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[38;5;%dm", c.index)
+		return fgIndexSeq[c.index]
 	case colorRGB:
-		return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", c.r, c.g, c.b)
+		var buf [32]byte
+		return string(c.AppendFG(buf[:0]))
 	default:
-		return "\x1b[39m" // default fg
+		return "\x1b[39m"
 	}
 }
 
 func (c Color) bgSeq() string {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[48;5;%dm", c.index)
+		return bgIndexSeq[c.index]
 	case colorRGB:
-		return fmt.Sprintf("\x1b[48;2;%d;%d;%dm", c.r, c.g, c.b)
+		var buf [32]byte
+		return string(c.AppendBG(buf[:0]))
 	default:
-		return "\x1b[49m" // default bg
+		return "\x1b[49m"
 	}
 }
 
@@ -100,22 +153,30 @@ type Style struct {
 	Dim       bool
 }
 
+// AppendANSI appends the escape sequence that applies this style to b.
+// Always starts with a full reset to avoid state bleed from previous cells.
+func (s Style) AppendANSI(b []byte) []byte {
+	b = append(b, "\x1b[0m"...)
+	if s.Bold {
+		b = append(b, "\x1b[1m"...)
+	}
+	if s.Underline {
+		b = append(b, "\x1b[4m"...)
+	}
+	if s.Dim {
+		b = append(b, "\x1b[2m"...)
+	}
+	b = s.FG.AppendFG(b)
+	b = s.BG.AppendBG(b)
+	return b
+}
+
 // ANSI returns the escape sequence that applies this style.
 // Always starts with a full reset to avoid state bleed from previous cells.
 func (s Style) ANSI() string {
-	out := "\x1b[0m" // reset all attributes
-	if s.Bold {
-		out += "\x1b[1m"
-	}
-	if s.Underline {
-		out += "\x1b[4m"
-	}
-	if s.Dim {
-		out += "\x1b[2m"
-	}
-	out += s.FG.fgSeq()
-	out += s.BG.bgSeq()
-	return out
+	var buf [64]byte
+	b := s.AppendANSI(buf[:0])
+	return string(b)
 }
 
 // Reset is a zero Style — default terminal colors, no attributes.

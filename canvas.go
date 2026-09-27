@@ -4,7 +4,7 @@
 package loom
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -379,14 +379,24 @@ func (c *Canvas) Row(y int) string {
 		return ""
 	}
 	var b strings.Builder
+	b.Grow(c.cols * 16)
+	c.writeRowToBuilder(&b, y)
+	return b.String()
+}
+
+func (c *Canvas) writeRowToBuilder(b *strings.Builder, y int) {
+	if y < 0 || y >= c.rows {
+		return
+	}
 	var cur Style
+	var styleBuf [64]byte
 	vteNeedPad := false
 	isVTE := measure.ActiveRenderPath() == measure.RenderPathVTE
 	for _, cell := range c.cells[y] {
 		if cell.Continuation {
 			if vteNeedPad {
 				if cell.Style != cur {
-					b.WriteString(cell.Style.ANSI())
+					b.Write(cell.Style.AppendANSI(styleBuf[:0]))
 					cur = cell.Style
 				}
 				b.WriteByte(' ')
@@ -399,7 +409,7 @@ func (c *Canvas) Row(y int) string {
 			vteNeedPad = true
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSI())
+			b.Write(cell.Style.AppendANSI(styleBuf[:0]))
 			cur = cell.Style
 		}
 		if cell.Text == "" {
@@ -409,7 +419,6 @@ func (c *Canvas) Row(y int) string {
 		}
 	}
 	b.WriteString("\x1b[0m") // reset after every row so colors don't bleed
-	return b.String()
 }
 
 // Flush writes all rows to out using absolute cursor positioning.
@@ -430,28 +439,50 @@ func (c *Canvas) FlushWithClear(out interface{ WriteString(string) (int, error) 
 // switches (atomic buffered flush, per-row clearing, synchronized output).
 func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error) }, startRow, clearRows int, cfg ResizeConfig) {
 	var b strings.Builder
+	if cfg.AtomicFlush {
+		b.Grow(c.rows*(c.cols*16+20) + clearRows*20 + 64)
+	}
 	var sink interface{ WriteString(string) (int, error) } = &b
 	if !cfg.AtomicFlush {
 		sink = out
+	}
+
+	var posBuf [32]byte
+	writePos := func(row, col int) {
+		p := append(posBuf[:0], "\x1b["...)
+		p = strconv.AppendInt(p, int64(row), 10)
+		p = append(p, ';')
+		p = strconv.AppendInt(p, int64(col), 10)
+		p = append(p, 'H')
+		if cfg.AtomicFlush {
+			b.Write(p)
+		} else {
+			sink.WriteString(string(p))
+		}
 	}
 
 	if cfg.SynchronizedOutput {
 		sink.WriteString("\x1b[?2026h") //nolint:errcheck
 	}
 	for y := 0; y < c.rows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
-		sink.WriteString(c.Row(y))                              //nolint:errcheck
+		writePos(startRow+y, 1)
+		if cfg.AtomicFlush {
+			c.writeRowToBuilder(&b, y)
+		} else {
+			sink.WriteString(c.Row(y)) //nolint:errcheck
+		}
 		if cfg.RowClear {
 			sink.WriteString("\x1b[K") //nolint:errcheck
 		}
 	}
 	for y := 0; y < clearRows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", startRow+c.rows+y)) //nolint:errcheck
+		writePos(startRow+c.rows+y, 1)
+		sink.WriteString("\x1b[2K") //nolint:errcheck
 	}
 	if c.CursorX >= 0 && c.CursorY >= 0 {
 		// Position and show the cursor only when a widget asked for it (a prompt).
-		sink.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1)) //nolint:errcheck
-		sink.WriteString("\x1b[?25h")                                                 //nolint:errcheck
+		writePos(startRow+c.CursorY, c.CursorX+1)
+		sink.WriteString("\x1b[?25h") //nolint:errcheck
 	} else {
 		// No prompt on this frame: hide the hardware cursor so it doesn't linger
 		// as a stray block after the last drawn cell.

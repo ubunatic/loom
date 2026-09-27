@@ -5,7 +5,6 @@ package loom
 
 import (
 	"os"
-	"strconv"
 	"strings"
 	"unicode"
 
@@ -201,18 +200,46 @@ func applySGRSequence(style Style, params string) Style {
 		return Style{}
 	}
 
-	// Split by semicolon; an empty part (e.g. ESC[;1m or ESC[1;m) counts as 0
-	parts := strings.Split(params, ";")
-	for i := 0; i < len(parts); i++ {
-		p := parts[i]
-		code := 0
-		if p != "" {
-			var err error
-			code, err = strconv.Atoi(p)
-			if err != nil {
-				continue
+	var args [16]int
+	var valid [16]bool
+	nArgs := 0
+
+	start := 0
+	for i := 0; i <= len(params); i++ {
+		if i == len(params) || params[i] == ';' {
+			if nArgs < len(args) {
+				if i == start {
+					// empty param (e.g. ESC[;1m or ESC[1;m) counts as 0
+					args[nArgs] = 0
+					valid[nArgs] = true
+				} else {
+					val := 0
+					isValid := true
+					for k := start; k < i; k++ {
+						c := params[k]
+						if c >= '0' && c <= '9' {
+							val = val*10 + int(c-'0')
+						} else {
+							isValid = false
+							break
+						}
+					}
+					if isValid {
+						args[nArgs] = val
+						valid[nArgs] = true
+					}
+				}
+				nArgs++
 			}
+			start = i + 1
 		}
+	}
+
+	for i := 0; i < nArgs; i++ {
+		if !valid[i] {
+			continue
+		}
+		code := args[i]
 
 		switch {
 		case code == 0:
@@ -264,45 +291,43 @@ func applySGRSequence(style Style, params string) Style {
 			// Reset background to default
 			style.BG = ColorReset()
 
-		case code == 38 && i+2 < len(parts) && parts[i+1] == "5":
+		case code == 38 && i+2 < nArgs && valid[i+1] && args[i+1] == 5:
 			// 256-color foreground: 38;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
-			if err == nil && v >= 0 && v <= 255 {
-				style.FG = ColorIndex(uint8(v))
+			if valid[i+2] {
+				v := args[i+2]
+				if v >= 0 && v <= 255 {
+					style.FG = ColorIndex(uint8(v))
+				}
 			}
 			i += 2
 
-		case code == 48 && i+2 < len(parts) && parts[i+1] == "5":
+		case code == 48 && i+2 < nArgs && valid[i+1] && args[i+1] == 5:
 			// 256-color background: 48;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
-			if err == nil && v >= 0 && v <= 255 {
-				style.BG = ColorIndex(uint8(v))
+			if valid[i+2] {
+				v := args[i+2]
+				if v >= 0 && v <= 255 {
+					style.BG = ColorIndex(uint8(v))
+				}
 			}
 			i += 2
 
-		case code == 38 && i+4 < len(parts) && parts[i+1] == "2":
+		case code == 38 && i+4 < nArgs && valid[i+1] && args[i+1] == 2:
 			// 24-bit RGB foreground: 38;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
-			if errR == nil && errG == nil && errB == nil &&
-				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
-				style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
+			if valid[i+2] && valid[i+3] && valid[i+4] {
+				r, g, b := args[i+2], args[i+3], args[i+4]
+				if r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
+					style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
+				}
 			}
 			i += 4
 
-		case code == 48 && i+4 < len(parts) && parts[i+1] == "2":
+		case code == 48 && i+4 < nArgs && valid[i+1] && args[i+1] == 2:
 			// 24-bit RGB background: 48;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
-			if errR == nil && errG == nil && errB == nil &&
-				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
-				style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))
+			if valid[i+2] && valid[i+3] && valid[i+4] {
+				r, g, b := args[i+2], args[i+3], args[i+4]
+				if r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
+					style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))
+				}
 			}
 			i += 4
 		}
