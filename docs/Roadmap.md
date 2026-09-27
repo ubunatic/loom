@@ -27,106 +27,92 @@ Stage numbers below preserve the original plan and remain as historical
 acceptance context. The Now/Next/Later sequence is the live priority signal and
 supersedes stage order wherever the two disagree.
 
-## Shipped since the last roadmap pass (2026-09-27 update)
+## Shipped since the last roadmap pass (2026-09-27, Now-list sprint)
 
-The former Now bucket shipped except the media widget, and the `loom` CLI
-line is complete.
+Every ticket in the former Now bucket shipped except 102, which stays open as
+the user's manual checklist.
 
-- [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md): `monitor` is a hostable widget with registry factories and a hosted tabs test.
-- [124](../issues/124-make-f10-standard-global-quit-key-across-loom-applications.md): F10 is the pane-level global quit key, with an opt-out.
-- [128](../issues/128-add-box-frame-geometry-and-line-width-validator-for-ansi-assets.md): tracked `.ansi` assets are validated for box geometry and line width in `make test`.
-- [130](../issues/130-add-loom-format-command-to-auto-align-re-pad-and-normalize-ansi-files.md) (loom format) and [131](../issues/131-add-loom-frame-command-to-wrap-ansi-text-in-styled-box-borders.md) (loom frame): together with 129, one `loom` binary validates, measures, formats and frames ANSI assets.
+- [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md): `StyledRows` widget and a hostable treemap; the last hosted-widget conversion.
+- [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md): `docs/TuiInput.md` exists and describes the final quit keys.
+- [111](../issues/111-add-an-image-media-widget-rendered-with-cati.md): Image/Media widget rendered via `../cati` (`examples/media`). Follow-up filed upstream: cati issue 059 (double `cmd.Wait` hang in video streaming).
+- [103](../issues/103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md): `examples/usage` rebuilds `harnez usage --compact --watch` on Loom Frame/StyledRows with async collection and a plain/Loom view switch. Follow-up filed in harnez: issue 607 (adopt the Loom usage view behind a flag, the strangler-pattern step).
 
-Earlier passes: 063, 099, 101, 105, 129 (2026-09-27 reconcile); 117 to 123
-(2026-09-24 reconcile, syntax engine and textedit); 034, 037, 051, 060, 061,
-062, 081, 088, 092 to 097, 107, 108 (2026-09-24); 036, 038, 057 to 059, 085
-(2026-09-20). See the stage table.
+Earlier passes: 064, 124, 128, 130, 131 (2026-09-27 update); 063, 099, 101,
+105, 129 (2026-09-27 reconcile); 117 to 123 (2026-09-24 reconcile); 034, 037,
+051, 060, 061, 062, 081, 088, 092 to 097, 107, 108 (2026-09-24); 036, 038, 057
+to 059, 085 (2026-09-20). See the stage table.
 
 ---
 
 ## Themes in the open backlog
 
-The 25 open tickets fall into six themes:
+The 21 open tickets fall into five themes:
 
-1. **Hosted-widget conversion and real-host proof** (065, 103): only treemap and the Harnez migration remain.
-2. **ANSI core** (116, 100): builds on the finished `loom` CLI and validator.
-3. **Input and pointer UX** (089, 091, 106).
-4. **Media and editor extras** (111, 112, 120, 090).
-5. **Verification, review and docs** (095, 102, 042, 098, 052).
-6. **Parked or close candidates** (014 to 019, 039, 048, 056).
-
----
-
-## Now: prove Loom in a real host
-
-**Rationale.** With 063 and 064 shipped, one conversion (065) stands between
-Loom and the real-host migration (103), which is the most direct proof of the
-product goal: dashboards sharing widgets inside a host program. 102 now holds
-the manual checks for 124 and 064, so reviewing it closes the loop on what just
-shipped. 042 was waiting on 124 for the final quit keys and is now unblocked
-and small. 111 stays because the user queued it.
-
-- [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md) (P3): ANSI-styled rows widget and hostable treemap. **Moved up from Next**: the last conversion before 103.
-- [103](../issues/103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md) (P2): hostable migration loop in a Harnez-usage clone. **Moved up from Next**: 064 unblocked it.
-- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks for the 124 and 064 deliveries. **Moved up from Next**: it gates confidence in what just shipped.
-- [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md) (P3): `docs/TuiInput.md`. **Moved up from Later**: 124 fixed the quit keys it must describe.
-- [111](../issues/111-add-an-image-media-widget-rendered-with-cati.md) (P2, user-queued 2026-09-24): Image/Media widget via `../cati`; canary the cati v1 API first.
+1. **Real-host adoption and review** (102, plus harnez 607 outside this repo): the conversion line is done; what remains is confirming it by hand and in Harnez.
+2. **Input and pointer UX** (089, 091, 106): the interaction quality every hosted widget inherits.
+3. **ANSI core and rendering correctness** (116, 100, 052, 098).
+4. **Media and editor extras** (112, 090, 120).
+5. **Verification tooling** (095), then parked and close candidates (014 to 019, 039, 048, 056).
 
 ---
 
-## Next: pointer UX, ANSI core, verification
+## Now: confirm the real host, then pointer UX
 
-**Rationale.** Pointer features rest on the proven 107/108 hover baseline.
-116 can start now that the CLI and validator (128) settled which ANSI helpers
-are needed.
+**Rationale.** Loom's value is widgets a host program can adopt with little
+ceremony. 103 proved that in a Harnez-usage clone; 102 is the human check of
+that proof (plus 111, 124, 064) and gates harnez 607. After that, the most
+host-visible gap is pointer interaction, which every hosted widget inherits and
+which rests on the proven 107/108 hover baseline.
 
-- [089](../issues/089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) (P1): mouse cursor hints and effects, tested with the 107 colour-cell method ([`HoverTesting.md`](HoverTesting.md)).
-- [091](../issues/091-add-double-click-interaction-for-filebrowser-and-path-trees.md) (P1): reusable double-click recognition.
-- [106](../issues/106-make-scrollbar-enabled-by-default-for-panes.md) (P2): `scrollbar: auto` as the pane default.
-- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; its predecessor 128 shipped.
-- [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3): media controls; depends on 111.
-- [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY view mode.
+- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks for 103, 111, 124 and 064. **Stays in Now**: the user's checklist; it gates harnez 607.
+- [089](../issues/089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) (P1): mouse cursor hints and effects, tested with the 107 colour-cell method ([`HoverTesting.md`](HoverTesting.md)). **Moved up from Next.**
+- [091](../issues/091-add-double-click-interaction-for-filebrowser-and-path-trees.md) (P1): reusable double-click recognition for filebrowser and path trees. **Moved up from Next.**
+- [106](../issues/106-make-scrollbar-enabled-by-default-for-panes.md) (P2): `scrollbar: auto` as the pane default; small, and it removes per-host ceremony. **Moved up from Next.**
+
+---
+
+## Next: ANSI core, verification, media controls
+
+**Rationale.** 116 is a library-wide internals change (type aliases, zero-alloc
+`Canvas.Row`) and is safer after the pointer work settles. 095 makes the
+growing set of PTY tests observable by a human. 112 builds directly on the
+shipped 111.
+
+- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; its predecessors 128 to 131 shipped.
+- [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode.
+- [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3): media play/pause, zoom and panning; 111 shipped. Video work should wait for cati 059.
 
 ---
 
 ## Later: docs, polish, extras
 
-- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine. The lexical engine from 119/121 already covers highlighting; large, dependency-heavy, no dashboard use case yet.
-- [098](../issues/098-document-animatedbackground-ticker-initialization-pitfall.md) (P2): `AnimatedBackground` ticker pitfall doc.
-- [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): full-width top-bar background in ansiviewer; can move up opportunistically.
-- [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): unused `ChoiceStyle.Border`.
-- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed backgrounds; should reuse the 111 cati rendering.
+- [098](../issues/098-document-animatedbackground-ticker-initialization-pitfall.md) (P2): `AnimatedBackground` ticker pitfall doc; can be done any time.
+- [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): unused `ChoiceStyle.Border` contract.
+- [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): full-width top-bar background in ansiviewer; can move up opportunistically, may fold into 116.
+- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed backgrounds; should reuse the 111 cati rendering. No host has asked for it yet.
+- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine. The lexical engine from 119/121 covers highlighting; large, dependency-heavy, no dashboard use case.
 
 ---
 
-## Close / deprioritize candidates
+## Close / Park
 
 - [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) (P2, Bug): **reclassify to Documentation.** Emoji width variance across terminals cannot be fixed in library code (see [`EmojiWidth.md`](EmojiWidth.md)).
 - [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md) (P3, Bug): **close as won't-fix-in-code.** The seam comes from terminal font rendering.
-- [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) (P2): **park / close as milestone.**
-- [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) (P3): in-process hosting is delivered by 057 to 065; full VT100 sub-process emulation is a separate product.
-
----
-
-## Parked: declarative data sources and simulated targets (014 to 019)
-
-Blocked on a product decision about whether Loom owns data-source wiring.
-
-- [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) → [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) → [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md)
-- [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md) → [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md)
-- [019](../issues/019-evaluate-declarative-source-and-action-wiring.md)
+- [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) (P2): **close as milestone**; 103 is the real-host proof it anticipated.
+- [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) (P3): **park.** In-process hosting is delivered by 057 to 065; full VT100 sub-process emulation is a separate product.
+- Data sources and simulated targets, **parked** on a product decision about whether Loom owns data-source wiring (103 kept collection in the host, which argues it does not):
+  [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) → [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) → 016; [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md) → [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md); [019](../issues/019-evaluate-declarative-source-and-action-wiring.md).
 
 ---
 
 ## Dependency map
 
 ```text
-[063 064 105 shipped] ──► 065 ──► 103 (real-host migration)
-[129 130 131 128 shipped] ──► 116 (ansi subpackage)
-111 ──► 112
-111 ──► 090 (shared cati rendering)
+[063 064 065 105 shipped] ──► [103 shipped] ──► 102 (manual check) ──► harnez 607
+[128 129 130 131 shipped] ──► 116 (ansi subpackage) ──► 100?
+[111 shipped] ──► 112 (video part waits on cati 059)
+[111 shipped] ──► 090 (shared cati rendering)
 [107 108 shipped] ──► 089, 091, 095
-[124 shipped] ──► 042
 [119 121 shipped] ──► 120
 ```
 
@@ -144,7 +130,7 @@ Blocked on a product decision about whether Loom owns data-source wiring.
 | Typed file prototype (Shipped) | [027](../issues/027-introduce-first-spec-driven-collector-prototype.md) |
 | 10 — Splash & startup screen (Shipped) | [029](../issues/029-declarative-centered-layout-and-viewport-alignment-primitives.md), [030](../issues/030-braille-activity-spinner-and-bracketed-progress-bar-primitives.md), [031](../issues/031-provider-status-pill-cluster-and-lifecycle-state-presentation.md), [032](../issues/032-splash-lifecycle-controller-async-provider-coordination-and-key-dismissal.md), [033](../issues/033-harnez-target-splash-screen-integration-and-golden-tests.md) |
 | 13 — Hosted widgets contract (Shipped) | [057](../issues/057-hosted-widget-key-contract-child-first-routing-reserved-host-keybinds-and-quit-containment.md) (Shipped), [058](../issues/058-widget-declared-pane-requirements-panerequest.md) (Shipped), [059](../issues/059-fix-mouse-coordinate-convention-mismatch-between-frame-and-tabs-stack-grid.md) (Shipped), [060](../issues/060-periodic-redraw-without-pane-ownership-ticker-interface-and-pane-invalidate.md), [061](../issues/061-themeable-host-provided-theme-propagation-through-composite-widgets.md) |
-| 14 — Hosted widgets conversion (062 to 064 Shipped; 065 Active) | [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md), [063](../issues/063-convert-filebrowser-example-to-a-hostable-widget.md), [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md), [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md) |
+| 14 — Hosted widgets conversion (Shipped) | [062](../issues/062-example-widget-factories-newwidget-for-split-and-tabs-hosted-loom-demo-mode-headless-bench-smoke.md), [063](../issues/063-convert-filebrowser-example-to-a-hostable-widget.md), [064](../issues/064-convert-splash-and-monitor-examples-to-hostable-widgets.md), [065](../issues/065-ansi-styled-rows-widget-and-treemap-conversion.md) |
 | 15 — Compositor & overlays (Shipped) | [066](../issues/066-nested-help-pane-opens-a-second-pane-racing-the-outer-pane-tty-reader.md), [067](../issues/067-animated-loom-background-for-filebrowser-with-proper-compositing.md), [068](../issues/068-formalize-layered-compositor-semantics-and-background-inheritance.md), [069](../issues/069-render-help-as-a-root-level-modal-overlay.md), [070](../issues/070-prevent-text-overflow-in-framework-help-modals.md), [050](../issues/050-support-truecolor-rgb-values-in-theme-specs.md) |
 | 16 — Terminal resize & stability (Shipped) | [071](../issues/071-reflow-stacked-dynamic-frames-within-narrow-terminal-heights.md), [072](../issues/072-ensure-stable-responsive-frame-layout-during-terminal-resize.md), [073](../issues/073-add-configurable-winch-resize-diagnostics-app-and-spec-backed-rendering-modes.md), [074](../issues/074-use-measured-winch-speed-for-adaptive-resize-width-guard.md) |
 | 17 — Framework primitives (Shipped) | [075](../issues/075-position-cursor-on-previous-folder-when-navigating-up-in-file-browser.md), [076](../issues/076-add-first-class-split-widget-with-ratio-control-dividers-and-nested-focus-traversal.md), [077](../issues/077-support-dynamic-tab-lifecycle-operations-and-configurable-keybindings-in-tabs-widget.md), [078](../issues/078-add-concurrency-safe-metricstore-and-metric-bound-gauge-and-sparkline-widgets.md), [079](../issues/079-extract-reusable-directory-model-filebrowser-primitives-and-platform-file-opener.md), [080](../issues/080-add-declarative-startup-transition-runner-with-deterministic-completion-lifecycle.md) |
@@ -153,6 +139,7 @@ Blocked on a product decision about whether Loom owns data-source wiring.
 | 20 — Developer feedback & verification tools (096, 107 Shipped; 095 Active) | [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md), [096](../issues/096-follow-up-038-with-a-non-ascii-text-rendering-example-app.md) |
 | 21 — Mouse correctness (Shipped) | [107](../issues/107-pty-mouse-test-system-detect-loomoji-hover-vs-highlight-offset-via-rendered-fg-bg-cells.md), [108](../issues/108-fix-loomoji-hover-highlight-one-row-above-pointer-dy-1.md) |
 | 22 — loom CLI and asset validation (Shipped) | [128](../issues/128-add-box-frame-geometry-and-line-width-validator-for-ansi-assets.md), [129](../issues/129-build-loom-cli-tool-for-tui-asset-validation-measurement-and-interactive-viewing.md), [130](../issues/130-add-loom-format-command-to-auto-align-re-pad-and-normalize-ansi-files.md), [131](../issues/131-add-loom-frame-command-to-wrap-ansi-text-in-styled-box-borders.md) |
+| 23 — Real-host proof and media (Shipped) | [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md), [103](../issues/103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md), [111](../issues/111-add-an-image-media-widget-rendered-with-cati.md) |
 | Parked — Data sources & targets | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md), [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md), [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md), [019](../issues/019-evaluate-declarative-source-and-action-wiring.md), [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) |
 
 ## Long-term outcome
