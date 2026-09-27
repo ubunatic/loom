@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 016 — Complete Harnez and Voxi simulated UI milestone
 
-**Status**: Open
+**Status**: Closed — milestone superseded by 103, the real-host proof
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
