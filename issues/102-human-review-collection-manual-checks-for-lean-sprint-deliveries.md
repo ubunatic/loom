@@ -24,7 +24,8 @@ Whoever completes the last item closes this ticket.
   terminal 2). Decide whether `loom.StringWidth` changes; the width audit itself is tracked in 048.
   Result 2026-09-27 (tilix, foot, ptyxis, kitty, alacritty; notes in docs/progress/096/comments.txt):
   all six frames look right. Every terminal draws the ZWJ family as 3 separate emojis (6 columns),
-  which matches Loom's width 6, so `loom.StringWidth` stays unchanged. The flag varies by terminal
+  which matches Loom's width 6. CORRECTION (ansiviewer ruler, same day): the frames contain no U+200D
+  joiner, so the three emojis come from Loom's output, not the terminals; see 134. The flag varies by terminal
   (letters "DE" in tilix, ptyxis and alacritty, a wavy flag in foot, a color flag in kitty), which is
   font or terminal behavior. Open: tilix shows a big gap between the text and '>' in M2-buttons.
 - [ ] **092 scrollbar drag**: drag the View and Split scrollbars with a real mouse; check drag
