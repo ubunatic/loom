@@ -40,13 +40,17 @@ func (d MouseDefaults) validate() error {
 	return nil
 }
 
-// ScrollbarDefaults defines the one-cell foreground and background glyphs.
+// ScrollbarDefaults defines scrollbar visibility and its one-cell glyphs.
 type ScrollbarDefaults struct {
-	ForegroundChar string `yaml:"foreground_char"`
-	BackgroundChar string `yaml:"background_char"`
+	Mode           ScrollbarMode `yaml:"mode"`
+	ForegroundChar string        `yaml:"foreground_char"`
+	BackgroundChar string        `yaml:"background_char"`
 }
 
 func (d ScrollbarDefaults) validate() error {
+	if d.Mode != ScrollbarAuto && d.Mode != ScrollbarAlways && d.Mode != ScrollbarNever {
+		return fmt.Errorf("scrollbar.mode must be %q, %q, or %q", ScrollbarAuto, ScrollbarAlways, ScrollbarNever)
+	}
 	for _, field := range []struct{ name, glyph string }{
 		{"foreground_char", d.ForegroundChar},
 		{"background_char", d.BackgroundChar},

@@ -5,6 +5,32 @@ package loom
 
 import "strings"
 
+// ScrollbarMode controls when a widget displays its scrollbar.
+type ScrollbarMode string
+
+const (
+	// ScrollbarAuto displays a scrollbar only when content overflows.
+	ScrollbarAuto ScrollbarMode = "auto"
+	// ScrollbarAlways displays a scrollbar regardless of overflow.
+	ScrollbarAlways ScrollbarMode = "always"
+	// ScrollbarNever hides the scrollbar and does not reserve its column.
+	ScrollbarNever ScrollbarMode = "never"
+)
+
+func scrollbarVisible(mode ScrollbarMode, overflow bool) bool {
+	if mode == "" {
+		mode = SpeccedDefaults.Scrollbar.Mode
+	}
+	switch mode {
+	case ScrollbarAlways:
+		return true
+	case ScrollbarNever:
+		return false
+	default:
+		return overflow
+	}
+}
+
 // ScrollbarStyle controls the visual appearance of scrollbar cells.
 type ScrollbarStyle struct {
 	Track Style
@@ -26,10 +52,12 @@ type View struct {
 	Style      Style // base style for all lines
 	FocusStyle Style // style for all lines when focused (falls back to Style if zero)
 	Scrollbar  ScrollbarStyle
-	focused    bool
-	lastH      int // height from last Draw; gates scroll in HandleKey
-	lastRect   Rect
-	drag       scrollbarDrag
+	// ScrollbarMode overrides the spec default for this widget.
+	ScrollbarMode ScrollbarMode
+	focused       bool
+	lastH         int // height from last Draw; gates scroll in HandleKey
+	lastRect      Rect
+	drag          scrollbarDrag
 }
 
 // NewView creates a View from a slice of pre-formatted lines.
@@ -55,13 +83,13 @@ func (v *View) Draw(c *Canvas, r Rect) {
 	v.lastH = r.H
 	v.lastRect = r
 	total := len(v.Lines)
-	scrollable := total > r.H
+	scrollable := scrollbarVisible(v.ScrollbarMode, total > r.H)
 
 	// Clamp scroll.
 	if v.Scroll < 0 {
 		v.Scroll = 0
 	}
-	if scrollable && v.Scroll > total-r.H {
+	if total > r.H && v.Scroll > total-r.H {
 		v.Scroll = total - r.H
 	}
 
@@ -90,7 +118,7 @@ func (v *View) Draw(c *Canvas, r Rect) {
 			c.Write(r.X, y, plain, lineStyle)
 		}
 		if scrollable {
-			thumb := scrollbarThumbLength(r.H, total, r.H)
+			thumb := max(1, scrollbarThumbLength(r.H, total, r.H))
 			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
 		}
 	}
@@ -163,7 +191,7 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 			v.Scroll++
 		}
 	case MousePress:
-		if e.Button == MouseLeft && maxScroll > 0 && v.lastRect.W > 0 &&
+		if e.Button == MouseLeft && maxScroll > 0 && scrollbarVisible(v.ScrollbarMode, true) && v.lastRect.W > 0 &&
 			e.X == v.lastRect.X+v.lastRect.W-1 &&
 			e.Y >= v.lastRect.Y && e.Y < v.lastRect.Y+v.lastRect.H {
 			row := e.Y - v.lastRect.Y

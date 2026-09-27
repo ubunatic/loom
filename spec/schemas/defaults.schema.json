@@ -24,8 +24,9 @@
     "scrollbar": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["foreground_char", "background_char"],
+      "required": ["mode", "foreground_char", "background_char"],
       "properties": {
+        "mode": { "type": "string", "enum": ["auto", "always", "never"] },
         "foreground_char": { "type": "string", "minLength": 1 },
         "background_char": { "type": "string", "minLength": 1 }
       }

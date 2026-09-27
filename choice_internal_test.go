@@ -349,6 +349,47 @@ func TestChoiceDrawsScrollbarTrackOutsidePrompt(t *testing.T) {
 	}
 }
 
+func TestChoiceScrollbarModeDefaultsToAutoAndCanBeDisabled(t *testing.T) {
+	if got := SpeccedDefaults.Scrollbar.Mode; got != ScrollbarAuto {
+		t.Fatalf("spec scrollbar mode = %q, want %q", got, ScrollbarAuto)
+	}
+	c := makeChoice(20)
+	canvas := NewCanvas(10, 5)
+	c.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(9, 0).Text; got != SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Fatalf("default overflow cell = %q, want scrollbar thumb", got)
+	}
+
+	c = makeChoice(2)
+	canvas.Clear()
+	c.Draw(canvas, canvas.Bounds())
+	for y := 0; y < 4; y++ {
+		if got := canvas.Get(9, y).Text; got == SpeccedDefaults.Scrollbar.ForegroundChar || got == SpeccedDefaults.Scrollbar.BackgroundChar {
+			t.Fatalf("non-overflow row %d reserved scrollbar cell %q", y, got)
+		}
+	}
+	c.ScrollbarMode = ScrollbarAlways
+	c.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(9, 0).Text; got != SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Fatalf("always-mode cell = %q, want scrollbar thumb", got)
+	}
+
+	c = makeChoice(20)
+	c.ScrollbarMode = ScrollbarNever
+	c.SelectOnlyOnClick = true
+	canvas.Clear()
+	c.Draw(canvas, canvas.Bounds())
+	for y := 0; y < 4; y++ {
+		if got := canvas.Get(9, y).Text; got == SpeccedDefaults.Scrollbar.ForegroundChar || got == SpeccedDefaults.Scrollbar.BackgroundChar {
+			t.Fatalf("opt-out row %d reserved scrollbar cell %q", y, got)
+		}
+	}
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 9, Y: 3})
+	if c.viewOffset != 0 {
+		t.Fatalf("opt-out track click changed view offset to %d", c.viewOffset)
+	}
+}
+
 func TestChoiceUsesPlaceholderStyleOnlyForPlaceholder(t *testing.T) {
 	c := makeChoice(1)
 	c.Prompt = "filter> "

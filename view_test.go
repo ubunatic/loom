@@ -84,6 +84,50 @@ func TestViewDrawsScrollbarTrack(t *testing.T) {
 	}
 }
 
+func TestViewScrollbarModeDefaultsToAutoAndCanBeDisabled(t *testing.T) {
+	if got := SpeccedDefaults.Scrollbar.Mode; got != ScrollbarAuto {
+		t.Fatalf("spec scrollbar mode = %q, want %q", got, ScrollbarAuto)
+	}
+	lines := make([]string, 8)
+	v := NewView(lines)
+	if v.ScrollbarMode != "" {
+		t.Fatalf("new view mode = %q, want inherited spec default", v.ScrollbarMode)
+	}
+
+	canvas := NewCanvas(8, 4)
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(7, 0).Text; got != SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Fatalf("default overflow cell = %q, want scrollbar thumb", got)
+	}
+
+	v = NewView([]string{"one", "two"})
+	canvas = NewCanvas(8, 4)
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(7, 0).Text; got == SpeccedDefaults.Scrollbar.ForegroundChar || got == SpeccedDefaults.Scrollbar.BackgroundChar {
+		t.Fatalf("non-overflow cell = %q, unexpectedly reserved for scrollbar", got)
+	}
+	v.ScrollbarMode = ScrollbarAlways
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(7, 0).Text; got != SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Fatalf("always-mode cell = %q, want scrollbar thumb", got)
+	}
+	if got := canvas.Get(7, 3).Text; got != SpeccedDefaults.Scrollbar.BackgroundChar {
+		t.Fatalf("always-mode track cell = %q, want scrollbar track", got)
+	}
+
+	v = NewView(lines)
+	v.ScrollbarMode = ScrollbarNever
+	canvas = NewCanvas(8, 4)
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(7, 0).Text; got == SpeccedDefaults.Scrollbar.ForegroundChar || got == SpeccedDefaults.Scrollbar.BackgroundChar {
+		t.Fatalf("opt-out cell = %q, unexpectedly reserved for scrollbar", got)
+	}
+	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 7, Y: 3})
+	if v.Scroll != 0 {
+		t.Fatalf("opt-out track click changed scroll to %d", v.Scroll)
+	}
+}
+
 func TestViewFocusable(t *testing.T) {
 	v := NewView([]string{"item 1", "item 2"})
 	v.Style = Style{Dim: true}

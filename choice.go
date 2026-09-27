@@ -30,12 +30,14 @@ func DefaultChoiceStyle() ChoiceStyle {
 // Enter confirms; Esc or Ctrl-C aborts.
 // Typing ':' or '/' activates command mode (see loom.Cmd, loom.Nav).
 type Choice struct {
-	Items     []Item
-	Style     ChoiceStyle
-	Prompt    string          // default "> "
-	focused   bool            // dims the border when false so focus is visually clear
-	PromptTop bool            // place prompt on first row instead of last row
-	OnSelect  func(item Item) // called on Enter or an activating click; if nil, Enter quits
+	Items []Item
+	Style ChoiceStyle
+	// ScrollbarMode overrides the spec default for this widget.
+	ScrollbarMode ScrollbarMode
+	Prompt        string          // default "> "
+	focused       bool            // dims the border when false so focus is visually clear
+	PromptTop     bool            // place prompt on first row instead of last row
+	OnSelect      func(item Item) // called on Enter or an activating click; if nil, Enter quits
 	// SelectOnlyOnClick keeps a single click from confirming; Enter still invokes OnSelect.
 	SelectOnlyOnClick bool
 	// DoubleClickToActivate makes a matching second click activate the selected
@@ -210,14 +212,14 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 
 	c.clampView(itemRows)
 
-	scrollable := len(c.filtered) > itemRows
+	scrollable := scrollbarVisible(c.ScrollbarMode, len(c.filtered) > itemRows)
 	contentW := r.W
 	if scrollable {
 		contentW = r.W - 1 // reserve right column for indicator
 	}
 
 	// Pre-compute scroll indicator row.
-	indicatorRow := -1
+	indicatorRow := 0
 	if scrollable {
 		total := len(c.filtered)
 		maxOffset := total - itemRows
@@ -248,7 +250,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			cv.Write(r.X, y, line, style)
 		}
 		if scrollable {
-			thumb := scrollbarThumbLength(itemRows, len(c.filtered), itemRows)
+			thumb := max(1, scrollbarThumbLength(itemRows, len(c.filtered), itemRows))
 			cv.Set(r.X+r.W-1, y, scrollbarCell(c.Style.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
 		}
 	}
@@ -401,7 +403,7 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	}
 	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
 		c.lastRect.W > 0 && c.itemRows > 0 &&
-		e.X == c.lastRect.X+c.lastRect.W-1 && len(c.filtered) > c.itemRows {
+		e.X == c.lastRect.X+c.lastRect.W-1 && len(c.filtered) > c.itemRows && scrollbarVisible(c.ScrollbarMode, true) {
 		c.observeDoubleClick(e, "")
 		row := e.Y - c.lastRect.Y
 		if c.PromptTop {
@@ -409,7 +411,7 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		}
 		if row >= 0 && row < c.itemRows {
 			maxOffset := len(c.filtered) - c.itemRows
-			thumb := scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows)
+			thumb := max(1, scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows))
 			start := scrollbarThumbStart(c.itemRows, thumb, c.viewOffset, maxOffset)
 			if row >= start && row < start+thumb {
 				c.drag.press(row, start, c.viewOffset)
@@ -467,7 +469,7 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	}
 	if c.MouseTextOnly && (e.Action == MousePress || e.Action == MouseHover || e.Action == MouseDrag) {
 		contentW := c.lastRect.W
-		if len(c.filtered) > c.itemRows {
+		if len(c.filtered) > c.itemRows && scrollbarVisible(c.ScrollbarMode, true) {
 			contentW--
 		}
 		_, end, ok := choiceMouseHitRegion(c.choiceRowText(fi, contentW), contentW)

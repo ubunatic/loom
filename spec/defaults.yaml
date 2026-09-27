@@ -10,6 +10,7 @@ pane:
   max_cols: 50
 
 scrollbar:
+  mode: auto
   foreground_char: "▓" # position marker (thumb)
   background_char: "░" # clickable track
 
