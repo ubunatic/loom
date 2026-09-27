@@ -1,6 +1,6 @@
 # 056 — Embed real applications as PTY-hosted widgets (tmux/screen-style)
 
-**Status**: Open
+**Status**: Closed — parked: full VT100 sub-process emulation is a separate product; in-process hosting delivered by 057-065
 **Priority**: P3 (Low) — aspirational, not scheduled
 **Severity**: Minor
 **Category**: Feature
