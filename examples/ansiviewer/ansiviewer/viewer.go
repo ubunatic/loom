@@ -371,15 +371,27 @@ func writeANSI(c *loom.Canvas, r loom.Rect, input string) {
 			i++
 			continue
 		}
-		w := loom.StringWidth(string(rs[i]))
-		if w < 1 {
+		if rs[i] < 0x20 || rs[i] == 0x7f {
 			i++
 			continue
 		}
-		if x+w <= r.X+r.W {
-			x += c.Write(x, y, string(rs[i]), style)
+		end := i + 1
+		for end < len(rs) && rs[end] != '\x1b' && rs[end] != '\r' && rs[end] != '\n' && rs[end] >= 0x20 && rs[end] != 0x7f {
+			end++
 		}
-		i++
+		for _, cell := range loom.ParseANSI(string(rs[i:end])) {
+			if cell.Continuation {
+				continue
+			}
+			w := loom.StringWidth(cell.Text)
+			if w < 1 {
+				continue
+			}
+			if x+w <= r.X+r.W {
+				x += c.Write(x, y, cell.Text, style)
+			}
+		}
+		i = end
 	}
 }
 
