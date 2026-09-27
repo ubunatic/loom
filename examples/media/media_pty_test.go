@@ -68,7 +68,7 @@ func writeVideo(t *testing.T) string {
 func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
-	s.WaitFor("Media Demo", 5*time.Second)
+	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
 		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
 	}
@@ -82,6 +82,13 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	}
 	if titleY < 0 {
 		t.Fatal("media title was not rendered")
+	}
+	status := s.Screen()[rows-1]
+	if !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") {
+		t.Fatalf("bottom row does not contain status dimensions and mode: %q", status)
+	}
+	if !strings.Contains(status, "Media: ") || !strings.Contains(status, "red.png") {
+		t.Fatalf("bottom row does not contain media path: %q", status)
 	}
 
 	redCells := 0
@@ -126,9 +133,12 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))
-	s.WaitFor("Media Demo", 5*time.Second)
+	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
 		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
+	}
+	if status := s.Screen()[rows-1]; !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") || !strings.Contains(status, "colors.mp4") {
+		t.Fatalf("bottom row does not contain terminal status and video path: %q", status)
 	}
 	for y, row := range s.Cells() {
 		if len(row) != cols {

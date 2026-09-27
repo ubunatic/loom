@@ -17,12 +17,18 @@ import (
 
 type demo struct {
 	image *media.Widget
+	path  string
+	mode  media.Mode
 }
 
 func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{BG: loom.ColorRGB(17, 24, 32)})
 	c.Write(r.X+1, r.Y, "Media Demo  (q quits)", loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
-	d.image.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 1})
+	if r.H < 2 {
+		return
+	}
+	d.image.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
+	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("Cols: %d  Rows: %d  Mode: %s  Media: %s", c.Cols(), c.Rows(), d.mode, d.path), loom.Style{FG: loom.ColorRGB(240, 240, 240), BG: loom.ColorRGB(38, 48, 60)})
 }
 
 func (*demo) HandleKey(loom.KeyEvent) bool     { return false }
@@ -55,7 +61,7 @@ func run(args []string) error {
 		return err
 	}
 	defer pane.Close()
-	return pane.Run(&demo{image: widget})
+	return pane.Run(&demo{image: widget, path: args[0], mode: mode})
 }
 
 func isVideo(path string) bool {
