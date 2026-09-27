@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"image"
 	"math"
+	"reflect"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ const (
 // Widget renders a still image or video frame inside the rectangle supplied by loom.
 type Widget struct {
 	mu        sync.RWMutex
+	cacheMu   sync.Mutex
 	image     image.Image
 	mode      Mode
 	frames    <-chan image.Image
@@ -38,6 +40,17 @@ type Widget struct {
 	stop      func()
 	playing   bool
 	closeOnce sync.Once
+	renderer  func(image.Image, Mode, int, int) (*core.Grid, error)
+	cache     renderCache
+}
+
+type renderCache struct {
+	image image.Image
+	cols  int
+	rows  int
+	grid  *core.Grid
+	err   error
+	valid bool
 }
 
 // NewImage creates a still-image widget using mode. A zero mode selects
@@ -92,6 +105,11 @@ func NewVideo(path string, mode Mode, fps float64) (*Widget, error) {
 	}
 	still.stop = func() {
 		cancel()
+		// OpenVideoStream's cleanup and reader both call cmd.Wait. Drain until
+		// its reader has finished waiting and closed the channel before cleanup
+		// checks its completion signal, avoiding concurrent waits.
+		for range frames {
+		}
 		stop()
 	}
 	still.playing = true
@@ -117,24 +135,76 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	if img == nil {
 		return
 	}
-	grid, err := w.render(img, r.W, r.H)
-	if err != nil || grid == nil {
+	for y := 0; y < r.H; y++ {
+		for x := 0; x < r.W; x++ {
+			c.Set(r.X+x, r.Y+y, loom.Cell{Text: " ", Style: loom.Reset})
+		}
+	}
+	grid, err := w.renderCached(img, r.W, r.H)
+	if err != nil {
+		message := "render error"
+		if len(message) > r.W {
+			message = message[:r.W]
+		}
+		c.Write(r.X, r.Y, message, loom.Style{FG: loom.ColorRGB(255, 96, 96)})
 		return
 	}
+	if grid == nil {
+		return
+	}
+	offsetX := (r.W - grid.Width) / 2
+	offsetY := (r.H - grid.Height) / 2
 	for y, row := range grid.Cells {
-		if y >= r.H {
-			break
-		}
 		for x, cell := range row {
-			if x >= r.W {
-				break
+			dstX, dstY := r.X+offsetX+x, r.Y+offsetY+y
+			if dstX < r.X || dstX >= r.X+r.W || dstY < r.Y || dstY >= r.Y+r.H {
+				continue
 			}
-			c.Set(r.X+x, r.Y+y, canvasCell(cell))
+			c.Set(dstX, dstY, canvasCell(cell))
 		}
 	}
 }
 
+func (w *Widget) renderCached(img image.Image, cols, rows int) (*core.Grid, error) {
+	if !cacheableImage(img) {
+		return w.render(img, cols, rows)
+	}
+	w.cacheMu.Lock()
+	defer w.cacheMu.Unlock()
+	if w.cache.valid && sameImage(w.cache.image, img) && w.cache.cols == cols && w.cache.rows == rows {
+		return w.cache.grid, w.cache.err
+	}
+	grid, err := w.render(img, cols, rows)
+	w.cache = renderCache{image: img, cols: cols, rows: rows, grid: grid, err: err, valid: true}
+	return grid, err
+}
+
+func cacheableImage(img image.Image) bool {
+	if img == nil {
+		return false
+	}
+	v := reflect.ValueOf(img)
+	return v.Kind() == reflect.Pointer || v.Comparable()
+}
+
+func sameImage(a, b image.Image) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	va, vb := reflect.ValueOf(a), reflect.ValueOf(b)
+	if va.Type() != vb.Type() {
+		return false
+	}
+	if va.Kind() == reflect.Pointer {
+		return va.Pointer() == vb.Pointer()
+	}
+	return va.Comparable() && va.Interface() == vb.Interface()
+}
+
 func (w *Widget) render(img image.Image, cols, rows int) (*core.Grid, error) {
+	if w.renderer != nil {
+		return w.renderer(img, w.mode, cols, rows)
+	}
 	switch w.mode {
 	case ModeQuadblock:
 		return quadblock.RenderToGrid(img, cols, quadblock.Options{Rows: rows})
