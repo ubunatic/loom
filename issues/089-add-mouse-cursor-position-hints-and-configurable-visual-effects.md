@@ -81,3 +81,13 @@ Pre-Work / Required Refinements for M3:
   The pulse animation must follow the same rule.
 - The trail fades its color toward black, which looks wrong on light backgrounds. Fade toward the
   cell's background instead (RGB when resolvable), with a test.
+
+M3 delivered (f8f2c1c): one-shot press pulse on button and key presses; the frame ticker runs only
+while a trail point or pulse is alive; stars fade toward the cell background. `--cursor-fx` in
+ansicanvas_demo turns on all three effects.
+
+Pre-Work / Required Refinements for M4:
+- Add the manual check to issues/102: `ansicanvas_demo --cursor-fx` in tilix and foot (glow
+  strength, trail, pulse, no lag while moving, idle CPU near zero when the mouse rests).
+- PTY test: drive motion, a click and a key through a real terminal session and assert the effect
+  cells appear and expire, and that the click still reaches the widget at the right cell.
