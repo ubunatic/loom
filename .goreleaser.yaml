@@ -1,0 +1,69 @@
+version: 2
+
+project_name: loom
+
+builds:
+  - id: loom
+    main: ./cmd/loom
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: loom
+    ldflags:
+      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+
+  - id: loom-probe
+    main: ./cmd/loom-probe
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: loom-probe
+    ldflags:
+      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+
+  - id: loom-demo
+    main: ./cmd/loom-demo
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: loom-demo
+    ldflags:
+      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+
+  - id: loom-bench
+    main: ./cmd/loom-bench
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    binary: loom-bench
+    ldflags:
+      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: "{{ .Binary }}-{{ .Version }}-{{ if eq .Arch \"amd64\" }}x86_64{{ else if eq .Arch \"arm64\" }}aarch64{{ else }}{{ .Arch }}{{ end }}-linux"
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: SHA256SUMS
+  algorithm: sha256

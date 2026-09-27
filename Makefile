@@ -20,6 +20,13 @@ test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the t
 	go vet ./...
 	go test ./...
 
+check: ⚙️ validate-spec geometry-replay  ## validate specs, vet and test with the pinned module dependencies
+	GOWORK=off go vet ./...
+	GOWORK=off go test ./...
+
+release: check ⚙️  ## release the project using harnez
+	harnez release
+
 validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Go jsonschema-go + yaml.v3)
 	go run ./cmd/validate-spec
 
