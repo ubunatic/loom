@@ -1,6 +1,6 @@
 # 106 — Make automatic scrollbars the default for panes
 
-**Status**: Open
+**Status**: Closed — M1-M3 delivered (ea66279, d0f191b): spec scrollbar.mode auto|always|never, per-widget override, ansiviewer preview scrollbar
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
