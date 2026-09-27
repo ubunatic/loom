@@ -33,15 +33,16 @@ When inspecting large terminal assets, wide ANSI mockups (such as multi-column l
 - **/goal**: Implement 2D panning support in Loom pane/view containers and make `ansiviewer`'s ANSI preview pane pannable with automated tests, or stop and report when blocked on a user decision or denied permission.
 
 - **M1 (View / Pane 2D Panning Primitives)**:
-  - Implement 2D offset / panning (`OffsetX`, `OffsetY`, `Pan(dx, dy int)`) in `loom.View`. Ensure horizontal offset clipping preserves styling.
-  - Add comprehensive unit tests in `view_test.go`.
-  - Deliverable commit: `feat(view): add 2D offset and panning support in View (issue 138 M1)`
+  - Delivered in `a4bc213`: Added `OffsetX`/`OffsetY`, `Pan()`, `SetOffset()`, `Offset()`, ANSI-aware horizontal line clipping with style preservation, wide-glyph clipping, and unit tests in `view_test.go`.
 
 - **M2 (Ansiviewer Preview Panning)**:
-  - Wire up horizontal and vertical panning in `examples/ansiviewer` for the preview pane when focused.
-  - Handle key events (arrows, `h`/`j`/`k`/`l` when focused) and mouse scroll/events.
-  - Update status bar instructions and add automated tests in `examples/ansiviewer/ansiviewer/viewer_test.go`.
+  - **Scope**:
+    - Wire up horizontal and vertical panning in `examples/ansiviewer/ansiviewer/viewer.go` for the preview pane.
+    - Support horizontal offset in `browser` (`offsetX` / `b.previewView.OffsetX`) and ensure `writeANSI` or line rendering applies horizontal offset clipping when drawing ANSI and text content.
+    - Support panning key bindings (`left`/`right`/`up`/`down`, `h`/`l`/`j`/`k`, `pgup`/`pgdn`, `home`/`end`) in `browser.HandleKey`.
+    - Update `framedBrowser` status line to include panning instructions (`hjkl/arrows pan`).
+    - Add tests in `examples/ansiviewer/ansiviewer/viewer_test.go` verifying horizontal & vertical panning on ANSI content.
   - Deliverable commit: `feat(ansiviewer): enable 2D panning in preview pane (issue 138 M2)`
 
 - **M3 (Verification & Regression Gate)**:
-  - Run full test suite (`go test ./...`), verify `make test` and `make install`.
+  - Run full test suite (`make test`), verify `make install`.
