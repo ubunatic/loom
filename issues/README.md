@@ -164,3 +164,8 @@ upkeep.
 | 151 | [151-add-and-install-desktop-icon-for-ansiviewer.md](151-add-and-install-desktop-icon-for-ansiviewer.md) | Add and install desktop icon for ansiviewer | Closed — Implemented in 75ccd6e (M1): created ansiviewer.svg, added Icon=ansiviewer to desktop file, and configured Makefile install to deploy to ~/.local/share/icons/hicolor/scalable/apps |
 | 152 | [152-run-update-desktop-database-and-gtk-update-icon-cache-in-make-install.md](152-run-update-desktop-database-and-gtk-update-icon-cache-in-make-install.md) | Run update-desktop-database and gtk-update-icon-cache in make install | Closed — Implemented in 7fb3331 (M1): invoke update-desktop-database and gtk-update-icon-cache automatically during make install |
 | 153 | [153-hide-the-filebrowser-search-ui-until-search-is-active.md](153-hide-the-filebrowser-search-ui-until-search-is-active.md) | Hide the filebrowser search UI until search is active | Open |
+| 154 | [154-dynamic-cadence-and-timer-control-on-ticker.md](154-dynamic-cadence-and-timer-control-on-ticker.md) | Dynamic Cadence and Timer Control on Ticker | Open |
+| 155 | [155-built-in-modal-and-dialog-overlay-primitive.md](155-built-in-modal-and-dialog-overlay-primitive.md) | Built-in Modal and Dialog Overlay Primitive | Open |
+| 156 | [156-canvas-subcanvas-and-blit-layer-compositing.md](156-canvas-subcanvas-and-blit-layer-compositing.md) | Canvas SubCanvas and Blit Layer Compositing | Open |
+| 157 | [157-ansi-golden-mockup-visual-test-comparator.md](157-ansi-golden-mockup-visual-test-comparator.md) | ANSI Golden Mockup Visual Test Comparator | Open |
+| 158 | [158-keymap-and-action-key-aliasing-helper.md](158-keymap-and-action-key-aliasing-helper.md) | KeyMap and Action Key Aliasing Helper | Open |
