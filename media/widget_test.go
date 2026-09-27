@@ -4,6 +4,7 @@
 package media
 
 import (
+	"context"
 	"errors"
 	"image"
 	"image/color"
@@ -362,6 +363,97 @@ func TestCloseStopsVideoStreamOnce(t *testing.T) {
 	if got := widget.TickInterval(); got != 0 {
 		t.Fatalf("closed video tick interval = %s, want zero", got)
 	}
+}
+
+func TestVideoPosterDrawsBeforeFirstFrame(t *testing.T) {
+	poster := solidImage(4, 4, color.RGBA{R: 230, A: 255})
+	frames := make(chan image.Image)
+	widget, err := newVideoWithOpener("test-video", ModeHalfblock, 24, poster, func(context.Context, string, float64) (<-chan image.Image, func(), error) {
+		return frames, func() {}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	canvas := loom.NewCanvas(8, 4)
+	widget.Draw(canvas, loom.Rect{W: 8, H: 4})
+	if _, ok := coloredBounds(canvas, loom.Rect{W: 8, H: 4}, color.RGBA{R: 230, A: 255}); !ok {
+		t.Fatal("poster was not rendered before the first stream frame")
+	}
+}
+
+func TestPausePlayControlsFrameAdvancement(t *testing.T) {
+	first := solidImage(2, 2, color.RGBA{R: 100, A: 255})
+	frames := make(chan image.Image, 1)
+	frames <- first
+	widget, err := newVideoWithOpener("test-video", ModeHalfblock, 24, first, func(ctx context.Context, _ string, _ float64) (<-chan image.Image, func(), error) {
+		go func() {
+			<-ctx.Done()
+			close(frames)
+		}()
+		return frames, func() {}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	widget.Pause()
+	if widget.IsPlaying() || widget.TickInterval() != 0 {
+		t.Fatal("paused widget reports active playback")
+	}
+	widget.Tick(time.Now())
+	if widget.image != first {
+		t.Fatal("paused widget advanced its frame")
+	}
+	resumed := make(chan image.Image, 1)
+	widget.Play()
+	if !widget.IsPlaying() || widget.TickInterval() != time.Second/24 {
+		t.Fatal("Play did not resume playback")
+	}
+	widget.Tick(time.Now())
+	if got := widget.image.Bounds().Dx(); got != 2 {
+		t.Fatalf("resumed stream frame width = %d, want buffered frame width 2", got)
+	}
+	widget.Pause()
+	widget.openStream = func(ctx context.Context, _ string, _ float64) (<-chan image.Image, func(), error) {
+		go func() {
+			<-ctx.Done()
+			close(resumed)
+		}()
+		return resumed, func() {}, nil
+	}
+	widget.Restart()
+	resumed <- solidImage(3, 2, color.RGBA{G: 100, A: 255})
+	widget.Tick(time.Now())
+	if got := widget.image.Bounds().Dx(); got != 3 {
+		t.Fatalf("restarted stream frame width = %d, want 3", got)
+	}
+	widget.Close()
+}
+
+func TestRestartAfterStreamCompletion(t *testing.T) {
+	frames := make(chan image.Image)
+	var opens atomic.Int32
+	opener := func(context.Context, string, float64) (<-chan image.Image, func(), error) {
+		opens.Add(1)
+		frames := make(chan image.Image)
+		close(frames)
+		return frames, func() {}, nil
+	}
+	widget, err := newVideoWithOpener("test-video", ModeHalfblock, 30, solidImage(2, 2, color.RGBA{A: 255}), opener)
+	if err != nil {
+		t.Fatal(err)
+	}
+	close(frames)
+	widget.Tick(time.Now())
+	if widget.IsPlaying() {
+		t.Fatal("completed stream still reports playback")
+	}
+	if err := widget.Restart(); err != nil {
+		t.Fatalf("Restart after completion: %v", err)
+	}
+	if opens.Load() != 2 || !widget.IsPlaying() {
+		t.Fatalf("restart opens = %d, playing = %v", opens.Load(), widget.IsPlaying())
+	}
+	widget.Close()
 }
 
 func TestNewImageRejectsUnknownMode(t *testing.T) {

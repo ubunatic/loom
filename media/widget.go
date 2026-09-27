@@ -31,20 +31,24 @@ const (
 
 // Widget renders a still image or video frame inside the rectangle supplied by loom.
 type Widget struct {
-	mu        sync.RWMutex
-	cacheMu   sync.Mutex
-	loadMu    sync.Mutex
-	load      *renderLoad
-	image     image.Image
-	mode      Mode
-	theme     loom.ThemeColors
-	frames    <-chan image.Image
-	interval  time.Duration
-	stop      func()
-	playing   bool
-	closeOnce sync.Once
-	renderer  func(image.Image, Mode, int, int) (*core.Grid, error)
-	cache     renderCache
+	mu         sync.RWMutex
+	cacheMu    sync.Mutex
+	loadMu     sync.Mutex
+	load       *renderLoad
+	image      image.Image
+	mode       Mode
+	theme      loom.ThemeColors
+	frames     <-chan image.Image
+	interval   time.Duration
+	path       string
+	fps        float64
+	closed     bool
+	openStream func(context.Context, string, float64) (<-chan image.Image, func(), error)
+	poster     image.Image
+	stop       func()
+	playing    bool
+	renderer   func(image.Image, Mode, int, int) (*core.Grid, error)
+	cache      renderCache
 }
 
 type renderLoad struct {
@@ -117,7 +121,20 @@ func LoadImage(path string, mode Mode) (*Widget, error) {
 // NewVideo opens a cati video frame stream. A non-positive fps uses 24 frames
 // per second; ffprobe and ffmpeg must be available on PATH.
 func NewVideo(path string, mode Mode, fps float64) (*Widget, error) {
-	still, err := NewImage(image.NewRGBA(image.Rect(0, 0, 1, 1)), mode)
+	return newVideo(path, mode, fps, image.NewRGBA(image.Rect(0, 0, 1, 1)))
+}
+
+// NewVideoWithPoster opens a video stream and displays poster until its first
+// decoded frame arrives.
+func NewVideoWithPoster(path string, mode Mode, fps float64, poster image.Image) (*Widget, error) {
+	if poster == nil || (reflect.ValueOf(poster).Kind() == reflect.Pointer && reflect.ValueOf(poster).IsNil()) {
+		return nil, fmt.Errorf("media: poster image is nil")
+	}
+	return newVideo(path, mode, fps, poster)
+}
+
+func newVideoWithOpener(path string, mode Mode, fps float64, poster image.Image, open func(context.Context, string, float64) (<-chan image.Image, func(), error)) (*Widget, error) {
+	widget, err := NewImage(poster, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -127,18 +144,39 @@ func NewVideo(path string, mode Mode, fps float64) (*Widget, error) {
 	if fps <= 0 {
 		fps = 24
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	frames, stop, err := halfblock.OpenVideoStream(ctx, path, fps, 0, 0)
-	if err != nil {
-		cancel()
+	widget.path = path
+	widget.fps = fps
+	widget.poster = poster
+	widget.image = poster
+	widget.interval = time.Duration(float64(time.Second) / fps)
+	if widget.interval <= 0 {
+		widget.interval = time.Nanosecond
+	}
+	widget.openStream = open
+	if widget.openStream == nil {
+		widget.openStream = func(ctx context.Context, path string, fps float64) (<-chan image.Image, func(), error) {
+			return halfblock.OpenVideoStream(ctx, path, fps, 0, 0)
+		}
+	}
+	if err := widget.startStream(); err != nil {
 		return nil, err
 	}
-	still.frames = frames
-	still.interval = time.Duration(float64(time.Second) / fps)
-	if still.interval <= 0 {
-		still.interval = time.Nanosecond
+	return widget, nil
+}
+
+func newVideo(path string, mode Mode, fps float64, poster image.Image) (*Widget, error) {
+	return newVideoWithOpener(path, mode, fps, poster, nil)
+}
+
+// startStream starts decoding from the beginning.
+func (w *Widget) startStream() error {
+	ctx, cancel := context.WithCancel(context.Background())
+	frames, stop, err := w.openStream(ctx, w.path, w.fps)
+	if err != nil {
+		cancel()
+		return err
 	}
-	still.stop = func() {
+	streamStop := func() {
 		cancel()
 		// OpenVideoStream's cleanup and reader both call cmd.Wait. Drain until
 		// its reader has finished waiting and closed the channel before cleanup
@@ -147,8 +185,20 @@ func NewVideo(path string, mode Mode, fps float64) (*Widget, error) {
 		}
 		stop()
 	}
-	still.playing = true
-	return still, nil
+	w.mu.Lock()
+	if w.closed {
+		w.mu.Unlock()
+		streamStop()
+		return fmt.Errorf("media: video widget is closed")
+	}
+	w.frames = frames
+	w.stop = streamStop
+	w.playing = true
+	if w.image == nil {
+		w.image = w.poster
+	}
+	w.mu.Unlock()
+	return nil
 }
 
 // Mode returns the widget's selected renderer mode.
@@ -335,6 +385,75 @@ func (w *Widget) Tick(time.Time) {
 	}
 }
 
+// Pause stops frame advancement and preserves the current image and stream
+// queue. Play resumes consuming frames buffered while paused.
+func (w *Widget) Pause() {
+	if w == nil {
+		return
+	}
+	w.mu.Lock()
+	if !w.playing {
+		w.mu.Unlock()
+		return
+	}
+	w.playing = false
+	w.mu.Unlock()
+}
+
+// Play resumes a paused stream or starts a completed stream from the beginning.
+// A closed widget cannot be restarted.
+func (w *Widget) Play() {
+	if w == nil {
+		return
+	}
+	w.mu.RLock()
+	if w.playing || w.closed || w.path == "" {
+		w.mu.RUnlock()
+		return
+	}
+	paused := w.frames != nil
+	w.mu.RUnlock()
+	if paused {
+		w.mu.Lock()
+		if !w.closed && !w.playing {
+			w.playing = true
+		}
+		w.mu.Unlock()
+		return
+	}
+	_ = w.startStream()
+}
+
+// IsPlaying reports whether the video stream is advancing.
+func (w *Widget) IsPlaying() bool {
+	if w == nil {
+		return false
+	}
+	w.mu.RLock()
+	defer w.mu.RUnlock()
+	return w.playing
+}
+
+// Restart closes any active stream and opens a fresh stream from the beginning.
+func (w *Widget) Restart() error {
+	if w == nil {
+		return fmt.Errorf("media: widget is nil")
+	}
+	w.mu.Lock()
+	if w.closed || w.path == "" {
+		w.mu.Unlock()
+		return fmt.Errorf("media: video widget is closed or has no stream")
+	}
+	w.playing = false
+	stop := w.stop
+	w.stop = nil
+	w.mu.Unlock()
+	if stop != nil {
+		stop()
+	}
+	return w.startStream()
+}
+
 // TickInterval is zero for still images and finished or closed videos.
 func (w *Widget) TickInterval() time.Duration {
 	if w == nil {
@@ -354,17 +473,20 @@ func (w *Widget) Close() {
 	if w == nil {
 		return
 	}
-	w.closeOnce.Do(func() {
-		w.mu.Lock()
-		w.playing = false
-		w.frames = nil
-		stop := w.stop
-		w.stop = nil
+	w.mu.Lock()
+	if w.closed {
 		w.mu.Unlock()
-		if stop != nil {
-			stop()
-		}
-	})
+		return
+	}
+	w.closed = true
+	w.playing = false
+	w.frames = nil
+	stop := w.stop
+	w.stop = nil
+	w.mu.Unlock()
+	if stop != nil {
+		stop()
+	}
 }
 
 func newStreamingWidget(frames <-chan image.Image, fps float64, stop func()) *Widget {
