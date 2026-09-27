@@ -1,6 +1,6 @@
 # 132 — Flag emoji width mismatch leaves unpainted cells at line end (ansiviewer, tilix)
 
-**Status**: Open
+**Status**: Closed — ansiviewer replayed a flag's two regional indicators as separate runes; M2 (38d0776) replays whole clusters via loom.ParseANSI, regression test in 40dc03f. Terminal check parked in 102.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
