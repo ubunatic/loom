@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=schemas/cursor.schema.json
+proximity:
+  enabled: true
+  radius: 3
+  brightness: 0.7

@@ -28,6 +28,7 @@ var specPairs = []specPair{
 	{document: "spec/themes.yaml", schema: "spec/schemas/themes.schema.json"},
 	{document: "spec/backgrounds.yaml", schema: "spec/schemas/backgrounds.schema.json"},
 	{document: "spec/resize.yaml", schema: "spec/schemas/resize.schema.json"},
+	{document: "spec/cursor.yaml", schema: "spec/schemas/cursor.schema.json"},
 	{document: "spec/emoji.yaml", schema: "spec/schemas/emoji.schema.json"},
 	{document: "examples/monitor/monitor/spec/watch.yaml", schema: "spec/schemas/watch.schema.json"},
 	{document: "examples/monitor/monitor/spec/monitor.yaml", schema: "spec/schemas/monitor.schema.json"},

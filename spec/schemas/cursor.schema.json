@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom cursor proximity specification",
+  "type": "object",
+  "required": ["proximity"],
+  "properties": {
+    "proximity": {
+      "type": "object",
+      "required": ["enabled", "radius", "brightness"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "radius": { "type": "integer", "minimum": 0 },
+        "brightness": { "type": "number", "minimum": 0, "maximum": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

@@ -61,9 +61,12 @@ type Pane struct {
 	ownsTTY         bool
 
 	// mouse tracking is enabled with EnableMouse.
-	mouse      bool
-	mouseMode  int
-	Resizeable bool
+	mouse           bool
+	mouseMode       int
+	cursorProximity bool
+	mouseX, mouseY  int
+	mouseKnown      bool
+	Resizeable      bool
 
 	// InlineOnly opts out of the automatic switch to the alternate screen: the
 	// pane stays inline even when it is nearly as big as the terminal. Loom's
@@ -365,6 +368,13 @@ func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
 // HandleMouse method.
 func (p *Pane) EnableMouse() {
 	p.setMouseMode(1003)
+}
+
+// EnableCursorProximity enables spec-driven cursor hints and background
+// brightening. It also enables any-motion reports and must be called before Run.
+func (p *Pane) EnableCursorProximity() {
+	p.cursorProximity = true
+	p.EnableMouse()
 }
 
 // EnableMouseClicks tracks clicks and wheel events without any-motion reports.
@@ -828,12 +838,20 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			canvas = NewCanvas(cols, p.rows)
 		}
 		canvas.Clear()
+		if p.cursorProximity && p.mouseKnown {
+			canvas.SetCursorPosition(p.mouseX, p.mouseY)
+		} else {
+			canvas.ClearCursorPosition()
+		}
 		root.Draw(canvas, canvas.Bounds())
 		if p.help != nil {
 			p.help.Draw(canvas, canvas.Bounds())
 		}
 		drawn := time.Now()
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), drawn)
+		if p.cursorProximity {
+			canvas.ApplyCursorBrighten()
+		}
 		composed := time.Now()
 		out := &countingWriter{w: p.tty}
 		canvas.FlushWithConfig(out, p.startRow, clearRows+p.staleRows, p.ResizeConfig)
@@ -1069,6 +1087,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// 0-based coordinates.
 					me.X--
 					me.Y -= p.startRow
+					if p.cursorProximity {
+						p.mouseX, p.mouseY = me.X, me.Y
+						p.mouseKnown = me.X >= 0 && me.X < canvas.Cols() && me.Y >= 0 && me.Y < canvas.Rows()
+					}
 					if p.handleHelpMouse(me) || p.dispatchMouse(root, me).Quit {
 						quit = true
 						break

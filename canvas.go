@@ -49,6 +49,9 @@ type Canvas struct {
 	cells      [][]Cell
 	claimed    [][]bool
 	composing  bool
+	mouseX     int
+	mouseY     int
+	mouseKnown bool
 	CursorX    int // 0-based column index, -1 if hidden
 	CursorY    int // 0-based row index, -1 if hidden
 }
