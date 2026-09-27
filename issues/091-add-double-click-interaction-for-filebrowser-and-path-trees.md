@@ -1,6 +1,6 @@
 # 091 — Add double-click interaction for filebrowser and path trees
 
-**Status**: Open
+**Status**: Closed — M1-M5 delivered (6ed8f8d..b068c1b): recognizer, spec interval, Choice opt-in, filebrowser and outline consumers, PTY test
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
