@@ -41,3 +41,16 @@ Add native poster frame support and playback controls to `codeberg.org/ubunatic/
 - [ ] `NewVideoWithPoster` (or equivalent option) renders the poster image immediately before the first stream frame arrives.
 - [ ] `Play()`, `Pause()`, and `IsPlaying()` cleanly toggle frame advancement and ticker interval without destroying the widget.
 - [ ] Unit tests in `media/widget_test.go` verifying poster display before first tick, pause/resume behavior, and stream restart.
+
+## 4. Delivery Status
+
+- M1 (poster and playback API) implementation committed as `fbe08d1` (`feat(media): add video playback controls for issue 160`). It adds `NewVideoWithPoster`, `Play`, `Pause`, `IsPlaying`, and `Restart`, with focused tests in `media/widget_test.go`.
+- `gofmt`, `git diff --check`, and `make install` passed.
+- The one allowed `make test-q1` run failed: `TestMediaDemoPTYPlaysVideo` observed video content ending at column `-1`, before the expected column 50. The `media` package test process was later terminated after 99.448 seconds. No tests were rerun after follow-up edits, so the committed code is not fully verified.
+- Status remains Open pending the required refinements below.
+
+### M2 Pre-Work / Required Refinements
+
+- Reproduce and resolve the `TestMediaDemoPTYPlaysVideo` failure, then verify the complete suite under the quota-1 test target.
+- Strengthen `TestPausePlayControlsFrameAdvancement` so the paused assertion distinguishes the displayed image from the queued frame; currently both use the same image dimensions, so that assertion cannot prove frame consumption stopped.
+- Confirm public constructor validation and restart/close lifecycle behavior with focused assertions, while preserving the single-run quota rule for the next work turn.

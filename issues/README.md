@@ -170,3 +170,4 @@ upkeep.
 | 157 | [157-ansi-golden-mockup-visual-test-comparator.md](157-ansi-golden-mockup-visual-test-comparator.md) | ANSI Golden Mockup Visual Test Comparator | Open |
 | 158 | [158-keymap-and-action-key-aliasing-helper.md](158-keymap-and-action-key-aliasing-helper.md) | KeyMap and Action Key Aliasing Helper | Open |
 | 159 | [159-set-up-go-release-pipeline-for-loom-and-cli-tools.md](159-set-up-go-release-pipeline-for-loom-and-cli-tools.md) | Set up Go release pipeline for loom and CLI tools | Closed — Implemented in 6d10dd5 (M1): configure .goreleaser.yaml, version.yaml, spec validation, Cobra version wiring, Makefile check and release targets, and minisign key |
+| 160 | [160-media-widget-playback-controls-and-poster-frame-support.md](160-media-widget-playback-controls-and-poster-frame-support.md) | Media Widget Playback Controls and Poster Frame Support | Open |
