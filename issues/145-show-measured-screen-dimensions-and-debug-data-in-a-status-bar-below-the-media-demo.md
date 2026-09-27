@@ -1,6 +1,6 @@
 # 145 — Show measured screen dimensions and debug data in a status bar below the media demo
 
-**Status**: Open
+**Status**: Closed — Implemented in ffe6e11 (M1): added bottom status bar in examples/media displaying terminal Cols/Rows, Mode, and Media path
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
