@@ -50,7 +50,22 @@ func writeSolidPNG(t *testing.T) string {
 	return path
 }
 
-func TestMediaDemoPTYPaintsOnlyItsImageRect(t *testing.T) {
+func writeVideo(t *testing.T) string {
+	t.Helper()
+	for _, tool := range []string{"ffmpeg", "ffprobe"} {
+		if _, err := exec.LookPath(tool); err != nil {
+			t.Skipf("%s is unavailable: %v", tool, err)
+		}
+	}
+	path := filepath.Join(t.TempDir(), "colors.mp4")
+	cmd := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=red:s=32x16:d=0.5:r=8", "-f", "lavfi", "-i", "color=c=blue:s=32x16:d=0.5:r=8", "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0,format=yuv420p", "-an", "-c:v", "mpeg4", "-y", path)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Skipf("ffmpeg cannot create the test video: %v: %s", err, output)
+	}
+	return path
+}
+
+func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	s := ptytest.Start(t, 50, 16, buildMediaDemo(t), writeSolidPNG(t))
 	s.WaitFor("Media Demo", 5*time.Second)
 
@@ -66,6 +81,7 @@ func TestMediaDemoPTYPaintsOnlyItsImageRect(t *testing.T) {
 	}
 
 	redCells := 0
+	maxX := -1
 	for y, row := range s.Cells() {
 		for x, cell := range row {
 			fg, _ := cell.Style.Effective()
@@ -74,15 +90,57 @@ func TestMediaDemoPTYPaintsOnlyItsImageRect(t *testing.T) {
 				continue
 			}
 			redCells++
-			if x < 6 || x >= 14 || y < titleY+2 || y >= titleY+6 {
-				t.Fatalf("image color escaped its rect at (%d,%d), title row %d", x, y, titleY)
+			if y < titleY+1 {
+				t.Fatalf("image color reached title row at (%d,%d), title row %d", x, y, titleY)
+			}
+			if x > maxX {
+				maxX = x
 			}
 		}
 	}
 	if redCells == 0 {
 		t.Fatal("PTY screen contains no image-colored cells")
 	}
+	if maxX < 30 || maxX >= 50 {
+		t.Fatalf("aspect-fitted image reached column %d, want columns 0 through at least 30 within terminal width 50", maxX)
+	}
+	for y, row := range s.Cells() {
+		if y <= titleY {
+			continue
+		}
+		if len(row) != 50 {
+			t.Fatalf("rendered row %d has %d cells, want full terminal width 50", y, len(row))
+		}
+	}
 
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("media example exit: %v", err)
+	}
+}
+
+func TestMediaDemoPTYPlaysVideo(t *testing.T) {
+	s := ptytest.Start(t, 50, 16, buildMediaDemo(t), writeVideo(t))
+	s.WaitFor("Media Demo", 5*time.Second)
+	deadline := time.Now().Add(5 * time.Second)
+	seenRed, seenBlue := false, false
+	for time.Now().Before(deadline) && !(seenRed && seenBlue) {
+		for _, row := range s.Cells() {
+			for _, cell := range row {
+				fg, _ := cell.Style.Effective()
+				r, g, b, ok := fg.RGB()
+				if !ok {
+					continue
+				}
+				seenRed = seenRed || (r > 180 && g < 80 && b < 80)
+				seenBlue = seenBlue || (b > 120 && r < 80 && g < 80)
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if !seenRed || !seenBlue {
+		t.Fatalf("video colors observed: red=%t blue=%t", seenRed, seenBlue)
+	}
 	s.Send("q")
 	if err := s.Wait(3 * time.Second); err != nil {
 		t.Fatalf("media example exit: %v", err)
