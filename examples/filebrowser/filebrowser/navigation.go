@@ -23,6 +23,9 @@ type NavigationPaneOptions struct {
 	SelectParent bool
 	// Style overrides the default Choice appearance when non-zero.
 	Style loom.ChoiceStyle
+	// TypeToSearch sends every typed character to the filter, as before "/" gating.
+	// By default, typing filters only after "/", so the app's own letter keys work.
+	TypeToSearch bool
 }
 
 // NavigationPane provides a filterable, keyboard- and mouse-driven directory list.
@@ -34,6 +37,7 @@ type NavigationPane struct {
 	list      *loom.Choice
 	options   NavigationPaneOptions
 	lastRect  loom.Rect
+	searching bool
 }
 
 // NewNavigationPane reads dir and creates a navigation pane with an initial selection.
@@ -193,6 +197,9 @@ func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) {
 
 // HandleKey processes navigation, filtering, directory opening, and selection.
 func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
+	if handled, quit := p.handleSearchKey(e); handled {
+		return quit
+	}
 	if e.Is("esc") {
 		if p.rootDir != "" && p.directory.Path == p.rootDir {
 			if p.options.OnQuit != nil {
@@ -256,8 +263,43 @@ func (p *NavigationPane) HandleMouse(e loom.MouseEvent) bool {
 // ConsumeKey reports whether a key belongs to the navigation pane's host-level
 // navigation contract. ESC and backspace are consumed for parent navigation and root quit.
 func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	if e.Is("esc") || e.Is("backspace") {
+	if (p.searching && e.Key == "" && e.Text != "") || p.startsSearch(e) || e.Is("esc") || e.Is("backspace") {
 		return p.HandleKey(e), true
+	}
+	return false, false
+}
+
+// Searching reports whether typed text currently goes to the filter.
+func (p *NavigationPane) Searching() bool { return p.searching || p.options.TypeToSearch }
+
+func (p *NavigationPane) startsSearch(e loom.KeyEvent) bool {
+	return !p.options.TypeToSearch && !p.searching && e.Is("/")
+}
+
+// handleSearchKey gates the filter behind "/": outside search, typed text is
+// left to the app; inside, Esc clears the query and Enter keeps it.
+func (p *NavigationPane) handleSearchKey(e loom.KeyEvent) (handled, quit bool) {
+	switch {
+	case p.options.TypeToSearch:
+		return false, false
+	case p.startsSearch(e):
+		p.searching = true
+		return true, false
+	case !p.searching:
+		return e.Text != "" && e.Key == "", false
+	case e.Is("esc"):
+		for p.list.Query() != "" {
+			p.list.HandleKey(loom.KeyEvent{Key: "backspace"})
+		}
+		p.searching = false
+		p.notifySelection()
+		return true, false
+	case e.Is("enter"):
+		p.searching = false
+		return false, false
+	case e.Is("backspace") && p.list.Query() == "":
+		// An empty search closes, and backspace navigates up as usual.
+		p.searching = false
 	}
 	return false, false
 }

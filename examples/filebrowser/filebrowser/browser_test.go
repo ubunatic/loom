@@ -70,6 +70,10 @@ func TestNewWidgetPaneRequestAndHostedKeys(t *testing.T) {
 	if got, want := b.PaneRequest(), (loom.PaneRequest{Mouse: 1000, Resizeable: true, MaxCols: 0}); got != want {
 		t.Fatalf("PaneRequest() = %+v, want %+v", got, want)
 	}
+	if _, consumed := b.ConsumeKey(loom.KeyEvent{Text: "q"}); consumed {
+		t.Fatal("q outside search was consumed; the host must get it")
+	}
+	b.ConsumeKey(loom.KeyEvent{Text: "/"})
 	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Text: "q"}); quit || !consumed {
 		t.Fatalf("q = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
 	}
@@ -150,6 +154,7 @@ func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
 	}
 
 	// Filter query non-empty: backspace deletes character from query, does not navigate up
+	b.HandleKey(loom.KeyEvent{Text: "/"})
 	b.HandleKey(loom.KeyEvent{Text: "t"})
 	if b.list.Query() != "t" {
 		t.Fatalf("filter query = %q, want t", b.list.Query())
@@ -321,6 +326,7 @@ func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	b.HandleKey(loom.KeyEvent{Text: "/"})
 	if b.HandleKey(loom.KeyEvent{Text: "q"}) {
 		t.Fatal("typing q into the file filter quit the app")
 	}

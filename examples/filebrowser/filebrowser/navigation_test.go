@@ -31,6 +31,11 @@ func TestNavigationPaneReadsAndSelectsEntries(t *testing.T) {
 		t.Fatalf("initial selection = %+v, ok=%v; want alpha.txt", got, ok)
 	}
 	pane.HandleKey(loom.KeyEvent{Text: "beta"})
+	if got := pane.List().Query(); got != "" {
+		t.Fatalf("typing before / filtered to %q, want no filter", got)
+	}
+	pane.HandleKey(loom.KeyEvent{Text: "/"})
+	pane.HandleKey(loom.KeyEvent{Text: "beta"})
 	if got := pane.List().Query(); got != "beta" {
 		t.Fatalf("filter = %q, want beta", got)
 	}
@@ -97,5 +102,39 @@ func TestNavigationPaneMouseSelectionUsesChildLocalCoordinates(t *testing.T) {
 	pane.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 2})
 	if got, ok := pane.Selected(); !ok || got.Name != "beta" {
 		t.Fatalf("selection after local row 1 click = %+v, ok=%v; want beta", got, ok)
+	}
+}
+
+func TestNavigationPaneSearchGate(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"alpha", "beta"} {
+		if err := os.WriteFile(filepath.Join(dir, name), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pane, err := NewNavigationPane(dir, NavigationPaneOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "a"}); consumed {
+		t.Fatal("a letter outside search was consumed; the app must get it")
+	}
+	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "/"}); !consumed || !pane.Searching() {
+		t.Fatalf("/ consumed=%v searching=%v, want both", consumed, pane.Searching())
+	}
+	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "b"}); !consumed || pane.List().Query() != "b" {
+		t.Fatalf("typed b while searching: consumed=%v query=%q", consumed, pane.List().Query())
+	}
+	pane.HandleKey(loom.KeyEvent{Key: "esc"})
+	if pane.Searching() || pane.List().Query() != "" {
+		t.Fatalf("esc left searching=%v query=%q, want search closed and cleared", pane.Searching(), pane.List().Query())
+	}
+	typing, err := NewNavigationPane(dir, NavigationPaneOptions{TypeToSearch: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	typing.HandleKey(loom.KeyEvent{Text: "b"})
+	if got := typing.List().Query(); got != "b" {
+		t.Fatalf("TypeToSearch query = %q, want b", got)
 	}
 }

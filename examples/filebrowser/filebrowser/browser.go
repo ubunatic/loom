@@ -261,9 +261,9 @@ func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
 	if key == "ctrl-c" || key == "ctrl-d" || key == "esc" {
 		return true, true
 	}
-	// The Choice owns all text keys while filtering; consume them before the
-	// host can interpret q or another app-level binding.
-	if k.Text != "" || isBrowserListKey(key) {
+	// While searching ("/"), the Choice owns all text keys; consume them before
+	// the host can interpret q or another app-level binding.
+	if (k.Text != "" && b.navigation.Searching()) || isBrowserListKey(key) {
 		quit = b.frame.HandleKey(k)
 		b.dir = b.navigation.Directory().Path
 		return quit || b.quit, true
