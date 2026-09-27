@@ -1,6 +1,6 @@
 # 151 — Add and install desktop icon for ansiviewer
 
-**Status**: Open
+**Status**: Closed — Implemented in 75ccd6e (M1): created ansiviewer.svg, added Icon=ansiviewer to desktop file, and configured Makefile install to deploy to ~/.local/share/icons/hicolor/scalable/apps
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature / Packaging
