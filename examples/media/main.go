@@ -60,6 +60,7 @@ func run(args []string) error {
 	if err != nil {
 		return err
 	}
+	pane.MaxCols = 0
 	defer pane.Close()
 	return pane.Run(&demo{image: widget, path: args[0], mode: mode})
 }

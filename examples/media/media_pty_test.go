@@ -68,9 +68,9 @@ func writeVideo(t *testing.T) string {
 func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
-	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
+	s.WaitFor("Cols: 120  Rows: 39  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
-		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
+		t.Fatalf("rendered %d rows, want terminal height %d", len(screen), rows)
 	}
 
 	var titleY = -1
@@ -84,7 +84,7 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 		t.Fatal("media title was not rendered")
 	}
 	status := s.Screen()[rows-1]
-	if !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") {
+	if !strings.Contains(status, "Cols: 120  Rows: 39  Mode: halfblock") {
 		t.Fatalf("bottom row does not contain status dimensions and mode: %q", status)
 	}
 	if !strings.Contains(status, "Media: ") || !strings.Contains(status, "red.png") {
@@ -112,8 +112,8 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	if redCells == 0 {
 		t.Fatal("PTY screen contains no image-colored cells")
 	}
-	if maxX < 30 || maxX >= cols {
-		t.Fatalf("aspect-fitted image reached column %d, want columns 0 through at least 30 within terminal width %d", maxX, cols)
+	if maxX < 50 || maxX >= cols {
+		t.Fatalf("aspect-fitted image reached column %d, want image content beyond column 50 within terminal width %d", maxX, cols)
 	}
 	for y, row := range s.Cells() {
 		if y <= titleY {
@@ -133,17 +133,28 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))
-	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
+	s.WaitFor("Cols: 120  Rows: 39  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
 		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
 	}
-	if status := s.Screen()[rows-1]; !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") || !strings.Contains(status, "colors.mp4") {
+	if status := s.Screen()[rows-1]; !strings.Contains(status, "Cols: 120  Rows: 39  Mode: halfblock") || !strings.Contains(status, "colors.mp4") {
 		t.Fatalf("bottom row does not contain terminal status and video path: %q", status)
 	}
+	maxX := -1
 	for y, row := range s.Cells() {
 		if len(row) != cols {
 			t.Fatalf("rendered row %d has %d cells, want full terminal width %d", y, len(row), cols)
 		}
+		for x, cell := range row {
+			fg, _ := cell.Style.Effective()
+			r, g, b, ok := fg.RGB()
+			if ok && ((r > 180 && g < 80 && b < 80) || (b > 120 && r < 80 && g < 80)) && x > maxX {
+				maxX = x
+			}
+		}
+	}
+	if maxX < 50 {
+		t.Fatalf("video content reached column %d, want content beyond column 50", maxX)
 	}
 	deadline := time.Now().Add(5 * time.Second)
 	seenRed, seenBlue := false, false
