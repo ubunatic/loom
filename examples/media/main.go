@@ -50,7 +50,7 @@ func run(args []string) error {
 		return err
 	}
 	defer widget.Close()
-	pane, err := loom.New(8)
+	pane, err := loom.New(1 << 16)
 	if err != nil {
 		return err
 	}

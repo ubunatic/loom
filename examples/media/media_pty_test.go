@@ -66,8 +66,12 @@ func writeVideo(t *testing.T) string {
 }
 
 func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
-	s := ptytest.Start(t, 50, 16, buildMediaDemo(t), writeSolidPNG(t))
+	const cols, rows = 120, 40
+	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
 	s.WaitFor("Media Demo", 5*time.Second)
+	if screen := s.Screen(); len(screen) != rows {
+		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
+	}
 
 	var titleY = -1
 	for y, row := range s.Screen() {
@@ -101,15 +105,15 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	if redCells == 0 {
 		t.Fatal("PTY screen contains no image-colored cells")
 	}
-	if maxX < 30 || maxX >= 50 {
-		t.Fatalf("aspect-fitted image reached column %d, want columns 0 through at least 30 within terminal width 50", maxX)
+	if maxX < 30 || maxX >= cols {
+		t.Fatalf("aspect-fitted image reached column %d, want columns 0 through at least 30 within terminal width %d", maxX, cols)
 	}
 	for y, row := range s.Cells() {
 		if y <= titleY {
 			continue
 		}
-		if len(row) != 50 {
-			t.Fatalf("rendered row %d has %d cells, want full terminal width 50", y, len(row))
+		if len(row) != cols {
+			t.Fatalf("rendered row %d has %d cells, want full terminal width %d", y, len(row), cols)
 		}
 	}
 
@@ -120,8 +124,17 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 }
 
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
-	s := ptytest.Start(t, 50, 16, buildMediaDemo(t), writeVideo(t))
+	const cols, rows = 120, 40
+	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))
 	s.WaitFor("Media Demo", 5*time.Second)
+	if screen := s.Screen(); len(screen) != rows {
+		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
+	}
+	for y, row := range s.Cells() {
+		if len(row) != cols {
+			t.Fatalf("rendered row %d has %d cells, want full terminal width %d", y, len(row), cols)
+		}
+	}
 	deadline := time.Now().Add(5 * time.Second)
 	seenRed, seenBlue := false, false
 	for time.Now().Before(deadline) && !(seenRed && seenBlue) {
