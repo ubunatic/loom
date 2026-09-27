@@ -6,6 +6,7 @@ _prim := \033[36m
 _rst  := \033[0m
 LOOMOJI_DIR ?= $(HOME)/.local/share/loomoji
 ANSIVIEWER_DESKTOP_DIR ?= $(HOME)/.local/share/applications
+ANSIVIEWER_ICON_DIR ?= $(HOME)/.local/share/icons/hicolor/scalable/apps
 
 
 help: 🤖  # show this help
@@ -42,6 +43,7 @@ install: ⚙️
 		./examples/ansicanvas_demo ./examples/media ./examples/usage
 	install -D -m 0644 examples/loomoji/loomoji.zsh "$(LOOMOJI_DIR)/loomoji.zsh"
 	install -D -m 0644 examples/ansiviewer/ansiviewer.desktop "$(ANSIVIEWER_DESKTOP_DIR)/ansiviewer.desktop"
+	install -D -m 0644 examples/ansiviewer/assets/ansiviewer.svg "$(ANSIVIEWER_ICON_DIR)/ansiviewer.svg"
 
 test-q1: 🤖  # run tests under Quota-1 enforcement
 	harnez exec --quota-1 -- $(MAKE) test

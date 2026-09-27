@@ -1,6 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=ANSI Viewer
+Icon=ansiviewer
 Comment=View text and ANSI files
 Exec=ansiviewer %f
 Terminal=true
