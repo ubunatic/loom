@@ -159,3 +159,4 @@ upkeep.
 | 146 | [146-set-pane-maxcols-0-in-examples-media-to-uncap-terminal-width.md](146-set-pane-maxcols-0-in-examples-media-to-uncap-terminal-width.md) | Set pane.MaxCols = 0 in examples/media to uncap terminal width | Closed — Implemented in 3bcf2b3 (M1): set pane.MaxCols = 0 to uncap media canvas width from default 50 columns |
 | 147 | [147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md](147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md) | Detect unclosed boxes and prioritize box validation errors | Open |
 | 148 | [148-open-ansiviewer-directly-on-a-file-argument.md](148-open-ansiviewer-directly-on-a-file-argument.md) | Open ansiviewer directly on a file argument | Open |
+| 149 | [149-convert-the-media-example-to-a-cobra-cli-app.md](149-convert-the-media-example-to-a-cobra-cli-app.md) | Convert the media example to a Cobra CLI app | Open |
