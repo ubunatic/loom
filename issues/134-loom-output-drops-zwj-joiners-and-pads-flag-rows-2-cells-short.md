@@ -34,3 +34,18 @@ output bugs, which the 096 review had put down to terminal behavior:
 - M2: keep the joiner in the output; count a regional-indicator pair as 2 columns everywhere
   (StringWidth, box check, ParseANSI) to match the terminals tested in 096.
 - M3: re-record the 096 frames; the user checks them with ansiviewer's ruler (102).
+
+## 4. Terminal test with the joiner kept (user, 2026-09-27, `echo` of 👨‍👩‍👧‍👦 with U+200D)
+- Joins into one family glyph (2 columns): foot, kitty.
+- Draws separate emojis (2 columns each): tilix, ptyxis, alacritty.
+So the width of a ZWJ sequence depends on the terminal, like the flag (2 columns as letters or glyph
+in all five). Keeping the joiner is still right (joining terminals need it), but no single width is
+right everywhere.
+
+Revised plan:
+- M2 keeps U+200D in the output and counts a flag as 2 columns (all five terminals agree).
+- New M2b: measure ZWJ width per terminal at startup with a canary (docs/Canary.md): write a ZWJ
+  sequence off-screen or on the alternate screen, ask for the cursor position (DSR `ESC[6n`), and
+  set Loom's ZWJ width mode from the reply; fall back to the separate-emoji width when there is no
+  reply in time, and allow an override (env var, e.g. `LOOM_ZWJ=join|split`). Probe once, in
+  tilix, foot, kitty, ptyxis and alacritty, before building on it.
