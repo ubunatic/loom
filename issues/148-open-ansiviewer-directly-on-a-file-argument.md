@@ -1,6 +1,6 @@
 # 148 — Open ansiviewer directly on a file argument
 
-**Status**: Open
+**Status**: Closed — Implemented in b256610 (M1): ansiviewer opens file arguments directly in their parent directory with pre-selected preview
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
