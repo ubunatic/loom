@@ -38,3 +38,11 @@ not paint its full row breaks the look of any themed Loom app that shows flag te
   sample text comes first and the label second ("DE Flag [...]" instead of "Flag DE [...]"). This
   points to ansiviewer's cursor replay (column moves) and not only to width. Check whether the
   frame uses absolute column moves (CSI G / CSI H) that ansiviewer replays differently from ptyxis.
+
+## 5. Plan (dev-132, reviewed by the host)
+- M1: a test that replays a 096 frame through ansiviewer and asserts label/sample order and cell
+  positions around the flag. The test comes first and fails.
+- M2: `writeANSI` replays whole grapheme clusters (a regional-indicator pair is one cluster) and
+  keeps rectangle clipping; the trailing cells of the row get the widget background.
+- M3: fix cursor replay (CSI G / CSI H) only if M1 shows it is wrong.
+Pre-work: use `make test-q1` once per change, write its output to a file, and grep it for `--- FAIL`.
