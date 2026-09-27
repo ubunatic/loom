@@ -35,7 +35,7 @@ vet: ⚙️  ## run go vet
 	go vet ./...
 
 install: ⚙️
-	go install ./cmd/loom ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
+	go install ./cmd/loom ./cmd/loom-probe ./cmd/loom-demo ./cmd/loom-bench ./cmd/validate-spec \
 		./examples/ansiviewer ./examples/filebrowser/ ./examples/treemap \
 		./examples/loomoji ./examples/textedit ./examples/ansiedit \
 		./examples/ansicanvas_demo ./examples/media ./examples/usage
