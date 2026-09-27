@@ -205,7 +205,7 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 		v.OffsetX = max(0, v.OffsetX-1)
 	case "right", "l":
 		v.OffsetX++
-	case "pgdown", "ctrl-f", " ":
+	case "pgdown", "pgdn", "ctrl-f", " ":
 		v.Scroll = min(maxScroll, v.Scroll+page)
 		v.OffsetY = v.Scroll
 	case "pgup", "ctrl-b", "b":
