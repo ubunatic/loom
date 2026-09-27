@@ -150,3 +150,4 @@ upkeep.
 | 137 | [137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md](137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) | Feedback: CLI asset tools workflow & multi-box ANSI validation | Open |
 | 138 | [138-allow-panning-in-loom-panes-and-make-ansiviewer-preview-pane-pannable.md](138-allow-panning-in-loom-panes-and-make-ansiviewer-preview-pane-pannable.md) | Allow panning in loom panes and make ansiviewer preview pane pannable | Closed |
 | 139 | [139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md](139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) | Add `loom play` for interactive TUI commands and ANSI capture | Open |
+| 140 | [140-lazy-load-media-widget-images-and-video-previews.md](140-lazy-load-media-widget-images-and-video-previews.md) | Lazy load media widget images and video previews | Open |
