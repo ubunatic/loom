@@ -37,3 +37,8 @@ Pre-Work (host):
 - Inline mode: re-querying must not move `inlineStart` or clear scrollback; add a test that an inline pane with unchanged size produces no extra reflow.
 - The hook is test-only (unexported var, nil in production).
 - Commits: `test: ... (issue 136 M1)`, `fix: ... (issue 136 M2)`; `make test-q1` once after the last edit.
+
+## Handoff (2026-09-27)
+
+No code yet. The Sonnet dev (dev-136b) failed at start (claude exit 1, likely the usage limit).
+Resume point: dispatch a fresh developer for M1 (red test) then M2 (fix) from the plan and pre-work above.
