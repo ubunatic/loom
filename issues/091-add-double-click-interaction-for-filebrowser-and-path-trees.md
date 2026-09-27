@@ -63,3 +63,9 @@ Pre-Work for M3: use conventional commit messages (`feat: ... (issue 091 M3)`); 
 Opt-in `DoubleClickToActivate`; first click selects, pair activates once; MultiSelect never pairs; scroll, drag, scrollbar and empty space break a pending pair. Host ran Choice tests: pass.
 
 Pre-Work for M4: enable it in NavigationPane/filebrowser (file opens, dir enters) and textedit outline; single click must not open.
+
+## M4 delivered: consumers (4883663)
+
+NavigationPane sets `DoubleClickToActivate`; textedit outline selects on first click, jumps on double-click (behavior change: single click no longer jumps). Note: outline now calls `refresh()` on every mouse event incl. hover; fine unless profiling says otherwise.
+
+Pre-Work for M5: PTY test in filebrowser sends two timed press/release pairs; assert a single click does not open, a double-click opens a file and enters a dir.
