@@ -1,6 +1,6 @@
 # 042 — `docs/TuiInput.md` referenced by 5 code comments but does not exist
 
-**Status**: Open
+**Status**: Closed — docs/TuiInput.md written with §1-§3 matching all 5 code references, listed in docs/README.md (2e1ad85, doc fix)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Documentation
