@@ -59,3 +59,5 @@ Whoever completes the last item closes this ticket.
 
 - [ ] **089 cursor effects:** run `ansicanvas_demo --cursor-fx` in tilix and foot. Check glow
   strength, star trail, pulse, smooth motion without lag, and idle CPU near zero while the mouse rests.
+
+- 134 (ZWJ width detection, 013fa84): open a Loom app with the family emoji (e.g. ansiviewer on docs/progress/096/M2-buttons.ansi) in tilix and foot; rows should end flush, no gap before `>`. `LOOM_ZWJ=join|split` forces a mode.
