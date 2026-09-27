@@ -4,6 +4,7 @@
 package loom
 
 import (
+	"strconv"
 	"strings"
 
 	"codeberg.org/ubunatic/loom/measure"
@@ -34,9 +35,13 @@ type Choice struct {
 	Prompt    string          // default "> "
 	focused   bool            // dims the border when false so focus is visually clear
 	PromptTop bool            // place prompt on first row instead of last row
-	OnSelect  func(item Item) // called on Enter or a confirming click; if nil, Enter quits
-	// SelectOnlyOnClick keeps a click from confirming; Enter still invokes OnSelect.
+	OnSelect  func(item Item) // called on Enter or an activating click; if nil, Enter quits
+	// SelectOnlyOnClick keeps a single click from confirming; Enter still invokes OnSelect.
 	SelectOnlyOnClick bool
+	// DoubleClickToActivate makes a matching second click activate the selected
+	// item. The first click only selects; a double-click can activate even when
+	// SelectOnlyOnClick is set.
+	DoubleClickToActivate bool
 	// MouseTextOnly restricts mouse selection and activation to rendered item content.
 	MouseTextOnly bool
 
@@ -51,19 +56,20 @@ type Choice struct {
 	// Checks are keyed by Item.Name so they survive filtering.
 	MultiSelect bool
 
-	cmd        *cmdBar
-	cmdNav     Nav
-	query      string
-	sel        int
-	viewOffset int // first visible item index (virtual scrolling)
-	itemRows   int // item rows from the last Draw; excludes the prompt
-	drawn      bool
-	lastRect   Rect
-	drag       scrollbarDrag
-	aborted    bool
-	done       bool
-	filtered   []Item
-	checked    map[string]bool // MultiSelect: set of checked Item.Name
+	cmd         *cmdBar
+	cmdNav      Nav
+	query       string
+	sel         int
+	viewOffset  int // first visible item index (virtual scrolling)
+	itemRows    int // item rows from the last Draw; excludes the prompt
+	drawn       bool
+	lastRect    Rect
+	drag        scrollbarDrag
+	doubleClick *DoubleClickRecognizer
+	aborted     bool
+	done        bool
+	filtered    []Item
+	checked     map[string]bool // MultiSelect: set of checked Item.Name
 }
 
 // NewChoice creates a ready-to-use Choice with default style.
@@ -390,11 +396,13 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 // so hit-tests stay correct once the list has been scrolled.
 func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	if c.cmd.handleHelpMouse(e) {
+		c.observeDoubleClick(e, "")
 		return false
 	}
 	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
 		c.lastRect.W > 0 && c.itemRows > 0 &&
 		e.X == c.lastRect.X+c.lastRect.W-1 && len(c.filtered) > c.itemRows {
+		c.observeDoubleClick(e, "")
 		row := e.Y - c.lastRect.Y
 		if c.PromptTop {
 			row--
@@ -413,6 +421,7 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		return false
 	}
 	if c.drag.active {
+		c.observeDoubleClick(e, "")
 		switch e.Action {
 		case MouseDrag:
 			c.viewOffset = scrollbarOffset(c.itemRows, scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows), e.Y-c.lastRect.Y, c.drag.grab, len(c.filtered)-c.itemRows)
@@ -425,11 +434,13 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 	}
 	switch e.Action {
 	case MouseScrollUp:
+		c.observeDoubleClick(e, "")
 		if c.sel > 0 {
 			c.sel--
 		}
 		return false
 	case MouseScrollDown:
+		c.observeDoubleClick(e, "")
 		if c.sel < len(c.filtered)-1 {
 			c.sel++
 		}
@@ -442,13 +453,16 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		e.Y--
 	}
 	if e.Y < 0 {
+		c.observeDoubleClick(e, "")
 		return false
 	}
 	if c.drawn && e.Y >= c.itemRows {
+		c.observeDoubleClick(e, "")
 		return false
 	}
 	fi := c.viewOffset + e.Y
 	if fi < 0 || fi >= len(c.filtered) {
+		c.observeDoubleClick(e, "")
 		return false
 	}
 	if c.MouseTextOnly && (e.Action == MousePress || e.Action == MouseHover || e.Action == MouseDrag) {
@@ -458,15 +472,28 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		}
 		_, end, ok := choiceMouseHitRegion(c.choiceRowText(fi, contentW), contentW)
 		if !ok || e.X-c.lastRect.X < 0 || e.X-c.lastRect.X >= end {
+			c.observeDoubleClick(e, "")
 			return false
 		}
 	}
+	doubleClick := c.observeDoubleClick(e, strconv.Itoa(fi)+"\x00"+c.filtered[fi].Name)
 	switch e.Action {
 	case MousePress:
 		if e.Button == MouseLeft {
 			c.sel = fi
 			if c.MultiSelect {
 				c.toggleChecked() // click toggles the checkbox, never confirms
+				return false
+			}
+			if c.DoubleClickToActivate {
+				if doubleClick {
+					if c.OnSelect != nil {
+						c.OnSelect(c.filtered[c.sel])
+						return false
+					}
+					c.done = true
+					return true
+				}
 				return false
 			}
 			if c.SelectOnlyOnClick {
@@ -483,6 +510,19 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		c.sel = fi
 	}
 	return false
+}
+
+func (c *Choice) observeDoubleClick(e MouseEvent, target string) bool {
+	if !c.DoubleClickToActivate || c.MultiSelect {
+		if c.doubleClick != nil {
+			c.doubleClick.Handle(e, "")
+		}
+		return false
+	}
+	if c.doubleClick == nil {
+		c.doubleClick = NewDoubleClickRecognizer(nil)
+	}
+	return c.doubleClick.Handle(e, target)
 }
 
 func (c *Choice) choiceRowText(fi, width int) string {

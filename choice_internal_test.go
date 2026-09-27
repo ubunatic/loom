@@ -6,6 +6,7 @@ package loom
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestChoiceMouseHitRegion(t *testing.T) {
@@ -175,6 +176,98 @@ func TestChoiceSelectOnlyOnClick(t *testing.T) {
 	c.HandleKey(KeyEvent{Key: "enter"})
 	if !selected {
 		t.Fatal("Enter did not invoke OnSelect after click")
+	}
+}
+
+func TestChoiceDoubleClickSelectsThenActivatesOnce(t *testing.T) {
+	c := makeChoice(3)
+	c.DoubleClickToActivate = true
+	now := time.Unix(0, 0)
+	c.doubleClick = NewDoubleClickRecognizer(func() time.Time { return now })
+	activations := 0
+	c.OnSelect = func(Item) { activations++ }
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	click := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
+
+	c.HandleMouse(click)
+	if c.sel != 1 || activations != 0 {
+		t.Fatalf("first click selected %d and activated %d times; want selection 1 without activation", c.sel, activations)
+	}
+	c.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
+	now = now.Add(100 * time.Millisecond)
+	c.HandleMouse(click)
+	if c.sel != 1 || activations != 1 {
+		t.Fatalf("second click selected %d and activated %d times; want selection 1 and one activation", c.sel, activations)
+	}
+	c.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
+	if activations != 1 {
+		t.Fatalf("release repeated activation %d times", activations)
+	}
+}
+
+func TestChoiceDoubleClickNeedsMatchingItem(t *testing.T) {
+	c := makeChoice(3)
+	c.DoubleClickToActivate = true
+	now := time.Unix(0, 0)
+	c.doubleClick = NewDoubleClickRecognizer(func() time.Time { return now })
+	activations := 0
+	c.OnSelect = func(Item) { activations++ }
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	first := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 0}
+	second := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
+
+	c.HandleMouse(first)
+	now = now.Add(10 * time.Millisecond)
+	c.HandleMouse(second)
+	if activations != 0 {
+		t.Fatalf("clicks on different rows activated %d times", activations)
+	}
+	now = now.Add(10 * time.Millisecond)
+	c.HandleMouse(second)
+	if activations != 1 {
+		t.Fatalf("second matching row click activated %d times; want 1", activations)
+	}
+}
+
+func TestChoiceDoubleClickOverridesOnlySingleClickConfirmation(t *testing.T) {
+	c := makeChoice(3)
+	c.SelectOnlyOnClick = true
+	c.DoubleClickToActivate = true
+	now := time.Unix(0, 0)
+	c.doubleClick = NewDoubleClickRecognizer(func() time.Time { return now })
+	activations := 0
+	c.OnSelect = func(Item) { activations++ }
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	click := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
+
+	c.HandleMouse(click)
+	if activations != 0 {
+		t.Fatal("SelectOnlyOnClick allowed a single-click activation")
+	}
+	c.HandleKey(KeyEvent{Key: "enter"})
+	if activations != 1 {
+		t.Fatal("Enter no longer activates a SelectOnlyOnClick choice")
+	}
+	now = now.Add(time.Second)
+	c.HandleMouse(click)
+	if activations != 1 {
+		t.Fatal("click after the timeout activated")
+	}
+	now = now.Add(10 * time.Millisecond)
+	c.HandleMouse(click)
+	if activations != 2 {
+		t.Fatalf("recognized double-click activated %d times total; want Enter plus one double-click", activations)
+	}
+}
+
+func TestChoiceSingleClickConfirmationRemainsDefault(t *testing.T) {
+	c := makeChoice(3)
+	activations := 0
+	c.OnSelect = func(Item) { activations++ }
+	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
+	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	if activations != 1 {
+		t.Fatalf("default single click activated %d times, want 1", activations)
 	}
 }
 
