@@ -5,7 +5,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 # 017 — External file and socket adapters with separate producer fixtures
 
-**Status**: Open
+**Status**: Closed — parked: hosts own data-source wiring (103)
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
