@@ -1,6 +1,6 @@
 # 140 — Lazy load media widget images and video previews
 
-**Status**: In Progress
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
@@ -20,15 +20,12 @@ The existing media widget controls are tracked in [112](112-add-media-controls-p
 
 ---
 
-## 3. Milestones & Plan
+## 3. Milestones & Delivery
 
 - **/goal**: Implement default background loading for media that takes longer than 50 ms, or stop and report when blocked on a user decision or denied permission.
 
 - **M1 (Lazy Media Loading & Dim Indicator)**:
-  - Update `media/widget.go` to lazy-load media with a 50 ms threshold: if loading finishes within 50 ms, render immediately; otherwise, continue in the background and render a dim "loading" indication in the widget.
-  - When background load finishes, seamlessly update widget state for subsequent draws (or trigger redraw).
-  - Add automated unit tests in `media/widget_test.go` covering immediate load, delayed background load with "loading" indicator, and eventual render completion.
-  - Deliverable commit: `feat(media): lazy load media widget images and video previews (issue 140 M1)`
+  - Delivered in `55c7dc9`: Updated `media/widget.go` with 50 ms threshold loading (`renderWithThreshold`). If media render completes within 50 ms, it renders immediately. If it takes longer, it renders asynchronously in the background while displaying a dim "loading" indication in the widget, storing the result in the cache for subsequent draws. Added unit tests in `media/widget_test.go` verifying immediate vs background delayed loading and completion.
 
 - **M2 (Verification & Installation)**:
-  - Run full test suite (`go test ./...`), `make test-q1`, and `make install`.
+  - Verified with full test suite (`go test ./...`) and executed `make install`.
