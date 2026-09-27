@@ -69,3 +69,15 @@ Pre-Work / Required Refinements for M2:
   Loom has one; the terminal default background may stay unchanged, documented.
 - Add an opt-in flag to one example (e.g. loom-demo or paint: `--cursor-fx`) so the user can see the
   effect early. The strength (0.7) is a user decision, checked by eye.
+
+M2 delivered (cc18b91): star trail (spec: glyph ✦, 8 points, 400 ms, 40 ms frames), brighten now
+covers text cells and indexed colors, and `ansicanvas_demo --cursor-fx` shows both effects. The
+dev's test failure (TestAllAnsiAssetsHaveValidBoxes) came from the host's ruler mockup and is fixed
+in 81d5d6b; the host's full run there passed with M2 included.
+
+Pre-Work / Required Refinements for M3:
+- The 40 ms trail ticker redraws the whole screen forever once enabled, even with no trail. Redraw
+  only while unexpired points exist (test: no frames scheduled when the trail is empty or expired).
+  The pulse animation must follow the same rule.
+- The trail fades its color toward black, which looks wrong on light backgrounds. Fade toward the
+  cell's background instead (RGB when resolvable), with a test.
