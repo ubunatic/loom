@@ -142,12 +142,21 @@ func TestANSIViewScrollAndQuit(t *testing.T) {
 }
 
 func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
-	buffer, err := loom.ParseAnsiBuffer("abcdefghijkl\nrow two\nrow three\nrow four", 1, 1)
+	buffer, err := loom.ParseAnsiBuffer("abcdefghijklmnopqrst\nABCDEFGHIJKLMNOPQRST\n01234567890123456789", 1, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
-	view := &ansiView{buffer: buffer}
-	canvas := loom.NewCanvas(4, 2)
+	view := &ansiView{buffer: buffer, offsetX: 2, offsetY: 1}
+	canvas := loom.NewCanvas(6, 4)
+	view.Draw(canvas, loom.Rect{X: 1, Y: 1, W: 4, H: 2})
+	if got := canvas.Get(1, 1).Text; got != "C" {
+		t.Fatalf("first rendered cell after 2D pan = %q, want %q", got, "C")
+	}
+	if got := canvas.Get(4, 2).Text; got != "5" {
+		t.Fatalf("last rendered cell after 2D pan = %q, want %q", got, "5")
+	}
+	view.offsetX = 0
+	view.offsetY = 0
 	view.Draw(canvas, loom.Rect{W: 4, H: 2})
 	view.HandleKey(loom.KeyEvent{Key: "right"})
 	view.HandleKey(loom.KeyEvent{Key: "right"})
@@ -157,15 +166,28 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	}
 	view.HandleKey(loom.KeyEvent{Key: "end"})
 	if want := buffer.Cols() - 4; view.offsetX != want {
-		t.Fatalf("end horizontal offset = %d, want clamped offset %d", view.offsetX, want)
+		t.Fatalf("end horizontal offset = %d, want maximum offset %d", view.offsetX, want)
 	}
 	view.Draw(canvas, loom.Rect{W: 4, H: 2})
-	if got := canvas.Get(0, 0).Text; got != "i" {
-		t.Fatalf("first rendered cell at right edge = %q, want %q", got, "i")
+	if got := canvas.Get(0, 0).Text; got != "q" {
+		t.Fatalf("first rendered cell at right edge = %q, want %q", got, "q")
 	}
 	view.HandleKey(loom.KeyEvent{Key: "right"})
 	if want := buffer.Cols() - 4; view.offsetX != want {
 		t.Fatalf("right edge offset = %d, want %d", view.offsetX, want)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "home"})
+	view.HandleKey(loom.KeyEvent{Key: "]"})
+	if view.offsetX != 10 {
+		t.Fatalf("] horizontal offset = %d, want 10", view.offsetX)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "shift-right"})
+	if view.offsetX != 16 {
+		t.Fatalf("shift-right horizontal offset = %d, want clamped maximum 16", view.offsetX)
+	}
+	view.HandleKey(loom.KeyEvent{Key: "["})
+	if view.offsetX != 6 {
+		t.Fatalf("[ horizontal offset = %d, want 6", view.offsetX)
 	}
 	view.HandleKey(loom.KeyEvent{Key: "left"})
 	view.HandleKey(loom.KeyEvent{Key: "home"})
@@ -179,5 +201,16 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	view.HandleKey(loom.KeyEvent{Key: "down"})
 	if want := buffer.Rows() - 2; view.offsetY != want {
 		t.Fatalf("bottom vertical offset = %d, want %d", view.offsetY, want)
+	}
+}
+
+func TestViewCommandPaneSettings(t *testing.T) {
+	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
+	configureViewPane(pane)
+	if pane.MaxCols != 0 {
+		t.Errorf("view pane MaxCols = %d, want 0", pane.MaxCols)
+	}
+	if !pane.Resizeable {
+		t.Error("view pane Resizeable = false, want true")
 	}
 }
