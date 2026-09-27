@@ -1,6 +1,6 @@
 # 065 — ANSI-styled rows widget and treemap conversion
 
-**Status**: Open
+**Status**: Closed — StyledRows widget + hosted treemap (async collection, rect sizing, repaint via InvalidationAware, loom-demo tab); user approved colors (44c11c0, 8f883aa, f060955, 0a56571, 30a17e4, 0ccc813)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
