@@ -145,3 +145,10 @@ not a replacement.
 **Pre-Work / Required Refinements (from M3 review):**
 1. **No repaint when a collection finishes.** The goroutine updates rows, but nothing asks the pane to redraw. With `--watch`, the first real frame waits for the next tick (up to 2s after "Collecting…"). Without `--watch`, `TickInterval()==0`, so a hosted treemap shows "Collecting process tree…" until some unrelated event happens. Fix this with the existing mechanism (`Pane.Invalidate`, pane.go:625, or whatever widget-to-host redraw path 060 established). If widgets cannot reach it, use the smallest generic hook: for example, a short tick interval while a collection is pending. Test: a non-watch hosted widget under a pane or test host shows real rows without any key event or ticker.
 2. Check that the `closeHostedTabs` loop in loom-demo also covers the monitor from 064 (so no double Close with its own `defer w.Close()`), and that `Close` is idempotent. Add a test that calls it twice.
+
+**M4 delivered:** Pane binds its existing `Invalidate` redraw callback to nested
+`InvalidationAware` widgets. Hosted treemap requests redraw after publishing
+background results, including in non-watch mode; tests verify rows appear after
+the callback with no ticker and that the pane callback reaches nested widgets.
+loom-demo's hosted close test confirms the monitor is covered and closing all
+hosted widgets twice is safe.

@@ -35,6 +35,30 @@ func TestPaneInvalidateIsNonBlockingAndCoalesced(t *testing.T) {
 	}
 }
 
+type invalidationProbe struct{ invalidate func() }
+
+func (*invalidationProbe) Draw(*Canvas, Rect)          {}
+func (*invalidationProbe) HandleKey(KeyEvent) bool     { return false }
+func (*invalidationProbe) HandleMouse(MouseEvent) bool { return false }
+func (p *invalidationProbe) SetInvalidate(invalidate func()) {
+	p.invalidate = invalidate
+}
+
+func TestBindInvalidationTreeConnectsNestedWidgetToPane(t *testing.T) {
+	child := &invalidationProbe{}
+	pane := &Pane{}
+	bindInvalidationTree(NewTabs(Tab{Widget: NewStack(Vertical, child)}), pane.Invalidate)
+	if child.invalidate == nil {
+		t.Fatal("nested widget did not receive a pane invalidation callback")
+	}
+	child.invalidate()
+	select {
+	case <-pane.invalidate:
+	default:
+		t.Fatal("nested widget callback did not request a pane redraw")
+	}
+}
+
 type tickerProbe struct {
 	interval time.Duration
 	ticks    []time.Time

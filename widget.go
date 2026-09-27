@@ -98,6 +98,39 @@ type PaneRequester interface {
 	PaneRequest() PaneRequest
 }
 
+// InvalidationAware widgets accept a callback that requests a host redraw.
+// The callback may be invoked from a background goroutine.
+type InvalidationAware interface {
+	SetInvalidate(func())
+}
+
+func bindInvalidationTree(root Widget, invalidate func()) {
+	if root == nil {
+		return
+	}
+	if aware, ok := root.(InvalidationAware); ok {
+		aware.SetInvalidate(invalidate)
+	}
+	switch node := root.(type) {
+	case *Tabs:
+		for _, tab := range node.Tabs {
+			bindInvalidationTree(tab.Widget, invalidate)
+		}
+	case *Stack:
+		for _, child := range node.Children {
+			bindInvalidationTree(child, invalidate)
+		}
+	case *Grid:
+		for _, child := range node.Children {
+			bindInvalidationTree(child, invalidate)
+		}
+	case *Frame:
+		for _, box := range node.Boxes {
+			bindInvalidationTree(box.Child, invalidate)
+		}
+	}
+}
+
 func mergePaneRequest(dst *PaneRequest, src PaneRequest) {
 	if src.Mouse > dst.Mouse {
 		dst.Mouse = src.Mouse
@@ -137,7 +170,6 @@ type MouseConsumer interface {
 type KeyConsumer interface {
 	ConsumeKey(e KeyEvent) (quit, consumed bool)
 }
-
 
 // FocusContainer is a focusable composite that can move focus within itself.
 // FocusNext and FocusPrevious return false when focus is already at the

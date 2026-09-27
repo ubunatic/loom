@@ -158,6 +158,30 @@ func TestHostedTabsIncludeLiveTreemap(t *testing.T) {
 	t.Fatal("treemap tab is missing from loom-demo")
 }
 
+func TestCloseHostedTabsIsIdempotentAndIncludesMonitor(t *testing.T) {
+	host, err := newHostedTabs()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer closeHostedTabs(host)
+
+	var monitor loom.Widget
+	for _, tab := range host.Tabs {
+		if tab.Title == "monitor" {
+			monitor = tab.Widget
+			break
+		}
+	}
+	if monitor == nil {
+		t.Fatal("monitor tab is missing")
+	}
+	if _, ok := monitor.(interface{ Close() }); !ok {
+		t.Fatalf("monitor widget %T does not implement Close", monitor)
+	}
+	closeHostedTabs(host)
+	closeHostedTabs(host)
+}
+
 func TestGenerateM3HostedEvidence(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping evidence generation in short mode")

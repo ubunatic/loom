@@ -119,6 +119,33 @@ func TestHostedWidgetCollectsAsynchronouslyAndShowsErrors(t *testing.T) {
 	widget.Close()
 }
 
+func TestNonWatchCollectionRequestsRepaint(t *testing.T) {
+	widget, err := newWidgetFromOptions(defaultOptions(), func(context.Context, Options, int, int) ([]string, error) {
+		return []string{"real process rows"}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(widget.Close)
+
+	repaint := make(chan struct{}, 1)
+	widget.SetInvalidate(func() { repaint <- struct{}{} })
+	canvas := loom.NewCanvas(30, 4)
+	widget.Draw(canvas, canvas.Bounds())
+	if got := widget.TickInterval(); got != 0 {
+		t.Fatalf("non-watch tick interval = %v, want 0", got)
+	}
+	select {
+	case <-repaint:
+	case <-time.After(time.Second):
+		t.Fatal("collection completed without requesting a pane repaint")
+	}
+	widget.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(canvas.Row(0), "real process rows") {
+		t.Fatalf("redraw did not show collected rows: %q", canvas.Row(0))
+	}
+}
+
 func TestWidgetFlagBindingAndHostedQuitContract(t *testing.T) {
 	opts, err := parseWidgetOptions([]string{"--watch", "--ansi", "--width=40", "--legend=right"})
 	if err != nil {

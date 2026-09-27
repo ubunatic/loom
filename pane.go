@@ -655,6 +655,7 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
 	p.invalidateOnce.Do(func() { p.invalidate = make(chan struct{}, 1) })
+	bindInvalidationTree(root, p.Invalidate)
 	if requester, ok := root.(PaneRequester); ok {
 		request := requester.PaneRequest()
 		if !p.mouse && request.Mouse > 0 {

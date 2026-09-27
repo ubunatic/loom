@@ -67,6 +67,7 @@ type treemapWidget struct {
 	width, height                 int
 	renderedWidth, renderedHeight int
 	collecting, closed            bool
+	invalidate                    func()
 	ctx                           context.Context
 	cancel                        context.CancelFunc
 	done                          sync.WaitGroup
@@ -129,9 +130,9 @@ func (w *treemapWidget) startCollectionLocked() {
 		defer w.done.Done()
 		lines, err := w.output(w.ctx, opts, width, height)
 		w.mu.Lock()
-		defer w.mu.Unlock()
 		w.collecting = false
 		if w.closed {
+			w.mu.Unlock()
 			return
 		}
 		w.renderedWidth, w.renderedHeight = width, height
@@ -142,11 +143,24 @@ func (w *treemapWidget) startCollectionLocked() {
 		if w.width != width || w.height != height {
 			w.startCollectionLocked()
 		}
+		invalidate := w.invalidate
+		w.mu.Unlock()
 		select {
 		case w.changed <- struct{}{}:
 		default:
 		}
+		if invalidate != nil {
+			invalidate()
+		}
 	}()
+}
+
+// SetInvalidate installs the host redraw callback. It is called whenever a
+// background collection publishes a new frame.
+func (w *treemapWidget) SetInvalidate(invalidate func()) {
+	w.mu.Lock()
+	w.invalidate = invalidate
+	w.mu.Unlock()
 }
 
 // HandleKey's bool follows Widget semantics: true asks the host to quit this
