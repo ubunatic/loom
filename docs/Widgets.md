@@ -164,6 +164,8 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `Choice.MouseTextOnly` | 093 | Mouse selects only on rendered item text. |
 | Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
+| 2D Panning in `loom.View` (`OffsetX`, `OffsetY`, `Pan`) | 138 | 2D offset panning with ANSI-aware style-preserving horizontal column clipping. |
+| Lazy Media Loading (`media.Widget`) | 140 | 50 ms threshold non-blocking background render with dim loading indicator. |
 
 ## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 
@@ -238,6 +240,39 @@ Loom provides 2D spatial ANSI cell grid modeling and interactive overtype/insert
   - Interactive arrow/word/object navigation and character painting.
   - Automatic viewport panning and focused cursor styling.
   - Mouse click-to-focus/navigate and wheel scrolling.
+
+---
+
+## 11. 2D Scrollable Viewport (`loom.View`)
+
+`loom.View` renders lines of plain or ANSI-styled text into a constrained rectangle with full 2D offset controls:
+
+```go
+view := loom.NewView(lines)
+view.SetOffset(colOffset, lineOffset)
+view.Pan(dx, dy) // moves offset with non-negative clamping
+```
+
+### Key Capabilities & Invariants
+- **2D Offset & Panning**: `OffsetX` sets the first visible terminal display column; `OffsetY` (alias for `Scroll`) sets the first visible line index.
+- **ANSI-Aware Style-Preserving Slicing**: When lines contain SGR escape codes (e.g. truecolor or 256-color text), horizontal column offsets cleanly clip preceding characters without dropping active color styles or breaking multi-byte/wide Unicode runes (`drawViewLine`).
+- **Interactive Navigation**: Supports two-axis keyboard panning (`left`/`right`/`up`/`down`, `h`/`l`/`k`/`j`, `pgup`/`pgdn`, `home`/`end`) and mouse wheel / trackbar dragging.
+
+---
+
+## 12. Media and Image Widget (`media.Widget`)
+
+`media.Widget` renders static images and streaming video preview frames into halfblock/terminal canvas grids:
+
+```go
+imgWidget, err := media.LoadImage("asset.png", media.ModeHalfblock)
+videoWidget, err := media.NewVideo("preview.mp4", media.ModeHalfblock, 24)
+```
+
+### Lazy Background Loading
+- **50 ms Threshold (`renderWithThreshold`)**: Media decodes and renders exceeding 50 ms are automatically backgrounded asynchronously.
+- **Non-Blocking UI Loop**: The widget immediately displays a dim `"loading"` indicator during slow operations and populates the rendered grid into the cache upon completion, keeping event loops and parent layouts fully responsive.
+
 
 
 
