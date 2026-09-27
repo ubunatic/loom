@@ -17,6 +17,7 @@ import (
 
 // TestWidths verifies that all test cases have correct display widths
 func TestWidths(t *testing.T) {
+	t.Setenv("LOOM_ZWJ", "join")
 	for _, tc := range Cases {
 		got := loom.StringWidth(tc.Text)
 		if divergence, ok := knownDivergences[tc.Label]; ok {

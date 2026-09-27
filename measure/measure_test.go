@@ -9,6 +9,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	_ = os.Setenv("LOOM_ZWJ", "join")
 	if data, err := os.ReadFile("../spec/emoji.yaml"); err == nil {
 		_ = LoadEmojiSpecYAML(data)
 	}
@@ -33,10 +34,10 @@ func TestStringWidthUsesLoomCellPolicy(t *testing.T) {
 		{name: "vs16_point_up", text: "☝️", want: 2},
 		{name: "flag_de", text: "🇩🇪", want: 2},
 		{name: "zwj_family", text: "👨‍👩‍👧", want: 2},
-		{name: "zwj_heart_on_fire", text: "❤️‍🔥", want: 3},
-		{name: "zwj_polar_bear", text: "🐻‍❄️", want: 4},
-		{name: "zwj_black_cat", text: "🐈‍⬛", want: 4},
-		{name: "zwj_mending_heart", text: "❤️‍🩹", want: 3},
+		{name: "zwj_heart_on_fire", text: "❤️‍🔥", want: 2},
+		{name: "zwj_polar_bear", text: "🐻‍❄️", want: 2},
+		{name: "zwj_black_cat", text: "🐈‍⬛", want: 2},
+		{name: "zwj_mending_heart", text: "❤️‍🩹", want: 2},
 		{name: "vs16_hand_with_fingers_splayed", text: "🖐️", want: 2},
 		{name: "vs16_hot_pepper", text: "🌶️", want: 2},
 		{name: "override_raised_fist", text: "✊", want: 2},
@@ -65,6 +66,39 @@ func TestRegionalIndicatorPairWidthInBothImplementations(t *testing.T) {
 	} {
 		if got := measureWidth("🇩🇪"); got != 2 {
 			t.Errorf("%s StringWidth(flag) = %d, want 2", name, got)
+		}
+	}
+}
+
+func TestStringWidthZWJModeOverride(t *testing.T) {
+	for _, tc := range []struct {
+		mode string
+		want int
+	}{{"join", 2}, {"split", 6}} {
+		t.Run(tc.mode, func(t *testing.T) {
+			t.Setenv("LOOM_ZWJ", tc.mode)
+			if got := StringWidth("👨‍👩‍👧"); got != tc.want {
+				t.Fatalf("StringWidth(family) = %d, want %d for LOOM_ZWJ=%s", got, tc.want, tc.mode)
+			}
+		})
+	}
+	t.Setenv("LOOM_ZWJ", "split")
+	if got := StringWidth("❤️‍🔥"); got != 4 {
+		t.Fatalf("StringWidth(heart on fire) = %d, want 4 when split", got)
+	}
+}
+
+func TestZWJModeFromProbeAdvance(t *testing.T) {
+	for _, tc := range []struct {
+		advance int
+		mode    string
+	}{{2, "join"}, {8, "split"}, {0, "split"}} {
+		want := zwjSplit
+		if tc.mode == "join" {
+			want = zwjJoin
+		}
+		if got := zwjModeFromAdvance(tc.advance); got != want {
+			t.Errorf("zwjModeFromAdvance(%d) = %d, want %d", tc.advance, got, want)
 		}
 	}
 }

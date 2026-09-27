@@ -4,6 +4,7 @@
 package loom
 
 import (
+	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom/measure"
@@ -24,6 +25,9 @@ func TestEmbeddedEmojiSpecMatchesRuntime(t *testing.T) {
 		t.Errorf("FlagDefaultWidth = %d, want 2", spec.FlagDefaultWidth)
 	}
 	for _, o := range spec.Overrides {
+		if strings.ContainsRune(o.Glyph, '\u200D') {
+			continue // ZWJ widths are selected from the runtime terminal probe.
+		}
 		if got := measure.StringWidth(o.Glyph); got != o.Width {
 			t.Errorf("measure.StringWidth(%q) = %d, want specced %d (%s)", o.Glyph, got, o.Width, o.Note)
 		}

@@ -85,4 +85,5 @@ Pre-Work for M2c: loom-probe prints results while still in raw mode (lines stair
 - foot: ZWJ family 2, flag 2, plain 2 (joins).
 - kitty: ZWJ family 2, flag 2, plain 2 (joins).
 
-- Also verify in M2c: the gap before `>` in docs/progress/096 M2-buttons.ansi in tilix (likely the same join/split width mismatch).
+- The gap before `>` in `docs/progress/096/M2-buttons.ansi` on Tilix is consistent with a width mismatch: this three-person sample advances 6 cells when split, while the old joined-width policy reserved 2. M2c's split mode measures the three emoji separately (6); join mode measures the family as 2.
+- M2c restores raw mode before writing its summary, which ends with a newline.

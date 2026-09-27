@@ -154,10 +154,10 @@ func StringWidthNew(text string) int {
 			break
 		}
 
-		if gw, ok := getGlyphOverride(text[start:i]); ok {
+		if hasZWJ {
+			w += ZWJClusterWidth(text[start:i])
+		} else if gw, ok := getGlyphOverride(text[start:i]); ok {
 			w += gw
-		} else if hasZWJ {
-			w += ActiveEmojiSpec().ZWJDefaultWidth
 		} else if hasVS16 {
 			w += ActiveEmojiSpec().VS16DefaultWidth
 		} else if hasVS15 {
@@ -187,9 +187,6 @@ func ClusterWidth(cluster string) int {
 	if cluster == "" {
 		return 0
 	}
-	if w, ok := getGlyphOverride(cluster); ok {
-		return w
-	}
 	rs := []rune(cluster)
 	if len(rs) == 0 {
 		return 0
@@ -198,9 +195,12 @@ func ClusterWidth(cluster string) int {
 	if len(rs) == 2 && isRegionalIndicator(rs[0]) && isRegionalIndicator(rs[1]) {
 		return ActiveEmojiSpec().FlagDefaultWidth
 	}
-	// ZWJ sequences: rendered as single joined emoji in modern terminals
+	// ZWJ sequence width follows the startup terminal probe or LOOM_ZWJ override.
 	if strings.ContainsRune(cluster, '\u200D') {
-		return ActiveEmojiSpec().ZWJDefaultWidth
+		return ZWJClusterWidth(cluster)
+	}
+	if w, ok := getGlyphOverride(cluster); ok {
+		return w
 	}
 	// VS16 (Variation Selector-16) emoji presentation: width 2
 	if strings.ContainsRune(cluster, '\uFE0F') {

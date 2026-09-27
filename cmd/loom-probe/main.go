@@ -46,7 +46,12 @@ func run(input *os.File, output io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("enable raw terminal input: %w", err)
 	}
-	defer term.Restore(inFD, oldState) //nolint:errcheck
+	raw := true
+	defer func() {
+		if raw {
+			term.Restore(inFD, oldState) //nolint:errcheck
+		}
+	}()
 
 	inAlternateScreen := false
 	defer func() {
@@ -81,7 +86,15 @@ func run(input *os.File, output io.Writer) error {
 		return fmt.Errorf("leave alternate screen: %w", err)
 	}
 	inAlternateScreen = false
+	if err := term.Restore(inFD, oldState); err != nil {
+		return fmt.Errorf("restore terminal: %w", err)
+	}
+	raw = false
+	writeResults(output, results)
+	return nil
+}
 
+func writeResults(output io.Writer, results []result) {
 	fmt.Fprintln(output, "Terminal cursor advances (start column 1):")
 	for _, r := range results {
 		if r.err != nil {
@@ -90,7 +103,6 @@ func run(input *os.File, output io.Writer) error {
 		}
 		fmt.Fprintf(output, "  %s: %d columns (cursor column %d)\n", r.sample.name, cursorAdvance(1, r.col), r.col)
 	}
-	return nil
 }
 
 func readCursorReport(fd int, timeout time.Duration) (int, int, error) {

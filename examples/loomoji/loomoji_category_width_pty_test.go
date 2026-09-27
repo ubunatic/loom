@@ -20,6 +20,7 @@ func TestLoomojiCategoryLineWidthsPTY(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping PTY category width test in short mode")
 	}
+	t.Setenv("LOOM_ZWJ", "join") // The test VT is not a terminal emulator and cannot answer DSR.
 
 	bin := filepath.Join(t.TempDir(), "loomoji")
 	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/loomoji").CombinedOutput(); err != nil {

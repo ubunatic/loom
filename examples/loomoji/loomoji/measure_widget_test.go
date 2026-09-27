@@ -137,6 +137,7 @@ func TestApplyRenderMode(t *testing.T) {
 }
 
 func TestEvaluateVTEModeAndWidth(t *testing.T) {
+	t.Setenv("LOOM_ZWJ", "join")
 	tests := []struct {
 		glyph     string
 		wantMode  string
@@ -146,13 +147,13 @@ func TestEvaluateVTEModeAndWidth(t *testing.T) {
 		{glyph: "🏘️", wantMode: RenderModePad1, wantWidth: 2},
 		{glyph: "⟵", wantMode: RenderModePad1, wantWidth: 2},
 		{glyph: "⟷", wantMode: RenderModePad1, wantWidth: 2},
-		{glyph: "🐻‍❄️", wantMode: RenderModePad1, wantWidth: 4},
-		{glyph: "👁️‍🗨️", wantMode: RenderModePad1, wantWidth: 3},
-		{glyph: "🐈‍⬛", wantMode: RenderModeDefault, wantWidth: 4},
-		{glyph: "😮‍💨", wantMode: RenderModeDefault, wantWidth: 4},
-		{glyph: "😵‍💫", wantMode: RenderModeDefault, wantWidth: 4},
-		{glyph: "❤️‍🔥", wantMode: RenderModeDefault, wantWidth: 3},
-		{glyph: "❤️‍🩹", wantMode: RenderModeDefault, wantWidth: 3},
+		{glyph: "🐻‍❄️", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "👁️‍🗨️", wantMode: RenderModePad1, wantWidth: 2},
+		{glyph: "🐈‍⬛", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "😮‍💨", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "😵‍💫", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "❤️‍🔥", wantMode: RenderModeDefault, wantWidth: 2},
+		{glyph: "❤️‍🩹", wantMode: RenderModeDefault, wantWidth: 2},
 		{glyph: "⭐️", wantMode: RenderModeDefault, wantWidth: 2},
 		{glyph: "😀", wantMode: RenderModeDefault, wantWidth: 2},
 		{glyph: "←", wantMode: RenderModeDefault, wantWidth: 1},

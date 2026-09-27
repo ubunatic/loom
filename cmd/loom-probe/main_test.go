@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestParseCursorReport(t *testing.T) {
 	row, col, err := parseCursorReport("\x1b[7;9R")
@@ -23,5 +26,13 @@ func TestParseCursorReportRejectsInvalidReply(t *testing.T) {
 func TestCursorAdvanceFromColumnOne(t *testing.T) {
 	if got := cursorAdvance(1, 3); got != 2 {
 		t.Fatalf("cursorAdvance(1, 3) = %d, want 2", got)
+	}
+}
+
+func TestProbeSummaryEndsWithNewline(t *testing.T) {
+	var output strings.Builder
+	writeResults(&output, []result{{sample: sample{name: "ZWJ family"}, row: 1, col: 3}})
+	if got := output.String(); !strings.HasSuffix(got, "\n") {
+		t.Fatalf("probe summary lacks trailing newline: %q", got)
 	}
 }
