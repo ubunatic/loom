@@ -160,6 +160,67 @@ func TestViewFocusable(t *testing.T) {
 	}
 }
 
+func TestViewPanOffsetAndANSIClipping(t *testing.T) {
+	v := NewView([]string{"\x1b[31mabcd\x1b[0m", "xy"})
+	v.SetOffset(2, 0)
+	canvas := NewCanvas(3, 2)
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(0, 0); got.Text != "c" || got.Style.FG != ColorIndex(1) {
+		t.Fatalf("offset ANSI cell = %+v, want red c", got)
+	}
+	if got := canvas.Get(1, 0).Text; got != "d" {
+		t.Fatalf("second clipped cell = %q, want d", got)
+	}
+	if got := canvas.Get(0, 1).Text; got != " " {
+		t.Fatalf("short line should be blank at offset, got %q", got)
+	}
+	v.Pan(-10, -10)
+	if x, y := v.Offset(); x != 0 || y != 0 {
+		t.Fatalf("negative pan offset=(%d,%d), want (0,0)", x, y)
+	}
+	v.Pan(3, 1)
+	if x, y := v.Offset(); x != 3 || y != 1 {
+		t.Fatalf("positive pan offset=(%d,%d), want (3,1)", x, y)
+	}
+	v.Draw(canvas, canvas.Bounds())
+	if v.OffsetY != 1 {
+		t.Fatalf("draw offsetY=%d, want synchronized scroll 1", v.OffsetY)
+	}
+}
+
+func TestViewHorizontalPanKeys(t *testing.T) {
+	v := NewView([]string{"abcdef"})
+	v.HandleKey(KeyEvent{Key: "right"})
+	v.HandleKey(KeyEvent{Text: "l"})
+	if v.OffsetX != 2 {
+		t.Fatalf("right pan offset=%d, want 2", v.OffsetX)
+	}
+	v.HandleKey(KeyEvent{Key: "left"})
+	v.HandleKey(KeyEvent{Text: "h"})
+	v.HandleKey(KeyEvent{Key: "left"})
+	if v.OffsetX != 0 {
+		t.Fatalf("left pan offset=%d, want clamped 0", v.OffsetX)
+	}
+}
+
+func TestViewOffsetClipsWideCellsAndClampsVerticalOffset(t *testing.T) {
+	v := NewView([]string{"a界b", "second", "third"})
+	v.SetOffset(3, 1)
+	canvas := NewCanvas(2, 2)
+	v.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(0, 0).Text; got != "o" {
+		t.Fatalf("cell at horizontal offset = %q, want o", got)
+	}
+	if v.Scroll != 1 || v.OffsetY != 1 {
+		t.Fatalf("vertical offset after draw = (%d,%d), want (1,1)", v.Scroll, v.OffsetY)
+	}
+	v.SetOffset(0, 10)
+	v.Draw(canvas, canvas.Bounds())
+	if v.Scroll != len(v.Lines)-canvas.Bounds().H || v.OffsetY != v.Scroll {
+		t.Fatalf("clamped vertical offset = (%d,%d), want %d", v.Scroll, v.OffsetY, len(v.Lines)-canvas.Bounds().H)
+	}
+}
+
 func TestScrollbarMapping(t *testing.T) {
 	for _, tc := range []struct {
 		name                             string

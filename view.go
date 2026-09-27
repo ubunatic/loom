@@ -48,6 +48,8 @@ func DefaultScrollbarStyle() ScrollbarStyle {
 type View struct {
 	Lines      []string
 	Scroll     int   // first visible line index
+	OffsetX    int   // first visible display column
+	OffsetY    int   // first visible line index (alias for Scroll)
 	Height     int   // preferred visible height cap; 0 = len(Lines)
 	Style      Style // base style for all lines
 	FocusStyle Style // style for all lines when focused (falls back to Style if zero)
@@ -59,6 +61,23 @@ type View struct {
 	lastRect      Rect
 	drag          scrollbarDrag
 }
+
+// Pan moves the view by display columns and lines, clamping at the origin.
+func (v *View) Pan(dx, dy int) {
+	v.OffsetX = max(0, v.OffsetX+dx)
+	v.Scroll = max(0, v.Scroll+dy)
+	v.OffsetY = v.Scroll
+}
+
+// SetOffset sets the view's display-column and line offsets.
+func (v *View) SetOffset(x, y int) {
+	v.OffsetX = max(0, x)
+	v.Scroll = max(0, y)
+	v.OffsetY = v.Scroll
+}
+
+// Offset returns the current display-column and line offsets.
+func (v *View) Offset() (x, y int) { return v.OffsetX, v.Scroll }
 
 // NewView creates a View from a slice of pre-formatted lines.
 func NewView(lines []string) *View {
@@ -72,6 +91,7 @@ func (v *View) Focused() bool { return v.focused }
 func (v *View) SetFocus(focused bool) {
 	if !focused && v.drag.active {
 		v.Scroll = v.drag.start
+		v.OffsetY = v.Scroll
 		v.drag.cancel()
 	}
 	v.focused = focused
@@ -92,6 +112,7 @@ func (v *View) Draw(c *Canvas, r Rect) {
 	if total > r.H && v.Scroll > total-r.H {
 		v.Scroll = total - r.H
 	}
+	v.OffsetY = v.Scroll
 
 	// Pre-compute indicator row (proportional to scroll position).
 	indicatorRow := 0
@@ -114,12 +135,37 @@ func (v *View) Draw(c *Canvas, r Rect) {
 		c.PaintSurface(Rect{r.X, y, r.W, 1}, lineStyle)
 		lineIdx := v.Scroll + row
 		if lineIdx >= 0 && lineIdx < total {
-			plain := TruncateText(stripANSI(v.Lines[lineIdx]), contentW, "")
-			c.Write(r.X, y, plain, lineStyle)
+			drawViewLine(c, r.X, y, contentW, v.Lines[lineIdx], v.OffsetX, lineStyle)
 		}
 		if scrollable {
 			thumb := max(1, scrollbarThumbLength(r.H, total, r.H))
 			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
+		}
+	}
+}
+
+func drawViewLine(c *Canvas, x, y, width int, line string, offset int, base Style) {
+	col := 0
+	out := x
+	for _, cell := range ParseANSI(line) {
+		if cell.Continuation {
+			continue
+		}
+		cellWidth := StringWidth(cell.Text)
+		if cellWidth <= 0 {
+			continue
+		}
+		if col >= offset && out+cellWidth <= x+width {
+			style := cell.Style
+			if style == (Style{}) {
+				style = base
+			}
+			c.Set(out, y, Cell{Text: cell.Text, Style: style})
+			out += cellWidth
+		}
+		col += cellWidth
+		if out >= x+width {
+			break
 		}
 	}
 }
@@ -148,26 +194,39 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 	case "up", "k":
 		if v.Scroll > 0 {
 			v.Scroll--
+			v.OffsetY = v.Scroll
 		}
 	case "down", "j":
 		if v.Scroll < maxScroll {
 			v.Scroll++
+			v.OffsetY = v.Scroll
 		}
+	case "left", "h":
+		v.OffsetX = max(0, v.OffsetX-1)
+	case "right", "l":
+		v.OffsetX++
 	case "pgdown", "ctrl-f", " ":
 		v.Scroll = min(maxScroll, v.Scroll+page)
+		v.OffsetY = v.Scroll
 	case "pgup", "ctrl-b", "b":
 		v.Scroll = max(0, v.Scroll-page)
+		v.OffsetY = v.Scroll
 	case "ctrl-d":
 		v.Scroll = min(maxScroll, v.Scroll+halfPage)
+		v.OffsetY = v.Scroll
 	case "ctrl-u":
 		v.Scroll = max(0, v.Scroll-halfPage)
+		v.OffsetY = v.Scroll
 	case "home", "g":
 		v.Scroll = 0
+		v.OffsetY = v.Scroll
 	case "end", "G":
 		v.Scroll = maxScroll
+		v.OffsetY = v.Scroll
 	case "esc", "ctrl-c", "q":
 		if v.drag.active {
 			v.Scroll = v.drag.start
+			v.OffsetY = v.Scroll
 			v.drag.cancel()
 		}
 		return true
@@ -185,10 +244,12 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 	case MouseScrollUp:
 		if v.Scroll > 0 {
 			v.Scroll--
+			v.OffsetY = v.Scroll
 		}
 	case MouseScrollDown:
 		if v.Scroll < maxScroll {
 			v.Scroll++
+			v.OffsetY = v.Scroll
 		}
 	case MousePress:
 		if e.Button == MouseLeft && maxScroll > 0 && scrollbarVisible(v.ScrollbarMode, true) && v.lastRect.W > 0 &&
@@ -201,11 +262,13 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 				v.drag.press(row, start, v.Scroll)
 			} else {
 				v.Scroll = scrollTrackPosition(row, v.lastRect.H, maxScroll)
+				v.OffsetY = v.Scroll
 			}
 		}
 	case MouseDrag:
 		if v.drag.active {
 			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y-v.lastRect.Y, v.drag.grab, maxScroll)
+			v.OffsetY = v.Scroll
 		}
 	case MouseRelease:
 		if v.drag.active {
