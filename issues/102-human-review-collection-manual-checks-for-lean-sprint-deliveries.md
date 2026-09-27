@@ -44,3 +44,5 @@ Whoever completes the last item closes this ticket.
 - [ ] **124 F10 global quit**: in textedit, ansiedit, ansiviewer, filebrowser and paint, press F10 while an editor or popup has focus. The app exits and the terminal is restored, and the footer shows "F10 Quit".
 - [ ] **064 hosted tabs**: in loom-demo, open splash and monitor as two tabs. Both redraw live, switching tabs works, and when splash finishes it closes only its own tab.
 - [ ] **064 standalone monitor**: `monitor --watch`, press F10, then check that no monitor process or collector is left running.
+
+- [ ] **111 media widget:** run `media` (examples/media) with a PNG, and with a video if ffmpeg is installed. Check that the image keeps its proportions and is centered, that colors look right in halfblock, quadblock and sextant, that nothing is painted outside the image area, and that quitting leaves no ffmpeg process behind.

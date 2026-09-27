@@ -49,3 +49,7 @@ rect, rendered through cati's public `v1` packages instead of loom's own rendere
 3. **Do not rescale on every Draw.** `Draw` calls `RenderToGrid` on every repaint. Cache the grid, keyed by the image identity and the rect size, and re-render only when the frame or size changes.
 4. **Errors are swallowed.** When rendering fails, draw a short error message inside the rect instead of leaving it blank.
 5. The outside-rect assertion in `widget_test.go` only checks `Text != " "`. Also compare `Style` against Reset, so a background-only spill is caught.
+
+**M4 delivered (7ef3c86):** centered aspect fit (cati already preserves the aspect ratio), letterbox clearing, a grid cache keyed by the image and rect size, render errors drawn inside the rect, and spill checks that also compare Style. The host re-ran `make test-q1`, and it passed, including `media` and `examples/media`.
+**Upstream note:** `NewVideo` drains cati's frame channel before calling its stop func, because cati's `OpenVideoStream` reader and its cleanup both call `cmd.Wait`, and the M4 Close test hung. This workaround belongs in cati (v0.2.6), not in loom.
+**Visual check:** the user was away. The check is parked in 102.
