@@ -23,6 +23,12 @@ import (
 // convention (docs/Canary.md).
 func openPTY(t *testing.T) (master, slave *os.File) {
 	t.Helper()
+	t.Setenv("LOOM_ZWJ", "join") // This test PTY has no terminal emulator to answer DSR.
+	return openPTYForProbe(t)
+}
+
+func openPTYForProbe(t *testing.T) (master, slave *os.File) {
+	t.Helper()
 	m, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {
 		t.Skipf("open /dev/ptmx: %v", err)
@@ -356,6 +362,73 @@ func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 	got := rec.snapshot()
 	if len(got) != 2 || got[0].Key != "up" || got[1].Key != "down" {
 		t.Fatalf("got %+v, want [{Key:up} {Key:down}]", got)
+	}
+}
+
+func TestPaneProbesZWJAfterEnteringAltScreen(t *testing.T) {
+	t.Setenv("LOOM_ZWJ", "")
+	master, slave := openPTYForProbe(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 4, cols: 20, startRow: 1, ResizeConfig: DefaultResizeConfig()}
+	p.ResizeConfig.AltScreen = true
+	rec := newKeyRecorder(1)
+	output := make(chan string, 1)
+	probed := make(chan struct{})
+	stop := make(chan struct{})
+	go func() {
+		var captured strings.Builder
+		replied := false
+		buf := make([]byte, 256)
+		for {
+			select {
+			case <-stop:
+				output <- captured.String()
+				return
+			default:
+			}
+			fds := []unix.PollFd{{Fd: int32(master.Fd()), Events: unix.POLLIN}}
+			if n, err := unix.Poll(fds, 20); err != nil || n == 0 {
+				continue
+			}
+			n, err := master.Read(buf)
+			if err != nil {
+				continue
+			}
+			captured.Write(buf[:n])
+			if !replied && strings.Contains(captured.String(), "\x1b[6n") {
+				_, _ = master.Write([]byte("\x1b[1;3R"))
+				replied = true
+				select {
+				case <-probed:
+				default:
+					close(probed)
+				}
+			}
+		}
+	}()
+	errC := make(chan error, 1)
+	go func() { errC <- p.Run(rec) }()
+	select {
+	case <-probed:
+	case <-time.After(time.Second):
+		t.Fatal("pane did not issue ZWJ probe")
+	}
+	if _, err := master.Write([]byte("q")); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-errC; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+	close(stop)
+	select {
+	case raw := <-output:
+		alt := strings.Index(raw, "\x1b[?1049h")
+		probe := strings.Index(raw, "\x1b7\x1b[1;1H👨‍👩‍👧‍👦\x1b[6n")
+		erase := strings.Index(raw, "\r\x1b[2K\x1b8")
+		if alt < 0 || probe < alt || erase < probe {
+			t.Fatalf("startup output does not enter alt screen before probing and erasing glyph: %q", raw)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("pane probe output capture did not finish")
 	}
 }
 

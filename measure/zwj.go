@@ -25,9 +25,17 @@ func init() {
 	detectedZWJMode.Store(zwjSplit)
 	if mode, ok := parseZWJMode(os.Getenv("LOOM_ZWJ")); ok {
 		detectedZWJMode.Store(mode)
+	}
+}
+
+// DetectZWJMode probes an interactive terminal after its caller has entered
+// raw mode and selected its screen. It is safe to call with non-terminal files.
+func DetectZWJMode(input, output *os.File, row int) {
+	if mode, ok := parseZWJMode(os.Getenv("LOOM_ZWJ")); ok {
+		detectedZWJMode.Store(mode)
 		return
 	}
-	if mode, err := probeTerminalZWJMode(os.Stdin, os.Stdout, 200*time.Millisecond); err == nil {
+	if mode, err := probeTerminalZWJMode(input, output, row, 200*time.Millisecond); err == nil {
 		detectedZWJMode.Store(mode)
 	}
 }
@@ -67,21 +75,17 @@ func zwjModeFromAdvance(advance int) int32 {
 	return zwjSplit
 }
 
-func probeTerminalZWJMode(input, output *os.File, timeout time.Duration) (int32, error) {
+func probeTerminalZWJMode(input, output *os.File, row int, timeout time.Duration) (int32, error) {
 	if input == nil || output == nil || !term.IsTerminal(int(input.Fd())) || !term.IsTerminal(int(output.Fd())) {
 		return zwjSplit, fmt.Errorf("terminal probe requires tty stdin and stdout")
 	}
-	state, err := term.MakeRaw(int(input.Fd()))
-	if err != nil {
+	if row < 1 {
+		row = 1
+	}
+	defer output.WriteString("\r\x1b[2K\x1b8") //nolint:errcheck
+	if _, err := fmt.Fprintf(output, "\x1b7\x1b[%d;1H👨‍👩‍👧‍👦\x1b[6n", row); err != nil {
 		return zwjSplit, err
 	}
-	defer term.Restore(int(input.Fd()), state) //nolint:errcheck
-
-	if _, err := output.WriteString("\x1b[?1049h\x1b[2J\x1b[1;1H👨‍👩‍👧‍👦\x1b[6n"); err != nil {
-		_, _ = output.WriteString("\x1b[?1049l")
-		return zwjSplit, err
-	}
-	defer output.WriteString("\x1b[?1049l") //nolint:errcheck
 	_, col, err := readProbeCursor(int(input.Fd()), timeout)
 	if err != nil {
 		return zwjSplit, err

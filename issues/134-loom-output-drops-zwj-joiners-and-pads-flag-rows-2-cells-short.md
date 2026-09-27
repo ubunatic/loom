@@ -97,3 +97,8 @@ Pre-Work / Required Refinements for M2d:
 - The probe must leave no glyphs on screen (carriage return + erase line after measuring).
 - Test: importing measure with a tty-like stdin performs no I/O.
 - Conventional commit (`feat: ... (issue 134 M2d)`).
+
+M2d implementation: `measure.init` is environment-only. `Pane.run` enters its selected screen
+mode, then calls `measure.DetectZWJMode` before starting the input reader. The probe saves and
+restores the cursor and erases its test row, including on timeout. Tests cover import with PTY
+stdin/stdout and startup ordering with a DSR responder.

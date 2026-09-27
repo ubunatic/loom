@@ -33,6 +33,7 @@ import (
 	"syscall"
 	"time"
 
+	"codeberg.org/ubunatic/loom/measure"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
@@ -756,10 +757,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	if full, alt := p.wantScreen(); full && !alt {
 		// The full-screen layout owns the usable terminal buffer from row 1.
 		// Recompute it before allocating the first canvas; later Winch events use
-		// the same path. (An alternate-screen start is entered by the first redraw.)
+		// the same path.
 		p.inlineStart, p.fullActive = p.startRow, true
 		p.applyWinch(&cols)
 	}
+	full, alt := p.wantScreen()
+	p.changeScreen(full, alt)
+	// New has put the owned tty in raw mode. Probe before starting the input
+	// reader so the DSR reply cannot be consumed as a key event.
+	measure.DetectZWJMode(p.tty, p.tty, p.startRow)
 	if p.MaxCols > 0 && cols > p.MaxCols {
 		cols = p.MaxCols
 	}

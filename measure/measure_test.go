@@ -4,8 +4,14 @@
 package measure
 
 import (
+	"bytes"
+	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestMain(m *testing.M) {
@@ -101,6 +107,91 @@ func TestZWJModeFromProbeAdvance(t *testing.T) {
 			t.Errorf("zwjModeFromAdvance(%d) = %d, want %d", tc.advance, got, want)
 		}
 	}
+}
+
+func TestMeasureImportDoesNotProbeTTY(t *testing.T) {
+	dir := t.TempDir()
+	source := filepath.Join(dir, "main.go")
+	if err := os.WriteFile(source, []byte("package main\nimport _ \"codeberg.org/ubunatic/loom/measure\"\nfunc main() {}\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	bin := filepath.Join(dir, "import-measure")
+	build := exec.Command("go", "build", "-o", bin, source)
+	build.Env = envWithoutZWJOverride()
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build import helper: %v\n%s", err, output)
+	}
+
+	master, slave := openTestPTY(t)
+	cmd := exec.Command(bin)
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
+	cmd.Env = envWithoutZWJOverride()
+	if err := cmd.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if err := cmd.Wait(); err != nil {
+		t.Fatalf("import helper: %v", err)
+	}
+	if got := readPTYOutput(t, master); len(got) != 0 {
+		t.Fatalf("importing measure wrote to tty: %q", got)
+	}
+}
+
+func openTestPTY(t *testing.T) (*os.File, *os.File) {
+	t.Helper()
+	master, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := unix.IoctlSetPointerInt(int(master.Fd()), unix.TIOCSPTLCK, 0); err != nil {
+		t.Fatal(err)
+	}
+	n, err := unix.IoctlGetInt(int(master.Fd()), unix.TIOCGPTN)
+	if err != nil {
+		t.Fatal(err)
+	}
+	slave, err := os.OpenFile(fmt.Sprintf("/dev/pts/%d", n), os.O_RDWR, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = master.Close(); _ = slave.Close() })
+	return master, slave
+}
+
+func readPTYOutput(t *testing.T, master *os.File) []byte {
+	t.Helper()
+	fd := int(master.Fd())
+	if err := unix.SetNonblock(fd, true); err != nil {
+		t.Fatal(err)
+	}
+	var out bytes.Buffer
+	buf := make([]byte, 256)
+	for {
+		n, err := unix.Read(fd, buf)
+		if n > 0 {
+			out.Write(buf[:n])
+		}
+		if err == unix.EAGAIN || err == unix.EWOULDBLOCK || err == unix.EIO {
+			break
+		}
+		if err != nil {
+			t.Fatal(err)
+		}
+		if n == 0 {
+			break
+		}
+	}
+	return out.Bytes()
+}
+
+func envWithoutZWJOverride() []string {
+	var env []string
+	for _, entry := range os.Environ() {
+		if len(entry) < len("LOOM_ZWJ=") || entry[:len("LOOM_ZWJ=")] != "LOOM_ZWJ=" {
+			env = append(env, entry)
+		}
+	}
+	return env
 }
 
 func TestEmojiSpecLoadAndReconcile(t *testing.T) {
