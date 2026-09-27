@@ -69,3 +69,8 @@ Data: `docs/data/loomoji-widths/xterm-256color--unknown.{json,txt}` (1132 glyphs
 - Unified Loomoji with Loom's `measure` package, eliminating shadow tables.
 - Added PTY category width test in `examples/loomoji/loomoji_category_width_pty_test.go`.
 - Documented in [`docs/EmojiWidth.md`](../docs/EmojiWidth.md).
+
+## Finding 2026-09-27 (132, ruler mockup)
+Loom disagrees with itself about the DE flag (🇩🇪): the ANSI box check (TestAllAnsiAssetsHaveValidBoxes)
+counts it as 4 columns, while ansiviewer's cluster replay (132, via ParseANSI) places the next text
+2 columns later. The terminals tested in 096 draw it as 2 columns or as a 2-column glyph.
