@@ -53,8 +53,10 @@ Unknown or invalid sequences produce an empty event rather than a guessed key.
 The exact decoded names are part of the input contract used by widgets and
 applications; see `KeyDefaults.md` for the library's default key actions.
 
-After decoding and dispatch, the pane handles F10 globally by default: it
-requests quit before sending the event to any widget, including the help
-overlay. Applications that need F10 within their widget tree can set
-`DisableGlobalF10Quit` on the pane. This global behavior is separate from the
+After decoding, the pane handles F10 globally by default: it requests quit
+before dispatching the event to any widget, including the help overlay.
+Applications that need F10 within their widget tree can set
+`DisableGlobalF10Quit` on the pane, or have the root widget return
+`OwnsQuit: true` from its `PaneRequest`, which disables both the default quit
+keys and the global F10 quit. This global behavior is separate from the
 key decoder, which simply reports F10 as `f10`.
