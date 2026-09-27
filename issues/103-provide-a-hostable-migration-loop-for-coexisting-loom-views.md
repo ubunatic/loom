@@ -1,10 +1,3 @@
-# 103 — Provide a hostable migration loop for coexisting Loom views
-
-**Status**: Open
-
----
-
-Reserved placeholder ticket.
 # 103 — Port minimal colored `harnez usage --compact --watch`
 
 **Status**: Open
@@ -29,3 +22,10 @@ both views to coexist, and provide an interactive switch between them.
 The SDK changes required by the migration should be kept small and generic.
 File separate follow-up issues for Loom capabilities that are discovered but
 are not necessary to complete this port.
+
+## Clarification (user, 2026-09-27)
+
+"Port" here means **rebuild**, not copy: re-implement the behavior on Loom widgets, or use the
+strangler pattern, where old and new views coexist behind flags and the Loom views gradually
+replace the old ones. Do not copy Harnez's rendering code across. Reuse only its data
+collection and its behavior as the reference.
