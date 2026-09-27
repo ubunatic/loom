@@ -152,3 +152,6 @@ background results, including in non-watch mode; tests verify rows appear after
 the callback with no ticker and that the pane callback reaches nested widgets.
 loom-demo's hosted close test confirms the monitor is covered and closing all
 hosted widgets twice is safe.
+
+**M4 reviewed (0ccc813):** the new `InvalidationAware` interface (`SetInvalidate(func())`) is bound by the Pane through the Tabs, Stack, Grid and Frame children when the Pane is built. The treemap calls it after each background collection, and there is a repaint test with no ticker. Known limit: widgets added after the Pane is built are not bound. That is acceptable for now.
+**Visual check:** the user reviewed the colored treemap render in a screenshot. Box and legend colors are correct, with no leaked escapes. The tiny boxes 1 and 2 have squashed borders, which comes from the existing graph drawing and is out of scope here. The user's final OK is still pending.
