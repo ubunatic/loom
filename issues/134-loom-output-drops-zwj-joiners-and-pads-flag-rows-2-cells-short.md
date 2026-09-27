@@ -49,3 +49,14 @@ Revised plan:
   set Loom's ZWJ width mode from the reply; fall back to the separate-emoji width when there is no
   reply in time, and allow an override (env var, e.g. `LOOM_ZWJ=join|split`). Probe once, in
   tilix, foot, kitty, ptyxis and alacritty, before building on it.
+
+## 5. Plan (dev-134, reviewed by the host)
+- M1: failing tests that U+200D survives Canvas.Write/Set, the cell renderer (Canvas.Row) and ANSI
+  replay; find and fix the loss point.
+- M2: flags count 2 columns everywhere. Known outliers: the ANSI box check (ValidateAnsiBox) and
+  ParseAnsiBuffer sum RuneWidth per rune; measure.go, parse_ansi.go and rawscreen.go handle pairs.
+- M2b: a probe command `loom-probe` (installed by make install) that prints a ZWJ family, a flag and
+  a plain emoji, asks for the cursor position (ESC[6n) after each, and prints each advance in
+  columns. The user runs it in tilix, foot, kitty, ptyxis and alacritty and pastes the output here.
+- M2c (after the probe results): startup detection and `LOOM_ZWJ=join|split` override.
+- M3: re-record the 096 frames for the user's ruler check.
