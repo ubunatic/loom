@@ -6,6 +6,10 @@ package main
 
 import (
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -17,33 +21,85 @@ import (
 )
 
 type demo struct {
-	image *media.Widget
-	path  string
-	mode  media.Mode
+	image   *media.Widget
+	path    string
+	mode    media.Mode
+	video   bool
+	message string
 }
 
 func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{BG: loom.ColorRGB(17, 24, 32)})
-	c.Write(r.X+1, r.Y, "Media Demo  (q quits)", loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
+	title := "Media Demo  (q quits)"
+	c.Write(r.X+1, r.Y, title, loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
+	if d.video {
+		label := " [p] Play  [r] Restart "
+		if d.image.IsPlaying() {
+			label = " [p] Pause  [r] Restart "
+		}
+		buttonX := r.X + r.W - len(label) - 1
+		if buttonX > r.X+1+len(title) {
+			c.Write(buttonX, r.Y, label, loom.Style{FG: loom.ColorRGB(255, 255, 255), BG: loom.ColorRGB(48, 88, 120), Bold: true})
+		}
+	}
 	if r.H < 2 {
 		return
 	}
 	d.image.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
-	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("Cols: %d  Rows: %d  Mode: %s  Media: %s", c.Cols(), c.Rows(), d.mode, d.path), loom.Style{FG: loom.ColorRGB(240, 240, 240), BG: loom.ColorRGB(38, 48, 60)})
+	status := fmt.Sprintf("Cols: %d  Rows: %d  Mode: %s  Media: %s", c.Cols(), c.Rows(), d.mode, d.path)
+	if d.message != "" {
+		status = d.message
+	}
+	c.Write(r.X, r.Y+r.H-1, status, loom.Style{FG: loom.ColorRGB(240, 240, 240), BG: loom.ColorRGB(38, 48, 60)})
 }
 
-func (*demo) HandleKey(loom.KeyEvent) bool     { return false }
+func (d *demo) HandleKey(e loom.KeyEvent) bool {
+	if !d.video {
+		return false
+	}
+	switch e.Rune() {
+	case 'p', 'P':
+		if d.image.IsPlaying() {
+			d.image.Pause()
+		} else {
+			d.image.Play()
+		}
+		d.message = ""
+	case 'r', 'R':
+		if err := d.image.Restart(); err != nil {
+			d.message = err.Error()
+		} else {
+			d.message = ""
+		}
+	}
+	return false
+}
 func (*demo) HandleMouse(loom.MouseEvent) bool { return false }
 
 func (d *demo) TickInterval() time.Duration { return d.image.TickInterval() }
 func (d *demo) Tick(now time.Time)          { d.image.Tick(now) }
 
 func run(path string, mode media.Mode) error {
+	return runWithPoster(path, mode, "")
+}
+
+func runWithPoster(path string, mode media.Mode, posterPath string) error {
 	var widget *media.Widget
 	var err error
 	if isVideo(path) {
-		widget, err = media.NewVideo(path, mode, 24)
+		if posterPath == "" {
+			widget, err = media.NewVideo(path, mode, 24)
+		} else {
+			var poster image.Image
+			poster, err = loadPoster(posterPath)
+			if err == nil {
+				widget, err = media.NewVideoWithPoster(path, mode, 24, poster)
+			}
+		}
 	} else {
+		if posterPath != "" {
+			return fmt.Errorf("--poster can only be used with a video")
+		}
 		widget, err = media.LoadImage(path, mode)
 	}
 	if err != nil {
@@ -56,19 +112,39 @@ func run(path string, mode media.Mode) error {
 	}
 	pane.MaxCols = 0
 	defer pane.Close()
-	return pane.Run(&demo{image: widget, path: path, mode: mode})
+	return pane.Run(&demo{image: widget, path: path, mode: mode, video: isVideo(path)})
+}
+
+func loadPoster(path string) (image.Image, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+	img, _, err := image.Decode(file)
+	if err != nil {
+		return nil, fmt.Errorf("decode poster %q: %w", path, err)
+	}
+	return img, nil
 }
 
 func newCommand() *cobra.Command {
-	return newCommandWithRun(run)
+	return newCommandWithOptionsRun(runWithPoster)
 }
 
 func newCommandWithRun(runMedia func(string, media.Mode) error) *cobra.Command {
+	return newCommandWithOptionsRun(func(path string, mode media.Mode, _ string) error {
+		return runMedia(path, mode)
+	})
+}
+
+func newCommandWithOptionsRun(runMedia func(string, media.Mode, string) error) *cobra.Command {
 	var mode string
+	var posterPath string
 	cmd := &cobra.Command{
 		Use:   "loom-media <image-or-video> [mode]",
 		Short: "Display an image or video in the terminal",
-		Long:  "Display an image or video in the terminal using Loom's media widget.",
+		Long:  "Display an image or video in the terminal using Loom's media widget. For videos, press p to play or pause and r to restart. Use --poster to display a PNG, JPEG, or GIF poster before the first frame.",
 		Args: func(_ *cobra.Command, args []string) error {
 			if len(args) < 1 || len(args) > 2 {
 				return fmt.Errorf("requires an image or video path, optionally followed by a render mode")
@@ -84,10 +160,11 @@ func newCommandWithRun(runMedia func(string, media.Mode) error) *cobra.Command {
 			if len(args) == 2 {
 				mode = args[1]
 			}
-			return runMedia(args[0], media.Mode(mode))
+			return runMedia(args[0], media.Mode(mode), posterPath)
 		},
 	}
 	cmd.Flags().StringVar(&mode, "mode", string(media.ModeHalfblock), "render mode (halfblock, quadblock, sextant)")
+	cmd.Flags().StringVar(&posterPath, "poster", "", "poster image for a video (PNG, JPEG, or GIF)")
 	return cmd
 }
 
