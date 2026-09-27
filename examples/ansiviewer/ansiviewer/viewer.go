@@ -94,6 +94,9 @@ func (a *astraToggle) DrawBackgroundAt(c *loom.Canvas, r loom.Rect, now time.Tim
 	}
 }
 
+// filesMinWidth keeps short file names readable in narrow terminals.
+const filesMinWidth = 16
+
 func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 	theme := loom.Theme("julia256")
 	border := loom.BoxBorder{
@@ -105,7 +108,7 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 		Title:  "ANSI Viewer",
 		Status: "↑↓ select  •  / filter  •  Enter open  •  Esc back  •  Tab preview  •  a Astra  •  F10 Quit",
 		Boxes: []loom.Box{
-			{ID: "files", Title: "Files", FillHeight: true, Dynamic: true, MinWidth: 20, Width: 32, Height: 4, Border: border, Child: b.navigation},
+			{ID: "files", Title: "Files", FillHeight: true, MinWidth: filesMinWidth, Width: filesMinWidth, Height: 4, Border: border, Child: b.navigation},
 			{ID: "viewer", Title: "Preview", FillHeight: true, Dynamic: true, MinWidth: 30, Height: 4, Border: border, Child: b},
 		},
 		Actions: []loom.FrameAction{
@@ -125,6 +128,9 @@ func newFramedBrowser(b *browser, astra *astraToggle) *framedBrowser {
 func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) {
 	b.frame.Boxes[0].Title = "Files"
 	b.frame.Boxes[1].Title = "Preview"
+	// The file list takes a quarter of the width; the preview gets the rest.
+	files := max(filesMinWidth, r.W/4)
+	b.frame.Boxes[0].Width, b.frame.Boxes[0].MaxWidth = files, files
 	if focused := b.frame.FocusedBox(); focused != nil {
 		if focused.ID == "files" {
 			b.frame.Boxes[0].Title = "▶ Files"
