@@ -174,7 +174,7 @@ func Run(args []string) error {
 			pane.Resizeable = true
 			pane.DisableDefaultQuit = true
 			if cursorFX {
-				pane.EnableCursorStarTrail()
+				pane.EnableCursorEffects()
 			} else {
 				pane.EnableMouse()
 			}

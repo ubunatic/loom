@@ -10,3 +10,9 @@ star_trail:
   max_points: 8
   lifetime_ms: 400
   frame_ms: 40
+press_pulse:
+  enabled: true
+  radius: 4
+  brightness: 1.0
+  lifetime_ms: 480
+  frame_ms: 40

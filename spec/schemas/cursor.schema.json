@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Loom cursor proximity specification",
   "type": "object",
-  "required": ["proximity", "star_trail"],
+  "required": ["proximity", "star_trail", "press_pulse"],
   "properties": {
     "proximity": {
       "type": "object",
@@ -22,6 +22,18 @@
         "glyph": { "type": "string", "minLength": 1 },
         "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "max_points": { "type": "integer", "minimum": 1 },
+        "lifetime_ms": { "type": "integer", "minimum": 1 },
+        "frame_ms": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "press_pulse": {
+      "type": "object",
+      "required": ["enabled", "radius", "brightness", "lifetime_ms", "frame_ms"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "radius": { "type": "integer", "minimum": 0 },
+        "brightness": { "type": "number", "minimum": 0, "maximum": 1 },
         "lifetime_ms": { "type": "integer", "minimum": 1 },
         "frame_ms": { "type": "integer", "minimum": 1 }
       },

@@ -77,6 +77,55 @@ func TestCursorStarTrailFadesAndExpires(t *testing.T) {
 	}
 }
 
+func TestCursorStarTrailFadesTowardCellBackground(t *testing.T) {
+	c := loom.NewCanvas(3, 2)
+	c.PaintSurface(loom.Rect{X: 1, Y: 1, W: 1, H: 1}, loom.Style{BG: loom.ColorRGB(0, 0, 100)})
+	now := time.Unix(200, 0)
+	c.ApplyCursorStarTrail([]loom.CursorTrailPoint{{X: 1, Y: 1, At: now.Add(-200 * time.Millisecond)}}, now)
+	cell := c.Get(1, 1)
+	if cell.Text != "✦" || cell.Style.FG != loom.ColorRGB(128, 128, 178) {
+		t.Fatalf("star over colored background = %+v; want fade toward its background", cell)
+	}
+}
+
+func TestCursorPressPulseExpandsAndExpires(t *testing.T) {
+	c := loom.NewCanvas(9, 5)
+	base := loom.Style{BG: loom.ColorRGB(20, 30, 40)}
+	c.PaintSurface(c.Bounds(), base)
+	now := time.Unix(300, 0)
+	pulse := loom.CursorPulse{X: 4, Y: 2, Started: now}
+	if !c.ApplyCursorPulse(pulse, now) {
+		t.Fatal("new pulse should be active")
+	}
+	center := c.Get(4, 2).Style.BG
+	if center == base.BG {
+		t.Fatal("new pulse did not brighten its origin")
+	}
+	c.Clear()
+	c.PaintSurface(c.Bounds(), base)
+	c.ApplyCursorPulse(pulse, now.Add(loom.SpeccedCursorPressPulse.Lifetime/2))
+	if got := c.Get(6, 2).Style.BG; got != loom.ColorRGB(179, 182, 185) {
+		t.Fatalf("halfway pulse ring = %+v; want expanded, fading intensity", got)
+	}
+	if got := c.Get(4, 2).Style.BG; got != base.BG {
+		t.Fatalf("pulse center should be behind the expanding ring: %+v", got)
+	}
+	c.Clear()
+	c.PaintSurface(c.Bounds(), base)
+	if c.ApplyCursorPulse(pulse, now.Add(loom.SpeccedCursorPressPulse.Lifetime)) {
+		t.Fatal("expired pulse should be inactive")
+	}
+	if got := c.Get(4, 2).Style.BG; got != base.BG {
+		t.Fatalf("expired pulse changed the background: %+v", got)
+	}
+}
+
+func TestCursorPressPulseSpec(t *testing.T) {
+	if spec := loom.SpeccedCursorPressPulse; !spec.Enabled || spec.Radius != 4 || spec.Lifetime != 480*time.Millisecond || spec.Frame != 40*time.Millisecond || spec.Brightness != 1 {
+		t.Fatalf("SpeccedCursorPressPulse = %+v", spec)
+	}
+}
+
 func TestCursorStarTrailSpec(t *testing.T) {
 	if spec := loom.SpeccedCursorStarTrail; !spec.Enabled || spec.Glyph != "✦" || spec.MaxPoints != 8 || spec.Lifetime != 400*time.Millisecond {
 		t.Fatalf("SpeccedCursorStarTrail = %+v", spec)

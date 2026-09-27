@@ -61,14 +61,16 @@ type Pane struct {
 	ownsTTY         bool
 
 	// mouse tracking is enabled with EnableMouse.
-	mouse           bool
-	mouseMode       int
-	cursorProximity bool
-	cursorStarTrail bool
-	mouseX, mouseY  int
-	mouseKnown      bool
-	cursorTrail     []CursorTrailPoint
-	Resizeable      bool
+	mouse            bool
+	mouseMode        int
+	cursorProximity  bool
+	cursorStarTrail  bool
+	cursorPressPulse bool
+	mouseX, mouseY   int
+	mouseKnown       bool
+	cursorTrail      []CursorTrailPoint
+	cursorPulse      *CursorPulse
+	Resizeable       bool
 
 	// InlineOnly opts out of the automatic switch to the alternate screen: the
 	// pane stays inline even when it is nearly as big as the terminal. Loom's
@@ -384,6 +386,41 @@ func (p *Pane) EnableCursorProximity() {
 func (p *Pane) EnableCursorStarTrail() {
 	p.cursorStarTrail = true
 	p.EnableCursorProximity()
+}
+
+// EnableCursorPressPulse enables the one-shot expanding effect for key and
+// button presses at the latest known pointer position.
+func (p *Pane) EnableCursorPressPulse() {
+	p.cursorPressPulse = true
+	p.EnableCursorProximity()
+}
+
+// EnableCursorEffects enables all currently implemented cursor effects.
+func (p *Pane) EnableCursorEffects() {
+	p.cursorStarTrail = true
+	p.cursorPressPulse = true
+	p.EnableCursorProximity()
+}
+
+func (p *Pane) triggerCursorPulse(now time.Time) {
+	if !p.cursorPressPulse || !p.mouseKnown || !SpeccedCursorPressPulse.Enabled {
+		return
+	}
+	p.cursorPulse = &CursorPulse{X: p.mouseX, Y: p.mouseY, Started: now}
+}
+
+func (p *Pane) expireCursorEffects(now time.Time) {
+	active := p.cursorTrail[:0]
+	for _, point := range p.cursorTrail {
+		age := now.Sub(point.At)
+		if !point.At.IsZero() && age >= 0 && age < SpeccedCursorStarTrail.Lifetime {
+			active = append(active, point)
+		}
+	}
+	p.cursorTrail = active
+	if p.cursorPulse != nil && !p.cursorPulse.active(now) {
+		p.cursorPulse = nil
+	}
 }
 
 // EnableMouseClicks tracks clicks and wheel events without any-motion reports.
@@ -745,11 +782,12 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 	var cursorFrames <-chan time.Time
 	var cursorTicker *time.Ticker
-	if p.cursorStarTrail && SpeccedCursorStarTrail.Enabled && SpeccedCursorStarTrail.Frame > 0 {
-		cursorTicker = time.NewTicker(SpeccedCursorStarTrail.Frame)
-		cursorFrames = cursorTicker.C
-		defer cursorTicker.Stop()
-	}
+	var cursorFrameInterval time.Duration
+	defer func() {
+		if cursorTicker != nil {
+			cursorTicker.Stop()
+		}
+	}()
 
 	// Read input in a goroutine and forward it on a channel so the main loop can
 	// select between input and SIGWINCH. os.File.Read retries EINTR via Go's poll
@@ -871,6 +909,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if p.cursorStarTrail {
 			canvas.ApplyCursorStarTrail(p.cursorTrail, time.Now())
 		}
+		if p.cursorPressPulse && p.cursorPulse != nil {
+			canvas.ApplyCursorPulse(*p.cursorPulse, time.Now())
+		}
 		composed := time.Now()
 		out := &countingWriter{w: p.tty}
 		canvas.FlushWithConfig(out, p.startRow, clearRows+p.staleRows, p.ResizeConfig)
@@ -920,6 +961,21 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 	}()
 	for {
+		now := time.Now()
+		p.expireCursorEffects(now)
+		wantedCursorFrame := cursorAnimationFrameInterval(p.cursorTrail, p.cursorPulse, now)
+		if wantedCursorFrame != cursorFrameInterval {
+			if cursorTicker != nil {
+				cursorTicker.Stop()
+				cursorTicker = nil
+				cursorFrames = nil
+			}
+			cursorFrameInterval = wantedCursorFrame
+			if wantedCursorFrame > 0 {
+				cursorTicker = time.NewTicker(wantedCursorFrame)
+				cursorFrames = cursorTicker.C
+			}
+		}
 		interval := shortestTickInterval(root)
 		if interval <= 0 {
 			tickC = nil
@@ -997,7 +1053,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-backgroundFrames:
 			dirty = true
 			animationDirty = true
-		case <-cursorFrames:
+		case now := <-cursorFrames:
+			p.expireCursorEffects(now)
 			dirty = true
 		case <-guardTimerC:
 			guardTimerC = nil
@@ -1070,6 +1127,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			pending = nil
 			pendingC = nil
 			dirty = true
+			p.triggerCursorPulse(time.Now())
 			if quit, handled := p.handleHelpKey(ke); handled {
 				if quit {
 					return nil
@@ -1117,6 +1175,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 						}
 						p.mouseX, p.mouseY = me.X, me.Y
 						p.mouseKnown = me.X >= 0 && me.X < canvas.Cols() && me.Y >= 0 && me.Y < canvas.Rows()
+						if me.Action == MousePress {
+							p.triggerCursorPulse(time.Now())
+						}
 					}
 					if p.handleHelpMouse(me) || p.dispatchMouse(root, me).Quit {
 						quit = true
@@ -1151,6 +1212,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// scanKey must always make progress; guard against a stall.
 					break
 				}
+				p.triggerCursorPulse(time.Now())
 				if quit, handled := p.handleHelpKey(ke); handled {
 					if quit {
 						return nil
