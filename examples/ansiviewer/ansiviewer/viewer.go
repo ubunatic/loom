@@ -587,8 +587,17 @@ func run(args []string, output io.Writer) error {
 		return err
 	}
 	dir := "."
-	if fs.NArg() > 0 {
+	selectName := ""
+	if fs.NArg() > 0 && *record == 0 {
 		dir = fs.Arg(0)
+		info, err := os.Stat(dir)
+		if err != nil {
+			return fmt.Errorf("ansiviewer: stat %s: %w", dir, err)
+		}
+		if !info.IsDir() {
+			selectName = filepath.Base(dir)
+			dir = filepath.Dir(dir)
+		}
 	}
 	if *record > 0 {
 		var out io.Writer = output
@@ -607,7 +616,7 @@ func run(args []string, output io.Writer) error {
 		}
 		return Record(context.Background(), out, dir, *record, 100, 30)
 	}
-	b, err := New(dir)
+	b, err := newBrowserSelection(dir, selectName)
 	if err != nil {
 		return err
 	}

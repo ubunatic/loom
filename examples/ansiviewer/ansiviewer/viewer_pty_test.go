@@ -39,3 +39,21 @@ func TestViewerPTYShowsFilesAndQuits(t *testing.T) {
 		t.Fatalf("viewer did not exit: %v", err)
 	}
 }
+
+func TestViewerPTYOpensFileArgument(t *testing.T) {
+	dir := t.TempDir()
+	file := filepath.Join(dir, "selected.txt")
+	if err := os.WriteFile(file, []byte("immediate file preview content\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s := ptytest.Start(t, 100, 30, buildViewer(t), file)
+	s.WaitFor("selected.txt", 5*time.Second)
+	s.WaitFor("immediate file preview content", 5*time.Second)
+	if !strings.Contains(strings.Join(s.Screen(), "\n"), "Preview") {
+		t.Fatal("viewer pane not rendered")
+	}
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("viewer did not exit: %v", err)
+	}
+}
