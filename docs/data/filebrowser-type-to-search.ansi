@@ -1,4 +1,4 @@
-[2J[H[1;37;44m┌─ Browse /home/uwe/projects/loom · Type-to-search enabled ─────────────────────[0m
+[2J[H[1;37;44m┌─ Browse /home/uwe/projects/loom · Type-to-search enabled ────────────────────┐[0m
 │ ┌─ ▶ Files ─────────────────────────────┐ ┌─ Metadata ─────────────────────┐ │
 │ │ ..                                    │ │ Name: media/                   │ │
 │ │ cmd/                                  │ │ Path: /home/uwe/projects/loom  │ │
@@ -14,10 +14,10 @@
 │ │ widgets.go                            │ │                                │ │
 │ │ README.md                             │ │                                │ │
 │ │ Makefile                              │ │                                │ │
-│ │ filter> ▏ type to filter              │ │                                │ │ 
+│ │ filter> ▏ type to filter              │ │                                │ │
 │ └───────────────────────────────────────┘ └────────────────────────────────┘ │
 │                                                                              │
 ├──────────────────────────────────────────────────────────────────────────────┤
-│ Type to filter   Esc clear   Tab pane   ↑↓ move   Enter open   F9 theme      │     
+│ Type to filter   Esc clear   Tab pane   ↑↓ move   Enter open   F9 theme      │
 │                                                                              │
 └──────────────────────────────────────────────────────────────────────────────┘
