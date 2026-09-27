@@ -44,6 +44,12 @@ install: ⚙️
 	install -D -m 0644 examples/loomoji/loomoji.zsh "$(LOOMOJI_DIR)/loomoji.zsh"
 	install -D -m 0644 examples/ansiviewer/ansiviewer.desktop "$(ANSIVIEWER_DESKTOP_DIR)/ansiviewer.desktop"
 	install -D -m 0644 examples/ansiviewer/assets/ansiviewer.svg "$(ANSIVIEWER_ICON_DIR)/ansiviewer.svg"
+	@if command -v update-desktop-database >/dev/null 2>&1; then \
+		update-desktop-database "$(ANSIVIEWER_DESKTOP_DIR)" 2>/dev/null || true; \
+	fi
+	@if command -v gtk-update-icon-cache >/dev/null 2>&1; then \
+		gtk-update-icon-cache -q -t "$(HOME)/.local/share/icons/hicolor" 2>/dev/null || true; \
+	fi
 
 test-q1: 🤖  # run tests under Quota-1 enforcement
 	harnez exec --quota-1 -- $(MAKE) test
