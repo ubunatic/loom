@@ -80,3 +80,5 @@ M3 delivered (0a28fe9): the PTY screen capture split clusters; fixed, and the fo
 
 ZWJ family 8 columns, DE flag 2, plain emoji 2 (a split terminal).
 Pre-Work for M2c: loom-probe prints results while still in raw mode (lines staircase, no trailing newline; zsh shows `%`). Restore the terminal before printing, or use `\r\n` and end with a newline.
+- foot: ZWJ family 2, flag 2, plain 2 (joins).
+- kitty: ZWJ family 2, flag 2, plain 2 (joins).
