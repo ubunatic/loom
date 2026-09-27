@@ -1,6 +1,6 @@
 # 153 — Hide the filebrowser search UI until search is active
 
-**Status**: Open
+**Status**: Closed — Implemented in 4fcac28 (M1): hide idle search UI with subtle / search hint, show prompt on slash, preserve query on enter, clear on escape
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
