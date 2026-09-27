@@ -15,6 +15,7 @@
 - [Animated backgrounds](AnimatedBackgrounds.md): Astra-style deterministic Braille star fields, protected-cell rendering, and the custom-effect contract.
 - [Root overlays](RootOverlays.md): the root-level-overlay hook pattern (`paneHelpRequest`) for modals that must draw over an entire split layout, not just a `paintClipped` child.
 - [Key defaults](KeyDefaults.md): decoded keys, default actions per library widget, terminal limitations.
+- [Terminal input](TuiInput.md): controlling tty ownership, interruptible input reads, and key decoding compatibility.
 - [Progress evidence](progress/): `.ansi` frames per ticket; view with `for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done`.
 - [Emoji & Unicode measurement](EmojiWidth.md): authoritative spec system, VTE render modes (pad-1), cluster parsing, and PTY width invariants.
 - [Widgets & framework primitives](Widgets.md): split layout, dynamic tabs, metric stores, directory navigation, and startup transition runners.
