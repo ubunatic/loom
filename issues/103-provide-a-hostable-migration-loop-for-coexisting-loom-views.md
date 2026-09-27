@@ -1,6 +1,6 @@
 # 103 — Port minimal colored `harnez usage --compact --watch`
 
-**Status**: Open
+**Status**: Closed — examples/usage rebuild: All Usage + Load on Loom Frame/StyledRows, async collection with repaint, plain/Loom view switch (a537019, 8d78564, be9f193, c2c90d3); visual check in 102
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
