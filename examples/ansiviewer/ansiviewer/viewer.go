@@ -55,17 +55,18 @@ func Classify(path string) Kind {
 }
 
 type browser struct {
-	dir        string
-	files      []os.DirEntry
-	selected   int
-	offset     int
-	lines      []string
-	kind       Kind
-	ruler      bool
-	metadata   string
-	navigation *filebrowser.NavigationPane
-	quit       bool
-	focused    bool
+	dir         string
+	files       []os.DirEntry
+	selected    int
+	offset      int
+	lines       []string
+	kind        Kind
+	ruler       bool
+	metadata    string
+	previewView *loom.View
+	navigation  *filebrowser.NavigationPane
+	quit        bool
+	focused     bool
 }
 
 func (b *browser) Focused() bool         { return b.focused }
@@ -285,12 +286,41 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	if r.H < 1 || r.W < 1 {
 		return
 	}
-	if b.kind == KindANSI {
-		writeANSI(c, r, strings.Join(b.lines, "\n"))
-		return
+	if b.previewView == nil {
+		b.previewView = loom.NewView(b.lines)
 	}
-	for i := 0; i < r.H && b.offset+i < len(b.lines); i++ {
-		writeANSI(c, loom.Rect{X: r.X, Y: r.Y + i, W: r.W, H: 1}, b.lines[b.offset+i])
+	b.previewView.Lines = b.lines
+	b.previewView.Scroll = b.offset
+	barCanvas := loom.NewCanvas(r.W, r.H)
+	b.previewView.Draw(barCanvas, loom.Rect{W: r.W, H: r.H})
+	b.offset = b.previewView.Scroll
+	barVisible := false
+	for y := 0; y < r.H; y++ {
+		cell := barCanvas.Get(r.W-1, y)
+		if (cell.Text == loom.SpeccedDefaults.Scrollbar.ForegroundChar && cell.Style == b.previewView.Scrollbar.Thumb) ||
+			(cell.Text == loom.SpeccedDefaults.Scrollbar.BackgroundChar && cell.Style == b.previewView.Scrollbar.Track) {
+			barVisible = true
+			break
+		}
+	}
+	contentRect := r
+	if barVisible {
+		contentRect.W--
+	}
+	start := min(b.offset, len(b.lines))
+	end := min(len(b.lines), b.offset+r.H)
+	visibleLines := b.lines[start:end]
+	if b.kind == KindANSI {
+		writeANSI(c, contentRect, strings.Join(visibleLines, "\n"))
+	} else {
+		for i, line := range visibleLines {
+			writeANSI(c, loom.Rect{X: contentRect.X, Y: contentRect.Y + i, W: contentRect.W, H: 1}, line)
+		}
+	}
+	if barVisible {
+		for y := 0; y < r.H; y++ {
+			c.Set(r.X+r.W-1, r.Y+y, barCanvas.Get(r.W-1, y))
+		}
 	}
 }
 
@@ -326,7 +356,14 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 	}
 	return false
 }
-func (b *browser) HandleMouse(e loom.MouseEvent) bool { return false }
+func (b *browser) HandleMouse(e loom.MouseEvent) bool {
+	if b.previewView == nil {
+		return false
+	}
+	quit := b.previewView.HandleMouse(e)
+	b.offset = b.previewView.Scroll
+	return quit
+}
 func max(a, b int) int {
 	if a > b {
 		return a

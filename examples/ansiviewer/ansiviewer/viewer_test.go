@@ -39,6 +39,55 @@ func TestBrowserListsTextAndANSI(t *testing.T) {
 	}
 }
 
+func TestPreviewScrollbarAutoRendersOnlyOnOverflow(t *testing.T) {
+	long := &browser{lines: []string{strings.Repeat("x", 20), "one", "two", "three", "four", "five", "six", "seven"}, kind: KindText}
+	canvas := loom.NewCanvas(12, 4)
+	long.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(11, 0).Text; got != loom.SpeccedDefaults.Scrollbar.ForegroundChar {
+		t.Fatalf("overflow preview cell = %q, want scrollbar thumb", got)
+	}
+	if got := canvas.Get(10, 0).Text; got != "x" {
+		t.Fatalf("preview content width did not reserve scrollbar column: cell = %q", got)
+	}
+
+	short := &browser{lines: []string{strings.Repeat("x", 20), "two"}, kind: KindText}
+	canvas.Clear()
+	short.Draw(canvas, canvas.Bounds())
+	if got := canvas.Get(11, 0).Text; got != "x" {
+		t.Fatalf("short preview did not use final column for content: got %q", got)
+	}
+	for y := 0; y < 4; y++ {
+		if got := canvas.Get(11, y).Text; got == loom.SpeccedDefaults.Scrollbar.ForegroundChar || got == loom.SpeccedDefaults.Scrollbar.BackgroundChar {
+			t.Fatalf("short preview row %d unexpectedly draws scrollbar %q", y, got)
+		}
+	}
+}
+
+func TestPreviewScrollbarTrackClickAndThumbDrag(t *testing.T) {
+	b := &browser{lines: []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"}, kind: KindText}
+	canvas := loom.NewCanvas(12, 4)
+	b.Draw(canvas, canvas.Bounds())
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: 3})
+	if b.offset == 0 {
+		t.Fatal("bottom track click did not move preview offset")
+	}
+
+	b.Draw(canvas, canvas.Bounds())
+	thumbY := 0
+	for y := 0; y < 4; y++ {
+		if canvas.Get(11, y).Text == loom.SpeccedDefaults.Scrollbar.ForegroundChar {
+			thumbY = y
+		}
+	}
+	start := b.offset
+	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: thumbY})
+	b.HandleMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 11, Y: 0})
+	if b.offset != 0 || b.offset == start {
+		t.Fatalf("dragging preview scrollbar thumb moved offset to %d, want 0 from %d", b.offset, start)
+	}
+	b.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 11, Y: 0})
+}
+
 func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "alpha.txt"), []byte("alpha preview"), 0o644); err != nil {
