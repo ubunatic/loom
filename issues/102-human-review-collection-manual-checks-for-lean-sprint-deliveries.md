@@ -19,9 +19,14 @@ Whoever completes the last item closes this ticket.
 
 - [ ] **All evidence frames**: `for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done`
   in a real terminal. Spot check that frames look right, not just that tests pass (73 frames).
-- [ ] **096 textrender vs terminal**: run the example in your terminal(s) (tilix, foot, VTE, kitty)
+- [x] **096 textrender vs terminal**: run the example in your terminal(s) (tilix, foot, VTE, kitty)
   and compare with the recorded `knownDivergences` (ZWJ family: Loom 6, terminal 2; flag: Loom 4,
   terminal 2). Decide whether `loom.StringWidth` changes; the width audit itself is tracked in 048.
+  Result 2026-09-27 (tilix, foot, ptyxis, kitty, alacritty; notes in docs/progress/096/comments.txt):
+  all six frames look right. Every terminal draws the ZWJ family as 3 separate emojis (6 columns),
+  which matches Loom's width 6, so `loom.StringWidth` stays unchanged. The flag varies by terminal
+  (letters "DE" in tilix, ptyxis and alacritty, a wavy flag in foot, a color flag in kitty), which is
+  font or terminal behavior. Open: tilix shows a big gap between the text and '>' in M2-buttons.
 - [ ] **092 scrollbar drag**: drag the View and Split scrollbars with a real mouse; check drag
   past the track ends, release outside the window, and drag inside a Split child.
 - [ ] **093 filebrowser mouse**: click on row text, on trailing whitespace and on the border
