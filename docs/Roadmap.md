@@ -66,6 +66,7 @@ which rests on the proven 107/108 hover baseline.
 
 - [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks for 103, 111, 124 and 064. **Stays in Now**: the user's checklist; it gates harnez 607.
 - [089](../issues/089-add-mouse-cursor-position-hints-and-configurable-visual-effects.md) (P1): mouse cursor hints and effects, tested with the 107 colour-cell method ([`HoverTesting.md`](HoverTesting.md)). **Moved up from Next.**
+- [134](../issues/134-loom-output-drops-zwj-joiners-and-pads-flag-rows-2-cells-short.md) (P1): keep ZWJ joiners, flags 2 columns, probe the terminal's ZWJ width. **Added 2026-09-27** after ansiviewer's ruler exposed it; any host showing emoji gets broken rows until fixed.
 - [091](../issues/091-add-double-click-interaction-for-filebrowser-and-path-trees.md) (P1): reusable double-click recognition for filebrowser and path trees. **Moved up from Next.**
 - [106](../issues/106-make-scrollbar-enabled-by-default-for-panes.md) (P2): `scrollbar: auto` as the pane default; small, and it removes per-host ceremony. **Moved up from Next.**
 
