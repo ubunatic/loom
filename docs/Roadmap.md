@@ -27,93 +27,103 @@ Stage numbers below preserve the original plan and remain as historical
 acceptance context. The Now/Next/Later sequence is the live priority signal and
 supersedes stage order wherever the two disagree.
 
-## Shipped since the last roadmap pass (2026-09-27)
+## Shipped since the last roadmap pass (2026-09-28)
 
-- [138](../issues/138-allow-panning-in-loom-panes-and-make-ansiviewer-preview-pane-pannable.md): 2D panning (`OffsetX`/`OffsetY`) for Loom panes and views, with a pannable `ansiviewer` preview pane.
-- [140](../issues/140-lazy-load-media-widget-images-and-video-previews.md): lazy loading for the media widget — images and video previews show a dim "loading" indicator instead of blocking the first draw.
+- Media example and widget: [141](../issues/141-move-media-widget-labels-colors-and-timing-defaults-into-specs.md) spec-driven media defaults, [143](../issues/143-make-the-media-example-full-width-and-play-video.md)/[144](../issues/144-fix-examples-media-pane-initialization-to-take-full-terminal-size.md)/[146](../issues/146-set-pane-maxcols-0-in-examples-media-to-uncap-terminal-width.md) full-width video example, [145](../issues/145-show-measured-screen-dimensions-and-debug-data-in-a-status-bar-below-the-media-demo.md) status bar, [149](../issues/149-convert-the-media-example-to-a-cobra-cli-app.md) Cobra CLI.
+- ansiviewer as a desktop app: [148](../issues/148-open-ansiviewer-directly-on-a-file-argument.md) open file arguments, [150](../issues/150-register-ansiviewer-as-a-linux-desktop-viewing-tool.md) desktop entry, [151](../issues/151-add-and-install-desktop-icon-for-ansiviewer.md) icon, [152](../issues/152-run-update-desktop-database-and-gtk-update-icon-cache-in-make-install.md) desktop cache hooks.
+- [142](../issues/142-document-theme-selection-and-listing-in-the-go-library.md) theme API docs, [153](../issues/153-hide-the-filebrowser-search-ui-until-search-is-active.md) hidden idle filebrowser search, [159](../issues/159-set-up-go-release-pipeline-for-loom-and-cli-tools.md) release pipeline (GoReleaser, minisign).
+- [160](../issues/160-media-widget-playback-controls-and-poster-frame-support.md) M1 landed (`fbe08d1`: poster frame, `Play`/`Pause`/`Restart`); ticket stays open pending verification.
 
-Also shipped this pass: 089, 091, 106, 134 (pointer UX and ZWJ rendering fixes).
+**Closed by decision** (the previous Close/Park list was executed): 016, 039, 056, 015, 017, 018, 019.
 
-Earlier passes: 065, 042, 111, 103; 064, 124, 128, 130, 131; 063, 099, 101,
-105, 129; 117 to 123; 034, 037, 051, 060, 061, 062, 081, 088, 092 to 097, 107,
-108; 036, 038, 057 to 059, 085. See the stage table.
+Earlier passes: 138, 140; 089, 091, 106, 134; 065, 042, 111, 103; 064, 124,
+128, 130, 131; 063, 099, 101, 105, 129; 117 to 123; 034, 037, 051, 060 to 062,
+081, 088, 092 to 097, 107, 108; 036, 038, 057 to 059, 085. See the stage table.
 
 ---
 
 ## Themes in the open backlog
 
-The 16 open tickets fall into five themes:
+The 24 open tickets fall into six themes:
 
-1. **Stability and rendering correctness** (136, 135, 048, 100): a live resize bug, a test that misreports under evidence capture, and two long-standing ANSI-width/background quirks.
-2. **Diagnosability tooling** (133, 137, 095): a debug overlay and PTY test view that make the above class of bug visible and fixable, plus triage of CLI-asset-tool feedback.
-3. **Real-host adoption and review** (102, plus harnez 607 outside this repo): the conversion line shipped; what remains is the human confirmation.
-4. **ANSI core internals** (116): the zero-alloc `ansi` subpackage extraction.
-5. **Media, backgrounds, and editor extras** (112, 090, 120), plus parked/low-priority items (139, 014, 052, 098).
-
----
-
-## Now: fix live bugs, then confirm the real host
-
-**Rationale.** 136 is an active user-facing regression (panes drawing at the
-wrong size on startup under `foot`); it should not wait behind planning work.
-133 (ruler overlay) and 135 (evidence-mode test failure) sit next to it because
-they were both surfaced by the same 2026-09-27 diagnostic pass and unblock
-further rendering fixes. 102 stays in Now because it gates harnez issue 607.
-
-- [136](../issues/136-pane-misses-a-resize-that-happens-during-startup-foot-app-draws-at-initial-size.md) (P2, Bug): pane misses a resize during startup; SIGWINCH delivered before `signal.Notify` is lost.
-- [133](../issues/133-pane-debug-mode-with-ruler-overlay-shift-f12-loom-debug.md) (P2): pane debug mode with a ruler overlay (Shift-F12, `LOOM_DEBUG`), which makes layout/width bugs such as 136, 048 and 100 visible.
-- [135](../issues/135-testbrowserusesanimatedbackground-fails-when-loom-evidence-1.md) (P3, Bug): `LOOM_EVIDENCE=1` breaks a filebrowser test by reading ambient environment state instead of setting it.
-- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks for 103, 111, 124 and 064. **Stays in Now**: the user's checklist; it gates harnez 607.
+1. **Stability and rendering correctness** (136, 135, 048, 100): a live resize bug, an environment-leaking test, two ANSI-width/background quirks.
+2. **Diagnosability and visual testing** (133, 095, 157): ruler overlay, human-observable PTY tests, and a golden-ANSI canvas comparator.
+3. **App-building primitives from loom-games** (154, 155, 156, 158): ticker cadence control, dialog overlay, SubCanvas/Blit, KeyMap. New this pass; all filed from the snake v0 build, i.e. a second real host beyond Harnez.
+4. **Media** (160, 161, 112, 090): playback API verification, the redesign-005 example, zoom/pan, image backgrounds.
+5. **CLI asset tools** (137, 147, 139): feedback triage, unclosed-box detection, `loom play`.
+6. **Internals, adoption, docs** (116, 102, 052, 098, 014, 120).
 
 ---
 
-## Next: ANSI core, verification, media controls
+## Now: fix live bugs, finish in-flight media, confirm the real host
 
-**Rationale.** 116 is a library-wide internals change (type aliases,
-zero-alloc `Canvas.Row`); safer once the Now-list rendering fixes land. 095
-makes the growing set of PTY tests observable by a human. 137 is feedback
-triage from the CLI asset tools and should close out or spin off tickets while
-fresh. 112 builds directly on the shipped media widget (111, 140).
+**Rationale.** 136 is a user-facing regression and 135 a misreporting test;
+133 makes this bug class visible. 160 is half-done (M1 committed) and 161 is a
+small, already-designed follow-up that consumes 160's API, so finishing both
+avoids stale work in flight. 102 gates harnez 607.
 
-- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; its predecessors 128 to 131 shipped.
+- [136](../issues/136-pane-misses-a-resize-that-happens-during-startup-foot-app-draws-at-initial-size.md) (P2, Bug): pane misses a resize during startup (SIGWINCH before `signal.Notify`).
+- [135](../issues/135-testbrowserusesanimatedbackground-fails-when-loom-evidence-1.md) (P3, Bug): `LOOM_EVIDENCE=1` breaks a filebrowser test via ambient env state.
+- [133](../issues/133-pane-debug-mode-with-ruler-overlay-shift-f12-loom-debug.md) (P2): ruler overlay (Shift-F12, `LOOM_DEBUG`); exposes 136, 048, 100.
+- [160](../issues/160-media-widget-playback-controls-and-poster-frame-support.md) (P2): **new, in flight.** Verify M1 (poster frame, playback API) and close.
+- [161](../issues/161-align-media-example-with-redesign-005.md) (P2): **new.** Media example to redesign 005; depends on 160.
+- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks for 103, 111, 124, 064; gates harnez 607.
+
+---
+
+## Next: primitives for a second host, visual testing, ANSI core
+
+**Rationale.** 154, 155, 156 and 158 each came from building a real app
+(loom-games snake) and are small, additive API. 156 (SubCanvas/Blit) goes
+first because 155 (dialog) can build on it. 157 pairs with 095: both make
+rendering regressions catchable, and 157 directly serves the golden-mockup
+workflow used for 161. 116 is library-wide and safer after the Now fixes.
+147 is the concrete output of 137's feedback; do them together.
+
+- [156](../issues/156-canvas-subcanvas-and-blit-layer-compositing.md) (P2): **new.** `Canvas.SubCanvas` / `Blit`; unblocks 155.
+- [155](../issues/155-built-in-modal-and-dialog-overlay-primitive.md) (P2): **new.** Dialog/overlay primitive; builds on 156.
+- [154](../issues/154-dynamic-cadence-and-timer-control-on-ticker.md) (P2): **new.** Dynamic ticker cadence and reset.
+- [158](../issues/158-keymap-and-action-key-aliasing-helper.md) (P2): **new.** `KeyMap` action aliasing; fits spec-declared keybindings.
+- [157](../issues/157-ansi-golden-mockup-visual-test-comparator.md) (P2): **new.** Golden ANSI canvas comparator (`loomtest`).
 - [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode.
-- [137](../issues/137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) (P3, Feedback): triage CLI asset-tools feedback (`check-box`, `eval`, `format`, `measure`) from the mediabrowse mockup work.
-- [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3): media play/pause, zoom and panning; 111/140 shipped. Video work should wait for cati 059.
+- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage.
+- [137](../issues/137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) (P3) + [147](../issues/147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md) (P2, **new**): CLI asset-tool feedback triage and unclosed-box detection.
 
 ---
 
 ## Later: docs, polish, extras
 
-- [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) (P2, Bug): **reclassify to Documentation.** Emoji width variance across terminals cannot be fixed in library code (see [`EmojiWidth.md`](EmojiWidth.md)).
-- [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): full-width top-bar background in ansiviewer; can move up opportunistically, may fold into 116.
-- [098](../issues/098-document-animatedbackground-ticker-initialization-pitfall.md) (P2): `AnimatedBackground` ticker pitfall doc; can be done any time.
+- [112](../issues/112-add-media-controls-play-pause-zoom-and-panning-for-the-image-media-widget.md) (P3): media zoom/panning; **moved down from Next** because 160 now covers play/pause and 138 shipped pane panning, leaving mainly zoom. Video parts wait for cati 059.
+- [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) (P2, Bug): **reclassify to Documentation**; emoji width variance is a terminal property (see [`EmojiWidth.md`](EmojiWidth.md)).
+- [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): full-width top-bar background in ansiviewer; may fold into 116.
+- [098](../issues/098-document-animatedbackground-ticker-initialization-pitfall.md) (P2): `AnimatedBackground` ticker pitfall doc; consider bundling with 154.
 - [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): unused `ChoiceStyle.Border` contract.
-- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed backgrounds; should reuse the 111 cati rendering. No host has asked for it yet.
-- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine. The lexical engine from 119/121 covers highlighting; large, dependency-heavy, no dashboard use case.
-- [139](../issues/139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) (P2): `loom play` for interactive TUI commands and ANSI capture. **Held to Later**: overlaps `ansiviewer --record`, Reelang, tmux and asciinema; needs a reuse-vs-build decision before it competes with the Now/Next work above.
+- [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) (P2): configurable graph colors/glyphs; **kept open** while its data-source siblings closed, since it is pure presentation.
+- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed backgrounds; reuse the 111 cati rendering. No host has asked.
+- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine; large, dependency-heavy, no dashboard use case.
+- [139](../issues/139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) (P2): `loom play`; needs a reuse-vs-build decision (ansiviewer `--record`, Reelang, tmux, asciinema).
 
 ---
 
 ## Close / Park
 
-- [039](../issues/039-graph-renderbar-subchar-boundary-glyph-shows-a-visible-seam-without-ansi-background-styling.md) (P3, Bug): **close as won't-fix-in-code.** The seam comes from terminal font rendering.
-- [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md) (P2): **close as milestone**; 103 is the real-host proof it anticipated.
-- [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) (P3): **park.** In-process hosting is delivered by 057 to 065; full VT100 sub-process emulation is a separate product.
-- Data sources and simulated targets, **parked** on a product decision about whether Loom owns data-source wiring (103 kept collection in the host, which argues it does not):
-  [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) → [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md) → 016; [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md) → [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md); [019](../issues/019-evaluate-declarative-source-and-action-wiring.md).
+- Nothing new to close. The prior list (016, 039, 056, 015, 017 to 019) was closed.
+- Candidate: if 157 lands as a reusable package, re-check whether 095 still needs its own view mode or can shrink to a feedback flow on top of 157.
 
 ---
 
 ## Dependency map
 
 ```text
-[063 064 065 105 shipped] ──► [103 shipped] ──► 102 (manual check) ──► harnez 607
-[128 129 130 131 shipped] ──► 116 (ansi subpackage) ──► 100?
+[103 shipped] ──► 102 (manual check) ──► harnez 607
+[160 M1 committed] ──► 160 verify ──► 161 (redesign 005)
+[160, 138 shipped panning] ──► 112 (zoom; video waits on cati 059)
+156 (SubCanvas/Blit) ──► 155 (dialog)
+[128-131 shipped] ──► 116 (ansi subpackage) ──► 100?
 [133 debug overlay] ──► exposes 136, 048, 100
-[111 140 shipped] ──► 112 (video part waits on cati 059)
-[111 shipped] ──► 090 (shared cati rendering)
-[107 108 shipped] ──► 095
-[097 099 129 shipped] ──► 139 (held in Later)
+137 (feedback) ──► 147 (unclosed boxes)
+157 (golden comparator) ~ 095 (PTY view)
+[111 shipped] ──► 090
 [119 121 shipped] ──► 120
 ```
 
@@ -142,7 +152,8 @@ fresh. 112 builds directly on the shipped media widget (111, 140).
 | 22 — loom CLI and asset validation (Shipped) | [128](../issues/128-add-box-frame-geometry-and-line-width-validator-for-ansi-assets.md), [129](../issues/129-build-loom-cli-tool-for-tui-asset-validation-measurement-and-interactive-viewing.md), [130](../issues/130-add-loom-format-command-to-auto-align-re-pad-and-normalize-ansi-files.md), [131](../issues/131-add-loom-frame-command-to-wrap-ansi-text-in-styled-box-borders.md) |
 | 23 — Real-host proof and media (Shipped) | [042](../issues/042-docs-tuiinput-md-referenced-by-5-code-comments-but-does-not-exist.md), [103](../issues/103-provide-a-hostable-migration-loop-for-coexisting-loom-views.md), [111](../issues/111-add-an-image-media-widget-rendered-with-cati.md) |
 | 24 — 2D panning and lazy media (Shipped) | [138](../issues/138-allow-panning-in-loom-panes-and-make-ansiviewer-preview-pane-pannable.md), [140](../issues/140-lazy-load-media-widget-images-and-video-previews.md) |
-| Parked — Data sources & targets | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md), [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md), [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md), [019](../issues/019-evaluate-declarative-source-and-action-wiring.md), [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) |
+| 25 — Media example, ansiviewer desktop, release (Shipped) | 141 to 146, 148 to 153, 159 |
+| Closed — Data sources & targets (parked) | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md), [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md), [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md), [019](../issues/019-evaluate-declarative-source-and-action-wiring.md), [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) |
 
 ## Long-term outcome
 
