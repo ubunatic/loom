@@ -52,4 +52,4 @@ Delivered `progressbar.go` (`NewProgressBar`, `Set`, `Done`, `Reset`, `Value`, `
 - Done: one-frame swap to the done pattern, same as `SplashView` (user chose this over a drain animation).
 - Tests in `progressbar_test.go`: invalidation count, clamping incl. NaN/Inf, done/reset, clipping, step-vs-render agreement.
 
-Remaining (still open): indeterminate pulse mode, percent/count labels, separate fill/empty styles, `Themeable`, migrating `SplashView` onto `ProgressBar`.
+Remaining (still open): indeterminate pulse mode, percent/count labels, separate fill/empty styles, `Themeable`. `SplashView` draws its bar through `ProgressBar` since 2026-09-29 (its Progress/Pattern/BracketWidth fields are unchanged; existing splash tests pass).

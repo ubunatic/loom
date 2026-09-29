@@ -21,6 +21,8 @@ type SplashView struct {
 	BracketWidth int    // inner bar width, default 24 or 32
 	PillGap      int    // spacing between pills, default 2
 	Controller   *SplashController
+
+	bar *ProgressBar
 }
 
 // NewSplashView creates a SplashView with default settings matching HarnezSplashTarget.
@@ -113,15 +115,8 @@ func (sv *SplashView) Draw(c *Canvas, r Rect) {
 	// Line 2: Bracketed Progress Bar
 	barY := startY + 2
 	if barY < r.Y+r.H {
-		barOpts := graph.BracketedBarOptions{
-			Width:   sv.BracketWidth,
-			Pattern: sv.Pattern,
-			SubChar: true,
-		}
-		barStr := graph.RenderBracketedBar(sv.Progress, barOpts)
-		barW := graph.BracketedBarWidth(barOpts)
-		barX := r.X + layout.AlignOffset(r.W, barW, layout.AlignCenter)
-		c.Write(barX, barY, barStr, Style{})
+		bar := sv.progressBar()
+		bar.Draw(c, Rect{X: r.X, Y: barY, W: r.W, H: 1})
 	}
 
 	// Line 4: Step text
@@ -169,4 +164,23 @@ func (sv *SplashView) HandleKey(e KeyEvent) bool {
 // HandleMouse implements Widget.
 func (sv *SplashView) HandleMouse(e MouseEvent) bool {
 	return false
+}
+
+// progressBar syncs the declarative Progress, Pattern and BracketWidth fields
+// into the ProgressBar that draws the bar line.
+func (sv *SplashView) progressBar() *ProgressBar {
+	if sv.bar == nil {
+		sv.bar = NewProgressBar()
+		sv.bar.Align = layout.AlignCenter
+	}
+	sv.bar.Options.Width = sv.BracketWidth
+	sv.bar.Set(sv.Progress)
+	sv.bar.DonePattern = sv.Pattern
+	if sv.Pattern != "" {
+		sv.bar.Done()
+	} else if sv.bar.IsDone() {
+		sv.bar.Reset()
+		sv.bar.Set(sv.Progress)
+	}
+	return sv.bar
 }
