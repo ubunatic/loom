@@ -1,6 +1,6 @@
 # 163 — ANSI parser exits prematurely or drops screen when files use cursor positioning (mc-julia256.ansi)
 
-**Status**: Open
+**Status**: Closed — ParseAnsiBuffer now pre-scans CSI positioning sequences and consumes full streams
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Bug
@@ -35,9 +35,11 @@ In `loom.ParseAnsiBuffer` (`ansibuffer.go`):
   - Either pre-scan CSI row/col positions (`H`, `f`, `d`, `G`, `r`) during dimension sizing, or dynamically expand `buf.cells` / clamp coordinates within buffer bounds so content is not lost.
   - Correctly render `docs/data/mc-julia256.ansi` in `loom.ParseAnsiBuffer`.
 
-## 3. Implementation & Verification Plan
+## 3. Milestones & Delivery
 
-- **/goal**: Fix `loom.ParseAnsiBuffer` to parse full ANSI streams containing cursor positioning and scroll regions without early termination, verifying with `docs/data/mc-julia256.ansi` and automated tests, or stop and report when blocked on user input or denied permission.
-- Add regression tests in `ansibuffer_test.go` loading `docs/data/mc-julia256.ansi` and verifying that non-empty cells and midnight commander panel text ("projects/loom", "Name", "Size") are populated.
-- Verify `loom view` and `ansiviewer` display the content.
-- Ensure all tests pass with `make test-q1`.
+### M1: Pre-Scan CSI Dimensions & Unbound Stream Consumption
+- **Delivered**: `c3deb85` (*"fix(ansibuffer): pre-scan CSI dimensions and prevent premature parser exit (issue 163 M1)"*).
+- Added `pre-scan` for CSI coordinates (`H`, `f`, `d`, `G`, `r`) in `ParseAnsiBuffer` (`ansibuffer.go`) before sizing `NewAnsiBuffer(maxCols, maxRows)`.
+- Removed `y < maxRows` termination guard from main parser loop to ensure complete input stream consumption.
+- Added regression test `TestParseAnsiBufferMcJulia256` in `ansibuffer_test.go` verifying that `docs/data/mc-julia256.ansi` renders at least 16 rows and contains panel text ("projects/loom", "Name", "Size").
+- Verified with `make test-q1` and `make install`.
