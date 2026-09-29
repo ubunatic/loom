@@ -1,6 +1,6 @@
 # 162 — Refactor ansiviewer preview to use loom.AnsiBuffer
 
-**Status**: Open
+**Status**: Closed — ansiviewer refactored to use loom.AnsiBuffer and legacy streaming ANSI parser removed
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Architecture
@@ -28,11 +28,11 @@ Refactor `browser.Draw` and file selection in `examples/ansiviewer/ansiviewer/vi
 - `browser.Draw()` draws `ansiBuf` to `contentRect` when `b.kind == KindANSI`.
 - Verified with `go test ./examples/ansiviewer/...`.
 
-### M2: Cleanup Dead Code & Regression Verification (Pending / Resume Point)
-- **Pre-Work / Required Refinements**:
-  - `writeANSI()` is still called by `browser.Draw()` for `KindText` lines. Evaluate whether `KindText` should draw using `loom.View` or standard text rendering rather than `writeANSI()`, allowing `writeANSI`, `applySGR`, and CSI position parsers to be removed completely.
-  - Review `TestANSIWrite*` unit tests in `viewer_test.go` that directly test `writeANSI()`.
-- Verify full test suite and clean build (`make test-q1`, `make install`).
-- Commit: `refactor(ansiviewer): remove legacy streaming ANSI parser (issue 162 M2)`.
+### M2: Cleanup Dead Code & Regression Verification
+- **Delivered**: `a44f9a7` (*"refactor(ansiviewer): remove legacy streaming ANSI parser (issue 162 M2)"*).
+- Removed legacy streaming ANSI tokenizer and helpers (`writeANSI`, `claimANSIArea`, `initialANSIStyle`, `csiNumber`, `csiPosition`, `applySGR`).
+- Plain text preview (`KindText`) renders directly from the scroll view canvas without invoking an escape parser.
+- Migrated tests in `viewer_test.go` from `writeANSI` calls to plain text view assertions.
+- Verified test suite and clean `make install`.
 
 
