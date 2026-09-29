@@ -1,6 +1,6 @@
 # 165 — Add plain text dump mode to loom view to validate layout without ANSI formatting
 
-**Status**: Open
+**Status**: Closed — loom view --plain/-p flag implemented and verified
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
@@ -30,9 +30,12 @@ Having a non-interactive plain text mode (e.g. `loom view --raw`, `loom view --p
   - Check if `AnsiBuffer` currently exposes a plain-text export method.
   - If not, provide an exported method on `AnsiBuffer` (e.g. `PlainText() string` or `buf.PlainText()`) that iterates over rows and emits runes without escape sequences.
 
-## 3. Implementation & Verification Plan
+## 3. Milestones & Delivery
 
-- **/goal**: Add `--plain` flag to `loom view` to output the parsed ANSI art as plain text, verifying with unit tests and sample files, or stop and report when blocked on user input or denied permission.
-- Add tests in `cmd/loom/main_test.go` verifying that `loom view --plain file.ansi` outputs expected plain text.
-- Verify `loom view --plain docs/data/mc-julia256.ansi` outputs clean, readable text without escape sequences.
-- Verify with `make test-q1` and `make install`.
+### M1: Add Plain Text Export to AnsiBuffer and --plain Flag to loom view
+- **Delivered**: `a29def2` (*"feat(loom): add plain text dump mode to loom view (issue 165 M1)"*).
+- Added `(*AnsiBuffer).PlainText() string` in `ansibuffer.go` to emit 2D grid contents without styling or escape sequences, trimming trailing blank cells per row.
+- Added `--plain` / `-p` flag to `loom view` in `cmd/loom/main.go`, writing plain text output directly to stdout without initializing the interactive TUI pane.
+- Added unit tests in `ansibuffer_test.go` and `cmd/loom/main_test.go`.
+- Tested `loom view --plain docs/data/mc-julia256.ansi` successfully producing clean Unicode plain text.
+- Verified with `make test-q1` and `make install`.
