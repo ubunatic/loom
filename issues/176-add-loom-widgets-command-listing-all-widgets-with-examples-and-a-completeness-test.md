@@ -1,6 +1,6 @@
 # 176 — Add loom widgets command listing all widgets with examples and a completeness test
 
-**Status**: Open
+**Status**: Closed — resolved
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
@@ -21,3 +21,11 @@ On 2026-09-29 an agent answered "which input widgets do we have?" from memory an
 
 ## 3. Implementation & Verification Plan
 /goal Never lose track of our own widgets again: `loom widgets` lists all widgets with minimal examples and refs from one spec, and `make test` fails when a Widget type is added or removed without updating the catalog. Stop and report when blocked on a user decision or denied permission.
+
+## Outcome (2026-09-29)
+
+- `loom widgets` lists every library widget from `spec/widgets.yaml` (embedded, schema-validated); `loom widgets <name>` shows one entry and rejects unknown or ambiguous names.
+- `widgets_catalog_test.go` fails when an exported type with `Draw(*Canvas, Rect[, bool])` + `HandleKey(KeyEvent) bool` in a library package is missing from the spec or vice versa; this includes embedded controls (`TextInput`, `TextArea`). Named exclusions must still exist.
+- `docs/Widgets.md` §13 now points to the catalog instead of a hand-kept table.
+- Built by rs176 (codex luna, stalled before commit), finished by the host; reviewed by agy:flash38 (no blockers).
+- Known limit: detection is AST-based, so widgets that only get their methods through struct embedding, or import loom under an alias, are not detected. Switch to `go/types` if that case appears.

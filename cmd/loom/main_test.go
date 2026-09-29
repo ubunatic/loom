@@ -121,11 +121,33 @@ func TestCheckBox(t *testing.T) {
 }
 
 func TestCLIArityErrors(t *testing.T) {
-	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"check-box"}} {
+	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"check-box"}, {"widgets", "a", "b"}} {
 		var out bytes.Buffer
 		if err := execute(args, &out); err == nil {
 			t.Errorf("execute(%q) succeeded, want arity error", args)
 		}
+	}
+}
+
+func TestWidgetsCommandListsAndSelectsCatalogEntries(t *testing.T) {
+	var all bytes.Buffer
+	if err := execute([]string{"widgets"}, &all); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"loom.Choice [input]", "KindNumber bounded numeric rows", "media.Widget [display]", "loom.TextInput [input]", "Example:", "Source:", "Ticket: issues/173"} {
+		if !strings.Contains(all.String(), want) {
+			t.Errorf("widgets output %q does not contain %q", all.String(), want)
+		}
+	}
+	var one bytes.Buffer
+	if err := execute([]string{"widgets", "Gauge"}, &one); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(one.String(), "loom.Gauge [display]") {
+		t.Fatalf("single widget output = %q", one.String())
+	}
+	if err := execute([]string{"widgets", "FileOpener"}, &one); err == nil {
+		t.Fatal("unknown widget was accepted")
 	}
 }
 

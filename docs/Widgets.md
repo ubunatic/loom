@@ -278,20 +278,19 @@ videoWidget, err := media.NewVideo("preview.mp4", media.ModeHalfblock, 24)
 
 
 
-## 13. Input Widget Inventory
+## 13. Library Widget Catalog
 
-Check this list before telling a consumer that an input widget is missing. Several inputs exist only as `Settings` row kinds, not as standalone widgets.
+Run `loom widgets` for the complete library widget catalog, short examples,
+categories, and source references. Use `loom widgets <name>` to show one entry.
+The catalog is maintained in `spec/widgets.yaml`; its completeness test checks
+exported `loom.Widget` implementations in library packages.
 
-| Need | Use | Notes |
-|---|---|---|
-| Single-line text | `TextInput` | No mask mode yet (issue 173). |
-| Multi-line text / read-only preview | `TextArea` | Syntax highlighting via `syntax/`. |
-| Pick one of many | `Choice` | Also the radio-button substitute. |
-| Yes/no | `Confirm` | |
-| Toggle, text, choice, bounded number in a list | `Settings` (`KindBool`, `KindString`, `KindChoice`, `KindNumber`) | Standalone `Toggle`/`NumberInput`: issue 174. |
-| Styled ANSI text | `AnsiEditor` | |
-| Row selection | `Table` | |
-| File/directory picking | `examples/filebrowser/filebrowser.NavigationPane` on `loom.Directory` (§4) | Lives in an example package; a library `FilePicker` is issue 172. |
-| Forms, dates, menus | — | Issues 169, 175, 170. |
+The test also counts embedded controls such as `TextInput` and `TextArea`,
+which draw with a focus flag and are hosted by a parent widget.
 
-Consumers compose multi-step wizards from these widgets with their own step index; `Router` only serves YAML-declared views.
+Check the catalog before telling a consumer an input widget is missing:
+`Settings` also offers toggle (`KindBool`), text (`KindString`), choice
+(`KindChoice`), and bounded-number (`KindNumber`) rows; standalone versions
+are issue 174. The file browser `NavigationPane` lives in
+`examples/filebrowser` and is not catalogued until a library `FilePicker`
+exists (issue 172). Forms, dates, and menus are issues 169, 175, and 170.

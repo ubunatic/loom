@@ -186,4 +186,4 @@ upkeep.
 | 173 | [173-add-masked-password-mode-to-textinput.md](173-add-masked-password-mode-to-textinput.md) | Add masked password mode to TextInput | Open |
 | 174 | [174-add-standalone-numberinput-and-toggle-widgets.md](174-add-standalone-numberinput-and-toggle-widgets.md) | Add standalone NumberInput and Toggle widgets | Open |
 | 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Open |
-| 176 | [176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md](176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md) | Add loom widgets command listing all widgets with examples and a completeness test | Open |
+| 176 | [176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md](176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md) | Add loom widgets command listing all widgets with examples and a completeness test | Closed — resolved |
