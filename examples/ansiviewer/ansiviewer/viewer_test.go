@@ -120,34 +120,31 @@ func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
 	}
 }
 
-func TestANSIWriteClipsToBounds(t *testing.T) {
+func TestPlainTextViewClipsAndPansUnicode(t *testing.T) {
 	c := loom.NewCanvas(24, 2)
 	c.Write(0, 0, "LEFT", loom.Style{})
 	c.Write(18, 0, "RIGHT", loom.Style{})
 	before := c.Row(0)
-	writeANSI(c, loom.Rect{X: 4, Y: 0, W: 6, H: 1}, "界\x1b[38;2;1;2;3mCJK long text")
+	b := &browser{lines: []string{"界CJK long text"}, kind: KindText}
+	b.Draw(c, loom.Rect{X: 4, Y: 0, W: 6, H: 1})
 	after := c.Row(0)
 	if !strings.Contains(after, "LEFT") || !strings.Contains(after, "RIGHT") {
 		t.Fatalf("outside cells changed: before=%q after=%q", before, after)
 	}
 	if !strings.Contains(after, "界") || !strings.Contains(after, "CJK") {
-		t.Fatalf("bounded content missing: %q", after)
+		t.Fatalf("bounded text content missing: %q", after)
 	}
-}
 
-func TestANSIWriteHorizontalOffsetPreservesStyles(t *testing.T) {
-	c := loom.NewCanvas(4, 1)
-	writeANSI(c, loom.Rect{W: 4, H: 1}, "\x1b[31mabcdef\x1b[0m", 2)
-	if got := c.Get(0, 0); got.Text != "c" || got.Style.FG != loom.ColorIndex(1) {
-		t.Fatalf("first offset ANSI cell = %+v, want red c", got)
-	}
-	if got := c.Get(1, 0).Text; got != "d" {
-		t.Fatalf("second offset ANSI cell = %q, want d", got)
+	b.offsetX = 2
+	c.Clear()
+	b.Draw(c, loom.Rect{W: 4, H: 1})
+	if got := c.Get(0, 0).Text; got != "C" {
+		t.Fatalf("first horizontally panned text cell = %q, want C", got)
 	}
 }
 
 func TestBrowserPansPreviewInTwoDimensions(t *testing.T) {
-	b := &browser{lines: []string{strings.Repeat("x", 40), "line 1", "line 2", "line 3", "line 4"}, kind: KindANSI}
+	b := &browser{lines: []string{strings.Repeat("x", 40), "line 1", "line 2", "line 3", "line 4"}, kind: KindText}
 	b.Draw(loom.NewCanvas(12, 2), loom.Rect{W: 12, H: 2})
 	for _, key := range []string{"right", "l", "down", "j"} {
 		b.HandleKey(loom.KeyEvent{Key: key})
@@ -177,32 +174,11 @@ func TestFramedBrowserStatusIncludesPanningHint(t *testing.T) {
 	}
 }
 
-func TestANSIWriteFlagClusterKeepsLabelAndFillsRow(t *testing.T) {
-	c := loom.NewCanvas(24, 1)
-	area := loom.Rect{X: 0, Y: 0, W: 24, H: 1}
-	style := loom.Style{BG: loom.ColorIndex(24)}
-	writeANSI(c, area, "\x1b[48;5;24mFlag 🇩🇪 tail")
-
-	if got := c.Get(0, 0).Text; got != "F" {
-		t.Fatalf("label starts with %q, want F", got)
-	}
-	if got := c.Get(5, 0).Text; got != "🇩🇪" {
-		t.Fatalf("flag cluster = %q, want one regional-indicator pair", got)
-	}
-	if got := c.Get(8, 0).Text; got != "t" {
-		t.Fatalf("text after flag starts at column 8 with %q, want t", got)
-	}
-	for x := 0; x < area.W; x++ {
-		if got := c.Get(x, 0).Style.BG; got != style.BG {
-			t.Fatalf("column %d background = %v, want %v", x, got, style.BG)
-		}
-	}
-}
-
-func TestANSIReplayPreservesZWJFamily(t *testing.T) {
+func TestPlainTextViewPreservesZWJFamily(t *testing.T) {
 	family := "👨‍👩‍👧‍👦"
 	canvas := loom.NewCanvas(12, 1)
-	writeANSI(canvas, loom.Rect{X: 0, Y: 0, W: 12, H: 1}, family)
+	b := &browser{lines: []string{family}, kind: KindText}
+	b.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 12, H: 1})
 
 	if got := canvas.Get(0, 0).Text; got != family {
 		t.Fatalf("replayed cell text = %q, want family sequence %q", got, family)
