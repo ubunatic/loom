@@ -17,12 +17,13 @@ var defaultsYAML []byte
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
-	FallbackQuitKeys []string          `yaml:"fallback_quit_keys"`
-	Pane             PaneDefaults      `yaml:"pane"`
-	Scrollbar        ScrollbarDefaults `yaml:"scrollbar"`
-	Mouse            MouseDefaults     `yaml:"mouse"`
-	Splash           SplashDefaults    `yaml:"splash"`
-	Media            MediaDefaults     `yaml:"media"`
+	FallbackQuitKeys []string            `yaml:"fallback_quit_keys"`
+	Pane             PaneDefaults        `yaml:"pane"`
+	Scrollbar        ScrollbarDefaults   `yaml:"scrollbar"`
+	Mouse            MouseDefaults       `yaml:"mouse"`
+	Splash           SplashDefaults      `yaml:"splash"`
+	ProgressBar      ProgressBarDefaults `yaml:"progress_bar"`
+	Media            MediaDefaults       `yaml:"media"`
 }
 
 // MediaDefaults defines user-facing media status and rendering timing defaults.
@@ -72,10 +73,10 @@ func (d ScrollbarDefaults) validate() error {
 
 // PaneDefaults defines specced defaults for Pane.
 type PaneDefaults struct {
-	MaxCols        int           `yaml:"max_cols"`
-	EscKeyTimeout  time.Duration `yaml:"esc_key_timeout"`
-	GuardDuration  time.Duration `yaml:"guard_duration"`
-	ViewPanStep    int           `yaml:"view_pan_step"`
+	MaxCols       int           `yaml:"max_cols"`
+	EscKeyTimeout time.Duration `yaml:"esc_key_timeout"`
+	GuardDuration time.Duration `yaml:"guard_duration"`
+	ViewPanStep   int           `yaml:"view_pan_step"`
 }
 
 // SplashDefaults defines specced defaults for splash lifecycle and widgets.
@@ -86,6 +87,12 @@ type SplashDefaults struct {
 	StepText     string        `yaml:"step_text"`
 	TickInterval time.Duration `yaml:"tick_interval"`
 	HoldDuration time.Duration `yaml:"hold_duration"`
+}
+
+// ProgressBarDefaults defines specced defaults for the ProgressBar widget.
+type ProgressBarDefaults struct {
+	Width       int    `yaml:"width"`
+	DonePattern string `yaml:"done_pattern"`
 }
 
 // SpeccedDefaults holds the loaded immutable defaults from spec/defaults.yaml.

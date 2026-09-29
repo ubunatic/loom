@@ -166,6 +166,7 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
 | 2D Panning in `loom.View` (`OffsetX`, `OffsetY`, `Pan`) | 138 | 2D offset panning with ANSI-aware style-preserving horizontal column clipping. |
 | Lazy Media Loading (`media.Widget`) | 140 | 50 ms threshold non-blocking background render with dim loading indicator. |
+| `loom.ProgressBar` (`Set`, `Done`, `Reset`), `graph.BracketedBarStep` | 167 | Determinate bracketed bar; pass `bar.Set` as a progress callback from any goroutine. `Set` invalidates only when a visible half-cell changes. `Done` swaps to the specced `:` pattern like the splash. Colors come from `Style`, not `Options.ANSI`. |
 
 ## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 

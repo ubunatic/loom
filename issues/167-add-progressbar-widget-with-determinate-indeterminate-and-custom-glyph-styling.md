@@ -45,3 +45,11 @@ Introduce `loom.ProgressBar` (implementing `loom.Widget` and `loom.Themeable`):
   - Indeterminate pulse position calculation across frames.
   - Canvas rendering output checks for filled vs empty runes and colors.
 - Document in `docs/Widgets.md`.
+
+## 4. Outcome, 2026-09-29 (milestone 1: determinate bar)
+Delivered `progressbar.go` (`NewProgressBar`, `Set`, `Done`, `Reset`, `Value`, `IsDone`, `Style`, `Align`), `graph.BracketedBarStep`, and the `progress_bar` section in `spec/defaults.yaml` (width 24, done pattern `:`).
+- Throttle: `Set` compares the visible step (filled half-cells) and calls the pane invalidate only when it changes; the pane's invalidate channel coalesces bursts.
+- Done: one-frame swap to the done pattern, same as `SplashView` (user chose this over a drain animation).
+- Tests in `progressbar_test.go`: invalidation count, clamping incl. NaN/Inf, done/reset, clipping, step-vs-render agreement.
+
+Remaining (still open): indeterminate pulse mode, percent/count labels, separate fill/empty styles, `Themeable`, migrating `SplashView` onto `ProgressBar`.

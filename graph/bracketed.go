@@ -129,3 +129,28 @@ func BracketedBarWidth(opts BracketedBarOptions) int {
 	}
 	return measure.StringWidth(left) + width + measure.StringWidth(right)
 }
+
+// BracketedBarStep returns the number of visible fill subunits for value, in
+// [0, width*subdivisions]. Two values with the same step render the same bar,
+// so callers can skip redraws when the step did not change. Pattern bars have
+// no fill and always return 0.
+func BracketedBarStep(value float64, opts BracketedBarOptions) int {
+	if opts.Pattern != "" {
+		return 0
+	}
+	width := opts.Width
+	if width <= 0 {
+		width = 32
+	}
+	subdivisions := 1
+	if opts.SubChar {
+		glyphs := opts.SubCharacterGlyphs
+		if len(glyphs) == 0 {
+			glyphs = BrailleSubCharacterGlyphs
+		}
+		subdivisions = len(glyphs) + 1
+	}
+	pct := normalizedPercent(value, 0, 100)
+	step := int(float64(width*subdivisions) * (pct / 100))
+	return min(max(step, 0), width*subdivisions)
+}
