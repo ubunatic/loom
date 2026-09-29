@@ -1,6 +1,6 @@
 # 176 — Add loom widgets command listing all widgets with examples and a completeness test
 
-**Status**: Closed — resolved
+**Status**: In Progress
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
@@ -29,3 +29,12 @@ On 2026-09-29 an agent answered "which input widgets do we have?" from memory an
 - `docs/Widgets.md` §13 now points to the catalog instead of a hand-kept table.
 - Built by rs176 (codex luna, stalled before commit), finished by the host; reviewed by agy:flash38 (no blockers).
 - Known limit: detection is AST-based, so widgets that only get their methods through struct embedding, or import loom under an alias, are not detected. Switch to `go/types` if that case appears.
+
+## M2 — Catalog output polish (follow-up, 2026-09-29)
+
+Acceptance criteria:
+1. `loom widgets` (no args) prints one line per widget: name, category, purpose; grouped by category (input, display, layout, infra), sorted by name within each group. `loom widgets <name>` keeps the full entry (example, source, docs, ticket).
+2. Entries in `spec/widgets.yaml` are sorted by name, and a test enforces that order.
+3. No entry points `docs:` at `docs/Widgets.md §13` (the catalog section itself); make `docs` optional in the schema and drop those values; only print `Docs:` when set.
+4. `ticket:` values use the short form `issues/NNN` everywhere.
+5. Update `cmd/loom/main_test.go` for the new list format; run `make test-q1` once to a file and grep `--- FAIL`; `make install`; commit `feat(cmd): ... (issue 176 M2)`.
