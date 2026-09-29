@@ -144,7 +144,9 @@ grayscale ramp, so it remains visible against bright, saturated surfaces (e.g.
 interpolates to exactly the surface color (`t=0`); the brightest frame uses
 `peakChannel(bg, floor, margin)` per RGB channel — `max(bg+margin, floor)`,
 clamped to 255 — so contrast scales with the surface's own brightness instead
-of assuming a dark terminal. A fixed grayscale fallback (`42+level*9`) is used
+of assuming a dark terminal. The peak floor and peak margin parameters (`peak_floor`,
+`peak_margin`) are defined in `spec/backgrounds.yaml` and loaded via
+`SpeccedBackground`. A fixed grayscale fallback (`42+level*9`) is used
 only when the surface color cannot be resolved. Density and timing remain
 spec-driven; visual tuning must not change ownership or merge semantics.
 

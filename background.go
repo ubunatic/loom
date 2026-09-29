@@ -72,8 +72,8 @@ func (AstraBackground) DrawBackgroundAt(c *Canvas, r Rect, now time.Time) {
 			// panel, so the peak is pushed a fixed margin above each of the
 			// background's own channels (clamped to 255), staying at least
 			// as bright as the old fixed peak on dark/neutral surfaces.
-			const peakFloor = 105
-			const peakMargin = 130
+			peakFloor := float64(SpeccedBackground.PeakFloor)
+			peakMargin := float64(SpeccedBackground.PeakMargin)
 			t := float64(level) / 7
 			bgR, bgG, bgB, ok := c.Get(r.X+x, r.Y+y).Style.BG.RGB()
 			var fr, fg, fb uint8

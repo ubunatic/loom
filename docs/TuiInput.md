@@ -38,6 +38,13 @@ terminal's cursor-position response; its poll also retries `EINTR` and observes
 a deadline. This startup query avoids a temporary reader goroutine that could
 steal ordinary keys after timing out.
 
+During input handling, when an incomplete byte sequence or lone `ESC` arrives at a
+read boundary, `Pane` buffers the pending bytes and arms a timer governed by
+`esc_key_timeout` from `spec/defaults.yaml` (default 50 ms). This ensures a
+standalone `ESC` resolves promptly into an escape event without blocking on further
+bytes. Similarly, width-guard intervals fall back to `guard_duration` from
+`spec/defaults.yaml` (default 1 s) when unset on the pane.
+
 ## 3. Key decoding and shell compatibility
 
 `DecodeKey` maps terminal byte sequences to Loom's `KeyEvent` names. Cursor

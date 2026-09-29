@@ -8,6 +8,9 @@ fallback_quit_keys:
 
 pane:
   max_cols: 50
+  esc_key_timeout: 50ms
+  guard_duration: 1s
+  view_pan_step: 10
 
 scrollbar:
   mode: auto

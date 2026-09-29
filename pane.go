@@ -938,7 +938,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// arrive with nothing more following, so a standalone ESC keypress still
 	// resolves promptly instead of waiting forever for bytes that will never
 	// come.
-	const escKeyTimeout = 50 * time.Millisecond
+	escKeyTimeout := SpeccedDefaults.Pane.EscKeyTimeout
 	var pending []byte
 	var pendingC <-chan time.Time
 
@@ -946,7 +946,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	var guardTimerC <-chan time.Time
 	guardDuration := p.WidthGuardDuration
 	if guardDuration <= 0 {
-		guardDuration = time.Second
+		guardDuration = SpeccedDefaults.Pane.GuardDuration
 	}
 	defer func() {
 		if guardTimer != nil {

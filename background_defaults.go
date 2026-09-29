@@ -20,6 +20,8 @@ type backgroundDefaults struct {
 	Threshold      float64       `yaml:"threshold"`
 	RedrawInterval time.Duration `yaml:"redraw_interval"`
 	Density        float64       `yaml:"density"`
+	PeakFloor      int           `yaml:"peak_floor"`
+	PeakMargin     int           `yaml:"peak_margin"`
 }
 
 type backgroundSpecFile struct {

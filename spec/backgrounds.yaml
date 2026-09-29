@@ -5,3 +5,5 @@ background:
   threshold: 0.12
   redraw_interval: 150ms
   density: 0.16
+  peak_floor: 105
+  peak_margin: 130

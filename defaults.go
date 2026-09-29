@@ -72,7 +72,10 @@ func (d ScrollbarDefaults) validate() error {
 
 // PaneDefaults defines specced defaults for Pane.
 type PaneDefaults struct {
-	MaxCols int `yaml:"max_cols"`
+	MaxCols        int           `yaml:"max_cols"`
+	EscKeyTimeout  time.Duration `yaml:"esc_key_timeout"`
+	GuardDuration  time.Duration `yaml:"guard_duration"`
+	ViewPanStep    int           `yaml:"view_pan_step"`
 }
 
 // SplashDefaults defines specced defaults for splash lifecycle and widgets.

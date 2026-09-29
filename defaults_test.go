@@ -41,3 +41,29 @@ func TestMediaDefaultsLoadFromSpec(t *testing.T) {
 		t.Fatalf("media defaults = %+v, want loading/render error/50ms", got)
 	}
 }
+
+func TestPaneDefaultsLoadFromSpec(t *testing.T) {
+	got := SpeccedDefaults.Pane
+	if got.MaxCols != 50 {
+		t.Fatalf("pane.MaxCols = %d, want 50", got.MaxCols)
+	}
+	if got.EscKeyTimeout != 50*time.Millisecond {
+		t.Fatalf("pane.EscKeyTimeout = %v, want 50ms", got.EscKeyTimeout)
+	}
+	if got.GuardDuration != time.Second {
+		t.Fatalf("pane.GuardDuration = %v, want 1s", got.GuardDuration)
+	}
+	if got.ViewPanStep != 10 {
+		t.Fatalf("pane.ViewPanStep = %d, want 10", got.ViewPanStep)
+	}
+}
+
+func TestBackgroundDefaultsLoadFromSpec(t *testing.T) {
+	got := SpeccedBackground
+	if got.PeakFloor != 105 {
+		t.Fatalf("background.PeakFloor = %d, want 105", got.PeakFloor)
+	}
+	if got.PeakMargin != 130 {
+		t.Fatalf("background.PeakMargin = %d, want 130", got.PeakMargin)
+	}
+}

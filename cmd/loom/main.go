@@ -274,8 +274,6 @@ type ansiView struct {
 	viewportRows int
 }
 
-const ansiViewPanStep = 10
-
 func (v *ansiView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	v.viewportCols = rect.W
 	v.viewportRows = rect.H
@@ -324,13 +322,14 @@ func (v *ansiView) clampOffsets() {
 }
 
 func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
+	panStep := loom.SpeccedDefaults.Pane.ViewPanStep
 	switch {
 	case event.Is("q", "f10", "ctrl-c"):
 		return true
 	case event.Is("shift-left", "["):
-		v.offsetX -= ansiViewPanStep
+		v.offsetX -= panStep
 	case event.Is("shift-right", "]"):
-		v.offsetX += ansiViewPanStep
+		v.offsetX += panStep
 	case event.Is("left", "h"):
 		v.offsetX--
 	case event.Is("right", "l"):
@@ -344,9 +343,9 @@ func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
 	case event.Is("down", "j"):
 		v.offsetY++
 	case event.Is("pgup"):
-		v.offsetY -= ansiViewPanStep
+		v.offsetY -= panStep
 	case event.Is("pgdn"):
-		v.offsetY += ansiViewPanStep
+		v.offsetY += panStep
 	}
 	v.clampOffsets()
 	return false

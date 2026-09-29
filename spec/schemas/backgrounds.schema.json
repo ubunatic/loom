@@ -6,13 +6,15 @@
   "properties": {
     "background": {
       "type": "object",
-      "required": ["glyphs", "dim_factor", "threshold", "redraw_interval", "density"],
+      "required": ["glyphs", "dim_factor", "threshold", "redraw_interval", "density", "peak_floor", "peak_margin"],
       "properties": {
         "glyphs": { "type": "array", "minItems": 8, "items": { "type": "string", "minLength": 1 } },
         "dim_factor": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
         "threshold": { "type": "number", "minimum": 0, "maximum": 1 },
         "redraw_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
-        "density": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+        "density": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "peak_floor": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "peak_margin": { "type": "integer", "minimum": 0, "maximum": 255 }
       },
       "additionalProperties": false
     }

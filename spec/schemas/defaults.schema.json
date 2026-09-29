@@ -16,9 +16,12 @@
     "pane": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["max_cols"],
+      "required": ["max_cols", "esc_key_timeout", "guard_duration", "view_pan_step"],
       "properties": {
-        "max_cols": { "type": "integer", "minimum": 1 }
+        "max_cols": { "type": "integer", "minimum": 1 },
+        "esc_key_timeout": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "guard_duration": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "view_pan_step": { "type": "integer", "minimum": 1 }
       }
     },
     "scrollbar": {

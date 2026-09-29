@@ -185,36 +185,32 @@ func TestMediaDemoPTYPlaysVideo(t *testing.T) {
 		t.Fatalf("bottom row does not contain terminal status and video path: %q", status)
 	}
 	maxX := -1
-	for y, row := range s.Cells() {
-		if len(row) != cols {
-			t.Fatalf("rendered row %d has %d cells, want full terminal width %d", y, len(row), cols)
-		}
-		for x, cell := range row {
-			fg, _ := cell.Style.Effective()
-			r, g, b, ok := fg.RGB()
-			if ok && ((r > 180 && g < 80 && b < 80) || (b > 120 && r < 80 && g < 80)) && x > maxX {
-				maxX = x
-			}
-		}
-	}
-	if maxX < 50 {
-		t.Fatalf("video content reached column %d, want content beyond column 50", maxX)
-	}
 	deadline := time.Now().Add(5 * time.Second)
 	seenRed, seenBlue := false, false
-	for time.Now().Before(deadline) && !(seenRed && seenBlue) {
-		for _, row := range s.Cells() {
-			for _, cell := range row {
+	for time.Now().Before(deadline) && !(seenRed && seenBlue && maxX >= 50) {
+		for y, row := range s.Cells() {
+			if len(row) != cols {
+				t.Fatalf("rendered row %d has %d cells, want full terminal width %d", y, len(row), cols)
+			}
+			for x, cell := range row {
 				fg, _ := cell.Style.Effective()
 				r, g, b, ok := fg.RGB()
 				if !ok {
 					continue
 				}
-				seenRed = seenRed || (r > 180 && g < 80 && b < 80)
-				seenBlue = seenBlue || (b > 120 && r < 80 && g < 80)
+				isRed := r > 180 && g < 80 && b < 80
+				isBlue := b > 120 && r < 80 && g < 80
+				if (isRed || isBlue) && x > maxX {
+					maxX = x
+				}
+				seenRed = seenRed || isRed
+				seenBlue = seenBlue || isBlue
 			}
 		}
 		time.Sleep(20 * time.Millisecond)
+	}
+	if maxX < 50 {
+		t.Fatalf("video content reached column %d, want content beyond column 50", maxX)
 	}
 	if !seenRed || !seenBlue {
 		t.Fatalf("video colors observed: red=%t blue=%t", seenRed, seenBlue)
