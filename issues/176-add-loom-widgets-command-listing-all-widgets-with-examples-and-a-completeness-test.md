@@ -1,6 +1,6 @@
 # 176 — Add loom widgets command listing all widgets with examples and a completeness test
 
-**Status**: In Progress
+**Status**: Closed — resolved
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
@@ -38,3 +38,5 @@ Acceptance criteria:
 3. No entry points `docs:` at `docs/Widgets.md §13` (the catalog section itself); make `docs` optional in the schema and drop those values; only print `Docs:` when set.
 4. `ticket:` values use the short form `issues/NNN` everywhere.
 5. Update `cmd/loom/main_test.go` for the new list format; run `make test-q1` once to a file and grep `--- FAIL`; `make install`; commit `feat(cmd): ... (issue 176 M2)`.
+
+M2 delivered (fc8e58c, agy:flash37 dev): compact grouped list, name-sorted spec with order test, §13 self-pointers removed, short ticket refs.
