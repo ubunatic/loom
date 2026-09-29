@@ -230,4 +230,3 @@ func TestTextAreaViewportBoundedHighlighting(t *testing.T) {
 		t.Errorf("scrolled query range = [%d, %d), want [4, 7)", mock.lastStart, mock.lastEnd)
 	}
 }
-

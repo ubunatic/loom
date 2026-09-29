@@ -532,4 +532,3 @@ func DispatchMouseEvent(root Widget, me MouseEvent) EventResult {
 	}
 	return Ignored()
 }
-

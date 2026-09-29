@@ -53,4 +53,3 @@ type Navigator interface {
 	Breadcrumb(line, col int) []string
 	Folds() [][2]int
 }
-

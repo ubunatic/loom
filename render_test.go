@@ -172,3 +172,43 @@ func TestViewContentTruncatedToReserveIndicatorColumn(t *testing.T) {
 		t.Errorf("content column 4 = %q, want X", got)
 	}
 }
+
+func BenchmarkCanvasRow(b *testing.B) {
+	c := loom.NewCanvas(120, 40)
+	s1 := loom.Style{FG: loom.ColorIndex(196), Bold: true}
+	s2 := loom.Style{BG: loom.ColorRGB(10, 20, 30)}
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 120; x++ {
+			if (x+y)%2 == 0 {
+				c.Set(x, y, loom.Cell{Text: "A", Style: s1})
+			} else {
+				c.Set(x, y, loom.Cell{Text: "B", Style: s2})
+			}
+		}
+	}
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = c.Row(i % 40)
+	}
+}
+
+func BenchmarkCanvasFlush(b *testing.B) {
+	c := loom.NewCanvas(120, 40)
+	s1 := loom.Style{FG: loom.ColorIndex(196), Bold: true}
+	s2 := loom.Style{BG: loom.ColorRGB(10, 20, 30)}
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 120; x++ {
+			if (x+y)%2 == 0 {
+				c.Set(x, y, loom.Cell{Text: "A", Style: s1})
+			} else {
+				c.Set(x, y, loom.Cell{Text: "B", Style: s2})
+			}
+		}
+	}
+	var out strings.Builder
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		out.Reset()
+		c.Flush(&out, 1)
+	}
+}

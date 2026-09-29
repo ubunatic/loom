@@ -3,7 +3,10 @@
 
 package loom
 
-import "fmt"
+import (
+	"strconv"
+	"strings"
+)
 
 // Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 type Color struct {
@@ -69,26 +72,52 @@ func xterm256RGB(idx uint8) (r, g, b uint8) {
 	}
 }
 
-func (c Color) fgSeq() string {
+func (c Color) appendFG(dst []byte) []byte {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[38;5;%dm", c.index)
+		dst = append(dst, "\x1b[38;5;"...)
+		dst = strconv.AppendUint(dst, uint64(c.index), 10)
+		return append(dst, 'm')
 	case colorRGB:
-		return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", c.r, c.g, c.b)
+		dst = append(dst, "\x1b[38;2;"...)
+		dst = strconv.AppendUint(dst, uint64(c.r), 10)
+		dst = append(dst, ';')
+		dst = strconv.AppendUint(dst, uint64(c.g), 10)
+		dst = append(dst, ';')
+		dst = strconv.AppendUint(dst, uint64(c.b), 10)
+		return append(dst, 'm')
 	default:
-		return "\x1b[39m" // default fg
+		return append(dst, "\x1b[39m"...)
 	}
 }
 
-func (c Color) bgSeq() string {
+func (c Color) appendBG(dst []byte) []byte {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[48;5;%dm", c.index)
+		dst = append(dst, "\x1b[48;5;"...)
+		dst = strconv.AppendUint(dst, uint64(c.index), 10)
+		return append(dst, 'm')
 	case colorRGB:
-		return fmt.Sprintf("\x1b[48;2;%d;%d;%dm", c.r, c.g, c.b)
+		dst = append(dst, "\x1b[48;2;"...)
+		dst = strconv.AppendUint(dst, uint64(c.r), 10)
+		dst = append(dst, ';')
+		dst = strconv.AppendUint(dst, uint64(c.g), 10)
+		dst = append(dst, ';')
+		dst = strconv.AppendUint(dst, uint64(c.b), 10)
+		return append(dst, 'm')
 	default:
-		return "\x1b[49m" // default bg
+		return append(dst, "\x1b[49m"...)
 	}
+}
+
+func (c Color) fgSeq() string {
+	var buf [32]byte
+	return string(c.appendFG(buf[:0]))
+}
+
+func (c Color) bgSeq() string {
+	var buf [32]byte
+	return string(c.appendBG(buf[:0]))
 }
 
 // Style describes the visual appearance of a Canvas cell.
@@ -100,22 +129,34 @@ type Style struct {
 	Dim       bool
 }
 
+// AppendANSI appends the escape sequence for this style to dst.
+func (s Style) AppendANSI(dst []byte) []byte {
+	dst = append(dst, "\x1b[0m"...)
+	if s.Bold {
+		dst = append(dst, "\x1b[1m"...)
+	}
+	if s.Underline {
+		dst = append(dst, "\x1b[4m"...)
+	}
+	if s.Dim {
+		dst = append(dst, "\x1b[2m"...)
+	}
+	dst = s.FG.appendFG(dst)
+	dst = s.BG.appendBG(dst)
+	return dst
+}
+
+// WriteANSI writes the escape sequence for this style directly to b.
+func (s Style) WriteANSI(b *strings.Builder) {
+	var buf [64]byte
+	b.Write(s.AppendANSI(buf[:0]))
+}
+
 // ANSI returns the escape sequence that applies this style.
 // Always starts with a full reset to avoid state bleed from previous cells.
 func (s Style) ANSI() string {
-	out := "\x1b[0m" // reset all attributes
-	if s.Bold {
-		out += "\x1b[1m"
-	}
-	if s.Underline {
-		out += "\x1b[4m"
-	}
-	if s.Dim {
-		out += "\x1b[2m"
-	}
-	out += s.FG.fgSeq()
-	out += s.BG.bgSeq()
-	return out
+	var buf [64]byte
+	return string(s.AppendANSI(buf[:0]))
 }
 
 // Reset is a zero Style — default terminal colors, no attributes.

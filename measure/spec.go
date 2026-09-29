@@ -16,12 +16,12 @@ import (
 // Package measure defines and loads emoji/sequence specifications.
 // EmojiSpec defines specced emoji and sequence width policy.
 type EmojiSpec struct {
-	VS16DefaultWidth  int             `yaml:"vs16_default_width"`
-	VS16VTEMode       string          `yaml:"vs16_vte_mode"`
-	VS16NonVTEMode    string          `yaml:"vs16_non_vte_mode,omitempty"`
-	ZWJDefaultWidth   int             `yaml:"zwj_default_width"`
-	FlagDefaultWidth  int             `yaml:"flag_default_width"`
-	Overrides         []EmojiOverride `yaml:"overrides"`
+	VS16DefaultWidth int             `yaml:"vs16_default_width"`
+	VS16VTEMode      string          `yaml:"vs16_vte_mode"`
+	VS16NonVTEMode   string          `yaml:"vs16_non_vte_mode,omitempty"`
+	ZWJDefaultWidth  int             `yaml:"zwj_default_width"`
+	FlagDefaultWidth int             `yaml:"flag_default_width"`
+	Overrides        []EmojiOverride `yaml:"overrides"`
 }
 
 // EmojiOverride defines an explicit glyph-to-width mapping.
@@ -51,13 +51,13 @@ const (
 )
 
 type emojiRuntime struct {
-	spec            EmojiSpec
-	runeOverrides   map[rune]int
-	glyphOverrides  map[string]int
-	vteModes        map[string]string
-	nonVTEModes     map[string]string
-	vs16VTEMode     string
-	vs16NonVTEMode  string
+	spec           EmojiSpec
+	runeOverrides  map[rune]int
+	glyphOverrides map[string]int
+	vteModes       map[string]string
+	nonVTEModes    map[string]string
+	vs16VTEMode    string
+	vs16NonVTEMode string
 }
 
 var currentEmojiRuntime atomic.Pointer[emojiRuntime]
@@ -78,11 +78,11 @@ func init() {
 
 func defaultEmojiSpec() EmojiSpec {
 	return EmojiSpec{
-		VS16DefaultWidth:  2,
-		VS16VTEMode:       "pad-1",
-		VS16NonVTEMode:    "default",
-		ZWJDefaultWidth:   2,
-		FlagDefaultWidth:  2,
+		VS16DefaultWidth: 2,
+		VS16VTEMode:      "pad-1",
+		VS16NonVTEMode:   "default",
+		ZWJDefaultWidth:  2,
+		FlagDefaultWidth: 2,
 	}
 }
 
@@ -339,4 +339,3 @@ func getGlyphOverride(g string) (int, bool) {
 	w, ok := rt.glyphOverrides[g]
 	return w, ok
 }
-
