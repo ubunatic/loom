@@ -185,4 +185,4 @@ upkeep.
 | 172 | [172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md](172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md) | Add a reusable FilePicker widget on top of the Directory model | Open |
 | 173 | [173-add-masked-password-mode-to-textinput.md](173-add-masked-password-mode-to-textinput.md) | Add masked password mode to TextInput | Open |
 | 174 | [174-add-standalone-numberinput-and-toggle-widgets.md](174-add-standalone-numberinput-and-toggle-widgets.md) | Add standalone NumberInput and Toggle widgets | Open |
-| 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Draft |
+| 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Open |
