@@ -9,12 +9,17 @@
 ---
 
 ## 1. Problem & Motivation
-Loom provides `graph.Bar` and `Gauge` for metric visualization, as well as `graph.Spinner` for ongoing background activity. However, applications frequently require a standard, standalone `ProgressBar` widget for long-running operations (file downloads, task completion, progress dialogs, batch jobs).
-Currently, consumers must hand-roll progress displays or configure low-level graph bars with custom labels, lacking:
-- Clean percentage / fraction formatting (`[████████░░░░░░░░] 50% (12/24)`).
-- Indeterminate / marquee mode (bouncing pulse or striped animation when total work is unknown).
-- Standard themeable fill / empty / head glyphs.
-- Automatic integration with `Pane.Invalidate()` or `Ticker` for animated indeterminate states.
+Loom provides low-level rendering helpers (`graph.Bar`, `graph.RenderBracketedBar`), a metric `Gauge`, and a specialized startup splash screen widget (`SplashView`, used in `examples/splash`).
+However:
+- In `SplashView` (`examples/splash`), the progress display is hard-coded into the splash screen's specific 8-row layout (centered title, spinner, pills, step text, and footer), directly calling the low-level string formatter `graph.RenderBracketedBar(...)`. It is not an independent, reusable widget that arbitrary containers (`Frame`, `Stack`, `Split`, `Modal`) can host.
+- Applications frequently require a standard, standalone `ProgressBar` widget for long-running operations (file downloads, task completion, progress dialogs, batch jobs).
+- Currently, consumers outside `SplashView` must hand-roll progress displays or configure low-level string formatters with custom labels, lacking:
+  - Standard `loom.Widget` lifecycle (`Draw`, `Measure`).
+  - Clean percentage / fraction formatting (`[████████░░░░░░░░] 50% (12/24)`).
+  - Indeterminate / marquee mode (bouncing pulse or striped animation when total work is unknown).
+  - Standard themeable fill / empty / head glyphs.
+  - Automatic integration with `Pane.Invalidate()` or `Ticker` for animated indeterminate states.
+- Once implemented, `SplashView` can also optionally adopt `ProgressBar` internally or share its configuration.
 
 ## 2. Technical Specification / Findings
 Introduce `loom.ProgressBar` (implementing `loom.Widget` and `loom.Themeable`):
