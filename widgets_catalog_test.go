@@ -19,6 +19,7 @@ import (
 type widgetCatalogDocument struct {
 	Widgets []struct {
 		Name string `yaml:"name"`
+		Docs string `yaml:"docs"`
 	} `yaml:"widgets"`
 	Exclusions []struct {
 		Name string `yaml:"name"`
@@ -35,9 +36,15 @@ func TestWidgetCatalogMatchesExportedWidgets(t *testing.T) {
 		t.Fatal(err)
 	}
 	listed := make(map[string]bool, len(catalog.Widgets))
-	for _, entry := range catalog.Widgets {
+	for i, entry := range catalog.Widgets {
 		if listed[entry.Name] {
 			t.Errorf("widget catalog repeats %q", entry.Name)
+		}
+		if i > 0 && catalog.Widgets[i-1].Name >= entry.Name {
+			t.Errorf("spec/widgets.yaml entries are not sorted by name: %q comes after %q", entry.Name, catalog.Widgets[i-1].Name)
+		}
+		if strings.Contains(entry.Docs, "§13") {
+			t.Errorf("widget %q points docs to section 13 (the catalog section)", entry.Name)
 		}
 		listed[entry.Name] = true
 	}

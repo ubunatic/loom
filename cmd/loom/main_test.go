@@ -134,11 +134,52 @@ func TestWidgetsCommandListsAndSelectsCatalogEntries(t *testing.T) {
 	if err := execute([]string{"widgets"}, &all); err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"loom.Choice [input]", "KindNumber bounded numeric rows", "media.Widget [display]", "loom.TextInput [input]", "Example:", "Source:", "Ticket: issues/173"} {
+	lines := strings.Split(strings.TrimSpace(all.String()), "\n")
+	if len(lines) == 0 {
+		t.Fatal("widgets output is empty")
+	}
+	for _, want := range []string{"loom.Choice [input]", "loom.Gauge [display]", "loom.AlignBox [layout]", "loom.Router [infra]"} {
 		if !strings.Contains(all.String(), want) {
 			t.Errorf("widgets output %q does not contain %q", all.String(), want)
 		}
 	}
+	for _, unwanted := range []string{"Example:", "Source:", "Capabilities:", "Ticket:"} {
+		if strings.Contains(all.String(), unwanted) {
+			t.Errorf("widgets list output unexpectedly contains %q", unwanted)
+		}
+	}
+
+	// Verify category grouping order (input -> display -> layout -> infra) and alphabetical sorting within groups
+	currentCategoryIndex := 0
+	categories := []string{"[input]", "[display]", "[layout]", "[infra]"}
+	var prevNameInCat string
+	for _, line := range lines {
+		cat := -1
+		for i, c := range categories {
+			if strings.Contains(line, c) {
+				cat = i
+				break
+			}
+		}
+		if cat == -1 {
+			t.Errorf("line %q does not contain known category", line)
+			continue
+		}
+		if cat < currentCategoryIndex {
+			t.Errorf("category group regression: line %q appeared after category %s", line, categories[currentCategoryIndex])
+		}
+		name := strings.Split(line, " ")[0]
+		if cat > currentCategoryIndex {
+			currentCategoryIndex = cat
+			prevNameInCat = name
+		} else {
+			if prevNameInCat != "" && name < prevNameInCat {
+				t.Errorf("entries not sorted within category %s: %s after %s", categories[cat], name, prevNameInCat)
+			}
+			prevNameInCat = name
+		}
+	}
+
 	var one bytes.Buffer
 	if err := execute([]string{"widgets", "Gauge"}, &one); err != nil {
 		t.Fatal(err)
@@ -146,6 +187,32 @@ func TestWidgetsCommandListsAndSelectsCatalogEntries(t *testing.T) {
 	if !strings.HasPrefix(one.String(), "loom.Gauge [display]") {
 		t.Fatalf("single widget output = %q", one.String())
 	}
+	if !strings.Contains(one.String(), "Example:") || !strings.Contains(one.String(), "Source: widget_graph.go") || !strings.Contains(one.String(), "Docs: docs/Widgets.md §3") {
+		t.Errorf("single widget output %q missing example/source/docs", one.String())
+	}
+
+	var settings bytes.Buffer
+	if err := execute([]string{"widgets", "Settings"}, &settings); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(settings.String(), "Capabilities: KindBool toggle rows; KindString text rows; KindChoice selection rows; KindNumber bounded numeric rows") {
+		t.Errorf("Settings output %q missing capabilities", settings.String())
+	}
+	if strings.Contains(settings.String(), "Docs:") {
+		t.Errorf("Settings output %q unexpectedly contains Docs:", settings.String())
+	}
+
+	var textInput bytes.Buffer
+	if err := execute([]string{"widgets", "TextInput"}, &textInput); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(textInput.String(), "Docs:") {
+		t.Errorf("TextInput output %q unexpectedly has Docs:", textInput.String())
+	}
+	if !strings.Contains(textInput.String(), "Ticket: issues/173") {
+		t.Errorf("TextInput output %q missing ticket issues/173", textInput.String())
+	}
+
 	if err := execute([]string{"widgets", "FileOpener"}, &one); err == nil {
 		t.Fatal("unknown widget was accepted")
 	}

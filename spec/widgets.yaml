@@ -1,5 +1,14 @@
 # yaml-language-server: $schema=schemas/widgets.schema.json
 widgets:
+  - name: loom.AlignBox
+    package: loom
+    purpose: Place one child within an aligned and padded rectangle.
+    category: layout
+    example: |-
+      box := loom.NewCenter(child)
+      box.Width = 30
+      box.Height = 5
+    source: align.go
   - name: loom.AnsiEditor
     package: loom
     purpose: Edit styled ANSI cell buffers with cursor navigation and painting.
@@ -11,16 +20,6 @@ widgets:
       _ = frame
     source: ansieditor.go
     docs: docs/Widgets.md §10
-  - name: loom.AlignBox
-    package: loom
-    purpose: Place one child within an aligned and padded rectangle.
-    category: layout
-    example: |-
-      box := loom.NewCenter(child)
-      box.Width = 30
-      box.Height = 5
-    source: align.go
-    docs: docs/Widgets.md §13
   - name: loom.Box
     package: loom
     purpose: Render a bordered or padded child region.
@@ -30,7 +29,6 @@ widgets:
       frame := &loom.Frame{Boxes: []loom.Box{*box}}
       _ = frame
     source: frame.go
-    docs: docs/Widgets.md §13
   - name: loom.Choice
     package: loom
     purpose: Filter and select one item from a list.
@@ -41,7 +39,6 @@ widgets:
           {Name: "Beta"},
       })
     source: choice.go
-    docs: docs/Widgets.md §13
   - name: loom.Confirm
     package: loom
     purpose: Ask for a yes or no response.
@@ -52,7 +49,6 @@ widgets:
           deleteItem()
       }
     source: confirm.go
-    docs: docs/Widgets.md §13
   - name: loom.Frame
     package: loom
     purpose: Arrange boxes and route events to their child widgets.
@@ -62,7 +58,6 @@ widgets:
           {Child: header}, {Child: body, FillHeight: true},
       }}
     source: frame.go
-    docs: docs/Widgets.md §13
   - name: loom.Gauge
     package: loom
     purpose: Display a metric value as a bounded bar.
@@ -82,7 +77,6 @@ widgets:
       focused := grid.Focus()
       _ = focused
     source: grid.go
-    docs: docs/Widgets.md §13
   - name: loom.Notif
     package: loom
     purpose: Show a non-interactive notification message.
@@ -92,7 +86,6 @@ widgets:
       frame := &loom.Frame{Boxes: []loom.Box{{Child: notice}}}
       _ = frame
     source: notif.go
-    docs: docs/Widgets.md §13
   - name: loom.PillCluster
     package: loom
     purpose: Display and navigate a cluster of compact status pills.
@@ -103,7 +96,6 @@ widgets:
           loom.ProviderPill{Label: "RAM", Value: "3 GB"},
       )
     source: pill.go
-    docs: docs/Widgets.md §13
   - name: loom.Popup
     package: loom
     purpose: Overlay a child widget on top of the surrounding view.
@@ -113,7 +105,6 @@ widgets:
       popup.Width = 40
       frame := &loom.Frame{Boxes: []loom.Box{{Child: popup}}}
     source: popup.go
-    docs: docs/Widgets.md §13
   - name: loom.ProgressBar
     package: loom
     purpose: Show and update determinate task progress.
@@ -126,16 +117,6 @@ widgets:
     source: progressbar.go
     docs: docs/Widgets.md §6
     ticket: issues/167
-  - name: loom.Rows
-    package: loom
-    purpose: Render aligned rows of styled text columns.
-    category: display
-    example: |-
-      rows := &loom.Rows{Columns: []loom.RowColumn{
-          {Width: 20}, {Width: 10},
-      }}
-    source: rows.go
-    docs: docs/Widgets.md §13
   - name: loom.Router
     package: loom
     purpose: Route between YAML-declared views.
@@ -147,7 +128,15 @@ widgets:
       }
       _, _ = widget, config
     source: yaml.go
-    docs: docs/Widgets.md §13
+  - name: loom.Rows
+    package: loom
+    purpose: Render aligned rows of styled text columns.
+    category: display
+    example: |-
+      rows := &loom.Rows{Columns: []loom.RowColumn{
+          {Width: 20}, {Width: 10},
+      }}
+    source: rows.go
   - name: loom.Settings
     package: loom
     purpose: Edit typed settings in a navigable list.
@@ -164,7 +153,6 @@ widgets:
           {Label: "Retries", Kind: loom.KindNumber, Num: &retries, Min: 0, Max: 5},
       })
     source: settings.go
-    docs: docs/Widgets.md §13
   - name: loom.Sparkline
     package: loom
     purpose: Plot recent metric history in a compact inline chart.
@@ -205,7 +193,6 @@ widgets:
       stack.Gap = 1
       _ = stack
     source: stack.go
-    docs: docs/Widgets.md §13
   - name: loom.StyledRows
     package: loom
     purpose: Render styled lines without handling input.
@@ -216,7 +203,6 @@ widgets:
           "\x1b[31mred text\x1b[0m",
       )
     source: styledrows.go
-    docs: docs/Widgets.md §13
   - name: loom.Table
     package: loom
     purpose: Display, navigate, and select rows across columns.
@@ -227,7 +213,6 @@ widgets:
       selected := table.Selected()
       _ = selected
     source: table.go
-    docs: docs/Widgets.md §13
   - name: loom.Tabs
     package: loom
     purpose: Switch between titled child panels.
@@ -239,6 +224,27 @@ widgets:
       )
     source: tabs.go
     docs: docs/Widgets.md §2
+  - name: loom.TextArea
+    package: loom
+    purpose: Edit or preview multi-line text with optional syntax highlighting and folding; embedded control drawn by its parent.
+    category: input
+    example: |-
+      area := loom.NewTextArea("line one\nline two")
+      area.HandleKey(key)
+      area.Draw(canvas, rect, true)
+    source: textarea.go
+    docs: docs/Widgets.md §9
+  - name: loom.TextInput
+    package: loom
+    purpose: Edit one line of text; embedded control drawn by its parent.
+    category: input
+    example: |-
+      input := loom.NewTextInput("initial")
+      input.HandleKey(key)
+      input.Draw(canvas, rect, true)
+      value := input.Value()
+    source: textinput.go
+    ticket: issues/173
   - name: loom.View
     package: loom
     purpose: Render and pan through plain or ANSI-styled text lines.
@@ -264,28 +270,6 @@ widgets:
     source: media/widget.go
     docs: docs/Widgets.md §12
     ticket: issues/140
-  - name: loom.TextArea
-    package: loom
-    purpose: Edit or preview multi-line text with optional syntax highlighting and folding; embedded control drawn by its parent.
-    category: input
-    example: |-
-      area := loom.NewTextArea("line one\nline two")
-      area.HandleKey(key)
-      area.Draw(canvas, rect, true)
-    source: textarea.go
-    docs: docs/Widgets.md §9
-  - name: loom.TextInput
-    package: loom
-    purpose: Edit one line of text; embedded control drawn by its parent.
-    category: input
-    example: |-
-      input := loom.NewTextInput("initial")
-      input.HandleKey(key)
-      input.Draw(canvas, rect, true)
-      value := input.Value()
-    source: textinput.go
-    docs: docs/Widgets.md §13
-    ticket: issues/173-add-masked-password-mode-to-textinput.md
 exclusions:
   - name: loom.startupRoot
     reason: Unexported startup event-loop wrapper; users compose its public StartupConfig and Pane.RunStartup instead.

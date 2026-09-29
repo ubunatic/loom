@@ -44,11 +44,13 @@ func widgetsCommand() *cobra.Command {
 				return err
 			}
 			if len(args) == 0 {
-				for i, entry := range catalog.Widgets {
-					if i > 0 {
-						fmt.Fprintln(cmd.OutOrStdout())
+				categories := []string{"input", "display", "layout", "infra"}
+				for _, cat := range categories {
+					for _, entry := range catalog.Widgets {
+						if entry.Category == cat {
+							fmt.Fprintf(cmd.OutOrStdout(), "%s [%s] — %s\n", entry.Name, entry.Category, entry.Purpose)
+						}
 					}
-					writeWidget(cmd.OutOrStdout(), entry)
 				}
 				return nil
 			}
@@ -96,8 +98,12 @@ func writeWidget(out io.Writer, entry widgetEntry) {
 	for _, line := range strings.Split(entry.Example, "\n") {
 		fmt.Fprintf(out, "  %s\n", line)
 	}
-	fmt.Fprintf(out, "Source: %s\nDocs: %s\n", entry.Source, entry.Docs)
+	fmt.Fprintf(out, "Source: %s\n", entry.Source)
+	if entry.Docs != "" {
+		fmt.Fprintf(out, "Docs: %s\n", entry.Docs)
+	}
 	if entry.Ticket != "" {
 		fmt.Fprintf(out, "Ticket: %s\n", entry.Ticket)
 	}
 }
+

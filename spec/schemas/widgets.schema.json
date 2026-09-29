@@ -8,7 +8,7 @@
       "minItems": 1,
       "items": {
         "type": "object",
-        "required": ["name", "package", "purpose", "category", "example", "source", "docs"],
+        "required": ["name", "package", "purpose", "category", "example", "source"],
         "properties": {
           "name": {"type": "string", "minLength": 1},
           "package": {"type": "string", "minLength": 1},
@@ -18,7 +18,7 @@
           "example": {"type": "string", "minLength": 1},
           "source": {"type": "string", "minLength": 1},
           "docs": {"type": "string", "minLength": 1},
-          "ticket": {"type": "string", "minLength": 1}
+          "ticket": {"type": "string", "pattern": "^issues/[0-9]+$"}
         },
         "additionalProperties": false
       }
