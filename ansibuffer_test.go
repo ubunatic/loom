@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 )
 
@@ -366,5 +367,45 @@ func TestAnsiBufferDesign004File(t *testing.T) {
 	}
 	if buf.Cols() < 80 || buf.Rows() < 24 {
 		t.Fatalf("expected at least 80x24, got %dx%d", buf.Cols(), buf.Rows())
+	}
+}
+
+// TestParseAnsiBufferMcJulia256 is a regression test for issue 163.
+// mc-julia256.ansi uses cursor positioning (CSI H) and scroll regions (CSI r)
+// which previously caused ParseAnsiBuffer to exit after reading only a few bytes.
+func TestParseAnsiBufferMcJulia256(t *testing.T) {
+	path := "docs/data/mc-julia256.ansi"
+	if _, err := os.Stat(path); err != nil {
+		t.Skip("mc-julia256.ansi not found, skipping")
+	}
+
+	buf, err := LoadAnsiBuffer(path, 80, 24)
+	if err != nil {
+		t.Fatalf("LoadAnsiBuffer(%q) error = %v", path, err)
+	}
+
+	// The file uses cursor positioning and fills at least 16 rows via CSI H sequences.
+	// A correct parse must produce a buffer larger than the 13 newlines in the raw file.
+	if buf.Rows() < 16 {
+		t.Fatalf("expected at least 16 rows (cursor-positioned), got %d", buf.Rows())
+	}
+
+	// Collect all visible text from the buffer.
+	var sb strings.Builder
+	for row := 0; row < buf.Rows(); row++ {
+		for col := 0; col < buf.Cols(); col++ {
+			c := buf.Get(col, row)
+			if c.Rune != 0 && c.Rune != ' ' {
+				sb.WriteRune(c.Rune)
+			}
+		}
+		sb.WriteByte('\n')
+	}
+	text := sb.String()
+
+	for _, want := range []string{"projects/loom", "Name", "Size"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("buffer text missing %q; got excerpt:\n%.500s", want, text)
+		}
 	}
 }

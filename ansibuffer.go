@@ -678,6 +678,53 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 		}
 	}
 
+	// Pre-scan CSI positioning sequences (H, f, d, G, r) to ensure the
+	// buffer is large enough to hold all cursor-addressed content.
+	// This prevents the y < maxRows guard from terminating the parser early
+	// when files use cursor positioning instead of newlines.
+	prescanRS := []rune(content)
+	prescanN := len(prescanRS)
+	for pi := 0; pi < prescanN; {
+		if prescanRS[pi] == '\x1b' && pi+1 < prescanN && prescanRS[pi+1] == '[' {
+			pj := pi + 2
+			for pj < prescanN && (prescanRS[pj] < '@' || prescanRS[pj] > '~') {
+				pj++
+			}
+			if pj < prescanN {
+				pparams := string(prescanRS[pi+2 : pj])
+				switch prescanRS[pj] {
+				case 'H', 'f':
+					row, col := parseAnsiCSIPos(pparams)
+					if row > maxRows {
+						maxRows = row
+					}
+					if col > maxCols {
+						maxCols = col
+					}
+				case 'd':
+					row := parseAnsiCSINum(pparams, 1)
+					if row > maxRows {
+						maxRows = row
+					}
+				case 'G':
+					col := parseAnsiCSINum(pparams, 1)
+					if col > maxCols {
+						maxCols = col
+					}
+				case 'r':
+					// Scroll region: ESC[top;bottomr — bottom defines screen height
+					_, bottom := parseAnsiCSIPos(pparams)
+					if bottom > maxRows {
+						maxRows = bottom
+					}
+				}
+				pi = pj + 1
+				continue
+			}
+		}
+		pi++
+	}
+
 	buf := NewAnsiBuffer(maxCols, maxRows)
 
 	var curStyle AnsiCell
@@ -689,7 +736,7 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 	rs := []rune(content)
 	n := len(rs)
 
-	for i := 0; i < n && y < maxRows; {
+	for i := 0; i < n; {
 		// Escape sequences
 		if rs[i] == '\x1b' && i+1 < n && rs[i+1] == '[' {
 			j := i + 2
