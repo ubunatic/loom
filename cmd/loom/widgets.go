@@ -106,4 +106,3 @@ func writeWidget(out io.Writer, entry widgetEntry) {
 		fmt.Fprintf(out, "Ticket: %s\n", entry.Ticket)
 	}
 }
-
