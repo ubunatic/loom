@@ -96,3 +96,45 @@ and alacritty draw the parts separately (8 columns). Regional-indicator flags ar
 - `loom-probe` prints the measured advances for a terminal.
 - Recorded `.ansi` frames bake in the recorder's mode (`join`) and are only column-exact in joining
   terminals.
+
+## VS16 Portability in Static `.ansi` Asset Files (2026-09-29)
+
+Static ANSI art files (e.g. design mockups in `docs/data/`) may embed VS16 variation selectors
+(`\uFE0F`) from the terminal they were authored in.
+
+### The Divergence
+
+| Terminal | `ℹ️` (`\u2139\uFE0F`) cursor advance |
+|---|---|
+| tilix / VTE | 1 cell (glyph visually wide, cursor narrow) |
+| foot | 2 cells (cursor matches Unicode/Loom width policy) |
+| `measure.StringWidth` | 2 cells (correct per spec) |
+
+**Symptom in `loom eval -a`**: if a single line contains VS16 emoji, it measures 1 column wider
+than all other box-drawing lines, causing the other rows to be flagged as ragged. The file was
+authored in tilix (1-cell advance); foot advances 2 cells and breaks the layout with `cat`.
+
+### Diagnosis
+
+`loom view --plain` strips VS16 during `PlainText()` rendering — it shows 1-cell width in all
+terminals and looks correct everywhere. `cat` shows the raw bytes including VS16, so it only looks
+correct in a terminal that treats VS16 as narrow.
+
+### Fix
+
+Strip VS16 from symbols where the intent is a 1-column icon width:
+
+```bash
+python3 -c "
+data = open('file.ansi','rb').read()
+fixed = data.replace('\u2139\ufe0f'.encode('utf-8'), '\u2139'.encode('utf-8'))
+open('file.ansi','wb').write(fixed)
+"
+```
+
+After stripping: `loom eval` should report uniform row widths and `cat` should look correct in foot.
+
+### Invariant
+
+`.ansi` design assets for Loom UI mockups **must not contain VS16** on symbols intended to render
+as 1-column icons. Use bare Unicode code points. (See also: issue #048 for runtime widget policy.)

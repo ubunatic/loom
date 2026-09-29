@@ -17,3 +17,15 @@ Source: [session report](studies/2026-09-21-lean-sprint-session-report.md). 12 t
 - **Model ladder (2026-09-24)**: luna, flash37, terra, opus. Escalate after one failed fix round; the host reruns the suite whenever code changed after the developer's single quota-1 run.
 - **Rate before delete**: `harnez agent rate --name <s> <1-5> "<reason>"` only works on a live session. Rate every developer session at milestone review, then delete it (2026-09-24: six ratings lost to early deletes).
 - **Where to start the ladder**: luna for hygiene, docs and single-file fixes; start at flash37 for refactors that move ownership between widgets (frame, pane, `Choice`). In the 105 sprint luna failed every such step ([report](studies/2026-09-24-roadmap-now-sprint-099-101-105.md)).
+
+- **Model ladder (2026-09-29)**: `luna` handled both #166 (annotated output mode) and #171 (right-margin callout fix) cleanly in 1 milestone each. Token cost: ~1M/session (heavy cached). Suitable for bounded, single-file feature additions and UX fixes.
+
+## 2026-09-29 field notes
+
+Source: session on `loom eval -a` annotated output feature (issues #166, #171) and `docs/data/` asset investigation.
+
+- **Plan-first is reliable for `luna`**: both sprints converged in 1 milestone after a read-only plan round. The plan quality was high enough that no pre-work or M2 was needed.
+- **Right-margin callout bug was in M1 itself**: #166 delivered `<-- N` on its own prepended line. Host caught it on live `loom eval -a` output — not from the diff or tests alone. **Lesson**: always run the real command after `make install` as a plausibility check, not just `make test-q1`.
+- **Agent lost context across server restarts**: the wait/resume cycle re-delivered the original planning message instead of the implementation result for #171, causing the host to see the plan twice. The status check (`harnez agent status`) confirmed completion; `git log` showed the actual commit. **Lesson**: after a wait-task, always verify via `git log -n 1 --stat` before inspecting agent messages, which may be stale replays.
+- **VS16 in static assets is a silent portability trap**: `loom eval` correctly identified the line-width mismatch; the root cause was that `ℹ️` (with VS16) was used in an asset authored in tilix (1-cell advance) but foot advances 2 cells for it. `loom view --plain` stripped VS16 and hid the discrepancy. See `docs/EmojiWidth.md` §VS16 Portability for the full diagnosis and invariant.
+- **No `harnez rate` calls**: tool feedback protocol was not followed. Rate developer sessions at review time, before `delete`.
