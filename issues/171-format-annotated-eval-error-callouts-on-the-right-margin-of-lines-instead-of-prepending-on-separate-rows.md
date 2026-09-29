@@ -1,6 +1,6 @@
 # 171 — Format annotated eval error callouts on the right margin of lines instead of prepending on separate rows
 
-**Status**: Open
+**Status**: Closed — Aligned annotated evaluation margin callout markers with padded right margin
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Bug / UX
