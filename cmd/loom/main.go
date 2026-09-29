@@ -287,13 +287,36 @@ func writeAnnotated(out io.Writer, text string, diagnostics []annotation) error 
 		byRow[diagnostic.row] = append(byRow[diagnostic.row], i+1)
 	}
 	for row, line := range grid {
-		for _, index := range byRow[row] {
-			fmt.Fprintf(out, "<-- %d\n", index)
+		if _, err := fmt.Fprint(out, line); err != nil {
+			return err
 		}
-		fmt.Fprintln(out, line)
+		if indices := byRow[row]; len(indices) > 0 {
+			padding := buffer.Cols() - measure.StringWidth(line)
+			if padding < 0 {
+				padding = 0
+			}
+			if _, err := fmt.Fprint(out, strings.Repeat(" ", padding), "  <-- "); err != nil {
+				return err
+			}
+			for i, index := range indices {
+				if i > 0 {
+					if _, err := fmt.Fprint(out, ", "); err != nil {
+						return err
+					}
+				}
+				if _, err := fmt.Fprint(out, index); err != nil {
+					return err
+				}
+			}
+		}
+		if _, err := fmt.Fprintln(out); err != nil {
+			return err
+		}
 	}
 	for i, diagnostic := range diagnostics {
-		fmt.Fprintf(out, "%d: %s\n", i+1, diagnostic.message)
+		if _, err := fmt.Fprintf(out, "%d: %s\n", i+1, diagnostic.message); err != nil {
+			return err
+		}
 	}
 	return nil
 }

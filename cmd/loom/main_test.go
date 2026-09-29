@@ -57,9 +57,14 @@ func TestEvalAnnotatedOutput(t *testing.T) {
 			t.Fatalf("eval %s: %v", flag, err)
 		}
 		got := out.String()
-		for _, want := range []string{"┌──┐", "│ x│", "<-- 1", "1: line 1: ragged width", "2: line 2: trailing whitespace"} {
+		for _, want := range []string{"┌──┐    <-- 1", "│ x│    <-- 2", "└──┘    <-- 3", "1: line 1: ragged width", "2: line 2: trailing whitespace"} {
 			if !strings.Contains(got, want) {
 				t.Errorf("eval %s output %q does not contain %q", flag, got, want)
+			}
+		}
+		for _, line := range strings.Split(got, "\n") {
+			if strings.HasPrefix(line, "<-- ") {
+				t.Errorf("eval %s output contains a standalone callout row: %q", flag, got)
 			}
 		}
 	}
@@ -74,9 +79,14 @@ func TestCheckBoxAnnotatedOutput(t *testing.T) {
 			t.Fatalf("check-box %s accepted invalid box", flag)
 		}
 		got := out.String() + err.Error()
-		for _, want := range []string{"└─┘", "<-- 1", "1: line 2: box width mismatch"} {
+		for _, want := range []string{"┌──┐", "│x│   <-- 1", "└─┘", "1: line 2: box width mismatch"} {
 			if !strings.Contains(got, want) {
 				t.Errorf("check-box %s output %q does not contain %q", flag, got, want)
+			}
+		}
+		for _, line := range strings.Split(got, "\n") {
+			if strings.HasPrefix(line, "<-- ") {
+				t.Errorf("check-box %s output contains a standalone callout row: %q", flag, got)
 			}
 		}
 	}
