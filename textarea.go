@@ -165,7 +165,6 @@ func (t *TextArea) FoldedRanges() map[int]int {
 	return out
 }
 
-
 // HandleKey applies an editing key, returning consumed=true when it acted.
 func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
 	switch e.Key {

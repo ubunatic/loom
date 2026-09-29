@@ -4,7 +4,7 @@
 package loom
 
 import (
-	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -379,6 +379,7 @@ func (c *Canvas) Row(y int) string {
 		return ""
 	}
 	var b strings.Builder
+	b.Grow(c.cols * 8)
 	var cur Style
 	vteNeedPad := false
 	isVTE := measure.ActiveRenderPath() == measure.RenderPathVTE
@@ -386,7 +387,7 @@ func (c *Canvas) Row(y int) string {
 		if cell.Continuation {
 			if vteNeedPad {
 				if cell.Style != cur {
-					b.WriteString(cell.Style.ANSI())
+					cell.Style.WriteANSI(&b)
 					cur = cell.Style
 				}
 				b.WriteByte(' ')
@@ -399,7 +400,7 @@ func (c *Canvas) Row(y int) string {
 			vteNeedPad = true
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSI())
+			cell.Style.WriteANSI(&b)
 			cur = cell.Style
 		}
 		if cell.Text == "" {
@@ -439,19 +440,26 @@ func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error)
 		sink.WriteString("\x1b[?2026h") //nolint:errcheck
 	}
 	for y := 0; y < c.rows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
-		sink.WriteString(c.Row(y))                              //nolint:errcheck
+		sink.WriteString("\x1b[")                    //nolint:errcheck
+		sink.WriteString(strconv.Itoa(startRow + y)) //nolint:errcheck
+		sink.WriteString(";1H")                      //nolint:errcheck
+		sink.WriteString(c.Row(y))                   //nolint:errcheck
 		if cfg.RowClear {
 			sink.WriteString("\x1b[K") //nolint:errcheck
 		}
 	}
 	for y := 0; y < clearRows; y++ {
-		sink.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", startRow+c.rows+y)) //nolint:errcheck
+		sink.WriteString("\x1b[")                             //nolint:errcheck
+		sink.WriteString(strconv.Itoa(startRow + c.rows + y)) //nolint:errcheck
+		sink.WriteString(";1H\x1b[2K")                        //nolint:errcheck
 	}
 	if c.CursorX >= 0 && c.CursorY >= 0 {
 		// Position and show the cursor only when a widget asked for it (a prompt).
-		sink.WriteString(fmt.Sprintf("\x1b[%d;%dH", startRow+c.CursorY, c.CursorX+1)) //nolint:errcheck
-		sink.WriteString("\x1b[?25h")                                                 //nolint:errcheck
+		sink.WriteString("\x1b[")                            //nolint:errcheck
+		sink.WriteString(strconv.Itoa(startRow + c.CursorY)) //nolint:errcheck
+		sink.WriteString(";")                                //nolint:errcheck
+		sink.WriteString(strconv.Itoa(c.CursorX + 1))        //nolint:errcheck
+		sink.WriteString("H\x1b[?25h")                       //nolint:errcheck
 	} else {
 		// No prompt on this frame: hide the hardware cursor so it doesn't linger
 		// as a stray block after the last drawn cell.

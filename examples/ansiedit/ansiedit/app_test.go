@@ -244,4 +244,3 @@ func TestAnsiEditNavigationKeysNeverQuit(t *testing.T) {
 		}
 	}
 }
-

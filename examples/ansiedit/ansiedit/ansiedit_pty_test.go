@@ -102,4 +102,3 @@ func TestAnsiEditPTYArrowNavigationDoesNotQuit(t *testing.T) {
 		}
 	}
 }
-
