@@ -172,3 +172,4 @@ upkeep.
 | 159 | [159-set-up-go-release-pipeline-for-loom-and-cli-tools.md](159-set-up-go-release-pipeline-for-loom-and-cli-tools.md) | Set up Go release pipeline for loom and CLI tools | Closed — Implemented in 6d10dd5 (M1): configure .goreleaser.yaml, version.yaml, spec validation, Cobra version wiring, Makefile check and release targets, and minisign key |
 | 160 | [160-media-widget-playback-controls-and-poster-frame-support.md](160-media-widget-playback-controls-and-poster-frame-support.md) | Media Widget Playback Controls and Poster Frame Support | Open |
 | 161 | [161-align-media-example-with-redesign-005.md](161-align-media-example-with-redesign-005.md) | Align media example with redesign 005 | Open |
+| 162 | [162-refactor-ansiviewer-preview-to-use-loom-ansibuffer.md](162-refactor-ansiviewer-preview-to-use-loom-ansibuffer.md) | Refactor ansiviewer preview to use loom.AnsiBuffer | Open |
