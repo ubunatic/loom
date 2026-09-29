@@ -1,6 +1,6 @@
 # 164 — Settings: KindNumber with min/max/step and ←/→ stepping
 
-**Status**: Open
+**Status**: Closed — KindNumber implemented with min/max/step, inline editing, and validation
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
