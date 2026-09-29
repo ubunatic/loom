@@ -4,7 +4,7 @@
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
-**Related**: fs.go, examples/filebrowser/filebrowser/browser.go, issues/079-*.md
+**Related**: fs.go, docs/Widgets.md §4 (`NavigationPane` in examples/filebrowser, a starting point), examples/filebrowser/filebrowser/browser.go, issues/079-*.md
 
 ---
 
