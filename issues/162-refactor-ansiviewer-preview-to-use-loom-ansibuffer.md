@@ -22,14 +22,17 @@ Refactor `browser.Draw` and file selection in `examples/ansiviewer/ansiviewer/vi
 ## 3. Milestones
 
 ### M1: Integrate AnsiBuffer into Browser Preview
-- Update `browser` struct to hold `ansiBuf *loom.AnsiBuffer`.
-- On selecting `KindANSI`, populate `ansiBuf` using `loom.ParseAnsiBuffer(string(data), 1, 1)`.
-- In `browser.Draw()`, draw `ansiBuf` to `contentRect` when `b.kind == KindANSI`.
-- Verify existing ansiviewer unit & PTY tests (`go test ./examples/ansiviewer/...`).
-- Commit: `refactor(ansiviewer): use loom.AnsiBuffer for ANSI preview (issue 162 M1)`.
+- **Delivered**: `9e4c4bb` (*"refactor(ansiviewer): use loom.AnsiBuffer for ANSI preview (issue 162 M1)"*).
+- `browser` holds `ansiBuf *loom.AnsiBuffer`.
+- On selecting `KindANSI`, populated via `loom.ParseAnsiBuffer(string(data), 1, 1)`.
+- `browser.Draw()` draws `ansiBuf` to `contentRect` when `b.kind == KindANSI`.
+- Verified with `go test ./examples/ansiviewer/...`.
 
-### M2: Cleanup Dead Code & Regression Verification
-- Remove redundant streaming ANSI parsing helpers in `viewer.go` that are no longer referenced.
+### M2: Cleanup Dead Code & Regression Verification (Pending / Resume Point)
+- **Pre-Work / Required Refinements**:
+  - `writeANSI()` is still called by `browser.Draw()` for `KindText` lines. Evaluate whether `KindText` should draw using `loom.View` or standard text rendering rather than `writeANSI()`, allowing `writeANSI`, `applySGR`, and CSI position parsers to be removed completely.
+  - Review `TestANSIWrite*` unit tests in `viewer_test.go` that directly test `writeANSI()`.
 - Verify full test suite and clean build (`make test-q1`, `make install`).
 - Commit: `refactor(ansiviewer): remove legacy streaming ANSI parser (issue 162 M2)`.
+
 
