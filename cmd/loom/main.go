@@ -234,10 +234,11 @@ func checkBoxCommand() *cobra.Command {
 }
 
 func viewCommand() *cobra.Command {
-	return &cobra.Command{
+	var plain bool
+	cmd := &cobra.Command{
 		Use: "view <file>", Short: "Interactively view an ANSI art file",
 		Args: cobra.ExactArgs(1), SilenceUsage: true,
-		RunE: func(_ *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			path := args[0]
 			if strings.ToLower(filepath.Ext(path)) != ".ansi" {
 				return fmt.Errorf("view supports .ansi files: %s", path)
@@ -250,6 +251,10 @@ func viewCommand() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("%s: %w", path, err)
 			}
+			if plain {
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), buf.PlainText())
+				return err
+			}
 			pane, err := loom.New(24)
 			if err != nil {
 				return err
@@ -259,6 +264,8 @@ func viewCommand() *cobra.Command {
 			return pane.Run(&ansiView{buffer: buf})
 		},
 	}
+	cmd.Flags().BoolVarP(&plain, "plain", "p", false, "Print parsed ANSI art as plain text")
+	return cmd
 }
 
 func configureViewPane(pane *loom.Pane) {

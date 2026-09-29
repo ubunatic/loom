@@ -127,6 +127,19 @@ func TestViewRequiresANSI(t *testing.T) {
 	}
 }
 
+func TestViewPlainTextFlag(t *testing.T) {
+	path := writeFixture(t, "\x1b[31mred\x1b[0m  \n┌─┐")
+	for _, flag := range []string{"--plain", "-p"} {
+		var out bytes.Buffer
+		if err := execute([]string{"view", flag, path}, &out); err != nil {
+			t.Fatalf("view %s: %v", flag, err)
+		}
+		if got, want := out.String(), "red\n┌─┐\n"; got != want {
+			t.Errorf("view %s output = %q, want %q", flag, got, want)
+		}
+	}
+}
+
 func TestANSIViewScrollAndQuit(t *testing.T) {
 	buffer, err := loom.ParseAnsiBuffer("one\ntwo\nthree", 1, 1)
 	if err != nil {

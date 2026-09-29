@@ -613,6 +613,31 @@ func (b *AnsiBuffer) Serialize() string {
 	return buf.String()
 }
 
+// PlainText converts the buffer contents to plain text without styling or escape sequences.
+func (b *AnsiBuffer) PlainText() string {
+	var buf strings.Builder
+	for y := 0; y < b.rows; y++ {
+		lastNonBlank := -1
+		for x := b.cols - 1; x >= 0; x-- {
+			if !b.cells[y][x].IsBlank() {
+				lastNonBlank = x
+				break
+			}
+		}
+		for x := 0; x <= lastNonBlank; x++ {
+			r := b.cells[y][x].Rune
+			if r == 0 {
+				r = ' '
+			}
+			buf.WriteRune(r)
+		}
+		if y < b.rows-1 {
+			buf.WriteByte('\n')
+		}
+	}
+	return buf.String()
+}
+
 // SerializeAnsiBuffer converts an AnsiBuffer to an ANSI formatted string.
 func SerializeAnsiBuffer(buf *AnsiBuffer) string {
 	if buf == nil {

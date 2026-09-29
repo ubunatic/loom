@@ -315,6 +315,16 @@ func TestAnsiBufferSerializeAndParse(t *testing.T) {
 	}
 }
 
+func TestAnsiBufferPlainText(t *testing.T) {
+	buf, err := ParseAnsiBuffer("\x1b[31mred\x1b[0m  \nwide 界\n", 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := buf.PlainText(), "red\nwide 界\n"; got != want {
+		t.Fatalf("PlainText() = %q, want %q", got, want)
+	}
+}
+
 func TestAnsiBufferSaveAndLoad(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "test.ansi")
