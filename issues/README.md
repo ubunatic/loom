@@ -184,5 +184,5 @@ upkeep.
 | 171 | [171-format-annotated-eval-error-callouts-on-the-right-margin-of-lines-instead-of-prepending-on-separate-rows.md](171-format-annotated-eval-error-callouts-on-the-right-margin-of-lines-instead-of-prepending-on-separate-rows.md) | Format annotated eval error callouts on the right margin of lines instead of prepending on separate rows | Closed — Aligned annotated evaluation margin callout markers with padded right margin |
 | 172 | [172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md](172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md) | Add a reusable FilePicker widget on top of the Directory model | Open |
 | 173 | [173-add-masked-password-mode-to-textinput.md](173-add-masked-password-mode-to-textinput.md) | Add masked password mode to TextInput | Open |
-| 174 | [174-add-standalone-numberinput-and-toggle-widgets.md](174-add-standalone-numberinput-and-toggle-widgets.md) | Add standalone NumberInput and Toggle widgets | Draft |
+| 174 | [174-add-standalone-numberinput-and-toggle-widgets.md](174-add-standalone-numberinput-and-toggle-widgets.md) | Add standalone NumberInput and Toggle widgets | Open |
 | 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Draft |
