@@ -1,6 +1,6 @@
 # 166 — Add annotated plain-text output mode with inline and margin error markers to loom eval and check-box
 
-**Status**: Open
+**Status**: Closed — Implemented annotated plain-text output mode with inline and margin error markers in loom eval and loom check-box
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
