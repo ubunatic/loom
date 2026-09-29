@@ -49,6 +49,39 @@ func TestMeasureAndEval(t *testing.T) {
 	}
 }
 
+func TestEvalAnnotatedOutput(t *testing.T) {
+	path := writeFixture(t, "┌──┐\n│ x│  \n└──┘\n")
+	for _, flag := range []string{"--annotate", "-a"} {
+		var out bytes.Buffer
+		if err := execute([]string{"eval", flag, path}, &out); err != nil {
+			t.Fatalf("eval %s: %v", flag, err)
+		}
+		got := out.String()
+		for _, want := range []string{"┌──┐", "│ x│", "<-- 1", "1: line 1: ragged width", "2: line 2: trailing whitespace"} {
+			if !strings.Contains(got, want) {
+				t.Errorf("eval %s output %q does not contain %q", flag, got, want)
+			}
+		}
+	}
+}
+
+func TestCheckBoxAnnotatedOutput(t *testing.T) {
+	path := writeFixture(t, "┌──┐\n│x│\n└─┘\n")
+	for _, flag := range []string{"--annotate", "-a"} {
+		var out bytes.Buffer
+		err := execute([]string{"check-box", flag, path}, &out)
+		if err == nil {
+			t.Fatalf("check-box %s accepted invalid box", flag)
+		}
+		got := out.String() + err.Error()
+		for _, want := range []string{"└─┘", "<-- 1", "1: line 2: box width mismatch"} {
+			if !strings.Contains(got, want) {
+				t.Errorf("check-box %s output %q does not contain %q", flag, got, want)
+			}
+		}
+	}
+}
+
 func TestEvalCountsRegionalIndicatorPairAsTwoColumns(t *testing.T) {
 	path := writeFixture(t, "🇩🇪X\n")
 	var out bytes.Buffer

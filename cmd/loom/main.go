@@ -46,13 +46,16 @@ func measureCommand() *cobra.Command {
 }
 
 func evalCommand() *cobra.Command {
-	return &cobra.Command{
+	var annotate bool
+	cmd := &cobra.Command{
 		Use: "eval <file>", Short: "Evaluate terminal dimensions and row geometry",
 		Args: cobra.ExactArgs(1), SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return evaluateFile(cmd.OutOrStdout(), args[0])
+			return evaluateFile(cmd.OutOrStdout(), args[0], annotate)
 		},
 	}
+	cmd.Flags().BoolVarP(&annotate, "annotate", "a", false, "print plain text with diagnostic markers")
+	return cmd
 }
 
 func measureFile(out io.Writer, path string) error {
@@ -89,13 +92,34 @@ func measureFile(out io.Writer, path string) error {
 	return nil
 }
 
-func evaluateFile(out io.Writer, path string) error {
+func evaluateFile(out io.Writer, path string, annotate bool) error {
 	data, err := readAsset(path)
 	if err != nil {
 		return err
 	}
 	text := strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
+	if annotate {
+		var diagnostics []annotation
+		maxWidth := 0
+		widths := make([]int, len(lines))
+		for i, line := range lines {
+			widths[i] = measure.StringWidth(line)
+			if widths[i] > maxWidth {
+				maxWidth = widths[i]
+			}
+		}
+		for i, line := range lines {
+			if widths[i] != maxWidth {
+				diagnostics = append(diagnostics, annotation{row: i, message: fmt.Sprintf("line %d: ragged width (%d columns, expected %d)", i+1, widths[i], maxWidth)})
+			}
+			plain := stripANSI(line)
+			if strings.TrimRight(plain, " \t") != plain {
+				diagnostics = append(diagnostics, annotation{row: i, message: fmt.Sprintf("line %d: trailing whitespace", i+1)})
+			}
+		}
+		return writeAnnotated(out, text, diagnostics)
+	}
 	minWidth, maxWidth := -1, 0
 	raggedRows, boxCount := 0, 0
 	minX, minY := -1, -1
@@ -206,7 +230,8 @@ func stripANSI(text string) string {
 }
 
 func checkBoxCommand() *cobra.Command {
-	return &cobra.Command{
+	var annotate bool
+	cmd := &cobra.Command{
 		Use: "check-box <file...>", Short: "Validate alignment of Unicode box borders",
 		Args: cobra.MinimumNArgs(1), SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -217,6 +242,17 @@ func checkBoxCommand() *cobra.Command {
 					err = loom.ValidateAnsiBox(string(data))
 				}
 				if err != nil {
+					if annotate && data != nil && strings.HasPrefix(err.Error(), "boxed line ") {
+						var line, left, right, width, wantLeft, wantRight, wantWidth, previous int
+						if _, scanErr := fmt.Sscanf(err.Error(), "boxed line %d: boundaries %d..%d width %d, want %d..%d width %d from line %d", &line, &left, &right, &width, &wantLeft, &wantRight, &wantWidth, &previous); scanErr == nil {
+							detail := fmt.Sprintf("line %d: box width mismatch (%d columns, expected %d from line %d)", line, width, wantWidth, previous)
+							fmt.Fprintf(cmd.OutOrStdout(), "%s:\n", path)
+							annotated := writeAnnotated(cmd.OutOrStdout(), string(data), []annotation{{row: line - 1, message: detail}})
+							if annotated != nil {
+								return annotated
+							}
+						}
+					}
 					if !strings.HasPrefix(err.Error(), path+":") {
 						err = fmt.Errorf("%s: %w", path, err)
 					}
@@ -231,6 +267,35 @@ func checkBoxCommand() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVarP(&annotate, "annotate", "a", false, "print plain text with diagnostic markers")
+	return cmd
+}
+
+type annotation struct {
+	row     int
+	message string
+}
+
+func writeAnnotated(out io.Writer, text string, diagnostics []annotation) error {
+	buffer, err := loom.ParseAnsiBuffer(text, 1, 1)
+	if err != nil {
+		return err
+	}
+	grid := strings.Split(buffer.PlainText(), "\n")
+	byRow := make(map[int][]int)
+	for i, diagnostic := range diagnostics {
+		byRow[diagnostic.row] = append(byRow[diagnostic.row], i+1)
+	}
+	for row, line := range grid {
+		for _, index := range byRow[row] {
+			fmt.Fprintf(out, "<-- %d\n", index)
+		}
+		fmt.Fprintln(out, line)
+	}
+	for i, diagnostic := range diagnostics {
+		fmt.Fprintf(out, "%d: %s\n", i+1, diagnostic.message)
+	}
+	return nil
 }
 
 func viewCommand() *cobra.Command {
