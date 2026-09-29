@@ -3,7 +3,11 @@
 
 package loom
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // SettingKind identifies how a Setting is rendered and edited.
 type SettingKind int
@@ -12,10 +16,11 @@ const (
 	KindBool   SettingKind = iota // toggle: true / false
 	KindString                    // editable text value
 	KindChoice                    // cycle through a fixed list of options
+	KindNumber                    // bounded numeric value
 )
 
 // Setting is a single configurable option.
-// Set exactly one of Bool, Str, or Options+Index depending on Kind.
+// Set the fields used by Kind: Bool, Str, Options+Index, or Num+Min+Max+Step.
 type Setting struct {
 	Label   string
 	Kind    SettingKind
@@ -23,6 +28,11 @@ type Setting struct {
 	Str     *string  // KindString: pointer to the governed value
 	Options []string // KindChoice: available values
 	Index   *int     // KindChoice: pointer to the current index
+	Num     *float64 // KindNumber: pointer to the governed value
+	Min     float64  // KindNumber: inclusive lower bound
+	Max     float64  // KindNumber: inclusive upper bound
+	Step    float64  // KindNumber: step amount; zero defaults to 1
+	Format  string   // KindNumber: fmt format; empty defaults to %g
 }
 
 // value returns the human-readable current value for the setting.
@@ -57,8 +67,23 @@ func (s Setting) value() string {
 			}
 			return out
 		}
+	case KindNumber:
+		if s.Num != nil {
+			return "◂ " + s.formatNumber(*s.Num) + " ▸"
+		}
 	}
 	return ""
+}
+
+func (s Setting) formatNumber(value float64) string {
+	format := s.Format
+	if format == "" {
+		format = "%g"
+	}
+	if strings.Count(format, "%") != 1 {
+		format = "%g"
+	}
+	return fmt.Sprintf(format, value)
 }
 
 // activate toggles or advances the setting's value.
@@ -72,31 +97,58 @@ func (s Setting) activate() {
 		if s.Index != nil && len(s.Options) > 0 {
 			*s.Index = (*s.Index + 1) % len(s.Options)
 		}
+	case KindNumber:
+		s.stepNumber(1)
 	}
 }
 
 // prev moves a KindChoice setting one step backward.
 func (s Setting) prev() {
-	if s.Kind == KindChoice && s.Index != nil && len(s.Options) > 0 {
+	if s.Kind == KindNumber {
+		s.stepNumber(-1)
+	} else if s.Kind == KindChoice && s.Index != nil && len(s.Options) > 0 {
 		n := len(s.Options)
 		*s.Index = (*s.Index + n - 1) % n
 	}
 }
 
+func (s Setting) stepNumber(direction float64) {
+	if s.Num == nil {
+		return
+	}
+	if s.Min > s.Max {
+		*s.Num = s.Min
+		return
+	}
+	step := s.Step
+	if step == 0 {
+		step = 1
+	}
+	value := *s.Num + direction*step
+	if value < s.Min {
+		value = s.Min
+	} else if value > s.Max {
+		value = s.Max
+	}
+	*s.Num = value
+}
+
 // Settings is a navigable list of configurable options.
-// ↑ ↓ move between settings; Enter / → toggle or advance;
-// ← steps a KindChoice backward. Esc returns quit=true.
+// ↑ ↓ move between settings; Enter / → toggle, advance or edit;
+// ← steps a KindChoice or KindNumber backward. Esc returns quit=true.
 //
 // A KindString row enters inline edit mode on Enter/→: printable keys append,
 // Backspace deletes, Enter commits, Esc cancels (restoring the prior value
 // without quitting the widget). Navigation is locked while editing.
 type Settings struct {
-	Items    []Setting
-	Prompt   string // header line; empty = no header
-	sel      int
-	editing  bool       // a KindString row is in inline edit mode
-	editOrig string     // value captured at edit start, restored on cancel
-	editor   *TextInput // active line editor while editing a KindString row
+	Items       []Setting
+	Prompt      string // header line; empty = no header
+	sel         int
+	editing     bool       // a KindString or KindNumber row is in inline edit mode
+	editOrig    string     // value captured at edit start, restored on cancel
+	editor      *TextInput // active line editor while editing a KindString row
+	numberOrig  float64    // KindNumber value captured at edit start
+	numberError string     // validation feedback shown beneath the selected row
 }
 
 // NewSettings creates a Settings widget.
@@ -129,7 +181,7 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 		}
 		label := fmt.Sprintf("%-16s", item.Label)
 		n := c.Write(r.X, y, marker+label, labelStyle)
-		editing := sel && s.editing && item.Kind == KindString
+		editing := sel && s.editing && (item.Kind == KindString || item.Kind == KindNumber)
 		if editing {
 			valueStyle = Style{} // never dim the value being edited
 		}
@@ -138,6 +190,12 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 			s.editor.Draw(c, Rect{r.X + n, y, r.W - n, 1}, true)
 		} else {
 			c.Write(r.X+n, y, item.value(), valueStyle)
+		}
+	}
+	if s.numberError != "" && len(s.Items) > 0 {
+		y := r.Y + start + len(s.Items)
+		if y < r.Y+r.H {
+			c.Write(r.X, y, s.numberError, Style{Dim: true})
 		}
 	}
 }
@@ -170,13 +228,37 @@ func (s *Settings) HandleKey(e KeyEvent) (quit bool) {
 			s.sel = 0
 		}
 	case "enter", "right":
-		if s.Items[s.sel].Kind == KindString {
+		if s.Items[s.sel].Kind == KindNumber && e.Key == "right" {
+			s.Items[s.sel].stepNumber(1)
+		} else if s.Items[s.sel].Kind == KindString {
 			s.beginEdit()
+		} else if s.Items[s.sel].Kind == KindNumber {
+			s.beginNumberEdit()
 		} else {
 			s.Items[s.sel].activate()
 		}
 	case "left":
-		s.Items[s.sel].prev()
+		if s.Items[s.sel].Kind == KindNumber {
+			s.Items[s.sel].stepNumber(-1)
+		} else {
+			s.Items[s.sel].prev()
+		}
+	case "-", "minus":
+		if s.Items[s.sel].Kind == KindNumber {
+			s.Items[s.sel].stepNumber(-1)
+		}
+	case "+", "plus":
+		if s.Items[s.sel].Kind == KindNumber {
+			s.Items[s.sel].stepNumber(1)
+		}
+	default:
+		if s.Items[s.sel].Kind == KindNumber && (e.Text == "+" || e.Text == "-") {
+			direction := 1.0
+			if e.Text == "-" {
+				direction = -1
+			}
+			s.Items[s.sel].stepNumber(direction)
+		}
 	}
 	return false
 }
@@ -193,11 +275,26 @@ func (s *Settings) beginEdit() {
 	s.editing = true
 }
 
+func (s *Settings) beginNumberEdit() {
+	item := s.Items[s.sel]
+	if item.Kind != KindNumber || item.Num == nil {
+		return
+	}
+	s.numberOrig = *item.Num
+	seed := item.formatNumber(*item.Num)
+	s.editor = NewTextInput(seed)
+	s.numberError = ""
+	s.editing = true
+}
+
 // handleEditKey drives the line editor for the in-edit KindString value. Enter
 // commits the editor's value into Str, Esc cancels (restoring the captured
 // value); neither quits the widget. All other editing keys go to the editor.
 func (s *Settings) handleEditKey(e KeyEvent) (quit bool) {
 	item := s.Items[s.sel]
+	if item.Kind == KindNumber {
+		return s.handleNumberEditKey(e)
+	}
 	switch e.Key {
 	case "enter":
 		if item.Str != nil && s.editor != nil {
@@ -222,6 +319,84 @@ func (s *Settings) handleEditKey(e KeyEvent) (quit bool) {
 	return false
 }
 
+func (s *Settings) handleNumberEditKey(e KeyEvent) bool {
+	item := s.Items[s.sel]
+	switch e.Key {
+	case "enter":
+		if s.editor == nil {
+			s.numberError = "invalid number"
+			return false
+		}
+		text := s.editor.Value()
+		if text == item.formatNumber(s.numberOrig) {
+			// Select-all behavior is intentionally avoided; starting with the
+			// current value means Enter commits unchanged values naturally.
+		}
+		value, err := strconv.ParseFloat(text, 64)
+		if err != nil {
+			s.numberError = "invalid number"
+			return false
+		}
+		if item.Min > item.Max {
+			value = item.Min
+		} else if value < item.Min {
+			s.numberError = fmt.Sprintf("%s is below the minimum %s", s.editor.Value(), item.formatNumber(item.Min))
+			return false
+		} else if value > item.Max {
+			s.numberError = fmt.Sprintf("%s is above the maximum %s", s.editor.Value(), item.formatNumber(item.Max))
+			return false
+		}
+		if item.Num != nil {
+			*item.Num = value
+		}
+		s.numberError = ""
+		s.endEdit()
+	case "esc", "ctrl-c":
+		if item.Num != nil {
+			*item.Num = s.numberOrig
+		}
+		s.numberError = ""
+		s.endEdit()
+	default:
+		if s.editor == nil {
+			return false
+		}
+		if e.Text == "-" {
+			if item.Min < 0 && s.editor.Caret() == 0 && !strings.Contains(s.editor.Value(), "-") {
+				s.editor.HandleKey(e)
+				s.numberError = ""
+			}
+			return false
+		}
+		if e.Text == "." && !strings.Contains(s.editor.Value(), ".") {
+			s.editor.HandleKey(e)
+			s.numberError = ""
+			return false
+		}
+		if e.Text != "" {
+			valid := true
+			invalidDot := false
+			for _, r := range e.Text {
+				if r < '0' || r > '9' {
+					valid = false
+					invalidDot = r == '.'
+					break
+				}
+			}
+			if valid {
+				s.editor.HandleKey(e)
+				s.numberError = ""
+			} else if invalidDot || strings.Contains(e.Text, ".") {
+				s.numberError = "invalid number"
+			}
+			return false
+		}
+		s.editor.HandleKey(e)
+		s.numberError = ""
+	}
+	return false
+}
+
 // endEdit leaves inline edit mode and releases the editor.
 func (s *Settings) endEdit() {
 	s.editing = false
@@ -240,6 +415,9 @@ func (s *Settings) Sel() int { return s.sel }
 // ContentHeight estimates the required height for this settings list.
 func (s *Settings) ContentHeight() int {
 	h := len(s.Items)
+	if s.numberError != "" {
+		h++
+	}
 	if s.Prompt != "" {
 		h++
 	}
