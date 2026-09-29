@@ -62,6 +62,7 @@ type browser struct {
 	offsetX     int
 	lines       []string
 	kind        Kind
+	ansiBuf     *loom.AnsiBuffer
 	ruler       bool
 	metadata    string
 	previewView *loom.View
@@ -262,6 +263,7 @@ func (b *browser) selectFile(i int) {
 	}
 	b.kind = KindText
 	b.lines = nil
+	b.ansiBuf = nil
 	b.metadata = fmt.Sprintf("%s  %d bytes  %s", b.files[i].Name(), info.Size(), Classify(path))
 	if b.files[i].IsDir() {
 		b.lines = []string{"directory", "Press Enter to open"}
@@ -278,6 +280,13 @@ func (b *browser) selectFile(i int) {
 		return
 	}
 	b.lines = strings.Split(strings.ReplaceAll(string(data), "\r\n", "\n"), "\n")
+	if b.kind == KindANSI {
+		b.ansiBuf, err = loom.ParseAnsiBuffer(string(data), 1, 1)
+		if err != nil {
+			b.lines = []string{"parse error: " + err.Error()}
+			return
+		}
+	}
 }
 
 func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
@@ -311,12 +320,24 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	if barVisible {
 		contentRect.W--
 	}
-	start := min(b.offset, len(b.lines))
-	end := min(len(b.lines), b.offset+r.H)
-	visibleLines := b.lines[start:end]
-	if b.kind == KindANSI {
-		writeANSI(c, contentRect, strings.Join(visibleLines, "\n"), b.offsetX)
+	if b.kind == KindANSI && b.ansiBuf != nil {
+		for y := 0; y < contentRect.H; y++ {
+			row := b.offset + y
+			if row >= b.ansiBuf.Rows() {
+				break
+			}
+			for x := 0; x < contentRect.W; x++ {
+				col := b.offsetX + x
+				if col >= b.ansiBuf.Cols() {
+					break
+				}
+				c.Set(contentRect.X+x, contentRect.Y+y, b.ansiBuf.Get(col, row).ToCell())
+			}
+		}
 	} else {
+		start := min(b.offset, len(b.lines))
+		end := min(len(b.lines), b.offset+r.H)
+		visibleLines := b.lines[start:end]
 		for i, line := range visibleLines {
 			writeANSI(c, loom.Rect{X: contentRect.X, Y: contentRect.Y + i, W: contentRect.W, H: 1}, line, b.offsetX)
 		}
