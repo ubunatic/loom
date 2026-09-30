@@ -213,3 +213,4 @@ upkeep.
 | 200 | [200-tests-gallery-tab-switching-and-per-widget-input.md](200-tests-gallery-tab-switching-and-per-widget-input.md) | Tests: gallery tab switching and per-widget input | Closed |
 | 201 | [201-theme-switch-in-the-widget-gallery.md](201-theme-switch-in-the-widget-gallery.md) | Theme switch in the widget gallery | Closed |
 | 202 | [202-media-zoom-crops-instead-of-scaling.md](202-media-zoom-crops-instead-of-scaling.md) | Media zoom crops instead of scaling | Closed |
+| 203 | [203-gallery-key-routing-typing-and-esc-quit-the-app.md](203-gallery-key-routing-typing-and-esc-quit-the-app.md) | Gallery key routing: typing and Esc quit the app | Open |
