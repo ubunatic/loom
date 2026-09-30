@@ -170,6 +170,7 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `loom.Spinner` (`Start`, `Stop`) | 186 | Labeled braille activity indicator driven by the pane ticker; stopped spinners return a zero cadence and stop requesting ticks. |
 | `loom.Paginator` (`Page`, `Pages`, `OnChange`) | 188 | Zero-based page navigation with clickable dots or a numeric indicator; the callback lets a host update a Choice or Table offset. |
 | `loom.Viewport` (`ScrollX`, `ScrollY`) | 190 | Scroll any child that reports its content size through `Measurer`, `ContentWidther`, or `ContentHeighter`; arrow keys, PgUp/PgDn, Home/End, and the mouse wheel move the visible window. |
+| `loom.Tree` (`TreeNode`, `OnActivate`) | 168 | Navigate nested nodes with arrows or `hjkl`, expand/collapse branches, select rows with the mouse, and scroll long visible trees. |
 | `loom.Timer` and `loom.Stopwatch` (`Start`, `Stop`, `Reset`) | 187 | Countdown and elapsed time widgets tick once per displayed second. Inject `Now` for deterministic clocks, set `Formatter` for custom text, and use `Timer.OnDone` for one-shot completion. |
 
 ## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants

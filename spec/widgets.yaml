@@ -320,6 +320,17 @@ widgets:
       enabled := false
       toggle := loom.NewToggle(&enabled)
     source: toggle.go
+  - name: loom.Tree
+    package: loom
+    purpose: Navigate and expand a hierarchy of labeled nodes.
+    category: input
+    example: |-
+      tree := loom.NewTree([]*loom.TreeNode{
+          {ID: "src", Label: "src", Children: []*loom.TreeNode{{ID: "main", Label: "main.go"}}},
+      })
+      _ = tree
+    source: tree.go
+    docs: docs/Widgets.md §6
   - name: loom.View
     package: loom
     purpose: Render and pan through plain or ANSI-styled text lines.

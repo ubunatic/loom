@@ -90,6 +90,16 @@ var demos = map[string]constructor{
 		timer.Start()
 		return timer
 	},
+	"Tree": func() loom.Widget {
+		return loom.NewTree([]*loom.TreeNode{
+			{ID: "src", Label: "src", Expanded: true, Children: []*loom.TreeNode{
+				{ID: "app", Label: "app.go"},
+				{ID: "tree", Label: "tree.go"},
+			}},
+			{ID: "docs", Label: "docs", Children: []*loom.TreeNode{{ID: "widgets", Label: "Widgets.md"}}},
+			{ID: "go.mod", Label: "go.mod"},
+		})
+	},
 	"Table": func() loom.Widget {
 		table := loom.NewTable(
 			[]loom.Column{{Header: "Task", Width: 24}, {Header: "Status", Width: 14}},
