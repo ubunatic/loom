@@ -795,6 +795,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 	full, alt := p.wantScreen()
 	p.changeScreen(full, alt)
+	if alt {
+		// Entering the alternate screen saves the inline bounds. Allocate its
+		// full terminal area before the first canvas, just as later switches do.
+		p.applyWinch(&cols)
+	}
 	p.setBracketedPaste(true)
 	defer p.setBracketedPaste(false)
 	// New has put the owned tty in raw mode. Probe before starting the input

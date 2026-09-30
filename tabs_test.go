@@ -72,6 +72,37 @@ func TestTabsVerticalLayoutAndSelection(t *testing.T) {
 	}
 }
 
+func TestTabsVerticalOverflowKeepsSelectionVisibleAndClickable(t *testing.T) {
+	tabs := loom.NewTabs(loom.Tab{Title: "A"}, loom.Tab{Title: "B"}, loom.Tab{Title: "C"}, loom.Tab{Title: "D"}, loom.Tab{Title: "E"})
+	tabs.Vertical = true
+	for _, tc := range []struct {
+		focus, height    int
+		visible          []string
+		click, wantFocus int
+	}{
+		{0, 2, []string{" A ", " B "}, 1, 1},
+		{4, 2, []string{" D ", " E "}, 0, 3},
+		{3, 1, []string{" D "}, 0, 3},
+		{0, 2, []string{" A ", " B "}, 0, 0},
+	} {
+		tabs.Select(tc.focus)
+		rows := loom.Render(tabs, 12, tc.height)
+		for y, title := range tc.visible {
+			if !strings.Contains(rows[y], title) {
+				t.Fatalf("focus %d, height %d: row %d = %q, want %q", tc.focus, tc.height, y, rows[y], title)
+			}
+		}
+		if res := tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: tc.click}); !res.Consumed || tabs.Focus() != tc.wantFocus {
+			t.Fatalf("click row %d: result %+v, focus %d, want %d", tc.click, res, tabs.Focus(), tc.wantFocus)
+		}
+	}
+	canvas := loom.NewCanvas(12, 1)
+	tabs.Draw(canvas, loom.Rect{W: 12})
+	if res := tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft}); res.Consumed {
+		t.Fatal("zero-height tabs consumed a click")
+	}
+}
+
 func TestTabsSwitchWithConfiguredKey(t *testing.T) {
 	tabs := loom.NewTabs(loom.Tab{Title: "A"}, loom.Tab{Title: "B"})
 	tabs.SwitchKey = "ctrl-t"

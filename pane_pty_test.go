@@ -4,6 +4,7 @@
 package loom
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -15,6 +16,65 @@ import (
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
+
+type firstDrawBoundsProbe struct {
+	pane     *Pane
+	cancel   context.CancelFunc
+	rect     Rect
+	startRow int
+}
+
+func (w *firstDrawBoundsProbe) Draw(_ *Canvas, r Rect) {
+	w.rect, w.startRow = r, w.pane.startRow
+	w.cancel()
+}
+func (*firstDrawBoundsProbe) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*firstDrawBoundsProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (*firstDrawBoundsProbe) PaneRequest() PaneRequest            { return PaneRequest{} }
+
+func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
+	for _, tc := range []struct {
+		name       string
+		mode       ScreenMode
+		auto       bool
+		wantStart  int
+		wantHeight int
+	}{
+		{"inline", ScreenInline, false, 7, 24},
+		{"full", ScreenFull, false, 1, 29},
+		{"alt", ScreenAlt, false, 1, 30},
+		{"wrapped-request-auto-alt", ScreenInline, true, 1, 30},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			master, slave := openPTY(t)
+			setPTYSize(t, master, 100, 30)
+			p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 24, wantRows: 24, cols: 100, startRow: 7, MaxCols: DefaultMaxCols, ResizeConfig: DefaultResizeConfig()}
+			state, err := term.GetState(p.fd)
+			if err != nil {
+				t.Fatal(err)
+			}
+			p.oldState = state
+			p.SetScreenMode(tc.mode)
+			p.ResizeConfig.AutoFullscreen = tc.auto
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			probe := &firstDrawBoundsProbe{pane: p, cancel: cancel}
+			done := make(chan struct{})
+			drainPTY(master, done)
+			defer close(done)
+			defer p.Close()
+			if err := p.run(ctx, &tickerWrapper{child: probe}, nil, nil, nil); err != context.Canceled {
+				t.Fatalf("run = %v, want canceled after first draw", err)
+			}
+			if probe.startRow != tc.wantStart || probe.rect != (Rect{W: 100, H: tc.wantHeight}) {
+				t.Fatalf("first draw at row %d with %+v, want row %d and 100x%d", probe.startRow, probe.rect, tc.wantStart, tc.wantHeight)
+			}
+			if p.altActive && (p.savedStart != 7 || p.savedRows != 24) {
+				t.Fatalf("saved inline bounds = row %d, height %d, want row 7, height 24", p.savedStart, p.savedRows)
+			}
+		})
+	}
+}
 
 // openPTY opens a real Linux pseudo-terminal pair via /dev/ptmx, returning
 // the master (test-controlled) and slave (what Pane.run reads/writes) ends.
