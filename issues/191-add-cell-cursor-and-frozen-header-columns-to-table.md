@@ -1,6 +1,6 @@
 # 191 — Add cell cursor and frozen header columns to Table
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
