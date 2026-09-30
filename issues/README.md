@@ -234,3 +234,5 @@ upkeep.
 | 221 | [221-table-clicks-do-not-select-rows.md](221-table-clicks-do-not-select-rows.md) | Table: clicks do not select rows | Closed — fixed with tests, suite green |
 | 222 | [222-keyhelp-and-viewport-ignore-the-theme-background.md](222-keyhelp-and-viewport-ignore-the-theme-background.md) | KeyHelp and Viewport ignore the theme background | Closed — fixed with tests, suite green |
 | 223 | [223-widgets-must-signal-completion-not-quit-when-confirmed.md](223-widgets-must-signal-completion-not-quit-when-confirmed.md) | Widgets must signal completion, not Quit, when confirmed | Closed — confirm returns Done, standalone runner maps Done to exit, gallery masking removed; suite green |
+| 224 | [224-fix-bash-lint-standards-and-screenshot-script-strict-mode.md](224-fix-bash-lint-standards-and-screenshot-script-strict-mode.md) | Fix bash lint standards and screenshot script strict mode | Open |
+| 225 | [225-modularize-high-loc-core-components-and-example-packages.md](225-modularize-high-loc-core-components-and-example-packages.md) | Modularize high-LOC core components and example packages | Open |
