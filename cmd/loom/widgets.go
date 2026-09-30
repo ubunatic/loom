@@ -6,6 +6,7 @@ package main
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"codeberg.org/ubunatic/loom"
@@ -40,6 +41,9 @@ func widgetsCommand() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "widgets [name]",
 		Short: "List library widgets, show usage, or run live demos",
+		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+			return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
+		},
 		Args: func(cmd *cobra.Command, args []string) error {
 			if show {
 				return nil
@@ -88,7 +92,35 @@ func widgetsCommand() *cobra.Command {
 	}
 	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
 	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
+	_ = command.RegisterFlagCompletionFunc("show", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
+	})
 	return command
+}
+
+func completeWidgetNames(prefix string) []string {
+	catalog, err := readWidgetCatalog()
+	if err != nil {
+		return nil
+	}
+	available := make(map[string]bool)
+	for _, name := range gallery.Names() {
+		available[name] = true
+	}
+	var names []string
+	for _, entry := range catalog.Widgets {
+		short := strings.TrimPrefix(entry.Name, entry.Package+".")
+		if !available[short] {
+			continue
+		}
+		for _, name := range []string{short, entry.Name} {
+			if strings.HasPrefix(name, prefix) {
+				names = append(names, name)
+			}
+		}
+	}
+	sort.Strings(names)
+	return names
 }
 
 var runWidgetPane = func(widget loom.Widget) error {

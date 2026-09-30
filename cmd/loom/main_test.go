@@ -7,10 +7,12 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
+	"github.com/spf13/cobra"
 )
 
 func writeFixture(t *testing.T, content string) string {
@@ -246,6 +248,48 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 	if err := execute([]string{"widgets", "--show", "NoSuchWidget"}, &shown); err == nil {
 		t.Fatal("--show accepted unknown demo")
+	}
+}
+
+func TestWidgetsCompletions(t *testing.T) {
+	command := widgetsCommand()
+	want := []string{"Chart", "loom.Chart", "TextInput", "loom.TextInput"}
+	for _, tc := range []struct {
+		name string
+		args []string
+	}{
+		{name: "positional", args: nil},
+		{name: "show flag", args: []string{"--show"}},
+	} {
+		got, directive := command.ValidArgsFunction(command, tc.args, "")
+		if directive != cobra.ShellCompDirectiveNoFileComp {
+			t.Errorf("%s directive = %v, want no file completion", tc.name, directive)
+		}
+		for _, name := range want {
+			if !slices.Contains(got, name) {
+				t.Errorf("%s completions %v omit %q", tc.name, got, name)
+			}
+		}
+		if slices.Contains(got, "FileOpener") || slices.Contains(got, "loom.FileOpener") {
+			t.Errorf("%s completions include non-demo widget: %v", tc.name, got)
+		}
+	}
+
+	flagCompletion, ok := command.GetFlagCompletionFunc("show")
+	if !ok {
+		t.Fatal("--show has no flag completion function")
+	}
+	got, directive := flagCompletion(command, nil, "")
+	if directive != cobra.ShellCompDirectiveNoFileComp || !slices.Contains(got, "Chart") || !slices.Contains(got, "loom.Chart") {
+		t.Errorf("--show completions = %v, directive %v", got, directive)
+	}
+
+	var out bytes.Buffer
+	if err := execute([]string{"__complete", "widgets", "--show", ""}, &out); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "Chart") || !strings.Contains(out.String(), "loom.Chart") {
+		t.Errorf("shell completion output = %q", out.String())
 	}
 }
 
