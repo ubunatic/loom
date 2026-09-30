@@ -66,8 +66,8 @@ func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
 		t.Fatalf("zoom = %v, want 1.25", w.zoom)
 	}
 	w.pan(-4, 4)
-	if w.panX != 0 || w.panY != 1 {
-		t.Fatalf("pan = (%v,%v), want clamped (0,1)", w.panX, w.panY)
+	if w.panX != -1 || w.panY != 1 {
+		t.Fatalf("pan = (%v,%v), want clamped (-1,1)", w.panX, w.panY)
 	}
 	w.setZoom(1.0 / 1.25)
 	if w.zoom != 1 || w.panX != 0 || w.panY != 0 {
@@ -103,24 +103,116 @@ func TestMediaControlsPlayPauseKeysAndMouseWheel(t *testing.T) {
 	}
 }
 
-func TestCropForViewPanChangesCropAndClampsInput(t *testing.T) {
+func TestScaleForViewPanChangesCrop(t *testing.T) {
 	img := image.NewRGBA(image.Rect(0, 0, 100, 60))
 	for y := 0; y < 60; y++ {
 		for x := 0; x < 100; x++ {
 			img.SetRGBA(x, y, color.RGBA{R: uint8(x), G: uint8(y), A: 255})
 		}
 	}
-	left := cropForView(img, 20, 10, 2, 0, 0)
-	right := cropForView(img, 20, 10, 2, 1, 1)
+	left := scaleForView(img, ModeHalfblock, 20, 10, 2, -1, -1)
+	right := scaleForView(img, ModeHalfblock, 20, 10, 2, 1, 1)
 	a, b := left.Bounds(), right.Bounds()
-	if a.Dx() != 100 || a.Dy() != 60 || b.Dx() != 100 || b.Dy() != 60 {
-		t.Fatalf("zoomed images = %v and %v, want full output size (100x60)", a, b)
+	if a.Dx() != 20 || a.Dy() != 20 || b.Dx() != 20 || b.Dy() != 20 {
+		t.Fatalf("zoomed images = %v and %v, want panel pixel size (20x20)", a, b)
 	}
 	if left.At(a.Min.X, a.Min.Y) == right.At(b.Min.X, b.Min.Y) {
 		t.Fatal("pan did not change the visible source crop")
 	}
 	if left.At(0, 0) != left.At(1, 0) {
-		t.Fatal("zoomed source pixels were not enlarged to fill the output image")
+		t.Fatal("zoomed source pixels were not enlarged across adjacent output pixels")
+	}
+}
+
+func TestNativeCellSizeAndScaleForView(t *testing.T) {
+	for _, tc := range []struct {
+		mode  Mode
+		pxW   int
+		pxH   int
+		wantW int
+		wantH int
+	}{
+		{ModeHalfblock, 1, 2, 13, 7},
+		{ModeQuadblock, 2, 2, 7, 7},
+		{ModeSextant, 2, 3, 7, 5},
+	} {
+		t.Run(string(tc.mode), func(t *testing.T) {
+			img := solidImage(13, 13, color.RGBA{R: 255, A: 255})
+			w, h := nativeCellSize(tc.mode, img)
+			if w != tc.wantW || h != tc.wantH {
+				t.Fatalf("nativeCellSize = %dx%d, want %dx%d", w, h, tc.wantW, tc.wantH)
+			}
+			oneX := scaleForView(img, tc.mode, 30, 30, 1, 0, 0)
+			small := scaleForView(img, tc.mode, 30, 30, .5, 0, 0)
+			if oneX.Bounds().Dx() != 13 || oneX.Bounds().Dy() != 13 {
+				t.Fatalf("1x image dimensions = %v, want 13x13", oneX.Bounds())
+			}
+			if small.Bounds().Dx() != 7 || small.Bounds().Dy() != 7 {
+				t.Fatalf("0.5x image dimensions = %v, want 7x7", small.Bounds())
+			}
+			cropped := scaleForView(img, tc.mode, 3, 2, 1, 0, 0)
+			if cropped.Bounds().Dx() != 3*tc.pxW || cropped.Bounds().Dy() != 2*tc.pxH {
+				t.Fatalf("cropped dimensions = %v, want %dx%d", cropped.Bounds(), 3*tc.pxW, 2*tc.pxH)
+			}
+		})
+	}
+}
+
+func TestScaleForViewCentersSmallImageAndPanMovesCrop(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	for y := 0; y < 10; y++ {
+		for x := 0; x < 10; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x * 20), G: uint8(y * 20), A: 255})
+		}
+	}
+	w, err := NewImage(img, ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
+		cells := make([][]core.Cell, 5)
+		for y := range cells {
+			cells[y] = make([]core.Cell, 10)
+			for x := range cells[y] {
+				cells[y][x] = core.Cell{Ch: 'X'}
+			}
+		}
+		return &core.Grid{Width: 10, Height: 5, Cells: cells}, nil
+	}
+	canvas := loom.NewCanvas(20, 10)
+	w.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 20, H: 10})
+	// 10x5 native cells occupy x=5..14 and y=1..5 once controls take two rows.
+	if canvas.Get(4, 2).Text != " " || canvas.Get(5, 2).Text == " " {
+		t.Fatal("small media was not centered in the available image viewport")
+	}
+	center := scaleForView(img, ModeHalfblock, 3, 2, 2, 0, 0)
+	left := scaleForView(img, ModeHalfblock, 3, 2, 2, -1, 0)
+	right := scaleForView(img, ModeHalfblock, 3, 2, 2, 1, 0)
+	if center.At(0, 0) == left.At(0, 0) || center.At(0, 0) == right.At(0, 0) || left.At(0, 0) == right.At(0, 0) {
+		t.Fatal("centered and panned crops did not show distinct source areas")
+	}
+}
+
+func TestScaleForViewHandlesNonZeroBoundsAndZoomFloor(t *testing.T) {
+	img := image.NewRGBA(image.Rect(4, 7, 24, 17))
+	for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y++ {
+		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x * 7), G: uint8(y * 11), A: 255})
+		}
+	}
+	out := scaleForView(img, ModeHalfblock, 5, 3, 2, 0, 0)
+	if out.Bounds().Dx() != 5 || out.Bounds().Dy() != 6 {
+		t.Fatalf("non-zero-bound crop = %v, want 5x6", out.Bounds())
+	}
+	w, err := NewImage(solidImage(80, 40, color.RGBA{A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 40; i++ {
+		w.setZoom(1 / 1.25)
+	}
+	if w.zoom != 1.0/16 {
+		t.Fatalf("zoom floor = %v, want 1/16", w.zoom)
 	}
 }
 
@@ -157,7 +249,7 @@ func TestZoomKeepsRenderedAreaAndMagnifiesPixels(t *testing.T) {
 		t.Fatalf("rendered cell count at fit/2x = %d/%d, want same non-zero area", fitCells, zoomCells)
 	}
 
-	zoomed := cropForView(img, 40, 6, 2, 0.5, 0.5)
+	zoomed := scaleForView(img, ModeHalfblock, 40, 6, 2, 0, 0)
 	if zoomed.At(0, 20) != zoomed.At(1, 20) {
 		t.Fatal("source detail was not enlarged across adjacent output pixels")
 	}
@@ -183,15 +275,14 @@ func TestMediaControlBarClickAndDragPan(t *testing.T) {
 	}
 }
 
-func TestWideAndTallImagesKeepAspectAndCenterInRect(t *testing.T) {
+func TestWideAndTallImagesCropWithinRectAndCenterGrid(t *testing.T) {
 	for _, tc := range []struct {
-		name       string
-		width      int
-		height     int
-		wantAspect float64
+		name   string
+		width  int
+		height int
 	}{
-		{name: "wide", width: 40, height: 10, wantAspect: 4},
-		{name: "tall", width: 10, height: 40, wantAspect: 0.25},
+		{name: "wide", width: 40, height: 10},
+		{name: "tall", width: 10, height: 40},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			img := solidImage(tc.width, tc.height, color.RGBA{R: 220, G: 30, B: 40, A: 255})
@@ -206,12 +297,8 @@ func TestWideAndTallImagesKeepAspectAndCenterInRect(t *testing.T) {
 			if !found {
 				t.Fatal("image produced no colored cells")
 			}
-			actualAspect := float64(bounds.W) / float64(bounds.H*2)
-			if delta := absFloat(actualAspect - tc.wantAspect); delta > 1 {
-				t.Fatalf("rendered aspect %.2f, source aspect %.2f (bounds %#v)", actualAspect, tc.wantAspect, bounds)
-			}
-			if absInt((bounds.X+bounds.W/2)-(r.X+r.W/2)) > 1 || absInt((bounds.Y+bounds.H/2)-(r.Y+r.H/2)) > 1 {
-				t.Fatalf("image bounds %#v are not centered in %#v", bounds, r)
+			if absInt((bounds.X+bounds.W/2)-(r.X+r.W/2)) > 1 || absInt((bounds.Y+bounds.H/2)-(r.Y+(r.H-2)/2)) > 1 {
+				t.Fatalf("image bounds %#v are not centered in image viewport %#v", bounds, r)
 			}
 		})
 	}

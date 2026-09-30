@@ -8,7 +8,6 @@ import (
 	"context"
 	"fmt"
 	"image"
-	"image/draw"
 	"math"
 	"reflect"
 	"sync"
@@ -64,6 +63,14 @@ type Widget struct {
 	help       *loom.KeyHelp
 	renderer   func(image.Image, Mode, int, int) (*core.Grid, error)
 	cache      renderCache
+	viewSource image.Image
+	viewMode   Mode
+	viewCols   int
+	viewRows   int
+	viewZoom   float64
+	viewPanX   float64
+	viewPanY   float64
+	viewImage  image.Image
 }
 
 type renderLoad struct {
@@ -265,13 +272,13 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 		w.drawControls(c, playing, zoom)
 		return
 	}
-	img = cropForView(img, imageRect.W, imageRect.H, zoom, panX, panY)
+	img = w.cachedScaleForView(img, imageRect.W, imageRect.H, zoom, panX, panY)
 	for y := 0; y < imageRect.H; y++ {
 		for x := 0; x < imageRect.W; x++ {
 			c.Set(r.X+x, r.Y+y, loom.Cell{Text: " ", Style: loom.Reset})
 		}
 	}
-	grid, err, loading := w.renderWithThreshold(img, imageRect.W, imageRect.H)
+	grid, err, loading := w.renderWithThreshold(img, 0, 0)
 	if loading {
 		label := loom.SpeccedDefaults.Media.LoadingLabel
 		if loom.StringWidth(label) > imageRect.W {
@@ -307,37 +314,68 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	w.drawControls(c, playing, zoom)
 }
 
-func cropForView(src image.Image, cols, rows int, zoom, panX, panY float64) image.Image {
-	if src == nil || zoom <= 1 || cols <= 0 || rows <= 0 {
+func pxPerCell(mode Mode) (int, int) {
+	switch mode {
+	case ModeQuadblock:
+		return 2, 2
+	case ModeSextant:
+		return 2, 3
+	default:
+		return 1, 2
+	}
+}
+
+func nativeCellSize(mode Mode, img image.Image) (int, int) {
+	if img == nil {
+		return 0, 0
+	}
+	w, h := pxPerCell(mode)
+	b := img.Bounds()
+	return (b.Dx() + w - 1) / w, (b.Dy() + h - 1) / h
+}
+
+func (w *Widget) cachedScaleForView(src image.Image, cols, rows int, zoom, panX, panY float64) image.Image {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if sameImage(w.viewSource, src) && w.viewMode == w.mode && w.viewCols == cols && w.viewRows == rows && w.viewZoom == zoom && w.viewPanX == panX && w.viewPanY == panY && w.viewImage != nil {
+		return w.viewImage
+	}
+	out := scaleForView(src, w.mode, cols, rows, zoom, panX, panY)
+	w.viewSource, w.viewMode = src, w.mode
+	w.viewCols, w.viewRows = cols, rows
+	w.viewZoom, w.viewPanX, w.viewPanY = zoom, panX, panY
+	w.viewImage = out
+	return out
+}
+
+func scaleForView(src image.Image, mode Mode, cols, rows int, zoom, panX, panY float64) image.Image {
+	if src == nil || cols <= 0 || rows <= 0 || zoom <= 0 {
 		return src
 	}
 	b := src.Bounds()
 	sw, sh := b.Dx(), b.Dy()
-	// Terminal cells are approximately twice as tall as they are wide.
-	wantAspect := float64(cols) / float64(rows*2)
-	cw, ch := float64(sw)/zoom, float64(sh)/zoom
-	if cw/ch > wantAspect {
-		cw = ch * wantAspect
-	} else {
-		ch = cw / wantAspect
-	}
-	maxX, maxY := float64(sw)-cw, float64(sh)-ch
-	x0, y0 := float64(b.Min.X)+panX*maxX, float64(b.Min.Y)+panY*maxY
-	box := image.Rect(int(x0), int(y0), int(x0+cw), int(y0+ch)).Intersect(b)
-	if box.Empty() {
+	if sw <= 0 || sh <= 0 {
 		return src
 	}
-	crop := image.NewRGBA(image.Rect(0, 0, box.Dx(), box.Dy()))
-	draw.Draw(crop, crop.Bounds(), src, box.Min, draw.Src)
-	// cati's ScaleToFit deliberately avoids upscaling. Restore the original
-	// source dimensions here so the selected region renders at the same cell
-	// size as the unzoomed image while its pixels appear magnified.
-	out := image.NewRGBA(image.Rect(0, 0, sw, sh))
-	for y := 0; y < sh; y++ {
-		srcY := y * crop.Bounds().Dy() / sh
-		for x := 0; x < sw; x++ {
-			srcX := x * crop.Bounds().Dx() / sw
-			out.Set(x, y, crop.At(srcX, srcY))
+	cellW, cellH := pxPerCell(mode)
+	fitW, fitH := cols*cellW, rows*cellH
+	targetW := max(1, int(math.Round(float64(sw)*zoom)))
+	targetH := max(1, int(math.Round(float64(sh)*zoom)))
+	scaled := halfblock.ScaleNN(src, targetW, targetH)
+	if targetW <= fitW && targetH <= fitH {
+		return scaled
+	}
+	visibleW, visibleH := min(targetW, fitW), min(targetH, fitH)
+	maxX, maxY := targetW-visibleW, targetH-visibleH
+	x0 := int(math.Round(float64(maxX)/2 + panX*float64(maxX)/2))
+	y0 := int(math.Round(float64(maxY)/2 + panY*float64(maxY)/2))
+	x0 = max(0, min(maxX, x0))
+	y0 = max(0, min(maxY, y0))
+	sb := scaled.Bounds()
+	out := image.NewRGBA(image.Rect(0, 0, visibleW, visibleH))
+	for y := 0; y < visibleH; y++ {
+		for x := 0; x < visibleW; x++ {
+			out.Set(x, y, scaled.At(sb.Min.X+x0+x, sb.Min.Y+y0+y))
 		}
 	}
 	return out
@@ -685,17 +723,34 @@ func (w *Widget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 
 func (w *Widget) setZoom(factor float64) {
 	w.mu.Lock()
-	w.zoom = math.Max(1, math.Min(8, w.zoom*factor))
-	if w.zoom == 1 {
-		w.panX, w.panY = 0, 0
+	img := w.image
+	nativeW, nativeH := nativeCellSize(w.mode, img)
+	maxCells := max(nativeW, nativeH)
+	minZoom := 1.0 / 16
+	if maxCells > 0 {
+		minZoom = math.Max(minZoom, 1/float64(maxCells))
 	}
+	w.zoom = math.Max(minZoom, math.Min(8, w.zoom*factor))
+	w.panX, w.panY = 0, 0
 	w.mu.Unlock()
 }
 func (w *Widget) pan(dx, dy float64) {
 	w.mu.Lock()
-	if w.zoom > 1 {
-		w.panX = math.Max(0, math.Min(1, w.panX+dx))
-		w.panY = math.Max(0, math.Min(1, w.panY+dy))
+	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
+	nativeW, nativeH := nativeCellSize(w.mode, w.image)
+	targetCols := int(math.Ceil(float64(nativeW) * w.zoom))
+	targetRows := int(math.Ceil(float64(nativeH) * w.zoom))
+	if targetCols > cols || targetRows > rows {
+		if targetCols > cols {
+			w.panX = math.Max(-1, math.Min(1, w.panX+dx))
+		} else {
+			w.panX = 0
+		}
+		if targetRows > rows {
+			w.panY = math.Max(-1, math.Min(1, w.panY+dy))
+		} else {
+			w.panY = 0
+		}
 	}
 	w.mu.Unlock()
 }
@@ -733,7 +788,7 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 			w.mu.Unlock()
 			w.setZoom(1.25)
 			return loom.Handled()
-		case e.Y < w.lastRect.H-2 && e.X < w.lastRect.W && w.zoom > 1:
+		case e.X >= 0 && e.X < w.lastRect.W && e.Y >= 0 && e.Y < w.imageHeightLocked() && w.canPanLocked():
 			w.dragging = true
 			w.dragX = e.X
 			w.dragY = e.Y
@@ -744,7 +799,7 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action == loom.MouseDrag && w.dragging {
 		dx, dy := e.X-w.dragX, e.Y-w.dragY
 		w.dragX, w.dragY = e.X, e.Y
-		width, height := max(1, w.lastRect.W), max(1, w.lastRect.H-2)
+		width, height := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
 		w.mu.Unlock()
 		w.pan(-float64(dx)/float64(width), -float64(dy)/float64(height))
 		return loom.Handled()
@@ -759,4 +814,21 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 		return loom.Handled()
 	}
 	return loom.Ignored()
+}
+
+func (w *Widget) canPanLocked() bool {
+	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
+	nativeW, nativeH := nativeCellSize(w.mode, w.image)
+	return int(math.Ceil(float64(nativeW)*w.zoom)) > cols || int(math.Ceil(float64(nativeH)*w.zoom)) > rows
+}
+
+func (w *Widget) imageHeightLocked() int {
+	switch {
+	case w.lastRect.H >= 3:
+		return w.lastRect.H - 2
+	case w.lastRect.H == 2:
+		return w.lastRect.H - 1
+	default:
+		return w.lastRect.H
+	}
 }
