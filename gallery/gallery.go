@@ -174,10 +174,12 @@ var demos = map[string]constructor{
 		return table
 	},
 	"Tabs": func() loom.Widget {
-		return loom.NewTabs(
+		tabs := loom.NewTabs(
 			loom.Tab{Title: "Overview", Widget: loom.NewView([]string{"Loom widget gallery", "Switch tabs with ← and →."})},
 			loom.Tab{Title: "Details", Widget: loom.NewView([]string{"Tabs host any Loom widgets."})},
 		)
+		tabs.Vertical = true
+		return tabs
 	},
 	"TextArea": func() loom.Widget {
 		return &textAreaWidget{area: loom.NewTextArea("A multi-line editor\nwith sample content.\nUse the arrow keys to move.")}
@@ -228,7 +230,9 @@ func NewAll() *loom.Tabs {
 	for _, name := range Names() {
 		tabs = append(tabs, loom.Tab{Title: name, Widget: demos[name]()})
 	}
-	return loom.NewTabs(tabs...)
+	all := loom.NewTabs(tabs...)
+	all.Vertical = true
+	return all
 }
 
 type textInputWidget struct{ input *loom.TextInput }

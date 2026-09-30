@@ -72,6 +72,18 @@ var tabsRuleGlyph = func() string {
 	return border.Horizontal
 }()
 
+var tabsVerticalGlyph = func() string {
+	data, err := frameSpecs.ReadFile("spec/box.yaml")
+	if err != nil {
+		return "|"
+	}
+	var border BoxBorder
+	if err := yaml.Unmarshal(data, &border); err != nil || border.Vertical == "" {
+		return "|"
+	}
+	return border.Vertical
+}()
+
 // Tabs hosts child widgets under a row of tabs, switching which child receives
 // Draw/HandleKey/HandleMouse. Tabs may be added, inserted, removed, or replaced
 // at runtime using its lifecycle methods.
@@ -79,6 +91,9 @@ type Tabs struct {
 	Tabs  []Tab
 	Style TabsStyle
 	Keys  TabsKeys
+	// Vertical places tab titles in a left column. The zero value preserves
+	// the historical horizontal tab bar.
+	Vertical bool
 	// SwitchKey optionally cycles to the next tab in addition to left/right
 	// arrow keys (e.g. "tab" or "ctrl-t"). Empty disables it.
 	SwitchKey   string
@@ -250,12 +265,24 @@ func (t *Tabs) barHeight() int {
 	if len(t.Tabs) == 0 {
 		return 0
 	}
+	if t.Vertical {
+		return len(t.Tabs)
+	}
 	return 2
 }
 
-// Draw renders the tab bar into the top of r (active tab highlighted per
-// t.Style.Active, others per t.Style.Inactive, with a rule row beneath
-// sourced from spec/box.yaml) and the active child into the remaining space.
+func (t *Tabs) barWidth() int {
+	w := 0
+	for _, tab := range t.Tabs {
+		if width := StringWidth(tab.Title) + 2; width > w {
+			w = width
+		}
+	}
+	return w
+}
+
+// Draw renders the tab bar in the top or left edge of r and the active child
+// in the remaining space. The active tab is highlighted with t.Style.Active.
 func (t *Tabs) Draw(c *Canvas, r Rect) {
 	t.drawn = true
 	t.lastRect = r
@@ -264,6 +291,43 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 		return
 	}
 	bar := t.barHeight()
+	if t.Vertical {
+		barWidth := t.barWidth()
+		t.tabCols = make([]Rect, n)
+		start := max(0, t.focus-max(0, r.H)+1)
+		end := min(n, start+r.H)
+		for row, i := 0, start; i < end; row, i = row+1, i+1 {
+			tab := t.Tabs[i]
+			if f, ok := tab.Widget.(Focusable); ok {
+				f.SetFocus(i == t.focus)
+			}
+			style := t.Style.Inactive
+			if i == t.focus {
+				style = t.Style.Active
+			}
+			title := " " + tab.Title + " "
+			t.tabCols[i] = Rect{X: r.X, Y: r.Y + row, W: barWidth, H: 1}
+			c.Write(r.X, r.Y+row, title, style)
+			if width := StringWidth(title); width < barWidth {
+				c.PaintSurface(Rect{X: r.X + width, Y: r.Y + row, W: barWidth - width, H: 1}, style)
+			}
+		}
+		if r.H > 0 {
+			c.Fill(Rect{X: r.X + barWidth, Y: r.Y, W: 1, H: r.H}, Cell{Text: tabsVerticalGlyph, Style: t.Style.Rule})
+		}
+		child := t.active()
+		if child != nil {
+			if f, ok := child.(Focusable); ok {
+				f.SetFocus(true)
+			}
+			cr := Rect{X: r.X + barWidth + 1, Y: r.Y, W: max(0, r.W-barWidth-1), H: r.H}
+			child.Draw(c, cr)
+			if Debug {
+				drawDebugBorder(c, cr)
+			}
+		}
+		return
+	}
 	x := r.X
 	t.tabCols = make([]Rect, n)
 	for i, tab := range t.Tabs {
@@ -417,6 +481,9 @@ func (t *Tabs) ContentHeight() int {
 			maxH = ch
 		}
 	}
+	if t.Vertical {
+		return max(t.barHeight(), maxH)
+	}
 	return t.barHeight() + maxH
 }
 
@@ -438,6 +505,9 @@ func (t *Tabs) HeightForWidth(width int) int {
 			maxH = h
 		}
 	}
+	if t.Vertical {
+		return max(t.barHeight(), maxH)
+	}
 	return t.barHeight() + maxH
 }
 
@@ -458,6 +528,9 @@ func (t *Tabs) ContentWidth() int {
 		if w > maxChildW {
 			maxChildW = w
 		}
+	}
+	if t.Vertical {
+		return t.barWidth() + 1 + maxChildW
 	}
 	return max(barW, maxChildW)
 }

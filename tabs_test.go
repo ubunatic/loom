@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"strings"
 	"testing"
 
 	"codeberg.org/ubunatic/loom"
@@ -54,6 +55,20 @@ func TestTabsSwitchWithArrowKeys(t *testing.T) {
 	tabs.HandleKey(loom.KeyEvent{Key: "left"}) // wraps to last
 	if tabs.Focus() != 2 {
 		t.Fatalf("after left wrap, focus = %d, want 2", tabs.Focus())
+	}
+}
+
+func TestTabsVerticalLayoutAndSelection(t *testing.T) {
+	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: loom.NewView([]string{"first"})}, loom.Tab{Title: "Long", Widget: loom.NewView([]string{"second"})})
+	tabs.Vertical = true
+	rows := loom.Render(tabs, 16, 5)
+	if len(rows) != 5 || !strings.Contains(rows[0], " A ") || !strings.Contains(rows[1], " Long ") || !strings.Contains(rows[0], "first") {
+		t.Fatalf("vertical layout = %#v", rows)
+	}
+	tabs.Select(1)
+	rows = loom.Render(tabs, 16, 5)
+	if !strings.Contains(rows[0], "second") {
+		t.Fatalf("selected vertical tab content missing: %#v", rows)
 	}
 }
 

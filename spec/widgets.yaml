@@ -358,6 +358,7 @@ widgets:
           loom.Tab{Title: "Status", Widget: status},
           loom.Tab{Title: "Logs", Widget: logs},
       )
+      tabs.Vertical = true
     source: tabs.go
     docs: docs/Widgets.md §2
   - name: loom.TextArea
