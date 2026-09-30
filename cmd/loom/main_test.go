@@ -251,6 +251,64 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 }
 
+func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
+	if len(loom.ThemeNames()) < 2 {
+		t.Fatal("theme cycling requires at least two themes")
+	}
+	previous := runWidgetPane
+	var shown loom.Widget
+	runWidgetPane = func(widget loom.Widget) error {
+		shown = widget
+		return nil
+	}
+	t.Cleanup(func() { runWidgetPane = previous })
+	if err := execute([]string{"widgets", "--show", "--theme", "mc", "Chart"}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	gallery, ok := shown.(*themedGallery)
+	if !ok {
+		t.Fatalf("shown widget = %T, want *themedGallery", shown)
+	}
+	if gallery.themeName != "mc" {
+		t.Fatalf("initial theme = %q, want mc", gallery.themeName)
+	}
+	child := &themeProbeWidget{}
+	gallery = newThemedGallery(child, "mc")
+	initialCanvas := loom.NewCanvas(40, 4)
+	gallery.Draw(initialCanvas, initialCanvas.Bounds())
+	initialColor := initialCanvas.Get(0, 0).Style
+	gallery.HandleKey(loom.KeyEvent{Key: "f2"})
+	names := loom.ThemeNames()
+	index := slices.Index(names, "mc")
+	want := names[(index+1)%len(names)]
+	if gallery.themeName != want || child.theme.NormalFG != loom.Theme(want).NormalFG {
+		t.Fatalf("after F2 theme = %q, child theme mismatch; want %q", gallery.themeName, want)
+	}
+	canvas := loom.NewCanvas(40, 4)
+	gallery.Draw(canvas, canvas.Bounds())
+	if canvas.Get(0, 0).Style == initialColor {
+		t.Fatalf("demo rendered the same color style after switching from mc to %q", want)
+	}
+	if !strings.Contains(canvas.Row(canvas.Rows()-1), "Theme: "+want) {
+		t.Fatalf("gallery chrome = %q, want active theme %q", canvas.Row(canvas.Rows()-1), want)
+	}
+}
+
+type themeProbeWidget struct{ theme loom.ThemeColors }
+
+func (w *themeProbeWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	c.Write(r.X, r.Y, "X", w.theme.ChoiceStyle().Normal)
+}
+func (*themeProbeWidget) HandleKey(loom.KeyEvent) bool        { return false }
+func (*themeProbeWidget) HandleMouse(loom.MouseEvent) bool    { return false }
+func (w *themeProbeWidget) ApplyTheme(theme loom.ThemeColors) { w.theme = theme }
+
+func TestWidgetsThemeFlagRejectsUnknownTheme(t *testing.T) {
+	if err := execute([]string{"widgets", "--show", "--theme", "missing"}, &bytes.Buffer{}); err == nil || !strings.Contains(err.Error(), "unknown theme") {
+		t.Fatalf("unknown theme error = %v", err)
+	}
+}
+
 func TestWidgetsCompletions(t *testing.T) {
 	command := widgetsCommand()
 	want := []string{"Chart", "loom.Chart", "TextInput", "loom.TextInput"}
