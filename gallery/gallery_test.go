@@ -276,6 +276,37 @@ func TestGalleryDialogReselectionPTY(t *testing.T) {
 	}
 }
 
+func TestGalleryTableClickSelectionPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Table", "Choice")
+	s.WaitFor("Unit tests", 5*time.Second)
+	locate := func(text string) (int, int) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				return utf8.RuneCountInString(line[:i]), y
+			}
+		}
+		t.Fatalf("%q missing", text)
+		return -1, -1
+	}
+	sx, sy := locate("Compile")
+	selected := s.Cell(sx, sy).Style
+	x, y := locate("Unit tests")
+	s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if s.Cell(x, y).Style == selected && s.Cell(sx, sy).Style != selected {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("click did not transfer selection to second data row")
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

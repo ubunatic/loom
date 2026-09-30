@@ -23,6 +23,34 @@ func psTestTable() (*loom.Table, []loom.Column, []loom.Row) {
 	return loom.NewTable(cols, rows), cols, rows
 }
 
+func TestTableMouseLocalRowsAndBounds(t *testing.T) {
+	tbl, _, rows := psTestTable()
+	selected := func() loom.Item {
+		item, _ := tbl.Selected()
+		return item
+	}
+	canvas := loom.NewCanvas(80, 20)
+	tbl.Draw(canvas, loom.Rect{X: 7, Y: 4, W: 50, H: 4})
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 0}, // header
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 3}, // prompt
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 50, Y: 1},
+		{Action: loom.MouseHover, Button: loom.MouseLeft, X: 0, Y: 2},
+	} {
+		if result := tbl.ConsumeMouse(e); result.Consumed || selected().Name != rows[0].Key {
+			t.Fatalf("out-of-data event %+v changed selection: %+v", e, result)
+		}
+	}
+	if result := tbl.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 2}); !result.Consumed || result.Quit || selected().Name != rows[1].Key {
+		t.Fatalf("local second-row click: %+v selection=%+v", result, selected())
+	}
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
+	tbl.Draw(canvas, loom.Rect{X: 7, Y: 4, W: 50, H: 4})
+	if result := tbl.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 1}); !result.Consumed || selected().Name != rows[1].Key {
+		t.Fatalf("scrolled first-row click: %+v selection=%+v", result, selected())
+	}
+}
+
 func TestTableContentHeight(t *testing.T) {
 	tbl, _, rows := psTestTable()
 	want := len(rows) + 2 // header + rows + prompt

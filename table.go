@@ -95,8 +95,14 @@ type Table struct {
 	pageRows   int
 	filtered   []Row
 	colWidths  []int
+	lastRect   Rect
+	columnHits []tableColumnHit
 	done       bool
 	aborted    bool
+}
+
+type tableColumnHit struct {
+	x, width, col int
 }
 
 // NewTable creates a ready-to-use Table with default style.
@@ -212,6 +218,8 @@ func (t *Table) headerText(i int) string {
 // Draw renders the table into r.
 // Layout: r.Y = header row, r.Y+1 .. r.Y+H-2 = data rows, r.Y+H-1 = prompt.
 func (t *Table) Draw(cv *Canvas, r Rect) {
+	t.lastRect = r
+	t.columnHits = nil
 	const sep = "  "
 	const sepW = 2
 
@@ -304,6 +312,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 			style = t.Style.SortHeader
 		}
 		w := min(t.colWidths[i], r.X+r.W-x)
+		t.columnHits = append(t.columnHits, tableColumnHit{x: x - r.X, width: w, col: i})
 		cv.Write(x, r.Y, padCol(t.headerText(i), w, col.Align), style)
 		x += t.colWidths[i]
 	}
@@ -495,12 +504,29 @@ func (t *Table) cellSelectionChanged() {
 	}
 }
 
-// ConsumeMouse is a no-op placeholder (mouse support is optional/future).
+// ConsumeMouse selects a visible data row and, in cell-cursor mode, its column.
 func (t *Table) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	if t.cmd.handleHelpMouse(e) {
 		return Handled()
 	}
-	return Ignored()
+	if e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.X >= t.lastRect.W || e.Y < 1 || e.Y > t.pageRows {
+		return Ignored()
+	}
+	row := t.viewOffset + e.Y - 1
+	if row < 0 || row >= len(t.filtered) {
+		return Ignored()
+	}
+	t.sel = row
+	if t.CellCursor {
+		for _, hit := range t.columnHits {
+			if e.X >= hit.x && e.X < hit.x+hit.width {
+				t.cellCol = hit.col
+				break
+			}
+		}
+	}
+	t.cellSelectionChanged()
+	return Handled()
 }
 
 func (t *Table) cycleSortNext() {
