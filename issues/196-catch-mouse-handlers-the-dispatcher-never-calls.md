@@ -1,6 +1,6 @@
 # 196 — Catch mouse handlers the dispatcher never calls
 
-**Status**: Draft
+**Status**: Open
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug

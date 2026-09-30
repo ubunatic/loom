@@ -206,4 +206,4 @@ upkeep.
 | 193 | [193-add-nested-submenus-to-menu.md](193-add-nested-submenus-to-menu.md) | Add nested submenus to Menu | Closed |
 | 194 | [194-copy-selected-text-to-the-system-clipboard-via-osc-52.md](194-copy-selected-text-to-the-system-clipboard-via-osc-52.md) | Copy selected text to the system clipboard via OSC 52 | Closed |
 | 195 | [195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md](195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md) | Widget gallery: loom widgets --show runs live widget demos | Closed |
-| 196 | [196-catch-mouse-handlers-the-dispatcher-never-calls.md](196-catch-mouse-handlers-the-dispatcher-never-calls.md) | Catch mouse handlers the dispatcher never calls | Draft |
+| 196 | [196-catch-mouse-handlers-the-dispatcher-never-calls.md](196-catch-mouse-handlers-the-dispatcher-never-calls.md) | Catch mouse handlers the dispatcher never calls | Open |
