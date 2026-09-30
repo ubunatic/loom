@@ -37,6 +37,20 @@ func TestTextInputCopySelectionAndWholeValue(t *testing.T) {
 	}
 }
 
+func TestMaskedTextInputRefusesCopy(t *testing.T) {
+	input := loom.NewTextInput("secret")
+	input.Mask = '•'
+	input.Keys = loom.NewKeyMap(map[string][]string{"copy": {"ctrl-y"}})
+	writes := 0
+	input.SetClipboardWriter(func(string) { writes++ })
+	if input.HandleKey(loom.KeyEvent{Key: "ctrl-y"}) {
+		t.Fatal("masked input consumed copy action")
+	}
+	if writes != 0 {
+		t.Fatalf("masked input wrote clipboard %d times, want 0", writes)
+	}
+}
+
 func TestTextAreaCopySelectionAndWholeValue(t *testing.T) {
 	area := loom.NewTextArea("one\ntwo")
 	area.Keys = loom.NewKeyMap(map[string][]string{"copy": {"ctrl-y"}})

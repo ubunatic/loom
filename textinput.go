@@ -18,7 +18,7 @@ type TextInput struct {
 	Prompt      string  // drawn before the value, e.g. "title> "
 	Placeholder string  // dim hint shown when the buffer is empty
 	Mask        rune    // optional display rune repeated once per value rune; zero shows the value
-	Keys        *KeyMap // optional action bindings; the "copy" action copies the selection or value
+	Keys        *KeyMap // optional action bindings; "copy" works only when Mask is zero
 
 	runes                        []rune
 	caret                        int // caret index in [0, len(runes)]
@@ -67,10 +67,13 @@ func (t *TextInput) SetValue(s string) {
 func (t *TextInput) Caret() int { return t.caret }
 
 // HandleKey applies an editing key. It returns consumed=true when the key was an
-// editing action; the host should treat consumed=false keys (enter, esc, …) as
-// its own.
+// editing action; copy is refused when Mask is set so masked values cannot be
+// copied. The host should treat consumed=false keys (enter, esc, …) as its own.
 func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 	if t.Keys.Matches(e, "copy") && t.clipboardWriter != nil {
+		if t.Mask != 0 {
+			return false
+		}
 		start, end := t.selectionStart, t.selectionEnd
 		if start > end {
 			start, end = end, start
