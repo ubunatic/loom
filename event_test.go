@@ -5,6 +5,48 @@ package loom
 
 import "testing"
 
+func TestScanKeySeparatesPrintableKeys(t *testing.T) {
+	for _, input := range []string{"r ", "ä🙂r ", "r\x1b[A "} {
+		t.Run(input, func(t *testing.T) {
+			var got []KeyEvent
+			for raw := []byte(input); len(raw) > 0; {
+				event, used, ok := scanKey(raw)
+				if !ok || used <= 0 {
+					t.Fatalf("scanKey(%q) made no progress", raw)
+				}
+				got = append(got, event)
+				raw = raw[used:]
+			}
+			var want []KeyEvent
+			switch input {
+			case "r ":
+				want = []KeyEvent{{Text: "r"}, {Text: " "}}
+			case "ä🙂r ":
+				want = []KeyEvent{{Text: "ä"}, {Text: "🙂"}, {Text: "r"}, {Text: " "}}
+			default:
+				want = []KeyEvent{{Text: "r"}, {Key: "up"}, {Text: " "}}
+			}
+			if len(got) != len(want) {
+				t.Fatalf("events = %+v, want %+v", got, want)
+			}
+			for i := range want {
+				if got[i] != want[i] {
+					t.Errorf("event %d = %+v, want %+v", i, got[i], want[i])
+				}
+			}
+		})
+	}
+}
+
+func TestScanKeyWaitsForCompleteUTF8Rune(t *testing.T) {
+	raw := []byte("🙂")
+	for end := 1; end < len(raw); end++ {
+		if event, used, ok := scanKey(raw[:end]); ok || used != 0 || event != (KeyEvent{}) {
+			t.Fatalf("partial rune decoded as (%+v, %d, %v)", event, used, ok)
+		}
+	}
+}
+
 func TestDecodeKey(t *testing.T) {
 	tests := []struct {
 		name     string

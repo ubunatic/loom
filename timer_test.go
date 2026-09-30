@@ -88,6 +88,36 @@ func TestStopwatchLifecycleWithInjectedClock(t *testing.T) {
 	}
 }
 
+func TestStopwatchControlsCoalescedResetResume(t *testing.T) {
+	now := time.Unix(200, 0)
+	watch := NewStopwatch()
+	watch.Now = func() time.Time { return now }
+	watch.Controls = true
+	watch.Start()
+	now = now.Add(200 * time.Millisecond)
+	watch.Stop()
+	// A paused display can already show 00:00, so reset and resume may arrive
+	// in the same tty read. Pane's scanner must dispatch them separately.
+	for raw := []byte("r "); len(raw) > 0; {
+		event, used, ok := scanKey(raw)
+		if !ok || used <= 0 {
+			t.Fatalf("scanKey(%q) made no progress", raw)
+		}
+		if result := watch.ConsumeKey(event); result != Handled() {
+			t.Fatalf("control %+v returned %+v", event, result)
+		}
+		raw = raw[used:]
+	}
+	if got := watch.Elapsed(); got != 0 || watch.TickInterval() != time.Second {
+		t.Fatalf("after reset/resume: elapsed=%s interval=%s", got, watch.TickInterval())
+	}
+	now = now.Add(time.Second)
+	watch.Tick(now)
+	if got := watch.text(); got != "00:01" {
+		t.Fatalf("resumed display = %q, want 00:01", got)
+	}
+}
+
 func TestTimerAndStopwatchFormatAndRender(t *testing.T) {
 	timer := NewTimer(65 * time.Second)
 	timer.Formatter = func(d time.Duration) string { return "left " + formatMinutesSeconds(d) }

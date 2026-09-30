@@ -358,8 +358,8 @@ func scanMouse(b []byte) (MouseEvent, int, bool) {
 // scanMouse: a single tty read (or several coalesced reads) can carry more
 // than one complete key sequence, and a fast terminal can split one escape
 // sequence across two reads. ok is false when b ends with bytes that could
-// still be the unfinished prefix of a longer escape sequence (e.g. a lone
-// "\x1b" or "\x1b[1") — the caller should hold those bytes as pending and
+// still be the unfinished prefix of a UTF-8 rune or longer escape sequence
+// (e.g. a lone "\x1b" or "\x1b[1") — the caller should hold those bytes as pending and
 // wait for more data (or time out and treat a standalone ESC as a plain
 // "esc" keypress; see Pane.run) instead of dispatching a wrong decode. When
 // ok is true, used is the number of bytes consumed for the returned event.
@@ -373,25 +373,14 @@ func scanKey(b []byte) (KeyEvent, int, bool) {
 	case 27:
 		return scanEscapeKey(b)
 	default:
-		// A run of plain text/UTF-8 bytes up to the next control byte or ESC,
-		// decoded together as DecodeKey's default branch already does.
-		end := 1
-		for end < len(b) && !isKeyControlByte(b[end]) {
-			end++
+		// Read boundaries are not key boundaries: dispatch one rune so rapid
+		// printable shortcuts work even when the tty batches them together.
+		// Bracketed paste is handled separately by Pane as a PasteEvent.
+		if !utf8.FullRune(b) {
+			return KeyEvent{}, 0, false
 		}
-		return DecodeKey(b[:end]), end, true
-	}
-}
-
-// isKeyControlByte reports whether c is one of the single-byte control keys
-// or ESC that scanKey/DecodeKey special-case, i.e. a byte that must not be
-// folded into a plain-text run.
-func isKeyControlByte(c byte) bool {
-	switch c {
-	case 3, 2, 4, 6, 9, 10, 13, 17, 21, 23, 127, 8, 27:
-		return true
-	default:
-		return false
+		_, size := utf8.DecodeRune(b)
+		return DecodeKey(b[:size]), size, true
 	}
 }
 

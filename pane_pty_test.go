@@ -333,35 +333,48 @@ func TestCursorEffectsThroughPTY(t *testing.T) {
 	}
 }
 
-// TestPaneRunDecodesMultipleKeysFromOneRead is the ticket-053 acceptance
-// case for bug 1: two complete key sequences written in a single Write (so
-// they are very likely to land in a single tty.Read) must both be decoded
-// and dispatched via ConsumeKey, in order. Before the fix, Pane.run decoded
-// only the first sequence in raw and silently dropped the rest.
+// Complete key sequences written in one Write must be dispatched in order,
+// including printable shortcuts such as Stopwatch's reset and resume.
 func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
-	master, slave := openPTY(t)
-	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
-	rec := newKeyRecorder(2)
+	for _, tc := range []struct {
+		name, input string
+		want        []KeyEvent
+	}{
+		{"arrows", "\x1b[A\x1b[B", []KeyEvent{{Key: "up"}, {Key: "down"}}},
+		{"reset-resume", "r ", []KeyEvent{{Text: "r"}, {Text: " "}}},
+		{"unicode", "ä🙂", []KeyEvent{{Text: "ä"}, {Text: "🙂"}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			master, slave := openPTY(t)
+			p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
+			rec := newKeyRecorder(len(tc.want))
 
-	errc := make(chan error, 1)
-	go func() { errc <- p.Run(rec) }()
+			errc := make(chan error, 1)
+			go func() { errc <- p.Run(rec) }()
 
-	if _, err := master.Write([]byte("\x1b[A\x1b[B")); err != nil {
-		t.Fatalf("write: %v", err)
-	}
+			if _, err := master.Write([]byte(tc.input)); err != nil {
+				t.Fatalf("write: %v", err)
+			}
 
-	select {
-	case <-rec.done:
-	case <-time.After(3 * time.Second):
-		t.Fatal("timed out waiting for both coalesced keys to be decoded")
-	}
-	if err := <-errc; err != nil {
-		t.Fatalf("Pane.Run: %v", err)
-	}
+			select {
+			case <-rec.done:
+			case <-time.After(3 * time.Second):
+				t.Fatal("timed out waiting for both coalesced keys to be decoded")
+			}
+			if err := <-errc; err != nil {
+				t.Fatalf("Pane.Run: %v", err)
+			}
 
-	got := rec.snapshot()
-	if len(got) != 2 || got[0].Key != "up" || got[1].Key != "down" {
-		t.Fatalf("got %+v, want [{Key:up} {Key:down}]", got)
+			got := rec.snapshot()
+			if len(got) != len(tc.want) {
+				t.Fatalf("got %+v, want %+v", got, tc.want)
+			}
+			for i := range tc.want {
+				if got[i] != tc.want[i] {
+					t.Errorf("event %d = %+v, want %+v", i, got[i], tc.want[i])
+				}
+			}
+		})
 	}
 }
 
