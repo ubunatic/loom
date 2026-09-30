@@ -1,6 +1,6 @@
 # 202 — Media zoom crops instead of scaling
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
