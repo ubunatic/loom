@@ -96,6 +96,17 @@ func TestTextInputConsumedReporting(t *testing.T) {
 	}
 }
 
+func TestTextInputPasteReplacesNewlinesWithSpaces(t *testing.T) {
+	in := loom.NewTextInput("ac")
+	in.HandleKey(loom.KeyEvent{Key: "left"})
+	if !loom.DispatchPasteEvent(in, loom.PasteEvent{Text: "b\nc\r\nd"}).Consumed {
+		t.Fatal("paste was not consumed")
+	}
+	if got := in.Value(); got != "ab c  d" {
+		t.Fatalf("paste value = %q, want %q", got, "ab c  d")
+	}
+}
+
 func TestTextInputDrawPlaceholderAndCaret(t *testing.T) {
 	in := loom.NewTextInput("")
 	in.Prompt = "> "

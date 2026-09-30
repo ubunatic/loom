@@ -365,6 +365,41 @@ func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 	}
 }
 
+type pastePTYWidget struct{ pasted chan PasteEvent }
+
+func (w *pastePTYWidget) Draw(*Canvas, Rect)          {}
+func (w *pastePTYWidget) HandleKey(KeyEvent) bool     { return false }
+func (w *pastePTYWidget) HandleMouse(MouseEvent) bool { return false }
+func (w *pastePTYWidget) ConsumePaste(event PasteEvent) EventResult {
+	w.pasted <- event
+	return QuitResult()
+}
+
+func TestPaneRunDispatchesBracketedPaste(t *testing.T) {
+	master, slave := openPTY(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
+	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1)}
+	errC := make(chan error, 1)
+	go func() { errC <- p.Run(w) }()
+	if _, err := master.Write([]byte("\x1b[200~first\nsecond\x1b[201~")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-w.pasted:
+		if got.Text != "first\nsecond" {
+			t.Fatalf("paste text = %q", got.Text)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for paste event")
+	}
+	if err := <-errC; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+	if p.pasteMode {
+		t.Fatal("bracketed paste mode remained enabled after Pane.Run")
+	}
+}
+
 func TestPaneProbesZWJAfterEnteringAltScreen(t *testing.T) {
 	t.Setenv("LOOM_ZWJ", "")
 	master, slave := openPTYForProbe(t)

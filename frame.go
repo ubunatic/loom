@@ -917,6 +917,13 @@ func (f *Frame) ConsumeKey(k KeyEvent) (quit, consumed bool) {
 	return false, false
 }
 
+func (f *Frame) ConsumePaste(e PasteEvent) EventResult {
+	if box := f.FocusedBox(); box != nil && box.Child != nil {
+		return DispatchPasteEvent(box.Child, e)
+	}
+	return Ignored()
+}
+
 func (f *Frame) focusFirst() {
 	for i := range f.Boxes {
 		if f.Boxes[i].Hidden {

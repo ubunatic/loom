@@ -21,6 +21,39 @@ type KeyEvent struct {
 	Text string // typed printable text (Key == "" when Text != "")
 }
 
+// PasteEvent carries the text from one bracketed terminal paste operation.
+type PasteEvent struct{ Text string }
+
+// DecodePaste decodes a complete bracketed-paste frame at the start of b.
+func DecodePaste(b []byte) (PasteEvent, int, bool) {
+	const start, end = "\x1b[200~", "\x1b[201~"
+	if !strings.HasPrefix(string(b), start) {
+		return PasteEvent{}, 0, false
+	}
+	i := strings.Index(string(b[len(start):]), end)
+	if i < 0 {
+		return PasteEvent{}, 0, false
+	}
+	used := len(start) + i + len(end)
+	return PasteEvent{Text: string(b[len(start) : len(start)+i])}, used, true
+}
+
+// PasteConsumer optionally handles a complete terminal paste event.
+type PasteConsumer interface {
+	ConsumePaste(PasteEvent) EventResult
+}
+
+// DispatchPasteEvent sends a paste only to widgets that explicitly support it.
+func DispatchPasteEvent(root any, event PasteEvent) EventResult {
+	if root == nil {
+		return Ignored()
+	}
+	if consumer, ok := root.(PasteConsumer); ok {
+		return consumer.ConsumePaste(event)
+	}
+	return Ignored()
+}
+
 // Name returns the special-key name or printable text carried by the event.
 func (e KeyEvent) Name() string {
 	if e.Key != "" {
@@ -532,4 +565,3 @@ func DispatchMouseEvent(root Widget, me MouseEvent) EventResult {
 	}
 	return Ignored()
 }
-

@@ -174,6 +174,13 @@ func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	return false, false
 }
 
+func (g *Grid) ConsumePaste(e PasteEvent) EventResult {
+	if g.focus < 0 || g.focus >= len(g.Children) {
+		return Ignored()
+	}
+	return DispatchPasteEvent(g.Children[g.focus], e)
+}
+
 // HandleMouse routes to the child whose drawn cell contains the event.
 func (g *Grid) HandleMouse(e MouseEvent) (quit bool) {
 	if len(g.Children) == 0 {

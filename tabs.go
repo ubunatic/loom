@@ -370,6 +370,10 @@ func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	return false, false
 }
 
+func (t *Tabs) ConsumePaste(e PasteEvent) EventResult {
+	return DispatchPasteEvent(t.active(), e)
+}
+
 func matchesTabKey(event KeyEvent, binding string) bool {
 	return binding != "" && (event.Key == binding || event.Text == binding)
 }

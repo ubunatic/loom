@@ -68,6 +68,13 @@ func (p *Popup) HandleKey(e KeyEvent) (quit bool) {
 	return false
 }
 
+func (p *Popup) ConsumePaste(e PasteEvent) EventResult {
+	if !p.Open || p.Inner == nil {
+		return Ignored()
+	}
+	return DispatchPasteEvent(p.Inner, e)
+}
+
 // HandleMouse forwards to Inner while Open.
 func (p *Popup) HandleMouse(e MouseEvent) (quit bool) {
 	if !p.Open || p.Inner == nil {

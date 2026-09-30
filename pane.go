@@ -99,6 +99,7 @@ type Pane struct {
 	// winchMeter measures SIGWINCH arrival rate for the adaptive guard.
 	winchMeter  WinchMeter
 	altActive   bool
+	pasteMode   bool
 	fullActive  bool // primary-screen layout is full screen (from row 1)
 	staleRows   int  // rows below the pane left over from a shrink, erased by the next frame
 	inlineStart int  // pane top before the full-screen layout took over
@@ -456,6 +457,18 @@ func (p *Pane) disableMouse() {
 	p.mouse, p.mouseMode = false, 0
 }
 
+func (p *Pane) setBracketedPaste(on bool) {
+	if p.tty == nil || p.pasteMode == on {
+		return
+	}
+	if on {
+		p.tty.WriteString("\x1b[?2004h") //nolint:errcheck
+	} else {
+		p.tty.WriteString("\x1b[?2004l") //nolint:errcheck
+	}
+	p.pasteMode = on
+}
+
 // Resize adjusts the pane height dynamically.
 // If the height increases and overflows the terminal screen, it scrolls the terminal up
 // to reserve the required space. If it decreases, it clears the abandoned lines.
@@ -775,6 +788,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 	full, alt := p.wantScreen()
 	p.changeScreen(full, alt)
+	p.setBracketedPaste(true)
+	defer p.setBracketedPaste(false)
 	// New has put the owned tty in raw mode. Probe before starting the input
 	// reader so the DSR reply cannot be consumed as a key event.
 	measure.DetectZWJMode(p.tty, p.tty, p.startRow)
@@ -1221,6 +1236,22 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			// wrong.
 			quit := false
 			for len(raw) > 0 {
+				const pasteStart = "\x1b[200~"
+				if strings.HasPrefix(string(raw), pasteStart) {
+					paste, used, complete := DecodePaste(raw)
+					if !complete {
+						pending = append([]byte(nil), raw...)
+						pendingC = nil
+						break
+					}
+					raw = raw[used:]
+					p.triggerCursorPulse(time.Now())
+					if DispatchPasteEvent(root, paste).Quit {
+						quit = true
+						break
+					}
+					continue
+				}
 				ke, used, ok := scanKey(raw)
 				if !ok {
 					pending = append([]byte(nil), raw...)
@@ -1354,6 +1385,7 @@ func (p *Pane) close() {
 	}
 
 	p.disableMouse()
+	p.setBracketedPaste(false)
 
 	var b strings.Builder
 	if p.altActive {

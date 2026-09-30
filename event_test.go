@@ -58,6 +58,16 @@ func TestDecodeKey(t *testing.T) {
 	}
 }
 
+func TestDecodePaste(t *testing.T) {
+	got, used, ok := DecodePaste([]byte("\x1b[200~one\ntwo\x1b[201~x"))
+	if !ok || used != len("\x1b[200~one\ntwo\x1b[201~") || got.Text != "one\ntwo" {
+		t.Fatalf("DecodePaste() = %+v, %d, %t", got, used, ok)
+	}
+	if _, _, ok := DecodePaste([]byte("\x1b[200~unfinished")); ok {
+		t.Fatal("DecodePaste accepted an unterminated paste")
+	}
+}
+
 func TestKeyEventName(t *testing.T) {
 	tests := []struct {
 		name  string
@@ -181,8 +191,8 @@ type dummyEventConsumer struct {
 	onKey func(KeyEvent) EventResult
 }
 
-func (d *dummyEventConsumer) Draw(*Canvas, Rect)       {}
-func (d *dummyEventConsumer) HandleKey(KeyEvent) bool   { return false }
+func (d *dummyEventConsumer) Draw(*Canvas, Rect)          {}
+func (d *dummyEventConsumer) HandleKey(KeyEvent) bool     { return false }
 func (d *dummyEventConsumer) HandleMouse(MouseEvent) bool { return false }
 func (d *dummyEventConsumer) ConsumeKey(e KeyEvent) EventResult {
 	if d.onKey != nil {
@@ -195,8 +205,8 @@ type dummyMouseConsumer struct {
 	onMouse func(MouseEvent) EventResult
 }
 
-func (d *dummyMouseConsumer) Draw(*Canvas, Rect)       {}
-func (d *dummyMouseConsumer) HandleKey(KeyEvent) bool   { return false }
+func (d *dummyMouseConsumer) Draw(*Canvas, Rect)          {}
+func (d *dummyMouseConsumer) HandleKey(KeyEvent) bool     { return false }
 func (d *dummyMouseConsumer) HandleMouse(MouseEvent) bool { return false }
 func (d *dummyMouseConsumer) ConsumeMouse(e MouseEvent) EventResult {
 	if d.onMouse != nil {
@@ -252,4 +262,3 @@ func TestDispatchKeyAndMouseEvent(t *testing.T) {
 		t.Errorf("DispatchMouseEvent(mc, release) = %+v, want Ignored", res)
 	}
 }
-

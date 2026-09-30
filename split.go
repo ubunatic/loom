@@ -296,6 +296,10 @@ func (s *Split) focusedChild() Widget {
 	return s.First
 }
 
+func (s *Split) ConsumePaste(e PasteEvent) EventResult {
+	return DispatchPasteEvent(s.focusedChild(), e)
+}
+
 func (s *Split) setFocusedChild(index int) {
 	s.focus = index
 	s.focused = true

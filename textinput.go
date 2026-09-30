@@ -3,6 +3,8 @@
 
 package loom
 
+import "strings"
+
 // TextInput is a single-line text editor with a movable caret. It is the shared
 // editing primitive behind Settings KindString rows and wizard value entry: it
 // owns a rune buffer and a caret index, and renders an optional prompt prefix
@@ -29,6 +31,15 @@ func NewTextInput(value string) *TextInput {
 
 // Value returns the current buffer as a string.
 func (t *TextInput) Value() string { return string(t.runes) }
+
+// ConsumePaste inserts single-line paste text at the caret.
+func (t *TextInput) ConsumePaste(event PasteEvent) EventResult {
+	text := strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(event.Text)
+	if text != "" {
+		t.HandleKey(KeyEvent{Text: text})
+	}
+	return Handled()
+}
 
 // SetValue replaces the buffer and places the caret at the end.
 func (t *TextInput) SetValue(s string) {

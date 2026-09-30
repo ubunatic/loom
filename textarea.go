@@ -60,6 +60,27 @@ func (t *TextArea) Value() string {
 	return strings.Join(parts, "\n")
 }
 
+// ConsumePaste inserts a multiline paste at the caret in one buffer update.
+func (t *TextArea) ConsumePaste(event PasteEvent) EventResult {
+	before := t.Value()
+	byteOffset := t.caretByteOffset(t.row, t.col)
+	joined := before[:byteOffset] + event.Text + before[byteOffset:]
+	oldRow := t.row
+	oldCol := t.col
+	t.SetValue(joined)
+	insertedLines := strings.Split(event.Text, "\n")
+	row := oldRow + len(insertedLines) - 1
+	col := oldCol + len([]rune(insertedLines[0]))
+	if len(insertedLines) > 1 {
+		col = len([]rune(insertedLines[len(insertedLines)-1]))
+	}
+	t.SetCaret(row, col)
+	if t.highlighter != nil {
+		_ = t.highlighter.Parse([]byte(joined))
+	}
+	return Handled()
+}
+
 // SetValue replaces the buffer and puts the caret at the end of the last line.
 func (t *TextArea) SetValue(s string) {
 	raw := strings.Split(s, "\n")
@@ -164,7 +185,6 @@ func (t *TextArea) FoldedRanges() map[int]int {
 	}
 	return out
 }
-
 
 // HandleKey applies an editing key, returning consumed=true when it acted.
 func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {

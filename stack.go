@@ -168,6 +168,13 @@ func (s *Stack) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 	return false, false
 }
 
+func (s *Stack) ConsumePaste(e PasteEvent) EventResult {
+	if len(s.Children) == 0 || s.focus < 0 || s.focus >= len(s.Children) {
+		return Ignored()
+	}
+	return DispatchPasteEvent(s.Children[s.focus], e)
+}
+
 // HandleMouse forwards to the child whose rect contains the event.
 func (s *Stack) HandleMouse(e MouseEvent) (quit bool) {
 	if len(s.Children) == 0 {

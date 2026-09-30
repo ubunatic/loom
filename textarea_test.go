@@ -46,6 +46,20 @@ func TestTextAreaEnterSplitsLine(t *testing.T) {
 	}
 }
 
+func TestTextAreaPasteInsertsMultilineText(t *testing.T) {
+	ta := loom.NewTextArea("ab")
+	ta.SetCaret(0, 1)
+	if !loom.DispatchPasteEvent(ta, loom.PasteEvent{Text: "x\ny"}).Consumed {
+		t.Fatal("paste was not consumed")
+	}
+	if got := ta.Value(); got != "ax\nyb" {
+		t.Fatalf("paste value = %q, want %q", got, "ax\nyb")
+	}
+	if r, c := ta.Caret(); r != 1 || c != 1 {
+		t.Fatalf("caret = (%d,%d), want (1,1)", r, c)
+	}
+}
+
 func TestTextAreaBackspaceJoinsLines(t *testing.T) {
 	ta := loom.NewTextArea("ab\ncd")
 	ta.HandleKey(loom.KeyEvent{Key: "home"}) // start of "cd" (caret seeded on last line)
@@ -230,4 +244,3 @@ func TestTextAreaViewportBoundedHighlighting(t *testing.T) {
 		t.Errorf("scrolled query range = [%d, %d), want [4, 7)", mock.lastStart, mock.lastEnd)
 	}
 }
-

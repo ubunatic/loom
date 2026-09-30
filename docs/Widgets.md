@@ -195,6 +195,7 @@ When an event arrives at `Pane` (or composite containers `Frame`, `Tabs`, `Stack
 - Widgets handling user input (e.g. navigation, typing, selection) should implement `EventConsumer` with `ConsumeKey(e KeyEvent) EventResult` and return `loom.Handled()` on consumed inputs.
 - If implementing historical `HandleKey(e KeyEvent) bool`, return `false` on ordinary keystrokes and `true` ONLY when requesting application termination.
 - Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.
+- `Pane` enables bracketed paste for the run and restores the terminal mode on exit. Widgets that implement `PasteConsumer` receive one `PasteEvent` per paste; other widgets ignore it. `TextInput` replaces pasted line breaks with spaces, while `TextArea` preserves them.
 
 ## 8. Mouse Coordinate Invariants
 
