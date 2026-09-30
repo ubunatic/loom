@@ -1,6 +1,6 @@
 # 192 — Add an axes-based Chart widget for line and grouped bar series
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
