@@ -133,6 +133,7 @@ var runWidgetPane = func(widget loom.Widget) error {
 	if err != nil {
 		return err
 	}
+	pane.EnableMouse()
 	defer pane.Close()
 	return pane.Run(widget)
 }

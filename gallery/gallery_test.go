@@ -82,11 +82,11 @@ func TestGalleryTabsCycleDemos(t *testing.T) {
 func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	// These demos intentionally present static content and have no input action.
 	displayOnly := map[string]bool{
-		"Chart": true, "KeyHelp": true, "Media": true, "PillCluster": true,
+		"Chart": true, "KeyHelp": true, "PillCluster": true,
 		"ProgressBar": true, "Spinner": true, "Stopwatch": true, "Timer": true,
 	}
 	keys := map[string]loom.KeyEvent{
-		"Choice": {Key: "down"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "tab"},
+		"Choice": {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "tab"},
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "Popup": {Key: "esc"},
 		"Table": {Key: "down"}, "Tabs": {Key: "tab"}, "TextArea": {Text: "x"},
@@ -199,6 +199,7 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 		}
 		t.Fatalf("%q not visible on PTY screen:\n%s", text, strings.Join(s.Screen(), "\n"))
 	}
+	s.WaitFor("Tree", 5*time.Second)
 	clickText("Tree")
 	s.WaitFor("app.go", 5*time.Second)
 	// Click the disclosure glyph immediately before src; collapsing the node
