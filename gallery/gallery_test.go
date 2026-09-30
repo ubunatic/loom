@@ -88,7 +88,7 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	keys := map[string]loom.KeyEvent{
 		"Choice": {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "tab"},
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
-		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "Popup": {Key: "esc"},
+		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"Table": {Key: "down"}, "Tabs": {Key: "tab"}, "TextArea": {Text: "x"},
 		"TextInput": {Text: "x"}, "Toggle": {Key: "enter"}, "Tree": {Key: "down"},
 		"Viewport": {Key: "down"},
@@ -221,6 +221,67 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	t.Fatalf("click inside Tree did not collapse src:\n%s", strings.Join(s.Screen(), "\n"))
+}
+
+func TestPaintCanvasPTYMouseDragDrawsBrailleLine(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build loom binary: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 80, 24, bin, "widgets", "--show", "PaintCanvas")
+	s.WaitFor("Theme:", 5*time.Second)
+	s.Send("c")
+	clearDeadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(clearDeadline) {
+		if !galleryHasBrailleGlyph(strings.Join(s.Screen(), "\n")) {
+			break
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	if galleryHasBrailleGlyph(strings.Join(s.Screen(), "\n")) {
+		t.Fatalf("clear key did not erase the gallery sample stroke:\n%s", strings.Join(s.Screen(), "\n"))
+	}
+	// SGR mouse coordinates are 1-based on the wire; normal dispatch converts
+	// them to 0-based, child-local widget coordinates.
+	s.SendRaw([]byte("\x1b[<0;12;10M"))
+	s.SendRaw([]byte("\x1b[<32;28;17M"))
+	s.SendRaw([]byte("\x1b[<0;28;17m"))
+	deadline := time.Now().Add(3 * time.Second)
+	for time.Now().Before(deadline) {
+		rows := s.Screen()
+		if galleryBrailleAt(rows, 11, 9) && galleryBrailleAt(rows, 19, 12) && galleryBrailleAt(rows, 27, 16) {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatalf("mouse drag did not draw braille on the PaintCanvas PTY:\n%s", strings.Join(s.Screen(), "\n"))
+}
+
+func galleryBrailleAt(rows []string, x, y int) bool {
+	r := galleryRuneAt(rows, x, y)
+	return r >= 0x2800 && r <= 0x28ff
+}
+
+func galleryRuneAt(rows []string, x, y int) rune {
+	if y < 0 || y >= len(rows) {
+		return 0
+	}
+	for column, r := range []rune(rows[y]) {
+		if column == x {
+			return r
+		}
+	}
+	return 0
+}
+
+func galleryHasBrailleGlyph(text string) bool {
+	for _, r := range text {
+		if r >= 0x2800 && r <= 0x28ff {
+			return true
+		}
+	}
+	return false
 }
 
 func TestWidgetKeyRoutingPTY(t *testing.T) {

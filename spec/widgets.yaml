@@ -196,6 +196,15 @@ widgets:
     source: paginator.go
     docs: docs/Widgets.md §6
     ticket: issues/188
+  - name: loom.PaintCanvas
+    package: loom
+    purpose: Paint braille dot lines with mouse strokes and clear the drawing from the keyboard.
+    category: input
+    example: |-
+      canvas := &loom.PaintCanvas{}
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: canvas}}}
+      _ = frame
+    source: paintcanvas.go
   - name: loom.PillCluster
     package: loom
     purpose: Display and navigate a cluster of compact status pills.

@@ -121,6 +121,14 @@ var demos = map[string]constructor{
 		paginator.SetPage(2)
 		return paginator
 	},
+	"PaintCanvas": func() loom.Widget {
+		canvas := &loom.PaintCanvas{}
+		canvas.Draw(loom.NewCanvas(32, 8), loom.Rect{W: 32, H: 8})
+		canvas.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 2})
+		canvas.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 25, Y: 5})
+		canvas.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 25, Y: 5})
+		return canvas
+	},
 	"Popup": func() loom.Widget {
 		popup := loom.NewPopup("Gallery popup", loom.NewView([]string{"This overlay is a live widget.", "Press Esc to close it."}))
 		popup.Width, popup.Height = 48, 7

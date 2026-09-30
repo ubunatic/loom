@@ -357,6 +357,9 @@ A two-row footer (key hints, then `▶ Play [-] [+]`, zoom level and an activity
 
 Every catalog widget has a live demo in the `gallery/` package: `loom widgets --show <Name>...` (195). `spec/widgets.yaml` is the catalog source of truth, kept in strict name order; `widgets_catalog_test.go` fails when an exported widget is missing from it.
 
+`PaintCanvas` draws braille dots with the left mouse button. Press to start a stroke,
+drag to connect points, and press `c` or Ctrl-L to clear the drawing.
+
 ### Standalone Form Controls
 
 `NumberInput` and `Toggle` can be used outside a `Settings` list. Both bind to
