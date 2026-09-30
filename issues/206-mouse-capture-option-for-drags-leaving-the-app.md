@@ -1,6 +1,6 @@
 # 206 — Mouse capture option for drags leaving the app
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
