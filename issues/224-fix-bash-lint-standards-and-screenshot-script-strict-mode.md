@@ -1,6 +1,6 @@
 # 224 — Fix bash lint standards and screenshot script strict mode
 
-**Status**: Open
+**Status**: Closed — fixed bash lint standards and screenshot script strict mode
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Hygiene
