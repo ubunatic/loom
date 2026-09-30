@@ -156,6 +156,7 @@ type paneTickerProbe struct {
 	draws    int
 	done     chan struct{}
 	pane     *Pane
+	reset    func()
 }
 
 func (p *paneTickerProbe) Draw(c *Canvas, _ Rect) {
@@ -177,10 +178,33 @@ func (p *paneTickerProbe) HandleKey(e KeyEvent) bool {
 	}
 	return false
 }
-func (p *paneTickerProbe) TickInterval() time.Duration { return p.interval }
-func (p *paneTickerProbe) Tick(time.Time)              { p.mu.Lock(); p.ticks++; p.mu.Unlock() }
-func (p *paneTickerProbe) tickCount() int              { p.mu.Lock(); defer p.mu.Unlock(); return p.ticks }
-func (p *paneTickerProbe) drawCount() int              { p.mu.Lock(); defer p.mu.Unlock(); return p.draws }
+func (p *paneTickerProbe) TickInterval() time.Duration {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.interval
+}
+func (p *paneTickerProbe) Tick(time.Time)            { p.mu.Lock(); p.ticks++; p.mu.Unlock() }
+func (p *paneTickerProbe) SetResetTick(reset func()) { p.mu.Lock(); p.reset = reset; p.mu.Unlock() }
+func (p *paneTickerProbe) tickCount() int            { p.mu.Lock(); defer p.mu.Unlock(); return p.ticks }
+func (p *paneTickerProbe) drawCount() int            { p.mu.Lock(); defer p.mu.Unlock(); return p.draws }
+func (p *paneTickerProbe) setInterval(interval time.Duration) {
+	p.mu.Lock()
+	p.interval = interval
+	p.mu.Unlock()
+}
+func (p *paneTickerProbe) resetTick() {
+	p.mu.Lock()
+	reset := p.reset
+	p.mu.Unlock()
+	if reset != nil {
+		reset()
+	}
+}
+func (p *paneTickerProbe) hasResetTick() bool {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	return p.reset != nil
+}
 
 func runPaneTickerProbe(t *testing.T, probe *paneTickerProbe, before func(*Pane), during func(*Pane, *os.File)) {
 	t.Helper()
@@ -237,6 +261,51 @@ func TestPaneTickerRunSurvivesInvalidateStorm(t *testing.T) {
 	if got := probe.tickCount(); got < 5 {
 		t.Fatalf("ticks during storm = %d, want at least 5", got)
 	}
+}
+
+func TestPaneTickerPauseResumeAndResetCountdown(t *testing.T) {
+	probe := &paneTickerProbe{interval: 120 * time.Millisecond, done: make(chan struct{})}
+	runPaneTickerProbe(t, probe, nil, func(_ *Pane, master *os.File) {
+		deadline := time.Now().Add(time.Second)
+		for !probe.hasResetTick() && time.Now().Before(deadline) {
+			time.Sleep(time.Millisecond)
+		}
+		if !probe.hasResetTick() {
+			t.Fatal("Pane did not bind ticker reset callback")
+		}
+		// Reset the original countdown partway through; it must not fire on the
+		// original deadline, and should fire one interval after the reset.
+		time.Sleep(70 * time.Millisecond)
+		probe.resetTick()
+		time.Sleep(65 * time.Millisecond)
+		if got := probe.tickCount(); got != 0 {
+			t.Fatalf("ticks before reset countdown elapsed = %d, want 0", got)
+		}
+		waitForPaneTicks(t, probe, 1)
+
+		probe.setInterval(0)
+		probe.pane.Invalidate()
+		time.Sleep(150 * time.Millisecond)
+		if got := probe.tickCount(); got != 1 {
+			t.Fatalf("ticks while paused = %d, want 1", got)
+		}
+		probe.setInterval(20 * time.Millisecond)
+		probe.pane.Invalidate()
+		waitForPaneTicks(t, probe, 2)
+		_, _ = master.Write([]byte("q"))
+	})
+}
+
+func waitForPaneTicks(t *testing.T, probe *paneTickerProbe, want int) {
+	t.Helper()
+	deadline := time.Now().Add(time.Second)
+	for time.Now().Before(deadline) {
+		if probe.tickCount() >= want {
+			return
+		}
+		time.Sleep(time.Millisecond)
+	}
+	t.Fatalf("ticks = %d, want at least %d", probe.tickCount(), want)
 }
 
 func TestPaneNonTickerIdleGuard(t *testing.T) {

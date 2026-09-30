@@ -41,6 +41,14 @@ type Ticker interface {
 	Tick(now time.Time)
 }
 
+// TickerControlAware widgets accept a callback that resets their Pane's tick
+// countdown. Call it after an action that should postpone the next tick.
+// Widgets that change TickInterval should also invalidate so the Pane can
+// apply the new cadence immediately.
+type TickerControlAware interface {
+	SetResetTick(func())
+}
+
 func shortestTickInterval(root Widget) time.Duration {
 	t, ok := root.(Ticker)
 	if !ok || t.TickInterval() <= 0 {
@@ -127,6 +135,33 @@ func bindInvalidationTree(root Widget, invalidate func()) {
 	case *Frame:
 		for _, box := range node.Boxes {
 			bindInvalidationTree(box.Child, invalidate)
+		}
+	}
+}
+
+func bindTickerControlTree(root Widget, reset func()) {
+	if root == nil {
+		return
+	}
+	if aware, ok := root.(TickerControlAware); ok {
+		aware.SetResetTick(reset)
+	}
+	switch node := root.(type) {
+	case *Tabs:
+		for _, tab := range node.Tabs {
+			bindTickerControlTree(tab.Widget, reset)
+		}
+	case *Stack:
+		for _, child := range node.Children {
+			bindTickerControlTree(child, reset)
+		}
+	case *Grid:
+		for _, child := range node.Children {
+			bindTickerControlTree(child, reset)
+		}
+	case *Frame:
+		for _, box := range node.Boxes {
+			bindTickerControlTree(box.Child, reset)
 		}
 	}
 }

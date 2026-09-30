@@ -122,7 +122,17 @@ type Pane struct {
 	interrupts     chan os.Signal
 	invalidate     chan struct{}
 	invalidateOnce sync.Once
+	tickerReset    chan struct{}
 	help           *Popup
+}
+
+// ResetTicker postpones the next ticker update by its current interval. It is
+// safe to call from widget callbacks, including callbacks on another goroutine.
+func (p *Pane) ResetTicker() {
+	select {
+	case p.tickerReset <- struct{}{}:
+	default:
+	}
 }
 
 // RenderMetrics reports recent completed redraw performance. RedrawTime and
@@ -713,6 +723,8 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
 	p.invalidateOnce.Do(func() { p.invalidate = make(chan struct{}, 1) })
 	bindInvalidationTree(root, p.Invalidate)
+	p.tickerReset = make(chan struct{}, 1)
+	bindTickerControlTree(root, p.ResetTicker)
 	if requester, ok := root.(PaneRequester); ok {
 		request := requester.PaneRequest()
 		if !p.mouse && request.Mouse > 0 {
@@ -1056,6 +1068,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			dirty = true
 		case <-p.invalidate:
 			dirty = true
+		case <-p.tickerReset:
+			// Force the timer to adopt the current interval with a fresh countdown.
+			tickInterval = -1
 		case <-backgroundFrames:
 			dirty = true
 			animationDirty = true
