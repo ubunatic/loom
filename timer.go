@@ -187,8 +187,10 @@ func (*Timer) ContentHeight() int                  { return 1 }
 // Stopwatch displays elapsed time and can be paused and resumed.
 type Stopwatch struct {
 	Formatter DurationFormatter
-	Now       func() time.Time
-	Style     Style
+	// Controls enables Space to start/stop and R to reset.
+	Controls bool
+	Now      func() time.Time
+	Style    Style
 
 	mu         sync.Mutex
 	elapsed    time.Duration
@@ -304,7 +306,36 @@ func (s *Stopwatch) Draw(c *Canvas, r Rect) {
 		c.Write(r.X, r.Y, TruncateText(s.text(), r.W, ""), s.Style)
 	}
 }
-func (*Stopwatch) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (s *Stopwatch) ConsumeKey(e KeyEvent) EventResult {
+	if !s.Controls {
+		return Ignored()
+	}
+	switch e.Key {
+	case "space":
+		if s.TickInterval() > 0 {
+			s.Stop()
+		} else {
+			s.Start()
+		}
+		return Handled()
+	case "r":
+		s.Reset()
+		return Handled()
+	}
+	if e.Text == " " {
+		if s.TickInterval() > 0 {
+			s.Stop()
+		} else {
+			s.Start()
+		}
+		return Handled()
+	}
+	if e.Text == "r" || e.Text == "R" {
+		s.Reset()
+		return Handled()
+	}
+	return Ignored()
+}
 func (*Stopwatch) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (s *Stopwatch) ContentWidth() int                 { return StringWidth(s.text()) }
 func (*Stopwatch) ContentHeight() int                  { return 1 }

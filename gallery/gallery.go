@@ -114,6 +114,7 @@ var demos = map[string]constructor{
 		value := 7.5
 		input := loom.NewNumberInput(&value, 0, 10)
 		input.Step = .5
+		input.FixedWidth = 7
 		return input
 	},
 	"Paginator": func() loom.Widget {
@@ -141,6 +142,7 @@ var demos = map[string]constructor{
 		bar.ShowPercent = true
 		bar.ShowCount = true
 		bar.Unit = " files"
+		bar.Indeterminate = true
 		bar.Set(16)
 		return bar
 	},
@@ -151,13 +153,12 @@ var demos = map[string]constructor{
 	},
 	"Stopwatch": func() loom.Widget {
 		watch := loom.NewStopwatch()
-		watch.Formatter = func(time.Duration) string { return "02:37" }
+		watch.Controls = true
 		watch.Start()
 		return watch
 	},
 	"Timer": func() loom.Widget {
 		timer := loom.NewTimer(4*time.Minute + 12*time.Second)
-		timer.Formatter = func(time.Duration) string { return "04:12" }
 		timer.Start()
 		return timer
 	},
@@ -195,14 +196,19 @@ var demos = map[string]constructor{
 		return &textAreaWidget{area: loom.NewTextArea("A multi-line editor\nwith sample content.\nUse the arrow keys to move.")}
 	},
 	"TextInput": func() loom.Widget {
-		input := loom.NewTextInput("a long gallery value with 界 and 🙂")
+		input := loom.NewTextInput("Ada Lovelace")
 		input.Prompt = "Name: "
-		input.Mask = '•'
-		return &textInputWidget{input: input}
+		placeholder := loom.NewTextInput("")
+		placeholder.Prompt, placeholder.Placeholder = "Placeholder: ", "Type a value…"
+		masked := loom.NewTextInput("correct horse")
+		masked.Prompt, masked.Mask = "Masked: ", '•'
+		return &textInputWidget{input: input, placeholder: placeholder, masked: masked}
 	},
 	"Toggle": func() loom.Widget {
 		value := true
-		return loom.NewToggle(&value)
+		toggle := loom.NewToggle(&value)
+		toggle.Label = "Notifications"
+		return toggle
 	},
 	"Viewport": func() loom.Widget {
 		lines := make([]string, 30)
@@ -247,11 +253,21 @@ func NewAll() *loom.Tabs {
 	return all
 }
 
-type textInputWidget struct{ input *loom.TextInput }
+type textInputWidget struct {
+	input       *loom.TextInput
+	placeholder *loom.TextInput
+	masked      *loom.TextInput
+}
 
 func (w *textInputWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{})
 	w.input.Draw(c, r, true)
+	if r.H > 2 {
+		w.placeholder.Draw(c, loom.Rect{X: r.X, Y: r.Y + 2, W: r.W, H: 1}, false)
+	}
+	if r.H > 4 {
+		w.masked.Draw(c, loom.Rect{X: r.X, Y: r.Y + 4, W: r.W, H: 1}, false)
+	}
 }
 func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.input.ConsumeKey(e) }
 func (w *textInputWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }

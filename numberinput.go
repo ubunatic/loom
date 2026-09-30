@@ -17,6 +17,8 @@ type NumberInput struct {
 	Max    float64
 	Step   float64
 	Format string
+	// FixedWidth pads the complete control to a stable display width. Zero keeps the natural width.
+	FixedWidth int
 
 	editor *TextInput
 	orig   float64
@@ -35,7 +37,13 @@ func (n *NumberInput) Draw(c *Canvas, r Rect) {
 		n.editor.Draw(c, r, true)
 		return
 	}
-	c.Write(r.X, r.Y, n.String(), Style{})
+	text := n.String()
+	if n.FixedWidth > 0 && n.Value != nil {
+		value := "◂ " + n.format(*n.Value)
+		padding := max(0, n.FixedWidth-StringWidth(value)-2)
+		text = value + strings.Repeat(" ", padding) + " ▸"
+	}
+	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), Style{})
 }
 
 // String returns the formatted current value with step indicators.

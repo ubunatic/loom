@@ -8,6 +8,7 @@ import (
 	"io"
 	"sort"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/gallery"
@@ -229,6 +230,18 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return g.widget.ConsumeMouse(e)
+}
+
+func (g *themedGallery) TickInterval() time.Duration {
+	if ticker, ok := g.widget.(loom.Ticker); ok {
+		return ticker.TickInterval()
+	}
+	return 0
+}
+func (g *themedGallery) Tick(now time.Time) {
+	if ticker, ok := g.widget.(loom.Ticker); ok {
+		ticker.Tick(now)
+	}
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

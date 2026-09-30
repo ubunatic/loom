@@ -328,6 +328,78 @@ func TestWidgetsPTYSizeAndF2ThemePropagation(t *testing.T) {
 	}
 }
 
+func TestRicherDemosPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build loom binary: %v\n%s", err, output)
+	}
+	checks := []struct {
+		name, visible string
+		animated      bool
+	}{
+		{"ProgressBar", "16/24 files", true}, {"Spinner", "Syncing workspace", true},
+		{"Stopwatch", "00:", true}, {"Timer", "04:", true}, {"NumberInput", "7.5", false},
+		{"TextInput", "Ada Lovelace", false}, {"Toggle", "Notifications", false},
+	}
+	for _, check := range checks {
+		t.Run(check.name, func(t *testing.T) {
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", check.name)
+			s.WaitFor(check.visible, 5*time.Second)
+			if check.name == "TextInput" {
+				s.WaitFor("Placeholder:", 5*time.Second)
+				s.WaitFor("Masked:", 5*time.Second)
+			}
+			before := strings.Join(s.Screen(), "\n")
+			if check.animated {
+				deadline := time.Now().Add(3 * time.Second)
+				for time.Now().Before(deadline) {
+					time.Sleep(30 * time.Millisecond)
+					if after := strings.Join(s.Screen(), "\n"); after != before {
+						return
+					}
+				}
+				t.Fatalf("%s did not render a changed frame over time:\n%s", check.name, before)
+			}
+		})
+	}
+	t.Run("NumberInputFixedWidth", func(t *testing.T) {
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
+		s.WaitFor("◂ 7.5 ▸", 5*time.Second)
+		before := strings.Join(s.Screen(), "\n")
+		start := strings.Index(before, "◂ 7.5 ▸")
+		if start < 0 {
+			t.Fatal("initial number input missing")
+		}
+		s.Send("\x1b[C")
+		s.WaitFor("◂ 8", 5*time.Second)
+		after := strings.Join(s.Screen(), "\n")
+		left, right := strings.Index(after, "◂ 8"), strings.Index(after, "▸")
+		if left < 0 || right < 0 || utf8.RuneCountInString(after[left:right]) != utf8.RuneCountInString("◂ 7.5 ") {
+			t.Fatalf("fixed-width NumberInput changed its footprint after stepping:\n%s", after)
+		}
+	})
+	t.Run("StopwatchControls", func(t *testing.T) {
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Stopwatch")
+		s.WaitFor("00:", 5*time.Second)
+		s.Send(" ")
+		paused := strings.Join(s.Screen(), "\n")
+		time.Sleep(1100 * time.Millisecond)
+		if strings.Join(s.Screen(), "\n") != paused {
+			t.Fatal("Space did not pause the stopwatch")
+		}
+		s.Send("r")
+		if !strings.Contains(strings.Join(s.Screen(), "\n"), "00:00") {
+			t.Fatal("R did not reset the stopwatch")
+		}
+		s.Send(" ")
+		time.Sleep(1100 * time.Millisecond)
+		if strings.Contains(strings.Join(s.Screen(), "\n"), "00:00") {
+			t.Fatal("Space did not restart the reset stopwatch")
+		}
+	})
+}
+
 func ptyColorMatches(got ptytest.Color, want loom.Color) bool {
 	gr, gg, gb, gok := got.RGB()
 	wr, wg, wb, wok := want.RGB()

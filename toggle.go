@@ -4,7 +4,10 @@
 package loom
 
 // Toggle presents and changes a boolean value.
-type Toggle struct{ Value *bool }
+type Toggle struct {
+	Value *bool
+	Label string
+}
 
 // NewToggle creates a toggle bound to value.
 func NewToggle(value *bool) *Toggle { return &Toggle{Value: value} }
@@ -23,7 +26,11 @@ func (t *Toggle) Draw(c *Canvas, r Rect) {
 	if t == nil {
 		return
 	}
-	c.Write(r.X, r.Y, t.String(), Style{})
+	text := t.String()
+	if t.Label != "" {
+		text += " " + t.Label
+	}
+	c.Write(r.X, r.Y, text, Style{})
 }
 
 // ConsumeKey toggles the value on Enter or Space.
