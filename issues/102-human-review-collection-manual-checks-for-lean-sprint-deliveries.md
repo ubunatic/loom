@@ -67,7 +67,7 @@ Whoever completes the last item closes this ticket.
 Decided 2026-09-30 (user: host makes all decisions): the host builds these after the main list, choosing look and behavior itself. Review afterwards; they do not block. Order and dependencies are in issues/180.
 - [ ] H1 155 Dialog — built (339f523); review with `loom widgets --show Dialog`. Host choices: centered by default (optional Rect), sized to content; Esc dismisses; Left/Right/Tab move the highlight, first button preselected; Enter calls OnSelect without quitting the app; Popup's sharp border, title and fill; selected button bold with ▶, others dim.
 - [ ] H2 170 Menu and MenuBar — built (2818936); review with `loom widgets --show MenuBar`. Host choices: one-row bar, bordered dropdown under the active title; `---` separators, right-aligned shortcut labels, check marks, dim disabled items, underlined mnemonics; F10 or Alt+mnemonic opens, Left/Right switch titles, Up/Down move, Enter/Space activate; first Esc closes the dropdown, second unfocuses; hover follows the mouse, clicking outside closes.
-- [ ] H3 193 Nested submenus — placement and hover (after 170)
+- [ ] H3 193 Nested submenus — built (7df9741); review with `loom widgets --show MenuBar`. Host choices: submenu opens beside its parent row, flips left at the right edge, clamped vertically; Right opens, Left/Esc close one level; hover opens instantly (no delay); `›` marks items with a submenu.
 - [ ] H4 175 DatePicker — layout, week start, time-of-day scope
 - [ ] H5 192 Chart widget — axis labels and glyphs
 - [ ] H6 112 Media controls — control layout (after 160)

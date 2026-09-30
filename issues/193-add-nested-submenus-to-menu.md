@@ -1,6 +1,6 @@
 # 193 — Add nested submenus to Menu
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
