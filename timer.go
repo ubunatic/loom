@@ -5,6 +5,7 @@ package loom
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 )
@@ -18,6 +19,8 @@ type DurationFormatter func(time.Duration) string
 // Timer displays a countdown. Start, Stop and Reset control its Pane-driven
 // updates; OnDone is called once when a running timer reaches zero.
 type Timer struct {
+	// Controls enables visible start/stop/reset buttons, Space to toggle, and R to reset.
+	Controls  bool
 	Duration  time.Duration
 	Formatter DurationFormatter
 	OnDone    func()
@@ -177,12 +180,68 @@ func (t *Timer) text() string {
 func (t *Timer) Draw(c *Canvas, r Rect) {
 	if r.W > 0 && r.H > 0 {
 		c.Write(r.X, r.Y, TruncateText(t.text(), r.W, ""), t.Style)
+		if t.Controls && r.H > 1 {
+			c.Write(r.X, r.Y+1, TruncateText(clockControlText(), r.W, ""), t.Style)
+		}
 	}
 }
-func (*Timer) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
-func (*Timer) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
-func (t *Timer) ContentWidth() int                 { return StringWidth(t.text()) }
-func (*Timer) ContentHeight() int                  { return 1 }
+func (t *Timer) ConsumeKey(e KeyEvent) EventResult {
+	if !t.Controls {
+		return Ignored()
+	}
+	if e.Is("space") || e.Text == " " {
+		if t.TickInterval() > 0 {
+			t.Stop()
+		} else {
+			t.Start()
+		}
+		return Handled()
+	}
+	if e.Is("r") || e.Text == "R" {
+		t.Reset()
+		return Handled()
+	}
+	return Ignored()
+}
+func (t *Timer) ConsumeMouse(e MouseEvent) EventResult {
+	if !t.Controls {
+		return Ignored()
+	}
+	return consumeClockMouse(e, t.Start, t.Stop, t.Reset)
+}
+func (t *Timer) ContentWidth() int {
+	if t.Controls {
+		return max(StringWidth(t.text()), StringWidth(clockControlText()))
+	}
+	return StringWidth(t.text())
+}
+func (t *Timer) ContentHeight() int {
+	if t.Controls {
+		return 2
+	}
+	return 1
+}
+
+func clockControlLabels() []string {
+	d := SpeccedDefaults.Clock
+	return []string{"[" + d.Start + "]", "[" + d.Stop + "]", "[" + d.Reset + "]"}
+}
+func clockControlText() string { return strings.Join(clockControlLabels(), " ") }
+func consumeClockMouse(e MouseEvent, start, stop, reset func()) EventResult {
+	if e.Action != MousePress || e.Button != MouseLeft || e.Y != 1 {
+		return Ignored()
+	}
+	x := 0
+	for i, label := range clockControlLabels() {
+		width := StringWidth(label)
+		if e.X >= x && e.X < x+width {
+			[]func(){start, stop, reset}[i]()
+			return Handled()
+		}
+		x += width + 1
+	}
+	return Ignored()
+}
 
 // Stopwatch displays elapsed time and can be paused and resumed.
 type Stopwatch struct {

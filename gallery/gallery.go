@@ -159,6 +159,7 @@ var demos = map[string]constructor{
 	},
 	"Timer": func() loom.Widget {
 		timer := loom.NewTimer(4*time.Minute + 12*time.Second)
+		timer.Controls = true
 		timer.Start()
 		return timer
 	},

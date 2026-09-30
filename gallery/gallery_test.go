@@ -165,6 +165,54 @@ func TestGalleryTextInputFocusPTY(t *testing.T) {
 	}
 }
 
+func TestGalleryTimerControlsPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Timer", "Choice")
+	s.WaitFor("04:", 5*time.Second)
+	s.WaitFor("04:10", 5*time.Second)
+	click := func(text string) {
+		t.Helper()
+		s.WaitFor(text, 5*time.Second)
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				x := utf8.RuneCountInString(line[:i])
+				s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+				return
+			}
+		}
+	}
+	click("[Stop]")
+	time.Sleep(200 * time.Millisecond)
+	stopped := strings.Join(s.Screen(), "\n")
+	time.Sleep(1200 * time.Millisecond)
+	if strings.Join(s.Screen(), "\n") != stopped {
+		t.Fatal("Stop button did not pause timer")
+	}
+	// Reset followed by a wait proves reset restores the duration and stops ticking.
+	click("[Reset]")
+	s.WaitFor("04:12", 5*time.Second)
+	time.Sleep(1200 * time.Millisecond)
+	if !strings.Contains(strings.Join(s.Screen(), "\n"), "04:12") {
+		t.Fatal("reset timer kept running")
+	}
+	click("[Start]")
+	s.WaitFor("04:10", 5*time.Second)
+	s.Send("r")
+	s.WaitFor("04:12", 5*time.Second)
+	s.Send(" ")
+	s.WaitFor("04:10", 5*time.Second)
+	s.Send(" ")
+	time.Sleep(200 * time.Millisecond)
+	paused := strings.Join(s.Screen(), "\n")
+	time.Sleep(1200 * time.Millisecond)
+	if strings.Join(s.Screen(), "\n") != paused {
+		t.Fatal("Space did not stop timer")
+	}
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

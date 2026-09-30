@@ -32,6 +32,11 @@ splash:
 spinner:
   tick_interval: 80ms
 
+clock:
+  start: "Start"
+  stop: "Stop"
+  reset: "Reset"
+
 progress_bar:
   width: 24
   done_pattern: ":"

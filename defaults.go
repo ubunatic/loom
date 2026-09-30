@@ -25,6 +25,14 @@ type LibDefaults struct {
 	Spinner          SpinnerDefaults     `yaml:"spinner"`
 	ProgressBar      ProgressBarDefaults `yaml:"progress_bar"`
 	Media            MediaDefaults       `yaml:"media"`
+	Clock            ClockDefaults       `yaml:"clock"`
+}
+
+// ClockDefaults defines the labels for timer and stopwatch controls.
+type ClockDefaults struct {
+	Start string `yaml:"start"`
+	Stop  string `yaml:"stop"`
+	Reset string `yaml:"reset"`
 }
 
 // MediaDefaults defines user-facing media status and rendering timing defaults.
