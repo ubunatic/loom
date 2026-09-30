@@ -1,6 +1,6 @@
 # 226 — Media widget scaling, zoom, cropping, and centering in bounded panels
 
-**Status**: Open
+**Status**: Closed — implemented media widget scaling, zoom, cropping, and centering in bounded panels
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Bug
