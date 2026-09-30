@@ -78,6 +78,92 @@ func NewCanvas(cols, rows int) *Canvas {
 	return &Canvas{cols: cols, rows: rows, cells: cells, claimed: claimed, ColorProfile: DetectColorProfile(), CursorX: -1, CursorY: -1}
 }
 
+// SubCanvas returns an independent canvas containing the requested region.
+// Its local origin (0, 0) corresponds to (r.X, r.Y) in c. Cells outside c's
+// bounds remain blank, and changes to the returned canvas do not affect c.
+func (c *Canvas) SubCanvas(r Rect) *Canvas {
+	sub := NewCanvas(r.W, r.H)
+	if c == nil || r.W <= 0 || r.H <= 0 {
+		return sub
+	}
+	sub.ColorProfile = c.ColorProfile
+	for sy := 0; sy < r.H && sy < sub.rows; sy++ {
+		py := r.Y + sy
+		if py < 0 || py >= c.rows {
+			continue
+		}
+		for sx := 0; sx < r.W && sx < sub.cols; sx++ {
+			px := r.X + sx
+			if px < 0 || px >= c.cols {
+				continue
+			}
+			cell := c.cells[py][px]
+			if cell.Continuation {
+				if sx == 0 || sub.cells[sy][sx-1].Continuation || StringWidth(sub.cells[sy][sx-1].Text) < 2 {
+					sub.cells[sy][sx] = blank
+					continue
+				}
+			}
+			if StringWidth(cell.Text) >= 2 && (sx+1 >= sub.cols || px+1 >= c.cols || !c.cells[py][px+1].Continuation) {
+				sub.cells[sy][sx] = blank
+				continue
+			}
+			sub.cells[sy][sx] = cell
+			sub.claimed[sy][sx] = c.claimed[py][px]
+		}
+	}
+	return sub
+}
+
+// Blit copies src into c with its top-left corner at (dstX, dstY). The copy is
+// clipped to c's bounds; wide glyphs are copied only when both cells fit.
+func (c *Canvas) Blit(src *Canvas, dstX, dstY int) {
+	if c == nil || src == nil {
+		return
+	}
+	for sy := 0; sy < src.rows; sy++ {
+		for sx := 0; sx < src.cols; sx++ {
+			cell := src.cells[sy][sx]
+			if cell.Continuation {
+				continue
+			}
+			dx, dy := dstX+sx, dstY+sy
+			width := StringWidth(cell.Text)
+			if width >= 2 {
+				if sx+1 >= src.cols || !src.cells[sy][sx+1].Continuation || dx < 0 || dx+1 >= c.cols || dy < 0 || dy >= c.rows {
+					continue
+				}
+				c.clearCellAt(dx, dy)
+				c.clearCellAt(dx+1, dy)
+				c.cells[dy][dx] = cell
+				c.cells[dy][dx+1] = src.cells[sy][sx+1]
+				c.claimed[dy][dx] = src.claimed[sy][sx]
+				c.claimed[dy][dx+1] = src.claimed[sy][sx+1]
+				continue
+			}
+			if dx < 0 || dx >= c.cols || dy < 0 || dy >= c.rows {
+				continue
+			}
+			c.clearCellAt(dx, dy)
+			c.cells[dy][dx] = cell
+			c.claimed[dy][dx] = src.claimed[sy][sx]
+		}
+	}
+}
+
+func (c *Canvas) clearCellAt(x, y int) {
+	if c.cells[y][x].Continuation && x > 0 {
+		c.cells[y][x-1] = blank
+		c.claimed[y][x-1] = false
+	}
+	if x+1 < c.cols && c.cells[y][x+1].Continuation {
+		c.cells[y][x+1] = blank
+		c.claimed[y][x+1] = false
+	}
+	c.cells[y][x] = blank
+	c.claimed[y][x] = false
+}
+
 // Cols returns the canvas width.
 func (c *Canvas) Cols() int { return c.cols }
 
