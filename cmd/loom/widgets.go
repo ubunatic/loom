@@ -212,7 +212,9 @@ func (g *themedGallery) Unwrap() loom.Widget { return g.widget }
 func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	theme := loom.Theme(g.themeName)
 	c.PaintSurface(r, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
-	g.widget.Draw(c, r)
+	content := r
+	content.H = max(0, r.H-1)
+	g.widget.Draw(c, content)
 	if r.H == 0 {
 		return
 	}

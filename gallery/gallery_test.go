@@ -213,6 +213,33 @@ func TestGalleryTimerControlsPTY(t *testing.T) {
 	}
 }
 
+func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	for _, name := range []string{"Choice", "FilePicker", "Media", "Table", "Tree"} {
+		t.Run(name, func(t *testing.T) {
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "-W", "100", "-H", "24", name)
+			s.WaitFor("Theme: plain", 5*time.Second)
+			s.Send("\x1bOQ")
+			themeName := nextGalleryTheme()
+			s.WaitFor("Theme: "+themeName, 5*time.Second)
+			for y, line := range s.Screen() {
+				if strings.Contains(line, "Theme: "+themeName) {
+					for x := 70; x < 100; x++ {
+						if !ptyColorMatches(s.Cell(x, y).Style.BG, loom.Theme(themeName).NormalBG.Color()) {
+							t.Fatalf("footer column %d inherited child background: %+v", x, s.Cell(x, y).Style)
+						}
+					}
+					return
+				}
+			}
+			t.Fatal("footer missing")
+		})
+	}
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {
