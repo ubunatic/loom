@@ -19,9 +19,9 @@ func TestScanMouseDrainsFlood(t *testing.T) {
 	}
 
 	want := []MouseEvent{
-		{Action: MouseHover, Button: MouseNone, X: 10, Y: 5},
-		{Action: MouseHover, Button: MouseNone, X: 11, Y: 6},
-		{Action: MouseHover, Button: MouseNone, X: 12, Y: 7},
+		{Action: MouseHover, Button: MouseNone, X: 10, Y: 5, RawX: 10, RawY: 5},
+		{Action: MouseHover, Button: MouseNone, X: 11, Y: 6, RawX: 11, RawY: 6},
+		{Action: MouseHover, Button: MouseNone, X: 12, Y: 7, RawX: 12, RawY: 7},
 	}
 	for i, w := range want {
 		ev, used, ok := scanMouse(raw)
