@@ -1,6 +1,6 @@
 # 112 — Add media controls: play/pause, zoom +/-, and panning for the Image/Media widget
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
