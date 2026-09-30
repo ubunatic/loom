@@ -1,6 +1,6 @@
 # 214 — MenuBar: second Alt-F/E/B press does not close the menu
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

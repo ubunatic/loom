@@ -1,6 +1,6 @@
 # 217 — ProgressBar demo: fill 0 to 100, fade, repeat
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Enhancement

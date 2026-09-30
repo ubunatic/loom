@@ -1,6 +1,6 @@
 # 213 — Dialog does not reopen when its gallery tab is selected again
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug

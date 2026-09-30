@@ -1,6 +1,6 @@
 # 222 — KeyHelp and Viewport ignore the theme background
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

@@ -1,6 +1,6 @@
 # 220 — Theme switch leaks selection colors into the app's last row
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug

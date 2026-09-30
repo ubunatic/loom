@@ -1,6 +1,6 @@
 # 218 — TextInput demo: only the first input is usable
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug

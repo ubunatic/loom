@@ -1,6 +1,6 @@
 # 215 — NumberInput demo: range -100.00 to +100.00, right aligned
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Enhancement

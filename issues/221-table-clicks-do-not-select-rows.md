@@ -1,6 +1,6 @@
 # 221 — Table: clicks do not select rows
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug

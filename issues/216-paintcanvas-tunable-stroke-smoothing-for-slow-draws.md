@@ -1,6 +1,6 @@
 # 216 — PaintCanvas: tunable stroke smoothing for slow draws
 
-**Status**: Open
+**Status**: Closed — fixed with tests, suite green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
