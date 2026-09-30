@@ -115,7 +115,7 @@ func (p *FilePicker) open(path, selectName string) error {
 				break
 			}
 		}
-	} else if len(entries) > 1 && entries[0].IsParent {
+	} else if p.options.Mode != FilePickerDirectories && len(entries) > 1 && entries[0].IsParent {
 		p.list.SelectIndex(1)
 	}
 	return nil
@@ -139,7 +139,7 @@ func (p *FilePicker) activate() {
 		return
 	}
 	if entry.Kind == FileKindDirectory {
-		if p.options.Mode == FilePickerDirectories && !entry.IsParent {
+		if p.options.Mode == FilePickerDirectories {
 			p.done = true
 			if p.options.OnSelect != nil {
 				p.options.OnSelect(entry.Path)
