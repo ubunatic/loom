@@ -64,6 +64,17 @@ widgets:
     source: filepicker.go
     docs: docs/Widgets.md §4
     ticket: issues/172
+  - name: loom.Form
+    package: loom
+    purpose: Arrange, validate, and submit a group of input widgets.
+    category: input
+    example: |-
+      name := loom.NewTextInput("")
+      form := loom.NewForm([]loom.FormField{{Label: "Name", Widget: name, Required: true}})
+      form.OnSubmit = func(values map[string]any) { fmt.Println(values["Name"]) }
+    source: form.go
+    docs: docs/Widgets.md §5
+    ticket: issues/169
   - name: loom.Frame
     package: loom
     purpose: Arrange boxes and route events to their child widgets.

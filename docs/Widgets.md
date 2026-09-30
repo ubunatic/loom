@@ -147,7 +147,24 @@ The pane draws its Choice inside the rectangle supplied by its host. `Choice.Han
 
 ---
 
-## 5. Startup & Splash Transition Runner (`Pane.RunStartup`)
+## 5. Forms (`loom.Form`)
+
+`Form` lays out existing input widgets with aligned labels, required markers,
+help text, keyboard focus traversal, a validation summary, and submit/cancel
+callbacks. Add `FormAction.OnActivate` for custom footer actions.
+
+```go
+name := loom.NewTextInput("")
+form := loom.NewForm([]loom.FormField{{Label: "Name", Widget: name, Required: true}})
+form.Actions = []loom.FormAction{{Label: "Save"}, {Label: "Cancel", Cancel: true}}
+form.OnSubmit = func(values map[string]any) { fmt.Println(values["Name"]) }
+```
+
+Tab/Down and Shift-Tab/Up move between fields and actions. Enter validates
+fields, focuses the first error, and submits valid values. Esc invokes
+`OnCancel`; validation messages render together above the fields.
+
+## 6. Startup & Splash Transition Runner (`Pane.RunStartup`)
 
 `RunStartup` orchestrates application startup loading screens, asynchronous task completion, final frame hold delays, and deterministic handover to the main application widget without ad-hoc `time.Sleep` loops:
 
@@ -165,7 +182,7 @@ err := pane.RunStartup(ctx, cfg)
 
 - **One-Shot Writer Previews (`loom.RenderTo`)**: Renders static widget snapshots directly to an `io.Writer` (e.g. for non-interactive CLI `--version` or `--help` banners).
 
-## 6. Primitives Added by the 2026-09 Lean Sprints
+## 7. Primitives Added by the 2026-09 Lean Sprints
 
 Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 
@@ -189,7 +206,7 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `loom.Tree` (`TreeNode`, `OnActivate`) | 168 | Navigate nested nodes with arrows or `hjkl`, expand/collapse branches, select rows with the mouse, and scroll long visible trees. |
 | `loom.Timer` and `loom.Stopwatch` (`Start`, `Stop`, `Reset`) | 187 | Countdown and elapsed time widgets tick once per displayed second. Inject `Now` for deterministic clocks, set `Formatter` for custom text, and use `Timer.OnDone` for one-shot completion. |
 
-## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
+## 8. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 
 Loom uses the small value struct `loom.EventResult` to cleanly distinguish whether an event was consumed from whether the application should terminate:
 

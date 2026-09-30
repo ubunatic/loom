@@ -35,6 +35,14 @@ var demos = map[string]constructor{
 		}
 		return picker
 	},
+	"Form": func() loom.Widget {
+		name := loom.NewTextInput("Ada Lovelace")
+		role := loom.NewTextInput("Engineer")
+		return loom.NewForm([]loom.FormField{
+			{Label: "Name", Widget: name, Required: true, Help: "Your display name"},
+			{Label: "Role", Widget: role},
+		})
+	},
 	"KeyHelp": func() loom.Widget {
 		keymap := loom.NewKeyMapWithLabels(map[string][]string{
 			"back": {"esc"},
