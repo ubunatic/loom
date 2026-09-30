@@ -204,3 +204,4 @@ upkeep.
 | 191 | [191-add-cell-cursor-and-frozen-header-columns-to-table.md](191-add-cell-cursor-and-frozen-header-columns-to-table.md) | Add cell cursor and frozen header columns to Table | Open |
 | 192 | [192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md](192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md) | Add an axes-based Chart widget for line and grouped bar series | Open |
 | 193 | [193-add-nested-submenus-to-menu.md](193-add-nested-submenus-to-menu.md) | Add nested submenus to Menu | Open |
+| 194 | [194-copy-selected-text-to-the-system-clipboard-via-osc-52.md](194-copy-selected-text-to-the-system-clipboard-via-osc-52.md) | Copy selected text to the system clipboard via OSC 52 | Open |

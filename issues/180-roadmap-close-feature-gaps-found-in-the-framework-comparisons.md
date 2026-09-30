@@ -50,7 +50,9 @@ Execution order, top to bottom. Every item is one ticket with a `/goal` and exit
 | 20 | 4 Composites | 191 | Table cell cursor and frozen columns | M | — |
 | 21 | 5 Media | 160 | Media playback controls M2 (fix PTY test) | S | — |
 
-### Human feedback (schedule when a reviewer is available)
+| 22 | 5 Extras | 194 | OSC 52 clipboard copy | S | 158 (optional) |
+
+### Human feedback (host decides look and behavior, builds after the main list; review later in 102)
 
 | # | Ticket | Title | Size | Depends on | What needs judging |
 |---|---|---|---|---|---|

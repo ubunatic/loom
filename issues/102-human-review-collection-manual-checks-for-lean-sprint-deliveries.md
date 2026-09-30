@@ -64,11 +64,11 @@ Whoever completes the last item closes this ticket.
 
 ## Roadmap 180 — human feedback queue (2026-09-30)
 
-Agents skip these; build and review them together in one session. Order and dependencies are in issues/180.
+Decided 2026-09-30 (user: host makes all decisions): the host builds these after the main list, choosing look and behavior itself. Review afterwards; they do not block. Order and dependencies are in issues/180.
 - [ ] H1 155 Dialog — button row and placement look
 - [ ] H2 170 Menu and MenuBar — interaction and look (after 155, 158)
 - [ ] H3 193 Nested submenus — placement and hover (after 170)
 - [ ] H4 175 DatePicker — layout, week start, time-of-day scope
 - [ ] H5 192 Chart widget — axis labels and glyphs
 - [ ] H6 112 Media controls — control layout (after 160)
-- [ ] Decide: system clipboard (OSC 52) — file a ticket or drop
+- [x] Clipboard decided: filed 194 (OSC 52 copy only), last in the main list
