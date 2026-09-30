@@ -31,6 +31,9 @@ func TestDemosMatchCatalogAndRender(t *testing.T) {
 	}
 	for _, name := range Names() {
 		qualified := "loom." + name
+		if name == "Media" {
+			qualified = "media.Widget"
+		}
 		if !listed[qualified] {
 			t.Errorf("gallery name %q is missing from spec/widgets.yaml", qualified)
 		}

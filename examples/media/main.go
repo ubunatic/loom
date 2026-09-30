@@ -30,12 +30,13 @@ type demo struct {
 
 func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{BG: loom.ColorRGB(17, 24, 32)})
-	title := "Media Demo  (q quits)"
-	c.Write(r.X+1, r.Y, title, loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
 	if r.H < 2 {
 		return
 	}
-	d.image.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
+	d.image.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: r.H - 1})
+	titleRect := loom.Rect{X: r.X, Y: r.Y, W: r.W, H: 1}
+	c.PaintSurface(titleRect, loom.Style{BG: loom.ColorRGB(17, 24, 32)})
+	c.Write(r.X+1, r.Y, "Media Demo  (q quits)", loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
 	status := fmt.Sprintf("Cols: %d  Rows: %d  Mode: %s  Media: %s", c.Cols(), c.Rows(), d.mode, d.path)
 	if d.message != "" {
 		status = d.message
@@ -65,12 +66,6 @@ func (d *demo) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 }
 func (d *demo) HandleMouse(loom.MouseEvent) bool { return false }
 func (d *demo) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
-	// demo reserves its first row for the title, so translate into the embedded
-	// media child's local rectangle before forwarding the event.
-	e.Y--
-	if e.Y < 0 {
-		return false, false
-	}
 	return d.image.ConsumeMouse(e)
 }
 

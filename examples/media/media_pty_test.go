@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"image/png"
@@ -180,9 +181,22 @@ func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
 	s.WaitFor("Cols: 80", 5*time.Second)
 	s.Send("+")
 	s.WaitFor("1.25x", 3*time.Second)
-	// The widget occupies the terminal width; the [+] control is at child-local x=11.
-	s.SendRaw([]byte("\x1b[<0;13;22M"))
-	s.SendRaw([]byte("\x1b[<0;13;22m"))
+	// Locate the visible control in terminal coordinates; the pane may start
+	// below the shell cursor, so its screen row is not a fixed constant.
+	controlRow, controlCol := -1, -1
+	for row, line := range s.Screen() {
+		if col := strings.Index(line, "[+]"); col >= 0 {
+			controlRow, controlCol = row, col
+			break
+		}
+	}
+	if controlRow < 0 {
+		t.Fatal("zoom-in control is not visible")
+	}
+	press := fmt.Sprintf("\x1b[<0;%d;%dM", controlCol+2, controlRow+1)
+	release := fmt.Sprintf("\x1b[<0;%d;%dm", controlCol+2, controlRow+1)
+	s.SendRaw([]byte(press))
+	s.SendRaw([]byte(release))
 	s.WaitFor("1.56x", 3*time.Second)
 	s.Send("q")
 	if err := s.Wait(3 * time.Second); err != nil {
