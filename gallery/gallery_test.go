@@ -240,6 +240,42 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 	}
 }
 
+func TestGalleryDialogReselectionPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Dialog", "ProgressBar")
+	clickTab := func(text string) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				x := utf8.RuneCountInString(line[:i])
+				s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+				return
+			}
+		}
+		t.Fatalf("tab %q missing", text)
+	}
+	for _, away := range []bool{true, false} {
+		s.WaitFor("Save changes", 5*time.Second)
+		s.Send("\r")
+		deadline := time.Now().Add(5 * time.Second)
+		for strings.Contains(strings.Join(s.Screen(), "\n"), "Save changes") && time.Now().Before(deadline) {
+			time.Sleep(10 * time.Millisecond)
+		}
+		if strings.Contains(strings.Join(s.Screen(), "\n"), "Save changes") {
+			t.Fatal("dialog did not close")
+		}
+		if away {
+			clickTab("ProgressBar")
+			s.WaitFor("16/24 files", 5*time.Second)
+		}
+		clickTab("Dialog")
+		s.WaitFor("Save changes", 5*time.Second)
+	}
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

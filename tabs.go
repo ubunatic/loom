@@ -233,6 +233,9 @@ func (t *Tabs) Select(index int) bool {
 	old := t.active()
 	t.focus = index
 	t.updateChildFocus(old, t.active())
+	if child, ok := UnwrapWidget(t.active()).(WidgetActivator); ok {
+		child.Activate()
+	}
 	return true
 }
 

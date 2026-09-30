@@ -35,6 +35,9 @@ func NewDialog(title, body string, buttons ...string) *Dialog {
 	return &Dialog{Title: title, Body: body, Buttons: buttons, Open: true}
 }
 
+// Activate reopens the dialog when its hosting tab is selected.
+func (d *Dialog) Activate() { d.Open = true }
+
 // SelectedButton reports the highlighted button label, or an empty string.
 func (d *Dialog) SelectedButton() string {
 	if len(d.Buttons) == 0 {

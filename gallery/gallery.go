@@ -285,6 +285,8 @@ func (w *popupDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 
 type dialogDemo struct{ dialog *loom.Dialog }
 
+func (w *dialogDemo) Unwrap() loom.Widget { return w.dialog }
+
 func (w *dialogDemo) ApplyTheme(theme loom.ThemeColors) { w.dialog.ApplyTheme(theme) }
 
 func (w *dialogDemo) Draw(c *loom.Canvas, r loom.Rect) { w.dialog.Draw(c, r) }

@@ -34,6 +34,12 @@ type WidgetUnwrapper interface {
 	Unwrap() Widget
 }
 
+// WidgetActivator is an optional lifecycle hook called on tab selection,
+// including selection of the already active tab.
+type WidgetActivator interface {
+	Activate()
+}
+
 // UnwrapWidget returns the innermost widget in a chain of wrappers.
 func UnwrapWidget(widget Widget) Widget {
 	for widget != nil {
