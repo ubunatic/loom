@@ -18,3 +18,6 @@ Investigate first (Canary): which terminal mouse modes (1002 button-event, 1003 
 PTY test: press on a scrollbar, drag with x beyond the app width, the scroll keeps following.
 
 /goal Drags continue outside the app where the terminal reports them, or document why not; or stop and report when blocked on a user decision.
+
+## 4. Result (2026-09-30)
+Frame kept dropping out-of-pane drag/release reports; it now keeps routing them to the pressed child (67a493d), proven by a PTY test with injected out-of-range SGR reports. Not verified in a real terminal (no live pointer in the agent PTY): check with `loom widgets --show FilePicker`, dragging the scrollbar out to the right, and `loom info --watch` to see what the terminal reports.
