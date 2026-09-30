@@ -400,6 +400,29 @@ func TestPaneRunDispatchesBracketedPaste(t *testing.T) {
 	}
 }
 
+func TestPaneFlushesOversizedUnterminatedPaste(t *testing.T) {
+	master, slave := openPTY(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
+	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1)}
+	errC := make(chan error, 1)
+	go func() { errC <- p.Run(w) }()
+	payload := strings.Repeat("x", maxPendingPasteSize+1)
+	if _, err := master.Write([]byte("\x1b[200~" + payload)); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-w.pasted:
+		if len(got.Text) != len(payload) {
+			t.Fatalf("flushed paste length = %d, want %d", len(got.Text), len(payload))
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for oversized paste flush")
+	}
+	if err := <-errC; err != nil {
+		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
 func TestPaneProbesZWJAfterEnteringAltScreen(t *testing.T) {
 	t.Setenv("LOOM_ZWJ", "")
 	master, slave := openPTYForProbe(t)

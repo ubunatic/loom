@@ -127,6 +127,8 @@ type Pane struct {
 	help           *Popup
 }
 
+const maxPendingPasteSize = 1 << 20
+
 // ResetTicker postpones the next ticker update by its current interval. It is
 // safe to call from widget callbacks, including callbacks on another goroutine.
 func (p *Pane) ResetTicker() {
@@ -1183,7 +1185,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			dirty = true
 			raw := rr.data
 			if len(pending) > 0 {
-				raw = append(pending, raw...)
+				pending = append(pending, raw...)
+				raw = pending
 			}
 			pending = nil
 			pendingC = nil
@@ -1240,8 +1243,19 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				if strings.HasPrefix(string(raw), pasteStart) {
 					paste, used, complete := DecodePaste(raw)
 					if !complete {
-						pending = append([]byte(nil), raw...)
+						if len(raw) > maxPendingPasteSize {
+							paste = PasteEvent{Text: string(raw[len(pasteStart):])}
+							p.triggerCursorPulse(time.Now())
+							if DispatchPasteEvent(root, paste).Quit {
+								quit = true
+							}
+							pending = nil
+							pendingC = nil
+							break
+						}
+						pending = raw
 						pendingC = nil
+						dirty = false
 						break
 					}
 					raw = raw[used:]
