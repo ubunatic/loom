@@ -344,6 +344,27 @@ func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
 	waitAbsent("Keyboard shortcuts")
 }
 
+func TestGalleryPaintCanvasTunePTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "PaintCanvas", "Choice")
+	s.WaitFor("Smoothing: 0", 5*time.Second)
+	for y, line := range s.Screen() {
+		if i := strings.Index(line, "[Tune]"); i >= 0 {
+			x := utf8.RuneCountInString(line[:i])
+			s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+			break
+		}
+	}
+	s.WaitFor("Smoothing: 1", 5*time.Second)
+	s.Send("t")
+	s.WaitFor("Smoothing: 2", 5*time.Second)
+	s.Send("t")
+	s.WaitFor("Smoothing: 0", 5*time.Second)
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

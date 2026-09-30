@@ -37,6 +37,11 @@ clock:
   stop: "Stop"
   reset: "Reset"
 
+paint_canvas:
+  tune_label: "Tune"
+  smoothing_label: "Smoothing"
+  smoothing_levels: [0, 1, 2]
+
 progress_bar:
   width: 24
   done_pattern: ":"

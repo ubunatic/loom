@@ -198,10 +198,10 @@ widgets:
     ticket: issues/188
   - name: loom.PaintCanvas
     package: loom
-    purpose: Paint braille dot lines with mouse strokes and clear the drawing from the keyboard.
+    purpose: Paint braille strokes with optional smoothing, tune controls, and keyboard clearing.
     category: input
     example: |-
-      canvas := &loom.PaintCanvas{}
+      canvas := &loom.PaintCanvas{Smoothing: 2, Controls: true}
       frame := &loom.Frame{Boxes: []loom.Box{{Child: canvas}}}
       _ = frame
     source: paintcanvas.go

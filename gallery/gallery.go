@@ -123,7 +123,7 @@ var demos = map[string]constructor{
 		return paginator
 	},
 	"PaintCanvas": func() loom.Widget {
-		canvas := &loom.PaintCanvas{}
+		canvas := &loom.PaintCanvas{Controls: true}
 		canvas.Draw(loom.NewCanvas(32, 8), loom.Rect{W: 32, H: 8})
 		canvas.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 2})
 		canvas.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 25, Y: 5})

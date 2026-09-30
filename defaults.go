@@ -26,6 +26,14 @@ type LibDefaults struct {
 	ProgressBar      ProgressBarDefaults `yaml:"progress_bar"`
 	Media            MediaDefaults       `yaml:"media"`
 	Clock            ClockDefaults       `yaml:"clock"`
+	PaintCanvas      PaintCanvasDefaults `yaml:"paint_canvas"`
+}
+
+// PaintCanvasDefaults defines stroke tuning controls.
+type PaintCanvasDefaults struct {
+	TuneLabel       string `yaml:"tune_label"`
+	SmoothingLabel  string `yaml:"smoothing_label"`
+	SmoothingLevels []int  `yaml:"smoothing_levels"`
 }
 
 // ClockDefaults defines the labels for timer and stopwatch controls.
