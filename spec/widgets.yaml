@@ -29,6 +29,18 @@ widgets:
       frame := &loom.Frame{Boxes: []loom.Box{*box}}
       _ = frame
     source: frame.go
+  - name: loom.Chart
+    package: loom
+    purpose: Plot numeric series with labeled axes as lines or grouped bars.
+    category: display
+    example: |-
+      chart := &loom.Chart{Series: []loom.ChartSeries{
+          {Name: "CPU", Values: []float64{20, 35, 28, 52}},
+      }}
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: chart}}}
+    source: chart.go
+    docs: docs/Widgets.md §3
+    ticket: issues/192
   - name: loom.Choice
     package: loom
     purpose: Filter and select one item from a list.

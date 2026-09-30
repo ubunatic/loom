@@ -16,6 +16,12 @@ import (
 type constructor func() loom.Widget
 
 var demos = map[string]constructor{
+	"Chart": func() loom.Widget {
+		return &loom.Chart{Series: []loom.ChartSeries{
+			{Name: "Requests", Values: []float64{12, 18, 14, 26, 22, 31, 27}},
+			{Name: "Errors", Values: []float64{2, 4, 3, 6, 5, 8, 4}},
+		}}
+	},
 	"DatePicker": func() loom.Widget {
 		selected := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
 		picker := loom.NewDatePicker(&selected)

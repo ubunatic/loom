@@ -95,6 +95,17 @@ sparkline := &loom.Sparkline{
 }
 ```
 
+### Axes Chart (`loom.Chart`)
+`Chart` plots ordered numeric samples as braille line series or grouped block bars. It scales automatically to the data, or uses `Min`, `Max`, and `RangeSet` for a fixed vertical range. The Y axis uses five evenly spaced numeric labels, X ticks mark sample positions, and a legend appears only when there are multiple series.
+
+```go
+chart := &loom.Chart{Series: []loom.ChartSeries{
+    {Name: "Requests", Values: []float64{12, 18, 14, 26}},
+    {Name: "Errors", Values: []float64{2, 4, 3, 6}},
+}}
+chart.Mode = loom.ChartGroupedBar // default is ChartLine
+```
+
 ---
 
 ## 4. Filesystem & OS Primitives (`loom.Directory` and `OpenFile`)
