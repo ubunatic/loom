@@ -10,6 +10,8 @@ Adhere to the following conventions.
 
 Run from project root.
 Mouse events reaching widgets are 0-based and child-local; never subtract 1 again (see docs/Widgets.md).
+Developer agents get the standard prompt in `.harnez/prompts/developer.md`.
+A developer's "fixed but not rerun" counts as untested; the host reruns `make test-q1` before closing the ticket.
 
 <!-- harnez:begin Language Conventions -->
 Adhere to the following conventions.
