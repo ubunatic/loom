@@ -34,6 +34,12 @@ var demos = map[string]constructor{
 			loom.ProviderPill{Name: "Cache", Symbol: "✓", State: loom.ProviderDone},
 		)
 	},
+	"NumberInput": func() loom.Widget {
+		value := 7.5
+		input := loom.NewNumberInput(&value, 0, 10)
+		input.Step = .5
+		return input
+	},
 	"Popup": func() loom.Widget {
 		popup := loom.NewPopup("Gallery popup", loom.NewView([]string{"This overlay is a live widget.", "Press Esc to close it."}))
 		popup.Width, popup.Height = 48, 7
@@ -65,6 +71,10 @@ var demos = map[string]constructor{
 		input.Prompt = "Name: "
 		input.Mask = '•'
 		return &textInputWidget{input: input}
+	},
+	"Toggle": func() loom.Widget {
+		value := true
+		return loom.NewToggle(&value)
 	},
 }
 

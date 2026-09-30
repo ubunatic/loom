@@ -282,6 +282,24 @@ videoWidget, err := media.NewVideo("preview.mp4", media.ModeHalfblock, 24)
 
 ## 13. Library Widget Catalog
 
+### Standalone Form Controls
+
+`NumberInput` and `Toggle` can be used outside a `Settings` list. Both bind to
+the caller's value through a pointer:
+
+```go
+size := 5.0
+number := loom.NewNumberInput(&size, 0, 10)
+number.Step = 0.5
+
+enabled := false
+toggle := loom.NewToggle(&enabled)
+```
+
+`NumberInput` steps with Left/Right and edits with Enter; Enter commits a valid
+value and Esc cancels. `Toggle` changes on Enter or Space. `Settings` uses the
+same control implementations for its boolean and bounded-number rows.
+
 Run `loom widgets` for the complete library widget catalog, short examples,
 categories, and source references. Use `loom widgets <name>` to show one entry.
 The catalog is maintained in `spec/widgets.yaml`; its completeness test checks
@@ -292,7 +310,6 @@ which draw with a focus flag and are hosted by a parent widget.
 
 Check the catalog before telling a consumer an input widget is missing:
 `Settings` also offers toggle (`KindBool`), text (`KindString`), choice
-(`KindChoice`), and bounded-number (`KindNumber`) rows; standalone versions
-are issue 174. The file browser `NavigationPane` lives in
+(`KindChoice`), and bounded-number (`KindNumber`) rows. The file browser `NavigationPane` lives in
 `examples/filebrowser` and is not catalogued until a library `FilePicker`
 exists (issue 172). Forms, dates, and menus are issues 169, 175, and 170.
