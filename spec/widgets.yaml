@@ -49,6 +49,17 @@ widgets:
           deleteItem()
       }
     source: confirm.go
+  - name: loom.DatePicker
+    package: loom
+    purpose: Navigate and select a bounded date from a month calendar or ISO date input.
+    category: input
+    example: |-
+      selected := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
+      picker := loom.NewDatePicker(&selected)
+      picker.Min = time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
+    source: datepicker.go
+    docs: docs/Widgets.md §13
+    ticket: issues/175
   - name: loom.Dialog
     package: loom
     purpose: Show a centered or positioned modal with body text and selectable buttons.

@@ -335,6 +335,25 @@ videoWidget, err := media.NewVideo("preview.mp4", media.ModeHalfblock, 24)
 
 ## 13. Library Widget Catalog
 
+### Date Picker (`loom.DatePicker`)
+
+`DatePicker` binds a date-only `*time.Time`, with optional inclusive `Min` and
+`Max` bounds. Its month grid starts on Monday by default; set `WeekStart` to a
+different `time.Weekday` to change the first column. Left/Right moves one day,
+Up/Down moves one week, PgUp/PgDn moves one month, and Ctrl+Left/Ctrl+Right
+moves one year. Enter selects the cursor date. Type `YYYY-MM-DD` and press
+Enter to select a date directly. The current day is bold with `*`; the selected
+day is marked with `>`, and the cursor is underlined. The injected `Now`
+function controls the current-day marker; `NewDatePickerWithClock` also makes an
+empty bound value initialize deterministically.
+
+```go
+selected := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
+picker := loom.NewDatePicker(&selected)
+picker.Min = time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
+picker.OnSelect = func(date time.Time) { fmt.Println(date.Format("2006-01-02")) }
+```
+
 ### Standalone Form Controls
 
 `NumberInput` and `Toggle` can be used outside a `Settings` list. Both bind to

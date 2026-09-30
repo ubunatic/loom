@@ -16,6 +16,12 @@ import (
 type constructor func() loom.Widget
 
 var demos = map[string]constructor{
+	"DatePicker": func() loom.Widget {
+		selected := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
+		picker := loom.NewDatePicker(&selected)
+		picker.Now = func() time.Time { return time.Date(2024, time.January, 20, 0, 0, 0, 0, time.UTC) }
+		return picker
+	},
 	"Choice": func() loom.Widget {
 		choice := loom.NewChoice([]loom.Item{
 			{Name: "filebrowser-widget", Desc: "Browser widget implementation"},
