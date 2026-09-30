@@ -145,6 +145,15 @@ widgets:
       )
       help := loom.NewKeyHelp(keys)
     source: keyhelp.go
+  - name: loom.Media
+    package: media
+    purpose: Display and interact with still images and video frames.
+    category: display
+    example: |-
+      widget, _ := media.LoadImage("photo.png", media.ModeHalfblock)
+      widget.ConsumeKey(loom.KeyEvent{Text: " "})
+    source: media/widget.go
+    ticket: issues/112
   - name: loom.Menu
     package: loom
     purpose: Display and navigate a one-level dropdown menu.

@@ -18,8 +18,9 @@ import (
 
 type widgetCatalogDocument struct {
 	Widgets []struct {
-		Name string `yaml:"name"`
-		Docs string `yaml:"docs"`
+		Name    string `yaml:"name"`
+		Package string `yaml:"package"`
+		Docs    string `yaml:"docs"`
 	} `yaml:"widgets"`
 	Exclusions []struct {
 		Name string `yaml:"name"`
@@ -36,6 +37,7 @@ func TestWidgetCatalogMatchesExportedWidgets(t *testing.T) {
 		t.Fatal(err)
 	}
 	listed := make(map[string]bool, len(catalog.Widgets))
+	rootCatalog := make(map[string]bool, len(catalog.Widgets))
 	for i, entry := range catalog.Widgets {
 		if listed[entry.Name] {
 			t.Errorf("widget catalog repeats %q", entry.Name)
@@ -47,6 +49,9 @@ func TestWidgetCatalogMatchesExportedWidgets(t *testing.T) {
 			t.Errorf("widget %q points docs to section 13 (the catalog section)", entry.Name)
 		}
 		listed[entry.Name] = true
+		if entry.Package == "" || entry.Package == "loom" {
+			rootCatalog[entry.Name] = true
+		}
 	}
 	// Named exclusions must still exist, so a stale entry cannot hide a rename.
 	for _, exclusion := range catalog.Exclusions {
@@ -60,11 +65,11 @@ func TestWidgetCatalogMatchesExportedWidgets(t *testing.T) {
 	}
 	found := exportedWidgetTypes(t)
 	for name := range found {
-		if !listed[name] {
+		if !rootCatalog[name] {
 			t.Errorf("exported Widget implementation %q is missing from spec/widgets.yaml", name)
 		}
 	}
-	for name := range listed {
+	for name := range rootCatalog {
 		if !found[name] {
 			t.Errorf("widget catalog entry %q does not name an exported Widget implementation", name)
 		}

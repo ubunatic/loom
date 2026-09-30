@@ -6,11 +6,14 @@ package gallery
 
 import (
 	"fmt"
+	"image"
+	"image/color"
 	"sort"
 	"strings"
 	"time"
 
 	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/media"
 )
 
 type constructor func() loom.Widget
@@ -86,6 +89,19 @@ var demos = map[string]constructor{
 		)
 		bar.Open = true
 		return bar
+	},
+	"Media": func() loom.Widget {
+		img := image.NewRGBA(image.Rect(0, 0, 64, 32))
+		for y := 0; y < 32; y++ {
+			for x := 0; x < 64; x++ {
+				img.Set(x, y, color.RGBA{R: uint8(x * 4), G: uint8(y * 7), B: 180, A: 255})
+			}
+		}
+		widget, err := media.NewImage(img, media.ModeHalfblock)
+		if err != nil {
+			return loom.NewView([]string{"Media demo unavailable", err.Error()})
+		}
+		return widget
 	},
 	"PillCluster": func() loom.Widget {
 		return loom.NewPillCluster(

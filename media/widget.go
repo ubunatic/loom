@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"image/draw"
 	"math"
 	"reflect"
 	"sync"
@@ -47,6 +48,20 @@ type Widget struct {
 	poster     image.Image
 	stop       func()
 	playing    bool
+	zoom       float64
+	panX       float64
+	panY       float64
+	lastRect   loom.Rect
+	dragX      int
+	dragY      int
+	dragging   bool
+	controls   loom.Rect
+	playButton loom.Rect
+	zoomOut    loom.Rect
+	zoomIn     loom.Rect
+	keys       *loom.KeyMap
+	progress   *loom.ProgressBar
+	help       *loom.KeyHelp
 	renderer   func(image.Image, Mode, int, int) (*core.Grid, error)
 	cache      renderCache
 }
@@ -86,7 +101,13 @@ func NewImage(src image.Image, mode Mode) (*Widget, error) {
 	default:
 		return nil, fmt.Errorf("media: unsupported render mode %q", mode)
 	}
-	return &Widget{image: src, mode: mode, theme: loom.Theme("plain")}, nil
+	keys := loom.NewKeyMapWithLabels(map[string][]string{
+		"play": {"space", " "}, "zoom_in": {"+", "="}, "zoom_out": {"-", "_"}, "pan": {"←/→/↑/↓", "left", "right", "up", "down"}, "reset": {"0"},
+	}, map[string]string{"play": "Play/Pause", "zoom_in": "Zoom in", "zoom_out": "Zoom out", "pan": "Pan", "reset": "Reset"})
+	bar := loom.NewProgressBar()
+	bar.Options.Width = 8
+	bar.Indeterminate = true
+	return &Widget{image: src, mode: mode, theme: loom.Theme("plain"), zoom: 1, keys: keys, progress: bar, help: loom.NewKeyHelp(keys)}, nil
 }
 
 // NewImageWithTheme creates a still-image widget using the supplied theme.
@@ -217,45 +238,140 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	w.mu.RLock()
 	img := w.image
 	theme := w.theme
+	zoom, panX, panY := w.zoom, w.panX, w.panY
+	playing := w.playing
 	w.mu.RUnlock()
-	if img == nil {
+	w.mu.Lock()
+	w.lastRect = r
+	w.playButton, w.zoomOut, w.zoomIn = loom.Rect{}, loom.Rect{}, loom.Rect{}
+	controlH := 0
+	if r.H >= 3 {
+		controlH = 2
+	} else if r.H == 2 {
+		controlH = 1
+	}
+	imageRect := r
+	imageRect.H = max(0, r.H-controlH)
+	w.controls = loom.Rect{X: 0, Y: r.H - controlH, W: r.W, H: controlH}
+	if r.W >= 9 && controlH > 0 {
+		w.playButton = loom.Rect{X: 0, Y: r.H - 1, W: 6, H: 1}
+	}
+	if r.W >= 17 && controlH > 0 {
+		w.zoomOut = loom.Rect{X: 7, Y: r.H - 1, W: 3, H: 1}
+		w.zoomIn = loom.Rect{X: 11, Y: r.H - 1, W: 3, H: 1}
+	}
+	w.mu.Unlock()
+	if img == nil || imageRect.W <= 0 || imageRect.H <= 0 {
+		w.drawControls(c, playing, zoom)
 		return
 	}
-	for y := 0; y < r.H; y++ {
-		for x := 0; x < r.W; x++ {
+	img = cropForView(img, imageRect.W, imageRect.H, zoom, panX, panY)
+	for y := 0; y < imageRect.H; y++ {
+		for x := 0; x < imageRect.W; x++ {
 			c.Set(r.X+x, r.Y+y, loom.Cell{Text: " ", Style: loom.Reset})
 		}
 	}
-	grid, err, loading := w.renderWithThreshold(img, r.W, r.H)
+	grid, err, loading := w.renderWithThreshold(img, imageRect.W, imageRect.H)
 	if loading {
 		label := loom.SpeccedDefaults.Media.LoadingLabel
-		if loom.StringWidth(label) > r.W {
-			label = loom.TruncateText(label, r.W, "")
+		if loom.StringWidth(label) > imageRect.W {
+			label = loom.TruncateText(label, imageRect.W, "")
 		}
 		c.Write(r.X, r.Y, label, loom.Style{FG: theme.MediaLoadingFG.Color(), Dim: theme.MediaLoadingDim})
+		w.drawControls(c, playing, zoom)
 		return
 	}
 	if err != nil {
 		message := loom.SpeccedDefaults.Media.RenderErrorLabel
-		if loom.StringWidth(message) > r.W {
-			message = loom.TruncateText(message, r.W, "")
+		if loom.StringWidth(message) > imageRect.W {
+			message = loom.TruncateText(message, imageRect.W, "")
 		}
 		c.Write(r.X, r.Y, message, loom.Style{FG: theme.MediaErrorFG.Color()})
+		w.drawControls(c, playing, zoom)
 		return
 	}
 	if grid == nil {
 		return
 	}
-	offsetX := (r.W - grid.Width) / 2
-	offsetY := (r.H - grid.Height) / 2
+	offsetX := (imageRect.W - grid.Width) / 2
+	offsetY := (imageRect.H - grid.Height) / 2
 	for y, row := range grid.Cells {
 		for x, cell := range row {
 			dstX, dstY := r.X+offsetX+x, r.Y+offsetY+y
-			if dstX < r.X || dstX >= r.X+r.W || dstY < r.Y || dstY >= r.Y+r.H {
+			if dstX < r.X || dstX >= r.X+imageRect.W || dstY < r.Y || dstY >= r.Y+imageRect.H {
 				continue
 			}
 			c.Set(dstX, dstY, canvasCell(cell))
 		}
+	}
+	w.drawControls(c, playing, zoom)
+}
+
+func cropForView(src image.Image, cols, rows int, zoom, panX, panY float64) image.Image {
+	if src == nil || zoom <= 1 || cols <= 0 || rows <= 0 {
+		return src
+	}
+	b := src.Bounds()
+	sw, sh := b.Dx(), b.Dy()
+	// Terminal cells are approximately twice as tall as they are wide.
+	wantAspect := float64(cols) / float64(rows*2)
+	cw, ch := float64(sw)/zoom, float64(sh)/zoom
+	if cw/ch > wantAspect {
+		cw = ch * wantAspect
+	} else {
+		ch = cw / wantAspect
+	}
+	maxX, maxY := float64(sw)-cw, float64(sh)-ch
+	x0, y0 := float64(b.Min.X)+panX*maxX, float64(b.Min.Y)+panY*maxY
+	box := image.Rect(int(x0), int(y0), int(x0+cw), int(y0+ch)).Intersect(b)
+	if box.Empty() {
+		return src
+	}
+	out := image.NewRGBA(image.Rect(0, 0, box.Dx(), box.Dy()))
+	draw.Draw(out, out.Bounds(), src, box.Min, draw.Src)
+	return out
+}
+
+func (w *Widget) drawControls(c *loom.Canvas, playing bool, zoom float64) {
+	w.mu.RLock()
+	controls, play, minus, plus := w.controls, w.playButton, w.zoomOut, w.zoomIn
+	base := w.lastRect
+	w.mu.RUnlock()
+	if controls.H <= 0 {
+		return
+	}
+	style := loom.Style{FG: loom.ColorRGB(235, 235, 235), BG: loom.ColorRGB(38, 48, 60)}
+	controls.X += base.X
+	controls.Y += base.Y
+	c.PaintSurface(controls, style)
+	if controls.H > 1 {
+		w.help.Draw(c, loom.Rect{X: controls.X, Y: controls.Y, W: controls.W, H: 1})
+	}
+	play.X += base.X
+	play.Y += base.Y
+	minus.X += base.X
+	minus.Y += base.Y
+	plus.X += base.X
+	plus.Y += base.Y
+	if play.W > 0 {
+		label := "▶ Play"
+		if playing {
+			label = "❚❚ Pause"
+		}
+		c.Write(play.X, play.Y, label, style)
+	}
+	if minus.W > 0 {
+		c.Write(minus.X, minus.Y, "[-]", style)
+		c.Write(plus.X, plus.Y, "[+]", style)
+	}
+	label := fmt.Sprintf("%.2fx", zoom)
+	x := controls.X + 14
+	if controls.W >= 24 {
+		c.Write(x, controls.Y+controls.H-1, label, style)
+		x += len(label) + 1
+	}
+	if w.progress != nil && playing && controls.H > 1 && x < controls.X+controls.W {
+		w.progress.Draw(c, loom.Rect{X: x, Y: controls.Y + controls.H - 1, W: min(8, controls.X+controls.W-x), H: 1})
 	}
 }
 
@@ -407,11 +523,15 @@ func (w *Widget) Play() {
 		return
 	}
 	w.mu.RLock()
-	if w.playing || w.closed || w.path == "" {
+	if w.playing || w.closed {
 		w.mu.RUnlock()
 		return
 	}
 	paused := w.frames != nil
+	if !paused && w.path == "" {
+		w.mu.RUnlock()
+		return
+	}
 	w.mu.RUnlock()
 	if paused {
 		w.mu.Lock()
@@ -513,8 +633,122 @@ func canvasCell(cell core.Cell) loom.Cell {
 	return loom.Cell{Text: text, Style: style}
 }
 
-// HandleKey reports that this widget does not consume keys.
+// HandleKey preserves the legacy quit-only widget contract.
 func (*Widget) HandleKey(loom.KeyEvent) bool { return false }
 
-// HandleMouse reports that this widget does not consume mouse events.
+// ConsumeKey applies media keyboard controls and reports consumption separately from quit.
+func (w *Widget) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
+	if w == nil {
+		return false, false
+	}
+	switch w.keys.Action(e) {
+	case "play":
+		if w.IsPlaying() {
+			w.Pause()
+		} else {
+			w.Play()
+		}
+	case "zoom_in":
+		w.setZoom(1.25)
+	case "zoom_out":
+		w.setZoom(1 / 1.25)
+	case "pan":
+		switch e.Name() {
+		case "left":
+			w.pan(-.12, 0)
+		case "right":
+			w.pan(.12, 0)
+		case "up":
+			w.pan(0, -.12)
+		case "down":
+			w.pan(0, .12)
+		default:
+			return false, false
+		}
+	case "reset":
+		w.mu.Lock()
+		w.zoom, w.panX, w.panY = 1, 0, 0
+		w.mu.Unlock()
+	default:
+		return false, false
+	}
+	return false, true
+}
+
+func (w *Widget) setZoom(factor float64) {
+	w.mu.Lock()
+	w.zoom = math.Max(1, math.Min(8, w.zoom*factor))
+	if w.zoom == 1 {
+		w.panX, w.panY = 0, 0
+	}
+	w.mu.Unlock()
+}
+func (w *Widget) pan(dx, dy float64) {
+	w.mu.Lock()
+	if w.zoom > 1 {
+		w.panX = math.Max(0, math.Min(1, w.panX+dx))
+		w.panY = math.Max(0, math.Min(1, w.panY+dy))
+	}
+	w.mu.Unlock()
+}
+
+// HandleMouse preserves the legacy quit-only widget contract.
 func (*Widget) HandleMouse(loom.MouseEvent) bool { return false }
+
+// ConsumeMouse uses child-local 0-based coordinates for the control bar and image.
+func (w *Widget) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
+	if w == nil {
+		return false, false
+	}
+	w.mu.Lock()
+	if e.Action == loom.MouseRelease {
+		wasDragging := w.dragging
+		w.dragging = false
+		w.mu.Unlock()
+		return false, wasDragging
+	}
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
+		switch {
+		case w.playButton.Contains(e.X, e.Y):
+			w.mu.Unlock()
+			if w.IsPlaying() {
+				w.Pause()
+			} else {
+				w.Play()
+			}
+			return false, true
+		case w.zoomOut.Contains(e.X, e.Y):
+			w.mu.Unlock()
+			w.setZoom(1 / 1.25)
+			return false, true
+		case w.zoomIn.Contains(e.X, e.Y):
+			w.mu.Unlock()
+			w.setZoom(1.25)
+			return false, true
+		case e.Y < w.lastRect.H-2 && e.X < w.lastRect.W && w.zoom > 1:
+			w.dragging = true
+			w.dragX = e.X
+			w.dragY = e.Y
+			w.mu.Unlock()
+			return false, true
+		}
+	}
+	if e.Action == loom.MouseDrag && w.dragging {
+		dx, dy := e.X-w.dragX, e.Y-w.dragY
+		w.dragX, w.dragY = e.X, e.Y
+		width, height := max(1, w.lastRect.W), max(1, w.lastRect.H-2)
+		w.mu.Unlock()
+		w.pan(-float64(dx)/float64(width), -float64(dy)/float64(height))
+		return false, true
+	}
+	w.mu.Unlock()
+	if e.Action == loom.MouseScrollUp {
+		w.setZoom(1.25)
+		return false, true
+	}
+	if e.Action == loom.MouseScrollDown {
+		w.setZoom(1 / 1.25)
+		return false, true
+	}
+	return false, false
+}

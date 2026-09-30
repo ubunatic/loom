@@ -174,6 +174,22 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	}
 }
 
+func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
+	const cols, rows = 80, 24
+	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
+	s.WaitFor("Cols: 80", 5*time.Second)
+	s.Send("+")
+	s.WaitFor("1.25x", 3*time.Second)
+	// The widget occupies the terminal width; the [+] control is at child-local x=11.
+	s.SendRaw([]byte("\x1b[<0;13;22M"))
+	s.SendRaw([]byte("\x1b[<0;13;22m"))
+	s.WaitFor("1.56x", 3*time.Second)
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("media example exit: %v", err)
+	}
+}
+
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))

@@ -56,6 +56,91 @@ func TestStillImageDrawModesFitAndStayInsideRect(t *testing.T) {
 	}
 }
 
+func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
+	w, err := NewImage(solidImage(40, 20, color.RGBA{A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.setZoom(1.25)
+	if w.zoom != 1.25 {
+		t.Fatalf("zoom = %v, want 1.25", w.zoom)
+	}
+	w.pan(-4, 4)
+	if w.panX != 0 || w.panY != 1 {
+		t.Fatalf("pan = (%v,%v), want clamped (0,1)", w.panX, w.panY)
+	}
+	w.setZoom(1.0 / 1.25)
+	if w.zoom != 1 || w.panX != 0 || w.panY != 0 {
+		t.Fatalf("zoom out did not reset fit/pan: zoom=%v pan=(%v,%v)", w.zoom, w.panX, w.panY)
+	}
+	for i := 0; i < 20; i++ {
+		w.setZoom(1.25)
+	}
+	if w.zoom != 8 {
+		t.Fatalf("zoom limit = %v, want 8", w.zoom)
+	}
+	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: "0"}); quit || !used {
+		t.Fatal("reset key was not consumed")
+	}
+	if w.zoom != 1 {
+		t.Fatalf("reset zoom = %v, want 1", w.zoom)
+	}
+}
+
+func TestMediaControlsPlayPauseKeysAndMouseWheel(t *testing.T) {
+	w := newStreamingWidget(make(chan image.Image), 24, nil)
+	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: " "}); quit || !used || w.IsPlaying() {
+		t.Fatal("space did not pause playback")
+	}
+	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: " "}); quit || !used || !w.IsPlaying() {
+		t.Fatal("space did not resume playback")
+	}
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 0, Y: 0}); quit || !used || w.zoom <= 1 {
+		t.Fatal("wheel up did not zoom in")
+	}
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 0, Y: 0}); quit || !used || w.zoom != 1 {
+		t.Fatal("wheel down did not return to fit")
+	}
+}
+
+func TestCropForViewPanChangesCropAndClampsInput(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 100, 60))
+	for y := 0; y < 60; y++ {
+		for x := 0; x < 100; x++ {
+			img.SetRGBA(x, y, color.RGBA{R: uint8(x), G: uint8(y), A: 255})
+		}
+	}
+	left := cropForView(img, 20, 10, 2, 0, 0)
+	right := cropForView(img, 20, 10, 2, 1, 1)
+	a, b := left.Bounds(), right.Bounds()
+	if a.Dx() != b.Dx() || a.Dy() != b.Dy() {
+		t.Fatalf("crop sizes differ: %v and %v", a, b)
+	}
+	if left.At(a.Min.X, a.Min.Y) == right.At(b.Min.X, b.Min.Y) {
+		t.Fatal("pan did not change the visible source crop")
+	}
+}
+
+func TestMediaControlBarClickAndDragPan(t *testing.T) {
+	w, err := NewImage(solidImage(40, 20, color.RGBA{R: 255, A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Draw(loom.NewCanvas(40, 8), loom.Rect{X: 0, Y: 0, W: 40, H: 8})
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 12, Y: 7}); quit || !used || w.zoom != 1.25 {
+		t.Fatalf("zoom button: quit=%v used=%v zoom=%v", quit, used, w.zoom)
+	}
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 20, Y: 2}); quit || !used {
+		t.Fatal("zoomed image press did not start pan drag")
+	}
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 10, Y: 2}); quit || !used || w.panX <= 0 {
+		t.Fatalf("drag pan failed: quit=%v used=%v pan=%v", quit, used, w.panX)
+	}
+	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft}); quit || !used {
+		t.Fatal("drag release was not consumed")
+	}
+}
+
 func TestWideAndTallImagesKeepAspectAndCenterInRect(t *testing.T) {
 	for _, tc := range []struct {
 		name       string

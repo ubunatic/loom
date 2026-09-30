@@ -32,16 +32,6 @@ func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{BG: loom.ColorRGB(17, 24, 32)})
 	title := "Media Demo  (q quits)"
 	c.Write(r.X+1, r.Y, title, loom.Style{FG: loom.ColorRGB(240, 240, 240), Bold: true})
-	if d.video {
-		label := " [p] Play  [r] Restart "
-		if d.image.IsPlaying() {
-			label = " [p] Pause  [r] Restart "
-		}
-		buttonX := r.X + r.W - len(label) - 1
-		if buttonX > r.X+1+len(title) {
-			c.Write(buttonX, r.Y, label, loom.Style{FG: loom.ColorRGB(255, 255, 255), BG: loom.ColorRGB(48, 88, 120), Bold: true})
-		}
-	}
 	if r.H < 2 {
 		return
 	}
@@ -54,27 +44,35 @@ func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (d *demo) HandleKey(e loom.KeyEvent) bool {
-	if !d.video {
-		return false
-	}
+	return false
+}
+
+func (d *demo) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 	switch e.Rune() {
-	case 'p', 'P':
-		if d.image.IsPlaying() {
-			d.image.Pause()
-		} else {
-			d.image.Play()
-		}
-		d.message = ""
 	case 'r', 'R':
+		if !d.video {
+			return false, false
+		}
 		if err := d.image.Restart(); err != nil {
 			d.message = err.Error()
 		} else {
 			d.message = ""
 		}
+	default:
+		return d.image.ConsumeKey(e)
 	}
-	return false
+	return false, true
 }
-func (*demo) HandleMouse(loom.MouseEvent) bool { return false }
+func (d *demo) HandleMouse(loom.MouseEvent) bool { return false }
+func (d *demo) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
+	// demo reserves its first row for the title, so translate into the embedded
+	// media child's local rectangle before forwarding the event.
+	e.Y--
+	if e.Y < 0 {
+		return false, false
+	}
+	return d.image.ConsumeMouse(e)
+}
 
 func (d *demo) TickInterval() time.Duration { return d.image.TickInterval() }
 func (d *demo) Tick(now time.Time)          { d.image.Tick(now) }
@@ -111,6 +109,7 @@ func runWithPoster(path string, mode media.Mode, posterPath string) error {
 		return err
 	}
 	pane.MaxCols = 0
+	pane.EnableMouse()
 	defer pane.Close()
 	return pane.Run(&demo{image: widget, path: path, mode: mode, video: isVideo(path)})
 }
