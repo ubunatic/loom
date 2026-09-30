@@ -1,6 +1,6 @@
 # 174 — Add standalone NumberInput and Toggle widgets
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
