@@ -1,6 +1,6 @@
 # 210 — loom info: terminal and capability report with --watch mouse probe
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
