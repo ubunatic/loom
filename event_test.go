@@ -91,6 +91,49 @@ func TestKeyEventIs(t *testing.T) {
 	}
 }
 
+func TestKeyMap(t *testing.T) {
+	km := NewKeyMapWithLabels(map[string][]string{
+		"move-up": {"up", "w", "k"},
+		"quit":    {"q", "ctrl-c", "esc"},
+	}, map[string]string{"move-up": "↑", "quit": "Quit"})
+
+	tests := []struct {
+		name   string
+		event  KeyEvent
+		action string
+	}{
+		{"single special key", KeyEvent{Key: "up"}, "move-up"},
+		{"alias lowercase", KeyEvent{Text: "k"}, "move-up"},
+		{"alias uppercase", KeyEvent{Text: "W"}, "move-up"},
+		{"modifier", KeyEvent{Key: "CTRL-C"}, "quit"},
+		{"special alias", KeyEvent{Key: "ESC"}, "quit"},
+		{"unmatched", KeyEvent{Text: "x"}, ""},
+		{"empty event", KeyEvent{}, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := km.Action(tt.event); got != tt.action {
+				t.Errorf("Action(%+v) = %q, want %q", tt.event, got, tt.action)
+			}
+			if got := km.Matches(tt.event, tt.action); got != (tt.action != "") {
+				t.Errorf("Matches(%+v, %q) = %t", tt.event, tt.action, got)
+			}
+		})
+	}
+	if got := km.Label("move-up"); got != "↑" {
+		t.Errorf("Label(move-up) = %q, want %q", got, "↑")
+	}
+	if got := km.Label("unknown"); got != "" {
+		t.Errorf("Label(unknown) = %q, want empty", got)
+	}
+
+	// Case folding is limited to ASCII; visually similar non-ASCII letters stay distinct.
+	unicodeMap := NewKeyMap(map[string][]string{"unicode": {"é"}})
+	if got := unicodeMap.Action(KeyEvent{Text: "É"}); got != "" {
+		t.Errorf("Action(non-ASCII case variant) = %q, want empty", got)
+	}
+}
+
 func TestKeyEventRune(t *testing.T) {
 	tests := []struct {
 		name  string
