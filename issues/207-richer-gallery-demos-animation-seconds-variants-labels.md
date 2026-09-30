@@ -1,6 +1,6 @@
 # 207 — Richer gallery demos: animation, seconds, variants, labels
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
