@@ -209,3 +209,4 @@ upkeep.
 | 196 | [196-catch-mouse-handlers-the-dispatcher-never-calls.md](196-catch-mouse-handlers-the-dispatcher-never-calls.md) | Catch mouse handlers the dispatcher never calls | Open |
 | 197 | [197-complete-widget-names-for-loom-widgets-and-show.md](197-complete-widget-names-for-loom-widgets-and-show.md) | Complete widget names for loom widgets and --show | Open |
 | 198 | [198-vertical-tabs-for-the-widget-gallery.md](198-vertical-tabs-for-the-widget-gallery.md) | Vertical tabs for the widget gallery | Open |
+| 199 | [199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md](199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md) | Mouse input in the widget gallery; only Tab cycles tabs | Open |
