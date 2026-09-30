@@ -49,6 +49,21 @@ widgets:
           deleteItem()
       }
     source: confirm.go
+  - name: loom.FilePicker
+    package: loom
+    purpose: Navigate directories and select files or directories by glob.
+    category: input
+    example: |-
+      picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{
+          Mode: loom.FilePickerFiles, Patterns: []string{"*.go"},
+          OnSelect: func(path string) { fmt.Println(path) },
+      })
+      if err != nil { return err }
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
+      _ = frame
+    source: filepicker.go
+    docs: docs/Widgets.md §4
+    ticket: issues/172
   - name: loom.Frame
     package: loom
     purpose: Arrange boxes and route events to their child widgets.

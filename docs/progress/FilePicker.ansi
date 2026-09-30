@@ -1,0 +1,24 @@
+/home/uwe/projects/loom                                                         [0m
+  ..  parent directory                                                         [0m[1m[39m[49m▓[0m
+[0m[1m[39m[49m▶ .agents  <dir>[0m[39m[49m                                                               [0m[1m[39m[49m▓[0m
+  .codex  <dir>                                                                [0m[1m[39m[49m▓[0m
+  .git  <dir>                                                                  [0m[2m[39m[49m░[0m
+  .harnez  <dir>                                                               [0m[2m[39m[49m░[0m
+  .jules  <dir>                                                                [0m[2m[39m[49m░[0m
+  .loom  <dir>                                                                 [0m[2m[39m[49m░[0m
+  AGENTS.md                                                                    [0m[2m[39m[49m░[0m
+  CLAUDE.md  <link>                                                            [0m[2m[39m[49m░[0m
+  LICENSES  <dir>                                                              [0m[2m[39m[49m░[0m
+  README.md                                                                    [0m[2m[39m[49m░[0m
+  align.go                                                                     [0m[2m[39m[49m░[0m
+  align_test.go                                                                [0m[2m[39m[49m░[0m
+  ansibuffer.go                                                                [0m[2m[39m[49m░[0m
+  ansibuffer_test.go                                                           [0m[2m[39m[49m░[0m
+  ansieditor.go                                                                [0m[2m[39m[49m░[0m
+  ansieditor_test.go                                                           [0m[2m[39m[49m░[0m
+  background.go                                                                [0m[2m[39m[49m░[0m
+  background_defaults.go                                                       [0m[2m[39m[49m░[0m
+  cadence.go                                                                   [0m[2m[39m[49m░[0m
+  cadence_test.go                                                              [0m[2m[39m[49m░[0m
+  canvas.go                                                                    [0m[2m[39m[49m░[0m
+>                                                                               [0m

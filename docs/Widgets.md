@@ -105,6 +105,22 @@ Loom extracts common terminal file-browsing and launch operations into clean, po
 - **Terminal-Safe Path Escaping (`DisplayPath`, `QuoteUnprintable`)**: Escapes unprintable control codes and formats paths safely for terminal display columns without corrupting layouts.
 - **Injectable Platform File Opener (`OpenFile`, `FileOpener`)**: Dispatches file launch commands (`xdg-open`, `gio`, `open`, `start`) detached from the terminal process, with mockable injection for deterministic unit tests.
 
+### Reusable File Picker (`loom.FilePicker`)
+`FilePicker` browses directories using `ReadDirectory`, filters files with `filepath.Match` patterns, and calls `OnSelect` with the chosen path. File mode navigates directories and selects regular files; directory mode selects directories and filters out files. Esc calls `OnCancel`; backspace navigates to the parent directory when the filter is empty.
+
+```go
+picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{
+    Mode: loom.FilePickerFiles,
+    Patterns: []string{"*.go", "*.md"},
+    OnSelect: func(path string) { fmt.Println("Selected", path) },
+    OnCancel: func() { fmt.Println("Cancelled") },
+})
+if err != nil { return err }
+frame.Boxes[0].Child = picker
+```
+
+Use `List()` to customize the embedded `Choice`, `Directory()` to inspect the current directory, and `ApplyTheme` to apply host theme colors. The widget shows the current path above its list and supports mouse selection as well as keyboard navigation.
+
 ### Shared File Navigation Pane (`examples/filebrowser/filebrowser.NavigationPane`)
 The filebrowser example package provides a reusable `NavigationPane` for directory lists. It is a widget that hosts can place directly in a `Frame` box; it owns a stable `loom.Choice` internally and updates its items when the directory changes.
 

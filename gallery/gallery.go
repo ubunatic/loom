@@ -28,6 +28,13 @@ var demos = map[string]constructor{
 		}
 		return choice
 	},
+	"FilePicker": func() loom.Widget {
+		picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{Mode: loom.FilePickerFiles, Patterns: []string{"*.go", "*.md"}})
+		if err != nil {
+			return loom.NewView([]string{"FilePicker demo unavailable", err.Error()})
+		}
+		return picker
+	},
 	"KeyHelp": func() loom.Widget {
 		keymap := loom.NewKeyMapWithLabels(map[string][]string{
 			"back": {"esc"},
