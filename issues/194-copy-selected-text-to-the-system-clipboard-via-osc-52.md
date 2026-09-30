@@ -1,6 +1,6 @@
 # 194 — Copy selected text to the system clipboard via OSC 52
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
