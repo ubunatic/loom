@@ -106,6 +106,16 @@ widgets:
       input := loom.NewNumberInput(&value, 0, 10)
       input.Step = 0.5
     source: numberinput.go
+  - name: loom.Paginator
+    package: loom
+    purpose: Navigate a host-managed collection of pages with keyboard and mouse controls.
+    category: input
+    example: |-
+      paginator := loom.NewPaginator(7)
+      paginator.OnChange = func(page int) { offset = page * pageSize }
+    source: paginator.go
+    docs: docs/Widgets.md §6
+    ticket: issues/188
   - name: loom.PillCluster
     package: loom
     purpose: Display and navigate a cluster of compact status pills.

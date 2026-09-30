@@ -53,6 +53,11 @@ var demos = map[string]constructor{
 		input.Step = .5
 		return input
 	},
+	"Paginator": func() loom.Widget {
+		paginator := loom.NewPaginator(7)
+		paginator.SetPage(2)
+		return paginator
+	},
 	"Popup": func() loom.Widget {
 		popup := loom.NewPopup("Gallery popup", loom.NewView([]string{"This overlay is a live widget.", "Press Esc to close it."}))
 		popup.Width, popup.Height = 48, 7

@@ -439,7 +439,7 @@ func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
 		v.offsetY++
 	case event.Is("pgup"):
 		v.offsetY -= panStep
-	case event.Is("pgdn"):
+	case event.Is("pgdown", "pgdn", "pagedown"):
 		v.offsetY += panStep
 	}
 	v.clampOffsets()

@@ -317,6 +317,21 @@ func TestANSIViewScrollAndQuit(t *testing.T) {
 	}
 }
 
+func TestANSIViewAcceptsPageDownAliases(t *testing.T) {
+	buffer, err := loom.ParseAnsiBuffer("one\ntwo\nthree\nfour\nfive\nsix\nseven\neight", 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	keys := []loom.KeyEvent{{Key: "pgdown"}, {Key: "pgdn"}, {Key: "pagedown"}, loom.DecodeKey([]byte("\x1b[6~"))}
+	for _, key := range keys {
+		view := &ansiView{buffer: buffer}
+		view.HandleKey(key)
+		if view.offsetY == 0 {
+			t.Errorf("key %q did not pan down", key.Key)
+		}
+	}
+}
+
 func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	buffer, err := loom.ParseAnsiBuffer("abcdefghijklmnopqrst\nABCDEFGHIJKLMNOPQRST\n01234567890123456789", 1, 1)
 	if err != nil {
