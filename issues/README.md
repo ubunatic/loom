@@ -211,5 +211,5 @@ upkeep.
 | 198 | [198-vertical-tabs-for-the-widget-gallery.md](198-vertical-tabs-for-the-widget-gallery.md) | Vertical tabs for the widget gallery | Closed |
 | 199 | [199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md](199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md) | Mouse input in the widget gallery; only Tab cycles tabs | Closed |
 | 200 | [200-tests-gallery-tab-switching-and-per-widget-input.md](200-tests-gallery-tab-switching-and-per-widget-input.md) | Tests: gallery tab switching and per-widget input | Open |
-| 201 | [201-theme-switch-in-the-widget-gallery.md](201-theme-switch-in-the-widget-gallery.md) | Theme switch in the widget gallery | Open |
+| 201 | [201-theme-switch-in-the-widget-gallery.md](201-theme-switch-in-the-widget-gallery.md) | Theme switch in the widget gallery | Closed |
 | 202 | [202-media-zoom-crops-instead-of-scaling.md](202-media-zoom-crops-instead-of-scaling.md) | Media zoom crops instead of scaling | Closed |

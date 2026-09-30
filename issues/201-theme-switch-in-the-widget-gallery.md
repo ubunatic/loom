@@ -1,6 +1,6 @@
 # 201 — Theme switch in the widget gallery
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
