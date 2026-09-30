@@ -30,6 +30,14 @@ type Menu struct {
 	itemRects []Rect
 }
 
+type menuSublevel struct {
+	items      []MenuItem
+	selected   int
+	parentItem int
+	rect       Rect
+	itemRects  []Rect
+}
+
 // MenuBar draws and navigates a horizontal row of menus and one-level dropdowns.
 type MenuBar struct {
 	Menus      []Menu
@@ -45,6 +53,7 @@ type MenuBar struct {
 	selected   int
 	keys       *KeyMap
 	keyActions map[string]func()
+	submenus   []menuSublevel
 }
 
 // MenuStyle controls the bar and dropdown appearance.
@@ -78,6 +87,7 @@ func (m *MenuBar) SetFocus(focused bool) {
 	m.focused = focused
 	if !focused {
 		m.Open = false
+		m.submenus = nil
 	}
 }
 
@@ -148,6 +158,7 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 	}
 	if !m.Open || m.ActiveMenu < 0 || m.ActiveMenu >= len(m.Menus) {
 		m.menuRect = Rect{}
+		m.submenus = nil
 		return
 	}
 	menu := m.Menus[m.ActiveMenu]
@@ -156,6 +167,9 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		labelWidth := StringWidth(menuItemLabel(item))
 		if item.Shortcut != "" {
 			labelWidth += StringWidth(item.Shortcut) + 2
+		}
+		if len(item.Submenu) > 0 {
+			labelWidth += 2
 		}
 		if labelWidth+2 > w {
 			w = labelWidth + 2
@@ -204,9 +218,100 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 				c.Write(sx, row, "─", style)
 			}
 		} else {
-			c.Write(x+1, row, menuItemLineWidth(item, w-2), style)
+			lineWidth := w - 2
+			if len(item.Submenu) > 0 {
+				lineWidth -= 2
+			}
+			line := menuItemLineWidth(item, lineWidth)
+			if len(item.Submenu) > 0 {
+				line = TruncateText(line, lineWidth, "")
+			}
+			c.Write(x+1, row, line, style)
+			if len(item.Submenu) > 0 && w >= 3 {
+				c.Write(x+w-2, row, "›", style)
+			}
 		}
 		m.itemRects[i] = Rect{X: x + 1, Y: row, W: max(0, w-2), H: 1}
+	}
+	m.drawSubmenus(c, r)
+}
+
+func (m *MenuBar) drawSubmenus(c *Canvas, bounds Rect) {
+	items := m.Menus[m.ActiveMenu].Items
+	anchor := m.menuRect
+	for i := range m.submenus {
+		level := &m.submenus[i]
+		if level.parentItem < 0 || level.parentItem >= len(items) {
+			m.submenus = m.submenus[:i]
+			return
+		}
+		parentRect := anchor
+		var parentItems []Rect
+		if i == 0 {
+			parentItems = m.itemRects
+		} else {
+			parentItems = m.submenus[i-1].itemRects
+		}
+		if level.parentItem >= len(parentItems) {
+			m.submenus = m.submenus[:i]
+			return
+		}
+		row := parentItems[level.parentItem].Y
+		w := 4
+		for _, item := range level.items {
+			w = max(w, StringWidth(menuItemLine(item))+2)
+			if len(item.Submenu) > 0 {
+				w = max(w, StringWidth(menuItemLine(item))+4)
+			}
+		}
+		w = min(w, bounds.W)
+		x := parentRect.X + parentRect.W
+		if x+w > bounds.X+bounds.W {
+			x = parentRect.X - w
+		}
+		x = max(bounds.X, min(x, bounds.X+bounds.W-w))
+		h := min(len(level.items)+2, bounds.H)
+		y := max(bounds.Y, min(row, bounds.Y+bounds.H-h))
+		level.rect = Rect{X: x, Y: y, W: w, H: h}
+		c.Fill(level.rect, Cell{Text: " ", Style: m.Style.Normal})
+		if w >= 2 && h >= 2 {
+			c.DrawBox(level.rect, BoxBorderStyleSharp, "", m.Style.Border)
+		}
+		level.itemRects = make([]Rect, len(level.items))
+		for j, item := range level.items {
+			yi := y + 1 + j
+			if yi >= y+h-1 {
+				break
+			}
+			style := m.Style.Normal
+			if item.Disabled {
+				style = m.Style.Disabled
+			} else if j == level.selected {
+				style = m.Style.Selected
+			}
+			c.Fill(Rect{X: x + 1, Y: yi, W: max(0, w-2), H: 1}, Cell{Text: " ", Style: style})
+			if item.Label == "---" {
+				for sx := x + 1; sx < x+w-1; sx++ {
+					c.Write(sx, yi, "─", style)
+				}
+			} else {
+				lineWidth := w - 2
+				if len(item.Submenu) > 0 {
+					lineWidth -= 2
+				}
+				line := menuItemLineWidth(item, lineWidth)
+				if len(item.Submenu) > 0 {
+					line = TruncateText(line, lineWidth, "")
+				}
+				c.Write(x+1, yi, line, style)
+				if len(item.Submenu) > 0 && w >= 3 {
+					c.Write(x+w-2, yi, "›", style)
+				}
+			}
+			level.itemRects[j] = Rect{X: x + 1, Y: yi, W: max(0, w-2), H: 1}
+		}
+		anchor = level.rect
+		items = level.items
 	}
 }
 
@@ -297,26 +402,38 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 	}
 	switch e.Key {
 	case "esc":
-		if m.Open {
+		if len(m.submenus) > 0 {
+			m.submenus = m.submenus[:len(m.submenus)-1]
+		} else if m.Open {
 			m.Open = false
 		} else {
 			m.focused = false
 		}
-	case "left", "right":
-		delta := 1
-		if e.Key == "left" {
-			delta = -1
+	case "left":
+		if len(m.submenus) > 0 {
+			m.submenus = m.submenus[:len(m.submenus)-1]
+		} else if m.Open {
+			m.ActiveMenu = (clampMenu(m.ActiveMenu, len(m.Menus)) - 1 + len(m.Menus)) % len(m.Menus)
+			m.selectFirst()
 		}
-		m.ActiveMenu = (clampMenu(m.ActiveMenu, len(m.Menus)) + delta + len(m.Menus)) % len(m.Menus)
+	case "right":
+		if m.Open && m.openSelectedSubmenu() {
+			return Consumed()
+		}
+		if len(m.submenus) > 0 {
+			return Consumed()
+		}
 		if m.Open {
+			m.ActiveMenu = (clampMenu(m.ActiveMenu, len(m.Menus)) + 1) % len(m.Menus)
+			m.submenus = nil
 			m.selectFirst()
 		}
 	case "down":
 		m.focused, m.Open = true, true
-		m.moveSelection(1)
+		m.moveCurrent(1)
 	case "up":
 		if m.Open {
-			m.moveSelection(-1)
+			m.moveCurrent(-1)
 		}
 	case "enter", " ":
 		if !m.Open {
@@ -324,11 +441,84 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 			m.selectFirst()
 			return Consumed()
 		}
-		m.activateSelected()
+		if !m.openSelectedSubmenu() {
+			m.activateCurrent()
+		}
 	default:
 		return Ignored()
 	}
 	return Consumed()
+}
+
+func (m *MenuBar) currentItems() []MenuItem {
+	if len(m.submenus) > 0 {
+		return m.submenus[len(m.submenus)-1].items
+	}
+	if m.ActiveMenu >= 0 && m.ActiveMenu < len(m.Menus) {
+		return m.Menus[m.ActiveMenu].Items
+	}
+	return nil
+}
+func (m *MenuBar) currentSelection() int {
+	if len(m.submenus) > 0 {
+		return m.submenus[len(m.submenus)-1].selected
+	}
+	return m.selected
+}
+func (m *MenuBar) setCurrentSelection(i int) {
+	if len(m.submenus) > 0 {
+		m.submenus[len(m.submenus)-1].selected = i
+	} else {
+		m.selected = i
+	}
+}
+func (m *MenuBar) moveCurrent(delta int) {
+	items := m.currentItems()
+	if len(items) == 0 {
+		return
+	}
+	i := m.currentSelection()
+	for tries := 0; tries < len(items); tries++ {
+		i = (i + delta + len(items)) % len(items)
+		if !items[i].Disabled {
+			m.setCurrentSelection(i)
+			return
+		}
+		delta = 1
+	}
+}
+func (m *MenuBar) openSelectedSubmenu() bool {
+	items := m.currentItems()
+	i := m.currentSelection()
+	if i < 0 || i >= len(items) || items[i].Disabled || len(items[i].Submenu) == 0 {
+		return false
+	}
+	selected := 0
+	for selected < len(items[i].Submenu)-1 && items[i].Submenu[selected].Disabled {
+		selected++
+	}
+	m.submenus = append(m.submenus, menuSublevel{items: items[i].Submenu, parentItem: i, selected: selected})
+	return true
+}
+func (m *MenuBar) activateCurrent() {
+	items := m.currentItems()
+	i := m.currentSelection()
+	if i < 0 || i >= len(items) {
+		return
+	}
+	item := items[i]
+	if item.Disabled || len(item.Submenu) > 0 {
+		return
+	}
+	if item.Checked != nil {
+		*item.Checked = !*item.Checked
+	}
+	if item.Action != nil {
+		item.Action()
+	}
+	m.Open = false
+	m.focused = false
+	m.submenus = nil
 }
 
 func clampMenu(i, n int) int {
@@ -378,6 +568,7 @@ func (m *MenuBar) activateSelected() {
 	}
 	m.Open = false
 	m.focused = false
+	m.submenus = nil
 }
 
 // HandleMouse handles title clicks, dropdown selection, hover switching, and outside dismissal.
@@ -388,10 +579,40 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 	if m == nil {
 		return Ignored()
 	}
+	for i := len(m.submenus) - 1; i >= 0; i-- {
+		level := &m.submenus[i]
+		if !level.rect.Contains(e.X, e.Y) {
+			continue
+		}
+		for j, rect := range level.itemRects {
+			if !rect.Contains(e.X, e.Y) {
+				continue
+			}
+			level.selected = j
+			if e.Action == MouseHover {
+				m.submenus = m.submenus[:i+1]
+				if len(level.items[j].Submenu) > 0 {
+					m.openSelectedSubmenu()
+				}
+				return Consumed()
+			}
+			if e.Action == MousePress && e.Button == MouseLeft {
+				if len(level.items[j].Submenu) > 0 {
+					m.submenus = m.submenus[:i+1]
+					m.openSelectedSubmenu()
+				} else {
+					m.activateCurrent()
+				}
+				return Consumed()
+			}
+		}
+		return Consumed()
+	}
 	for i, rect := range m.titleRects {
 		if rect.W > 0 && rect.Contains(e.X, e.Y) {
 			if e.Action == MouseHover && m.Open {
 				m.ActiveMenu = i
+				m.submenus = nil
 				m.selectFirst()
 				return Consumed()
 			}
@@ -399,10 +620,12 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 				if m.Open && m.ActiveMenu == i {
 					m.Open = false
 					m.focused = false
+					m.submenus = nil
 				} else {
 					m.ActiveMenu = i
 					m.Open = true
 					m.focused = true
+					m.submenus = nil
 					m.selectFirst()
 				}
 				return Consumed()
@@ -414,11 +637,20 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 			if rect.H > 0 && rect.Contains(e.X, e.Y) {
 				if e.Action == MouseHover {
 					m.selected = i
+					m.submenus = nil
+					if len(m.Menus[m.ActiveMenu].Items[i].Submenu) > 0 {
+						m.openSelectedSubmenu()
+					}
 					return Consumed()
 				}
 				if e.Action == MousePress && e.Button == MouseLeft {
 					m.selected = i
-					m.activateSelected()
+					if len(m.Menus[m.ActiveMenu].Items[i].Submenu) > 0 {
+						m.submenus = nil
+						m.openSelectedSubmenu()
+					} else {
+						m.activateSelected()
+					}
 					return Consumed()
 				}
 			}
@@ -428,6 +660,7 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 	if m.Open && e.Action == MousePress && e.Button == MouseLeft {
 		m.Open = false
 		m.focused = false
+		m.submenus = nil
 		return Consumed()
 	}
 	return Ignored()

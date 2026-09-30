@@ -82,3 +82,68 @@ func TestMenuBarDrawsClippedDropdown(t *testing.T) {
 		t.Fatalf("render rows=%d", len(rows))
 	}
 }
+
+func TestMenuBarNestedSubmenuKeyboardAndDismissal(t *testing.T) {
+	called := 0
+	bar := NewMenuBar(Menu{Title: "File", Items: []MenuItem{
+		{Label: "Open", Submenu: []MenuItem{{Label: "Recent", Submenu: []MenuItem{{Label: "Project", Action: func() { called++ }}}}}},
+	}})
+	bar.ConsumeKey(KeyEvent{Key: "f10"})
+	bar.ConsumeKey(KeyEvent{Key: "right"})
+	if len(bar.submenus) != 1 {
+		t.Fatalf("right opened %d submenu levels, want 1", len(bar.submenus))
+	}
+	bar.ConsumeKey(KeyEvent{Key: "right"})
+	if len(bar.submenus) != 2 {
+		t.Fatalf("nested right opened %d levels, want 2", len(bar.submenus))
+	}
+	bar.ConsumeKey(KeyEvent{Key: "enter"})
+	if called != 1 || bar.Open {
+		t.Fatalf("called=%d open=%v after leaf activation", called, bar.Open)
+	}
+	bar.ConsumeKey(KeyEvent{Key: "f10"})
+	bar.ConsumeKey(KeyEvent{Key: "right"})
+	bar.ConsumeKey(KeyEvent{Key: "esc"})
+	if len(bar.submenus) != 0 || !bar.Open {
+		t.Fatalf("Escape should close one level; levels=%d open=%v", len(bar.submenus), bar.Open)
+	}
+}
+
+func TestMenuBarNestedSubmenuFlipsAndRendersMarker(t *testing.T) {
+	bar := NewMenuBar(Menu{Title: "File"}, Menu{Title: "Edit"}, Menu{Title: "Help", Items: []MenuItem{{Label: "More", Submenu: []MenuItem{{Label: "Leaf"}}}}})
+	bar.ActiveMenu = 2
+	bar.Open = true
+	c := NewCanvas(20, 8)
+	bar.Draw(c, c.Bounds())
+	bar.ConsumeKey(KeyEvent{Key: "right"})
+	bar.Draw(c, c.Bounds())
+	if len(bar.submenus) != 1 {
+		t.Fatal("submenu did not open")
+	}
+	level := bar.submenus[0]
+	if level.rect.X+level.rect.W > bar.menuRect.X {
+		t.Fatalf("submenu overflows screen: %+v", level.rect)
+	}
+	if got := c.Get(bar.itemRects[0].X+bar.itemRects[0].W-1, bar.itemRects[0].Y).Text; got != "›" {
+		t.Fatalf("submenu marker=%q, want ›", got)
+	}
+}
+
+func TestMenuBarNestedSubmenuMouseHoverAndClick(t *testing.T) {
+	called := 0
+	bar := NewMenuBar(Menu{Title: "File", Items: []MenuItem{{Label: "More", Submenu: []MenuItem{{Label: "Leaf", Action: func() { called++ }}}}}})
+	c := NewCanvas(24, 8)
+	bar.Draw(c, c.Bounds())
+	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
+	bar.Draw(c, c.Bounds())
+	bar.HandleMouse(MouseEvent{Action: MouseHover, X: bar.itemRects[0].X, Y: bar.itemRects[0].Y})
+	if len(bar.submenus) != 1 {
+		t.Fatal("hover did not immediately open submenu")
+	}
+	bar.Draw(c, c.Bounds())
+	leaf := bar.submenus[0].itemRects[0]
+	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: leaf.X, Y: leaf.Y})
+	if called != 1 || bar.Open {
+		t.Fatalf("called=%d open=%v after submenu click", called, bar.Open)
+	}
+}

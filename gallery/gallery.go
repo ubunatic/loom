@@ -67,6 +67,7 @@ var demos = map[string]constructor{
 				{Label: "Open", Shortcut: "Ctrl+O"},
 				{Label: "Save", Shortcut: "Ctrl+S"},
 				{Label: "Autosave", Checked: &checked},
+				{Label: "Recent files", Submenu: []loom.MenuItem{{Label: "notes.txt"}, {Label: "project.go"}}},
 			}},
 			loom.Menu{Title: "Edit", Mnemonic: 'E', Items: []loom.MenuItem{{Label: "Undo", Shortcut: "Ctrl+Z"}, {Label: "Redo", Shortcut: "Ctrl+Y"}}},
 			loom.Menu{Title: "Help", Mnemonic: 'H', Items: []loom.MenuItem{{Label: "Keyboard shortcuts", Shortcut: "F1"}}},
