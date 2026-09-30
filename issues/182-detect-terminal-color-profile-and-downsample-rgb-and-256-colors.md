@@ -1,6 +1,6 @@
 # 182 — Detect terminal color profile and downsample RGB and 256 colors
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
