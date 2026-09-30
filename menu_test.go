@@ -38,12 +38,12 @@ func TestMenuBarSelectionToggleAndEscape(t *testing.T) {
 		{Label: "Status", Checked: &checked, Action: func() { called++ }},
 		{Label: "Refresh", Action: func() { called++ }},
 	}})
-	bar.HandleKey(KeyEvent{Key: "f10"})
-	bar.HandleKey(KeyEvent{Key: "enter"})
+	bar.ConsumeKey(KeyEvent{Key: "f10"})
+	bar.ConsumeKey(KeyEvent{Key: "enter"})
 	if !checked || called != 1 {
 		t.Fatalf("checked=%v called=%d", checked, called)
 	}
-	bar.HandleKey(KeyEvent{Key: "esc"})
+	bar.ConsumeKey(KeyEvent{Key: "esc"})
 	if bar.Open {
 		t.Fatal("Escape left dropdown open")
 	}
@@ -54,17 +54,17 @@ func TestMenuBarMouseOpenSelectAndOutsideDismiss(t *testing.T) {
 	bar := NewMenuBar(Menu{Title: "File", Items: []MenuItem{{Label: "Open", Action: func() { called++ }}}})
 	c := NewCanvas(30, 8)
 	bar.Draw(c, Rect{W: 30, H: 8})
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
 	if !bar.Open {
 		t.Fatal("clicking title did not open menu")
 	}
 	bar.Draw(c, Rect{W: 30, H: 8})
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
 	if called != 1 || bar.Open {
 		t.Fatalf("called=%d open=%v after item click", called, bar.Open)
 	}
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 20, Y: 6})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 20, Y: 6})
 	if bar.Open {
 		t.Fatal("outside click left menu open")
 	}
@@ -134,15 +134,15 @@ func TestMenuBarNestedSubmenuMouseHoverAndClick(t *testing.T) {
 	bar := NewMenuBar(Menu{Title: "File", Items: []MenuItem{{Label: "More", Submenu: []MenuItem{{Label: "Leaf", Action: func() { called++ }}}}}})
 	c := NewCanvas(24, 8)
 	bar.Draw(c, c.Bounds())
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 0})
 	bar.Draw(c, c.Bounds())
-	bar.HandleMouse(MouseEvent{Action: MouseHover, X: bar.itemRects[0].X, Y: bar.itemRects[0].Y})
+	bar.ConsumeMouse(MouseEvent{Action: MouseHover, X: bar.itemRects[0].X, Y: bar.itemRects[0].Y})
 	if len(bar.submenus) != 1 {
 		t.Fatal("hover did not immediately open submenu")
 	}
 	bar.Draw(c, c.Bounds())
 	leaf := bar.submenus[0].itemRects[0]
-	bar.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: leaf.X, Y: leaf.Y})
+	bar.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: leaf.X, Y: leaf.Y})
 	if called != 1 || bar.Open {
 		t.Fatalf("called=%d open=%v after submenu click", called, bar.Open)
 	}

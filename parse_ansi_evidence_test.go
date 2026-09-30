@@ -26,8 +26,8 @@ func (w *simpleCanvasWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *simpleCanvasWidget) HandleKey(e loom.KeyEvent) bool     { return false }
-func (w *simpleCanvasWidget) HandleMouse(e loom.MouseEvent) bool { return false }
+func (w *simpleCanvasWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (w *simpleCanvasWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 // TestGenerateM1Evidence generates a visual frame demonstrating ParseANSI capabilities.
 // This is the M1 evidence frame for ticket 034.

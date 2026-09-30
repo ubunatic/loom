@@ -39,7 +39,7 @@ var demos = map[string]constructor{
 		})
 		choice.Fuzzy = true
 		for _, r := range "fbw" {
-			choice.HandleKey(loom.KeyEvent{Text: string(r)})
+			choice.ConsumeKey(loom.KeyEvent{Text: string(r)})
 		}
 		return choice
 	},
@@ -245,81 +245,41 @@ func (w *textInputWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{})
 	w.input.Draw(c, r, true)
 }
-func (w *textInputWidget) HandleKey(e loom.KeyEvent) bool { return w.input.HandleKey(e) }
-func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) (bool, bool) {
-	return false, w.input.HandleKey(e)
-}
-func (w *textInputWidget) HandleMouse(loom.MouseEvent) bool { return false }
+func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.input.ConsumeKey(e) }
+func (w *textInputWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 type textAreaWidget struct{ area *loom.TextArea }
 
-func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect) { w.area.Draw(c, r, true) }
-func (w *textAreaWidget) HandleKey(e loom.KeyEvent) bool   { return w.area.HandleKey(e) }
-func (w *textAreaWidget) ConsumeKey(e loom.KeyEvent) (bool, bool) {
-	return false, w.area.HandleKey(e)
-}
-func (w *textAreaWidget) HandleMouse(loom.MouseEvent) bool { return false }
+func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect)              { w.area.Draw(c, r, true) }
+func (w *textAreaWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.area.ConsumeKey(e) }
+func (w *textAreaWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
+// The gallery wrappers reopen their sample after it has been dismissed.
+// All active input is forwarded as the original EventResult value.
 type popupDemo struct{ popup *loom.Popup }
 
 func (w *popupDemo) Draw(c *loom.Canvas, r loom.Rect) { w.popup.Draw(c, r) }
-func (w *popupDemo) HandleKey(e loom.KeyEvent) bool   { return w.popup.HandleKey(e) }
-func (w *popupDemo) HandleMouse(e loom.MouseEvent) bool {
-	return w.popup.HandleMouse(e)
-}
 func (w *popupDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
-	if !w.popup.Open {
-		if e.Key == "enter" {
-			w.popup.Open = true
-			return loom.Handled()
-		}
-		return loom.Ignored()
-	}
-	if e.Key == "esc" {
-		w.popup.Open = false
+	if !w.popup.Open && e.Key == "enter" {
+		w.popup.Open = true
 		return loom.Handled()
 	}
-	result := loom.DispatchKeyEvent(w.popup.Inner, e)
-	if result.Consumed {
-		return result
-	}
-	return loom.Handled()
+	return w.popup.ConsumeKey(e)
 }
 func (w *popupDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if !w.popup.Open {
-		return loom.Ignored()
-	}
-	result := loom.DispatchMouseEvent(w.popup.Inner, e)
-	if result.Consumed {
-		return result
-	}
-	return loom.Handled()
+	return w.popup.ConsumeMouse(e)
 }
 
 type dialogDemo struct{ dialog *loom.Dialog }
 
 func (w *dialogDemo) Draw(c *loom.Canvas, r loom.Rect) { w.dialog.Draw(c, r) }
-func (w *dialogDemo) HandleKey(e loom.KeyEvent) bool   { return w.dialog.HandleKey(e) }
-func (w *dialogDemo) HandleMouse(e loom.MouseEvent) bool {
-	return w.dialog.HandleMouse(e)
-}
 func (w *dialogDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
-	if !w.dialog.Open {
-		if e.Key == "enter" {
-			w.dialog.Open = true
-			return loom.Handled()
-		}
-		return loom.Ignored()
+	if !w.dialog.Open && e.Key == "enter" {
+		w.dialog.Open = true
+		return loom.Handled()
 	}
-	w.dialog.HandleKey(e)
-	return loom.Handled()
+	return w.dialog.ConsumeKey(e)
 }
 func (w *dialogDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if !w.dialog.Open {
-		return loom.Ignored()
-	}
-	if w.dialog.HandleMouse(e) {
-		return loom.Quit()
-	}
-	return loom.Handled()
+	return w.dialog.ConsumeMouse(e)
 }

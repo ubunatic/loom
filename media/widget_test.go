@@ -79,7 +79,7 @@ func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
 	if w.zoom != 8 {
 		t.Fatalf("zoom limit = %v, want 8", w.zoom)
 	}
-	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: "0"}); quit || !used {
+	if result := w.ConsumeKey(loom.KeyEvent{Text: "0"}); result.Quit || !result.Consumed {
 		t.Fatal("reset key was not consumed")
 	}
 	if w.zoom != 1 {
@@ -89,16 +89,16 @@ func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
 
 func TestMediaControlsPlayPauseKeysAndMouseWheel(t *testing.T) {
 	w := newStreamingWidget(make(chan image.Image), 24, nil)
-	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: " "}); quit || !used || w.IsPlaying() {
+	if result := w.ConsumeKey(loom.KeyEvent{Text: " "}); result.Quit || !result.Consumed || w.IsPlaying() {
 		t.Fatal("space did not pause playback")
 	}
-	if quit, used := w.ConsumeKey(loom.KeyEvent{Text: " "}); quit || !used || !w.IsPlaying() {
+	if result := w.ConsumeKey(loom.KeyEvent{Text: " "}); result.Quit || !result.Consumed || !w.IsPlaying() {
 		t.Fatal("space did not resume playback")
 	}
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 0, Y: 0}); quit || !used || w.zoom <= 1 {
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 0, Y: 0}); result.Quit || !result.Consumed || w.zoom <= 1 {
 		t.Fatal("wheel up did not zoom in")
 	}
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 0, Y: 0}); quit || !used || w.zoom != 1 {
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 0, Y: 0}); result.Quit || !result.Consumed || w.zoom != 1 {
 		t.Fatal("wheel down did not return to fit")
 	}
 }
@@ -169,16 +169,16 @@ func TestMediaControlBarClickAndDragPan(t *testing.T) {
 		t.Fatal(err)
 	}
 	w.Draw(loom.NewCanvas(40, 8), loom.Rect{X: 0, Y: 0, W: 40, H: 8})
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 12, Y: 7}); quit || !used || w.zoom != 1.25 {
-		t.Fatalf("zoom button: quit=%v used=%v zoom=%v", quit, used, w.zoom)
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 12, Y: 7}); result.Quit || !result.Consumed || w.zoom != 1.25 {
+		t.Fatalf("zoom button: quit=%v used=%v zoom=%v", result.Quit, result.Consumed, w.zoom)
 	}
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 20, Y: 2}); quit || !used {
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 20, Y: 2}); result.Quit || !result.Consumed {
 		t.Fatal("zoomed image press did not start pan drag")
 	}
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 10, Y: 2}); quit || !used || w.panX <= 0 {
-		t.Fatalf("drag pan failed: quit=%v used=%v pan=%v", quit, used, w.panX)
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 10, Y: 2}); result.Quit || !result.Consumed || w.panX <= 0 {
+		t.Fatalf("drag pan failed: quit=%v used=%v pan=%v", result.Quit, result.Consumed, w.panX)
 	}
-	if quit, used := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft}); quit || !used {
+	if result := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft}); result.Quit || !result.Consumed {
 		t.Fatal("drag release was not consumed")
 	}
 }

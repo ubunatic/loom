@@ -135,8 +135,8 @@ func TestMeasureSessionLoadsProfileAndShowsAllGlyphsByDefault(t *testing.T) {
 		t.Fatalf("unassessed session queued already answered glyph %q", first)
 	}
 
-	widget.HandleKey(keyText("0"))
-	widget.HandleKey(loom.KeyEvent{Key: "enter"})
+	widget.ConsumeKey(keyText("0"))
+	widget.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	loaded, err := LoadMeasurementStore(jsonPath)
 	if err != nil {
 		t.Fatalf("LoadMeasurementStore() after answer error = %v", err)

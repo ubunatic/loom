@@ -14,7 +14,7 @@ func TestConfirmDefaultYesEnter(t *testing.T) {
 	if c.Answered() {
 		t.Fatal("fresh Confirm should not be answered")
 	}
-	if quit := c.HandleKey(loom.KeyEvent{Key: "enter"}); !quit {
+	if quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit; !quit {
 		t.Fatal("Enter should quit")
 	}
 	if !c.Answered() || !c.Confirmed() {
@@ -25,7 +25,7 @@ func TestConfirmDefaultYesEnter(t *testing.T) {
 
 func TestConfirmDirectNoKey(t *testing.T) {
 	c := loom.NewConfirm("Commit?")
-	if quit := c.HandleKey(loom.KeyEvent{Text: "n"}); !quit {
+	if quit := c.ConsumeKey(loom.KeyEvent{Text: "n"}).Quit; !quit {
 		t.Fatal("'n' should answer and quit")
 	}
 	if !c.Answered() || c.Confirmed() {
@@ -35,9 +35,9 @@ func TestConfirmDirectNoKey(t *testing.T) {
 }
 
 func TestConfirmToggleThenEnter(t *testing.T) {
-	c := loom.NewConfirm("Commit?")          // starts on Yes
-	c.HandleKey(loom.KeyEvent{Key: "right"}) // move to No
-	c.HandleKey(loom.KeyEvent{Key: "enter"})
+	c := loom.NewConfirm("Commit?")           // starts on Yes
+	c.ConsumeKey(loom.KeyEvent{Key: "right"}) // move to No
+	c.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !c.Answered() || c.Confirmed() {
 		t.Errorf("toggle→Enter: answered=%v confirmed=%v, want true/false",
 			c.Answered(), c.Confirmed())
@@ -46,7 +46,7 @@ func TestConfirmToggleThenEnter(t *testing.T) {
 
 func TestConfirmEscIsNo(t *testing.T) {
 	c := loom.NewConfirm("Commit?")
-	if quit := c.HandleKey(loom.KeyEvent{Key: "esc"}); !quit {
+	if quit := c.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit; !quit {
 		t.Fatal("Esc should quit")
 	}
 	if !c.Answered() || c.Confirmed() {
@@ -57,7 +57,7 @@ func TestConfirmEscIsNo(t *testing.T) {
 
 func TestConfirmDefaultNo(t *testing.T) {
 	c := loom.NewConfirm("Delete?").DefaultNo()
-	c.HandleKey(loom.KeyEvent{Key: "enter"}) // confirms the highlighted (No)
+	c.ConsumeKey(loom.KeyEvent{Key: "enter"}) // confirms the highlighted (No)
 	if c.Confirmed() {
 		t.Error("DefaultNo + Enter should not confirm")
 	}

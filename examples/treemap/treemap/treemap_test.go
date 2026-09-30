@@ -50,7 +50,7 @@ func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {
 		t.Fatalf("widget ticker interval = %v, want 2s", ticker.TickInterval())
 	}
 	ticker.Tick(time.Now())
-	if !widget.HandleKey(loom.KeyEvent{Key: "q"}) {
+	if !widget.ConsumeKey(loom.KeyEvent{Key: "q"}).Quit {
 		t.Fatal("q should request hosted child quit")
 	}
 	closer.Close()
@@ -156,11 +156,11 @@ func TestWidgetFlagBindingAndHostedQuitContract(t *testing.T) {
 	}
 	widget := &treemapWidget{}
 	for _, key := range []string{"q", "esc", "ctrl-c", "ctrl-q"} {
-		if !widget.HandleKey(loom.KeyEvent{Key: key}) {
-			t.Errorf("HandleKey(%q) should signal child quit", key)
+		if !widget.ConsumeKey(loom.KeyEvent{Key: key}).Quit {
+			t.Errorf("ConsumeKey(%q) should signal child quit", key)
 		}
 	}
-	if widget.HandleKey(loom.KeyEvent{Key: "x"}) {
+	if widget.ConsumeKey(loom.KeyEvent{Key: "x"}).Quit {
 		t.Error("unhandled key should not signal quit")
 	}
 }

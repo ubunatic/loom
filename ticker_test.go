@@ -37,9 +37,9 @@ func TestPaneInvalidateIsNonBlockingAndCoalesced(t *testing.T) {
 
 type invalidationProbe struct{ invalidate func() }
 
-func (*invalidationProbe) Draw(*Canvas, Rect)          {}
-func (*invalidationProbe) HandleKey(KeyEvent) bool     { return false }
-func (*invalidationProbe) HandleMouse(MouseEvent) bool { return false }
+func (*invalidationProbe) Draw(*Canvas, Rect)                  {}
+func (*invalidationProbe) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*invalidationProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (p *invalidationProbe) SetInvalidate(invalidate func()) {
 	p.invalidate = invalidate
 }
@@ -64,11 +64,11 @@ type tickerProbe struct {
 	ticks    []time.Time
 }
 
-func (p *tickerProbe) Draw(*Canvas, Rect)          {}
-func (p *tickerProbe) HandleKey(KeyEvent) bool     { return false }
-func (p *tickerProbe) HandleMouse(MouseEvent) bool { return false }
-func (p *tickerProbe) TickInterval() time.Duration { return p.interval }
-func (p *tickerProbe) Tick(now time.Time)          { p.ticks = append(p.ticks, now) }
+func (p *tickerProbe) Draw(*Canvas, Rect)                  {}
+func (p *tickerProbe) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (p *tickerProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (p *tickerProbe) TickInterval() time.Duration         { return p.interval }
+func (p *tickerProbe) Tick(now time.Time)                  { p.ticks = append(p.ticks, now) }
 
 func TestTickTreeUsesShortestCadenceAndPerWidgetCadence(t *testing.T) {
 	fast := &tickerProbe{interval: time.Second}
@@ -166,17 +166,17 @@ func (p *paneTickerProbe) Draw(c *Canvas, _ Rect) {
 	p.mu.Unlock()
 	c.Write(0, 0, fmt.Sprintf("ticks=%d draws=%d", p.tickCount(), n), Style{})
 }
-func (p *paneTickerProbe) HandleMouse(MouseEvent) bool { return false }
-func (p *paneTickerProbe) HandleKey(e KeyEvent) bool {
+func (p *paneTickerProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (p *paneTickerProbe) ConsumeKey(e KeyEvent) EventResult {
 	if e.Key == "q" || e.Text == "q" {
 		select {
 		case <-p.done:
 		default:
 			close(p.done)
 		}
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 func (p *paneTickerProbe) TickInterval() time.Duration {
 	p.mu.Lock()

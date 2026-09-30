@@ -149,7 +149,7 @@ func TestSplashWidgetLifecycleAndTicks(t *testing.T) {
 	ticker.Tick(time.Now())
 
 	// Dismiss splash via key
-	app.HandleKey(loom.KeyEvent{Key: "esc"})
+	app.ConsumeKey(loom.KeyEvent{Key: "esc"})
 
 	// Advance ticks to finish transition
 	ticker.Tick(time.Now())
@@ -162,7 +162,7 @@ func TestSplashWidgetLifecycleAndTicks(t *testing.T) {
 	}
 
 	// Key in active destination: 'q' should quit
-	quit := app.HandleKey(loom.KeyEvent{Key: "q"})
+	quit := app.ConsumeKey(loom.KeyEvent{Key: "q"}).Quit
 	if !quit {
 		t.Error("expected 'q' in active destination to signal quit")
 	}
@@ -185,16 +185,16 @@ func TestSplashHostedInTabsOnChildQuit(t *testing.T) {
 
 	// Dismiss splash and transition to destination
 	app.Tick(time.Now())
-	app.HandleKey(loom.KeyEvent{Key: "esc"})
+	app.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	app.Tick(time.Now())
 	canvas := loom.NewCanvas(60, 12)
 	tabs.Draw(canvas, canvas.Bounds())
 	app.Tick(time.Now())
 
 	// Send 'q' key through Tabs
-	quit := tabs.HandleKey(loom.KeyEvent{Key: "q"})
+	quit := tabs.ConsumeKey(loom.KeyEvent{Key: "q"}).Quit
 	if quit {
-		t.Error("expected Tabs.HandleKey to return false when OnChildQuit contains quit")
+		t.Error("expected Tabs.ConsumeKey to return false when OnChildQuit contains quit")
 	}
 	if !childQuitReported {
 		t.Error("expected Tabs.OnChildQuit to be called when child destination quits")

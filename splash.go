@@ -232,8 +232,8 @@ func (sc *SplashController) Snapshot() SplashSnapshot {
 	}
 }
 
-// HandleKey intercepts navigation / dismissal keys (Esc, q, Enter, Ctrl-C).
-func (sc *SplashController) HandleKey(e KeyEvent) bool {
+// ConsumeKey intercepts navigation / dismissal keys (Esc, q, Enter, Ctrl-C).
+func (sc *SplashController) ConsumeKey(e KeyEvent) EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -241,7 +241,7 @@ func (sc *SplashController) HandleKey(e KeyEvent) bool {
 	switch key {
 	case "esc", "q", "enter", "ctrl-c", "ctrl-q":
 		sc.Dismiss()
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }

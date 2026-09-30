@@ -57,13 +57,16 @@ func (n *NumberInput) Error() string {
 // Editing reports whether inline editing is active.
 func (n *NumberInput) Editing() bool { return n != nil && n.editor != nil }
 
-// HandleKey steps, edits, commits, or cancels the value.
-func (n *NumberInput) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey steps, edits, commits, or cancels the value.
+func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if n == nil {
-		return false
+		return Ignored()
 	}
 	if n.editor != nil {
-		return n.handleEditKey(e)
+		if n.handleEditKey(e) {
+			return Handled()
+		}
+		return Ignored()
 	}
 	switch e.Key {
 	case "enter":
@@ -80,11 +83,11 @@ func (n *NumberInput) HandleKey(e KeyEvent) (quit bool) {
 			n.StepBy(-1)
 		}
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse is a no-op.
-func (n *NumberInput) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse is a no-op.
+func (n *NumberInput) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 // StepBy changes the value by direction times Step and clamps it to the bounds.
 func (n *NumberInput) StepBy(direction float64) {
@@ -161,13 +164,13 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 		}
 		if e.Text == "-" {
 			if n.Min < 0 && n.editor.Caret() == 0 && !strings.Contains(n.editor.Value(), "-") {
-				n.editor.HandleKey(e)
+				n.editor.ConsumeKey(e)
 				n.err = ""
 			}
 			return false
 		}
 		if e.Text == "." && !strings.Contains(n.editor.Value(), ".") {
-			n.editor.HandleKey(e)
+			n.editor.ConsumeKey(e)
 			n.err = ""
 			return false
 		}
@@ -182,14 +185,14 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 				}
 			}
 			if valid {
-				n.editor.HandleKey(e)
+				n.editor.ConsumeKey(e)
 				n.err = ""
 			} else if invalidDot || strings.Contains(e.Text, ".") {
 				n.err = "invalid number"
 			}
 			return false
 		}
-		n.editor.HandleKey(e)
+		n.editor.ConsumeKey(e)
 		n.err = ""
 	}
 	return false

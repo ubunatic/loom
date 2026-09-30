@@ -1256,10 +1256,13 @@ type picker struct {
 
 type gridPane struct{ picker *picker }
 
-func (g *gridPane) Draw(c *loom.Canvas, r loom.Rect) { g.picker.drawGrid(c, r) }
-func (g *gridPane) HandleKey(loom.KeyEvent) bool     { return false }
-func (g *gridPane) HandleMouse(e loom.MouseEvent) bool {
-	return g.picker.handleGridMouse(e)
+func (g *gridPane) Draw(c *loom.Canvas, r loom.Rect)          { g.picker.drawGrid(c, r) }
+func (g *gridPane) ConsumeKey(loom.KeyEvent) loom.EventResult { return loom.Ignored() }
+func (g *gridPane) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if g.picker.handleGridMouse(e) {
+		return loom.Handled()
+	}
+	return loom.Ignored()
 }
 
 func newPicker() *picker {
@@ -1438,26 +1441,26 @@ func (p *picker) drawGrid(c *loom.Canvas, r loom.Rect) {
 
 // ── Input handling ────────────────────────────────────────────────────────────
 
-func (p *picker) HandleKey(e loom.KeyEvent) bool {
+func (p *picker) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
 	}
 	switch key {
 	case "ctrl-c", "esc":
-		return true
+		return loom.QuitResult()
 	case "tab":
 		p.gridFocus = !p.gridFocus
 	case "left":
 		if !p.gridFocus {
-			p.query.HandleKey(e)
+			p.query.ConsumeKey(e)
 			p.refresh()
 		} else if p.index > 0 {
 			p.index--
 		}
 	case "right":
 		if !p.gridFocus {
-			p.query.HandleKey(e)
+			p.query.ConsumeKey(e)
 			p.refresh()
 		} else if p.index+1 < len(p.items) {
 			p.index++
@@ -1475,11 +1478,11 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 	case "enter":
 		if len(p.items) > 0 {
 			p.chosen = p.entries[p.items[p.index]].icon
-			return true
+			return loom.QuitResult()
 		}
 	case "backspace":
 		if !p.gridFocus {
-			p.query.HandleKey(e)
+			p.query.ConsumeKey(e)
 			p.refresh()
 		}
 	default:
@@ -1490,36 +1493,36 @@ func (p *picker) HandleKey(e loom.KeyEvent) bool {
 			} else {
 				p.nextCategory()
 			}
-			return false
+			return loom.Ignored()
 		}
 		// Printable text types into search and switches to search mode if in grid.
 		if e.Text != "" {
 			p.gridFocus = false
-			p.query.HandleKey(e)
+			p.query.ConsumeKey(e)
 			p.index = 0
 			p.refresh()
 		}
 	}
-	return false
+	return loom.Ignored()
 }
 
-func (p *picker) HandleMouse(e loom.MouseEvent) bool {
+func (p *picker) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
-		return false
+		return loom.Ignored()
 	}
 	x, y := e.X, e.Y
 	// Click on search bar → switch to search focus
 	if (y == p.searchY || y == p.searchY+1) && e.Action == loom.MousePress && e.Button == loom.MouseLeft {
 		p.gridFocus = false
-		return false
+		return loom.Ignored()
 	}
 	// Click on category bar → switch category
 	if y == p.categoryY || y == p.categoryY+1 {
 		if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
-			return false
+			return loom.Ignored()
 		}
 		if x < 2 || x >= p.width {
-			return false
+			return loom.Ignored()
 		}
 		// Walk the category icons to find which one was clicked.
 		cx := 2
@@ -1527,13 +1530,13 @@ func (p *picker) HandleMouse(e loom.MouseEvent) bool {
 			w := loom.StringWidth(cat.icon) + 2
 			if x >= cx && x < cx+w {
 				p.selectCategory(i)
-				return false
+				return loom.Ignored()
 			}
 			cx += w
 		}
-		return false
+		return loom.Ignored()
 	}
-	return p.split.HandleMouse(e)
+	return p.split.ConsumeMouse(e)
 }
 
 func (p *picker) handleGridMouse(e loom.MouseEvent) bool {

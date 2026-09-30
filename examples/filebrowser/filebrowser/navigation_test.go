@@ -32,19 +32,19 @@ func TestNavigationPaneReadsAndSelectsEntries(t *testing.T) {
 	if got, ok := pane.Selected(); !ok || got.Name != "alpha.txt" {
 		t.Fatalf("initial selection = %+v, ok=%v; want alpha.txt", got, ok)
 	}
-	pane.HandleKey(loom.KeyEvent{Text: "beta"})
+	pane.ConsumeKey(loom.KeyEvent{Text: "beta"})
 	if got := pane.List().Query(); got != "" {
 		t.Fatalf("typing before / filtered to %q, want no filter", got)
 	}
-	pane.HandleKey(loom.KeyEvent{Text: "/"})
-	pane.HandleKey(loom.KeyEvent{Text: "beta"})
+	pane.ConsumeKey(loom.KeyEvent{Text: "/"})
+	pane.ConsumeKey(loom.KeyEvent{Text: "beta"})
 	if got := pane.List().Query(); got != "beta" {
 		t.Fatalf("filter = %q, want beta", got)
 	}
 	if selected != "beta" {
 		t.Fatalf("selection callback name = %q, want beta", selected)
 	}
-	if pane.HandleKey(loom.KeyEvent{Key: "enter"}) {
+	if pane.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit {
 		t.Fatal("activating an entry should not quit")
 	}
 	if selected != "activated:beta" {
@@ -62,12 +62,12 @@ func TestNavigationPaneOpensDirectoryAndRestoresParentSelection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	pane.HandleKey(loom.KeyEvent{Key: "enter"})
+	pane.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if got := pane.Directory().Path; got != child {
 		t.Fatalf("opened directory = %q, want %q", got, child)
 	}
-	if quit, consumed := pane.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
-		t.Fatalf("escape = quit:%v consumed:%v, want false,true", quit, consumed)
+	if result := pane.ConsumeKey(loom.KeyEvent{Key: "esc"}); result.Quit || !result.Consumed {
+		t.Fatalf("escape = quit:%v consumed:%v, want false,true", result.Quit, result.Consumed)
 	}
 	if got := pane.Directory().Path; got != root {
 		t.Fatalf("returned directory = %q, want %q", got, root)
@@ -83,8 +83,8 @@ func TestNavigationPaneEscapeAtRootRequestsQuit(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if quit, consumed := pane.ConsumeKey(loom.KeyEvent{Key: "esc"}); !quit || !consumed {
-		t.Fatalf("root escape = quit:%v consumed:%v, want true,true", quit, consumed)
+	if result := pane.ConsumeKey(loom.KeyEvent{Key: "esc"}); !result.Quit || !result.Consumed {
+		t.Fatalf("root escape = quit:%v consumed:%v, want true,true", result.Quit, result.Consumed)
 	}
 }
 
@@ -101,7 +101,7 @@ func TestNavigationPaneMouseSelectionUsesChildLocalCoordinates(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(40, 10)
 	pane.Draw(canvas, loom.Rect{X: 7, Y: 5, W: 30, H: 6})
-	pane.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 2})
+	pane.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 2})
 	if got, ok := pane.Selected(); !ok || got.Name != "beta" {
 		t.Fatalf("selection after local row 1 click = %+v, ok=%v; want beta", got, ok)
 	}
@@ -121,13 +121,13 @@ func TestNavigationPaneDoubleClickActivatesFile(t *testing.T) {
 	}
 	pane.Draw(loom.NewCanvas(40, 8), loom.Rect{W: 40, H: 8})
 	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 1}
-	pane.HandleMouse(click)
+	pane.ConsumeMouse(click)
 	if got, ok := pane.Selected(); !ok || got.Name != "alpha.txt" || activated != "" {
 		t.Fatalf("first click selected %+v, ok=%v and activated %q; want alpha.txt selected only", got, ok, activated)
 	}
-	pane.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
+	pane.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
 	time.Sleep(10 * time.Millisecond)
-	pane.HandleMouse(click)
+	pane.ConsumeMouse(click)
 	if activated != "alpha.txt" {
 		t.Fatalf("double-click activated %q, want alpha.txt", activated)
 	}
@@ -148,13 +148,13 @@ func TestNavigationPaneDoubleClickEntersDirectory(t *testing.T) {
 	}
 	pane.Draw(loom.NewCanvas(40, 8), loom.Rect{W: 40, H: 8})
 	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 1}
-	pane.HandleMouse(click)
+	pane.ConsumeMouse(click)
 	if pane.Directory().Path != root || opened != 0 {
 		t.Fatalf("first click entered %q with %d open callbacks; want root and none", pane.Directory().Path, opened)
 	}
-	pane.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
+	pane.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 2, Y: 1})
 	time.Sleep(10 * time.Millisecond)
-	pane.HandleMouse(click)
+	pane.ConsumeMouse(click)
 	if pane.Directory().Path != child || opened != 1 {
 		t.Fatalf("double-click entered %q with %d open callbacks; want %q and one", pane.Directory().Path, opened, child)
 	}
@@ -171,16 +171,16 @@ func TestNavigationPaneSearchGate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "a"}); consumed {
+	if pane.ConsumeKey(loom.KeyEvent{Text: "a"}).Consumed {
 		t.Fatal("a letter outside search was consumed; the app must get it")
 	}
-	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "/"}); !consumed || !pane.Searching() {
-		t.Fatalf("/ consumed=%v searching=%v, want both", consumed, pane.Searching())
+	if result := pane.ConsumeKey(loom.KeyEvent{Text: "/"}); !result.Consumed || !pane.Searching() {
+		t.Fatalf("/ consumed=%v searching=%v, want both", result.Consumed, pane.Searching())
 	}
-	if _, consumed := pane.ConsumeKey(loom.KeyEvent{Text: "b"}); !consumed || pane.List().Query() != "b" {
-		t.Fatalf("typed b while searching: consumed=%v query=%q", consumed, pane.List().Query())
+	if result := pane.ConsumeKey(loom.KeyEvent{Text: "b"}); !result.Consumed || pane.List().Query() != "b" {
+		t.Fatalf("typed b while searching: consumed=%v query=%q", result.Consumed, pane.List().Query())
 	}
-	pane.HandleKey(loom.KeyEvent{Key: "esc"})
+	pane.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	if pane.Searching() || pane.List().Query() != "" {
 		t.Fatalf("esc left searching=%v query=%q, want search closed and cleared", pane.Searching(), pane.List().Query())
 	}
@@ -188,7 +188,7 @@ func TestNavigationPaneSearchGate(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	typing.HandleKey(loom.KeyEvent{Text: "b"})
+	typing.ConsumeKey(loom.KeyEvent{Text: "b"})
 	if got := typing.List().Query(); got != "b" {
 		t.Fatalf("TypeToSearch query = %q, want b", got)
 	}
@@ -217,18 +217,18 @@ func TestNavigationPaneSearchUIVisibility(t *testing.T) {
 	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 {
 		t.Fatalf("idle search row=%q cursor=(%d,%d), want / search and hidden cursor", got, canvas.CursorX, canvas.CursorY)
 	}
-	pane.HandleKey(loom.KeyEvent{Text: "/"})
+	pane.ConsumeKey(loom.KeyEvent{Text: "/"})
 	canvas, row = draw()
 	if !strings.HasPrefix(row, "filter> ") || canvas.CursorX < 0 {
 		t.Fatalf("active search row=%q cursor=(%d,%d), want editable filter and visible cursor", row, canvas.CursorX, canvas.CursorY)
 	}
-	pane.HandleKey(loom.KeyEvent{Text: "a"})
-	pane.HandleKey(loom.KeyEvent{Key: "enter"})
+	pane.ConsumeKey(loom.KeyEvent{Text: "a"})
+	pane.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	canvas, row = draw()
 	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 || pane.List().Query() != "a" {
 		t.Fatalf("applied search row=%q cursor=(%d,%d) query=%q, want idle hint, hidden cursor, retained query", got, canvas.CursorX, canvas.CursorY, pane.List().Query())
 	}
-	pane.HandleKey(loom.KeyEvent{Key: "esc"})
+	pane.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	canvas, row = draw()
 	if got := strings.TrimSpace(row); got != "/ search" || canvas.CursorX != -1 || pane.List().Query() != "" {
 		t.Fatalf("cleared search row=%q cursor=(%d,%d) query=%q, want idle hint, hidden cursor, empty query", got, canvas.CursorX, canvas.CursorY, pane.List().Query())

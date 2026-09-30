@@ -7,12 +7,14 @@ package loom
 // While Open, it captures all keyboard and mouse events before the
 // background widget. Set Open=false to dismiss.
 type Popup struct {
-	Title  string
-	Inner  Widget
-	Open   bool
-	Width  int // 0 = half the canvas width
-	Height int // 0 = half the canvas height
-	Style  Style
+	Title     string
+	Inner     Widget
+	Open      bool
+	Width     int // 0 = half the canvas width
+	Height    int // 0 = half the canvas height
+	Style     Style
+	lastRect  Rect
+	innerRect Rect
 }
 
 // NewPopup creates a Popup wrapping inner with the given title.
@@ -23,6 +25,8 @@ func NewPopup(title string, inner Widget) *Popup {
 // Draw renders the popup centered in r, with a simple box border.
 // If not Open, Draw does nothing.
 func (p *Popup) Draw(c *Canvas, r Rect) {
+	p.lastRect = r
+	p.innerRect = Rect{}
 	if !p.Open || p.Inner == nil {
 		return
 	}
@@ -48,24 +52,22 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 		if f, ok := p.Inner.(Focusable); ok {
 			f.SetFocus(p.Open)
 		}
-		p.Inner.Draw(c, Rect{X: x + 1, Y: y + 1, W: pw - 2, H: ph - 2})
+		p.innerRect = Rect{X: x + 1, Y: y + 1, W: pw - 2, H: ph - 2}
+		p.Inner.Draw(c, p.innerRect)
 	}
 }
 
-// HandleKey forwards to Inner while Open; Esc closes the popup.
-func (p *Popup) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey forwards to Inner while Open; Esc closes the popup.
+func (p *Popup) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if !p.Open || p.Inner == nil {
-		return false
+		return Ignored()
 	}
 	if e.Key == "esc" {
 		p.Open = false
-		return false
+		return Handled()
 	}
 	res := DispatchKeyEvent(p.Inner, e)
-	if res.Consumed {
-		return res.Quit
-	}
-	return false
+	return res
 }
 
 func (p *Popup) ConsumePaste(e PasteEvent) EventResult {
@@ -75,16 +77,21 @@ func (p *Popup) ConsumePaste(e PasteEvent) EventResult {
 	return DispatchPasteEvent(p.Inner, e)
 }
 
-// HandleMouse forwards to Inner while Open.
-func (p *Popup) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse forwards to Inner while Open.
+func (p *Popup) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	if !p.Open || p.Inner == nil {
-		return false
+		return Ignored()
 	}
+	x, y := e.X+p.lastRect.X, e.Y+p.lastRect.Y
+	if !p.innerRect.Contains(x, y) {
+		return Handled()
+	}
+	e.X, e.Y = x-p.innerRect.X, y-p.innerRect.Y
 	res := DispatchMouseEvent(p.Inner, e)
-	if res.Consumed {
-		return res.Quit
+	if !res.Consumed {
+		return Handled()
 	}
-	return false
+	return res
 }
 
 func (p *Popup) dims(r Rect) (w, h int) {

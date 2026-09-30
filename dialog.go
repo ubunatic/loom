@@ -88,16 +88,16 @@ func maxDialogWidth(title string, lines, buttons []string) int {
 	return w
 }
 
-func (d *Dialog) HandleKey(e KeyEvent) bool {
+func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 	if !d.Open {
-		return false
+		return Ignored()
 	}
 	if e.Key == "esc" {
 		d.Open = false
-		return false
+		return Ignored()
 	}
 	if len(d.Buttons) == 0 {
-		return false
+		return Ignored()
 	}
 	switch e.Key {
 	case "left":
@@ -110,14 +110,14 @@ func (d *Dialog) HandleKey(e KeyEvent) bool {
 		}
 		d.Open = false
 	}
-	return false
+	return Ignored()
 }
 
-func (d *Dialog) HandleMouse(e MouseEvent) bool {
+func (d *Dialog) ConsumeMouse(e MouseEvent) EventResult {
 	if d.popup == nil || !d.Open {
-		return false
+		return Ignored()
 	}
-	return d.popup.HandleMouse(e)
+	return d.popup.ConsumeMouse(e)
 }
 
 type dialogContent struct {
@@ -145,6 +145,6 @@ func (w *dialogContent) Draw(c *Canvas, r Rect) {
 		x += c.Write(x, y, text, style)
 	}
 }
-func (*dialogContent) HandleKey(KeyEvent) bool     { return false }
-func (*dialogContent) HandleMouse(MouseEvent) bool { return false }
-func (w *dialogContent) ContentHeight() int        { return len(w.lines) + 1 }
+func (*dialogContent) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*dialogContent) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (w *dialogContent) ContentHeight() int                { return len(w.lines) + 1 }

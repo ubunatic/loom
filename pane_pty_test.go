@@ -98,9 +98,9 @@ func newKeyRecorder(want int) *keyRecorder {
 	return &keyRecorder{want: want, done: make(chan struct{})}
 }
 
-func (r *keyRecorder) Draw(*Canvas, Rect)          {}
-func (r *keyRecorder) HandleMouse(MouseEvent) bool { return false }
-func (r *keyRecorder) HandleKey(e KeyEvent) bool {
+func (r *keyRecorder) Draw(*Canvas, Rect)                  {}
+func (r *keyRecorder) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (r *keyRecorder) ConsumeKey(e KeyEvent) EventResult {
 	r.mu.Lock()
 	r.keys = append(r.keys, e)
 	n := len(r.keys)
@@ -111,9 +111,9 @@ func (r *keyRecorder) HandleKey(e KeyEvent) bool {
 		default:
 			close(r.done)
 		}
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 
 func (r *keyRecorder) snapshot() []KeyEvent {
@@ -150,14 +150,14 @@ func (w *cursorEffectsPTYWidget) Draw(c *Canvas, r Rect) {
 	}
 }
 
-func (w *cursorEffectsPTYWidget) HandleMouse(e MouseEvent) bool {
+func (w *cursorEffectsPTYWidget) ConsumeMouse(e MouseEvent) EventResult {
 	w.mouseEvents <- e
-	return false
+	return Ignored()
 }
 
-func (w *cursorEffectsPTYWidget) HandleKey(e KeyEvent) bool {
+func (w *cursorEffectsPTYWidget) ConsumeKey(e KeyEvent) EventResult {
 	w.keyEvents <- e
-	return e.Is("q")
+	return EventResult{Consumed: e.Is("q"), Quit: e.Is("q")}
 }
 
 func TestCursorEffectsThroughPTY(t *testing.T) {
@@ -336,7 +336,7 @@ func TestCursorEffectsThroughPTY(t *testing.T) {
 // TestPaneRunDecodesMultipleKeysFromOneRead is the ticket-053 acceptance
 // case for bug 1: two complete key sequences written in a single Write (so
 // they are very likely to land in a single tty.Read) must both be decoded
-// and dispatched via HandleKey, in order. Before the fix, Pane.run decoded
+// and dispatched via ConsumeKey, in order. Before the fix, Pane.run decoded
 // only the first sequence in raw and silently dropped the rest.
 func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 	master, slave := openPTY(t)
@@ -367,9 +367,9 @@ func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 
 type pastePTYWidget struct{ pasted chan PasteEvent }
 
-func (w *pastePTYWidget) Draw(*Canvas, Rect)          {}
-func (w *pastePTYWidget) HandleKey(KeyEvent) bool     { return false }
-func (w *pastePTYWidget) HandleMouse(MouseEvent) bool { return false }
+func (w *pastePTYWidget) Draw(*Canvas, Rect)                  {}
+func (w *pastePTYWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (w *pastePTYWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (w *pastePTYWidget) ConsumePaste(event PasteEvent) EventResult {
 	w.pasted <- event
 	return QuitResult()
@@ -623,14 +623,14 @@ func (w *ptyResizeWidget) Draw(c *Canvas, r Rect) {
 	c.Write(0, 0, fmt.Sprintf("draw %d: %dx%d", w.draws, c.Cols(), c.Rows()), Style{})
 }
 
-func (w *ptyResizeWidget) HandleMouse(MouseEvent) bool { return false }
+func (w *ptyResizeWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
-func (w *ptyResizeWidget) HandleKey(e KeyEvent) bool {
+func (w *ptyResizeWidget) ConsumeKey(e KeyEvent) EventResult {
 	if e.Key == "q" || e.Text == "q" {
 		close(w.done)
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 
 func (w *ptyResizeWidget) lastDimensions() (int, int) {

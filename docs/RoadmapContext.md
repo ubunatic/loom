@@ -61,7 +61,7 @@ mouse decoding, colors/styles, screenshots, and widgets including:
 - `Router`
 
 The current public runtime boundary is a procedural `Widget` interface with
-`Draw`, `HandleKey`, and `HandleMouse`. `Stack` divides space equally and
+`Draw`, `ConsumeKey`, and `ConsumeMouse`. `Stack` divides space equally and
 `Grid` provides uniform cells. The YAML layer builds a limited set of
 predefined widgets and routes between named views.
 

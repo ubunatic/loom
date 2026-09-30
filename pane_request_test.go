@@ -7,16 +7,16 @@ type paneRequestWidget struct {
 	request PaneRequest
 }
 
-func (w paneRequestWidget) Draw(*Canvas, Rect)          {}
-func (w paneRequestWidget) HandleKey(KeyEvent) bool     { return false }
-func (w paneRequestWidget) HandleMouse(MouseEvent) bool { return false }
-func (w paneRequestWidget) PaneRequest() PaneRequest    { return w.request }
+func (w paneRequestWidget) Draw(*Canvas, Rect)                  {}
+func (w paneRequestWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (w paneRequestWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (w paneRequestWidget) PaneRequest() PaneRequest            { return w.request }
 
 type plainPaneWidget struct{}
 
-func (plainPaneWidget) Draw(*Canvas, Rect)          {}
-func (plainPaneWidget) HandleKey(KeyEvent) bool     { return false }
-func (plainPaneWidget) HandleMouse(MouseEvent) bool { return false }
+func (plainPaneWidget) Draw(*Canvas, Rect)                  {}
+func (plainPaneWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (plainPaneWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 func TestMergePaneRequestMouse(t *testing.T) {
 	request := (&Stack{Children: []Widget{

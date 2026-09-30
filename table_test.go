@@ -45,20 +45,20 @@ func TestTableInitialSelection(t *testing.T) {
 func TestTableNavigation(t *testing.T) {
 	tbl, _, _ := psTestTable()
 
-	tbl.HandleKey(loom.KeyEvent{Key: "down"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
 	item, _ := tbl.Selected()
 	if item.Name != "bash (200)" {
 		t.Errorf("after down: %q, want bash (200)", item.Name)
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Key: "down"})
-	tbl.HandleKey(loom.KeyEvent{Key: "down"}) // wraps back to first
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"}) // wraps back to first
 	item, _ = tbl.Selected()
 	if item.Name != "firefox (300)" {
 		t.Errorf("after wrap-down: %q, want firefox (300)", item.Name)
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Key: "up"}) // wraps to last
+	tbl.ConsumeKey(loom.KeyEvent{Key: "up"}) // wraps to last
 	item, _ = tbl.Selected()
 	if item.Name != "vim (201)" {
 		t.Errorf("after wrap-up: %q, want vim (201)", item.Name)
@@ -74,11 +74,11 @@ func TestTableCellCursorNavigationAndCallback(t *testing.T) {
 		gotRow, gotCol, called = row, col, true
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Key: "right"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if !called || gotRow != 0 || gotCol != 1 {
 		t.Fatalf("right callback = (%d, %d), called %v; want (0, 1)", gotRow, gotCol, called)
 	}
-	tbl.HandleKey(loom.KeyEvent{Key: "down"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if gotRow != 1 || gotCol != 1 {
 		t.Fatalf("down callback = (%d, %d), want (1, 1)", gotRow, gotCol)
 	}
@@ -96,7 +96,7 @@ func TestTableCellCursorScrollsWithFrozenColumns(t *testing.T) {
 	tbl.CellCursor = true
 	tbl.FrozenCols = 1
 	for i := 0; i < 3; i++ {
-		tbl.HandleKey(loom.KeyEvent{Key: "right"})
+		tbl.ConsumeKey(loom.KeyEvent{Key: "right"})
 	}
 	cv := loom.NewCanvas(15, 3)
 	tbl.Draw(cv, cv.Bounds())
@@ -113,7 +113,7 @@ func TestTableCellCursorScrollsWithFrozenColumns(t *testing.T) {
 func TestTablePageKeyAliases(t *testing.T) {
 	for _, key := range []string{"pgdown", "pgdn", "pagedown"} {
 		tbl, _, _ := psTestTable()
-		tbl.HandleKey(loom.KeyEvent{Key: key})
+		tbl.ConsumeKey(loom.KeyEvent{Key: key})
 		item, _ := tbl.Selected()
 		if item.Name != "vim (201)" {
 			t.Errorf("key %q selected %q, want last row", key, item.Name)
@@ -121,8 +121,8 @@ func TestTablePageKeyAliases(t *testing.T) {
 	}
 	for _, key := range []string{"pgup", "pageup"} {
 		tbl, _, _ := psTestTable()
-		tbl.HandleKey(loom.KeyEvent{Key: "down"})
-		tbl.HandleKey(loom.KeyEvent{Key: key})
+		tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
+		tbl.ConsumeKey(loom.KeyEvent{Key: key})
 		item, _ := tbl.Selected()
 		if item.Name != "firefox (300)" {
 			t.Errorf("key %q selected %q, want first row", key, item.Name)
@@ -132,7 +132,7 @@ func TestTablePageKeyAliases(t *testing.T) {
 
 func TestTableRowModeIgnoresHorizontalKeys(t *testing.T) {
 	tbl, _, _ := psTestTable()
-	tbl.HandleKey(loom.KeyEvent{Key: "right"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if _, ok := tbl.Selected(); !ok {
 		t.Fatal("row selection should remain available")
 	}
@@ -141,8 +141,8 @@ func TestTableRowModeIgnoresHorizontalKeys(t *testing.T) {
 func TestTableEnter(t *testing.T) {
 	tbl, _, _ := psTestTable()
 
-	tbl.HandleKey(loom.KeyEvent{Key: "down"}) // select bash
-	quit := tbl.HandleKey(loom.KeyEvent{Key: "enter"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "down"}) // select bash
+	quit := tbl.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit {
 		t.Error("enter should return quit=true")
 	}
@@ -158,7 +158,7 @@ func TestTableEnter(t *testing.T) {
 func TestTableAbort(t *testing.T) {
 	for _, key := range []string{"esc", "ctrl-c", "ctrl-d", "ctrl-q"} {
 		tbl, _, _ := psTestTable()
-		quit := tbl.HandleKey(loom.KeyEvent{Key: key})
+		quit := tbl.ConsumeKey(loom.KeyEvent{Key: key}).Quit
 		if !quit {
 			t.Errorf("key %q: expected quit=true", key)
 		}
@@ -177,7 +177,7 @@ func TestTableFilter(t *testing.T) {
 
 	// Type "vim" — only vim (201) should match.
 	for _, ch := range "vim" {
-		tbl.HandleKey(loom.KeyEvent{Text: string(ch)})
+		tbl.ConsumeKey(loom.KeyEvent{Text: string(ch)})
 	}
 	item, ok := tbl.Selected()
 	if !ok {
@@ -188,9 +188,9 @@ func TestTableFilter(t *testing.T) {
 	}
 
 	// Backspace clears filter char by char.
-	tbl.HandleKey(loom.KeyEvent{Key: "backspace"}) // "vi"
-	tbl.HandleKey(loom.KeyEvent{Key: "backspace"}) // "v"
-	tbl.HandleKey(loom.KeyEvent{Key: "backspace"}) // ""
+	tbl.ConsumeKey(loom.KeyEvent{Key: "backspace"}) // "vi"
+	tbl.ConsumeKey(loom.KeyEvent{Key: "backspace"}) // "v"
+	tbl.ConsumeKey(loom.KeyEvent{Key: "backspace"}) // ""
 	// All rows visible again.
 	item, ok = tbl.Selected()
 	if !ok {
@@ -207,7 +207,7 @@ func TestTableFilterAllColumns(t *testing.T) {
 
 	// "512" matches the MEM cell of firefox, not the NAME cell.
 	for _, ch := range "512" {
-		tbl.HandleKey(loom.KeyEvent{Text: string(ch)})
+		tbl.ConsumeKey(loom.KeyEvent{Text: string(ch)})
 	}
 	item, ok := tbl.Selected()
 	if !ok {
@@ -226,7 +226,7 @@ func TestTableSortCycle(t *testing.T) {
 	}
 
 	for i := range cols {
-		tbl.HandleKey(loom.KeyEvent{Key: "tab"})
+		tbl.ConsumeKey(loom.KeyEvent{Key: "tab"})
 		want := i
 		if tbl.SortCol != want {
 			t.Errorf("after %d tab(s): SortCol = %d, want %d", i+1, tbl.SortCol, want)
@@ -234,7 +234,7 @@ func TestTableSortCycle(t *testing.T) {
 	}
 
 	// One more tab wraps back to 0.
-	tbl.HandleKey(loom.KeyEvent{Key: "tab"})
+	tbl.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if tbl.SortCol != 0 {
 		t.Errorf("after wrap: SortCol = %d, want 0", tbl.SortCol)
 	}
@@ -250,7 +250,7 @@ func TestTableSortCallback(t *testing.T) {
 		gotDesc = desc
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Key: "tab"}) // → col 0
+	tbl.ConsumeKey(loom.KeyEvent{Key: "tab"}) // → col 0
 	if gotCol != 0 {
 		t.Errorf("OnSort col = %d, want 0", gotCol)
 	}
@@ -267,12 +267,12 @@ func TestTableSortDirection(t *testing.T) {
 		t.Error("initial SortDesc should be false")
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Text: "!"})
+	tbl.ConsumeKey(loom.KeyEvent{Text: "!"})
 	if !tbl.SortDesc {
 		t.Error("after !: SortDesc should be true")
 	}
 
-	tbl.HandleKey(loom.KeyEvent{Text: "!"})
+	tbl.ConsumeKey(loom.KeyEvent{Text: "!"})
 	if tbl.SortDesc {
 		t.Error("after !!: SortDesc should be false")
 	}
@@ -283,7 +283,7 @@ func TestTableSortDirectionNoCallbackWhenNoCol(t *testing.T) {
 	// SortCol=-1: ! should toggle SortDesc but not call OnSort.
 	called := false
 	tbl.OnSort = func(_ int, _ bool) { called = true }
-	tbl.HandleKey(loom.KeyEvent{Text: "!"})
+	tbl.ConsumeKey(loom.KeyEvent{Text: "!"})
 	if called {
 		t.Error("! with SortCol=-1 should not call OnSort")
 	}

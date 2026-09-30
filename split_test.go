@@ -60,7 +60,7 @@ func TestSplitSetRatioAndDivider(t *testing.T) {
 	if split.Ratio != 1 {
 		t.Fatalf("SetRatio(4) = %v, want 1", split.Ratio)
 	}
-	split.HandleKey(KeyEvent{Text: "["})
+	split.ConsumeKey(KeyEvent{Text: "["})
 	if split.Ratio != 0.95 {
 		t.Fatalf("ratio after [ = %v, want .95", split.Ratio)
 	}
@@ -108,15 +108,15 @@ func TestFrameTraversesNestedSplit(t *testing.T) {
 	a, b, c := &focusProbe{}, &focusProbe{}, &focusProbe{}
 	nested := NewSplit(a, b)
 	frame := &Frame{Boxes: []Box{{ID: "split", Child: nested}, {ID: "tail", Child: c}}}
-	frame.HandleKey(KeyEvent{Key: "tab"})
+	frame.ConsumeKey(KeyEvent{Key: "tab"})
 	if !b.Focused() || c.Focused() {
 		t.Fatal("frame tab did not traverse within split")
 	}
-	frame.HandleKey(KeyEvent{Key: "tab"})
+	frame.ConsumeKey(KeyEvent{Key: "tab"})
 	if b.Focused() || !c.Focused() {
 		t.Fatal("frame tab did not continue after split")
 	}
-	frame.HandleKey(KeyEvent{Key: "shift-tab"})
+	frame.ConsumeKey(KeyEvent{Key: "shift-tab"})
 	if !b.Focused() || c.Focused() {
 		t.Fatal("frame reverse tab did not enter split at last leaf")
 	}
@@ -128,7 +128,7 @@ func TestSplitAndBoxMouseRouting(t *testing.T) {
 	canvas := NewCanvas(20, 6)
 	split.Draw(canvas, Rect{X: 2, Y: 1, W: 15, H: 4})
 	click := MouseEvent{Action: MousePress, Button: MouseLeft, X: 14, Y: 3}
-	if split.HandleMouse(click) || len(left.mice) != 0 || len(right.mice) != 1 || !right.Focused() {
+	if split.ConsumeMouse(click).Quit || len(left.mice) != 0 || len(right.mice) != 1 || !right.Focused() {
 		t.Fatalf("split mouse route: left=%d right=%d focused=%v", len(left.mice), len(right.mice), right.Focused())
 	}
 	if right.mice[0].X != 4 || right.mice[0].Y != 2 {
@@ -138,11 +138,11 @@ func TestSplitAndBoxMouseRouting(t *testing.T) {
 	child := &focusProbe{}
 	box := &Box{Padding: 1, Child: child}
 	box.Draw(canvas, Rect{X: 3, Y: 0, W: 10, H: 6})
-	box.HandleMouse(MouseEvent{Action: MouseHover, X: 6, Y: 4})
+	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 6, Y: 4})
 	if len(child.mice) != 1 || child.mice[0].X != 1 || child.mice[0].Y != 2 {
 		t.Fatalf("box child event = %+v", child.mice)
 	}
-	box.HandleMouse(MouseEvent{Action: MouseHover, X: 4, Y: 2})
+	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 4, Y: 2})
 	if len(child.mice) != 1 {
 		t.Fatal("box border/padding event reached child")
 	}
@@ -152,14 +152,14 @@ func TestSplitDividerMouseDragChangesRatio(t *testing.T) {
 	split := NewSplit(&focusProbe{}, &focusProbe{})
 	canvas := NewCanvas(21, 4)
 	split.Draw(canvas, canvas.Bounds())
-	if split.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 10, Y: 2}) {
+	if split.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 10, Y: 2}).Quit {
 		t.Fatal("divider press requested quit")
 	}
-	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 4, Y: 2})
+	split.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 4, Y: 2})
 	if split.Ratio != 0.2 {
 		t.Fatalf("dragged ratio = %v, want .2", split.Ratio)
 	}
-	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 4, Y: 2})
+	split.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 4, Y: 2})
 }
 
 func TestSplitCapturesDragAndReleaseOutsideChild(t *testing.T) {
@@ -167,10 +167,10 @@ func TestSplitCapturesDragAndReleaseOutsideChild(t *testing.T) {
 	split := NewSplit(left, right)
 	canvas := NewCanvas(21, 4)
 	split.Draw(canvas, canvas.Bounds())
-	split.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 15, Y: 1})
-	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
-	split.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 3, Y: 9})
-	split.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
+	split.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 15, Y: 1})
+	split.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
+	split.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 3, Y: 9})
+	split.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 9})
 	if len(left.mice) != 0 || len(right.mice) != 3 {
 		t.Fatalf("left=%d right=%d events, want 0 and 3 (press, captured drag, release; later outside drag dropped)", len(left.mice), len(right.mice))
 	}

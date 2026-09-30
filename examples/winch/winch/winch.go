@@ -309,8 +309,8 @@ func (a *App) drawStressPanel(c *loom.Canvas, r loom.Rect, cfg loom.ResizeConfig
 	}
 }
 
-// HandleKey handles keyboard inputs for mode toggling, themes, and exiting.
-func (a *App) HandleKey(e loom.KeyEvent) bool {
+// ConsumeKey handles keyboard inputs for mode toggling, themes, and exiting.
+func (a *App) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -322,36 +322,36 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 		for _, id := range loom.SpeccedResizeModeIDs {
 			if mode, ok := loom.SpeccedResizeModes.Modes[id]; ok && mode.Key == keyLower {
 				a.toggleMode(id)
-				return false
+				return loom.Ignored()
 			}
 		}
 	case "+", "=", "]":
 		a.adjustGuardN(1)
-		return false
+		return loom.Ignored()
 	case "-", "_", "[":
 		a.adjustGuardN(-1)
-		return false
+		return loom.Ignored()
 	case "c":
 		cfg := a.Config()
 		cfg.AutoFullscreen = !cfg.AutoFullscreen
 		a.SetConfig(cfg)
-		return false
+		return loom.Ignored()
 	case "r":
 		a.resetDefaults()
-		return false
+		return loom.Ignored()
 	case "t":
 		a.cycleTheme()
-		return false
+		return loom.Ignored()
 	case "g":
 		a.toggleBackground()
 	case "m":
 		a.toggleReduceMotion()
-		return false
+		return loom.Ignored()
 	case "q", "f10":
 		a.quitting = true
-		return true
+		return loom.QuitResult()
 	}
-	return false
+	return loom.Ignored()
 }
 
 // guardSummary shows the effective guard width next to the manual n and the
@@ -380,10 +380,8 @@ func (a *App) adjustGuardN(delta int) {
 	a.SetConfig(cfg)
 }
 
-// HandleMouse handles click interactions.
-func (a *App) HandleMouse(_ loom.MouseEvent) bool {
-	return false
-}
+// ConsumeMouse handles click interactions.
+func (a *App) ConsumeMouse(_ loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func (a *App) toggleMode(id string) {
 	if a.pane != nil {

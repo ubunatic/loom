@@ -93,28 +93,16 @@ func (a *DemoApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if res.Consumed {
 		return res
 	}
-	if a.frame.HandleKey(e) {
+	res = a.frame.ConsumeKey(e)
+	if res.Quit {
 		a.quit = true
-		return loom.QuitResult()
 	}
-	return loom.Ignored()
-}
-
-// HandleKey implements loom.Widget.
-func (a *DemoApp) HandleKey(e loom.KeyEvent) bool {
-	res := a.ConsumeKey(e)
-	return res.Quit
+	return res
 }
 
 // ConsumeMouse handles mouse events and routes them to the editor.
 func (a *DemoApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return a.editor.ConsumeMouse(e)
-}
-
-// HandleMouse implements loom.Widget.
-func (a *DemoApp) HandleMouse(e loom.MouseEvent) bool {
-	res := a.ConsumeMouse(e)
-	return res.Quit
 }
 
 // PaneRequest declares terminal capabilities.

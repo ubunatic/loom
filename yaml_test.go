@@ -224,7 +224,7 @@ views:
 	// Now if we change focus to index 1 (element B) using key events or directly.
 	// B is the second child in the horizontal stack (or grid).
 	// Let's verify that B is focused when we press "tab".
-	router.HandleKey(loom.KeyEvent{Key: "tab"})
+	router.ConsumeKey(loom.KeyEvent{Key: "tab"})
 
 	// Redraw to update focus propagation and canvas cursor
 	canvas.Clear()
@@ -368,15 +368,15 @@ views:
 	}
 
 	// Press Enter to select the first item ("list") — triggers OnSelect → RouteTo
-	router.HandleKey(loom.KeyEvent{Key: "enter"})
+	router.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if router.Current() != "list" {
 		t.Errorf("expected current view = list after Enter, got %s", router.Current())
 	}
 
 	// Navigate down to "grid" and press Enter
 	router.GoBack()
-	router.HandleKey(loom.KeyEvent{Key: "down"})
-	router.HandleKey(loom.KeyEvent{Key: "enter"})
+	router.ConsumeKey(loom.KeyEvent{Key: "down"})
+	router.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if router.Current() != "grid" {
 		t.Errorf("expected current view = grid after navigating down + Enter, got %s", router.Current())
 	}

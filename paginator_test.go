@@ -22,9 +22,9 @@ func TestPaginatorNavigationAndCallback(t *testing.T) {
 	if p.Page != 0 || p.Pages != 7 {
 		t.Fatalf("initial state = %d/%d, want 0/7", p.Page, p.Pages)
 	}
-	p.HandleKey(KeyEvent{Key: "pgdn"})
-	p.HandleKey(KeyEvent{Key: "pgup"})
-	p.HandleKey(KeyEvent{Key: "pgup"})
+	p.ConsumeKey(KeyEvent{Key: "pgdn"})
+	p.ConsumeKey(KeyEvent{Key: "pgup"})
+	p.ConsumeKey(KeyEvent{Key: "pgup"})
 	if p.Page != 0 {
 		t.Fatalf("page = %d, want lower bound 0", p.Page)
 	}

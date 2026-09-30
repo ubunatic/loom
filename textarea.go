@@ -17,7 +17,7 @@ import (
 // decides when editing ends (e.g. Ctrl-D) and reads Value.
 //
 // Enter inserts a newline (splitting the current line); Backspace at column 0
-// joins with the previous line; arrows/Home/End move the caret. HandleKey
+// joins with the previous line; arrows/Home/End move the caret. ConsumeKey
 // returns consumed=true for keys it acted on so the host keeps its own end key.
 type TextArea struct {
 	Placeholder   string  // dim hint shown when the whole buffer is empty
@@ -234,8 +234,8 @@ func (t *TextArea) FoldedRanges() map[int]int {
 	return out
 }
 
-// HandleKey applies an editing key, returning consumed=true when it acted.
-func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
+// ConsumeKey applies an editing key, returning consumed=true when it acted.
+func (t *TextArea) ConsumeKey(e KeyEvent) (consumed EventResult) {
 	if t.Keys.Matches(e, "copy") && t.clipboardWriter != nil {
 		value := []rune(t.Value())
 		start, end := t.selectionStart, t.selectionEnd
@@ -247,15 +247,15 @@ func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
 		} else {
 			t.clipboardWriter(string(value))
 		}
-		return true
+		return Handled()
 	}
 	switch e.Key {
 	case "left":
 		t.moveLeft()
-		return true
+		return Handled()
 	case "right":
 		t.moveRight()
-		return true
+		return Handled()
 	case "up":
 		if len(t.folds) > 0 {
 			vis := t.visibleLines()
@@ -276,7 +276,7 @@ func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
 				t.clampCol()
 			}
 		}
-		return true
+		return Handled()
 	case "down":
 		if len(t.folds) > 0 {
 			vis := t.visibleLines()
@@ -297,28 +297,28 @@ func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
 				t.clampCol()
 			}
 		}
-		return true
+		return Handled()
 	case "home":
 		t.col = 0
-		return true
+		return Handled()
 	case "end":
 		t.col = len(t.lines[t.row])
-		return true
+		return Handled()
 	case "enter":
 		t.splitLine()
-		return true
+		return Handled()
 	case "backspace":
 		t.backspace()
-		return true
+		return Handled()
 	case "delete":
 		t.deleteForward()
-		return true
+		return Handled()
 	}
 	if e.Text != "" {
 		t.insert([]rune(e.Text))
-		return true
+		return Handled()
 	}
-	return false
+	return Ignored()
 }
 
 func (t *TextArea) moveLeft() {

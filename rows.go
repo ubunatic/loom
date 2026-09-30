@@ -85,11 +85,11 @@ func (rows *Rows) GetValues() [][]string {
 	return rows.Values
 }
 
-// HandleKey keeps static rows inert.
-func (*Rows) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey keeps static rows inert.
+func (*Rows) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse keeps static rows inert.
-func (*Rows) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse keeps static rows inert.
+func (*Rows) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 func (rows *Rows) validate() error {
 	if len(rows.Columns) == 0 || rows.Gap < 0 {

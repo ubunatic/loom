@@ -163,24 +163,24 @@ func (u *usageWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	u.frame.Draw(c, r)
 }
 
-func (u *usageWidget) HandleKey(e loom.KeyEvent) bool {
+func (u *usageWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Rune() == 'v' || e.Rune() == 'V' {
 		if u.view == viewPlain {
 			u.view = viewLoom
 		} else {
 			u.view = viewPlain
 		}
-		return false
+		return loom.Ignored()
 	}
 	if e.Rune() == 'q' || e.Rune() == 'Q' || e.Is("ctrl-c", "ctrl-q", "esc") {
-		return true
+		return loom.QuitResult()
 	}
-	return false
+	return loom.Ignored()
 }
 
-func (*usageWidget) HandleMouse(loom.MouseEvent) bool { return false }
-func (u *usageWidget) TickInterval() time.Duration    { return u.redraw }
-func (*usageWidget) Tick(time.Time)                   {}
+func (*usageWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
+func (u *usageWidget) TickInterval() time.Duration                 { return u.redraw }
+func (*usageWidget) Tick(time.Time)                                {}
 
 // SetInvalidate accepts the pane's redraw callback for asynchronous updates.
 func (u *usageWidget) SetInvalidate(invalidate func()) {

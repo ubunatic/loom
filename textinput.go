@@ -11,7 +11,7 @@ import "strings"
 // plus a dim placeholder when empty.
 //
 // TextInput does not decide when editing starts or ends — the host widget calls
-// HandleKey for input keys and reads Value when it wants the result. HandleKey
+// ConsumeKey for input keys and reads Value when it wants the result. ConsumeKey
 // returns consumed=true for keys it acted on (printable text, backspace, delete,
 // left/right/home/end) so the host can keep navigation keys for itself.
 type TextInput struct {
@@ -50,7 +50,7 @@ func (t *TextInput) Value() string { return string(t.runes) }
 func (t *TextInput) ConsumePaste(event PasteEvent) EventResult {
 	text := strings.NewReplacer("\r\n", " ", "\r", " ", "\n", " ").Replace(event.Text)
 	if text != "" {
-		t.HandleKey(KeyEvent{Text: text})
+		t.ConsumeKey(KeyEvent{Text: text})
 	}
 	return Handled()
 }
@@ -66,13 +66,13 @@ func (t *TextInput) SetValue(s string) {
 // Caret returns the current caret index (rune offset from the start).
 func (t *TextInput) Caret() int { return t.caret }
 
-// HandleKey applies an editing key. It returns consumed=true when the key was an
+// ConsumeKey applies an editing key. It returns consumed=true when the key was an
 // editing action; copy is refused when Mask is set so masked values cannot be
 // copied. The host should treat consumed=false keys (enter, esc, …) as its own.
-func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
+func (t *TextInput) ConsumeKey(e KeyEvent) (consumed EventResult) {
 	if t.Keys.Matches(e, "copy") && t.clipboardWriter != nil {
 		if t.Mask != 0 {
-			return false
+			return Ignored()
 		}
 		start, end := t.selectionStart, t.selectionEnd
 		if start > end {
@@ -83,7 +83,7 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 			value = string(t.runes[start:end])
 		}
 		t.clipboardWriter(value)
-		return true
+		return Handled()
 	}
 	switch e.Key {
 	case "left":
@@ -91,33 +91,33 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 			t.caret--
 		}
 		t.keepCaretInView()
-		return true
+		return Handled()
 	case "right":
 		if t.caret < len(t.runes) {
 			t.caret++
 		}
 		t.keepCaretInView()
-		return true
+		return Handled()
 	case "home":
 		t.caret = 0
 		t.view = 0
-		return true
+		return Handled()
 	case "end":
 		t.caret = len(t.runes)
-		return true
+		return Handled()
 	case "backspace":
 		if t.caret > 0 {
 			t.runes = append(t.runes[:t.caret-1], t.runes[t.caret:]...)
 			t.caret--
 		}
 		t.keepCaretInView()
-		return true
+		return Handled()
 	case "delete":
 		if t.caret < len(t.runes) {
 			t.runes = append(t.runes[:t.caret], t.runes[t.caret+1:]...)
 		}
 		t.keepCaretInView()
-		return true
+		return Handled()
 	}
 	if e.Text != "" {
 		ins := []rune(e.Text)
@@ -129,9 +129,9 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 		t.runes = next
 		t.caret += len(ins)
 		t.keepCaretInView()
-		return true
+		return Handled()
 	}
-	return false
+	return Ignored()
 }
 
 func (t *TextInput) keepCaretInView() {

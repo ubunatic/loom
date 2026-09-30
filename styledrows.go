@@ -106,8 +106,8 @@ func styledRowSGR(line string) string {
 	return out.String()
 }
 
-// HandleKey does not consume keyboard events.
-func (s *StyledRows) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey does not consume keyboard events.
+func (s *StyledRows) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse does not consume mouse events.
-func (s *StyledRows) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse does not consume mouse events.
+func (s *StyledRows) ConsumeMouse(MouseEvent) EventResult { return Ignored() }

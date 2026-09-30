@@ -79,7 +79,7 @@ type Pane struct {
 	InlineOnly bool
 
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
-	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from HandleKey.
+	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from ConsumeKey.
 	DisableDefaultQuit bool
 	// DisableGlobalF10Quit lets a pane keep F10 within its widget tree.
 	// The default is to quit before dispatching F10 to any widget.
@@ -383,7 +383,7 @@ func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
 
 // EnableMouse turns on SGR mouse tracking (button press, release, hover, scroll).
 // Must be called before Run. Mouse events are delivered to the root Widget's
-// HandleMouse method.
+// ConsumeMouse method.
 func (p *Pane) EnableMouse() {
 	p.setMouseMode(1003)
 }
@@ -1332,8 +1332,8 @@ func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
 		p.help = nil
 		return false, true
 	}
-	close := p.help.HandleKey(e)
-	if close || !p.help.Open {
+	result := p.help.ConsumeKey(e)
+	if result.Consumed || !p.help.Open {
 		p.help = nil
 	}
 	return false, true
@@ -1343,7 +1343,7 @@ func (p *Pane) handleHelpMouse(e MouseEvent) bool {
 	if p.help == nil {
 		return false
 	}
-	p.help.HandleMouse(e)
+	p.help.ConsumeMouse(e)
 	return true
 }
 

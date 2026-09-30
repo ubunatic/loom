@@ -145,8 +145,8 @@ func (s *Spinner) Draw(c *Canvas, r Rect) {
 	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), s.Style)
 }
 
-// HandleKey implements Widget; the spinner takes no input.
-func (*Spinner) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey implements Widget; the spinner takes no input.
+func (*Spinner) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse implements Widget; the spinner takes no input.
-func (*Spinner) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse implements Widget; the spinner takes no input.
+func (*Spinner) ConsumeMouse(MouseEvent) EventResult { return Ignored() }

@@ -145,33 +145,38 @@ func (b *framedBrowser) Draw(c *loom.Canvas, r loom.Rect) {
 	b.frame.Draw(c, r)
 }
 
-func (b *framedBrowser) HandleKey(e loom.KeyEvent) bool {
+func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Is("r") {
 		b.browser.ruler = !b.browser.ruler
-		return false
+		return loom.Handled()
 	}
 	if e.Is("a") && b.astra != nil {
 		b.astra.enabled = !b.astra.enabled
-		return false
+		return loom.Handled()
 	}
-	quit := b.frame.HandleKey(e)
-	b.browser.syncSelection()
-	return quit || b.browser.quit
-}
-
-func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	quit, consumed = b.browser.navigation.ConsumeKey(e)
-	if consumed {
+	result := b.browser.navigation.ConsumeKey(e)
+	if result.Consumed {
 		b.browser.syncSelection()
-		return quit || b.browser.quit, true
+		if result.Quit || b.browser.quit {
+			return loom.QuitResult()
+		}
+		return result
 	}
-	return false, false
+	result = b.frame.ConsumeKey(e)
+	b.browser.syncSelection()
+	if result.Quit || b.browser.quit {
+		return loom.QuitResult()
+	}
+	return result
 }
 
-func (b *framedBrowser) HandleMouse(e loom.MouseEvent) bool {
-	quit := b.frame.HandleMouse(e)
+func (b *framedBrowser) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	result := b.frame.ConsumeMouse(e)
 	b.browser.syncSelection()
-	return quit || b.browser.quit
+	if result.Quit || b.browser.quit {
+		return loom.QuitResult()
+	}
+	return result
 }
 
 // New opens dir and returns an interactive viewer widget.
@@ -348,14 +353,14 @@ func (b *browser) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (b *browser) HandleKey(e loom.KeyEvent) bool {
+func (b *browser) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Is("q", "ctrl-c") {
-		return true
+		return loom.QuitResult()
 	}
 	if e.Is("esc", "backspace") {
-		quit := b.navigation.HandleKey(e)
+		result := b.navigation.ConsumeKey(e)
 		b.syncSelection()
-		return quit
+		return result
 	}
 	if b.previewView == nil {
 		b.previewView = loom.NewView(b.lines)
@@ -363,21 +368,22 @@ func (b *browser) HandleKey(e loom.KeyEvent) bool {
 	b.previewView.Lines = b.lines
 	b.previewView.Scroll = b.offset
 	b.previewView.OffsetX = b.offsetX
-	if b.previewView.HandleKey(e) {
-		return true
+	result := b.previewView.ConsumeKey(e)
+	if result.Consumed {
+		return result
 	}
 	b.offset = b.previewView.Scroll
 	b.offsetX = b.previewView.OffsetX
-	return false
+	return result
 }
-func (b *browser) HandleMouse(e loom.MouseEvent) bool {
+func (b *browser) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if b.previewView == nil {
-		return false
+		return loom.Ignored()
 	}
-	quit := b.previewView.HandleMouse(e)
+	result := b.previewView.ConsumeMouse(e)
 	b.offset = b.previewView.Scroll
 	b.offsetX = b.previewView.OffsetX
-	return quit
+	return result
 }
 
 // Render writes one deterministic headless frame from the real widget.

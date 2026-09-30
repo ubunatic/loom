@@ -28,47 +28,47 @@ func TestWinchAppHeadlessConfiguration(t *testing.T) {
 	}
 
 	// Toggle key '1' (coalesce)
-	if app.HandleKey(loom.KeyEvent{Text: "1"}) {
-		t.Fatal("HandleKey(1) should not quit")
+	if app.ConsumeKey(loom.KeyEvent{Text: "1"}).Quit {
+		t.Fatal("ConsumeKey(1) should not quit")
 	}
 	if app.Config().Coalesce {
 		t.Fatal("expected coalesce to be toggled off")
 	}
 
 	// Toggle key '9' (width_guard)
-	app.HandleKey(loom.KeyEvent{Text: "9"})
+	app.ConsumeKey(loom.KeyEvent{Text: "9"})
 	if app.Config().WidthGuard {
 		t.Fatal("expected width_guard to be toggled off")
 	}
 
 	// Adjust guard n with '+' and '-'
-	app.HandleKey(loom.KeyEvent{Text: "+"})
+	app.ConsumeKey(loom.KeyEvent{Text: "+"})
 	if app.Config().WidthGuardN != 2 {
 		t.Fatalf("expected WidthGuardN = 2 after '+', got %d", app.Config().WidthGuardN)
 	}
-	app.HandleKey(loom.KeyEvent{Text: "+"})
+	app.ConsumeKey(loom.KeyEvent{Text: "+"})
 	if app.Config().WidthGuardN != 3 {
 		t.Fatalf("expected WidthGuardN = 3 after second '+', got %d", app.Config().WidthGuardN)
 	}
-	app.HandleKey(loom.KeyEvent{Text: "-"})
+	app.ConsumeKey(loom.KeyEvent{Text: "-"})
 	if app.Config().WidthGuardN != 2 {
 		t.Fatalf("expected WidthGuardN = 2 after '-', got %d", app.Config().WidthGuardN)
 	}
 	// Decrease past 1, should clamp to 1
-	app.HandleKey(loom.KeyEvent{Text: "-"})
-	app.HandleKey(loom.KeyEvent{Text: "-"})
+	app.ConsumeKey(loom.KeyEvent{Text: "-"})
+	app.ConsumeKey(loom.KeyEvent{Text: "-"})
 	if app.Config().WidthGuardN != 1 {
 		t.Fatalf("expected WidthGuardN clamped to 1, got %d", app.Config().WidthGuardN)
 	}
 
 	// Toggle key '6' (out_of_band_clear)
-	app.HandleKey(loom.KeyEvent{Text: "6"})
+	app.ConsumeKey(loom.KeyEvent{Text: "6"})
 	if !app.Config().OutOfBandClear {
 		t.Fatal("expected out_of_band_clear to be toggled on")
 	}
 
 	// Reset key 'r'
-	app.HandleKey(loom.KeyEvent{Text: "r"})
+	app.ConsumeKey(loom.KeyEvent{Text: "r"})
 	if !app.Config().Coalesce || app.Config().OutOfBandClear || !app.Config().WidthGuard || app.Config().WidthGuardN != 1 {
 		t.Fatal("expected reset to restore defaults")
 	}
@@ -77,21 +77,21 @@ func TestWinchAppHeadlessConfiguration(t *testing.T) {
 	if pane.ReduceMotion {
 		t.Fatal("expected initial ReduceMotion false")
 	}
-	app.HandleKey(loom.KeyEvent{Text: "m"})
+	app.ConsumeKey(loom.KeyEvent{Text: "m"})
 	if !pane.ReduceMotion {
 		t.Fatal("expected ReduceMotion true after 'm'")
 	}
 
 	// Theme cycle 't'
 	initialTheme := app.themeName
-	app.HandleKey(loom.KeyEvent{Text: "t"})
+	app.ConsumeKey(loom.KeyEvent{Text: "t"})
 	if app.themeName == initialTheme {
 		t.Fatal("expected theme to change on 't'")
 	}
 
 	// Quit key 'q'
-	if !app.HandleKey(loom.KeyEvent{Text: "q"}) {
-		t.Fatal("expected HandleKey('q') to return true (quit)")
+	if !app.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
+		t.Fatal("expected ConsumeKey('q') to return true (quit)")
 	}
 	if !app.quitting {
 		t.Fatal("expected app.quitting to be true")
@@ -145,7 +145,7 @@ func TestWinchAppAdaptiveGuardSwitch(t *testing.T) {
 	if app.Config().AdaptiveGuard {
 		t.Fatal("adaptive guard must default to the spec value (off)")
 	}
-	app.HandleKey(loom.KeyEvent{Text: "a"})
+	app.ConsumeKey(loom.KeyEvent{Text: "a"})
 	if !app.Config().AdaptiveGuard {
 		t.Fatal("key 'a' should enable adaptive guard")
 	}
@@ -163,7 +163,7 @@ func TestWinchAppAdaptiveGuardSwitch(t *testing.T) {
 		}
 	}
 
-	app.HandleKey(loom.KeyEvent{Text: "a"})
+	app.ConsumeKey(loom.KeyEvent{Text: "a"})
 	if app.Config().AdaptiveGuard {
 		t.Fatal("second 'a' should disable adaptive guard")
 	}

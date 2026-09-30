@@ -31,6 +31,7 @@ type Stack struct {
 	Gap         int
 	focus       int // index of focused child
 	childRects  []Rect
+	lastRect    Rect
 }
 
 // NewStack creates a Stack with the given children and direction.
@@ -73,6 +74,7 @@ func (s *Stack) PaneRequest() (request PaneRequest) {
 
 // Draw tiles all children across r.
 func (s *Stack) Draw(c *Canvas, r Rect) {
+	s.lastRect = r
 	n := len(s.Children)
 	if n == 0 {
 		return
@@ -132,40 +134,19 @@ func (s *Stack) childRect(r Rect, i, n int) Rect {
 	return Rect{X: r.X, Y: y, W: r.W, H: h}
 }
 
-// HandleKey forwards to the focused child; Tab cycles focus.
-func (s *Stack) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey forwards to the focused child; Tab cycles focus.
+func (s *Stack) ConsumeKey(e KeyEvent) EventResult {
 	if len(s.Children) == 0 {
-		return false
+		return Ignored()
+	}
+	if res := s.Children[s.focus].ConsumeKey(e); res.Consumed {
+		return res
 	}
 	if e.Key == "tab" {
 		s.focus = (s.focus + 1) % len(s.Children)
-		return false
+		return Handled()
 	}
-	if quit, consumed := s.ConsumeKey(e); consumed {
-		return quit
-	}
-	return s.Children[s.focus].HandleKey(e)
-}
-
-func (s *Stack) ConsumeKey(e KeyEvent) (quit, consumed bool) {
-	if len(s.Children) == 0 {
-		return false, false
-	}
-	if c, ok := s.Children[s.focus].(EventConsumer); ok {
-		if res := c.ConsumeKey(e); res.Consumed {
-			return res.Quit, true
-		}
-	}
-	if c, ok := s.Children[s.focus].(KeyConsumer); ok {
-		if quit, consumed = c.ConsumeKey(e); consumed {
-			return quit, true
-		}
-	}
-	if e.Key == "tab" {
-		s.focus = (s.focus + 1) % len(s.Children)
-		return false, true
-	}
-	return false, false
+	return Ignored()
 }
 
 func (s *Stack) ConsumePaste(e PasteEvent) EventResult {
@@ -175,17 +156,20 @@ func (s *Stack) ConsumePaste(e PasteEvent) EventResult {
 	return DispatchPasteEvent(s.Children[s.focus], e)
 }
 
-// HandleMouse forwards to the child whose rect contains the event.
-func (s *Stack) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse forwards to the child whose rect contains the event.
+func (s *Stack) ConsumeMouse(e MouseEvent) EventResult {
 	if len(s.Children) == 0 {
-		return false
+		return Ignored()
 	}
+	x, y := e.X+s.lastRect.X, e.Y+s.lastRect.Y
 	for i, rect := range s.childRects {
-		if rect.Contains(e.X, e.Y) {
-			return s.Children[i].HandleMouse(e)
+		if rect.Contains(x, y) {
+			e.X = x - rect.X
+			e.Y = y - rect.Y
+			return s.Children[i].ConsumeMouse(e)
 		}
 	}
-	return s.Children[s.focus].HandleMouse(e)
+	return Ignored()
 }
 
 // ContentHeight estimates the required height for this stack layout.

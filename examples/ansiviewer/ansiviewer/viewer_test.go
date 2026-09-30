@@ -67,7 +67,7 @@ func TestPreviewScrollbarTrackClickAndThumbDrag(t *testing.T) {
 	b := &browser{lines: []string{"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven"}, kind: KindText}
 	canvas := loom.NewCanvas(12, 4)
 	b.Draw(canvas, canvas.Bounds())
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: 3})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: 3})
 	if b.offset == 0 {
 		t.Fatal("bottom track click did not move preview offset")
 	}
@@ -80,12 +80,12 @@ func TestPreviewScrollbarTrackClickAndThumbDrag(t *testing.T) {
 		}
 	}
 	start := b.offset
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: thumbY})
-	b.HandleMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 11, Y: 0})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: thumbY})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 11, Y: 0})
 	if b.offset != 0 || b.offset == start {
 		t.Fatalf("dragging preview scrollbar thumb moved offset to %d, want 0 from %d", b.offset, start)
 	}
-	b.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 11, Y: 0})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 11, Y: 0})
 }
 
 func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
@@ -105,7 +105,7 @@ func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
 		t.Fatal("frame does not host the shared navigation pane")
 	}
 	stableChoice := b.navigation.List()
-	b.navigation.HandleKey(loom.KeyEvent{Key: "down"})
+	b.navigation.ConsumeKey(loom.KeyEvent{Key: "down"})
 	b.syncSelection()
 	if b.navigation.List() != stableChoice {
 		t.Fatal("navigation replaced its stable Choice")
@@ -113,8 +113,8 @@ func TestBrowserUsesSharedNavigationAndKeepsANSISelection(t *testing.T) {
 	if b.kind != KindANSI || !strings.Contains(strings.Join(b.lines, "\n"), "red preview") {
 		t.Fatalf("ANSI preview after shared selection = %q, %v", b.kind, b.lines)
 	}
-	b.navigation.HandleKey(loom.KeyEvent{Key: "/"})
-	b.navigation.HandleKey(loom.KeyEvent{Text: "alpha"})
+	b.navigation.ConsumeKey(loom.KeyEvent{Key: "/"})
+	b.navigation.ConsumeKey(loom.KeyEvent{Text: "alpha"})
 	if got := b.navigation.List().Query(); got != "alpha" {
 		t.Fatalf("shared filter query = %q, want alpha", got)
 	}
@@ -147,21 +147,21 @@ func TestBrowserPansPreviewInTwoDimensions(t *testing.T) {
 	b := &browser{lines: []string{strings.Repeat("x", 40), "line 1", "line 2", "line 3", "line 4"}, kind: KindText}
 	b.Draw(loom.NewCanvas(12, 2), loom.Rect{W: 12, H: 2})
 	for _, key := range []string{"right", "l", "down", "j"} {
-		b.HandleKey(loom.KeyEvent{Key: key})
+		b.ConsumeKey(loom.KeyEvent{Key: key})
 	}
 	if b.offsetX != 2 || b.offset != 2 {
 		t.Fatalf("after right/down panning offset=(%d,%d), want (2,2)", b.offsetX, b.offset)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "left"})
-	b.HandleKey(loom.KeyEvent{Key: "up"})
+	b.ConsumeKey(loom.KeyEvent{Key: "left"})
+	b.ConsumeKey(loom.KeyEvent{Key: "up"})
 	if b.offsetX != 1 || b.offset != 1 {
 		t.Fatalf("after left/up panning offset=(%d,%d), want (1,1)", b.offsetX, b.offset)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "home"})
+	b.ConsumeKey(loom.KeyEvent{Key: "home"})
 	if b.offset != 0 {
 		t.Fatalf("home vertical offset=%d, want 0", b.offset)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "end"})
+	b.ConsumeKey(loom.KeyEvent{Key: "end"})
 	if b.offset != len(b.lines)-2 {
 		t.Fatalf("end vertical offset=%d, want %d", b.offset, len(b.lines)-2)
 	}
@@ -224,7 +224,7 @@ func TestBrowserMetadataAndScroll(t *testing.T) {
 		b.lines = append(b.lines, "line")
 	}
 	b.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
-	b.HandleKey(loom.KeyEvent{Key: "pgdn"})
+	b.ConsumeKey(loom.KeyEvent{Key: "pgdn"})
 	if b.offset != 4 {
 		t.Fatalf("pgdn offset=%d, want viewport page 4", b.offset)
 	}
@@ -241,7 +241,7 @@ func TestBrowserEscapeGoesToParentDirectory(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit; quit {
 		t.Fatal("escape from a child directory should navigate to its parent")
 	}
 	if b.dir != root {
@@ -252,12 +252,12 @@ func TestBrowserEscapeGoesToParentDirectory(t *testing.T) {
 	}
 
 	b.navigation.SetRoot("")
-	b.navigation.HandleKey(loom.KeyEvent{Key: "esc"})
+	b.navigation.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	b.syncSelection()
-	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit; quit {
 		t.Fatal("escape from the filesystem root should not quit")
 	}
-	if quit := b.HandleKey(loom.KeyEvent{Key: "backspace"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}).Quit; quit {
 		t.Fatal("backspace from the filesystem root should not quit")
 	}
 }
@@ -274,10 +274,10 @@ func TestBrowserFilterAndMouseSelection(t *testing.T) {
 		t.Fatal(err)
 	}
 	framed := newFramedBrowser(b, &astraToggle{})
-	if framed.HandleKey(loom.KeyEvent{Key: "/"}) {
+	if framed.ConsumeKey(loom.KeyEvent{Key: "/"}).Quit {
 		t.Fatal("slash filtering quit the browser")
 	}
-	if framed.HandleKey(loom.KeyEvent{Text: "beta"}) {
+	if framed.ConsumeKey(loom.KeyEvent{Text: "beta"}).Quit {
 		t.Fatal("typing a filter query quit the browser")
 	}
 	if got := b.navigation.List().Query(); got != "beta" {
@@ -290,14 +290,14 @@ func TestBrowserFilterAndMouseSelection(t *testing.T) {
 
 	c := loom.NewCanvas(30, 8)
 	b.navigation.Draw(c, loom.Rect{W: 30, H: 8})
-	b.navigation.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 2})
+	b.navigation.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 2})
 	b.syncSelection()
 	entry, ok := b.navigation.Selected()
 	if !ok || entry.Name != "beta.txt" {
 		t.Fatalf("mouse selection = %+v, ok=%v; want beta.txt", entry, ok)
 	}
-	if quit, consumed := framed.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
-		t.Fatalf("framed escape = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	if result := framed.ConsumeKey(loom.KeyEvent{Key: "esc"}); result.Quit || !result.Consumed {
+		t.Fatalf("framed escape = quit:%v consumed:%v, want quit:false consumed:true", result.Quit, result.Consumed)
 	}
 }
 
@@ -437,7 +437,7 @@ func TestRulerPadsPreviewWithDefaultBackground(t *testing.T) {
 		t.Fatal(err)
 	}
 	framed := newFramedBrowser(b, &astraToggle{})
-	framed.HandleKey(loom.KeyEvent{Text: "r"})
+	framed.ConsumeKey(loom.KeyEvent{Text: "r"})
 	if !b.ruler {
 		t.Fatal("r did not turn the ruler on")
 	}
@@ -457,7 +457,7 @@ func TestRulerPadsPreviewWithDefaultBackground(t *testing.T) {
 	if got := c.Get(10, 0).Text; got != "1" {
 		t.Fatalf("ruler mark at column 10 = %q, want 1", got)
 	}
-	framed.HandleKey(loom.KeyEvent{Text: "r"})
+	framed.ConsumeKey(loom.KeyEvent{Text: "r"})
 	c = loom.NewCanvas(30, 6)
 	b.Draw(c, area)
 	if got := c.Get(0, 0).Text; got != "h" {

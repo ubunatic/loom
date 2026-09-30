@@ -44,9 +44,9 @@ type textRenderApp struct {
 
 type staticView struct{ draw func(*loom.Canvas, loom.Rect) }
 
-func (v staticView) Draw(c *loom.Canvas, r loom.Rect) { v.draw(c, r) }
-func (v staticView) HandleKey(loom.KeyEvent) bool     { return false }
-func (v staticView) HandleMouse(loom.MouseEvent) bool { return false }
+func (v staticView) Draw(c *loom.Canvas, r loom.Rect)              { v.draw(c, r) }
+func (v staticView) ConsumeKey(loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (v staticView) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func codepoints(s string) string {
 	parts := make([]string, 0, len([]rune(s)))
@@ -108,8 +108,10 @@ func (v *activatableView) Draw(c *loom.Canvas, r loom.Rect) {
 	v.choice.Draw(c, loom.Rect{X: r.X, Y: r.Y + 1, W: r.W, H: r.H - 2})
 	c.Write(r.X, r.Y+r.H-1, loom.TruncateText(v.status, r.W, ""), loom.Style{Dim: true})
 }
-func (v *activatableView) HandleKey(e loom.KeyEvent) bool     { return v.choice.HandleKey(e) }
-func (v *activatableView) HandleMouse(e loom.MouseEvent) bool { return v.choice.HandleMouse(e) }
+func (v *activatableView) ConsumeKey(e loom.KeyEvent) loom.EventResult { return v.choice.ConsumeKey(e) }
+func (v *activatableView) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	return v.choice.ConsumeMouse(e)
+}
 
 // newButtonsView uses Choice as the closest existing activatable widget.
 func newButtonsView() loom.Widget {
@@ -165,20 +167,20 @@ func (a *textRenderApp) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(r.X, footerY, legend, loom.Style{Dim: true})
 }
 
-func (a *textRenderApp) HandleKey(e loom.KeyEvent) bool {
+func (a *textRenderApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
 	}
 	switch key {
 	case "q", "ctrl-q", "ctrl-c", "esc":
-		return true
+		return loom.QuitResult()
 	}
-	return a.tabs.HandleKey(e)
+	return a.tabs.ConsumeKey(e)
 }
 
-func (a *textRenderApp) HandleMouse(e loom.MouseEvent) bool {
-	return a.tabs.HandleMouse(e)
+func (a *textRenderApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	return a.tabs.ConsumeMouse(e)
 }
 
 // PaneRequest declares the terminal requirements of the textrender widget.

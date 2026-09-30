@@ -31,7 +31,7 @@ func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *widget) HandleKey(k loom.KeyEvent) bool {
+func (w *widget) ConsumeKey(k loom.KeyEvent) loom.EventResult {
 	key := k.Key
 	if key == "" {
 		key = k.Text
@@ -41,19 +41,25 @@ func (w *widget) HandleKey(k loom.KeyEvent) bool {
 		if w.pane != nil {
 			w.pane.ReduceMotion = !w.pane.ReduceMotion
 		}
-		return false
+		return loom.Ignored()
 	case "t", "T":
 		if len(w.themes) > 0 {
 			w.theme = (w.theme + 1) % len(w.themes)
 			applyTheme(w.frame, loom.Theme(w.themes[w.theme]))
 		}
-		return false
+		return loom.Ignored()
 	}
-	return w.frame != nil && w.frame.HandleKey(k)
+	if w.frame == nil {
+		return loom.Ignored()
+	}
+	return w.frame.ConsumeKey(k)
 }
 
-func (w *widget) HandleMouse(k loom.MouseEvent) bool {
-	return w.frame != nil && w.frame.HandleMouse(k)
+func (w *widget) ConsumeMouse(k loom.MouseEvent) loom.EventResult {
+	if w.frame == nil {
+		return loom.Ignored()
+	}
+	return w.frame.ConsumeMouse(k)
 }
 
 func demoFrame() *loom.Frame {

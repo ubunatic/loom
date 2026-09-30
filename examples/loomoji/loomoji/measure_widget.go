@@ -165,32 +165,35 @@ func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	w.center(c, r, r.H-1, footer, loom.Style{FG: muted, Dim: w.saveErr == nil})
 }
 
-// HandleKey processes page answers, comments, confirmation, and navigation.
-func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
+// ConsumeKey processes page answers, comments, confirmation, and navigation.
+func (w *MeasureWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
 	}
 	if w.editingComment {
-		return w.handleCommentKey(key, e.Text)
+		if w.handleCommentKey(key, e.Text) {
+			return loom.Handled()
+		}
+		return loom.Ignored()
 	}
 	if key == "esc" || key == "ctrl-c" || key == "q" {
 		w.flushPending()
-		return true
+		return loom.QuitResult()
 	}
 	switch key {
 	case "tab", "f":
 		w.flushPending()
 		w.filter = nextMeasureFilter(w.filter)
 		w.refreshGlyphs()
-		return false
+		return loom.Ignored()
 	}
 	page := w.PageGlyphs()
 	if len(page) == 0 {
 		if key == "pgup" || key == "pageup" {
 			w.previousPage()
 		}
-		return false
+		return loom.Ignored()
 	}
 	switch key {
 	case "left":
@@ -214,7 +217,7 @@ func (w *MeasureWidget) HandleKey(e loom.KeyEvent) bool {
 	case "pgup", "pageup":
 		w.previousPage()
 	}
-	return false
+	return loom.Ignored()
 }
 
 func (w *MeasureWidget) refreshGlyphs() {
@@ -250,8 +253,8 @@ func nextMeasureFilter(filter MeasureFilter) MeasureFilter {
 	return MeasureFilterAll
 }
 
-// HandleMouse implements the loom.Widget interface; the measure flow is keyboard-only.
-func (*MeasureWidget) HandleMouse(loom.MouseEvent) bool { return false }
+// ConsumeMouse implements the loom.Widget interface; the measure flow is keyboard-only.
+func (*MeasureWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func (w *MeasureWidget) measurement(glyph string) Measurement {
 	if m, ok := w.pending[glyph]; ok {

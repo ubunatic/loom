@@ -127,8 +127,10 @@ func (m *monitorWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	m.frame.Draw(c, r)
 }
-func (m *monitorWidget) HandleKey(e loom.KeyEvent) bool     { return m.frame.HandleKey(e) }
-func (m *monitorWidget) HandleMouse(e loom.MouseEvent) bool { return m.frame.HandleMouse(e) }
+func (m *monitorWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult { return m.frame.ConsumeKey(e) }
+func (m *monitorWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	return m.frame.ConsumeMouse(e)
+}
 func (m *monitorWidget) TickInterval() time.Duration {
 	if !m.active || !m.spec.watchEnabled {
 		return 0

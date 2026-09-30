@@ -80,20 +80,20 @@ func (a *AlignBox) Draw(c *Canvas, r Rect) {
 	a.Child.Draw(c, childRect)
 }
 
-// HandleKey delegates key events to the child widget.
-func (a *AlignBox) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey delegates key events to the child widget.
+func (a *AlignBox) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if a.Child != nil {
-		return a.Child.HandleKey(e)
+		return a.Child.ConsumeKey(e)
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse delegates mouse events to the child widget.
-func (a *AlignBox) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse delegates mouse events to the child widget.
+func (a *AlignBox) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	if a.Child != nil {
-		return a.Child.HandleMouse(e)
+		return a.Child.ConsumeMouse(e)
 	}
-	return false
+	return Ignored()
 }
 
 // ContentWidth estimates the child width.

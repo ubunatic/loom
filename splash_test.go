@@ -62,9 +62,9 @@ func TestSplashControllerDismissal(t *testing.T) {
 
 	// Simulate Esc key after short delay
 	time.Sleep(20 * time.Millisecond)
-	handled := sc.HandleKey(KeyEvent{Key: "esc"})
+	handled := sc.ConsumeKey(KeyEvent{Key: "esc"}).Consumed
 	if !handled {
-		t.Errorf("HandleKey(esc) = false, want true")
+		t.Errorf("ConsumeKey(esc) = false, want true")
 	}
 
 	select {
@@ -84,9 +84,9 @@ func TestSplashControllerDismissal(t *testing.T) {
 
 func TestSplashControllerDismissalWithQKey(t *testing.T) {
 	sc := NewSplashController(SplashConfig{})
-	handled := sc.HandleKey(KeyEvent{Text: "q"})
+	handled := sc.ConsumeKey(KeyEvent{Text: "q"}).Consumed
 	if !handled {
-		t.Errorf("HandleKey(text 'q') = false, want true")
+		t.Errorf("ConsumeKey(text 'q') = false, want true")
 	}
 	if !sc.Snapshot().Dismissed {
 		t.Errorf("state not dismissed after 'q'")

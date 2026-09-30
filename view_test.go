@@ -22,7 +22,7 @@ func TestViewPagerNavigation(t *testing.T) {
 		{KeyEvent{Key: "home"}, 0},
 		{KeyEvent{Text: "g"}, 0},
 	} {
-		if v.HandleKey(tc.key) || v.Scroll != tc.want {
+		if v.ConsumeKey(tc.key).Quit || v.Scroll != tc.want {
 			t.Fatalf("key %+v: scroll %d, want %d", tc.key, v.Scroll, tc.want)
 		}
 	}
@@ -40,12 +40,12 @@ func TestViewScrollbarTrackClick(t *testing.T) {
 		{10, 5, 8},  // content column: no jump
 		{11, 1, 0},  // top of the track
 	} {
-		v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: tc.x, Y: tc.y})
+		v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: tc.x, Y: tc.y})
 		if v.Scroll != tc.want {
 			t.Fatalf("click (%d,%d): scroll=%d, want %d", tc.x, tc.y, v.Scroll, tc.want)
 		}
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 4})
+	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 4})
 	if v.Scroll != 0 {
 		t.Fatal("right click moved scrollbar")
 	}
@@ -122,7 +122,7 @@ func TestViewScrollbarModeDefaultsToAutoAndCanBeDisabled(t *testing.T) {
 	if got := canvas.Get(7, 0).Text; got == SpeccedDefaults.Scrollbar.ForegroundChar || got == SpeccedDefaults.Scrollbar.BackgroundChar {
 		t.Fatalf("opt-out cell = %q, unexpectedly reserved for scrollbar", got)
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 7, Y: 3})
+	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 7, Y: 3})
 	if v.Scroll != 0 {
 		t.Fatalf("opt-out track click changed scroll to %d", v.Scroll)
 	}
@@ -190,14 +190,14 @@ func TestViewPanOffsetAndANSIClipping(t *testing.T) {
 
 func TestViewHorizontalPanKeys(t *testing.T) {
 	v := NewView([]string{"abcdef"})
-	v.HandleKey(KeyEvent{Key: "right"})
-	v.HandleKey(KeyEvent{Text: "l"})
+	v.ConsumeKey(KeyEvent{Key: "right"})
+	v.ConsumeKey(KeyEvent{Text: "l"})
 	if v.OffsetX != 2 {
 		t.Fatalf("right pan offset=%d, want 2", v.OffsetX)
 	}
-	v.HandleKey(KeyEvent{Key: "left"})
-	v.HandleKey(KeyEvent{Text: "h"})
-	v.HandleKey(KeyEvent{Key: "left"})
+	v.ConsumeKey(KeyEvent{Key: "left"})
+	v.ConsumeKey(KeyEvent{Text: "h"})
+	v.ConsumeKey(KeyEvent{Key: "left"})
 	if v.OffsetX != 0 {
 		t.Fatalf("left pan offset=%d, want clamped 0", v.OffsetX)
 	}
@@ -267,12 +267,12 @@ func TestScrollbarDragSequenceAndHorizontalMapping(t *testing.T) {
 func TestViewScrollbarDrag(t *testing.T) {
 	v := NewView(make([]string, 100))
 	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 1})
-	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 9})
+	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 1})
+	v.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 9})
 	if v.Scroll <= 0 {
 		t.Fatal("drag did not scroll")
 	}
-	v.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 11, Y: 9})
+	v.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 11, Y: 9})
 	if v.drag.active {
 		t.Fatal("release left drag active")
 	}
@@ -284,16 +284,16 @@ func TestViewScrollbarDragCancelAndCapture(t *testing.T) {
 	v.Scroll = 20
 	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
 	start := v.Scroll
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 2})
-	v.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 99})
+	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 2})
+	v.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 99})
 	if v.Scroll == start {
 		t.Fatal("captured drag did not update outside the widget")
 	}
-	v.HandleKey(KeyEvent{Key: "esc"})
+	v.ConsumeKey(KeyEvent{Key: "esc"})
 	if v.Scroll != start || v.drag.active {
 		t.Fatalf("escape cancel: scroll=%d active=%v, want %d false", v.Scroll, v.drag.active, start)
 	}
-	v.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 2})
+	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 11, Y: 2})
 	if v.drag.active {
 		t.Fatal("non-primary press started drag")
 	}

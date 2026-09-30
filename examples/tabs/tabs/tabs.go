@@ -79,14 +79,14 @@ func (a *tabsApp) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(r.X, footerY, legend, loom.Style{Dim: true})
 }
 
-func (a *tabsApp) HandleKey(e loom.KeyEvent) bool {
+func (a *tabsApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
 	}
 	switch key {
 	case "q", "ctrl-q", "ctrl-c", "esc":
-		return true
+		return loom.QuitResult()
 	case "+", "a":
 		a.tabCounter++
 		title := fmt.Sprintf("Extra %d", a.tabCounter)
@@ -103,25 +103,18 @@ func (a *tabsApp) HandleKey(e loom.KeyEvent) bool {
 		}
 		idx := a.tabs.Add(newTab)
 		a.tabs.Select(idx)
-		return false
+		return loom.Ignored()
 	case "x", "d":
 		if len(a.tabs.Tabs) > 1 {
 			_ = a.tabs.Remove(a.tabs.Focus())
 		}
-		return false
+		return loom.Ignored()
 	}
-	return a.tabs.HandleKey(e)
-}
-
-func (a *tabsApp) HandleMouse(e loom.MouseEvent) bool {
-	return a.tabs.HandleMouse(e)
-}
-
-// ConsumeKey allows the tabs widget to consume keys before parent widgets
-// (e.g., when hosted in a parent Tabs). This is needed for proper nested-Tabs
-// support when ArrowSwitch=false in the parent.
-func (a *tabsApp) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 	return a.tabs.ConsumeKey(e)
+}
+
+func (a *tabsApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	return a.tabs.ConsumeMouse(e)
 }
 
 // PaneRequest declares the terminal requirements of the tabs widget.

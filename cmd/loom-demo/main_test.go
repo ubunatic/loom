@@ -81,7 +81,7 @@ func TestNestedTabsMeta(t *testing.T) {
 	beforeStr := strings.Join(framesBefore, "\n")
 
 	// Test right arrow key: should reach the inner tabs
-	_ = host.HandleKey(loom.KeyEvent{Key: "right"})
+	_ = host.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if host.Focus() != tabsIdx {
 		t.Errorf("after right key, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
 	}
@@ -93,7 +93,7 @@ func TestNestedTabsMeta(t *testing.T) {
 	}
 
 	// Test left arrow key: should go back
-	_ = host.HandleKey(loom.KeyEvent{Key: "left"})
+	_ = host.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if host.Focus() != tabsIdx {
 		t.Errorf("after left key, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
 	}
@@ -105,7 +105,7 @@ func TestNestedTabsMeta(t *testing.T) {
 	}
 
 	// Test ctrl-t (cycle): inner tabs should advance
-	_ = host.HandleKey(loom.KeyEvent{Key: "ctrl-t"})
+	_ = host.ConsumeKey(loom.KeyEvent{Key: "ctrl-t"})
 	if host.Focus() != tabsIdx {
 		t.Errorf("after ctrl-t, host focus changed to %d, expected %d (still on tabs tab)", host.Focus(), tabsIdx)
 	}
@@ -233,7 +233,7 @@ func TestGenerateM3HostedEvidence(t *testing.T) {
 	host.SetFocusIndex(tabsIdx)
 
 	// Send right arrow to the host, which should delegate to the tabs widget
-	_ = host.HandleKey(loom.KeyEvent{Key: "right"})
+	_ = host.ConsumeKey(loom.KeyEvent{Key: "right"})
 
 	// Render after the key (M3-hosted-tabs-inner-switched.ansi)
 	frames2 := loom.Render(host, 80, 24)

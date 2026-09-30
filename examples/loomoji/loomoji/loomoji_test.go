@@ -23,13 +23,13 @@ func TestInitialGridFocusAndNavigation(t *testing.T) {
 	}
 
 	// Arrow right moves grid selection
-	p.HandleKey(loom.KeyEvent{Key: "right"})
+	p.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if p.index != 1 {
 		t.Errorf("expected index 1 after right arrow, got %d", p.index)
 	}
 
 	// Arrow left moves back
-	p.HandleKey(loom.KeyEvent{Key: "left"})
+	p.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if p.index != 0 {
 		t.Errorf("expected index 0 after left arrow, got %d", p.index)
 	}
@@ -44,7 +44,7 @@ func TestCategorySwitching(t *testing.T) {
 	}
 
 	// Digits start a search while the grid is focused.
-	p.HandleKey(loom.KeyEvent{Text: "3"})
+	p.ConsumeKey(loom.KeyEvent{Text: "3"})
 	if p.group != grpFaces || p.query.Value() != "3" || p.gridFocus {
 		t.Errorf("digit should start a search without changing category; group=%d query=%q focus=%v", p.group, p.query.Value(), p.gridFocus)
 	}
@@ -53,19 +53,19 @@ func TestCategorySwitching(t *testing.T) {
 	p.refresh()
 
 	// Brackets cycle categories.
-	p.HandleKey(loom.KeyEvent{Text: "]"})
+	p.ConsumeKey(loom.KeyEvent{Text: "]"})
 	if p.group != grpHands {
 		t.Errorf("expected group %d (Hands), got %d", grpHands, p.group)
 	}
 
 	// Press ']' to advance to Animals
-	p.HandleKey(loom.KeyEvent{Text: "]"})
+	p.ConsumeKey(loom.KeyEvent{Text: "]"})
 	if p.group != grpAnimals {
 		t.Errorf("expected group %d (Animals), got %d", grpAnimals, p.group)
 	}
 
 	// Press '[' to go back to Hands
-	p.HandleKey(loom.KeyEvent{Text: "["})
+	p.ConsumeKey(loom.KeyEvent{Text: "["})
 	if p.group != grpHands {
 		t.Errorf("expected group %d (Hands), got %d", grpHands, p.group)
 	}
@@ -91,7 +91,7 @@ func TestSearchFiltering(t *testing.T) {
 	p := newPicker()
 
 	// Type text into search
-	p.HandleKey(loom.KeyEvent{Text: "box"})
+	p.ConsumeKey(loom.KeyEvent{Text: "box"})
 	if p.gridFocus {
 		t.Errorf("expected search to gain focus after typing text")
 	}
@@ -121,12 +121,12 @@ func TestMouseInteraction(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		cx += loom.StringWidth(p.categories[i].icon) + 2
 	}
-	if p.HandleMouse(loom.MouseEvent{
+	if p.ConsumeMouse(loom.MouseEvent{
 		Action: loom.MousePress,
 		Button: loom.MouseLeft,
 		X:      cx,
 		Y:      catY + 1,
-	}) {
+	}).Quit {
 		t.Fatal("category click unexpectedly selected an entry")
 	}
 	if p.group != grpAnimals {
@@ -136,12 +136,12 @@ func TestMouseInteraction(t *testing.T) {
 	canvas = loom.NewCanvas(60, 15)
 	p.Draw(canvas, loom.Rect{X: 0, Y: 0, W: 50, H: 12})
 	want := p.entries[p.items[1]].icon
-	if !p.HandleMouse(loom.MouseEvent{
+	if !p.ConsumeMouse(loom.MouseEvent{
 		Action: loom.MousePress,
 		Button: loom.MouseLeft,
 		X:      2 + p.cellWidth + 1,
 		Y:      p.searchY + 2,
-	}) {
+	}).Quit {
 		t.Fatal("grid click should select and exit")
 	}
 	if p.chosen != want {

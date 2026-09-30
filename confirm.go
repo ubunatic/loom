@@ -65,34 +65,34 @@ func (c *Confirm) Draw(cv *Canvas, r Rect) {
 	cv.Write(x, optY, noMark+"No", noStyle)
 }
 
-// HandleKey drives the selection and answers the prompt.
-func (c *Confirm) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey drives the selection and answers the prompt.
+func (c *Confirm) ConsumeKey(e KeyEvent) (quit EventResult) {
 	switch e.Key {
 	case "left", "right":
 		c.yes = !c.yes
-		return false
+		return Ignored()
 	case "enter":
 		c.answer(c.yes)
-		return true
+		return QuitResult()
 	case "esc", "ctrl-c":
 		c.answer(false)
-		return true
+		return QuitResult()
 	}
 	switch e.Text {
 	case "y", "Y":
 		c.answer(true)
-		return true
+		return QuitResult()
 	case "n", "N":
 		c.answer(false)
-		return true
+		return QuitResult()
 	case "h", "l":
 		c.yes = !c.yes
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse is a no-op; Confirm is keyboard-driven.
-func (c *Confirm) HandleMouse(MouseEvent) (quit bool) { return false }
+// ConsumeMouse is a no-op; Confirm is keyboard-driven.
+func (c *Confirm) ConsumeMouse(MouseEvent) (quit EventResult) { return Ignored() }
 
 // ContentHeight reports the rows needed: prompt + options.
 func (c *Confirm) ContentHeight() int { return 2 }

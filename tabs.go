@@ -85,7 +85,7 @@ var tabsVerticalGlyph = func() string {
 }()
 
 // Tabs hosts child widgets under a row of tabs, switching which child receives
-// Draw/HandleKey/HandleMouse. Tabs may be added, inserted, removed, or replaced
+// Draw/ConsumeKey/ConsumeMouse. Tabs may be added, inserted, removed, or replaced
 // at runtime using its lifecycle methods.
 type Tabs struct {
 	Tabs  []Tab
@@ -101,7 +101,7 @@ type Tabs struct {
 	OnChildQuit func(i int) (quitHost bool)
 
 	focus    int    // index of the active tab
-	drawn    bool   // whether Draw has run at least once (for HandleMouse hit-testing)
+	drawn    bool   // whether Draw has run at least once (for ConsumeMouse hit-testing)
 	lastRect Rect   // the Rect passed to the most recent Draw call
 	tabCols  []Rect // per-tab clickable rect on the bar, refreshed each Draw
 }
@@ -363,31 +363,12 @@ func (t *Tabs) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey applies configured navigation (and SwitchKey, if set), delegating
+// ConsumeKey applies configured navigation (and SwitchKey, if set), delegating
 // everything else to the active child.
-func (t *Tabs) HandleKey(e KeyEvent) (quit bool) {
-	quit, consumed := t.ConsumeKey(e)
-	if consumed {
-		if quit && t.OnChildQuit != nil {
-			return t.OnChildQuit(t.focus)
-		}
-		return quit
-	}
-	child := t.active()
-	if child == nil {
-		return false
-	}
-	quit = child.HandleKey(e)
-	if quit && t.OnChildQuit != nil {
-		return t.OnChildQuit(t.focus)
-	}
-	return quit
-}
-
-func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
+func (t *Tabs) ConsumeKey(e KeyEvent) EventResult {
 	n := len(t.Tabs)
 	if n == 0 {
-		return false, false
+		return Ignored()
 	}
 	keys := t.Keys
 	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
@@ -397,41 +378,40 @@ func (t *Tabs) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 		switch {
 		case matchesTabKey(e, keys.Previous):
 			t.Select((t.focus - 1 + n) % n)
-			return false, true
+			return Handled()
 		case matchesTabKey(e, keys.Next):
 			t.Select((t.focus + 1) % n)
-			return false, true
+			return Handled()
 		}
 	}
 	if child := t.active(); child != nil {
-		if c, ok := child.(EventConsumer); ok {
-			if res := c.ConsumeKey(e); res.Consumed {
-				return res.Quit, true
+		if res := child.ConsumeKey(e); res.Consumed {
+			if res.Quit && t.OnChildQuit != nil {
+				if t.OnChildQuit(t.focus) {
+					return QuitResult()
+				}
+				return Handled()
 			}
-		}
-		if c, ok := child.(KeyConsumer); ok {
-			if quit, consumed = c.ConsumeKey(e); consumed {
-				return quit, true
-			}
+			return res
 		}
 	}
 	switch {
 	case !t.ArrowSwitch && matchesTabKey(e, keys.Previous):
 		t.Select((t.focus - 1 + n) % n)
-		return false, true
+		return Handled()
 	case !t.ArrowSwitch && matchesTabKey(e, keys.Next):
 		t.Select((t.focus + 1) % n)
-		return false, true
+		return Handled()
 	case matchesTabKey(e, keys.Cycle), matchesTabKey(e, t.SwitchKey):
 		t.Select((t.focus + 1) % n)
-		return false, true
+		return Handled()
 	}
 	for index, binding := range keys.Select {
 		if matchesTabKey(e, binding) && t.Select(index) {
-			return false, true
+			return Handled()
 		}
 	}
-	return false, false
+	return Ignored()
 }
 
 func (t *Tabs) ConsumePaste(e PasteEvent) EventResult {
@@ -442,13 +422,6 @@ func matchesTabKey(event KeyEvent, binding string) bool {
 	return binding != "" && (event.Key == binding || event.Text == binding)
 }
 
-// HandleMouse switches tabs on a left click within the tab bar; any other
-// event is delegated to the active child. Coordinates are canvas-absolute
-// and 0-based.
-func (t *Tabs) HandleMouse(e MouseEvent) (quit bool) {
-	return t.ConsumeMouse(e).Quit
-}
-
 // ConsumeMouse selects a tab on a bar click and dispatches panel events to the
 // active child in child-local coordinates.
 func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
@@ -456,7 +429,7 @@ func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	if t.drawn && e.Action == MousePress && e.Button == MouseLeft {
-		x, y := e.X, e.Y
+		x, y := e.X+t.lastRect.X, e.Y+t.lastRect.Y
 		for i, cr := range t.tabCols {
 			if cr.Contains(x, y) {
 				t.Select(i)
@@ -469,13 +442,13 @@ func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	panel := t.childRect(t.lastRect)
-	if !panel.Contains(e.X, e.Y) {
+	x, y := e.X+t.lastRect.X, e.Y+t.lastRect.Y
+	if !panel.Contains(x, y) {
 		return Ignored()
 	}
-	e.X -= panel.X
-	e.Y -= panel.Y
-	res := DispatchMouseEvent(child, e)
-	return EventResult{Quit: res.Quit, Consumed: true}
+	e.X = x - panel.X
+	e.Y = y - panel.Y
+	return DispatchMouseEvent(child, e)
 }
 
 // childRect returns the active panel rectangle from the last draw allocation.

@@ -91,7 +91,7 @@ func TestDecodeMouseNotAReport(t *testing.T) {
 	}
 }
 
-// ── A2: HandleMouse per widget (synthetic events) ─────────────────────────────
+// ── A2: ConsumeMouse per widget (synthetic events) ─────────────────────────────
 
 // spyWidget records the mouse events forwarded to it.
 type spyWidget struct {
@@ -100,42 +100,42 @@ type spyWidget struct {
 	quit bool
 }
 
-func (s *spyWidget) Draw(*loom.Canvas, loom.Rect) {}
-func (s *spyWidget) HandleKey(loom.KeyEvent) bool { return false }
-func (s *spyWidget) HandleMouse(e loom.MouseEvent) bool {
+func (s *spyWidget) Draw(*loom.Canvas, loom.Rect)              {}
+func (s *spyWidget) ConsumeKey(loom.KeyEvent) loom.EventResult { return loom.Ignored() }
+func (s *spyWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	s.got = true
 	s.last = e
-	return s.quit
+	return loom.EventResult{Consumed: s.quit, Quit: s.quit}
 }
 
-func TestViewHandleMouseScroll(t *testing.T) {
+func TestViewConsumeMouseScroll(t *testing.T) {
 	v := loom.NewView([]string{"a", "b", "c", "d"})
 	c := loom.NewCanvas(4, 2) // height 2 < 4 lines → scrollable, maxScroll=2
-	v.Draw(c, c.Bounds())     // sets lastH so HandleMouse can clamp
+	v.Draw(c, c.Bounds())     // sets lastH so ConsumeMouse can clamp
 
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
 	if v.Scroll != 1 {
 		t.Errorf("Scroll = %d after wheel down, want 1", v.Scroll)
 	}
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollDown}) // clamp at maxScroll=2
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown}) // clamp at maxScroll=2
 	if v.Scroll != 2 {
 		t.Errorf("Scroll = %d after over-scroll, want 2 (clamped)", v.Scroll)
 	}
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
-	v.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollUp}) // clamp at 0
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
+	v.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp}) // clamp at 0
 	if v.Scroll != 0 {
 		t.Errorf("Scroll = %d after over-scroll-up, want 0 (clamped)", v.Scroll)
 	}
 }
 
-func TestChoiceHandleMouseClickSelects(t *testing.T) {
+func TestChoiceConsumeMouseClickSelects(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
 	// Left press at Y=1 selects the 2nd row (0-based) and quits (no OnSelect).
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
+	quit := c.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1}).Quit
 	if !quit {
 		t.Error("left click on a row should quit (done) when OnSelect is nil")
 	}
@@ -144,11 +144,11 @@ func TestChoiceHandleMouseClickSelects(t *testing.T) {
 	}
 }
 
-func TestChoiceHandleMouseHover(t *testing.T) {
+func TestChoiceConsumeMouseHover(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 2})
+	quit := c.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 2}).Quit
 	if quit {
 		t.Error("hover should not quit")
 	}
@@ -157,19 +157,19 @@ func TestChoiceHandleMouseHover(t *testing.T) {
 	}
 
 	// Out-of-range Y is a no-op (selection unchanged).
-	c.HandleMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 99})
+	c.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, Y: 99})
 	if c.FilteredSel() != 2 {
 		t.Errorf("sel = %d after out-of-range hover, want 2 (unchanged)", c.FilteredSel())
 	}
 }
 
-func TestChoiceHandleMouseOnSelectNoQuit(t *testing.T) {
+func TestChoiceConsumeMouseOnSelectNoQuit(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}}
 	var picked string
 	c := loom.NewChoice(items)
 	c.OnSelect = func(it loom.Item) { picked = it.Name }
 
-	quit := c.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0})
+	quit := c.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0}).Quit
 	if quit {
 		t.Error("click with OnSelect set should not quit")
 	}
@@ -178,7 +178,7 @@ func TestChoiceHandleMouseOnSelectNoQuit(t *testing.T) {
 	}
 }
 
-func TestChoiceInFrameHandleMouseUsesCanvasCoordinates(t *testing.T) {
+func TestChoiceInFrameConsumeMouseUsesCanvasCoordinates(t *testing.T) {
 	choice := loom.NewChoice([]loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}})
 	choice.SelectOnlyOnClick = true
 	frame := &loom.Frame{Boxes: []loom.Box{{Child: choice, Width: 8, Height: 6}}}
@@ -187,19 +187,19 @@ func TestChoiceInFrameHandleMouseUsesCanvasCoordinates(t *testing.T) {
 
 	// Frame chrome is one row high and the box border is one cell high. The
 	// second choice row is therefore at absolute canvas coordinate (7, 6).
-	frame.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 7, Y: 6})
+	frame.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 7, Y: 6})
 	if got := choice.FilteredSel(); got != 1 {
 		t.Fatalf("selection after click = %d, want 1", got)
 	}
 }
 
-func TestGridHandleMouseForwardsToFocusedChild(t *testing.T) {
+func TestGridConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{quit: true}
 	g := loom.NewGrid(2, a, b)
-	g.HandleKey(loom.KeyEvent{Key: "right"}) // focus → child 1 (b)
+	g.ConsumeKey(loom.KeyEvent{Key: "right"}) // focus → child 1 (b)
 
 	ev := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}
-	quit := g.HandleMouse(ev)
+	quit := g.ConsumeMouse(ev).Quit
 	if !b.got || a.got {
 		t.Errorf("mouse should reach focused child only: a.got=%v b.got=%v", a.got, b.got)
 	}
@@ -211,37 +211,37 @@ func TestGridHandleMouseForwardsToFocusedChild(t *testing.T) {
 	}
 }
 
-func TestStackHandleMouseForwardsToFocusedChild(t *testing.T) {
+func TestStackConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{}
 	s := loom.NewStack(loom.Horizontal, a, b)
-	s.HandleKey(loom.KeyEvent{Key: "tab"}) // focus → child 1 (b)
+	s.ConsumeKey(loom.KeyEvent{Key: "tab"}) // focus → child 1 (b)
 
-	s.HandleMouse(loom.MouseEvent{Action: loom.MouseHover})
+	s.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover})
 	if !b.got || a.got {
 		t.Errorf("stack mouse should reach focused child: a.got=%v b.got=%v", a.got, b.got)
 	}
 }
 
-func TestPopupHandleMouseForwardsWhileOpen(t *testing.T) {
+func TestPopupConsumeMouseForwardsWhileOpen(t *testing.T) {
 	inner := &spyWidget{}
 	p := loom.NewPopup("t", inner)
 
-	p.HandleMouse(loom.MouseEvent{Action: loom.MousePress})
+	p.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress})
 	if !inner.got {
 		t.Error("open popup should forward mouse to inner")
 	}
 
 	inner.got = false
 	p.Open = false
-	if p.HandleMouse(loom.MouseEvent{Action: loom.MousePress}) {
-		t.Error("closed popup HandleMouse should return false")
+	if p.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress}).Quit {
+		t.Error("closed popup ConsumeMouse should return false")
 	}
 	if inner.got {
 		t.Error("closed popup should not forward mouse to inner")
 	}
 }
 
-func TestRouterHandleMouseForwardsToActiveView(t *testing.T) {
+func TestRouterConsumeMouseForwardsToActiveView(t *testing.T) {
 	// The router wires each choice's OnSelect to navigation, so a left click on
 	// row 1 ("list") routes to the "list" view. Observing Current() proves the
 	// mouse event reached the active view's Choice.
@@ -282,7 +282,7 @@ views:
 		t.Fatalf("expected *loom.Router, got %T", widget)
 	}
 
-	router.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0})
+	router.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0})
 	if router.Current() != "list" {
 		t.Errorf("after click on row 1, current view = %q, want list", router.Current())
 	}

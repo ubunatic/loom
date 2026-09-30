@@ -110,7 +110,7 @@ const (
 type MouseEvent struct {
 	Action MouseAction
 	Button MouseButton
-	X, Y   int // 1-based terminal column and row
+	X, Y   int // DecodeMouse reports 1-based terminal coordinates; Pane converts them before widget dispatch.
 }
 
 // DecodeKey converts raw bytes from a /dev/tty read into a KeyEvent.
@@ -517,51 +517,18 @@ func QuitResult() EventResult {
 	return EventResult{Consumed: true, Quit: true}
 }
 
-// DispatchKeyEvent dispatches a key event to a widget, checking EventConsumer,
-// KeyConsumer, and Widget.HandleKey in order. Always returns an EventResult value struct.
+// DispatchKeyEvent dispatches a key event to a widget.
 func DispatchKeyEvent(root Widget, ke KeyEvent) EventResult {
 	if root == nil {
 		return Ignored()
 	}
-	if c, ok := root.(EventConsumer); ok {
-		if res := c.ConsumeKey(ke); res.Consumed {
-			return res
-		}
-	}
-	if c, ok := root.(interface{ ConsumeKeyEvent(KeyEvent) EventResult }); ok {
-		if res := c.ConsumeKeyEvent(ke); res.Consumed {
-			return res
-		}
-	}
-	if c, ok := root.(KeyConsumer); ok {
-		if quit, consumed := c.ConsumeKey(ke); consumed {
-			return EventResult{Consumed: true, Quit: quit}
-		}
-	}
-	if root.HandleKey(ke) {
-		return QuitResult()
-	}
-	return Ignored()
+	return root.ConsumeKey(ke)
 }
 
-// DispatchMouseEvent dispatches a mouse event to a widget, checking MouseConsumer,
-// MouseEventConsumer, and Widget.HandleMouse in order. Always returns an EventResult value struct.
+// DispatchMouseEvent dispatches a mouse event to a widget.
 func DispatchMouseEvent(root Widget, me MouseEvent) EventResult {
 	if root == nil {
 		return Ignored()
 	}
-	if c, ok := root.(MouseConsumer); ok {
-		if res := c.ConsumeMouse(me); res.Consumed {
-			return res
-		}
-	}
-	if c, ok := root.(interface{ ConsumeMouseEvent(MouseEvent) EventResult }); ok {
-		if res := c.ConsumeMouseEvent(me); res.Consumed {
-			return res
-		}
-	}
-	if root.HandleMouse(me) {
-		return QuitResult()
-	}
-	return Ignored()
+	return root.ConsumeMouse(me)
 }

@@ -17,21 +17,15 @@ import (
 // Lifecycle per frame:
 //  1. Pane clears the Canvas and calls root.Draw(canvas, canvas.Bounds()).
 //  2. Pane reads one event (key or mouse) from the terminal.
-//  3. Pane calls root.HandleKey or root.HandleMouse.
-//  4. If the handler returns quit=true, Pane.Run returns.
+//  3. Pane dispatches the event to the root widget.
+//  4. If the returned EventResult requests quit, Pane.Run returns.
 type Widget interface {
 	// Draw renders the widget into region r of canvas c.
 	// r is guaranteed to be within c.Bounds(). Draw must not write outside r.
 	Draw(c *Canvas, r Rect)
 
-	// HandleKey processes a keyboard event.
-	// Returns quit=true to signal that the event loop should stop.
-	HandleKey(e KeyEvent) (quit bool)
-
-	// HandleMouse processes a mouse event. e.X and e.Y are canvas-absolute,
-	// 0-based coordinates, with the canvas origin at its top-left corner.
-	// Returns quit=true to signal that the event loop should stop.
-	HandleMouse(e MouseEvent) (quit bool)
+	EventConsumer
+	MouseConsumer
 }
 
 // Ticker is an optional interface for widgets that need periodic updates.
@@ -187,23 +181,14 @@ type Focusable interface {
 	SetFocus(bool)
 }
 
-// EventConsumer optionally lets a widget report key consumption and quit status
-// using the EventResult small value struct.
+// EventConsumer processes key events and reports consumption and quit status.
 type EventConsumer interface {
 	ConsumeKey(e KeyEvent) EventResult
 }
 
-// MouseConsumer optionally lets a widget report mouse event consumption and quit
-// status using the EventResult small value struct.
+// MouseConsumer processes mouse events and reports consumption and quit status.
 type MouseConsumer interface {
 	ConsumeMouse(e MouseEvent) EventResult
-}
-
-// KeyConsumer optionally lets a widget report that it handled a key. The
-// signal allows hosted composites to give children first refusal while still
-// preserving Widget.HandleKey's historical quit-only API.
-type KeyConsumer interface {
-	ConsumeKey(e KeyEvent) (quit, consumed bool)
 }
 
 // FocusContainer is a focusable composite that can move focus within itself.

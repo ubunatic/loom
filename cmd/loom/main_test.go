@@ -277,7 +277,7 @@ func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
 	initialCanvas := loom.NewCanvas(40, 4)
 	gallery.Draw(initialCanvas, initialCanvas.Bounds())
 	initialColor := initialCanvas.Get(0, 0).Style
-	gallery.HandleKey(loom.KeyEvent{Key: "f2"})
+	gallery.ConsumeKey(loom.KeyEvent{Key: "f2"})
 	names := loom.ThemeNames()
 	index := slices.Index(names, "mc")
 	want := names[(index+1)%len(names)]
@@ -299,9 +299,9 @@ type themeProbeWidget struct{ theme loom.ThemeColors }
 func (w *themeProbeWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(r.X, r.Y, "X", w.theme.ChoiceStyle().Normal)
 }
-func (*themeProbeWidget) HandleKey(loom.KeyEvent) bool        { return false }
-func (*themeProbeWidget) HandleMouse(loom.MouseEvent) bool    { return false }
-func (w *themeProbeWidget) ApplyTheme(theme loom.ThemeColors) { w.theme = theme }
+func (*themeProbeWidget) ConsumeKey(loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (*themeProbeWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
+func (w *themeProbeWidget) ApplyTheme(theme loom.ThemeColors)           { w.theme = theme }
 
 func TestWidgetsThemeFlagRejectsUnknownTheme(t *testing.T) {
 	if err := execute([]string{"widgets", "--show", "--theme", "missing"}, &bytes.Buffer{}); err == nil || !strings.Contains(err.Error(), "unknown theme") {
@@ -411,10 +411,10 @@ func TestANSIViewScrollAndQuit(t *testing.T) {
 		t.Fatal(err)
 	}
 	view := &ansiView{buffer: buffer}
-	if view.HandleKey(loom.KeyEvent{Key: "down"}) || view.offsetY != 1 {
+	if view.ConsumeKey(loom.KeyEvent{Key: "down"}).Quit || view.offsetY != 1 {
 		t.Fatalf("down key did not scroll: offsetY=%d", view.offsetY)
 	}
-	if !view.HandleKey(loom.KeyEvent{Key: "f10"}) {
+	if !view.ConsumeKey(loom.KeyEvent{Key: "f10"}).Quit {
 		t.Fatal("F10 did not quit")
 	}
 }
@@ -427,7 +427,7 @@ func TestANSIViewAcceptsPageDownAliases(t *testing.T) {
 	keys := []loom.KeyEvent{{Key: "pgdown"}, {Key: "pgdn"}, {Key: "pagedown"}, loom.DecodeKey([]byte("\x1b[6~"))}
 	for _, key := range keys {
 		view := &ansiView{buffer: buffer}
-		view.HandleKey(key)
+		view.ConsumeKey(key)
 		if view.offsetY == 0 {
 			t.Errorf("key %q did not pan down", key.Key)
 		}
@@ -451,13 +451,13 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	view.offsetX = 0
 	view.offsetY = 0
 	view.Draw(canvas, loom.Rect{W: 4, H: 2})
-	view.HandleKey(loom.KeyEvent{Key: "right"})
-	view.HandleKey(loom.KeyEvent{Key: "right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
 	view.Draw(canvas, loom.Rect{W: 4, H: 2})
 	if got := canvas.Get(0, 0).Text; got != "c" {
 		t.Fatalf("first rendered cell after horizontal pan = %q, want %q", got, "c")
 	}
-	view.HandleKey(loom.KeyEvent{Key: "end"})
+	view.ConsumeKey(loom.KeyEvent{Key: "end"})
 	if want := buffer.Cols() - 4; view.offsetX != want {
 		t.Fatalf("end horizontal offset = %d, want maximum offset %d", view.offsetX, want)
 	}
@@ -465,33 +465,33 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	if got := canvas.Get(0, 0).Text; got != "q" {
 		t.Fatalf("first rendered cell at right edge = %q, want %q", got, "q")
 	}
-	view.HandleKey(loom.KeyEvent{Key: "right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if want := buffer.Cols() - 4; view.offsetX != want {
 		t.Fatalf("right edge offset = %d, want %d", view.offsetX, want)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "home"})
-	view.HandleKey(loom.KeyEvent{Key: "]"})
+	view.ConsumeKey(loom.KeyEvent{Key: "home"})
+	view.ConsumeKey(loom.KeyEvent{Key: "]"})
 	if view.offsetX != 10 {
 		t.Fatalf("] horizontal offset = %d, want 10", view.offsetX)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "shift-right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "shift-right"})
 	if view.offsetX != 16 {
 		t.Fatalf("shift-right horizontal offset = %d, want clamped maximum 16", view.offsetX)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "["})
+	view.ConsumeKey(loom.KeyEvent{Key: "["})
 	if view.offsetX != 6 {
 		t.Fatalf("[ horizontal offset = %d, want 6", view.offsetX)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "left"})
-	view.HandleKey(loom.KeyEvent{Key: "home"})
+	view.ConsumeKey(loom.KeyEvent{Key: "left"})
+	view.ConsumeKey(loom.KeyEvent{Key: "home"})
 	if view.offsetX != 0 {
 		t.Fatalf("home horizontal offset = %d, want 0", view.offsetX)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "pgdn"})
+	view.ConsumeKey(loom.KeyEvent{Key: "pgdn"})
 	if want := buffer.Rows() - 2; view.offsetY != want {
 		t.Fatalf("page-down vertical offset = %d, want clamped offset %d", view.offsetY, want)
 	}
-	view.HandleKey(loom.KeyEvent{Key: "down"})
+	view.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if want := buffer.Rows() - 2; view.offsetY != want {
 		t.Fatalf("bottom vertical offset = %d, want %d", view.offsetY, want)
 	}

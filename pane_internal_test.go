@@ -11,26 +11,20 @@ import (
 )
 
 type paneSelectionWidget struct {
-	selection      int
-	consumeCalls   int
-	handleKeyCalls int
+	selection    int
+	consumeCalls int
 }
 
-func (*paneSelectionWidget) Draw(*Canvas, Rect)          {}
-func (*paneSelectionWidget) HandleMouse(MouseEvent) bool { return false }
+func (*paneSelectionWidget) Draw(*Canvas, Rect)                  {}
+func (*paneSelectionWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
-func (w *paneSelectionWidget) HandleKey(KeyEvent) bool {
-	w.handleKeyCalls++
-	return false
-}
-
-func (w *paneSelectionWidget) ConsumeKey(e KeyEvent) (quit, consumed bool) {
+func (w *paneSelectionWidget) ConsumeKey(e KeyEvent) EventResult {
 	w.consumeCalls++
 	if e.Key == "down" {
 		w.selection++
-		return false, true
+		return Handled()
 	}
-	return false, false
+	return Ignored()
 }
 
 func TestPaneDispatchKeyConsumesSelectionKeyOnce(t *testing.T) {
@@ -45,9 +39,6 @@ func TestPaneDispatchKeyConsumesSelectionKeyOnce(t *testing.T) {
 	}
 	if w.consumeCalls != 1 {
 		t.Fatalf("ConsumeKey calls = %d, want 1", w.consumeCalls)
-	}
-	if w.handleKeyCalls != 0 {
-		t.Fatalf("HandleKey calls = %d, want 0 after consumed key", w.handleKeyCalls)
 	}
 }
 
@@ -135,7 +126,7 @@ func TestWinchBounds(t *testing.T) {
 	}
 }
 
-func TestPaneHandleKeyFallback(t *testing.T) {
+func TestPaneConsumeKeyFallback(t *testing.T) {
 	p := &Pane{}
 
 	// Default fallback exits on Esc, Ctrl-C, Ctrl-Q, Ctrl-D, and 'q'
@@ -218,9 +209,8 @@ type paneEventConsumerProbe struct {
 	quitKey     string
 }
 
-func (*paneEventConsumerProbe) Draw(*Canvas, Rect)          {}
-func (*paneEventConsumerProbe) HandleKey(KeyEvent) bool     { return false }
-func (*paneEventConsumerProbe) HandleMouse(MouseEvent) bool { return false }
+func (*paneEventConsumerProbe) Draw(*Canvas, Rect)                  {}
+func (*paneEventConsumerProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (p *paneEventConsumerProbe) ConsumeKey(e KeyEvent) EventResult {
 	if e.Key == p.quitKey {
 		return QuitResult()
@@ -261,9 +251,8 @@ func TestPaneDispatchKeyEventConsumer(t *testing.T) {
 
 type f10SwallowProbe struct{ calls int }
 
-func (*f10SwallowProbe) Draw(*Canvas, Rect)          {}
-func (*f10SwallowProbe) HandleKey(KeyEvent) bool     { return false }
-func (*f10SwallowProbe) HandleMouse(MouseEvent) bool { return false }
+func (*f10SwallowProbe) Draw(*Canvas, Rect)                  {}
+func (*f10SwallowProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (p *f10SwallowProbe) ConsumeKey(KeyEvent) EventResult {
 	p.calls++
 	return Handled()

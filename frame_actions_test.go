@@ -23,7 +23,7 @@ func TestFrameVisibilitySequences(t *testing.T) {
 		{"u", [2]bool{false, true}}, {"u", [2]bool{true, true}},
 		{"l", [2]bool{true, false}}, {"u", [2]bool{false, false}},
 	} {
-		if f.HandleKey(KeyEvent{Text: tc.key}) {
+		if f.ConsumeKey(KeyEvent{Text: tc.key}).Quit {
 			t.Fatal("toggle quit")
 		}
 		for i, want := range tc.hidden {
@@ -60,10 +60,10 @@ func TestFrameVisibilitySequences(t *testing.T) {
 			t.Fatal("state reset")
 		}
 	}
-	if !f.HandleKey(KeyEvent{Text: "q"}) || !f.HandleKey(KeyEvent{Key: "ctrl-c"}) {
+	if !f.ConsumeKey(KeyEvent{Text: "q"}).Quit || !f.ConsumeKey(KeyEvent{Key: "ctrl-c"}).Quit {
 		t.Fatal("quit not wired")
 	}
-	if f.HandleKey(KeyEvent{Text: "z"}) {
+	if f.ConsumeKey(KeyEvent{Text: "z"}).Quit {
 		t.Fatal("unknown key handled")
 	}
 }

@@ -56,7 +56,7 @@ func TestGraphWidgetsArePassiveAndHavePreferredSizes(t *testing.T) {
 	if sparkline.ContentWidth() != 4 || sparkline.ContentHeight() != 1 {
 		t.Errorf("sparkline preferred size = %dx%d, want 4x1", sparkline.ContentWidth(), sparkline.ContentHeight())
 	}
-	if gauge.HandleKey(KeyEvent{}) || gauge.HandleMouse(MouseEvent{}) || sparkline.HandleKey(KeyEvent{}) || sparkline.HandleMouse(MouseEvent{}) {
+	if gauge.ConsumeKey(KeyEvent{}).Quit || gauge.ConsumeMouse(MouseEvent{}).Quit || sparkline.ConsumeKey(KeyEvent{}).Quit || sparkline.ConsumeMouse(MouseEvent{}).Quit {
 		t.Fatal("graph widgets consumed an input event")
 	}
 }

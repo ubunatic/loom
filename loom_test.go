@@ -383,12 +383,12 @@ func TestChoiceNavigation(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
-	c.HandleKey(loom.KeyEvent{Key: "down"})
+	c.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if item, ok := c.Selected(); !ok || item.Name != "b" {
 		t.Errorf("after down: selected = %+v, ok=%v; want b", item, ok)
 	}
 
-	c.HandleKey(loom.KeyEvent{Key: "up"})
+	c.ConsumeKey(loom.KeyEvent{Key: "up"})
 	if item, ok := c.Selected(); !ok || item.Name != "a" {
 		t.Errorf("after up: selected = %+v, ok=%v; want a", item, ok)
 	}
@@ -397,7 +397,7 @@ func TestChoiceNavigation(t *testing.T) {
 func TestChoiceFilter(t *testing.T) {
 	items := []loom.Item{{Name: "git"}, {Name: "make"}, {Name: "find"}}
 	c := loom.NewChoice(items)
-	c.HandleKey(loom.KeyEvent{Text: "g"})
+	c.ConsumeKey(loom.KeyEvent{Text: "g"})
 	item, ok := c.Selected()
 	if !ok || item.Name != "git" {
 		t.Errorf("after filter 'g': selected = %+v, ok=%v; want git", item, ok)
@@ -413,7 +413,7 @@ func TestChoiceFuzzyFilterRanksAndKeepsStableTies(t *testing.T) {
 	c := loom.NewChoice(items)
 	c.Fuzzy = true
 	for _, r := range "fbw" {
-		c.HandleKey(loom.KeyEvent{Text: string(r)})
+		c.ConsumeKey(loom.KeyEvent{Text: string(r)})
 	}
 	want := []string{"fuzzy.browser.widget", "fuzzy-browser-widget", "filebrowser-widget"}
 	for i, name := range want {
@@ -427,7 +427,7 @@ func TestChoiceFuzzyMatchesDescriptionAndHighlightsRunes(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "Other", Desc: "filebrowser-widget"}})
 	c.Fuzzy = true
 	for _, r := range "fbw" {
-		c.HandleKey(loom.KeyEvent{Text: string(r)})
+		c.ConsumeKey(loom.KeyEvent{Text: string(r)})
 	}
 	if got := c.FilteredItem(0).Name; got != "Other" {
 		t.Fatalf("filtered item = %q, want Other", got)
@@ -445,7 +445,7 @@ func TestChoiceFuzzyMatchesDescriptionAndHighlightsRunes(t *testing.T) {
 
 func TestChoiceAbort(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	quit := c.HandleKey(loom.KeyEvent{Key: "esc"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit
 	if !quit {
 		t.Error("esc should return quit=true")
 	}
@@ -456,7 +456,7 @@ func TestChoiceAbort(t *testing.T) {
 
 func TestChoiceEnterQuits(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit {
 		t.Error("enter with no OnSelect should return quit=true")
 	}
@@ -489,11 +489,11 @@ func TestViewDraw(t *testing.T) {
 
 func TestViewScrollKey(t *testing.T) {
 	v := loom.NewView([]string{"a", "b", "c"})
-	v.HandleKey(loom.KeyEvent{Key: "down"})
+	v.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if v.Scroll != 1 {
 		t.Errorf("Scroll = %d after down, want 1", v.Scroll)
 	}
-	v.HandleKey(loom.KeyEvent{Key: "up"})
+	v.ConsumeKey(loom.KeyEvent{Key: "up"})
 	if v.Scroll != 0 {
 		t.Errorf("Scroll = %d after up, want 0", v.Scroll)
 	}
@@ -514,7 +514,7 @@ func TestStackTabCyclesFocus(t *testing.T) {
 	b := loom.NewChoice([]loom.Item{{Name: "b1"}})
 	s := loom.NewStack(loom.Horizontal, a, b)
 	// Tab should cycle without quitting.
-	quit := s.HandleKey(loom.KeyEvent{Key: "tab"})
+	quit := s.ConsumeKey(loom.KeyEvent{Key: "tab"}).Quit
 	if quit {
 		t.Error("tab should not quit")
 	}
@@ -542,8 +542,8 @@ func TestGridArrowNavigation(t *testing.T) {
 		loom.NewView([]string{"4"}),
 	}
 	g := loom.NewGrid(2, children...)
-	g.HandleKey(loom.KeyEvent{Key: "right"}) // focus → 1
-	g.HandleKey(loom.KeyEvent{Key: "down"})  // focus → 3
+	g.ConsumeKey(loom.KeyEvent{Key: "right"}) // focus → 1
+	g.ConsumeKey(loom.KeyEvent{Key: "down"})  // focus → 3
 	if g.Focus() != 3 {
 		t.Errorf("focus = %d, want 3", g.Focus())
 	}
@@ -559,7 +559,7 @@ func TestGridOnSelect(t *testing.T) {
 	g.OnSelect = func(i int) { selected = i }
 
 	// Enter with OnSelect must not quit and must call the callback.
-	quit := g.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := g.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if quit {
 		t.Error("enter with OnSelect should not quit")
 	}
@@ -572,7 +572,7 @@ func TestGridEnterWithoutOnSelectDelegatesToChild(t *testing.T) {
 	// Without OnSelect, Enter is forwarded to the focused child.
 	// View returns false on Enter (it doesn't handle it), so Grid should too.
 	g := loom.NewGrid(1, loom.NewView([]string{"x"}))
-	quit := g.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := g.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if quit {
 		t.Error("enter delegated to View should not quit")
 	}
@@ -596,7 +596,7 @@ func TestPopupDraw(t *testing.T) {
 func TestPopupEscCloses(t *testing.T) {
 	inner := loom.NewView([]string{"x"})
 	p := loom.NewPopup("test", inner)
-	quit := p.HandleKey(loom.KeyEvent{Key: "esc"})
+	quit := p.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit
 	if quit {
 		t.Error("esc should close popup, not quit the pane")
 	}
@@ -635,11 +635,11 @@ func TestSettingsBoolToggle(t *testing.T) {
 	s := loom.NewSettings([]loom.Setting{
 		{Label: "flag", Kind: loom.KindBool, Bool: &v},
 	})
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if v {
 		t.Error("bool should be false after Enter toggle")
 	}
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !v {
 		t.Error("bool should be true after second Enter toggle")
 	}
@@ -650,11 +650,11 @@ func TestSettingsChoiceCycle(t *testing.T) {
 	s := loom.NewSettings([]loom.Setting{
 		{Label: "theme", Kind: loom.KindChoice, Options: []string{"dark", "light", "system"}, Index: &idx},
 	})
-	s.HandleKey(loom.KeyEvent{Key: "right"})
+	s.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if idx != 1 {
 		t.Errorf("idx = %d after right, want 1", idx)
 	}
-	s.HandleKey(loom.KeyEvent{Key: "left"})
+	s.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if idx != 0 {
 		t.Errorf("idx = %d after left, want 0", idx)
 	}
@@ -665,11 +665,11 @@ func TestSettingsNavigation(t *testing.T) {
 		{Label: "a", Kind: loom.KindBool, Bool: new(bool)},
 		{Label: "b", Kind: loom.KindBool, Bool: new(bool)},
 	})
-	s.HandleKey(loom.KeyEvent{Key: "down"})
+	s.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if s.Sel() != 1 {
 		t.Errorf("Sel = %d after down, want 1", s.Sel())
 	}
-	s.HandleKey(loom.KeyEvent{Key: "up"})
+	s.ConsumeKey(loom.KeyEvent{Key: "up"})
 	if s.Sel() != 0 {
 		t.Errorf("Sel = %d after up, want 0", s.Sel())
 	}
@@ -677,7 +677,7 @@ func TestSettingsNavigation(t *testing.T) {
 
 func TestSettingsEscQuits(t *testing.T) {
 	s := loom.NewSettings(nil)
-	if !s.HandleKey(loom.KeyEvent{Key: "esc"}) {
+	if !s.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit {
 		t.Error("esc should return quit=true")
 	}
 }
@@ -700,7 +700,7 @@ func TestSettingsDraw(t *testing.T) {
 func TestChoiceFilteredAccessors(t *testing.T) {
 	items := []loom.Item{{Name: "alpha"}, {Name: "beta"}, {Name: "gamma"}}
 	c := loom.NewChoice(items)
-	c.HandleKey(loom.KeyEvent{Text: "a"}) // filters to "alpha", "gamma"
+	c.ConsumeKey(loom.KeyEvent{Text: "a"}) // filters to "alpha", "gamma"
 
 	if c.FilteredSel() != 0 {
 		t.Errorf("FilteredSel = %d, want 0", c.FilteredSel())

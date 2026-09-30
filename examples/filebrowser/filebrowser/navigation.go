@@ -210,17 +210,17 @@ func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect) {
 	p.list.Draw(c, r)
 }
 
-// HandleKey processes navigation, filtering, directory opening, and selection.
-func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
+// ConsumeKey processes navigation, filtering, directory opening, and selection.
+func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if handled, quit := p.handleSearchKey(e); handled {
-		return quit
+		return loom.EventResult{Consumed: true, Quit: quit}
 	}
 	if e.Is("esc") {
 		if p.rootDir != "" && p.directory.Path == p.rootDir {
 			if p.options.OnQuit != nil {
 				p.options.OnQuit()
 			}
-			return true
+			return loom.QuitResult()
 		}
 		parent, ok := p.directory.Parent()
 		if !ok || parent == p.directory.Path {
@@ -228,62 +228,56 @@ func (p *NavigationPane) HandleKey(e loom.KeyEvent) bool {
 				if p.options.OnQuit != nil {
 					p.options.OnQuit()
 				}
-				return true
+				return loom.QuitResult()
 			}
-			return false
+			return loom.Handled()
 		}
 		if err := p.open(parent, filepath.Base(p.directory.Path)); err != nil {
-			return false
+			return loom.Ignored()
 		}
 		if p.options.OnOpen != nil {
 			p.options.OnOpen(p.directory)
 		}
-		return false
+		return loom.Handled()
 	}
 	if e.Is("backspace") {
 		if p.list.Query() != "" {
-			quit := p.list.HandleKey(e)
+			result := p.list.ConsumeKey(e)
 			p.notifySelection()
-			return quit
+			return result
 		}
 		parent, ok := p.directory.Parent()
 		if !ok || parent == p.directory.Path {
-			return false
+			return loom.Ignored()
 		}
 		if err := p.open(parent, filepath.Base(p.directory.Path)); err != nil {
-			return false
+			return loom.Ignored()
 		}
 		if p.options.OnOpen != nil {
 			p.options.OnOpen(p.directory)
 		}
-		return false
+		return loom.Handled()
 	}
 	if e.Is("enter") {
-		return p.list.HandleKey(e)
+		return p.list.ConsumeKey(e)
 	}
-	quit := p.list.HandleKey(e)
+	result := p.list.ConsumeKey(e)
 	p.notifySelection()
-	return quit
+	return result
 }
 
-// HandleMouse processes mouse selection and forwards quit requests.
-func (p *NavigationPane) HandleMouse(e loom.MouseEvent) bool {
-	e.X += p.lastRect.X
-	e.Y += p.lastRect.Y
-	quit := p.list.HandleMouse(e)
+// ConsumeMouse processes mouse selection and forwards quit requests.
+func (p *NavigationPane) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if p.searching && !p.options.TypeToSearch {
+		e.Y--
+	}
+	result := p.list.ConsumeMouse(e)
 	p.notifySelection()
-	return quit
+	return result
 }
 
 // ConsumeKey reports whether a key belongs to the navigation pane's host-level
 // navigation contract. ESC and backspace are consumed for parent navigation and root quit.
-func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
-	if (p.searching && e.Key == "" && e.Text != "") || p.startsSearch(e) || e.Is("esc") || e.Is("backspace") {
-		return p.HandleKey(e), true
-	}
-	return false, false
-}
-
 // Searching reports whether typed text currently goes to the filter.
 func (p *NavigationPane) Searching() bool { return p.searching || p.options.TypeToSearch }
 
@@ -302,7 +296,7 @@ func (p *NavigationPane) handleSearchKey(e loom.KeyEvent) (handled, quit bool) {
 		return true, false
 	case e.Is("esc") && p.list.Query() != "":
 		for p.list.Query() != "" {
-			p.list.HandleKey(loom.KeyEvent{Key: "backspace"})
+			p.list.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 		}
 		p.searching = false
 		p.notifySelection()
@@ -311,7 +305,7 @@ func (p *NavigationPane) handleSearchKey(e loom.KeyEvent) (handled, quit bool) {
 		return e.Text != "" && e.Key == "", false
 	case e.Is("esc"):
 		for p.list.Query() != "" {
-			p.list.HandleKey(loom.KeyEvent{Key: "backspace"})
+			p.list.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 		}
 		p.searching = false
 		p.notifySelection()

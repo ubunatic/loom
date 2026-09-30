@@ -55,11 +55,11 @@ func (g *Gauge) Draw(c *Canvas, r Rect) {
 	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), Style{})
 }
 
-// HandleKey makes Gauge a passive widget.
-func (*Gauge) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey makes Gauge a passive widget.
+func (*Gauge) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse makes Gauge a passive widget.
-func (*Gauge) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse makes Gauge a passive widget.
+func (*Gauge) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 // ContentWidth reports the preferred width including RenderBar wrappers.
 func (g *Gauge) ContentWidth() int {
@@ -130,11 +130,11 @@ func (s *Sparkline) Draw(c *Canvas, r Rect) {
 	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), Style{})
 }
 
-// HandleKey makes Sparkline a passive widget.
-func (*Sparkline) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey makes Sparkline a passive widget.
+func (*Sparkline) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse makes Sparkline a passive widget.
-func (*Sparkline) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse makes Sparkline a passive widget.
+func (*Sparkline) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 // ContentWidth reports the configured sparkline width.
 func (s *Sparkline) ContentWidth() int {

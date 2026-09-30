@@ -14,9 +14,9 @@ import (
 
 type helpModalProbe struct{}
 
-func (helpModalProbe) Draw(*loom.Canvas, loom.Rect)     {}
-func (helpModalProbe) HandleKey(loom.KeyEvent) bool     { return false }
-func (helpModalProbe) HandleMouse(loom.MouseEvent) bool { return false }
+func (helpModalProbe) Draw(*loom.Canvas, loom.Rect)                  {}
+func (helpModalProbe) ConsumeKey(loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (helpModalProbe) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func TestBrowserSelectionAndNavigation(t *testing.T) {
 	dir := t.TempDir()
@@ -30,22 +30,22 @@ func TestBrowserSelectionAndNavigation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "down"}) // parent -> a.txt
+	b.ConsumeKey(loom.KeyEvent{Key: "down"}) // parent -> a.txt
 	if item, ok := b.list.Selected(); !ok || item.Name != "a.txt" {
 		t.Fatalf("selected item = %+v, ok=%v", item, ok)
 	}
 	if got := strings.Join(b.details.Lines, "\n"); !strings.Contains(got, "Size: 5 bytes") || !strings.Contains(got, "Type: file") {
 		t.Fatalf("file metadata missing: %s", got)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "down"}) // sub
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "down"}) // sub
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if b.dir != filepath.Join(dir, "sub") || b.frame.Boxes[0].Child != b.navigation {
 		t.Fatalf("directory navigation failed: %q", b.dir)
 	}
 	if item, ok := b.list.Selected(); !ok || item.Name != ".." {
 		t.Fatalf("parent entry missing: %+v, ok=%v", item, ok)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if b.dir != dir {
 		t.Fatalf("parent navigation returned %q, want %q", b.dir, dir)
 	}
@@ -70,21 +70,21 @@ func TestNewWidgetPaneRequestAndHostedKeys(t *testing.T) {
 	if got, want := b.PaneRequest(), (loom.PaneRequest{Mouse: 1000, Resizeable: true, MaxCols: 0}); got != want {
 		t.Fatalf("PaneRequest() = %+v, want %+v", got, want)
 	}
-	if _, consumed := b.ConsumeKey(loom.KeyEvent{Text: "q"}); consumed {
+	if b.ConsumeKey(loom.KeyEvent{Text: "q"}).Consumed {
 		t.Fatal("q outside search was consumed; the host must get it")
 	}
 	b.ConsumeKey(loom.KeyEvent{Text: "/"})
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Text: "q"}); quit || !consumed {
-		t.Fatalf("q = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Text: "q"}); result.Quit || !result.Consumed {
+		t.Fatalf("q = quit:%v consumed:%v, want quit:false consumed:true", result.Quit, result.Consumed)
 	}
 	if b.list.Query() != "q" {
 		t.Fatalf("filter query = %q, want q", b.list.Query())
 	}
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !quit || !consumed {
-		t.Fatalf("ctrl-q = quit:%v consumed:%v, want quit:true consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !result.Quit || !result.Consumed {
+		t.Fatalf("ctrl-q = quit:%v consumed:%v, want quit:true consumed:true", result.Quit, result.Consumed)
 	}
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "f10"}); !quit || !consumed {
-		t.Fatalf("f10 = quit:%v consumed:%v, want quit:true consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Key: "f10"}); !result.Quit || !result.Consumed {
+		t.Fatalf("f10 = quit:%v consumed:%v, want quit:true consumed:true", result.Quit, result.Consumed)
 	}
 }
 
@@ -108,7 +108,7 @@ func TestBrowserNavigationToParentFallsBackToFirstItem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 
 	if b.dir != dir {
 		t.Fatalf("parent navigation returned %q, want %q", b.dir, dir)
@@ -128,8 +128,8 @@ func TestBrowserEscapeNavigatesToParentAndConsumesKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "esc"}); quit || !consumed {
-		t.Fatalf("escape = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Key: "esc"}); result.Quit || !result.Consumed {
+		t.Fatalf("escape = quit:%v consumed:%v, want quit:false consumed:true", result.Quit, result.Consumed)
 	}
 	if b.dir != root {
 		t.Fatalf("directory after escape = %q, want %q", b.dir, root)
@@ -154,13 +154,13 @@ func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
 	}
 
 	// Filter query non-empty: backspace deletes character from query, does not navigate up
-	b.HandleKey(loom.KeyEvent{Text: "/"})
-	b.HandleKey(loom.KeyEvent{Text: "t"})
+	b.ConsumeKey(loom.KeyEvent{Text: "/"})
+	b.ConsumeKey(loom.KeyEvent{Text: "t"})
 	if b.list.Query() != "t" {
 		t.Fatalf("filter query = %q, want t", b.list.Query())
 	}
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); quit || !consumed {
-		t.Fatalf("backspace on non-empty query = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); result.Quit || !result.Consumed {
+		t.Fatalf("backspace on non-empty query = quit:%v consumed:%v, want quit:false consumed:true", result.Quit, result.Consumed)
 	}
 	if b.dir != child {
 		t.Fatalf("directory after backspace on non-empty query = %q, want %q", b.dir, child)
@@ -170,8 +170,8 @@ func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
 	}
 
 	// Filter query empty: backspace navigates up to parent directory
-	if quit, consumed := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); quit || !consumed {
-		t.Fatalf("backspace on empty query = quit:%v consumed:%v, want quit:false consumed:true", quit, consumed)
+	if result := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}); result.Quit || !result.Consumed {
+		t.Fatalf("backspace on empty query = quit:%v consumed:%v, want quit:false consumed:true", result.Quit, result.Consumed)
 	}
 	if b.dir != root {
 		t.Fatalf("directory after backspace = %q, want %q", b.dir, root)
@@ -179,13 +179,13 @@ func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
 
 	// At filesystem root: backspace and esc do not exit
 	b.dir = string(filepath.Separator)
-	if quit := b.HandleKey(loom.KeyEvent{Key: "backspace"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Key: "backspace"}).Quit; quit {
 		t.Fatal("backspace from filesystem root should not quit")
 	}
-	if quit := b.HandleKey(loom.KeyEvent{Key: "esc"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit; quit {
 		t.Fatal("esc from filesystem root should not quit")
 	}
-	if quit := b.HandleKey(loom.KeyEvent{Text: "x"}); quit {
+	if quit := b.ConsumeKey(loom.KeyEvent{Text: "x"}).Quit; quit {
 		t.Fatal("random keys should not quit")
 	}
 }
@@ -247,8 +247,8 @@ func TestBrowserThemePersistsAcrossNavigation(t *testing.T) {
 		}
 	}
 
-	b.HandleKey(loom.KeyEvent{Key: "down"})
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "down"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if b.dir != filepath.Join(dir, "sub") {
 		t.Fatalf("directory navigation returned %q", b.dir)
 	}
@@ -271,7 +271,7 @@ func TestBrowserCyclesSpeccedThemes(t *testing.T) {
 		}
 	}
 	for step := 1; step <= len(names); step++ {
-		if b.HandleKey(loom.KeyEvent{Key: "f9"}) {
+		if b.ConsumeKey(loom.KeyEvent{Key: "f9"}).Quit {
 			t.Fatal("F9 quit while cycling themes")
 		}
 		wantName := names[(start+step)%len(names)]
@@ -326,23 +326,23 @@ func TestBrowserDetailScrollingAndFilterKey(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b.HandleKey(loom.KeyEvent{Text: "/"})
-	if b.HandleKey(loom.KeyEvent{Text: "q"}) {
+	b.ConsumeKey(loom.KeyEvent{Text: "/"})
+	if b.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
 		t.Fatal("typing q into the file filter quit the app")
 	}
 	if item, ok := b.list.Selected(); !ok || item.Name != "q.txt" {
 		t.Fatalf("filter did not select q.txt: %+v, ok=%v", item, ok)
 	}
 	b.details.Draw(loom.NewCanvas(40, 2), loom.Rect{W: 40, H: 2})
-	b.HandleKey(loom.KeyEvent{Key: "tab"})
-	b.HandleKey(loom.KeyEvent{Key: "pgdown"})
+	b.ConsumeKey(loom.KeyEvent{Key: "tab"})
+	b.ConsumeKey(loom.KeyEvent{Key: "pgdown"})
 	if b.details.Scroll != 2 || !b.details.Focused() {
 		t.Fatalf("detail pane did not scroll with focus: scroll=%d focused=%v", b.details.Scroll, b.details.Focused())
 	}
-	if !b.HandleKey(loom.KeyEvent{Key: "ctrl-q"}) {
+	if !b.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}).Quit {
 		t.Fatal("Ctrl-Q did not quit")
 	}
-	if !b.HandleKey(loom.KeyEvent{Key: "f10"}) {
+	if !b.ConsumeKey(loom.KeyEvent{Key: "f10"}).Quit {
 		t.Fatal("F10 did not quit")
 	}
 }
@@ -359,20 +359,20 @@ func TestBrowserHelpDismissalRestoresInputRouting(t *testing.T) {
 
 	// The help popup consumes its dismissal key and reports no application quit.
 	help := loom.NewPopup("Help", helpModalProbe{})
-	if help.HandleKey(loom.KeyEvent{Text: "q"}) {
+	if help.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
 		t.Fatal("help dismissal reported an application quit")
 	}
 	if !help.Open {
 		t.Fatal("help popup closed without an explicit dismissal state")
 	}
-	if help.HandleKey(loom.KeyEvent{Key: "esc"}) {
+	if help.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit {
 		t.Fatal("Esc dismissal reported an application quit")
 	}
 	if help.Open {
 		t.Fatal("Esc did not close help popup")
 	}
 
-	if b.HandleKey(loom.KeyEvent{Key: "down"}) {
+	if b.ConsumeKey(loom.KeyEvent{Key: "down"}).Quit {
 		t.Fatal("filebrowser navigation reported an application quit after help dismissal")
 	}
 	if item, ok := b.list.Selected(); !ok || item.Name != "a.txt" {
@@ -418,8 +418,8 @@ func TestBrowserEnterOpensSelectedFile(t *testing.T) {
 		opened = path
 		return nil
 	}
-	b.HandleKey(loom.KeyEvent{Key: "down"})
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "down"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if opened != path || b.dir != dir {
 		t.Fatalf("opened %q, browsing %q; want %q and %q", opened, b.dir, path, dir)
 	}
@@ -427,7 +427,7 @@ func TestBrowserEnterOpensSelectedFile(t *testing.T) {
 		t.Fatalf("missing open notice: %v", b.details.Lines)
 	}
 	b.openFile = func(string) error { return errors.New("no opener") }
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !strings.Contains(strings.Join(b.details.Lines, "\n"), "Open failed: no opener") {
 		t.Fatalf("missing launch error: %v", b.details.Lines)
 	}
@@ -447,15 +447,15 @@ func TestBrowserMouseClickSelectsThenEnterOpensFile(t *testing.T) {
 	b.openFile = func(path string) error { opened = path; return nil }
 	b.Draw(loom.NewCanvas(80, 20), loom.Rect{W: 80, H: 20})
 	rect := b.frame.Layout(80, 20)[0]
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + 1, Y: rect.Y + 2})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + 1, Y: rect.Y + 2})
 	if opened != "" || b.list.FilteredSel() != 1 {
 		t.Fatalf("click opened %q or selected index %d, want selection only", opened, b.list.FilteredSel())
 	}
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + rect.W - 4, Y: rect.Y + 2})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: rect.X + rect.W - 4, Y: rect.Y + 2})
 	if b.list.FilteredSel() != 1 || opened != "" {
 		t.Fatalf("whitespace click changed selection to %d or opened %q", b.list.FilteredSel(), opened)
 	}
-	b.HandleKey(loom.KeyEvent{Key: "enter"})
+	b.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if opened != path {
 		t.Fatalf("Enter opened %q, want %q", opened, path)
 	}
@@ -477,7 +477,7 @@ func TestBrowserScrollbarClickJumpsFileList(t *testing.T) {
 	rect := b.frame.Layout(80, 20)[0]
 	// Child scrollbar is the last column inside the box border. Its final
 	// item row is immediately above Choice's filter prompt.
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft,
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft,
 		X: rect.X + rect.W - 2, Y: rect.Y + rect.H - 3})
 	item, ok := b.list.Selected()
 	if !ok || item.Name != "file-25" {
@@ -522,7 +522,7 @@ func TestBrowserApplyThemeAndF9Cycling(t *testing.T) {
 
 	// Verify that F9 cycles to a valid theme (not "custom")
 	initialThemeName := b.themeName
-	b.HandleKey(loom.KeyEvent{Key: "f9"})
+	b.ConsumeKey(loom.KeyEvent{Key: "f9"})
 	if b.themeName == "custom" {
 		t.Errorf("F9 cycled to custom theme; want a named theme")
 	}
@@ -705,8 +705,8 @@ func (w *canvasWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *canvasWidget) HandleKey(e loom.KeyEvent) bool     { return false }
-func (w *canvasWidget) HandleMouse(e loom.MouseEvent) bool { return false }
+func (w *canvasWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (w *canvasWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 // findFilebrowserRepoRoot walks up from the filebrowser package directory to find the repo root
 func findFilebrowserRepoRoot(t *testing.T) string {

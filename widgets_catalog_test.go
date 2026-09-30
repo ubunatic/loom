@@ -123,7 +123,7 @@ func collectPackageWidgets(dir, packageName string, found map[string]bool) error
 				if value.Recv == nil || value.Name == nil {
 					continue
 				}
-				if value.Name.Name != "Draw" && value.Name.Name != "HandleKey" && value.Name.Name != "HandleMouse" {
+				if value.Name.Name != "Draw" && value.Name.Name != "ConsumeKey" && value.Name.Name != "ConsumeMouse" {
 					continue
 				}
 				if len(value.Recv.List) != 1 {
@@ -161,7 +161,7 @@ func collectPackageWidgets(dir, packageName string, found map[string]bool) error
 func implementsWidgetMethods(methods map[string]*ast.FuncDecl) bool {
 	// Embedded controls such as TextInput draw with an extra focus flag and
 	// have no mouse handler; they are catalogued like full widgets.
-	draw, key, mouse := methods["Draw"], methods["HandleKey"], methods["HandleMouse"]
+	draw, key, mouse := methods["Draw"], methods["ConsumeKey"], methods["ConsumeMouse"]
 	if draw == nil || key == nil {
 		return false
 	}

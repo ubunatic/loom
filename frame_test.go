@@ -133,8 +133,8 @@ type overflowingChild struct{}
 func (overflowingChild) Draw(c *Canvas, _ Rect) {
 	c.Fill(Rect{X: -5, Y: -5, W: 30, H: 30}, Cell{Text: "X"})
 }
-func (overflowingChild) HandleKey(KeyEvent) bool     { return false }
-func (overflowingChild) HandleMouse(MouseEvent) bool { return false }
+func (overflowingChild) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (overflowingChild) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 func TestBoxPaddingAndIsolation(t *testing.T) {
 	w, _, err := BuildWidget(strings.NewReader(shellFixture(t)))

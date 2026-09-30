@@ -50,20 +50,20 @@ func (w *testWidget) Draw(c *loom.Canvas, rect loom.Rect) {
 	}
 }
 
-func (w *testWidget) HandleKey(e loom.KeyEvent) bool {
+func (w *testWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.keyCount++
 	w.lastKey = e
-	return w.returnKey
+	return loom.EventResult{Consumed: w.returnKey, Quit: w.returnKey}
 }
 
-func (w *testWidget) HandleMouse(e loom.MouseEvent) bool {
+func (w *testWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.mouseCount++
 	w.lastMouse = e
-	return w.returnMouse
+	return loom.EventResult{Consumed: w.returnMouse, Quit: w.returnMouse}
 }
 
 func TestRenderTo(t *testing.T) {

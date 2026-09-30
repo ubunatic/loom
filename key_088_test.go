@@ -60,22 +60,22 @@ func TestKey088LibraryDefaults(t *testing.T) {
 		t.Fatal("library defaults table is empty")
 	}
 	view := NewView([]string{"one", "two"})
-	if view.HandleKey(KeyEvent{Text: "q"}) != true {
+	if view.ConsumeKey(KeyEvent{Text: "q"}).Quit != true {
 		t.Fatal("View q should quit")
 	}
 	choice := NewChoice([]Item{{Name: "one"}, {Name: "two"}})
-	choice.HandleKey(KeyEvent{Key: "down"})
+	choice.ConsumeKey(KeyEvent{Key: "down"})
 	if choice.sel != 1 {
 		t.Fatalf("Choice down selected %d, want 1", choice.sel)
 	}
 	input := NewTextInput("ab")
-	input.HandleKey(KeyEvent{Key: "home"})
-	input.HandleKey(KeyEvent{Text: "x"})
+	input.ConsumeKey(KeyEvent{Key: "home"})
+	input.ConsumeKey(KeyEvent{Text: "x"})
 	if input.Value() != "xab" {
 		t.Fatalf("TextInput home/edit = %q, want xab", input.Value())
 	}
 	tabs := NewTabs(Tab{Title: "a", Widget: choice}, Tab{Title: "b", Widget: choice})
-	tabs.HandleKey(KeyEvent{Key: "right"})
+	tabs.ConsumeKey(KeyEvent{Key: "right"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("Tabs right focus = %d, want 1", tabs.Focus())
 	}

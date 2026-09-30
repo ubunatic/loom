@@ -28,13 +28,13 @@ func TestWidgetDraw(t *testing.T) {
 func TestWidgetKeyHandling(t *testing.T) {
 	pane := &loom.Pane{}
 	w := &widget{pane: pane, frame: demoFrame(), themes: []string{"plain", "mc"}}
-	if w.HandleKey(loom.KeyEvent{Key: "m"}) || !pane.ReduceMotion {
+	if w.ConsumeKey(loom.KeyEvent{Key: "m"}).Quit || !pane.ReduceMotion {
 		t.Fatal("m should toggle reduced motion")
 	}
-	if w.HandleKey(loom.KeyEvent{Key: "T"}) || w.theme != 1 {
+	if w.ConsumeKey(loom.KeyEvent{Key: "T"}).Quit || w.theme != 1 {
 		t.Fatal("T should cycle the theme")
 	}
-	if !w.HandleKey(loom.KeyEvent{Key: "q"}) {
+	if !w.ConsumeKey(loom.KeyEvent{Key: "q"}).Quit {
 		t.Fatal("background widget should delegate quit to its frame")
 	}
 }

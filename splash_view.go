@@ -145,10 +145,10 @@ func (sv *SplashView) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey implements Widget.
-func (sv *SplashView) HandleKey(e KeyEvent) bool {
+// ConsumeKey implements Widget.
+func (sv *SplashView) ConsumeKey(e KeyEvent) EventResult {
 	if sv.Controller != nil {
-		return sv.Controller.HandleKey(e)
+		return sv.Controller.ConsumeKey(e)
 	}
 	key := e.Key
 	if key == "" {
@@ -156,15 +156,13 @@ func (sv *SplashView) HandleKey(e KeyEvent) bool {
 	}
 	switch key {
 	case "esc", "q", "enter", "ctrl-c", "ctrl-q":
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse implements Widget.
-func (sv *SplashView) HandleMouse(e MouseEvent) bool {
-	return false
-}
+// ConsumeMouse implements Widget.
+func (sv *SplashView) ConsumeMouse(e MouseEvent) EventResult { return Ignored() }
 
 // progressBar syncs the declarative Progress, Pattern and BracketWidth fields
 // into the ProgressBar that draws the bar line.

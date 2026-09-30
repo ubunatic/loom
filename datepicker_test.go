@@ -19,20 +19,20 @@ func TestDatePickerNavigationBoundsAndClock(t *testing.T) {
 	if !strings.Contains(rows, "January 2024") || !strings.Contains(rows, "*20") {
 		t.Fatalf("missing injected-clock month or today marker: %s", rows)
 	}
-	picker.HandleKey(KeyEvent{Key: "right"})
+	picker.ConsumeKey(KeyEvent{Key: "right"})
 	if got := picker.Cursor().Format("2006-01-02"); got != "2024-02-01" {
 		t.Fatalf("right at month edge = %s", got)
 	}
-	picker.HandleKey(KeyEvent{Key: "pgdown"})
+	picker.ConsumeKey(KeyEvent{Key: "pgdown"})
 	if picker.DisplayMonth() != time.March {
 		t.Fatalf("PgDn month = %v", picker.DisplayMonth())
 	}
-	picker.HandleKey(KeyEvent{Key: "ctrl-right"})
+	picker.ConsumeKey(KeyEvent{Key: "ctrl-right"})
 	if got := picker.Cursor().Format("2006-01-02"); got != "2024-03-02" {
 		t.Fatalf("year navigation escaped maximum: %s", got)
 	}
 	picker.setCursor(time.Date(2024, time.January, 30, 0, 0, 0, 0, time.UTC))
-	picker.HandleKey(KeyEvent{Key: "left"})
+	picker.ConsumeKey(KeyEvent{Key: "left"})
 	if got := picker.Cursor().Format("2006-01-02"); got != "2024-01-30" {
 		t.Fatalf("left navigation escaped minimum: %s", got)
 	}
@@ -57,9 +57,9 @@ func TestDatePickerTypedISOCommitAndMouse(t *testing.T) {
 	selected := time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
 	picker := NewDatePicker(&selected)
 	for _, r := range "2024-02-29" {
-		picker.HandleKey(KeyEvent{Text: string(r)})
+		picker.ConsumeKey(KeyEvent{Text: string(r)})
 	}
-	picker.HandleKey(KeyEvent{Key: "enter"})
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if got := selected.Format("2006-01-02"); got != "2024-02-29" {
 		t.Fatalf("typed commit = %s", got)
 	}
@@ -77,9 +77,9 @@ func TestDatePickerWeekStartAndInvalidTypedDate(t *testing.T) {
 	picker := NewDatePicker(&selected)
 	picker.WeekStart = time.Sunday
 	for _, r := range "2023-02-29" {
-		picker.HandleKey(KeyEvent{Text: string(r)})
+		picker.ConsumeKey(KeyEvent{Text: string(r)})
 	}
-	picker.HandleKey(KeyEvent{Key: "enter"})
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if selected.Format("2006-01-02") != "2024-01-01" {
 		t.Fatal("invalid ISO date changed selection")
 	}

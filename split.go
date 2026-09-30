@@ -131,9 +131,9 @@ func (s *Split) drawDivider(c *Canvas) {
 	}
 }
 
-// HandleKey traverses children with Tab and Shift-Tab, then delegates other
+// ConsumeKey traverses children with Tab and Shift-Tab, then delegates other
 // keys to the focused child.
-func (s *Split) HandleKey(e KeyEvent) bool {
+func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -144,50 +144,40 @@ func (s *Split) HandleKey(e KeyEvent) bool {
 		if !s.FocusNext() {
 			s.focusFirst()
 		}
-		return false
+		return Handled()
 	case "shift-tab":
 		if !s.FocusPrevious() {
 			s.focusLast()
 		}
-		return false
+		return Handled()
 	case "[":
 		s.SetRatio(s.Ratio - 0.05)
-		return false
+		return Handled()
 	case "]":
 		s.SetRatio(s.Ratio + 0.05)
-		return false
+		return Handled()
 	}
 	if child := s.focusedChild(); child != nil {
-		if c, ok := child.(EventConsumer); ok {
-			if res := c.ConsumeKey(e); res.Consumed {
-				return res.Quit
-			}
-		}
-		if c, ok := child.(KeyConsumer); ok {
-			if quit, consumed := c.ConsumeKey(e); consumed {
-				return quit
-			}
-		}
-		return child.HandleKey(e)
+		return child.ConsumeKey(e)
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse forwards an event to the child under the pointer, translating
-// terminal coordinates to that child's local 1-based coordinates.
-func (s *Split) HandleMouse(e MouseEvent) bool {
-	x, y := e.X, e.Y
+// ConsumeMouse forwards an event to the child under the pointer, translating
+// terminal coordinates to that child's local 0-based coordinates.
+func (s *Split) ConsumeMouse(e MouseEvent) EventResult {
+	x, y := e.X+s.lastRect.X, e.Y+s.lastRect.Y
 	if e.Action == MousePress && e.Button == MouseLeft && s.dividerContains(x, y) {
 		s.dragging = true
-		return false
+		return Handled()
 	}
 	if e.Action == MouseRelease && s.dragging {
 		s.dragging = false
-		return false
+		return Handled()
 	}
 	if e.Action == MouseDrag && s.dragging {
 		s.setRatioFromPosition(x, y)
-		return false
+		return Handled()
 	}
 	if s.mouseCapture != nil && (e.Action == MouseDrag || e.Action == MouseRelease) {
 		e.X = x - s.captureRect.X
@@ -196,7 +186,7 @@ func (s *Split) HandleMouse(e MouseEvent) bool {
 		if e.Action == MouseRelease {
 			s.mouseCapture = nil
 		}
-		return captured.HandleMouse(e)
+		return captured.ConsumeMouse(e)
 	}
 	for index, target := range []struct {
 		widget Widget
@@ -212,9 +202,9 @@ func (s *Split) HandleMouse(e MouseEvent) bool {
 		}
 		e.X = x - target.rect.X
 		e.Y = y - target.rect.Y
-		return target.widget.HandleMouse(e)
+		return target.widget.ConsumeMouse(e)
 	}
-	return false
+	return Ignored()
 }
 
 func (s *Split) dividerContains(x, y int) bool {

@@ -179,10 +179,10 @@ func (t *Timer) Draw(c *Canvas, r Rect) {
 		c.Write(r.X, r.Y, TruncateText(t.text(), r.W, ""), t.Style)
 	}
 }
-func (*Timer) HandleKey(KeyEvent) bool     { return false }
-func (*Timer) HandleMouse(MouseEvent) bool { return false }
-func (t *Timer) ContentWidth() int         { return StringWidth(t.text()) }
-func (*Timer) ContentHeight() int          { return 1 }
+func (*Timer) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*Timer) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (t *Timer) ContentWidth() int                 { return StringWidth(t.text()) }
+func (*Timer) ContentHeight() int                  { return 1 }
 
 // Stopwatch displays elapsed time and can be paused and resumed.
 type Stopwatch struct {
@@ -304,10 +304,10 @@ func (s *Stopwatch) Draw(c *Canvas, r Rect) {
 		c.Write(r.X, r.Y, TruncateText(s.text(), r.W, ""), s.Style)
 	}
 }
-func (*Stopwatch) HandleKey(KeyEvent) bool     { return false }
-func (*Stopwatch) HandleMouse(MouseEvent) bool { return false }
-func (s *Stopwatch) ContentWidth() int         { return StringWidth(s.text()) }
-func (*Stopwatch) ContentHeight() int          { return 1 }
+func (*Stopwatch) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*Stopwatch) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (s *Stopwatch) ContentWidth() int                 { return StringWidth(s.text()) }
+func (*Stopwatch) ContentHeight() int                  { return 1 }
 
 func formatDuration(d time.Duration) string {
 	seconds := int64(nonnegativeDuration(d) / time.Second)

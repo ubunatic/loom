@@ -25,23 +25,23 @@ func TestFilePickerNavigatesFiltersAndSelects(t *testing.T) {
 	if got := picker.Entries(); len(got) != 3 || got[0].Name != ".." || got[1].Name != "a.go" || got[2].Name != "child" {
 		t.Fatalf("filtered entries = %#v", got)
 	}
-	picker.HandleKey(KeyEvent{Text: "ag"})
+	picker.ConsumeKey(KeyEvent{Text: "ag"})
 	if got, ok := picker.Selected(); !ok || got.Name != "a.go" {
 		t.Fatalf("fuzzy filtered selection = %#v, %v", got, ok)
 	}
-	picker.HandleKey(KeyEvent{Key: "backspace"})
-	picker.HandleKey(KeyEvent{Key: "backspace"})
+	picker.ConsumeKey(KeyEvent{Key: "backspace"})
+	picker.ConsumeKey(KeyEvent{Key: "backspace"})
 	picker.List().SelectIndex(2)
-	picker.HandleKey(KeyEvent{Key: "enter"})
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if picker.Directory().Path != child {
 		t.Fatalf("directory = %q, want %q", picker.Directory().Path, child)
 	}
-	picker.HandleKey(KeyEvent{Key: "backspace"})
+	picker.ConsumeKey(KeyEvent{Key: "backspace"})
 	if picker.Directory().Path != root {
 		t.Fatalf("directory after parent = %q", picker.Directory().Path)
 	}
 	picker.List().SelectIndex(1)
-	picker.HandleKey(KeyEvent{Key: "enter"})
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if selected != filepath.Join(root, "a.go") {
 		t.Fatalf("selected = %q", selected)
 	}
@@ -58,8 +58,8 @@ func TestFilePickerDirectoryModeAndCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	picker.HandleKey(KeyEvent{Key: "down"})
-	picker.HandleKey(KeyEvent{Key: "enter"})
+	picker.ConsumeKey(KeyEvent{Key: "down"})
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if selected != child {
 		t.Fatalf("selected = %q, want %q", selected, child)
 	}
@@ -67,7 +67,7 @@ func TestFilePickerDirectoryModeAndCancel(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	picker.HandleKey(KeyEvent{Key: "esc"})
+	picker.ConsumeKey(KeyEvent{Key: "esc"})
 	if cancelled != "yes" {
 		t.Fatal("cancel callback was not called")
 	}

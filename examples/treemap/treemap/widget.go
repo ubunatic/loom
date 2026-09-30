@@ -163,22 +163,22 @@ func (w *treemapWidget) SetInvalidate(invalidate func()) {
 	w.mu.Unlock()
 }
 
-// HandleKey's bool follows Widget semantics: true asks the host to quit this
+// ConsumeKey's bool follows Widget semantics: true asks the host to quit this
 // child. A tabs host may consume that child quit through its OnChildQuit hook.
-func (w *treemapWidget) HandleKey(e loom.KeyEvent) bool {
+func (w *treemapWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
 	}
 	switch key {
 	case "q", "esc", "ctrl-c", "ctrl-q":
-		return true
+		return loom.QuitResult()
 	default:
-		return false
+		return loom.Ignored()
 	}
 }
 
-func (w *treemapWidget) HandleMouse(loom.MouseEvent) bool { return false }
+func (w *treemapWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func (w *treemapWidget) TickInterval() time.Duration {
 	if !w.opts.Watch {

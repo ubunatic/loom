@@ -21,14 +21,14 @@ func (m *mockWidget) Draw(c *Canvas, r Rect) {
 	c.Fill(r, Cell{Text: "X"})
 }
 
-func (m *mockWidget) HandleKey(e KeyEvent) bool {
+func (m *mockWidget) ConsumeKey(e KeyEvent) EventResult {
 	m.handledKey = e.Key
-	return e.Key == "q"
+	return EventResult{Consumed: e.Key == "q", Quit: e.Key == "q"}
 }
 
-func (m *mockWidget) HandleMouse(e MouseEvent) bool {
+func (m *mockWidget) ConsumeMouse(e MouseEvent) EventResult {
 	m.handledMove = true
-	return false
+	return Ignored()
 }
 
 func (m *mockWidget) ContentWidth() int  { return m.w }
@@ -82,14 +82,14 @@ func TestAlignDelegation(t *testing.T) {
 	child := &mockWidget{w: 10, h: 2}
 	center := NewCenter(child)
 
-	if !center.HandleKey(KeyEvent{Key: "q"}) {
+	if !center.ConsumeKey(KeyEvent{Key: "q"}).Quit {
 		t.Errorf("expected quit from child")
 	}
 	if child.handledKey != "q" {
 		t.Errorf("handledKey = %q, want 'q'", child.handledKey)
 	}
 
-	center.HandleMouse(MouseEvent{Action: MouseHover})
+	center.ConsumeMouse(MouseEvent{Action: MouseHover})
 	if !child.handledMove {
 		t.Errorf("expected mouse event delegated to child")
 	}

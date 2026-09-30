@@ -236,7 +236,7 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		// Compare before doubling to avoid overflow for programmatic inputs.
 		if b.Child != nil && padding < (w-1)/2 && padding < (h-1)/2 {
 			inner := Rect{X: 1 + padding, Y: 1 + padding, W: w - 2 - 2*padding, H: h - 2 - 2*padding}
-			b.childRect = Rect{X: r.X + inner.X, Y: r.Y + inner.Y, W: inner.W, H: inner.H}
+			b.childRect = inner
 			paintClipped(local, inner, func(child *Canvas) { b.Child.Draw(child, child.Bounds()) })
 			if b.Footer != "" {
 				writeBoundedStyled(local, inner.X, inner.Y+inner.H-1, inner.W, b.Footer, b.Style.Footer)
@@ -245,32 +245,22 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 	})
 }
 
-// HandleKey forwards input to the child, if present.
-func (b *Box) HandleKey(k KeyEvent) bool {
+// ConsumeKey forwards input to the child, if present.
+func (b *Box) ConsumeKey(k KeyEvent) EventResult {
 	if b.Child == nil {
-		return false
+		return Ignored()
 	}
-	if c, ok := b.Child.(EventConsumer); ok {
-		if res := c.ConsumeKey(k); res.Consumed {
-			return res.Quit
-		}
-	}
-	if c, ok := b.Child.(KeyConsumer); ok {
-		if quit, consumed := c.ConsumeKey(k); consumed {
-			return quit
-		}
-	}
-	return b.Child.HandleKey(k)
+	return b.Child.ConsumeKey(k)
 }
 
-// HandleMouse forwards events inside the last drawn child bounds.
-func (b *Box) HandleMouse(e MouseEvent) bool {
-	if b.Child == nil || !b.childRect.Contains(e.X-1, e.Y-1) {
-		return false
+// ConsumeMouse forwards events inside the last drawn child bounds.
+func (b *Box) ConsumeMouse(e MouseEvent) EventResult {
+	if b.Child == nil || !b.childRect.Contains(e.X, e.Y) {
+		return Ignored()
 	}
 	e.X -= b.childRect.X
 	e.Y -= b.childRect.Y
-	return b.Child.HandleMouse(e)
+	return b.Child.ConsumeMouse(e)
 }
 
 // Frame places ordered boxes between title/status lines. A positive Breakpoint
@@ -836,24 +826,17 @@ func (f *Frame) cycleFocus(direction int) {
 	}
 }
 
-// HandleKey dispatches declared actions, focus keys, then the focused child.
-func (f *Frame) HandleKey(k KeyEvent) bool {
+// ConsumeKey dispatches declared actions, focus keys, then the focused child.
+func (f *Frame) ConsumeKey(k KeyEvent) EventResult {
 	if box := f.FocusedBox(); box != nil && box.Child != nil {
-		if c, ok := box.Child.(EventConsumer); ok {
-			if res := c.ConsumeKey(k); res.Consumed {
-				return res.Quit
-			}
-		}
-		if c, ok := box.Child.(KeyConsumer); ok {
-			if quit, consumed := c.ConsumeKey(k); consumed {
-				return quit
-			}
+		if res := box.Child.ConsumeKey(k); res.Consumed {
+			return res
 		}
 	}
 	return f.handleKey(k)
 }
 
-func (f *Frame) handleKey(k KeyEvent) bool {
+func (f *Frame) handleKey(k KeyEvent) EventResult {
 	f.syncFocus()
 	key := k.Key
 	if key == "" {
@@ -865,13 +848,13 @@ func (f *Frame) handleKey(k KeyEvent) bool {
 		}
 		switch a.Action {
 		case "quit":
-			return true
+			return QuitResult()
 		case "toggle":
 			for i := range f.Boxes {
 				if f.Boxes[i].ID == a.Target {
 					f.Boxes[i].Hidden = !f.Boxes[i].Hidden
 					f.syncFocus()
-					return false
+					return Handled()
 				}
 			}
 		}
@@ -888,33 +871,14 @@ func (f *Frame) handleKey(k KeyEvent) bool {
 		if !f.FocusNext() {
 			f.focusFirst()
 		}
-		return false
+		return Handled()
 	case prev:
 		if !f.FocusPrevious() {
 			f.focusLast()
 		}
-		return false
+		return Handled()
 	}
-	if box := f.FocusedBox(); box != nil {
-		return box.HandleKey(k)
-	}
-	return false
-}
-
-func (f *Frame) ConsumeKey(k KeyEvent) (quit, consumed bool) {
-	if box := f.FocusedBox(); box != nil && box.Child != nil {
-		if c, ok := box.Child.(EventConsumer); ok {
-			if res := c.ConsumeKey(k); res.Consumed {
-				return res.Quit, true
-			}
-		}
-		if c, ok := box.Child.(KeyConsumer); ok {
-			if quit, consumed = c.ConsumeKey(k); consumed {
-				return quit, true
-			}
-		}
-	}
-	return false, false
+	return Ignored()
 }
 
 func (f *Frame) ConsumePaste(e PasteEvent) EventResult {
@@ -948,9 +912,9 @@ func (f *Frame) focusLast() {
 	}
 }
 
-// HandleMouse focuses clicked boxes and forwards events inside a child's bounds.
-func (f *Frame) HandleMouse(e MouseEvent) bool {
-	x, y := e.X-f.lastRect.X, e.Y-f.lastRect.Y
+// ConsumeMouse focuses clicked boxes and forwards events inside a child's bounds.
+func (f *Frame) ConsumeMouse(e MouseEvent) EventResult {
+	x, y := e.X, e.Y
 	for i, rect := range f.Layout(f.lastRect.W, f.lastRect.H) {
 		if rect.W < 2 || rect.H < 2 || x < rect.X || x >= rect.X+rect.W || y < rect.Y || y >= rect.Y+rect.H {
 			continue
@@ -964,12 +928,12 @@ func (f *Frame) HandleMouse(e MouseEvent) bool {
 		inner := Rect{X: rect.X + 1 + padding, Y: rect.Y + 1 + padding,
 			W: rect.W - 2 - 2*padding, H: rect.H - 2 - 2*padding}
 		if box.Child == nil || inner.W <= 0 || inner.H <= 0 || x < inner.X || x >= inner.X+inner.W || y < inner.Y || y >= inner.Y+inner.H {
-			return false
+			return Handled()
 		}
 		e.X, e.Y = x-inner.X, y-inner.Y
-		return box.Child.HandleMouse(e)
+		return box.Child.ConsumeMouse(e)
 	}
-	return false
+	return Ignored()
 }
 
 // Box returns a pointer to the box with matching ID, or nil if not found.

@@ -87,16 +87,16 @@ func (ew *editorWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (ew *editorWidget) HandleKey(e loom.KeyEvent) bool {
+func (ew *editorWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	prevVal := ew.app.editor.Value()
-	handled := ew.app.editor.HandleKey(e)
+	result := ew.app.editor.ConsumeKey(e)
 	if ew.app.editor.Value() != prevVal {
 		ew.app.modified = true
 	}
-	return handled
+	return result
 }
 
-func (ew *editorWidget) HandleMouse(e loom.MouseEvent) bool {
+func (ew *editorWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.X < 5 {
 		vis := ew.app.editor.VisibleLines()
 		visIdx := ew.app.editor.Scroll() + e.Y
@@ -106,13 +106,13 @@ func (ew *editorWidget) HandleMouse(e loom.MouseEvent) bool {
 				for _, f := range nav.Folds() {
 					if f[0] == docLine {
 						ew.app.editor.ToggleFold(f[0], f[1])
-						return true
+						return loom.QuitResult()
 					}
 				}
 			}
 		}
 	}
-	return false
+	return loom.Ignored()
 }
 
 // SidebarMode defines the active tab in the left sidebar.
@@ -162,39 +162,39 @@ func (sb *sidebarWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (sb *sidebarWidget) HandleKey(e loom.KeyEvent) bool {
+func (sb *sidebarWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Is("ctrl-t", "alt-o", "o", "f") {
 		if sb.mode == SidebarFiles {
 			sb.mode = SidebarOutline
 		} else {
 			sb.mode = SidebarFiles
 		}
-		return true
+		return loom.QuitResult()
 	}
 	if sb.mode == SidebarFiles {
-		return sb.browser.HandleKey(e)
+		return sb.browser.ConsumeKey(e)
 	}
-	return sb.outline.HandleKey(e)
+	return sb.outline.ConsumeKey(e)
 }
 
-func (sb *sidebarWidget) HandleMouse(e loom.MouseEvent) bool {
+func (sb *sidebarWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
 		if e.X < 12 {
 			sb.mode = SidebarFiles
 		} else {
 			sb.mode = SidebarOutline
 		}
-		return true
+		return loom.QuitResult()
 	}
 	childEv := e
 	childEv.Y = e.Y - 1
 	if childEv.Y < 0 {
-		return false
+		return loom.Ignored()
 	}
 	if sb.mode == SidebarFiles {
-		return sb.browser.HandleMouse(e)
+		return sb.browser.ConsumeMouse(e)
 	}
-	return sb.outline.HandleMouse(childEv)
+	return sb.outline.ConsumeMouse(childEv)
 }
 
 type outlineWidget struct {
@@ -252,19 +252,19 @@ func (ow *outlineWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (ow *outlineWidget) HandleKey(e loom.KeyEvent) bool {
+func (ow *outlineWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	ow.refresh()
 	switch {
 	case e.Is("up", "k"):
 		if ow.selected > 0 {
 			ow.selected--
 		}
-		return true
+		return loom.QuitResult()
 	case e.Is("down", "j"):
 		if ow.selected < len(ow.symbols)-1 {
 			ow.selected++
 		}
-		return true
+		return loom.QuitResult()
 	case e.Is("enter"):
 		if len(ow.symbols) > 0 && ow.selected >= 0 && ow.selected < len(ow.symbols) {
 			sym := ow.symbols[ow.selected]
@@ -272,12 +272,12 @@ func (ow *outlineWidget) HandleKey(e loom.KeyEvent) bool {
 			ow.app.activeFocus = focusEditor
 			ow.app.statusMsg = fmt.Sprintf("Jumped to %s (line %d)", sym.Name, sym.Line+1)
 		}
-		return true
+		return loom.QuitResult()
 	}
-	return false
+	return loom.Ignored()
 }
 
-func (ow *outlineWidget) HandleMouse(e loom.MouseEvent) bool {
+func (ow *outlineWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	ow.refresh()
 	if ow.doubleClick == nil {
 		ow.doubleClick = loom.NewDoubleClickRecognizer(nil)
@@ -296,9 +296,9 @@ func (ow *outlineWidget) HandleMouse(e loom.MouseEvent) bool {
 			ow.app.activeFocus = focusEditor
 			ow.app.statusMsg = fmt.Sprintf("Jumped to %s (line %d)", sym.Name, sym.Line+1)
 		}
-		return true
+		return loom.QuitResult()
 	}
-	return false
+	return loom.Ignored()
 }
 
 type fileBrowserWidget struct {
@@ -365,28 +365,28 @@ func (fb *fileBrowserWidget) DrawEntries(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (fb *fileBrowserWidget) HandleKey(e loom.KeyEvent) bool {
+func (fb *fileBrowserWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch {
 	case e.Is("up", "k"):
 		if fb.selected > 0 {
 			fb.selected--
 		}
-		return true
+		return loom.QuitResult()
 	case e.Is("down", "j"):
 		if fb.selected < len(fb.files)-1 {
 			fb.selected++
 		}
-		return true
+		return loom.QuitResult()
 	case e.Is("backspace", "esc"):
 		parent := filepath.Dir(filepath.Clean(fb.dir))
 		if parent != filepath.Clean(fb.dir) {
 			fb.dir = parent
 			fb.reload()
 		}
-		return true
+		return loom.QuitResult()
 	case e.Is("enter"):
 		if len(fb.files) == 0 {
-			return true
+			return loom.QuitResult()
 		}
 		sel := fb.files[fb.selected]
 		target := filepath.Join(fb.dir, sel.Name())
@@ -396,12 +396,12 @@ func (fb *fileBrowserWidget) HandleKey(e loom.KeyEvent) bool {
 		} else {
 			fb.app.OpenFile(target)
 		}
-		return true
+		return loom.QuitResult()
 	}
-	return false
+	return loom.Ignored()
 }
 
-func (fb *fileBrowserWidget) HandleMouse(e loom.MouseEvent) bool {
+func (fb *fileBrowserWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y > 0 {
 		idx := e.Y - 1
 		if idx >= 0 && idx < len(fb.files) {
@@ -410,10 +410,10 @@ func (fb *fileBrowserWidget) HandleMouse(e loom.MouseEvent) bool {
 			if !sel.IsDir() {
 				fb.app.OpenFile(filepath.Join(fb.dir, sel.Name()))
 			}
-			return true
+			return loom.QuitResult()
 		}
 	}
-	return false
+	return loom.Ignored()
 }
 
 type terminalWidget struct {
@@ -462,19 +462,19 @@ func (tw *terminalWidget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (tw *terminalWidget) HandleKey(e loom.KeyEvent) bool {
+func (tw *terminalWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Is("enter") {
 		cmd := tw.input.Value()
 		tw.input.SetValue("")
 		if strings.TrimSpace(cmd) != "" {
 			tw.execCommand(strings.TrimSpace(cmd))
 		}
-		return true
+		return loom.QuitResult()
 	}
-	return tw.input.HandleKey(e)
+	return tw.input.ConsumeKey(e)
 }
 
-func (tw *terminalWidget) HandleMouse(e loom.MouseEvent) bool { return false }
+func (tw *terminalWidget) ConsumeMouse(e loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func (tw *terminalWidget) execCommand(cmd string) {
 	tw.logs = append(tw.logs, "$ "+cmd)
@@ -779,24 +779,24 @@ func (app *TextEditApp) drawStatus(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
+func (app *TextEditApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	// F10 and Ctrl-Q always exit immediately, regardless of focus.
 	if e.Is("f10", "F10", "ctrl-q", "ctrl-Q") {
-		return true
+		return loom.QuitResult()
 	}
 
 	// Global Keybindings
 	switch {
 	case e.Is("f2", "F2"):
 		app.toggleFoldAtCaret()
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-s", "ctrl-S"):
 		app.SaveFile(app.activePath)
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-shift-s"):
 		saveAsPath := app.activePath + ".bak"
 		app.SaveFile(saveAsPath)
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-o"):
 		// Open next file from MRU list
 		if len(app.mruList) > 1 {
@@ -805,7 +805,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 		} else {
 			app.statusMsg = "MRU list empty"
 		}
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-c"):
 		val := app.editor.Value()
 		lines := strings.Split(val, "\n")
@@ -814,16 +814,16 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.clipboard = lines[row]
 			app.statusMsg = "Copied line to clipboard"
 		}
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-v"):
 		if app.clipboard != "" {
 			for _, ch := range app.clipboard {
-				app.editor.HandleKey(loom.KeyEvent{Text: string(ch)})
+				app.editor.ConsumeKey(loom.KeyEvent{Text: string(ch)})
 			}
 			app.modified = true
 			app.statusMsg = "Pasted from clipboard"
 		}
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-x"):
 		val := app.editor.Value()
 		lines := strings.Split(val, "\n")
@@ -835,7 +835,7 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.modified = true
 			app.statusMsg = "Cut line to clipboard"
 		}
-		return false
+		return loom.Ignored()
 	case e.Is("ctrl-b"):
 		app.showBrowser = !app.showBrowser
 		if app.showBrowser {
@@ -845,38 +845,38 @@ func (app *TextEditApp) HandleKey(e loom.KeyEvent) bool {
 			app.hSplit.SetRatio(0.0)
 			app.statusMsg = "Sidebar collapsed"
 		}
-		return false
+		return loom.Ignored()
 	case e.Is("tab", "f6"):
 		app.activeFocus = (app.activeFocus + 1) % 3
 		app.statusMsg = fmt.Sprintf("Switched focus to %v", app.activeFocus)
-		return false
+		return loom.Ignored()
 	}
 
 	// Dispatch to active focus area
 	switch app.activeFocus {
 	case focusBrowser:
-		if sbHandled := app.sidebar.HandleKey(e); sbHandled {
-			return false
+		if result := app.sidebar.ConsumeKey(e); result.Consumed {
+			return result
 		}
 	case focusTerminal:
-		if termHandled := app.terminal.HandleKey(e); termHandled {
-			return false
+		if result := app.terminal.ConsumeKey(e); result.Consumed {
+			return result
 		}
 	case focusEditor:
-		if edHandled := app.editorW.HandleKey(e); edHandled {
-			return false
+		if result := app.editorW.ConsumeKey(e); result.Consumed {
+			return result
 		}
 	}
 
 	// The frame has its own focus tree, which is not the same as activeFocus.
 	// Forwarding an unhandled key would send it to a second widget and turn that
 	// widget's consumed result into quit.
-	return false
+	return loom.Ignored()
 }
 
-func (app *TextEditApp) HandleMouse(e loom.MouseEvent) bool {
-	app.frame.HandleMouse(e)
-	return false
+func (app *TextEditApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	app.frame.ConsumeMouse(e)
+	return loom.Ignored()
 }
 
 // PaneRequest declares terminal requirements.

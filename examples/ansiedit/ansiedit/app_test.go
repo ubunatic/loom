@@ -47,33 +47,33 @@ func TestAppFocusAndPanelSwitching(t *testing.T) {
 	}
 
 	// Tab toggles focus
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
+	app.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if app.activeFocus != FocusSidePanel {
 		t.Fatalf("expected focus SidePanel after Tab, got %v", app.activeFocus)
 	}
 
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
+	app.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if app.activeFocus != FocusCanvas {
 		t.Fatalf("expected focus Canvas after second Tab, got %v", app.activeFocus)
 	}
 
 	// Function keys switch side panel modes
-	app.HandleKey(loom.KeyEvent{Key: "f1"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f1"})
 	if app.panelMode != PanelInfo {
 		t.Fatalf("expected PanelInfo after F1, got %v", app.panelMode)
 	}
 
-	app.HandleKey(loom.KeyEvent{Key: "f2"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f2"})
 	if app.panelMode != PanelPalette {
 		t.Fatalf("expected PanelPalette after F2, got %v", app.panelMode)
 	}
 
-	app.HandleKey(loom.KeyEvent{Key: "f8"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f8"})
 	if app.panelMode != PanelKeys {
 		t.Fatalf("expected PanelKeys after F8, got %v", app.panelMode)
 	}
 
-	app.HandleKey(loom.KeyEvent{Key: "f9"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f9"})
 	if app.panelMode != PanelTheme {
 		t.Fatalf("expected PanelTheme after F9, got %v", app.panelMode)
 	}
@@ -82,7 +82,7 @@ func TestAppFocusAndPanelSwitching(t *testing.T) {
 	if app.Quit() {
 		t.Fatalf("expected not quit yet")
 	}
-	app.HandleKey(loom.KeyEvent{Key: "f10"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f10"})
 	if !app.Quit() {
 		t.Fatalf("expected quit after F10")
 	}
@@ -99,12 +99,12 @@ func TestPaletteNavigationAndColorApply(t *testing.T) {
 	app.palCol = 0
 
 	// Move down and right in palette
-	app.HandleKey(loom.KeyEvent{Key: "down"})
+	app.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if app.palRow != 1 {
 		t.Fatalf("expected palRow 1, got %d", app.palRow)
 	}
 
-	app.HandleKey(loom.KeyEvent{Key: "right"})
+	app.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if app.palCol != 1 {
 		t.Fatalf("expected palCol 1, got %d", app.palCol)
 	}
@@ -112,7 +112,7 @@ func TestPaletteNavigationAndColorApply(t *testing.T) {
 	targetColor := paletteGrid[1][1] // #94
 
 	// Enter sets FG
-	app.HandleKey(loom.KeyEvent{Key: "enter"})
+	app.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if app.activeFG != loom.ColorIndex(targetColor) {
 		t.Fatalf("expected activeFG %v, got %v", loom.ColorIndex(targetColor), app.activeFG)
 	}
@@ -121,7 +121,7 @@ func TestPaletteNavigationAndColorApply(t *testing.T) {
 	app.palRow = 6
 	app.palCol = 0 // #232
 	bgTarget := paletteGrid[6][0]
-	app.HandleKey(loom.KeyEvent{Key: "shift-enter"})
+	app.ConsumeKey(loom.KeyEvent{Key: "shift-enter"})
 	if app.activeBG != loom.ColorIndex(bgTarget) {
 		t.Fatalf("expected activeBG %v, got %v", loom.ColorIndex(bgTarget), app.activeBG)
 	}
@@ -133,7 +133,7 @@ func TestCanvasTypingAndNavigation(t *testing.T) {
 	app.activeFocus = FocusCanvas
 
 	// Type text
-	app.HandleKey(loom.KeyEvent{Text: "Loom"})
+	app.ConsumeKey(loom.KeyEvent{Text: "Loom"})
 	if app.cursorX != 4 || app.cursorY != 0 {
 		t.Fatalf("expected cursor at (4, 0), got (%d, %d)", app.cursorX, app.cursorY)
 	}
@@ -142,19 +142,19 @@ func TestCanvasTypingAndNavigation(t *testing.T) {
 	}
 
 	// Move cursor left
-	app.HandleKey(loom.KeyEvent{Key: "left"})
+	app.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if app.cursorX != 3 {
 		t.Fatalf("expected cursor at 3, got %d", app.cursorX)
 	}
 
 	// Backspace
-	app.HandleKey(loom.KeyEvent{Key: "backspace"})
+	app.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	if app.cursorX != 2 {
 		t.Fatalf("expected cursor at 2, got %d", app.cursorX)
 	}
 
 	// Insert mode toggle
-	app.HandleKey(loom.KeyEvent{Key: "insert"})
+	app.ConsumeKey(loom.KeyEvent{Key: "insert"})
 	if app.editMode != ModeInsert {
 		t.Fatalf("expected ModeInsert after insert key")
 	}
@@ -163,7 +163,7 @@ func TestCanvasTypingAndNavigation(t *testing.T) {
 	tmp := t.TempDir()
 	savePath := filepath.Join(tmp, "canvas_test.ansi")
 	buf.SetPath(savePath)
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-s"})
+	app.ConsumeKey(loom.KeyEvent{Key: "ctrl-s"})
 	if buf.Modified() {
 		t.Fatalf("expected buffer unmodified after save")
 	}
@@ -176,7 +176,7 @@ func TestThemeSwitching(t *testing.T) {
 	app.activeFocus = FocusSidePanel
 
 	origTheme := app.currentTheme
-	app.HandleKey(loom.KeyEvent{Key: "down"})
+	app.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if app.currentTheme == origTheme && len(app.themeNames) > 1 {
 		t.Fatalf("expected theme to change on down arrow")
 	}
@@ -215,9 +215,9 @@ func TestAnsiEditNavigationKeysNeverQuit(t *testing.T) {
 		if !res.Consumed || res.Quit {
 			t.Errorf("ConsumeKey(%+v) = %+v, want Consumed:true, Quit:false", k, res)
 		}
-		// HandleKey must return false (meaning do not quit)
-		if quit := app.HandleKey(k); quit {
-			t.Errorf("HandleKey(%+v) = true (quit), want false", k)
+		// ConsumeKey must return false (meaning do not quit)
+		if quit := app.ConsumeKey(k).Quit; quit {
+			t.Errorf("ConsumeKey(%+v) = true (quit), want false", k)
 		}
 		if app.Quit() {
 			t.Errorf("app.Quit() became true after key %+v", k)
@@ -239,9 +239,8 @@ func TestAnsiEditNavigationKeysNeverQuit(t *testing.T) {
 		if !app.Quit() {
 			t.Errorf("app.Quit() = false after quit key %+v, want true", k)
 		}
-		if quit := app.HandleKey(k); !quit {
-			t.Errorf("HandleKey(%+v) = false, want true", k)
+		if quit := app.ConsumeKey(k).Quit; !quit {
+			t.Errorf("ConsumeKey(%+v) = false, want true", k)
 		}
 	}
 }
-

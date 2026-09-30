@@ -229,46 +229,41 @@ func (b *browser) syncDir() {
 	}
 }
 
-func (b *browser) HandleKey(k loom.KeyEvent) bool {
-	if k.Key == "f9" {
-		b.cycleTheme()
-		return false
-	}
-	b.syncDir()
-	quit := b.frame.HandleKey(k)
-	b.dir = b.navigation.Directory().Path
-	return quit || b.quit
-}
-
-func (b *browser) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
+func (b *browser) ConsumeKey(k loom.KeyEvent) loom.EventResult {
 	key := k.Key
 	if key == "" {
 		key = k.Text
 	}
 	if key == "f10" || key == "ctrl-q" {
-		return true, true
+		return loom.QuitResult()
 	}
 	if key == "f9" {
 		b.cycleTheme()
-		return false, true
+		return loom.Handled()
 	}
 	b.syncDir()
-	quit, consumed = b.navigation.ConsumeKey(k)
-	if consumed {
+	if (k.Text != "" && b.navigation.Searching()) || key == "/" || key == "esc" || key == "backspace" {
+		result := b.navigation.ConsumeKey(k)
 		b.dir = b.navigation.Directory().Path
-		return quit || b.quit, true
+		if result.Quit || b.quit {
+			return loom.QuitResult()
+		}
+		if result.Consumed {
+			return result
+		}
 	}
 	if key == "ctrl-c" || key == "ctrl-d" || key == "esc" {
-		return true, true
+		return loom.QuitResult()
 	}
-	// While searching ("/"), the Choice owns all text keys; consume them before
-	// the host can interpret q or another app-level binding.
-	if (k.Text != "" && b.navigation.Searching()) || isBrowserListKey(key) {
-		quit = b.frame.HandleKey(k)
+	if isBrowserListKey(key) {
+		result := b.frame.ConsumeKey(k)
 		b.dir = b.navigation.Directory().Path
-		return quit || b.quit, true
+		if b.quit {
+			return loom.QuitResult()
+		}
+		return result
 	}
-	return false, false
+	return loom.Ignored()
 }
 
 func isBrowserListKey(key string) bool {
@@ -285,8 +280,11 @@ func (b *browser) PaneRequest() loom.PaneRequest {
 	return loom.PaneRequest{Mouse: 1000, Resizeable: true, MaxCols: 0}
 }
 
-func (b *browser) HandleMouse(k loom.MouseEvent) bool {
-	quit := b.frame.HandleMouse(k)
+func (b *browser) ConsumeMouse(k loom.MouseEvent) loom.EventResult {
+	result := b.frame.ConsumeMouse(k)
 	b.dir = b.navigation.Directory().Path
-	return quit || b.quit
+	if b.quit {
+		return loom.QuitResult()
+	}
+	return result
 }

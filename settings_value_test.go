@@ -45,19 +45,19 @@ func TestSettingsStringInlineEdit(t *testing.T) {
 		{Label: "name", Kind: loom.KindString, Str: &str},
 	})
 	// Outside edit mode, typing must not mutate the value.
-	s.HandleKey(loom.KeyEvent{Text: "z"})
+	s.ConsumeKey(loom.KeyEvent{Text: "z"})
 	if str != "abc" || s.Editing() {
 		t.Fatalf("value/edit-state changed before entering edit mode: %q editing=%v", str, s.Editing())
 	}
 	// Enter edit mode, type, delete, and commit.
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !s.Editing() {
 		t.Fatal("Enter on a KindString row did not enter edit mode")
 	}
-	s.HandleKey(loom.KeyEvent{Text: "d"})
-	s.HandleKey(loom.KeyEvent{Text: "e"})
-	s.HandleKey(loom.KeyEvent{Key: "backspace"})
-	q := s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Text: "d"})
+	s.ConsumeKey(loom.KeyEvent{Text: "e"})
+	s.ConsumeKey(loom.KeyEvent{Key: "backspace"})
+	q := s.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if q || s.Editing() {
 		t.Errorf("Enter should commit without quitting: quit=%v editing=%v", q, s.Editing())
 	}
@@ -71,12 +71,12 @@ func TestSettingsStringEditCancel(t *testing.T) {
 	s := loom.NewSettings([]loom.Setting{
 		{Label: "name", Kind: loom.KindString, Str: &str},
 	})
-	s.HandleKey(loom.KeyEvent{Key: "enter"}) // begin edit
-	s.HandleKey(loom.KeyEvent{Text: "x"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"}) // begin edit
+	s.ConsumeKey(loom.KeyEvent{Text: "x"})
 	if str != "abcx" {
 		t.Fatalf("typing in edit mode did not append: %q", str)
 	}
-	q := s.HandleKey(loom.KeyEvent{Key: "esc"}) // cancel restores prior value
+	q := s.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit // cancel restores prior value
 	if q {
 		t.Error("Esc during edit should cancel the edit, not quit the widget")
 	}
@@ -87,7 +87,7 @@ func TestSettingsStringEditCancel(t *testing.T) {
 		t.Errorf("Esc did not cancel edit, value = %q, want abc", str)
 	}
 	// After the edit is cancelled, Esc quits the widget as usual.
-	if !s.HandleKey(loom.KeyEvent{Key: "esc"}) {
+	if !s.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit {
 		t.Error("Esc outside edit mode should quit the widget")
 	}
 }

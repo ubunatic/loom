@@ -57,7 +57,7 @@ type View struct {
 	// ScrollbarMode overrides the spec default for this widget.
 	ScrollbarMode ScrollbarMode
 	focused       bool
-	lastH         int // height from last Draw; gates scroll in HandleKey
+	lastH         int // height from last Draw; gates scroll in ConsumeKey
 	lastRect      Rect
 	drag          scrollbarDrag
 }
@@ -178,8 +178,8 @@ func scrollbarCell(style ScrollbarStyle, thumb bool) Cell {
 	return Cell{Text: SpeccedDefaults.Scrollbar.BackgroundChar, Style: style.Track}
 }
 
-// HandleKey supports line, half-page, page, and boundary navigation.
-func (v *View) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey supports line, half-page, page, and boundary navigation.
+func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 	maxScroll := len(v.Lines) - v.lastH
 	if maxScroll < 0 {
 		maxScroll = 0
@@ -229,13 +229,13 @@ func (v *View) HandleKey(e KeyEvent) (quit bool) {
 			v.OffsetY = v.Scroll
 			v.drag.cancel()
 		}
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse supports wheel navigation and clicks in the scrollbar track.
-func (v *View) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse supports wheel navigation and clicks in the scrollbar track.
+func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	maxScroll := len(v.Lines) - v.lastH
 	if maxScroll < 0 {
 		maxScroll = 0
@@ -253,9 +253,9 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 		}
 	case MousePress:
 		if e.Button == MouseLeft && maxScroll > 0 && scrollbarVisible(v.ScrollbarMode, true) && v.lastRect.W > 0 &&
-			e.X == v.lastRect.X+v.lastRect.W-1 &&
-			e.Y >= v.lastRect.Y && e.Y < v.lastRect.Y+v.lastRect.H {
-			row := e.Y - v.lastRect.Y
+			e.X == v.lastRect.W-1 &&
+			e.Y >= 0 && e.Y < v.lastRect.H {
+			row := e.Y
 			thumb := scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH)
 			start := scrollbarThumbStart(v.lastRect.H, thumb, v.Scroll, maxScroll)
 			if row >= start && row < start+thumb {
@@ -267,7 +267,7 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 		}
 	case MouseDrag:
 		if v.drag.active {
-			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y-v.lastRect.Y, v.drag.grab, maxScroll)
+			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y, v.drag.grab, maxScroll)
 			v.OffsetY = v.Scroll
 		}
 	case MouseRelease:
@@ -275,7 +275,7 @@ func (v *View) HandleMouse(e MouseEvent) (quit bool) {
 			v.drag.cancel()
 		}
 	}
-	return false
+	return Ignored()
 }
 
 // scrollTrackPosition maps a clicked track row to the viewport's first item.

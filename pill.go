@@ -150,15 +150,11 @@ func (pc *PillCluster) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey implements Widget.
-func (pc *PillCluster) HandleKey(e KeyEvent) bool {
-	return false
-}
+// ConsumeKey implements Widget.
+func (pc *PillCluster) ConsumeKey(e KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse implements Widget.
-func (pc *PillCluster) HandleMouse(e MouseEvent) bool {
-	return false
-}
+// ConsumeMouse implements Widget.
+func (pc *PillCluster) ConsumeMouse(e MouseEvent) EventResult { return Ignored() }
 
 // FormatPillCluster returns an ANSI-formatted string of the pill cluster.
 func FormatPillCluster(pills []ProviderPill, gap int, useANSI bool) string {

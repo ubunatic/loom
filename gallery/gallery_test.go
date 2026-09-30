@@ -69,11 +69,11 @@ func TestGalleryTabsCycleDemos(t *testing.T) {
 	}
 	loom.Render(tabs, 100, 30)
 	initial := tabs.Focus()
-	tabs.HandleKey(loom.KeyEvent{Key: "tab"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if got := tabs.Focus(); got != (initial+1)%len(tabs.Tabs) {
 		t.Fatalf("Tab focus = %d, want %d", got, (initial+1)%len(tabs.Tabs))
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "shift-tab"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
 	if got := tabs.Focus(); got != initial {
 		t.Fatalf("Shift-Tab focus = %d, want %d", got, initial)
 	}

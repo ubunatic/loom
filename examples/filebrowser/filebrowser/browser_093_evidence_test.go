@@ -33,12 +33,12 @@ func TestFilebrowser093Evidence(t *testing.T) {
 	if b.list.FilteredSel() != 0 {
 		t.Fatalf("initial selection = %d, want row 0", b.list.FilteredSel())
 	}
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + listRect.W - 4, Y: listRect.Y + 3})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + listRect.W - 4, Y: listRect.Y + 3})
 	if b.list.FilteredSel() != 0 {
 		t.Fatalf("whitespace click changed selection to %d, want row 0", b.list.FilteredSel())
 	}
 	writeBrowser093Frame(t, outDir, "M2-click-after-whitespace.ansi", b, false, "M5 whitespace click on row 2: selection stays on row 0")
-	b.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + 4, Y: listRect.Y + 3})
+	b.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: listRect.X + 4, Y: listRect.Y + 3})
 	if b.list.FilteredSel() != 2 {
 		t.Fatalf("text click selected row %d, want row 2", b.list.FilteredSel())
 	}

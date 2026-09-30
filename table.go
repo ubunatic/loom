@@ -384,25 +384,25 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 	t.cmd.drawHelp(cv, r)
 }
 
-// HandleKey drives navigation, filtering, and sort controls.
+// ConsumeKey drives navigation, filtering, and sort controls.
 // ':' or '/' activates command mode; Tab completes commands when active.
-func (t *Table) HandleKey(e KeyEvent) (quit bool) {
+func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if t.cmd.handleHelp(e) {
-		return false
+		return Ignored()
 	}
-	if consumed, result := t.cmd.HandleKey(e); consumed {
+	if consumed, result := t.cmd.ConsumeKey(e); consumed {
 		switch result {
 		case cmdBack:
 			t.aborted = true
 			t.done = true
-			return true
+			return QuitResult()
 		case cmdHome:
 			t.cmdNav = NavHome
 			t.aborted = true
 			t.done = true
-			return true
+			return QuitResult()
 		}
-		return false
+		return Ignored()
 	}
 	var action string
 	if t.keys != nil {
@@ -423,20 +423,20 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 			}
 		}
 		t.cellSelectionChanged()
-		return false
+		return Ignored()
 	}
 	switch e.Key {
 	case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
 		t.aborted = true
 		t.done = true
-		return true
+		return QuitResult()
 	case "enter":
 		if t.OnSelect != nil && len(t.filtered) > 0 {
 			t.OnSelect(t.filtered[t.sel])
-			return false
+			return Ignored()
 		}
 		t.done = true
-		return true
+		return QuitResult()
 	case "up":
 		if t.sel > 0 {
 			t.sel--
@@ -480,7 +480,7 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 			t.refilter()
 		}
 	}
-	return false
+	return Ignored()
 }
 
 func (t *Table) cellSelectionChanged() {
@@ -495,9 +495,12 @@ func (t *Table) cellSelectionChanged() {
 	}
 }
 
-// HandleMouse is a no-op placeholder (mouse support is optional/future).
-func (t *Table) HandleMouse(e MouseEvent) (quit bool) {
-	return t.cmd.handleHelpMouse(e)
+// ConsumeMouse is a no-op placeholder (mouse support is optional/future).
+func (t *Table) ConsumeMouse(e MouseEvent) (quit EventResult) {
+	if t.cmd.handleHelpMouse(e) {
+		return Handled()
+	}
+	return Ignored()
 }
 
 func (t *Table) cycleSortNext() {

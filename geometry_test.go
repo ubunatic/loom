@@ -150,8 +150,8 @@ func checkGeometry(rows []string, width int, boxes []Rect) error {
 
 type geometryChild struct{}
 
-func (geometryChild) HandleKey(KeyEvent) bool     { return false }
-func (geometryChild) HandleMouse(MouseEvent) bool { return false }
+func (geometryChild) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (geometryChild) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (geometryChild) Draw(c *Canvas, r Rect) {
 	c.Fill(Rect{-20, -20, 100, 100}, Cell{Text: "."})
 	c.Write(-1, 0, "界ASCII e\u0301 中 ⣿⣀█░", Style{Bold: true, FG: ColorIndex(2)})
@@ -198,8 +198,8 @@ func TestGeometryFinalOutput(t *testing.T) {
 		}
 	}
 	for i := 0; i < 8; i++ {
-		f.HandleKey(KeyEvent{Text: "u"})
-		f.HandleKey(KeyEvent{Text: "l"})
+		f.ConsumeKey(KeyEvent{Text: "u"})
+		f.ConsumeKey(KeyEvent{Text: "l"})
 		for _, w := range []int{64, 40, 64} {
 			var boxes []Rect
 			if i%2 == 1 {

@@ -10,36 +10,34 @@ import (
 )
 
 type keyConsumerWidget struct {
-	keys    []loom.KeyEvent
-	quit    bool
-	consume bool
+	keys   []loom.KeyEvent
+	result loom.EventResult
 }
 
-func (w *keyConsumerWidget) Draw(*loom.Canvas, loom.Rect)     {}
-func (w *keyConsumerWidget) HandleKey(loom.KeyEvent) bool     { return w.quit }
-func (w *keyConsumerWidget) HandleMouse(loom.MouseEvent) bool { return false }
-func (w *keyConsumerWidget) ConsumeKey(e loom.KeyEvent) (bool, bool) {
+func (w *keyConsumerWidget) Draw(*loom.Canvas, loom.Rect)                  {}
+func (w *keyConsumerWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
+func (w *keyConsumerWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	w.keys = append(w.keys, e)
-	return w.quit, w.consume
+	return w.result
 }
 
 type focusableKeyWidget struct {
 	focused bool
 }
 
-func (w *focusableKeyWidget) Draw(*loom.Canvas, loom.Rect)     {}
-func (w *focusableKeyWidget) HandleKey(loom.KeyEvent) bool     { return false }
-func (w *focusableKeyWidget) HandleMouse(loom.MouseEvent) bool { return false }
-func (w *focusableKeyWidget) Focused() bool                    { return w.focused }
-func (w *focusableKeyWidget) SetFocus(focused bool)            { w.focused = focused }
+func (w *focusableKeyWidget) Draw(*loom.Canvas, loom.Rect)                  {}
+func (w *focusableKeyWidget) ConsumeKey(loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (w *focusableKeyWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
+func (w *focusableKeyWidget) Focused() bool                                 { return w.focused }
+func (w *focusableKeyWidget) SetFocus(focused bool)                         { w.focused = focused }
 
-func TestKeyConsumerChildFirstRouting(t *testing.T) {
-	child := &keyConsumerWidget{consume: true}
+func TestEventResultChildFirstRouting(t *testing.T) {
+	child := &keyConsumerWidget{result: loom.Handled()}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
 	tabs.ArrowSwitch = false
 
-	tabs.HandleKey(loom.KeyEvent{Key: "left"})
-	tabs.HandleKey(loom.KeyEvent{Key: "right"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "left"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if len(child.keys) != 2 || child.keys[0].Key != "left" || child.keys[1].Key != "right" {
 		t.Fatalf("child keys = %#v, want left and right", child.keys)
 	}
@@ -49,10 +47,10 @@ func TestKeyConsumerChildFirstRouting(t *testing.T) {
 }
 
 func TestArrowSwitchTrue(t *testing.T) {
-	child := &keyConsumerWidget{consume: true}
+	child := &keyConsumerWidget{result: loom.Handled()}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
 
-	tabs.HandleKey(loom.KeyEvent{Key: "right"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("focus after right = %d, want 1", tabs.Focus())
 	}
@@ -62,19 +60,19 @@ func TestArrowSwitchTrue(t *testing.T) {
 }
 
 func TestOnChildQuitContainment(t *testing.T) {
-	child := &keyConsumerWidget{consume: true, quit: true}
+	child := &keyConsumerWidget{result: loom.QuitResult()}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child})
 	tabs.OnChildQuit = func(int) bool { return false }
-	if tabs.HandleKey(loom.KeyEvent{Key: "q"}) {
+	if result := tabs.ConsumeKey(loom.KeyEvent{Key: "q"}); !result.Consumed || result.Quit {
 		t.Fatal("Tabs propagated a contained child quit")
 	}
 }
 
 func TestOnChildQuitPropagates(t *testing.T) {
-	child := &keyConsumerWidget{consume: true, quit: true}
+	child := &keyConsumerWidget{result: loom.QuitResult()}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child})
 	tabs.OnChildQuit = func(int) bool { return true }
-	if !tabs.HandleKey(loom.KeyEvent{Key: "q"}) {
+	if result := tabs.ConsumeKey(loom.KeyEvent{Key: "q"}); !result.Quit {
 		t.Fatal("Tabs suppressed a propagated child quit")
 	}
 }
@@ -90,10 +88,10 @@ func TestTabsFocusClearOnInactive(t *testing.T) {
 	}
 }
 
-func TestKeyConsumerDoesNotTriggerPaneQuitFallback(t *testing.T) {
-	child := &keyConsumerWidget{consume: true}
+func TestEventResultDoesNotTriggerPaneQuitFallback(t *testing.T) {
+	child := &keyConsumerWidget{result: loom.Handled()}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child})
-	if tabs.HandleKey(loom.KeyEvent{Key: "q"}) {
+	if result := tabs.ConsumeKey(loom.KeyEvent{Key: "q"}); result.Quit {
 		t.Fatal("consumed q caused Tabs to quit")
 	}
 }

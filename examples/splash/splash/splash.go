@@ -129,41 +129,7 @@ func (a *splashApp) PaneRequest() loom.PaneRequest {
 	}
 }
 
-func (a *splashApp) ConsumeKey(k loom.KeyEvent) (quit, consumed bool) {
-	key := k.Key
-	if key == "" {
-		key = k.Text
-	}
-	if key == "ctrl-c" || key == "ctrl-q" {
-		return true, true
-	}
-	if !a.active {
-		switch key {
-		case "q":
-			return true, true
-		case "esc", "enter":
-			if a.controller != nil {
-				a.controller.Dismiss()
-			}
-			return false, true
-		}
-		return false, false
-	}
-	if consumer, ok := a.next.(loom.KeyConsumer); ok {
-		if q, c := consumer.ConsumeKey(k); c {
-			return q, true
-		}
-	}
-	if a.next != nil {
-		q := a.next.HandleKey(k)
-		if q {
-			return true, true
-		}
-	}
-	return false, false
-}
-
-func (a *splashApp) HandleKey(k loom.KeyEvent) bool {
+func (a *splashApp) ConsumeKey(k loom.KeyEvent) loom.EventResult {
 	if !a.active {
 		key := k.Key
 		if key == "" {
@@ -171,26 +137,26 @@ func (a *splashApp) HandleKey(k loom.KeyEvent) bool {
 		}
 		switch key {
 		case "q", "ctrl-c", "ctrl-q":
-			return true
+			return loom.QuitResult()
 		case "esc", "enter":
 			if a.controller != nil {
 				a.controller.Dismiss()
 			}
-			return false
+			return loom.Handled()
 		}
-		return false
+		return loom.Ignored()
 	}
 	if a.next != nil {
-		return a.next.HandleKey(k)
+		return a.next.ConsumeKey(k)
 	}
-	return false
+	return loom.Ignored()
 }
 
-func (a *splashApp) HandleMouse(m loom.MouseEvent) bool {
+func (a *splashApp) ConsumeMouse(m loom.MouseEvent) loom.EventResult {
 	if a.active && a.next != nil {
-		return a.next.HandleMouse(m)
+		return a.next.ConsumeMouse(m)
 	}
-	return false
+	return loom.Ignored()
 }
 
 func (a *splashApp) Close() {

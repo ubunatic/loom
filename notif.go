@@ -49,8 +49,8 @@ func (n *Notif) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey is a no-op; Notif does not consume keyboard events.
-func (n *Notif) HandleKey(KeyEvent) (quit bool) { return false }
+// ConsumeKey is a no-op; Notif does not consume keyboard events.
+func (n *Notif) ConsumeKey(KeyEvent) (quit EventResult) { return Ignored() }
 
-// HandleMouse is a no-op; Notif does not consume mouse events.
-func (n *Notif) HandleMouse(MouseEvent) (quit bool) { return false }
+// ConsumeMouse is a no-op; Notif does not consume mouse events.
+func (n *Notif) ConsumeMouse(MouseEvent) (quit EventResult) { return Ignored() }

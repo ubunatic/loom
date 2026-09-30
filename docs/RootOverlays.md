@@ -25,7 +25,7 @@ cooperating root owner.
    - draws it last, after `root.Draw`, directly on the full canvas — not
      through any child's clipped sub-canvas;
    - checks it first in key/mouse handling, before forwarding to
-     `root.HandleKey`/`HandleMouse`.
+     `root.ConsumeKey`/`ConsumeMouse`.
 4. Widgets keep a local fallback (e.g. `cmdBar.help`, drawn via
    `drawHelp`/`handleHelp`) for when no root hook is installed — headless
    tests, custom hosting, or standalone widget use outside a `Pane`.

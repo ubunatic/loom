@@ -14,7 +14,7 @@ import (
 
 func TestCmdColonActivates(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "git"}, {Name: "make"}})
-	quit := c.HandleKey(loom.KeyEvent{Text: ":"})
+	quit := c.ConsumeKey(loom.KeyEvent{Text: ":"}).Quit
 	if quit {
 		t.Error("':' should not quit")
 	}
@@ -26,7 +26,7 @@ func TestCmdColonActivates(t *testing.T) {
 
 func TestCmdSlashActivates(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "git"}, {Name: "make"}})
-	c.HandleKey(loom.KeyEvent{Text: "/"})
+	c.ConsumeKey(loom.KeyEvent{Text: "/"})
 	if c.FilteredItem(1).Name != "make" {
 		t.Error("'/' should activate command mode, not filter items")
 	}
@@ -36,13 +36,13 @@ func TestCmdSlashActivates(t *testing.T) {
 
 func TestCmdEscDeactivatesWithoutQuitting(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})          // activate
-	quit := c.HandleKey(loom.KeyEvent{Key: "esc"}) // deactivate
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})               // activate
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit // deactivate
 	if quit {
 		t.Error("Esc in command mode should deactivate, not quit")
 	}
 	// Second Esc (now in normal mode) should quit.
-	quit = c.HandleKey(loom.KeyEvent{Key: "esc"})
+	quit = c.ConsumeKey(loom.KeyEvent{Key: "esc"}).Quit
 	if !quit {
 		t.Error("Esc in normal mode should quit")
 	}
@@ -50,15 +50,15 @@ func TestCmdEscDeactivatesWithoutQuitting(t *testing.T) {
 
 func TestCmdBackspaceToEmptyDeactivates(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "h"})                // query = "h"
-	c.HandleKey(loom.KeyEvent{Key: "backspace"})         // query = ""
-	quit := c.HandleKey(loom.KeyEvent{Key: "backspace"}) // deactivates
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: "h"})                     // query = "h"
+	c.ConsumeKey(loom.KeyEvent{Key: "backspace"})              // query = ""
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "backspace"}).Quit // deactivates
 	if quit {
 		t.Error("backspace to empty should deactivate command mode, not quit")
 	}
 	// Normal typing should filter now, not accumulate command query.
-	c.HandleKey(loom.KeyEvent{Text: "x"})
+	c.ConsumeKey(loom.KeyEvent{Text: "x"})
 	if c.FilteredItem(0).Name != "x" {
 		t.Error("after deactivation, typing should filter normally")
 	}
@@ -69,7 +69,7 @@ func TestCmdBackspaceToEmptyDeactivates(t *testing.T) {
 func TestCmdBackAbortsWidget(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	typeCmd(c, "back")
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit {
 		t.Error(":back enter should quit")
 	}
@@ -83,9 +83,9 @@ func TestCmdBackAbortsWidget(t *testing.T) {
 
 func TestCmdBackTabCompletes(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "b"})          // "b" matches "back"
-	quit := c.HandleKey(loom.KeyEvent{Key: "tab"}) // complete + execute
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: "b"})               // "b" matches "back"
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "tab"}).Quit // complete + execute
 	if !quit {
 		t.Error(":b tab should complete to :back and quit")
 	}
@@ -100,7 +100,7 @@ func TestCmdHomeSetsNavHost(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	c.AddCmd(loom.Cmd{Name: "home", Title: "go to root"})
 	typeCmd(c, "home")
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit {
 		t.Error(":home enter should quit")
 	}
@@ -116,7 +116,7 @@ func TestCmdHelpDoesNotQuitInTest(t *testing.T) {
 	// of opening a second Pane, so this never touches /dev/tty. Nav stays NavNone.
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	typeCmd(c, "help")
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if quit {
 		t.Error(":help should not quit the parent widget")
 	}
@@ -140,7 +140,7 @@ func TestCmdHelpInvokesRunner(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	c.AddCmd(loom.Cmd{Name: "custom", Title: "custom title"})
 	typeCmd(c, "help")
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if quit {
 		t.Error(":help should not quit")
 	}
@@ -164,12 +164,12 @@ func TestCmdHelpInvokesRunner(t *testing.T) {
 
 func TestCmdPrefixMatchEnter(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "b"}) // matches "back"
-	c.HandleKey(loom.KeyEvent{Text: "a"})
-	c.HandleKey(loom.KeyEvent{Text: "c"})
-	c.HandleKey(loom.KeyEvent{Text: "k"}) // full "back"
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: "b"}) // matches "back"
+	c.ConsumeKey(loom.KeyEvent{Text: "a"})
+	c.ConsumeKey(loom.KeyEvent{Text: "c"})
+	c.ConsumeKey(loom.KeyEvent{Text: "k"}) // full "back"
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit || !c.Aborted() {
 		t.Error(":back full match enter should abort")
 	}
@@ -177,14 +177,14 @@ func TestCmdPrefixMatchEnter(t *testing.T) {
 
 func TestCmdNoMatchEnterDeactivates(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "git"}})
-	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "z"}) // no command starts with "z"
-	quit := c.HandleKey(loom.KeyEvent{Key: "enter"})
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: "z"}) // no command starts with "z"
+	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if quit {
 		t.Error("unmatched enter should deactivate but not quit")
 	}
 	// After deactivation, normal filter should work.
-	c.HandleKey(loom.KeyEvent{Text: "g"})
+	c.ConsumeKey(loom.KeyEvent{Text: "g"})
 	if c.FilteredItem(0).Name != "git" {
 		t.Error("after unmatched cmd deactivation, filter should work")
 	}
@@ -195,8 +195,8 @@ func TestCmdNoMatchEnterDeactivates(t *testing.T) {
 func TestCmdModeDoesNotFilter(t *testing.T) {
 	items := []loom.Item{{Name: "git"}, {Name: "make"}}
 	c := loom.NewChoice(items)
-	c.HandleKey(loom.KeyEvent{Text: ":"})
-	c.HandleKey(loom.KeyEvent{Text: "g"}) // "g" is cmd query, not filter
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: "g"}) // "g" is cmd query, not filter
 	if c.FilteredItem(0).Name != "git" || c.FilteredItem(1).Name != "make" {
 		t.Error("in command mode, typing should not filter the item list")
 	}
@@ -208,7 +208,7 @@ func TestTableCmdHomeViaColumn(t *testing.T) {
 	tbl, _, _ := psTestTable()
 	tbl.AddCmd(loom.Cmd{Name: "home", Title: "go to root"})
 	typeTableCmd(tbl, "home")
-	quit := tbl.HandleKey(loom.KeyEvent{Key: "enter"})
+	quit := tbl.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
 	if !quit {
 		t.Error(":home enter should quit the table")
 	}
@@ -219,10 +219,10 @@ func TestTableCmdHomeViaColumn(t *testing.T) {
 
 func TestTableCmdModeBlocksSortTab(t *testing.T) {
 	tbl, _, _ := psTestTable()
-	tbl.HandleKey(loom.KeyEvent{Text: ":"}) // activate command mode
+	tbl.ConsumeKey(loom.KeyEvent{Text: ":"}) // activate command mode
 	// Tab in command mode should try to complete a command, not cycle sort.
 	sortColBefore := tbl.SortCol
-	tbl.HandleKey(loom.KeyEvent{Key: "tab"}) // completes "help" (no tty → no-op)
+	tbl.ConsumeKey(loom.KeyEvent{Key: "tab"}) // completes "help" (no tty → no-op)
 	if tbl.SortCol != sortColBefore {
 		t.Error("Tab in command mode should not cycle the sort column")
 	}
@@ -239,7 +239,7 @@ func TestCmdAddLocalCommand(t *testing.T) {
 		Fn:    func() error { called = true; return nil },
 	})
 	typeCmd(c, "refresh")
-	c.HandleKey(loom.KeyEvent{Key: "enter"})
+	c.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !called {
 		t.Error("custom :refresh command Fn should be called")
 	}
@@ -249,16 +249,16 @@ func TestCmdAddLocalCommand(t *testing.T) {
 
 // typeCmd activates command mode and types name into c.
 func typeCmd(c *loom.Choice, name string) {
-	c.HandleKey(loom.KeyEvent{Text: ":"})
+	c.ConsumeKey(loom.KeyEvent{Text: ":"})
 	for _, ch := range name {
-		c.HandleKey(loom.KeyEvent{Text: string(ch)})
+		c.ConsumeKey(loom.KeyEvent{Text: string(ch)})
 	}
 }
 
 // typeTableCmd activates command mode and types name into t.
 func typeTableCmd(t *loom.Table, name string) {
-	t.HandleKey(loom.KeyEvent{Text: ":"})
+	t.ConsumeKey(loom.KeyEvent{Text: ":"})
 	for _, ch := range name {
-		t.HandleKey(loom.KeyEvent{Text: string(ch)})
+		t.ConsumeKey(loom.KeyEvent{Text: string(ch)})
 	}
 }

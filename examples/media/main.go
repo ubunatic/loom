@@ -44,15 +44,11 @@ func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(r.X, r.Y+r.H-1, status, loom.Style{FG: loom.ColorRGB(240, 240, 240), BG: loom.ColorRGB(38, 48, 60)})
 }
 
-func (d *demo) HandleKey(e loom.KeyEvent) bool {
-	return false
-}
-
-func (d *demo) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
+func (d *demo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch e.Rune() {
 	case 'r', 'R':
 		if !d.video {
-			return false, false
+			return loom.Ignored()
 		}
 		if err := d.image.Restart(); err != nil {
 			d.message = err.Error()
@@ -62,12 +58,9 @@ func (d *demo) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 	default:
 		return d.image.ConsumeKey(e)
 	}
-	return false, true
+	return loom.Handled()
 }
-func (d *demo) HandleMouse(loom.MouseEvent) bool { return false }
-func (d *demo) ConsumeMouseEvent(e loom.MouseEvent) loom.EventResult {
-	return d.image.ConsumeMouseEvent(e)
-}
+func (d *demo) ConsumeMouse(e loom.MouseEvent) loom.EventResult { return d.image.ConsumeMouse(e) }
 
 func (d *demo) TickInterval() time.Duration { return d.image.TickInterval() }
 func (d *demo) Tick(now time.Time)          { d.image.Tick(now) }

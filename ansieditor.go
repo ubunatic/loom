@@ -288,12 +288,6 @@ func (e *AnsiEditor) ConsumeKey(ke KeyEvent) EventResult {
 	return Ignored()
 }
 
-// HandleKey implements the Widget interface.
-func (e *AnsiEditor) HandleKey(ke KeyEvent) bool {
-	res := e.ConsumeKey(ke)
-	return res.Quit
-}
-
 // ConsumeMouse processes mouse input, returning an EventResult value struct.
 func (e *AnsiEditor) ConsumeMouse(me MouseEvent) EventResult {
 	if e.Buffer == nil {
@@ -324,12 +318,6 @@ func (e *AnsiEditor) ConsumeMouse(me MouseEvent) EventResult {
 	}
 
 	return Ignored()
-}
-
-// HandleMouse implements the Widget interface.
-func (e *AnsiEditor) HandleMouse(me MouseEvent) bool {
-	res := e.ConsumeMouse(me)
-	return res.Quit
 }
 
 // PaneRequest declares terminal capabilities needed by AnsiEditor.

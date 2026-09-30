@@ -416,11 +416,11 @@ func (v *ansiView) clampOffsets() {
 	}
 }
 
-func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
+func (v *ansiView) ConsumeKey(event loom.KeyEvent) loom.EventResult {
 	panStep := loom.SpeccedDefaults.Pane.ViewPanStep
 	switch {
 	case event.Is("q", "f10", "ctrl-c"):
-		return true
+		return loom.QuitResult()
 	case event.Is("shift-left", "["):
 		v.offsetX -= panStep
 	case event.Is("shift-right", "]"):
@@ -443,7 +443,7 @@ func (v *ansiView) HandleKey(event loom.KeyEvent) bool {
 		v.offsetY += panStep
 	}
 	v.clampOffsets()
-	return false
+	return loom.Ignored()
 }
 
-func (*ansiView) HandleMouse(loom.MouseEvent) bool { return false }
+func (*ansiView) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }

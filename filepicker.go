@@ -187,54 +187,39 @@ func (p *FilePicker) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey navigates, selects, or cancels the picker.
-func (p *FilePicker) HandleKey(e KeyEvent) bool {
+// ConsumeKey navigates, selects, or cancels the picker.
+func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 	if p.done {
-		return false
+		return Ignored()
 	}
 	if e.Is("esc") {
 		p.done = true
 		if p.options.OnCancel != nil {
 			p.options.OnCancel()
 		}
-		return false
+		return Handled()
 	}
 	if e.Is("backspace") {
 		if p.list.Query() != "" {
-			return p.list.HandleKey(e)
+			return p.list.ConsumeKey(e)
 		}
 		p.parent()
-		return false
+		return Handled()
 	}
 	if e.Is("enter") {
-		return p.list.HandleKey(e)
+		return p.list.ConsumeKey(e)
 	}
-	return p.list.HandleKey(e)
+	return p.list.ConsumeKey(e)
 }
 
-// ConsumeKey reports picker navigation and selection as consumed events.
-func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
-	before, dir, query := p.list.FilteredSel(), p.directory.Path, p.list.Query()
-	p.HandleKey(e)
-	return EventResult{Consumed: p.done || before != p.list.FilteredSel() || dir != p.directory.Path || query != p.list.Query() || e.Is("esc", "enter", "backspace", "up", "down", "pgup", "pgdown", "pgdn", "pagedown", "pageup") || e.Text != ""}
-}
-
-// HandleMouse forwards child-local coordinates to the embedded Choice.
-func (p *FilePicker) HandleMouse(e MouseEvent) bool {
-	if e.X < 0 || e.Y < 1 || e.X >= p.lastRect.W || e.Y >= p.lastRect.H {
-		return false
-	}
-	e.X += p.listRect.X
-	e.Y += p.listRect.Y
-	quit := p.list.HandleMouse(e)
-	return quit
-}
-
-// ConsumeMouse adapts mouse input to EventConsumer hosts.
+// ConsumeMouse forwards child-local coordinates to the embedded Choice.
 func (p *FilePicker) ConsumeMouse(e MouseEvent) EventResult {
-	before := p.list.FilteredSel()
-	quit := p.HandleMouse(e)
-	return EventResult{Consumed: before != p.list.FilteredSel() || (e.Action == MousePress && e.Y >= 1 && e.Y < p.lastRect.H), Quit: quit}
+	if e.X < 0 || e.Y < 1 || e.X >= p.lastRect.W || e.Y >= p.lastRect.H {
+		return Ignored()
+	}
+	e.X -= p.listRect.X - p.lastRect.X
+	e.Y--
+	return p.list.ConsumeMouse(e)
 }
 
 var _ Widget = (*FilePicker)(nil)

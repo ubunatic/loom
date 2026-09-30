@@ -76,7 +76,7 @@ func (s Setting) numberInput() *NumberInput {
 func (s Setting) activate() {
 	switch s.Kind {
 	case KindBool:
-		NewToggle(s.Bool).HandleKey(KeyEvent{Key: "enter"})
+		NewToggle(s.Bool).ConsumeKey(KeyEvent{Key: "enter"})
 	case KindChoice:
 		if s.Index != nil && len(s.Options) > 0 {
 			*s.Index = (*s.Index + 1) % len(s.Options)
@@ -166,21 +166,24 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey navigates settings and edits values.
-func (s *Settings) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey navigates settings and edits values.
+func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 	n := len(s.Items)
 	if n == 0 {
 		if e.Key == "esc" || e.Key == "ctrl-c" {
-			return true
+			return QuitResult()
 		}
-		return false
+		return Ignored()
 	}
 	if s.editing {
-		return s.handleEditKey(e)
+		if s.handleEditKey(e) {
+			return Handled()
+		}
+		return Ignored()
 	}
 	switch e.Key {
 	case "esc", "ctrl-c":
-		return true
+		return QuitResult()
 	case "up":
 		if s.sel > 0 {
 			s.sel--
@@ -226,7 +229,7 @@ func (s *Settings) HandleKey(e KeyEvent) (quit bool) {
 			s.Items[s.sel].stepNumber(direction)
 		}
 	}
-	return false
+	return Ignored()
 }
 
 // beginEdit puts the selected KindString row into edit mode, capturing the
@@ -259,7 +262,7 @@ func (s *Settings) handleEditKey(e KeyEvent) (quit bool) {
 	item := s.Items[s.sel]
 	if item.Kind == KindNumber {
 		if s.numberInput != nil {
-			s.numberInput.HandleKey(e)
+			s.numberInput.ConsumeKey(e)
 		}
 		s.editor = nil
 		if s.numberInput != nil {
@@ -285,7 +288,7 @@ func (s *Settings) handleEditKey(e KeyEvent) (quit bool) {
 		// Keep the governed value live so callers see edits as they happen;
 		// editOrig still restores it on cancel.
 		if s.editor != nil {
-			s.editor.HandleKey(e)
+			s.editor.ConsumeKey(e)
 			if item.Str != nil {
 				*item.Str = s.editor.Value()
 			}
@@ -304,8 +307,8 @@ func (s *Settings) endEdit() {
 // Editing reports whether a KindString row is currently being edited.
 func (s *Settings) Editing() bool { return s.editing }
 
-// HandleMouse is a no-op for now.
-func (s *Settings) HandleMouse(MouseEvent) (quit bool) { return false }
+// ConsumeMouse is a no-op for now.
+func (s *Settings) ConsumeMouse(MouseEvent) (quit EventResult) { return Ignored() }
 
 // Sel returns the index of the currently selected setting.
 func (s *Settings) Sel() int { return s.sel }

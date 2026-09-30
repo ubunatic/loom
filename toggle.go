@@ -26,16 +26,16 @@ func (t *Toggle) Draw(c *Canvas, r Rect) {
 	c.Write(r.X, r.Y, t.String(), Style{})
 }
 
-// HandleKey toggles the value on Enter or Space.
-func (t *Toggle) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey toggles the value on Enter or Space.
+func (t *Toggle) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if t == nil || t.Value == nil {
-		return false
+		return Ignored()
 	}
 	if e.Key == "enter" || e.Key == "space" || e.Text == " " {
 		*t.Value = !*t.Value
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse is a no-op.
-func (*Toggle) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse is a no-op.
+func (*Toggle) ConsumeMouse(MouseEvent) EventResult { return Ignored() }

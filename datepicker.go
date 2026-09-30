@@ -120,8 +120,6 @@ func (p *DatePicker) selectDate(t time.Time) bool {
 	return true
 }
 
-func (p *DatePicker) HandleKey(e KeyEvent) bool { p.ConsumeKey(e); return false }
-
 func (p *DatePicker) ConsumeKey(e KeyEvent) EventResult {
 	if e.Key == "esc" {
 		p.input = ""
@@ -185,14 +183,12 @@ func (p *DatePicker) ConsumeKey(e KeyEvent) EventResult {
 	return Ignored()
 }
 
-func (p *DatePicker) HandleMouse(e MouseEvent) bool { p.ConsumeMouse(e); return false }
-
 func (p *DatePicker) ConsumeMouse(e MouseEvent) EventResult {
 	if e.Action != MousePress || e.Button != MouseLeft {
 		return Ignored()
 	}
 	// Mouse coordinates at this widget boundary are 0-based and child-local.
-	x, y := e.X-p.grid.X, e.Y-p.grid.Y
+	x, y := e.X, e.Y
 	if x < 0 || x >= 21 || y < 3 || y >= 9 {
 		return Ignored()
 	}

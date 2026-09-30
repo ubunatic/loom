@@ -229,20 +229,20 @@ func (f *Form) activate() {
 	if _, ok := f.Fields[f.focused].Widget.(*NumberInput); ok {
 		w := f.Fields[f.focused].Widget.(*NumberInput)
 		if !w.Editing() {
-			w.HandleKey(KeyEvent{Key: "enter"})
+			w.ConsumeKey(KeyEvent{Key: "enter"})
 			return
 		}
-		if !w.HandleKey(KeyEvent{Key: "enter"}) && w.Error() != "" {
+		if !w.ConsumeKey(KeyEvent{Key: "enter"}).Consumed && w.Error() != "" {
 			f.Validation[f.focused] = w.Error()
 			return
 		}
 	}
 	if w, ok := f.Fields[f.focused].Widget.(*Toggle); ok {
-		w.HandleKey(KeyEvent{Key: "enter"})
+		w.ConsumeKey(KeyEvent{Key: "enter"})
 		return
 	}
 	if w, ok := f.Fields[f.focused].Widget.(*Choice); ok {
-		w.HandleKey(KeyEvent{Key: "enter"})
+		w.ConsumeKey(KeyEvent{Key: "enter"})
 		return
 	}
 	if first := f.validate(); first >= 0 {
@@ -258,8 +258,7 @@ func (f *Form) submit() {
 	}
 }
 
-// HandleKey routes editing keys and form navigation.
-func (f *Form) HandleKey(e KeyEvent) bool { return f.ConsumeKey(e).Quit }
+// ConsumeKey routes editing keys and form navigation.
 func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 	if f == nil {
 		return Ignored()
@@ -289,20 +288,12 @@ func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 		return Handled()
 	}
 	if f.focused < len(f.Fields) {
-		if w, ok := f.Fields[f.focused].Widget.(KeyConsumer); ok {
-			quit, used := w.ConsumeKey(e)
-			return EventResult{Quit: quit, Consumed: used}
-		}
-		switch w := f.Fields[f.focused].Widget.(type) {
-		case *TextInput:
-			return EventResult{Consumed: w.HandleKey(e)}
-		case Widget:
-			return EventResult{Quit: w.HandleKey(e), Consumed: true}
+		if w, ok := f.Fields[f.focused].Widget.(Widget); ok {
+			return w.ConsumeKey(e)
 		}
 	}
 	return Ignored()
 }
-func (f *Form) HandleMouse(e MouseEvent) bool { return f.ConsumeMouse(e).Quit }
 func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 	if f == nil {
 		return Ignored()
@@ -332,11 +323,8 @@ func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 			f.syncFocus()
 			e.X -= labelW
 			e.Y = y
-			if mc, ok := field.Widget.(MouseConsumer); ok {
-				return mc.ConsumeMouse(e)
-			}
 			if w, ok := field.Widget.(Widget); ok {
-				return EventResult{Quit: w.HandleMouse(e), Consumed: true}
+				return w.ConsumeMouse(e)
 			}
 			return Handled()
 		}

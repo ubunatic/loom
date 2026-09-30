@@ -28,7 +28,7 @@ func TestDialogCentersClearsAndTruncatesTitle(t *testing.T) {
 func TestDialogPlacedAndSelectsButton(t *testing.T) {
 	d := loom.NewDialog("Confirm", "Delete?", "Cancel", "Delete")
 	d.Rect = loom.Rect{X: 3, Y: 2, W: 20, H: 5}
-	d.HandleKey(loom.KeyEvent{Key: "right"})
+	d.ConsumeKey(loom.KeyEvent{Key: "right"})
 	var selected string
 	d.OnSelect = func(label string) { selected = label }
 	c := loom.NewCanvas(30, 10)
@@ -36,14 +36,14 @@ func TestDialogPlacedAndSelectsButton(t *testing.T) {
 	if got := loom.Render(d, 30, 10)[2]; !strings.Contains(got, "┌") {
 		t.Fatalf("placed dialog row = %q, missing border", got)
 	}
-	if quit := d.HandleKey(loom.KeyEvent{Key: "enter"}); quit || selected != "Delete" || d.Open {
+	if quit := d.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit; quit || selected != "Delete" || d.Open {
 		t.Fatalf("enter: quit=%v selected=%q open=%v", quit, selected, d.Open)
 	}
 }
 
 func TestDialogEscapeDismisses(t *testing.T) {
 	d := loom.NewDialog("Alert", "Done", "OK")
-	d.HandleKey(loom.KeyEvent{Key: "esc"})
+	d.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	if d.Open {
 		t.Fatal("Escape left dialog open")
 	}

@@ -203,16 +203,6 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	c.Write(r.X, r.Y+r.H-1, " Theme: "+g.themeName+" | F2 next theme ", style)
 }
 
-func (g *themedGallery) HandleKey(e loom.KeyEvent) bool {
-	if e.Key == "f2" {
-		g.themeIndex = (g.themeIndex + 1) % len(g.themes)
-		g.themeName = g.themes[g.themeIndex]
-		g.applyTheme()
-		return false
-	}
-	return g.widget.HandleKey(e)
-}
-
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Key == "f2" {
 		g.themeIndex = (g.themeIndex + 1) % len(g.themes)
@@ -220,32 +210,11 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		g.applyTheme()
 		return loom.Handled()
 	}
-	result := loom.DispatchKeyEvent(g.widget, e)
-	if result.Consumed {
-		return result
-	}
-	key := e.Key
-	if key == "" {
-		key = e.Text
-	}
-	for _, quitKey := range loom.SpeccedDefaults.FallbackQuitKeys {
-		if key == quitKey {
-			return result
-		}
-	}
-	return loom.Handled()
-}
-
-func (g *themedGallery) HandleMouse(e loom.MouseEvent) bool {
-	return loom.DispatchMouseEvent(g.widget, e).Quit
+	return g.widget.ConsumeKey(e)
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	result := loom.DispatchMouseEvent(g.widget, e)
-	if result.Consumed {
-		return result
-	}
-	return loom.Handled()
+	return g.widget.ConsumeMouse(e)
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

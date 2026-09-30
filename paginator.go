@@ -65,11 +65,6 @@ func (p *Paginator) SetPage(page int) {
 	}
 }
 
-func (p *Paginator) HandleKey(e KeyEvent) bool {
-	p.ConsumeKey(e)
-	return false
-}
-
 // ConsumeKey handles page up and page down without requesting application quit.
 func (p *Paginator) ConsumeKey(e KeyEvent) EventResult {
 	switch e.Key {
@@ -83,8 +78,6 @@ func (p *Paginator) ConsumeKey(e KeyEvent) EventResult {
 		return Ignored()
 	}
 }
-
-func (p *Paginator) HandleMouse(e MouseEvent) bool { return false }
 
 // ConsumeMouse selects a page when a dot is clicked. Coordinates are 0-based
 // and local to the widget rectangle.

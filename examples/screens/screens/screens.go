@@ -290,8 +290,8 @@ func drawBorder(c *loom.Canvas, r loom.Rect, style loom.Style) loom.Rect {
 	return loom.Rect{X: r.X + 1, Y: r.Y + 1, W: r.W - 2, H: r.H - 2}
 }
 
-// HandleKey handles the demo keys.
-func (a *App) HandleKey(e loom.KeyEvent) bool {
+// ConsumeKey handles the demo keys.
+func (a *App) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -350,28 +350,28 @@ func (a *App) HandleKey(e loom.KeyEvent) bool {
 	case "P":
 		a.cfg.FullMinPercent = max(0, a.cfg.FullMinPercent-10)
 	case "q", "Q":
-		return true
+		return loom.QuitResult()
 	default:
-		return false
+		return loom.Ignored()
 	}
 	a.apply()
-	return false
+	return loom.Ignored()
 }
 
-// HandleMouse triggers the clicked button. Coordinates are pane-relative and
+// ConsumeMouse triggers the clicked button. Coordinates are pane-relative and
 // 1-based, so canvas coordinates are one less.
-func (a *App) HandleMouse(e loom.MouseEvent) bool {
+func (a *App) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
-		return false
+		return loom.Ignored()
 	}
 	x, y := e.X-1, e.Y-1
 	for _, b := range a.buttons {
 		if y != b.rect.Y || x < b.rect.X || x >= b.rect.X+b.rect.W {
 			continue
 		}
-		return a.HandleKey(loom.KeyEvent{Key: b.key})
+		return a.ConsumeKey(loom.KeyEvent{Key: b.key})
 	}
-	return false
+	return loom.Ignored()
 }
 
 type options struct {

@@ -149,11 +149,11 @@ func (t *Tree) nodeInfo(want *TreeNode) (depth int, parent *TreeNode) {
 	return
 }
 
-func (t *Tree) HandleKey(e KeyEvent) bool {
+func (t *Tree) ConsumeKey(e KeyEvent) EventResult {
 	key := e.Name()
 	nodes := t.VisibleNodes()
 	if len(nodes) == 0 {
-		return false
+		return Ignored()
 	}
 	t.selected = min(max(0, t.selected), len(nodes)-1)
 	node := nodes[t.selected]
@@ -194,19 +194,10 @@ func (t *Tree) HandleKey(e KeyEvent) bool {
 	case "end":
 		t.selected = len(nodes) - 1
 	default:
-		return false
+		return Ignored()
 	}
 	t.ensureSelectionVisible()
-	return false
-}
-
-// ConsumeKey adapts key handling to EventConsumer hosts.
-func (t *Tree) ConsumeKey(e KeyEvent) EventResult {
-	before := t.selected
-	node := t.SelectedNode()
-	wasExpanded := node != nil && node.Expanded
-	quit := t.HandleKey(e)
-	return EventResult{Quit: quit, Consumed: t.selected != before || (node != nil && node.Expanded != wasExpanded) || e.Is("enter", " ", "pgdown", "pgdn", "pagedown", "pgup", "pageup", "home", "end")}
+	return Handled()
 }
 
 func (t *Tree) ensureSelectionVisible() {
@@ -220,29 +211,22 @@ func (t *Tree) ensureSelectionVisible() {
 	t.ScrollY = min(max(0, t.ScrollY), max(0, len(t.VisibleNodes())-h))
 }
 
-// HandleMouse selects a row or toggles a node through its disclosure marker.
-func (t *Tree) HandleMouse(e MouseEvent) bool {
+// ConsumeMouse selects a row or toggles a node through its disclosure marker.
+func (t *Tree) ConsumeMouse(e MouseEvent) EventResult {
 	if !t.drawn || e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.Y < 0 || e.X >= t.lastRect.W || e.Y >= t.lastRect.H {
-		return false
+		return Ignored()
 	}
 	i := t.ScrollY + e.Y
 	nodes := t.VisibleNodes()
 	if i >= len(nodes) {
-		return false
+		return Ignored()
 	}
 	t.selected = i
 	depth, _ := t.nodeInfo(nodes[i])
 	if e.X >= depth*2 && e.X < depth*2+2 && len(nodes[i].Children) > 0 {
 		nodes[i].Expanded = !nodes[i].Expanded
 	}
-	return false
-}
-
-// ConsumeMouse adapts mouse handling to MouseConsumer hosts.
-func (t *Tree) ConsumeMouse(e MouseEvent) EventResult {
-	before := t.selected
-	t.HandleMouse(e)
-	return EventResult{Consumed: t.selected != before || (t.drawn && e.Action == MousePress && e.Button == MouseLeft && e.X >= 0 && e.Y >= 0 && e.X < t.lastRect.W && e.Y < t.lastRect.H)}
+	return Handled()
 }
 
 // Focused reports whether this tree is focused.

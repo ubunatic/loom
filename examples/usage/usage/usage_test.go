@@ -262,7 +262,7 @@ func TestUsageViewFlagAndInteractiveSwitch(t *testing.T) {
 	if !strings.Contains(plain, "38;2;185;125;255m") {
 		t.Fatal("plain All Usage panel lost its colored title")
 	}
-	if widget.HandleKey(loom.KeyEvent{Text: "v"}) {
+	if widget.ConsumeKey(loom.KeyEvent{Text: "v"}).Quit {
 		t.Fatal("view switch unexpectedly quit the widget")
 	}
 	if widget.view != viewLoom {
@@ -272,7 +272,7 @@ func TestUsageViewFlagAndInteractiveSwitch(t *testing.T) {
 	if !strings.Contains(loomView, "Claude") || strings.Contains(loomView, "plain view") {
 		t.Fatalf("Loom view did not preserve shared usage data:\n%s", loomView)
 	}
-	widget.HandleKey(loom.KeyEvent{Text: "v"})
+	widget.ConsumeKey(loom.KeyEvent{Text: "v"})
 	if widget.view != viewPlain {
 		t.Fatalf("view after second v = %q, want plain", widget.view)
 	}

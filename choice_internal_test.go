@@ -49,7 +49,7 @@ func TestChoiceRowTextPinsDisplayWidthTruncation(t *testing.T) {
 
 func TestChoiceSetItemsAndSelectIndex(t *testing.T) {
 	c := NewChoice([]Item{{Name: "alpha"}, {Name: "beta"}})
-	c.HandleKey(KeyEvent{Text: "beta"})
+	c.ConsumeKey(KeyEvent{Text: "beta"})
 	if got := c.Query(); got != "beta" {
 		t.Fatalf("query = %q, want beta", got)
 	}
@@ -94,11 +94,11 @@ func makeChoice(n int) *Choice {
 	return NewChoice(items)
 }
 
-// TestHandleMouseScrollOffset verifies that mouse hit-tests honor the list's
+// TestConsumeMouseScrollOffset verifies that mouse hit-tests honor the list's
 // scroll offset: once Draw has scrolled the view (viewOffset > 0), a click on a
 // visible row must select the item actually shown there, not viewOffset rows
-// above it. Regression test for the offset bug in Choice.HandleMouse.
-func TestHandleMouseScrollOffset(t *testing.T) {
+// above it. Regression test for the offset bug in Choice.ConsumeMouse.
+func TestConsumeMouseScrollOffset(t *testing.T) {
 	const total = 20
 	const paneRows = 6 // r.H; itemRows = r.H-1 = 5 visible item rows
 
@@ -119,7 +119,7 @@ func TestHandleMouseScrollOffset(t *testing.T) {
 		if want >= total {
 			break
 		}
-		c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: row})
+		c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: row})
 		if c.sel != want {
 			t.Errorf("click at Y=%d (viewOffset=%d): sel=%d, want %d",
 				row, c.viewOffset, c.sel, want)
@@ -127,20 +127,20 @@ func TestHandleMouseScrollOffset(t *testing.T) {
 	}
 }
 
-// TestHandleMouseClickSelects covers the unscrolled case: a top-of-list click
+// TestConsumeMouseClickSelects covers the unscrolled case: a top-of-list click
 // selects the corresponding row, and a click past the last item is ignored.
-func TestHandleMouseClickSelects(t *testing.T) {
+func TestConsumeMouseClickSelects(t *testing.T) {
 	c := makeChoice(3)
 	cv := NewCanvas(40, 6)
 	c.Draw(cv, Rect{X: 0, Y: 0, W: 40, H: 6})
 
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
 	if c.sel != 1 {
 		t.Errorf("click at Y=2: sel=%d, want 1", c.sel)
 	}
 
 	// A click below the last item (Y beyond len) must not change the selection.
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 8})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 8})
 	if c.sel != 1 {
 		t.Errorf("out-of-range click changed sel to %d, want 1", c.sel)
 	}
@@ -149,15 +149,15 @@ func TestHandleMouseClickSelects(t *testing.T) {
 func TestChoiceMouseWheelAndPromptHitTest(t *testing.T) {
 	c := makeChoice(8)
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
-	c.HandleMouse(MouseEvent{Action: MouseScrollDown, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MouseScrollDown, Y: 1})
 	if c.sel != 1 {
 		t.Fatalf("wheel down selected %d, want 1", c.sel)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 3}) // prompt row
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 3}) // prompt row
 	if c.sel != 1 || c.done {
 		t.Fatal("clicking the prompt selected a file")
 	}
-	c.HandleMouse(MouseEvent{Action: MouseScrollUp, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MouseScrollUp, Y: 1})
 	if c.sel != 0 {
 		t.Fatalf("wheel up selected %d, want 0", c.sel)
 	}
@@ -169,11 +169,11 @@ func TestChoiceSelectOnlyOnClick(t *testing.T) {
 	selected := false
 	c.OnSelect = func(Item) { selected = true }
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
 	if c.sel != 1 || selected {
 		t.Fatalf("click selected index %d, invoked callback %v", c.sel, selected)
 	}
-	c.HandleKey(KeyEvent{Key: "enter"})
+	c.ConsumeKey(KeyEvent{Key: "enter"})
 	if !selected {
 		t.Fatal("Enter did not invoke OnSelect after click")
 	}
@@ -189,17 +189,17 @@ func TestChoiceDoubleClickSelectsThenActivatesOnce(t *testing.T) {
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
 	click := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
 
-	c.HandleMouse(click)
+	c.ConsumeMouse(click)
 	if c.sel != 1 || activations != 0 {
 		t.Fatalf("first click selected %d and activated %d times; want selection 1 without activation", c.sel, activations)
 	}
-	c.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
 	now = now.Add(100 * time.Millisecond)
-	c.HandleMouse(click)
+	c.ConsumeMouse(click)
 	if c.sel != 1 || activations != 1 {
 		t.Fatalf("second click selected %d and activated %d times; want selection 1 and one activation", c.sel, activations)
 	}
-	c.HandleMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
 	if activations != 1 {
 		t.Fatalf("release repeated activation %d times", activations)
 	}
@@ -216,14 +216,14 @@ func TestChoiceDoubleClickNeedsMatchingItem(t *testing.T) {
 	first := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 0}
 	second := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
 
-	c.HandleMouse(first)
+	c.ConsumeMouse(first)
 	now = now.Add(10 * time.Millisecond)
-	c.HandleMouse(second)
+	c.ConsumeMouse(second)
 	if activations != 0 {
 		t.Fatalf("clicks on different rows activated %d times", activations)
 	}
 	now = now.Add(10 * time.Millisecond)
-	c.HandleMouse(second)
+	c.ConsumeMouse(second)
 	if activations != 1 {
 		t.Fatalf("second matching row click activated %d times; want 1", activations)
 	}
@@ -240,21 +240,21 @@ func TestChoiceDoubleClickOverridesOnlySingleClickConfirmation(t *testing.T) {
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
 	click := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
 
-	c.HandleMouse(click)
+	c.ConsumeMouse(click)
 	if activations != 0 {
 		t.Fatal("SelectOnlyOnClick allowed a single-click activation")
 	}
-	c.HandleKey(KeyEvent{Key: "enter"})
+	c.ConsumeKey(KeyEvent{Key: "enter"})
 	if activations != 1 {
 		t.Fatal("Enter no longer activates a SelectOnlyOnClick choice")
 	}
 	now = now.Add(time.Second)
-	c.HandleMouse(click)
+	c.ConsumeMouse(click)
 	if activations != 1 {
 		t.Fatal("click after the timeout activated")
 	}
 	now = now.Add(10 * time.Millisecond)
-	c.HandleMouse(click)
+	c.ConsumeMouse(click)
 	if activations != 2 {
 		t.Fatalf("recognized double-click activated %d times total; want Enter plus one double-click", activations)
 	}
@@ -265,7 +265,7 @@ func TestChoiceSingleClickConfirmationRemainsDefault(t *testing.T) {
 	activations := 0
 	c.OnSelect = func(Item) { activations++ }
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
 	if activations != 1 {
 		t.Fatalf("default single click activated %d times, want 1", activations)
 	}
@@ -275,7 +275,7 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	c := makeChoice(30)
 	c.SelectOnlyOnClick = true
 	c.Draw(NewCanvas(25, 8), Rect{X: 2, Y: 1, W: 20, H: 6})
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 5})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 5})
 	if c.viewOffset != 25 || c.sel != 25 {
 		t.Fatalf("bottom track click: offset=%d sel=%d, want 25", c.viewOffset, c.sel)
 	}
@@ -283,11 +283,11 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	if c.viewOffset != 25 {
 		t.Fatalf("redraw snapped viewport to %d", c.viewOffset)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 1})
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatalf("top track click: offset=%d sel=%d, want 0 and 4", c.viewOffset, c.sel)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 6}) // prompt
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 6}) // prompt
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatal("prompt-row click moved scrollbar")
 	}
@@ -300,16 +300,16 @@ func TestChoiceScrollbarDragCancelAndCapture(t *testing.T) {
 	c.viewOffset = 5
 	c.Draw(NewCanvas(25, 8), Rect{W: 20, H: 6})
 	start := c.viewOffset
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 2})
-	c.HandleMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 19, Y: 99})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 2})
+	c.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 19, Y: 99})
 	if c.viewOffset == start {
 		t.Fatal("captured choice drag did not update outside the widget")
 	}
-	c.HandleKey(KeyEvent{Key: "esc"})
+	c.ConsumeKey(KeyEvent{Key: "esc"})
 	if c.viewOffset != start || c.drag.active {
 		t.Fatalf("choice escape cancel: offset=%d active=%v, want %d false", c.viewOffset, c.drag.active, start)
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 19, Y: 2})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 19, Y: 2})
 	if c.drag.active {
 		t.Fatal("choice non-primary press started drag")
 	}
@@ -384,7 +384,7 @@ func TestChoiceScrollbarModeDefaultsToAutoAndCanBeDisabled(t *testing.T) {
 			t.Fatalf("opt-out row %d reserved scrollbar cell %q", y, got)
 		}
 	}
-	c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 9, Y: 3})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 9, Y: 3})
 	if c.viewOffset != 0 {
 		t.Fatalf("opt-out track click changed view offset to %d", c.viewOffset)
 	}
@@ -419,7 +419,7 @@ func TestBackspaceEmptyQueryDoesNotLeaveView(t *testing.T) {
 
 	// With a filter query, backspace trims it and does not quit.
 	c.query = "it"
-	if quit := c.HandleKey(KeyEvent{Key: "backspace"}); quit {
+	if quit := c.ConsumeKey(KeyEvent{Key: "backspace"}).Quit; quit {
 		t.Fatal("backspace with a query should not quit")
 	}
 	if c.query != "i" {
@@ -427,7 +427,7 @@ func TestBackspaceEmptyQueryDoesNotLeaveView(t *testing.T) {
 	}
 
 	// Trimming to empty does not quit on the keystroke that empties it.
-	if quit := c.HandleKey(KeyEvent{Key: "backspace"}); quit {
+	if quit := c.ConsumeKey(KeyEvent{Key: "backspace"}).Quit; quit {
 		t.Fatal("backspace that empties the query should not quit")
 	}
 	if c.query != "" {
@@ -435,7 +435,7 @@ func TestBackspaceEmptyQueryDoesNotLeaveView(t *testing.T) {
 	}
 
 	// The next backspace on the empty query is a no-op and does not leave the view.
-	if quit := c.HandleKey(KeyEvent{Key: "backspace"}); quit {
+	if quit := c.ConsumeKey(KeyEvent{Key: "backspace"}).Quit; quit {
 		t.Fatal("backspace on empty query should not quit the view")
 	}
 	if c.Aborted() {
@@ -450,31 +450,31 @@ func TestChoicePgUpPgDnAndHomeEnd(t *testing.T) {
 	c.itemRows = 10
 
 	// Home / End
-	c.HandleKey(KeyEvent{Key: "end"})
+	c.ConsumeKey(KeyEvent{Key: "end"})
 	if c.sel != 29 {
 		t.Fatalf("End: sel = %d, want 29", c.sel)
 	}
-	c.HandleKey(KeyEvent{Key: "home"})
+	c.ConsumeKey(KeyEvent{Key: "home"})
 	if c.sel != 0 {
 		t.Fatalf("Home: sel = %d, want 0", c.sel)
 	}
 
 	// PgDown jumps by max(1, itemRows-1) = 9
-	c.HandleKey(KeyEvent{Key: "pgdown"})
+	c.ConsumeKey(KeyEvent{Key: "pgdown"})
 	if c.sel != 9 {
 		t.Fatalf("PgDown: sel = %d, want 9", c.sel)
 	}
-	c.HandleKey(KeyEvent{Key: "pgdn"})
+	c.ConsumeKey(KeyEvent{Key: "pgdn"})
 	if c.sel != 18 {
 		t.Fatalf("PgDn: sel = %d, want 18", c.sel)
 	}
 
 	// PgUp jumps back
-	c.HandleKey(KeyEvent{Key: "pgup"})
+	c.ConsumeKey(KeyEvent{Key: "pgup"})
 	if c.sel != 9 {
 		t.Fatalf("PgUp: sel = %d, want 9", c.sel)
 	}
-	c.HandleKey(KeyEvent{Key: "pageup"})
+	c.ConsumeKey(KeyEvent{Key: "pageup"})
 	if c.sel != 0 {
 		t.Fatalf("PageUp: sel = %d, want 0", c.sel)
 	}
@@ -487,12 +487,12 @@ func TestMultiSelectToggleAndChecked(t *testing.T) {
 	c.MultiSelect = true
 
 	// Move to item-02 and toggle it, then back to item-00 and toggle it.
-	c.HandleKey(KeyEvent{Key: "down"})
-	c.HandleKey(KeyEvent{Key: "down"})
-	c.HandleKey(KeyEvent{Text: " "}) // check item-02
-	c.HandleKey(KeyEvent{Key: "up"})
-	c.HandleKey(KeyEvent{Key: "up"})
-	c.HandleKey(KeyEvent{Text: " "}) // check item-00
+	c.ConsumeKey(KeyEvent{Key: "down"})
+	c.ConsumeKey(KeyEvent{Key: "down"})
+	c.ConsumeKey(KeyEvent{Text: " "}) // check item-02
+	c.ConsumeKey(KeyEvent{Key: "up"})
+	c.ConsumeKey(KeyEvent{Key: "up"})
+	c.ConsumeKey(KeyEvent{Text: " "}) // check item-00
 
 	got := c.Checked()
 	if len(got) != 2 || got[0].Name != "item-00" || got[1].Name != "item-02" {
@@ -500,9 +500,9 @@ func TestMultiSelectToggleAndChecked(t *testing.T) {
 	}
 
 	// Toggling item-00 again unchecks it.
-	c.HandleKey(KeyEvent{Key: "up"}) // already at top; stays/wraps — re-seat on item-00
+	c.ConsumeKey(KeyEvent{Key: "up"}) // already at top; stays/wraps — re-seat on item-00
 	c.sel = 0
-	c.HandleKey(KeyEvent{Text: " "})
+	c.ConsumeKey(KeyEvent{Text: " "})
 	got = c.Checked()
 	if len(got) != 1 || got[0].Name != "item-02" {
 		t.Errorf("after untoggle, Checked() = %v, want [item-02]", names(got))
@@ -515,11 +515,11 @@ func TestMultiSelectFilterPreservesChecks(t *testing.T) {
 	c := makeChoice(4)
 	c.MultiSelect = true
 	c.sel = 1
-	c.HandleKey(KeyEvent{Text: " "}) // check item-01
+	c.ConsumeKey(KeyEvent{Text: " "}) // check item-01
 
 	// Filter to "item-03" — item-01 is no longer in the filtered list.
 	for _, r := range "03" {
-		c.HandleKey(KeyEvent{Text: string(r)})
+		c.ConsumeKey(KeyEvent{Text: string(r)})
 	}
 	if len(c.filtered) != 1 || c.filtered[0].Name != "item-03" {
 		t.Fatalf("filter setup wrong: %v", names(c.filtered))
@@ -538,7 +538,7 @@ func TestMultiSelectMouseToggleHonorsScroll(t *testing.T) {
 	c.MultiSelect = true
 	c.viewOffset = 3 // list scrolled so row 1 shows item-03
 
-	quit := c.HandleMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 0})
+	quit := c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 0}).Quit
 	if quit {
 		t.Error("multi-select click should not confirm/quit")
 	}
@@ -552,8 +552,8 @@ func TestMultiSelectMouseToggleHonorsScroll(t *testing.T) {
 func TestMultiSelectEscAbortsToEmpty(t *testing.T) {
 	c := makeChoice(3)
 	c.MultiSelect = true
-	c.HandleKey(KeyEvent{Text: " "}) // check item-00
-	if got := c.HandleKey(KeyEvent{Key: "esc"}); !got {
+	c.ConsumeKey(KeyEvent{Text: " "}) // check item-00
+	if got := c.ConsumeKey(KeyEvent{Key: "esc"}); !got.Quit {
 		t.Fatal("Esc should quit")
 	}
 	if got := c.Checked(); got != nil {

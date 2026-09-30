@@ -376,47 +376,47 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	c.cmd.drawHelp(cv, r)
 }
 
-// HandleKey drives navigation and filtering.
+// ConsumeKey drives navigation and filtering.
 // ':' or '/' activates command mode; all other keys behave normally when inactive.
-func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
+func (c *Choice) ConsumeKey(e KeyEvent) EventResult {
 	if e.Is("esc") && c.drag.active {
 		c.viewOffset = c.drag.start
 		c.drag.cancel()
 	}
 	if c.cmd.handleHelp(e) {
-		return false
+		return Handled()
 	}
-	if consumed, result := c.cmd.HandleKey(e); consumed {
+	if consumed, result := c.cmd.ConsumeKey(e); consumed {
 		switch result {
 		case cmdBack:
 			c.aborted = true
 			c.done = true
-			return true
+			return QuitResult()
 		case cmdHome:
 			c.cmdNav = NavHome
 			c.aborted = true
 			c.done = true
-			return true
+			return QuitResult()
 		}
-		return false
+		return Handled()
 	}
 	switch e.Key {
 	case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
 		c.aborted = true
 		c.done = true
-		return true
+		return QuitResult()
 	case "enter":
 		if c.MultiSelect {
 			// Confirm the whole checked set; OnSelect/single-select rules don't apply.
 			c.done = true
-			return true
+			return QuitResult()
 		}
 		if c.OnSelect != nil && len(c.filtered) > 0 {
 			c.OnSelect(c.filtered[c.sel])
-			return false
+			return Handled()
 		}
 		c.done = true
-		return true
+		return QuitResult()
 	case "up":
 		if c.sel > 0 {
 			c.sel--
@@ -454,31 +454,31 @@ func (c *Choice) HandleKey(e KeyEvent) (quit bool) {
 	default:
 		if c.MultiSelect && e.Text == " " {
 			c.toggleChecked() // Space toggles the checkbox instead of filtering
-			return false
+			return Handled()
 		}
 		if e.Text != "" {
 			c.query += e.Text
 			c.refilter()
 		}
 	}
-	return false
+	return Handled()
 }
 
-// HandleMouse updates selection on hover or wheel, confirms on left-click,
+// ConsumeMouse updates selection on hover or wheel, confirms on left-click,
 // and jumps the viewport when the scrollbar track is clicked.
-// e.Y is a canvas-absolute 0-based row;
+// e.Y is a widget-local 0-based row;
 // viewOffset maps that back to a filtered index (mirrors Draw's fi mapping)
 // so hit-tests stay correct once the list has been scrolled.
-func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
+func (c *Choice) ConsumeMouse(e MouseEvent) EventResult {
 	if c.cmd.handleHelpMouse(e) {
 		c.observeDoubleClick(e, "")
-		return false
+		return Handled()
 	}
 	if e.Action == MousePress && e.Button == MouseLeft && c.drawn &&
 		c.lastRect.W > 0 && c.itemRows > 0 &&
-		e.X == c.lastRect.X+c.lastRect.W-1 && len(c.filtered) > c.itemRows && scrollbarVisible(c.ScrollbarMode, true) {
+		e.X == c.lastRect.W-1 && len(c.filtered) > c.itemRows && scrollbarVisible(c.ScrollbarMode, true) {
 		c.observeDoubleClick(e, "")
-		row := e.Y - c.lastRect.Y
+		row := e.Y
 		if c.PromptTop {
 			row--
 		}
@@ -493,18 +493,18 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			}
 			c.sel = max(c.viewOffset, min(c.sel, c.viewOffset+c.itemRows-1))
 		}
-		return false
+		return Handled()
 	}
 	if c.drag.active {
 		c.observeDoubleClick(e, "")
 		switch e.Action {
 		case MouseDrag:
-			c.viewOffset = scrollbarOffset(c.itemRows, scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows), e.Y-c.lastRect.Y, c.drag.grab, len(c.filtered)-c.itemRows)
+			c.viewOffset = scrollbarOffset(c.itemRows, scrollbarThumbLength(c.itemRows, len(c.filtered), c.itemRows), e.Y, c.drag.grab, len(c.filtered)-c.itemRows)
 			c.sel = max(c.viewOffset, min(c.sel, c.viewOffset+c.itemRows-1))
-			return false
+			return Handled()
 		case MouseRelease:
 			c.drag.cancel()
-			return false
+			return Handled()
 		}
 	}
 	switch e.Action {
@@ -513,32 +513,29 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 		if c.sel > 0 {
 			c.sel--
 		}
-		return false
+		return Handled()
 	case MouseScrollDown:
 		c.observeDoubleClick(e, "")
 		if c.sel < len(c.filtered)-1 {
 			c.sel++
 		}
-		return false
-	}
-	if c.drawn {
-		e.Y -= c.lastRect.Y
+		return Handled()
 	}
 	if c.PromptTop {
 		e.Y--
 	}
 	if e.Y < 0 {
 		c.observeDoubleClick(e, "")
-		return false
+		return Ignored()
 	}
 	if c.drawn && e.Y >= c.itemRows {
 		c.observeDoubleClick(e, "")
-		return false
+		return Ignored()
 	}
 	fi := c.viewOffset + e.Y
 	if fi < 0 || fi >= len(c.filtered) {
 		c.observeDoubleClick(e, "")
-		return false
+		return Ignored()
 	}
 	if c.MouseTextOnly && (e.Action == MousePress || e.Action == MouseHover || e.Action == MouseDrag) {
 		contentW := c.lastRect.W
@@ -546,9 +543,9 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			contentW--
 		}
 		_, end, ok := choiceMouseHitRegion(c.choiceRowText(fi, contentW), contentW)
-		if !ok || e.X-c.lastRect.X < 0 || e.X-c.lastRect.X >= end {
+		if !ok || e.X < 0 || e.X >= end {
 			c.observeDoubleClick(e, "")
-			return false
+			return Handled()
 		}
 	}
 	doubleClick := c.observeDoubleClick(e, strconv.Itoa(fi)+"\x00"+c.filtered[fi].Name)
@@ -558,33 +555,33 @@ func (c *Choice) HandleMouse(e MouseEvent) (quit bool) {
 			c.sel = fi
 			if c.MultiSelect {
 				c.toggleChecked() // click toggles the checkbox, never confirms
-				return false
+				return Handled()
 			}
 			if c.DoubleClickToActivate {
 				if doubleClick {
 					if c.OnSelect != nil {
 						c.OnSelect(c.filtered[c.sel])
-						return false
+						return Handled()
 					}
 					c.done = true
-					return true
+					return QuitResult()
 				}
-				return false
+				return Handled()
 			}
 			if c.SelectOnlyOnClick {
-				return false
+				return Handled()
 			}
 			if c.OnSelect != nil {
 				c.OnSelect(c.filtered[c.sel])
-				return false
+				return Handled()
 			}
 			c.done = true
-			return true
+			return QuitResult()
 		}
 	case MouseHover, MouseDrag:
 		c.sel = fi
 	}
-	return false
+	return Ignored()
 }
 
 func (c *Choice) observeDoubleClick(e MouseEvent, target string) bool {

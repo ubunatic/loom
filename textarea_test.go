@@ -13,7 +13,7 @@ import (
 
 func taType(t *loom.TextArea, texts ...string) {
 	for _, s := range texts {
-		t.HandleKey(loom.KeyEvent{Text: s})
+		t.ConsumeKey(loom.KeyEvent{Text: s})
 	}
 }
 
@@ -36,7 +36,7 @@ func TestTextAreaContentDrivenHeightBounds(t *testing.T) {
 	if got := ta.ContentHeight(); got != 3 {
 		t.Fatalf("default content height = %d, want 3", got)
 	}
-	ta.HandleKey(loom.KeyEvent{Key: "enter"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if got := ta.Measure(20).Height; got != 4 {
 		t.Fatalf("measured height after inserting a line = %d, want 4", got)
 	}
@@ -53,7 +53,7 @@ func TestTextAreaContentDrivenHeightBounds(t *testing.T) {
 	if got := ta.ContentHeight(); got != 2 {
 		t.Fatalf("height with maximum = %d, want 2", got)
 	}
-	ta.HandleKey(loom.KeyEvent{Text: "!"})
+	ta.ConsumeKey(loom.KeyEvent{Text: "!"})
 	if got := ta.ContentHeight(); got != 2 {
 		t.Fatalf("height after editing at maximum = %d, want 2", got)
 	}
@@ -65,10 +65,10 @@ func TestTextAreaContentDrivenHeightBounds(t *testing.T) {
 
 func TestTextAreaEnterSplitsLine(t *testing.T) {
 	ta := loom.NewTextArea("abcd")
-	ta.HandleKey(loom.KeyEvent{Key: "home"})
-	ta.HandleKey(loom.KeyEvent{Key: "right"})
-	ta.HandleKey(loom.KeyEvent{Key: "right"}) // caret after "ab"
-	ta.HandleKey(loom.KeyEvent{Key: "enter"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "home"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "right"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "right"}) // caret after "ab"
+	ta.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if ta.Value() != "ab\ncd" {
 		t.Errorf("enter split = %q, want \"ab\\ncd\"", ta.Value())
 	}
@@ -94,8 +94,8 @@ func TestTextAreaPasteInsertsMultilineText(t *testing.T) {
 
 func TestTextAreaBackspaceJoinsLines(t *testing.T) {
 	ta := loom.NewTextArea("ab\ncd")
-	ta.HandleKey(loom.KeyEvent{Key: "home"}) // start of "cd" (caret seeded on last line)
-	ta.HandleKey(loom.KeyEvent{Key: "backspace"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "home"}) // start of "cd" (caret seeded on last line)
+	ta.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	if ta.Value() != "abcd" {
 		t.Errorf("backspace join = %q, want abcd", ta.Value())
 	}
@@ -107,9 +107,9 @@ func TestTextAreaBackspaceJoinsLines(t *testing.T) {
 
 func TestTextAreaDeleteMergesNextLine(t *testing.T) {
 	ta := loom.NewTextArea("ab\ncd")
-	ta.HandleKey(loom.KeyEvent{Key: "up"})  // to line 0
-	ta.HandleKey(loom.KeyEvent{Key: "end"}) // end of "ab"
-	ta.HandleKey(loom.KeyEvent{Key: "delete"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "up"})  // to line 0
+	ta.ConsumeKey(loom.KeyEvent{Key: "end"}) // end of "ab"
+	ta.ConsumeKey(loom.KeyEvent{Key: "delete"})
 	if ta.Value() != "abcd" {
 		t.Errorf("delete merge = %q, want abcd", ta.Value())
 	}
@@ -119,14 +119,14 @@ func TestTextAreaVerticalCaretClamp(t *testing.T) {
 	ta := loom.NewTextArea("longline\nx")
 	// Caret seeded at (1,1) on "x"; moving up must clamp col to len("longline")? No —
 	// up keeps col then clamps to the shorter target line. Here target is longer.
-	ta.HandleKey(loom.KeyEvent{Key: "up"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "up"})
 	_, col := ta.Caret()
 	if col != 1 {
 		t.Errorf("col after up = %d, want 1 (preserved)", col)
 	}
 	// Move to end of the long line, then down onto the short line clamps col.
-	ta.HandleKey(loom.KeyEvent{Key: "end"})
-	ta.HandleKey(loom.KeyEvent{Key: "down"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "end"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "down"})
 	r, col := ta.Caret()
 	if r != 1 || col != 1 {
 		t.Errorf("caret after down-clamp = (%d,%d), want (1,1)", r, col)
@@ -219,7 +219,7 @@ func TestTextAreaEditIncrementalHighlighting(t *testing.T) {
 	}
 
 	// Move to start of line and type comment "// "
-	ta.HandleKey(loom.KeyEvent{Key: "home"})
+	ta.ConsumeKey(loom.KeyEvent{Key: "home"})
 	taType(ta, "// ")
 
 	c.Clear()
@@ -248,7 +248,7 @@ func (m *mockViewportEngine) HighlightViewport(startLine, endLine int) map[int][
 func TestTextAreaViewportBoundedHighlighting(t *testing.T) {
 	ta := loom.NewTextArea("0\n1\n2\n3\n4\n5\n6\n7\n8\n9")
 	for i := 0; i < 9; i++ {
-		ta.HandleKey(loom.KeyEvent{Key: "up"})
+		ta.ConsumeKey(loom.KeyEvent{Key: "up"})
 	}
 	mock := &mockViewportEngine{}
 	ta.SetHighlighter(mock)
@@ -266,7 +266,7 @@ func TestTextAreaViewportBoundedHighlighting(t *testing.T) {
 
 	// Move caret down so scrolling occurs
 	for i := 0; i < 6; i++ {
-		ta.HandleKey(loom.KeyEvent{Key: "down"})
+		ta.ConsumeKey(loom.KeyEvent{Key: "down"})
 	}
 	mock.queryCount = 0
 	ta.Draw(c, c.Bounds(), true)

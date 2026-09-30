@@ -6,7 +6,7 @@ weight: 35
 # Loom Widgets and Framework Primitives
 
 Loom provides composable, dependency-light widget primitives designed for inline terminal UIs.
-Widgets implement `loom.Widget` (`Draw`, `HandleKey`, `HandleMouse`) and integrate cleanly with `loom.Frame`, `loom.Pane`, and the layered compositor.
+Widgets implement `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`) and integrate cleanly with `loom.Frame`, `loom.Pane`, and the layered compositor.
 
 ---
 
@@ -154,7 +154,7 @@ frame.Boxes[0].Child = nav
 
 The pane retains one `Choice` instance while opening directories: `Choice.SetItems` replaces the rows and resets its filter, while `SelectIndex` restores a requested row. Hosts that customize list behavior can use `List()` without replacing the pane's child widget; the frame and pane then keep a consistent child identity.
 
-The pane draws its Choice inside the rectangle supplied by its host. `Choice.HandleMouse` expects coordinates relative to that drawn rectangle, while `NavigationPane.HandleMouse` receives child-local coordinates and bridges them to the last Choice draw rectangle. Containers already translate mouse events to child-local coordinates, so callers should pass those events directly and must not subtract an additional cell.
+The pane draws its Choice inside the rectangle supplied by its host. Both widgets receive 0-based, child-local mouse coordinates; `NavigationPane` forwards the result from `Choice` directly. Containers translate events to child-local coordinates, so callers should pass those events directly and must not subtract an additional cell.
 
 ---
 
@@ -232,7 +232,7 @@ bar := loom.NewMenuBar(loom.Menu{
 
 F10 opens the bar; `Alt+<mnemonic>` opens a matching menu. Left/Right moves between titles, Up/Down moves through items, Enter/Space invokes the selected action, Escape closes the dropdown, and a second Escape unfocuses the bar. Mouse hover changes the active title or highlighted item; a title click toggles its dropdown and an outside click dismisses it. Item shortcut labels are matched through `KeyMap`. `Submenu` is reserved for nested menus and is not opened by this one-level widget.
 
-## 8. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
+## 8. Root Event Loop Contract: EventResult and Quit Invariants
 
 Loom uses the small value struct `loom.EventResult` to cleanly distinguish whether an event was consumed from whether the application should terminate:
 
@@ -248,16 +248,17 @@ Constructors and helpers (always returned by value):
 - `loom.Ignored()` / `loom.Unhandled()`: `EventResult{Consumed: false, Quit: false}`
 - `loom.Quit()` / `loom.QuitResult()`: `EventResult{Consumed: true, Quit: true}`
 
-### Event Handling Hierarchy
-When an event arrives at `Pane` (or composite containers `Frame`, `Tabs`, `Stack`, `Grid`, `Split`), `DispatchKeyEvent` and `DispatchMouseEvent` resolve the event in precedence order:
-1. `EventConsumer` (`ConsumeKey(e KeyEvent) EventResult`) / `MouseConsumer` (`ConsumeMouse(e MouseEvent) EventResult`).
-2. Legacy `KeyConsumer` (`ConsumeKey(e KeyEvent) (quit, consumed bool)`). **Mouse has no legacy tuple form:** a `ConsumeMouse(e) (quit, consumed bool)` method is never called by the dispatcher, and clicks are silently dropped. Widgets that keep the tuple form for composition (e.g. `media.Widget`) must also expose `ConsumeMouseEvent(e MouseEvent) EventResult` (112).
-3. Historical `Widget.HandleKey(e KeyEvent) bool` / `Widget.HandleMouse(e MouseEvent) bool`, where returning `true` signals a request to **quit the application**.
-4. Unhandled fallback quit keys (e.g. `Ctrl-C`, `Ctrl-Q`, `Esc`, `q` for non-text widgets). Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`, `backspace`) never trigger fallback quit.
+### Event Handling
+`Widget` has one input contract: `ConsumeKey(e KeyEvent) EventResult` and
+`ConsumeMouse(e MouseEvent) EventResult`. Composite widgets pass the result back
+through the same contract, preserving both `Consumed` and `Quit` at every level.
+`DispatchKeyEvent` and `DispatchMouseEvent` call the corresponding widget method
+directly. `Pane` applies fallback quit keys only when a key result is unconsumed.
+Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`,
+`backspace`) never trigger fallback quit.
 
 ### Widget Implementation Contract
-- Widgets handling user input (e.g. navigation, typing, selection) should implement `EventConsumer` with `ConsumeKey(e KeyEvent) EventResult` and return `loom.Handled()` on consumed inputs.
-- If implementing historical `HandleKey(e KeyEvent) bool`, return `false` on ordinary keystrokes and `true` ONLY when requesting application termination.
+- Widgets handling user input (e.g. navigation, typing, selection) return `loom.Handled()` when they consume an input without quitting and `loom.Ignored()` when they did not handle it.
 - Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.
 - `Pane` enables bracketed paste for the run and restores the terminal mode on exit. Widgets that implement `PasteConsumer` receive one `PasteEvent` per paste; other widgets ignore it. `TextInput` replaces pasted line breaks with spaces, while `TextArea` preserves them.
 - `TextInput.Mask` optionally replaces each displayed value rune with the configured rune (for example, `•`) and adjusts the caret to the mask's display width. A zero mask keeps normal text display. `Value()` continues to return the entered text to the host. `TextInput` and `TextArea` can copy via an optional `Keys` `KeyMap` binding named `copy`; `SetSelection(start, end)` selects a half-open rune range, and an empty selection copies the whole value. `Pane` sends the value through OSC 52.

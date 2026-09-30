@@ -31,37 +31,37 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 	}
 
 	// Pressing numeric key 3 sets width to 3
-	w.HandleKey(loom.KeyEvent{Text: "3"})
+	w.ConsumeKey(loom.KeyEvent{Text: "3"})
 	if got := w.PageMeasurement(0).MeasuredWidth; got != 3 {
 		t.Fatalf("numeric key 3 set width = %d, want 3", got)
 	}
 	// Pressing numeric key 2 sets width to 2
-	w.HandleKey(loom.KeyEvent{Text: "2"})
+	w.ConsumeKey(loom.KeyEvent{Text: "2"})
 	if got := w.PageMeasurement(0).MeasuredWidth; got != 2 {
 		t.Fatalf("numeric key 2 set width = %d, want 2", got)
 	}
-	w.HandleKey(loom.KeyEvent{Key: "down"})
-	w.HandleKey(loom.KeyEvent{Text: "?"})
+	w.ConsumeKey(loom.KeyEvent{Key: "down"})
+	w.ConsumeKey(loom.KeyEvent{Text: "?"})
 	if got := w.PageMeasurement(1); got.MeasuredWidth != 0 || !got.Answered {
 		t.Fatalf("staged unsure row = %#v, want confirmed unsure answer", got)
 	}
-	w.HandleKey(loom.KeyEvent{Text: "c"})
-	w.HandleKey(loom.KeyEvent{Text: "manual observation"})
-	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	w.ConsumeKey(loom.KeyEvent{Text: "c"})
+	w.ConsumeKey(loom.KeyEvent{Text: "manual observation"})
+	w.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if got := w.PageMeasurement(1).Comment; got != "manual observation" {
 		t.Fatalf("staged comment = %q, want manual observation", got)
 	}
 	// Test D deletes comment
-	w.HandleKey(loom.KeyEvent{Text: "c"})
-	w.HandleKey(loom.KeyEvent{Text: "temporary note"})
-	w.HandleKey(loom.KeyEvent{Key: "enter"})
-	w.HandleKey(loom.KeyEvent{Text: "D"})
+	w.ConsumeKey(loom.KeyEvent{Text: "c"})
+	w.ConsumeKey(loom.KeyEvent{Text: "temporary note"})
+	w.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	w.ConsumeKey(loom.KeyEvent{Text: "D"})
 	if got := w.PageMeasurement(1).Comment; got != "" {
 		t.Fatalf("D key did not clear comment: %q", got)
 	}
-	w.HandleKey(loom.KeyEvent{Text: "c"})
-	w.HandleKey(loom.KeyEvent{Text: "manual observation"})
-	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	w.ConsumeKey(loom.KeyEvent{Text: "c"})
+	w.ConsumeKey(loom.KeyEvent{Text: "manual observation"})
+	w.ConsumeKey(loom.KeyEvent{Key: "enter"})
 
 	if got := store.Entries[page[0]]; !got.Answered || got.MeasuredWidth != 2 {
 		t.Fatalf("first row in store = %#v", got)
@@ -70,7 +70,7 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 		t.Fatalf("unsure row in store = %#v", got)
 	}
 
-	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	w.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if got, want := w.page, 1; got != want {
 		t.Fatalf("page after confirmation = %d, want %d", got, want)
 	}
@@ -90,11 +90,11 @@ func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
 func TestMeasureWidgetPageNavigationAndDraw(t *testing.T) {
 	w := NewMeasureWidget(NewMeasurementStore(TerminalProfile{}), "", "")
 	first := w.CurrentGlyph()
-	w.HandleKey(loom.KeyEvent{Key: "pgdown"})
+	w.ConsumeKey(loom.KeyEvent{Key: "pgdown"})
 	if w.page != 1 {
 		t.Fatalf("PgDn page = %d, want 1", w.page)
 	}
-	w.HandleKey(loom.KeyEvent{Key: "pgup"})
+	w.ConsumeKey(loom.KeyEvent{Key: "pgup"})
 	if got := w.CurrentGlyph(); got != first {
 		t.Fatalf("PgUp current glyph = %q, want %q", got, first)
 	}
@@ -174,8 +174,8 @@ func TestMeasureWidgetQuitSavesPendingEdits(t *testing.T) {
 	store := NewMeasurementStore(TerminalProfile{})
 	w := NewMeasureWidget(store, jsonPath, "")
 	glyph := w.CurrentGlyph()
-	w.HandleKey(loom.KeyEvent{Key: "right"})
-	if !w.HandleKey(loom.KeyEvent{Text: "q"}) {
+	w.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if !w.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
 		t.Fatal("q did not request quit")
 	}
 	if entry, exists := store.Entries[glyph]; !exists || !entry.Answered {
@@ -196,12 +196,12 @@ func TestMeasureWidgetReviewModeFiltersAndSavesEdits(t *testing.T) {
 	if got := w.PageGlyphs(); !reflect.DeepEqual(got, []string{glyphs[1]}) {
 		t.Fatalf("review width-2 page = %#v, want %#v", got, []string{glyphs[1]})
 	}
-	w.HandleKey(loom.KeyEvent{Text: "1"})
-	w.HandleKey(loom.KeyEvent{Key: "enter"})
+	w.ConsumeKey(loom.KeyEvent{Text: "1"})
+	w.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if got := store.Entries[glyphs[1]]; got.MeasuredWidth != 1 || !got.Answered {
 		t.Fatalf("saved review edit = %#v, want answered width 1", got)
 	}
-	w.HandleKey(loom.KeyEvent{Key: "tab"})
+	w.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if w.filter != MeasureFilterWidth3 {
 		t.Fatalf("Tab filter = %s, want %s", w.filter, MeasureFilterWidth3)
 	}

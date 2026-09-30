@@ -80,7 +80,7 @@ func (a *splitApp) Draw(c *loom.Canvas, r loom.Rect) {
 	a.frame.Draw(c, r)
 }
 
-func (a *splitApp) HandleKey(e loom.KeyEvent) bool {
+func (a *splitApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -91,13 +91,13 @@ func (a *splitApp) HandleKey(e loom.KeyEvent) bool {
 		} else {
 			a.hSplit.SetRatio(0.4)
 		}
-		return false
+		return loom.Ignored()
 	}
-	return a.frame.HandleKey(e)
+	return a.frame.ConsumeKey(e)
 }
 
-func (a *splitApp) HandleMouse(e loom.MouseEvent) bool {
-	return a.frame.HandleMouse(e)
+func (a *splitApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	return a.frame.ConsumeMouse(e)
 }
 
 // PaneRequest declares the terminal requirements of the split widget.

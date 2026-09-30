@@ -109,24 +109,24 @@ func TestSplashViewKeyHandling(t *testing.T) {
 	view := NewSplashView("harnez usage")
 
 	// Direct key handling without controller
-	if !view.HandleKey(KeyEvent{Key: "esc"}) {
-		t.Errorf("HandleKey(esc) = false, want true")
+	if !view.ConsumeKey(KeyEvent{Key: "esc"}).Quit {
+		t.Errorf("ConsumeKey(esc) = false, want true")
 	}
-	if !view.HandleKey(KeyEvent{Text: "q"}) {
-		t.Errorf("HandleKey(text 'q') = false, want true")
+	if !view.ConsumeKey(KeyEvent{Text: "q"}).Quit {
+		t.Errorf("ConsumeKey(text 'q') = false, want true")
 	}
-	if !view.HandleKey(KeyEvent{Key: "enter"}) {
-		t.Errorf("HandleKey(enter) = false, want true")
+	if !view.ConsumeKey(KeyEvent{Key: "enter"}).Quit {
+		t.Errorf("ConsumeKey(enter) = false, want true")
 	}
-	if view.HandleKey(KeyEvent{Text: "a"}) {
-		t.Errorf("HandleKey(text 'a') = true, want false")
+	if view.ConsumeKey(KeyEvent{Text: "a"}).Quit {
+		t.Errorf("ConsumeKey(text 'a') = true, want false")
 	}
 
 	// Key handling with attached controller
 	sc := NewSplashController(SplashConfig{})
 	view.Controller = sc
-	if !view.HandleKey(KeyEvent{Text: "q"}) {
-		t.Errorf("Controller view HandleKey(q) = false, want true")
+	if !view.ConsumeKey(KeyEvent{Text: "q"}).Quit {
+		t.Errorf("Controller view ConsumeKey(q) = false, want true")
 	}
 	if !sc.Snapshot().Dismissed {
 		t.Errorf("controller not dismissed after q key")

@@ -291,8 +291,8 @@ func (p *ProgressBar) ApplyTheme(theme ThemeColors) {
 	p.StyleEmpty = Style{FG: theme.ScrollbarTrackFG.Color(), BG: theme.ScrollbarTrackBG.Color(), Dim: theme.ScrollbarTrackDim}
 }
 
-// HandleKey implements Widget; the bar takes no input.
-func (p *ProgressBar) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey implements Widget; the bar takes no input.
+func (p *ProgressBar) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse implements Widget; the bar takes no input.
-func (p *ProgressBar) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse implements Widget; the bar takes no input.
+func (p *ProgressBar) ConsumeMouse(MouseEvent) EventResult { return Ignored() }

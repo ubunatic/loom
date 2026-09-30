@@ -60,7 +60,7 @@ type YamlView struct {
 	Elements map[string]YamlElement `yaml:"elements"`
 	Order    []string               `yaml:"order"`
 	Frame    *Frame                 `yaml:"frame"`
-	// OnKey is retained for legacy documents; routing still uses Widget.HandleKey.
+	// OnKey is retained for legacy documents; routing still uses Widget.ConsumeKey.
 	OnKey map[string]string `yaml:"on_key"`
 }
 
@@ -326,34 +326,37 @@ func (r *Router) ContentHeight() int {
 	return h
 }
 
-// HandleKey processes key events, returning quit=true on unhandled ESC.
-func (r *Router) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey processes key events, returning quit=true on unhandled ESC.
+func (r *Router) ConsumeKey(e KeyEvent) (quit EventResult) {
 	// If active widget handles key and returns quit, we pop view or ignore
 	if w, ok := r.views[r.current]; ok {
-		if quit := w.HandleKey(e); quit {
-			if r.GoBack() {
-				return false
+		if result := w.ConsumeKey(e); result.Consumed {
+			if result.Quit {
+				if r.GoBack() {
+					return Handled()
+				}
+				return QuitResult()
 			}
-			return true
+			return result
 		}
-		return false
+		return Ignored()
 	}
 
 	if e.Key == "esc" {
 		if r.GoBack() {
-			return false
+			return Ignored()
 		}
-		return true
+		return QuitResult()
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse forwards mouse events to the active view.
-func (r *Router) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse forwards mouse events to the active view.
+func (r *Router) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	if w, ok := r.views[r.current]; ok {
-		return w.HandleMouse(e)
+		return w.ConsumeMouse(e)
 	}
-	return false
+	return Ignored()
 }
 
 // BuildWidget parses YAML configuration and constructs the widget tree and Router

@@ -178,7 +178,8 @@ layer has a three-layer boundary (see issues/055):
    color/theme roles, keys, timings. It does not describe which widgets exist
    or how an application composes them.
 2. **YAML struct tags are for inert chrome.** `Frame`, `Box`, and `Rows` are
-   tagged widgets and return `false` from `HandleKey` and `HandleMouse`.
+   tagged widgets and return an ignored `EventResult` from `ConsumeKey` and
+   `ConsumeMouse`.
    Widgets with focus, behavior, or arbitrary children (`Stack`, `Grid`,
    `Popup`, `Choice`, `Tab`) are constructed in Go. User layout YAML may reach
    them through a `type:` DTO in `yaml.go`'s `compileWidget`; that format stays

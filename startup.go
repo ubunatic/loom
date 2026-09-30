@@ -194,12 +194,7 @@ func (r *startupRoot) ConsumeKey(e KeyEvent) EventResult {
 	return DispatchKeyEvent(target, e)
 }
 
-func (r *startupRoot) HandleKey(e KeyEvent) bool {
-	res := r.ConsumeKey(e)
-	return res.Quit
-}
-
-func (r *startupRoot) HandleMouse(e MouseEvent) bool {
+func (r *startupRoot) ConsumeMouse(e MouseEvent) EventResult {
 	r.mu.Lock()
 	active := r.active
 	transitionErr := r.transitionErr
@@ -207,12 +202,11 @@ func (r *startupRoot) HandleMouse(e MouseEvent) bool {
 	view := r.view
 	r.mu.Unlock()
 	if transitionErr != nil {
-		return true
+		return QuitResult()
 	}
 	var target Widget = view
 	if active {
 		target = next
 	}
-	res := DispatchMouseEvent(target, e)
-	return res.Quit
+	return DispatchMouseEvent(target, e)
 }

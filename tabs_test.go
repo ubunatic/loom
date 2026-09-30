@@ -29,13 +29,13 @@ func (s *focusTabSpy) Focused() bool         { return s.focused }
 func (s *focusTabSpy) SetFocus(focused bool) { s.focused = focused }
 
 func (s *tabSpy) Draw(*loom.Canvas, loom.Rect) { s.drawn = true }
-func (s *tabSpy) HandleKey(e loom.KeyEvent) bool {
+func (s *tabSpy) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	s.keys = append(s.keys, e)
-	return s.quitKey
+	return loom.EventResult{Consumed: s.quitKey, Quit: s.quitKey}
 }
-func (s *tabSpy) HandleMouse(e loom.MouseEvent) bool {
+func (s *tabSpy) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	s.mice = append(s.mice, e)
-	return s.quitMice
+	return loom.EventResult{Consumed: s.quitMice, Quit: s.quitMice}
 }
 
 func TestTabsSwitchWithArrowKeys(t *testing.T) {
@@ -43,16 +43,16 @@ func TestTabsSwitchWithArrowKeys(t *testing.T) {
 	if tabs.Focus() != 0 {
 		t.Fatalf("initial focus = %d, want 0", tabs.Focus())
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "right"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("after right, focus = %d, want 1", tabs.Focus())
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "right"})
-	tabs.HandleKey(loom.KeyEvent{Key: "right"}) // wraps back to 0
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"}) // wraps back to 0
 	if tabs.Focus() != 0 {
 		t.Fatalf("after wrap, focus = %d, want 0", tabs.Focus())
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "left"}) // wraps to last
+	tabs.ConsumeKey(loom.KeyEvent{Key: "left"}) // wraps to last
 	if tabs.Focus() != 2 {
 		t.Fatalf("after left wrap, focus = %d, want 2", tabs.Focus())
 	}
@@ -75,7 +75,7 @@ func TestTabsVerticalLayoutAndSelection(t *testing.T) {
 func TestTabsSwitchWithConfiguredKey(t *testing.T) {
 	tabs := loom.NewTabs(loom.Tab{Title: "A"}, loom.Tab{Title: "B"})
 	tabs.SwitchKey = "ctrl-t"
-	tabs.HandleKey(loom.KeyEvent{Key: "ctrl-t"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "ctrl-t"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("after ctrl-t, focus = %d, want 1", tabs.Focus())
 	}
@@ -178,7 +178,7 @@ func TestTabsConfiguredNavigation(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			tabs.HandleKey(test.event)
+			tabs.ConsumeKey(test.event)
 			if tabs.Focus() != test.want {
 				t.Fatalf("focus = %d, want %d", tabs.Focus(), test.want)
 			}
@@ -190,13 +190,13 @@ func TestTabsDelegatesKeyToActiveChildOnly(t *testing.T) {
 	a, b := &tabSpy{}, &tabSpy{}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: a}, loom.Tab{Title: "B", Widget: b})
 
-	tabs.HandleKey(loom.KeyEvent{Text: "x"})
+	tabs.ConsumeKey(loom.KeyEvent{Text: "x"})
 	if len(a.keys) != 1 || len(b.keys) != 0 {
 		t.Fatalf("expected only active child (a) to receive the key; a=%d b=%d", len(a.keys), len(b.keys))
 	}
 
-	tabs.HandleKey(loom.KeyEvent{Key: "right"}) // switch to b
-	tabs.HandleKey(loom.KeyEvent{Text: "y"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"}) // switch to b
+	tabs.ConsumeKey(loom.KeyEvent{Text: "y"})
 	if len(a.keys) != 1 || len(b.keys) != 1 {
 		t.Fatalf("expected only b to receive the key after switch; a=%d b=%d", len(a.keys), len(b.keys))
 	}
@@ -205,7 +205,7 @@ func TestTabsDelegatesKeyToActiveChildOnly(t *testing.T) {
 func TestTabsQuitPropagatesFromActiveChild(t *testing.T) {
 	a := &tabSpy{quitKey: true}
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: a})
-	if quit := tabs.HandleKey(loom.KeyEvent{Text: "z"}); !quit {
+	if quit := tabs.ConsumeKey(loom.KeyEvent{Text: "z"}).Quit; !quit {
 		t.Error("Tabs should propagate the active child's quit=true")
 	}
 }
@@ -217,7 +217,7 @@ func TestTabsDelegatesMouseToActiveChildOnly(t *testing.T) {
 	tabs.Draw(c, loom.Rect{X: 0, Y: 0, W: 40, H: 10})
 
 	// A hover event well below the tab bar should reach the active child (a).
-	tabs.HandleMouse(loom.MouseEvent{Action: loom.MouseHover, X: 5, Y: 5})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, X: 5, Y: 5})
 	if len(a.mice) != 1 || len(b.mice) != 0 {
 		t.Fatalf("expected only active child (a) to receive the mouse event; a=%d b=%d", len(a.mice), len(b.mice))
 	}
@@ -231,7 +231,7 @@ func TestTabsMouseClickSwitchesTab(t *testing.T) {
 
 	// " A " occupies columns 0-2 (0-based canvas); " B " starts at column 3.
 	// Click at canvas column 4, inside " B ", on the bar's row 0.
-	quit := tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0})
+	quit := tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}).Quit
 	if quit {
 		t.Error("switching tabs via mouse must not quit")
 	}
@@ -251,16 +251,16 @@ func TestTabsVerticalMouseRoutingUsesChildLocalCoordinates(t *testing.T) {
 	c := loom.NewCanvas(40, 10)
 	tabs.Draw(c, loom.Rect{X: 5, Y: 3, W: 30, H: 6})
 
-	tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 15, Y: 5})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 15, Y: 5})
 	if len(a.mice) != 1 || a.mice[0].X != 6 || a.mice[0].Y != 2 {
 		t.Fatalf("child click = %#v, want child-local (6,2)", a.mice)
 	}
-	tabs.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 15, Y: 6})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 15, Y: 6})
 	if len(a.mice) != 2 || a.mice[1].X != 6 || a.mice[1].Y != 3 || a.mice[1].Action != loom.MouseScrollDown {
 		t.Fatalf("child wheel = %#v, want child-local (6,3)", a.mice)
 	}
 
-	tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 6, Y: 4})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 6, Y: 4})
 	if tabs.Focus() != 1 {
 		t.Fatalf("focus after vertical tab click = %d, want 1", tabs.Focus())
 	}
@@ -271,15 +271,15 @@ func TestTabsCanForwardArrowsToChildAndUseTabBindings(t *testing.T) {
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
 	tabs.ArrowSwitch = false
 	tabs.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
-	tabs.HandleKey(loom.KeyEvent{Key: "left"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if len(child.keys) != 1 || child.keys[0].Key != "left" || tabs.Focus() != 0 {
 		t.Fatalf("arrow routing: keys=%#v focus=%d", child.keys, tabs.Focus())
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "tab"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("focus after Tab = %d, want 1", tabs.Focus())
 	}
-	tabs.HandleKey(loom.KeyEvent{Key: "shift-tab"})
+	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
 	if tabs.Focus() != 0 {
 		t.Fatalf("focus after Shift-Tab = %d, want 0", tabs.Focus())
 	}
@@ -303,7 +303,7 @@ func TestTabsRendersActiveVsInactiveStyle(t *testing.T) {
 func TestTabsSingleTab(t *testing.T) {
 	a := &tabSpy{}
 	tabs := loom.NewTabs(loom.Tab{Title: "Only", Widget: a})
-	tabs.HandleKey(loom.KeyEvent{Key: "right"}) // no-op, stays on the only tab
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"}) // no-op, stays on the only tab
 	if tabs.Focus() != 0 {
 		t.Fatalf("single-tab focus = %d, want 0", tabs.Focus())
 	}
@@ -320,11 +320,11 @@ func TestTabsZeroTabsIsNoop(t *testing.T) {
 
 	// None of these should panic on an empty tab set.
 	tabs.Draw(c, loom.Rect{X: 0, Y: 0, W: 40, H: 10})
-	if quit := tabs.HandleKey(loom.KeyEvent{Key: "right"}); quit {
-		t.Error("zero-tab HandleKey should not quit")
+	if quit := tabs.ConsumeKey(loom.KeyEvent{Key: "right"}).Quit; quit {
+		t.Error("zero-tab ConsumeKey should not quit")
 	}
-	if quit := tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 1}); quit {
-		t.Error("zero-tab HandleMouse should not quit")
+	if quit := tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 1}).Quit; quit {
+		t.Error("zero-tab ConsumeMouse should not quit")
 	}
 	if h := tabs.ContentHeight(); h != 0 {
 		t.Errorf("zero-tab ContentHeight = %d, want 0", h)

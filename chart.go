@@ -286,7 +286,7 @@ func minInt(a, b int) int {
 	}
 	return b
 }
-func (*Chart) HandleKey(KeyEvent) bool     { return false }
-func (*Chart) HandleMouse(MouseEvent) bool { return false }
-func (*Chart) ContentWidth() int           { return 32 }
-func (*Chart) ContentHeight() int          { return 10 }
+func (*Chart) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (*Chart) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (*Chart) ContentWidth() int                   { return 32 }
+func (*Chart) ContentHeight() int                  { return 10 }

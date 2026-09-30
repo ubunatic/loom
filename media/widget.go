@@ -644,13 +644,10 @@ func canvasCell(cell core.Cell) loom.Cell {
 	return loom.Cell{Text: text, Style: style}
 }
 
-// HandleKey preserves the legacy quit-only widget contract.
-func (*Widget) HandleKey(loom.KeyEvent) bool { return false }
-
-// ConsumeKey applies media keyboard controls and reports consumption separately from quit.
-func (w *Widget) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
+// ConsumeKey applies media keyboard controls.
+func (w *Widget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if w == nil {
-		return false, false
+		return loom.Ignored()
 	}
 	switch w.keys.Action(e) {
 	case "play":
@@ -674,16 +671,16 @@ func (w *Widget) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 		case "down":
 			w.pan(0, .12)
 		default:
-			return false, false
+			return loom.Ignored()
 		}
 	case "reset":
 		w.mu.Lock()
 		w.zoom, w.panX, w.panY = 1, 0, 0
 		w.mu.Unlock()
 	default:
-		return false, false
+		return loom.Ignored()
 	}
-	return false, true
+	return loom.Handled()
 }
 
 func (w *Widget) setZoom(factor float64) {
@@ -703,27 +700,20 @@ func (w *Widget) pan(dx, dy float64) {
 	w.mu.Unlock()
 }
 
-// HandleMouse preserves the legacy quit-only widget contract.
-func (*Widget) HandleMouse(loom.MouseEvent) bool { return false }
-
 // ConsumeMouse uses child-local 0-based coordinates for the control bar and image.
-// ConsumeMouseEvent adapts ConsumeMouse to loom's MouseConsumer dispatch so the
-// widget receives clicks when mounted directly as a pane root.
-func (w *Widget) ConsumeMouseEvent(e loom.MouseEvent) loom.EventResult {
-	quit, consumed := w.ConsumeMouse(e)
-	return loom.EventResult{Consumed: consumed, Quit: quit}
-}
-
-func (w *Widget) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
+func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if w == nil {
-		return false, false
+		return loom.Ignored()
 	}
 	w.mu.Lock()
 	if e.Action == loom.MouseRelease {
 		wasDragging := w.dragging
 		w.dragging = false
 		w.mu.Unlock()
-		return false, wasDragging
+		if wasDragging {
+			return loom.Handled()
+		}
+		return loom.Ignored()
 	}
 	if e.Action == loom.MousePress && e.Button == loom.MouseLeft {
 		switch {
@@ -734,21 +724,21 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
 			} else {
 				w.Play()
 			}
-			return false, true
+			return loom.Handled()
 		case w.zoomOut.Contains(e.X, e.Y):
 			w.mu.Unlock()
 			w.setZoom(1 / 1.25)
-			return false, true
+			return loom.Handled()
 		case w.zoomIn.Contains(e.X, e.Y):
 			w.mu.Unlock()
 			w.setZoom(1.25)
-			return false, true
+			return loom.Handled()
 		case e.Y < w.lastRect.H-2 && e.X < w.lastRect.W && w.zoom > 1:
 			w.dragging = true
 			w.dragX = e.X
 			w.dragY = e.Y
 			w.mu.Unlock()
-			return false, true
+			return loom.Handled()
 		}
 	}
 	if e.Action == loom.MouseDrag && w.dragging {
@@ -757,16 +747,16 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
 		width, height := max(1, w.lastRect.W), max(1, w.lastRect.H-2)
 		w.mu.Unlock()
 		w.pan(-float64(dx)/float64(width), -float64(dy)/float64(height))
-		return false, true
+		return loom.Handled()
 	}
 	w.mu.Unlock()
 	if e.Action == loom.MouseScrollUp {
 		w.setZoom(1.25)
-		return false, true
+		return loom.Handled()
 	}
 	if e.Action == loom.MouseScrollDown {
 		w.setZoom(1 / 1.25)
-		return false, true
+		return loom.Handled()
 	}
-	return false, false
+	return loom.Ignored()
 }

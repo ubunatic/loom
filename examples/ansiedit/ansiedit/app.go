@@ -660,12 +660,6 @@ func (app *AnsiEditApp) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	return loom.Ignored()
 }
 
-// HandleKey handles keyboard events and reports whether the event loop should quit.
-func (app *AnsiEditApp) HandleKey(e loom.KeyEvent) bool {
-	res := app.ConsumeKey(e)
-	return res.Quit
-}
-
 func (app *AnsiEditApp) handleSidePanelKey(e loom.KeyEvent) bool {
 	switch app.panelMode {
 	case PanelPalette:
@@ -810,10 +804,8 @@ func (app *AnsiEditApp) handleCanvasKey(e loom.KeyEvent) bool {
 	return false
 }
 
-// HandleMouse handles mouse clicks.
-func (app *AnsiEditApp) HandleMouse(e loom.MouseEvent) bool {
-	return false
-}
+// ConsumeMouse handles mouse clicks.
+func (app *AnsiEditApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 // PaneRequest declares terminal requirements.
 func (app *AnsiEditApp) PaneRequest() loom.PaneRequest {

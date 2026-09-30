@@ -191,9 +191,8 @@ type dummyEventConsumer struct {
 	onKey func(KeyEvent) EventResult
 }
 
-func (d *dummyEventConsumer) Draw(*Canvas, Rect)          {}
-func (d *dummyEventConsumer) HandleKey(KeyEvent) bool     { return false }
-func (d *dummyEventConsumer) HandleMouse(MouseEvent) bool { return false }
+func (d *dummyEventConsumer) Draw(*Canvas, Rect)                  {}
+func (d *dummyEventConsumer) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (d *dummyEventConsumer) ConsumeKey(e KeyEvent) EventResult {
 	if d.onKey != nil {
 		return d.onKey(e)
@@ -205,9 +204,8 @@ type dummyMouseConsumer struct {
 	onMouse func(MouseEvent) EventResult
 }
 
-func (d *dummyMouseConsumer) Draw(*Canvas, Rect)          {}
-func (d *dummyMouseConsumer) HandleKey(KeyEvent) bool     { return false }
-func (d *dummyMouseConsumer) HandleMouse(MouseEvent) bool { return false }
+func (d *dummyMouseConsumer) Draw(*Canvas, Rect)              {}
+func (d *dummyMouseConsumer) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 func (d *dummyMouseConsumer) ConsumeMouse(e MouseEvent) EventResult {
 	if d.onMouse != nil {
 		return d.onMouse(e)

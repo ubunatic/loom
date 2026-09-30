@@ -361,9 +361,7 @@ func menuItemLineWidth(item MenuItem, width int) string {
 	return label + strings.Repeat(" ", spaces) + item.Shortcut
 }
 
-// HandleKey processes menu navigation and command accelerators.
-func (m *MenuBar) HandleKey(e KeyEvent) bool { return m.ConsumeKey(e).Quit }
-
+// ConsumeKey processes menu navigation and command accelerators.
 // ConsumeKey reports whether the menu bar consumed e.
 func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 	if m == nil {
@@ -571,9 +569,7 @@ func (m *MenuBar) activateSelected() {
 	m.submenus = nil
 }
 
-// HandleMouse handles title clicks, dropdown selection, hover switching, and outside dismissal.
-func (m *MenuBar) HandleMouse(e MouseEvent) bool { return m.ConsumeMouse(e).Quit }
-
+// ConsumeMouse handles title clicks, dropdown selection, hover switching, and outside dismissal.
 // ConsumeMouse reports whether the menu bar consumed e.
 func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 	if m == nil {
@@ -710,7 +706,6 @@ func (m *Menu) Draw(c *Canvas, r Rect) {
 		m.itemRects[i] = Rect{X: r.X + 1, Y: y, W: max(0, r.W-2), H: 1}
 	}
 }
-func (m *Menu) HandleKey(e KeyEvent) bool { return m.ConsumeKey(e).Quit }
 func (m *Menu) ConsumeKey(e KeyEvent) EventResult {
 	if m == nil {
 		return Ignored()
@@ -732,7 +727,6 @@ func (m *Menu) ConsumeKey(e KeyEvent) EventResult {
 	}
 	return Consumed()
 }
-func (m *Menu) HandleMouse(e MouseEvent) bool { return m.ConsumeMouse(e).Quit }
 func (m *Menu) ConsumeMouse(e MouseEvent) EventResult {
 	if m == nil || !m.Open {
 		return Ignored()

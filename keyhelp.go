@@ -56,11 +56,11 @@ func (h *KeyHelp) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey does not consume keyboard events.
-func (h *KeyHelp) HandleKey(KeyEvent) bool { return false }
+// ConsumeKey does not consume keyboard events.
+func (h *KeyHelp) ConsumeKey(KeyEvent) EventResult { return Ignored() }
 
-// HandleMouse does not consume mouse events.
-func (h *KeyHelp) HandleMouse(MouseEvent) bool { return false }
+// ConsumeMouse does not consume mouse events.
+func (h *KeyHelp) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
 func joinKeyHelp(parts []string, separator string) string {
 	if len(parts) == 0 {

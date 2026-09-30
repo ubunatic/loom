@@ -18,6 +18,7 @@ type Grid struct {
 
 	focus      int // flat index of the focused child
 	childRects []Rect
+	lastRect   Rect
 }
 
 // NewGrid creates a Grid with cols columns.
@@ -67,6 +68,7 @@ func (g *Grid) Focus() int { return g.focus }
 // Draw renders all children into a uniform grid within r.
 // The focused cell receives a FocusBG background highlight before its child draws.
 func (g *Grid) Draw(c *Canvas, r Rect) {
+	g.lastRect = r
 	n := len(g.Children)
 	if n == 0 || g.Cols == 0 {
 		return
@@ -104,32 +106,14 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 	}
 }
 
-// HandleKey moves focus with arrow keys; Enter calls OnSelect or delegates to child.
-func (g *Grid) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey moves focus with arrow keys; Enter calls OnSelect or delegates to child.
+func (g *Grid) ConsumeKey(e KeyEvent) EventResult {
 	n := len(g.Children)
 	if n == 0 {
-		return false
+		return Ignored()
 	}
-	if quit, consumed := g.ConsumeKey(e); consumed {
-		return quit
-	}
-	return g.Children[g.focus].HandleKey(e)
-}
-
-func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
-	n := len(g.Children)
-	if n == 0 {
-		return false, false
-	}
-	if c, ok := g.Children[g.focus].(EventConsumer); ok {
-		if res := c.ConsumeKey(e); res.Consumed {
-			return res.Quit, true
-		}
-	}
-	if c, ok := g.Children[g.focus].(KeyConsumer); ok {
-		if quit, consumed = c.ConsumeKey(e); consumed {
-			return quit, true
-		}
+	if res := g.Children[g.focus].ConsumeKey(e); res.Consumed {
+		return res
 	}
 	switch e.Key {
 	case "left":
@@ -138,14 +122,14 @@ func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 		} else {
 			g.focus = n - 1
 		}
-		return false, true
+		return Handled()
 	case "right":
 		if g.focus < n-1 {
 			g.focus++
 		} else {
 			g.focus = 0
 		}
-		return false, true
+		return Handled()
 	case "up":
 		if g.focus >= g.Cols {
 			g.focus -= g.Cols
@@ -156,7 +140,7 @@ func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 			}
 			g.focus = last
 		}
-		return false, true
+		return Handled()
 	case "down":
 		next := g.focus + g.Cols
 		if next < n {
@@ -164,14 +148,14 @@ func (g *Grid) ConsumeKey(e KeyEvent) (quit, consumed bool) {
 		} else {
 			g.focus = g.focus % g.Cols
 		}
-		return false, true
+		return Handled()
 	case "enter":
 		if g.OnSelect != nil {
 			g.OnSelect(g.focus)
-			return false, true
+			return Handled()
 		}
 	}
-	return false, false
+	return Ignored()
 }
 
 func (g *Grid) ConsumePaste(e PasteEvent) EventResult {
@@ -181,17 +165,20 @@ func (g *Grid) ConsumePaste(e PasteEvent) EventResult {
 	return DispatchPasteEvent(g.Children[g.focus], e)
 }
 
-// HandleMouse routes to the child whose drawn cell contains the event.
-func (g *Grid) HandleMouse(e MouseEvent) (quit bool) {
+// ConsumeMouse routes to the child whose drawn cell contains the event.
+func (g *Grid) ConsumeMouse(e MouseEvent) EventResult {
 	if len(g.Children) == 0 {
-		return false
+		return Ignored()
 	}
+	x, y := e.X+g.lastRect.X, e.Y+g.lastRect.Y
 	for i, rect := range g.childRects {
-		if rect.Contains(e.X, e.Y) {
-			return g.Children[i].HandleMouse(e)
+		if rect.Contains(x, y) {
+			e.X = x - rect.X
+			e.Y = y - rect.Y
+			return g.Children[i].ConsumeMouse(e)
 		}
 	}
-	return g.Children[g.focus].HandleMouse(e)
+	return Ignored()
 }
 
 // ContentHeight estimates the required height for this grid layout.

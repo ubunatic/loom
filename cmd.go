@@ -86,9 +86,9 @@ func (cb *cmdBar) PromptParts() (prefix, hint string) {
 	return prefix, hint
 }
 
-// HandleKey processes a keyboard event for the command bar.
+// ConsumeKey processes a keyboard event for the command bar.
 // Returns (consumed, result): consumed=true means the event was handled here.
-func (cb *cmdBar) HandleKey(e KeyEvent) (consumed bool, result cmdResult) {
+func (cb *cmdBar) ConsumeKey(e KeyEvent) (consumed bool, result cmdResult) {
 	if !cb.active {
 		if e.Text == ":" || e.Text == "/" {
 			cb.active = true
@@ -205,7 +205,7 @@ func (cb *cmdBar) handleHelp(e KeyEvent) bool {
 	if cb.help == nil {
 		return false
 	}
-	if cb.help.HandleKey(e) {
+	if cb.help.ConsumeKey(e).Consumed {
 		cb.help = nil
 	}
 	return true
@@ -215,7 +215,7 @@ func (cb *cmdBar) handleHelpMouse(e MouseEvent) bool {
 	if cb.help == nil {
 		return false
 	}
-	if cb.help.HandleMouse(e) {
+	if cb.help.ConsumeMouse(e).Consumed {
 		cb.help = nil
 	}
 	return true
@@ -261,20 +261,20 @@ func (hw *helpWidget) Draw(cv *Canvas, r Rect) {
 	cv.Write(r.X, promptY, TruncateText("  press any key to close", r.W, ""), Style{Dim: true})
 }
 
-func (hw *helpWidget) HandleKey(e KeyEvent) bool {
+func (hw *helpWidget) ConsumeKey(e KeyEvent) EventResult {
 	switch e.Key {
 	case "up":
 		if hw.scroll > 0 {
 			hw.scroll--
 		}
-		return false
+		return Ignored()
 	case "down":
 		if hw.scroll < len(hw.lines)-1 {
 			hw.scroll++
 		}
-		return false
+		return Ignored()
 	}
-	return true // any other key closes
+	return QuitResult() // any other key closes
 }
 
-func (hw *helpWidget) HandleMouse(_ MouseEvent) bool { return false }
+func (hw *helpWidget) ConsumeMouse(_ MouseEvent) EventResult { return Ignored() }

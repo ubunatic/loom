@@ -11,7 +11,7 @@ import (
 
 func typeKeys(t *loom.TextInput, texts ...string) {
 	for _, s := range texts {
-		t.HandleKey(loom.KeyEvent{Text: s})
+		t.ConsumeKey(loom.KeyEvent{Text: s})
 	}
 }
 
@@ -20,7 +20,7 @@ func TestTextInputInsertMidString(t *testing.T) {
 	if in.Caret() != 2 {
 		t.Fatalf("caret after seed = %d, want 2", in.Caret())
 	}
-	in.HandleKey(loom.KeyEvent{Key: "left"}) // caret between a and c
+	in.ConsumeKey(loom.KeyEvent{Key: "left"}) // caret between a and c
 	typeKeys(in, "b")
 	if in.Value() != "abc" {
 		t.Errorf("mid-string insert = %q, want abc", in.Value())
@@ -32,8 +32,8 @@ func TestTextInputInsertMidString(t *testing.T) {
 
 func TestTextInputBackspaceAtCaret(t *testing.T) {
 	in := loom.NewTextInput("abc")
-	in.HandleKey(loom.KeyEvent{Key: "left"}) // caret before c
-	in.HandleKey(loom.KeyEvent{Key: "backspace"})
+	in.ConsumeKey(loom.KeyEvent{Key: "left"}) // caret before c
+	in.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	if in.Value() != "ac" {
 		t.Errorf("backspace at caret = %q, want ac", in.Value())
 	}
@@ -41,8 +41,8 @@ func TestTextInputBackspaceAtCaret(t *testing.T) {
 		t.Errorf("caret = %d, want 1", in.Caret())
 	}
 	// Backspace at the start is a no-op.
-	in.HandleKey(loom.KeyEvent{Key: "home"})
-	in.HandleKey(loom.KeyEvent{Key: "backspace"})
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	if in.Value() != "ac" || in.Caret() != 0 {
 		t.Errorf("backspace at start changed state: %q caret=%d", in.Value(), in.Caret())
 	}
@@ -50,13 +50,13 @@ func TestTextInputBackspaceAtCaret(t *testing.T) {
 
 func TestTextInputDelete(t *testing.T) {
 	in := loom.NewTextInput("abc")
-	in.HandleKey(loom.KeyEvent{Key: "home"})
-	in.HandleKey(loom.KeyEvent{Key: "delete"}) // remove 'a'
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "delete"}) // remove 'a'
 	if in.Value() != "bc" || in.Caret() != 0 {
 		t.Errorf("delete = %q caret=%d, want bc caret=0", in.Value(), in.Caret())
 	}
-	in.HandleKey(loom.KeyEvent{Key: "end"})
-	in.HandleKey(loom.KeyEvent{Key: "delete"}) // no-op at end
+	in.ConsumeKey(loom.KeyEvent{Key: "end"})
+	in.ConsumeKey(loom.KeyEvent{Key: "delete"}) // no-op at end
 	if in.Value() != "bc" {
 		t.Errorf("delete at end mutated value: %q", in.Value())
 	}
@@ -64,7 +64,7 @@ func TestTextInputDelete(t *testing.T) {
 
 func TestTextInputHomeEnd(t *testing.T) {
 	in := loom.NewTextInput("hello")
-	in.HandleKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
 	if in.Caret() != 0 {
 		t.Errorf("home caret = %d, want 0", in.Caret())
 	}
@@ -72,7 +72,7 @@ func TestTextInputHomeEnd(t *testing.T) {
 	if in.Value() != "Xhello" {
 		t.Errorf("insert after home = %q, want Xhello", in.Value())
 	}
-	in.HandleKey(loom.KeyEvent{Key: "end"})
+	in.ConsumeKey(loom.KeyEvent{Key: "end"})
 	typeKeys(in, "!")
 	if in.Value() != "Xhello!" {
 		t.Errorf("insert after end = %q, want Xhello!", in.Value())
@@ -82,23 +82,23 @@ func TestTextInputHomeEnd(t *testing.T) {
 func TestTextInputConsumedReporting(t *testing.T) {
 	in := loom.NewTextInput("")
 	// Editing keys are consumed; navigation/commit keys are not.
-	if !in.HandleKey(loom.KeyEvent{Text: "a"}) {
+	if !in.ConsumeKey(loom.KeyEvent{Text: "a"}).Consumed {
 		t.Error("text key should be consumed")
 	}
-	if !in.HandleKey(loom.KeyEvent{Key: "left"}) {
+	if !in.ConsumeKey(loom.KeyEvent{Key: "left"}).Consumed {
 		t.Error("left should be consumed")
 	}
-	if in.HandleKey(loom.KeyEvent{Key: "enter"}) {
+	if in.ConsumeKey(loom.KeyEvent{Key: "enter"}).Consumed {
 		t.Error("enter should NOT be consumed (host owns it)")
 	}
-	if in.HandleKey(loom.KeyEvent{Key: "esc"}) {
+	if in.ConsumeKey(loom.KeyEvent{Key: "esc"}).Consumed {
 		t.Error("esc should NOT be consumed (host owns it)")
 	}
 }
 
 func TestTextInputPasteReplacesNewlinesWithSpaces(t *testing.T) {
 	in := loom.NewTextInput("ac")
-	in.HandleKey(loom.KeyEvent{Key: "left"})
+	in.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if !loom.DispatchPasteEvent(in, loom.PasteEvent{Text: "b\nc\r\nd"}).Consumed {
 		t.Fatal("paste was not consumed")
 	}
@@ -137,7 +137,7 @@ func TestTextInputMaskedDrawKeepsValueAndMasksPerRune(t *testing.T) {
 	in := loom.NewTextInput("界🙂")
 	in.Prompt = "Password: "
 	in.Mask = '•'
-	in.HandleKey(loom.KeyEvent{Key: "left"})
+	in.ConsumeKey(loom.KeyEvent{Key: "left"})
 
 	c := loom.NewCanvas(30, 1)
 	c.ColorProfile = loom.ColorProfileNone
@@ -165,16 +165,16 @@ func TestTextInputMaskedDrawKeepsValueAndMasksPerRune(t *testing.T) {
 func TestTextInputMaskedWideMaskCaretAndDeletion(t *testing.T) {
 	in := loom.NewTextInput("ab界")
 	in.Mask = '界'
-	in.HandleKey(loom.KeyEvent{Key: "home"})
-	in.HandleKey(loom.KeyEvent{Key: "right"})
-	in.HandleKey(loom.KeyEvent{Key: "right"})
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "right"})
+	in.ConsumeKey(loom.KeyEvent{Key: "right"})
 	c := loom.NewCanvas(20, 1)
 	c.ColorProfile = loom.ColorProfileNone
 	in.Draw(c, c.Bounds(), true)
 	if c.CursorX != loom.StringWidth("界界") {
 		t.Errorf("wide mask caret x = %d, want %d", c.CursorX, loom.StringWidth("界界"))
 	}
-	in.HandleKey(loom.KeyEvent{Key: "delete"})
+	in.ConsumeKey(loom.KeyEvent{Key: "delete"})
 	if got := in.Value(); got != "ab" || in.Caret() != 2 {
 		t.Errorf("delete in masked input = %q caret=%d, want %q caret=2", got, in.Caret(), "ab")
 	}
@@ -195,9 +195,9 @@ func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
 		t.Errorf("end caret showed a right marker despite no hidden suffix")
 	}
 	// Move inside the value with hidden content on both sides.
-	in.HandleKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
 	for range 4 {
-		in.HandleKey(loom.KeyEvent{Key: "right"})
+		in.ConsumeKey(loom.KeyEvent{Key: "right"})
 	}
 	c.Clear()
 	in.Draw(c, c.Bounds(), true)
@@ -207,7 +207,7 @@ func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
 	if got := c.Get(4, 0).Text; got != "›" {
 		t.Errorf("interior right marker = %q, want ›", got)
 	}
-	in.HandleKey(loom.KeyEvent{Key: "home"})
+	in.ConsumeKey(loom.KeyEvent{Key: "home"})
 	c.Clear()
 	in.Draw(c, c.Bounds(), true)
 	if c.CursorX != 0 {
@@ -216,8 +216,8 @@ func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
 	if got := c.Get(0, 0).Text; got != "a" {
 		t.Errorf("home window starts with %q, want a", got)
 	}
-	in.HandleKey(loom.KeyEvent{Key: "end"})
-	in.HandleKey(loom.KeyEvent{Key: "backspace"})
+	in.ConsumeKey(loom.KeyEvent{Key: "end"})
+	in.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	c.Clear()
 	in.Draw(c, c.Bounds(), true)
 	if c.CursorX < 0 || c.CursorX >= 5 {

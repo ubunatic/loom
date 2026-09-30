@@ -31,20 +31,20 @@ func TestHelpWidgetScrollStaysOpen(t *testing.T) {
 	hw := newHelpWidget([]Cmd{
 		{Name: "a"}, {Name: "b"}, {Name: "c"},
 	})
-	if hw.HandleKey(KeyEvent{Key: "down"}) {
+	if hw.ConsumeKey(KeyEvent{Key: "down"}).Quit {
 		t.Error("down should scroll, not close")
 	}
 	if hw.scroll != 1 {
 		t.Errorf("scroll = %d after down, want 1", hw.scroll)
 	}
-	if hw.HandleKey(KeyEvent{Key: "up"}) {
+	if hw.ConsumeKey(KeyEvent{Key: "up"}).Quit {
 		t.Error("up should scroll, not close")
 	}
 	if hw.scroll != 0 {
 		t.Errorf("scroll = %d after up, want 0", hw.scroll)
 	}
 	// up at top clamps (no underflow) and stays open.
-	if hw.HandleKey(KeyEvent{Key: "up"}); hw.scroll != 0 {
+	if hw.ConsumeKey(KeyEvent{Key: "up"}); hw.scroll != 0 {
 		t.Errorf("scroll = %d after clamp, want 0", hw.scroll)
 	}
 }
@@ -52,7 +52,7 @@ func TestHelpWidgetScrollStaysOpen(t *testing.T) {
 func TestHelpWidgetClosesOnAnyOtherKey(t *testing.T) {
 	for _, e := range []KeyEvent{{Key: "enter"}, {Key: "esc"}, {Text: "x"}} {
 		hw := newHelpWidget([]Cmd{{Name: "a"}})
-		if !hw.HandleKey(e) {
+		if !hw.ConsumeKey(e).Quit {
 			t.Errorf("key %+v should close the help widget", e)
 		}
 	}

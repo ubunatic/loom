@@ -91,8 +91,8 @@ func (v *Viewport) SetFocus(focused bool) {
 	}
 }
 
-// HandleKey scrolls the viewport or forwards an unhandled key to its child.
-func (v *Viewport) HandleKey(e KeyEvent) (quit bool) {
+// ConsumeKey scrolls the viewport or forwards an unhandled key to its child.
+func (v *Viewport) ConsumeKey(e KeyEvent) EventResult {
 	key := e.Key
 	if key == "" {
 		key = e.Text
@@ -102,55 +102,52 @@ func (v *Viewport) HandleKey(e KeyEvent) (quit bool) {
 	switch key {
 	case "up", "k":
 		v.ScrollY = max(0, v.ScrollY-1)
+		return Handled()
 	case "down", "j":
 		v.ScrollY = min(maxY, v.ScrollY+1)
+		return Handled()
 	case "left", "h":
 		v.ScrollX = max(0, v.ScrollX-1)
+		return Handled()
 	case "right", "l":
 		v.ScrollX = min(maxX, v.ScrollX+1)
+		return Handled()
 	case "pgdown", "pgdn", "pagedown", " ":
 		v.ScrollY = min(maxY, v.ScrollY+page)
+		return Handled()
 	case "pgup", "pageup":
 		v.ScrollY = max(0, v.ScrollY-page)
+		return Handled()
 	case "home":
 		v.ScrollX, v.ScrollY = 0, 0
+		return Handled()
 	case "end":
 		v.ScrollX, v.ScrollY = maxX, maxY
+		return Handled()
 	default:
-		if consumer, ok := v.Child.(EventConsumer); ok {
-			result := consumer.ConsumeKey(e)
-			if result.Consumed {
-				return result.Quit
-			}
-		}
-		if consumer, ok := v.Child.(KeyConsumer); ok {
-			if quit, consumed := consumer.ConsumeKey(e); consumed {
-				return quit
-			}
-		}
 		if v.Child != nil {
-			return v.Child.HandleKey(e)
+			return v.Child.ConsumeKey(e)
 		}
 	}
-	return false
+	return Ignored()
 }
 
-// HandleMouse scrolls with the wheel and translates pointer coordinates into
+// ConsumeMouse scrolls with the wheel and translates pointer coordinates into
 // the child's full content coordinate space.
-func (v *Viewport) HandleMouse(e MouseEvent) (quit bool) {
+func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	maxY := max(0, v.childH-v.lastRect.H)
 	switch e.Action {
 	case MouseScrollUp:
 		v.ScrollY = max(0, v.ScrollY-1)
-		return false
+		return Handled()
 	case MouseScrollDown:
 		v.ScrollY = min(maxY, v.ScrollY+1)
-		return false
+		return Handled()
 	}
 	if v.Child == nil || e.X < 0 || e.Y < 0 || e.X >= v.content.W || e.Y >= v.lastRect.H {
-		return false
+		return Ignored()
 	}
 	e.X += v.ScrollX
 	e.Y += v.ScrollY
-	return v.Child.HandleMouse(e)
+	return v.Child.ConsumeMouse(e)
 }

@@ -86,34 +86,34 @@ func TestKeybindingsClipboardAndSidebar(t *testing.T) {
 	app.editor.SetValue("first line\nsecond line")
 
 	// C-c (Copy line)
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-c"})
+	app.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
 	if app.clipboard != "second line" { // caret on last line by default
 		t.Errorf("clipboard = %q, want %q", app.clipboard, "second line")
 	}
 
 	// C-v (Paste)
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-v"})
+	app.ConsumeKey(loom.KeyEvent{Key: "ctrl-v"})
 	if !strings.Contains(app.editor.Value(), "second line") {
 		t.Errorf("editor should contain pasted content")
 	}
 
 	// C-x (Cut line)
 	app.editor.SetValue("line A\nline B")
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-x"})
+	app.ConsumeKey(loom.KeyEvent{Key: "ctrl-x"})
 	if app.clipboard != "line B" {
 		t.Errorf("cut clipboard = %q, want %q", app.clipboard, "line B")
 	}
 
 	// C-b (Toggle sidebar)
 	initialShow := app.showBrowser
-	app.HandleKey(loom.KeyEvent{Key: "ctrl-b"})
+	app.ConsumeKey(loom.KeyEvent{Key: "ctrl-b"})
 	if app.showBrowser == initialShow {
 		t.Errorf("C-b did not toggle sidebar showBrowser")
 	}
 
 	// Tab (Cycle focus)
 	f0 := app.activeFocus
-	app.HandleKey(loom.KeyEvent{Key: "tab"})
+	app.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if app.activeFocus == f0 {
 		t.Errorf("Tab did not change focus area")
 	}
@@ -124,7 +124,7 @@ func TestInputDoesNotTreatConsumedEventsAsQuit(t *testing.T) {
 	original := app.editor.Value()
 	app.activeFocus = focusBrowser
 
-	if app.HandleKey(loom.KeyEvent{Text: "x"}) {
+	if app.ConsumeKey(loom.KeyEvent{Text: "x"}).Quit {
 		t.Fatal("ordinary key was treated as a quit request")
 	}
 	if app.editor.Value() != original {
@@ -132,12 +132,12 @@ func TestInputDoesNotTreatConsumedEventsAsQuit(t *testing.T) {
 	}
 
 	loom.Render(app, 80, 24)
-	if app.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 5}) {
+	if app.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 5}).Quit {
 		t.Fatal("mouse click was treated as a quit request")
 	}
 
 	// When browser is focused, 'q' is unhandled and does not quit
-	if app.HandleKey(loom.KeyEvent{Text: "q"}) {
+	if app.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
 		t.Fatal("unhandled 'q' in browser quit unexpectedly")
 	}
 }
@@ -148,7 +148,7 @@ func TestF10AndCtrlQAlwaysQuitWhenEditorFocused(t *testing.T) {
 	valBefore := app.editor.Value()
 
 	// Typing 'q' into editor should insert 'q' without quitting
-	if app.HandleKey(loom.KeyEvent{Text: "q"}) {
+	if app.ConsumeKey(loom.KeyEvent{Text: "q"}).Quit {
 		t.Fatal("typing 'q' in editor caused app to quit")
 	}
 	if app.editor.Value() == valBefore || !strings.Contains(app.editor.Value(), "q") {
@@ -156,10 +156,10 @@ func TestF10AndCtrlQAlwaysQuitWhenEditorFocused(t *testing.T) {
 	}
 
 	// F10 and Ctrl-Q must quit even with focus in editor
-	if !app.HandleKey(loom.KeyEvent{Key: "f10"}) {
+	if !app.ConsumeKey(loom.KeyEvent{Key: "f10"}).Quit {
 		t.Fatal("F10 did not quit when editor was focused")
 	}
-	if !app.HandleKey(loom.KeyEvent{Key: "ctrl-q"}) {
+	if !app.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}).Quit {
 		t.Fatal("Ctrl-Q did not quit when editor was focused")
 	}
 }
@@ -216,17 +216,17 @@ func TestFileBrowserNavigation(t *testing.T) {
 		t.Fatalf("expected 2 files in temp dir, got %d", len(fb.files))
 	}
 
-	fb.HandleKey(loom.KeyEvent{Key: "down"})
+	fb.ConsumeKey(loom.KeyEvent{Key: "down"})
 	if fb.selected != 1 {
 		t.Errorf("selected = %d, want 1", fb.selected)
 	}
 
-	fb.HandleKey(loom.KeyEvent{Key: "up"})
+	fb.ConsumeKey(loom.KeyEvent{Key: "up"})
 	if fb.selected != 0 {
 		t.Errorf("selected = %d, want 0", fb.selected)
 	}
 
-	fb.HandleKey(loom.KeyEvent{Key: "enter"})
+	fb.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if app.activePath != filepath.Join(tmpDir, "f1.txt") {
 		t.Errorf("activePath = %q, want %q", app.activePath, filepath.Join(tmpDir, "f1.txt"))
 	}
@@ -238,7 +238,7 @@ func TestFileBrowserNavigation(t *testing.T) {
 	if fb2.dir != subDir {
 		t.Fatalf("fb2.dir = %q, want %q", fb2.dir, subDir)
 	}
-	fb2.HandleKey(loom.KeyEvent{Key: "backspace"})
+	fb2.ConsumeKey(loom.KeyEvent{Key: "backspace"})
 	if fb2.dir != tmpDir {
 		t.Fatalf("fb2.dir after backspace = %q, want %q", fb2.dir, tmpDir)
 	}
@@ -380,7 +380,7 @@ func TestSidebarOutlineAndJumpCaret(t *testing.T) {
 
 	// Select symbol in outline and press Enter
 	app.activeFocus = focusBrowser
-	app.HandleKey(loom.KeyEvent{Key: "enter"})
+	app.ConsumeKey(loom.KeyEvent{Key: "enter"})
 
 	row, _ = app.editor.Caret()
 	if row != 5 { // func main() is at line index 5 (gutter line 6)
@@ -401,14 +401,14 @@ func TestOutlineDoubleClickJumpsToSelectedSymbol(t *testing.T) {
 	}
 	symbol := app.sidebar.outline.symbols[0]
 	click := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 0}
-	app.sidebar.outline.HandleMouse(click)
+	app.sidebar.outline.ConsumeMouse(click)
 	row, col := app.editor.Caret()
 	if app.sidebar.outline.selected != 0 || row != 0 || col != 0 || app.activeFocus != focusBrowser {
 		t.Fatalf("first click selected %d, caret (%d,%d), focus %v; want selection only", app.sidebar.outline.selected, row, col, app.activeFocus)
 	}
-	app.sidebar.outline.HandleMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, Y: 0})
+	app.sidebar.outline.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, Y: 0})
 	time.Sleep(10 * time.Millisecond)
-	app.sidebar.outline.HandleMouse(click)
+	app.sidebar.outline.ConsumeMouse(click)
 	if row, col := app.editor.Caret(); row != symbol.Line || col != symbol.Column {
 		t.Fatalf("double-click caret = (%d,%d), want symbol at (%d,%d)", row, col, symbol.Line, symbol.Column)
 	}
@@ -435,7 +435,7 @@ func TestCodeFoldingInTextEdit(t *testing.T) {
 	app.editor.SetCaret(5, 0)
 
 	// Press F2 to fold
-	app.HandleKey(loom.KeyEvent{Key: "f2"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f2"})
 	if !app.editor.IsFolded(5) {
 		t.Fatalf("expected line 5 to be folded after F2")
 	}
@@ -456,7 +456,7 @@ func TestCodeFoldingInTextEdit(t *testing.T) {
 	}
 
 	// Press F2 again to unfold
-	app.HandleKey(loom.KeyEvent{Key: "f2"})
+	app.ConsumeKey(loom.KeyEvent{Key: "f2"})
 	if app.editor.IsFolded(5) {
 		t.Fatalf("expected line 5 to be unfolded after second F2")
 	}

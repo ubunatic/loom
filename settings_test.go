@@ -30,7 +30,7 @@ func TestSettingsNumberSteppingAndClamping(t *testing.T) {
 			if tt.name == "reversed bounds clamp to min" {
 				s = loom.NewSettings([]loom.Setting{{Kind: loom.KindNumber, Num: &value, Min: 5, Max: -1, Step: .5}})
 			}
-			s.HandleKey(tt.key)
+			s.ConsumeKey(tt.key)
 			if value != tt.want {
 				t.Errorf("value = %g, want %g", value, tt.want)
 			}
@@ -42,11 +42,11 @@ func TestSettingsNumberSteppingAndClamping(t *testing.T) {
 
 	value := 4.0
 	s := loom.NewSettings([]loom.Setting{{Kind: loom.KindNumber, Num: &value, Min: 0, Max: 6}})
-	s.HandleKey(loom.KeyEvent{Key: "left"})
+	s.ConsumeKey(loom.KeyEvent{Key: "left"})
 	if value != 3 {
 		t.Errorf("default step value = %g, want 3", value)
 	}
-	s.HandleKey(loom.KeyEvent{Key: "right"})
+	s.ConsumeKey(loom.KeyEvent{Key: "right"})
 	if value != 4 {
 		t.Errorf("right step value = %g, want 4", value)
 	}
@@ -55,30 +55,30 @@ func TestSettingsNumberSteppingAndClamping(t *testing.T) {
 func TestSettingsNumberInlineEditCommitCancelAndNegative(t *testing.T) {
 	value := 3.0
 	s := loom.NewSettings([]loom.Setting{{Kind: loom.KindNumber, Num: &value, Min: -10, Max: 10}})
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !s.Editing() {
 		t.Fatal("Enter did not start number edit")
 	}
 	for _, key := range []loom.KeyEvent{{Key: "home"}, {Text: "-"}, {Key: "delete"}, {Text: "2"}, {Text: "."}, {Text: "5"}, {Key: "enter"}} {
-		s.HandleKey(key)
+		s.ConsumeKey(key)
 	}
 	if value != -2.5 || s.Editing() {
 		t.Errorf("committed value/editing = %g/%v, want -2.5/false", value, s.Editing())
 	}
 
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
-	s.HandleKey(loom.KeyEvent{Text: "9"})
-	s.HandleKey(loom.KeyEvent{Key: "esc"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Text: "9"})
+	s.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	if value != -2.5 || s.Editing() {
 		t.Errorf("cancel value/editing = %g/%v, want -2.5/false", value, s.Editing())
 	}
 
 	positive := 1.0
 	positiveSettings := loom.NewSettings([]loom.Setting{{Kind: loom.KindNumber, Num: &positive, Min: 0, Max: 10}})
-	positiveSettings.HandleKey(loom.KeyEvent{Key: "enter"})
-	positiveSettings.HandleKey(loom.KeyEvent{Key: "home"})
-	positiveSettings.HandleKey(loom.KeyEvent{Text: "-"})
-	positiveSettings.HandleKey(loom.KeyEvent{Key: "enter"})
+	positiveSettings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	positiveSettings.ConsumeKey(loom.KeyEvent{Key: "home"})
+	positiveSettings.ConsumeKey(loom.KeyEvent{Text: "-"})
+	positiveSettings.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if positiveSettings.Editing() {
 		t.Fatal("a minus sign is ignored when Min is nonnegative")
 	}
@@ -87,13 +87,13 @@ func TestSettingsNumberInlineEditCommitCancelAndNegative(t *testing.T) {
 func TestSettingsNumberValidationAndErrorRendering(t *testing.T) {
 	value := 12.0
 	s := loom.NewSettings([]loom.Setting{{Label: "size", Kind: loom.KindNumber, Num: &value, Min: 1, Max: 72}})
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
-	s.HandleKey(loom.KeyEvent{Key: "home"})
-	s.HandleKey(loom.KeyEvent{Key: "delete"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "home"})
+	s.ConsumeKey(loom.KeyEvent{Key: "delete"})
 	for _, r := range "99" {
-		s.HandleKey(loom.KeyEvent{Text: string(r)})
+		s.ConsumeKey(loom.KeyEvent{Text: string(r)})
 	}
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if !s.Editing() || value != 12 {
 		t.Fatalf("out-of-range commit state value/editing = %g/%v, want 12/true", value, s.Editing())
 	}
@@ -107,14 +107,14 @@ func TestSettingsNumberValidationAndErrorRendering(t *testing.T) {
 	}
 
 	// Replace invalid input and verify a valid commit clears the error line.
-	s.HandleKey(loom.KeyEvent{Key: "home"})
+	s.ConsumeKey(loom.KeyEvent{Key: "home"})
 	for range "99" {
-		s.HandleKey(loom.KeyEvent{Key: "delete"})
+		s.ConsumeKey(loom.KeyEvent{Key: "delete"})
 	}
-	s.HandleKey(loom.KeyEvent{Key: "home"})
-	s.HandleKey(loom.KeyEvent{Key: "delete"})
-	s.HandleKey(loom.KeyEvent{Text: "6"})
-	s.HandleKey(loom.KeyEvent{Key: "enter"})
+	s.ConsumeKey(loom.KeyEvent{Key: "home"})
+	s.ConsumeKey(loom.KeyEvent{Key: "delete"})
+	s.ConsumeKey(loom.KeyEvent{Text: "6"})
+	s.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if value != 6 || s.Editing() || s.ContentHeight() != 1 {
 		t.Errorf("corrected commit value/editing/height = %g/%v/%d, want 6/false/1", value, s.Editing(), s.ContentHeight())
 	}
@@ -122,13 +122,13 @@ func TestSettingsNumberValidationAndErrorRendering(t *testing.T) {
 	for _, input := range []string{"", "."} {
 		v := 2.0
 		widget := loom.NewSettings([]loom.Setting{{Kind: loom.KindNumber, Num: &v, Min: 0, Max: 10}})
-		widget.HandleKey(loom.KeyEvent{Key: "enter"})
-		widget.HandleKey(loom.KeyEvent{Key: "home"})
-		widget.HandleKey(loom.KeyEvent{Key: "delete"})
+		widget.ConsumeKey(loom.KeyEvent{Key: "enter"})
+		widget.ConsumeKey(loom.KeyEvent{Key: "home"})
+		widget.ConsumeKey(loom.KeyEvent{Key: "delete"})
 		for _, r := range input {
-			widget.HandleKey(loom.KeyEvent{Text: string(r)})
+			widget.ConsumeKey(loom.KeyEvent{Text: string(r)})
 		}
-		widget.HandleKey(loom.KeyEvent{Key: "enter"})
+		widget.ConsumeKey(loom.KeyEvent{Key: "enter"})
 		if !widget.Editing() || widget.ContentHeight() != 2 {
 			t.Errorf("input %q should remain in edit mode with error", input)
 		}
@@ -148,11 +148,11 @@ func TestSettingsNumberCustomFormattingAndPositiveKeys(t *testing.T) {
 	if row := rowText(c, 0); !strings.Contains(row, "◂ 3.50 ▸") {
 		t.Errorf("formatted number row = %q, want ◂ 3.50 ▸", row)
 	}
-	s.HandleKey(loom.KeyEvent{Text: "+"})
+	s.ConsumeKey(loom.KeyEvent{Text: "+"})
 	if value != 3.75 {
 		t.Errorf("plus value = %g, want 3.75", value)
 	}
-	s.HandleKey(loom.KeyEvent{Text: "-"})
+	s.ConsumeKey(loom.KeyEvent{Text: "-"})
 	if value != 3.5 {
 		t.Errorf("minus value = %g, want 3.5", value)
 	}
