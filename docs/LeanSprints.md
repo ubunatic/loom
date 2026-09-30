@@ -29,3 +29,14 @@ Source: session on `loom eval -a` annotated output feature (issues #166, #171) a
 - **Agent lost context across server restarts**: the wait/resume cycle re-delivered the original planning message instead of the implementation result for #171, causing the host to see the plan twice. The status check (`harnez agent status`) confirmed completion; `git log` showed the actual commit. **Lesson**: after a wait-task, always verify via `git log -n 1 --stat` before inspecting agent messages, which may be stale replays.
 - **VS16 in static assets is a silent portability trap**: `loom eval` correctly identified the line-width mismatch; the root cause was that `ℹ️` (with VS16) was used in an asset authored in tilix (1-cell advance) but foot advances 2 cells for it. `loom view --plain` stripped VS16 and hid the discrepancy. See `docs/EmojiWidth.md` §VS16 Portability for the full diagnosis and invariant.
 - **No `harnez rate` calls**: tool feedback protocol was not followed. Rate developer sessions at review time, before `delete`.
+
+## 2026-09-30 field notes
+
+Source: roadmap 180 session, ~30 tickets with `codex:luna:med` developers, host `claude:opus`.
+- **luna:med scaled well**: most widget tickets (Spinner, Tree, Form, DatePicker, Chart, …) landed in one round with a shared `devprompt.txt` (TDD, gallery demo + `.ansi`, one `make test-q1` at the end, commit trailers, `make install`).
+- **Developers report unverified fixes**: several ended with "fixed after the suite run, not rerun". Treat that as untested; the host reruns `make test-q1` (harnez prints the files changed since the last run).
+- **Repeated rules belong in the prompt, not in review**: catalog name order, `pgdown`/`pgup` aliases, 0-based child-local mouse. Each was found once by a failure, then added to `devprompt.txt` and never recurred.
+- **Two failed rounds → host debugs**: on 112 the developer twice "fixed" the PTY test (byte offset, row guess) while the real cause was a mouse-handler signature the dispatcher never calls (see [Widgets](Widgets.md) §Event Handling). Reading the dispatcher took the host three tool calls.
+- **Colour-dependent tests**: after `LOOMCOLOR` (182), pin `LOOMCOLOR=truecolor` in `TestMain` of packages that assert colours.
+- **Waiting on agents**: a `pgrep` waiter matches itself; wait on the PID with `kill -0` or use the background-task notification.
+- **Deliverables**: plans and roadmaps as Markdown; `.ansi` only for visible widget/example changes (`docs/progress/<Widget>.ansi`).

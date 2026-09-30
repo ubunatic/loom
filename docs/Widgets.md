@@ -251,7 +251,7 @@ Constructors and helpers (always returned by value):
 ### Event Handling Hierarchy
 When an event arrives at `Pane` (or composite containers `Frame`, `Tabs`, `Stack`, `Grid`, `Split`), `DispatchKeyEvent` and `DispatchMouseEvent` resolve the event in precedence order:
 1. `EventConsumer` (`ConsumeKey(e KeyEvent) EventResult`) / `MouseConsumer` (`ConsumeMouse(e MouseEvent) EventResult`).
-2. Legacy `KeyConsumer` (`ConsumeKey(e KeyEvent) (quit, consumed bool)`).
+2. Legacy `KeyConsumer` (`ConsumeKey(e KeyEvent) (quit, consumed bool)`). **Mouse has no legacy tuple form:** a `ConsumeMouse(e) (quit, consumed bool)` method is never called by the dispatcher, and clicks are silently dropped. Widgets that keep the tuple form for composition (e.g. `media.Widget`) must also expose `ConsumeMouseEvent(e MouseEvent) EventResult` (112).
 3. Historical `Widget.HandleKey(e KeyEvent) bool` / `Widget.HandleMouse(e MouseEvent) bool`, where returning `true` signals a request to **quit the application**.
 4. Unhandled fallback quit keys (e.g. `Ctrl-C`, `Ctrl-Q`, `Esc`, `q` for non-text widgets). Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`, `backspace`) never trigger fallback quit.
 
@@ -340,11 +340,16 @@ videoWidget, err := media.NewVideo("preview.mp4", media.ModeHalfblock, 24)
 - **50 ms Threshold (`renderWithThreshold`)**: Media decodes and renders exceeding 50 ms are automatically backgrounded asynchronously.
 - **Non-Blocking UI Loop**: The widget immediately displays a dim `"loading"` indicator during slow operations and populates the rendered grid into the cache upon completion, keeping event loops and parent layouts fully responsive.
 
+### Controls (112)
+A two-row footer (key hints, then `▶ Play [-] [+]`, zoom level and an activity ProgressBar) shrinks or disappears on short widgets. Space toggles playback; `+`/`-`/wheel zoom by 1.25× within 1×–8×; arrows pan 12%; drag pans; `0` resets. Pan clamps to the media bounds. The ProgressBar shows activity only: the video API exposes no duration.
+
 
 
 
 
 ## 13. Library Widget Catalog
+
+Every catalog widget has a live demo in the `gallery/` package: `loom widgets --show <Name>...` (195). `spec/widgets.yaml` is the catalog source of truth, kept in strict name order; `widgets_catalog_test.go` fails when an exported widget is missing from it.
 
 ### Standalone Form Controls
 

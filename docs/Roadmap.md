@@ -182,3 +182,10 @@ visibility controls, and data bindings. Go defines collectors, external
 integration, state transitions, and action behavior. The renderer remains
 independent of collection frequency and application-specific coordinates.
 </content>
+
+## Gap roadmap 180 (2026-09)
+
+The Bubble Tea / ncurses gap analysis (177–179) produced roadmap ticket 180.
+Status per ticket: [progress/roadmap.md](progress/roadmap.md). All main gaps and
+the six human-review items shipped by 2026-09-30; host UX choices awaiting
+review are listed in issue 102 (H1–H6).
