@@ -108,8 +108,10 @@ type SplashDefaults struct {
 
 // ProgressBarDefaults defines specced defaults for the ProgressBar widget.
 type ProgressBarDefaults struct {
-	Width       int    `yaml:"width"`
-	DonePattern string `yaml:"done_pattern"`
+	Width        int           `yaml:"width"`
+	DonePattern  string        `yaml:"done_pattern"`
+	DemoInterval time.Duration `yaml:"demo_interval"`
+	DemoStep     float64       `yaml:"demo_step"`
 }
 
 // SpinnerDefaults defines specced animation timing for Spinner.

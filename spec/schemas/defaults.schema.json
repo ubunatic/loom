@@ -79,10 +79,12 @@
     "progress_bar": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["width", "done_pattern"],
+      "required": ["width", "done_pattern", "demo_interval", "demo_step"],
       "properties": {
         "width": { "type": "integer", "minimum": 1 },
-        "done_pattern": { "type": "string", "minLength": 1 }
+        "done_pattern": { "type": "string", "minLength": 1 },
+        "demo_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "demo_step": { "type": "number", "exclusiveMinimum": 0 }
       }
     },
     "spinner": {

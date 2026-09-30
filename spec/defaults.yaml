@@ -45,6 +45,8 @@ paint_canvas:
 progress_bar:
   width: 24
   done_pattern: ":"
+  demo_interval: 150ms
+  demo_step: 10
 
 media:
   loading_label: "loading"

@@ -138,13 +138,10 @@ var demos = map[string]constructor{
 	"ProgressBar": func() loom.Widget {
 		bar := loom.NewProgressBar()
 		bar.Options.Width = 18
-		bar.Total = 24
 		bar.ShowPercent = true
 		bar.ShowCount = true
 		bar.Unit = " files"
-		bar.Indeterminate = true
-		bar.Set(16)
-		return bar
+		return &progressDemo{ProgressBar: bar}
 	},
 	"Spinner": func() loom.Widget {
 		spinner := loom.NewSpinner("Syncing workspace")
@@ -260,6 +257,59 @@ func NewAll() *loom.Tabs {
 }
 
 type textAreaWidget struct{ area *loom.TextArea }
+
+// progressDemo drives a determinate bar through fill, dim, hidden, and restart.
+// It retains its own ticking hook rather than exposing the determinate child
+// through Unwrap, since a determinate ProgressBar deliberately does not tick.
+type progressDemo struct {
+	*loom.ProgressBar
+	phase      int
+	invalidate func()
+}
+
+func (p *progressDemo) TickInterval() time.Duration {
+	return loom.SpeccedDefaults.ProgressBar.DemoInterval
+}
+
+func (p *progressDemo) SetInvalidate(fn func()) {
+	p.invalidate = fn
+	p.ProgressBar.SetInvalidate(fn)
+}
+
+func (p *progressDemo) Tick(time.Time) {
+	switch p.phase {
+	case 0:
+		if p.Value() < p.Total {
+			p.Set(p.Value() + loom.SpeccedDefaults.ProgressBar.DemoStep)
+			return
+		}
+		p.phase = 1
+	case 1:
+		p.phase = 2
+	case 2:
+		p.phase = 0
+		p.Reset()
+		return
+	}
+	if p.invalidate != nil {
+		p.invalidate()
+	}
+}
+
+func (p *progressDemo) Draw(c *loom.Canvas, r loom.Rect) {
+	if p.phase == 2 {
+		c.PaintSurface(r, loom.Style{})
+		return
+	}
+	p.ProgressBar.Draw(c, r)
+	if p.phase == 1 && r.H > 0 {
+		for x := r.X; x < r.X+r.W; x++ {
+			cell := c.Get(x, r.Y)
+			cell.Style.Dim = true
+			c.Set(x, r.Y, cell)
+		}
+	}
+}
 
 func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect)              { w.area.Draw(c, r, true) }
 func (w *textAreaWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.area.ConsumeKey(e) }

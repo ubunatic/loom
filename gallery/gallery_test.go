@@ -269,7 +269,7 @@ func TestGalleryDialogReselectionPTY(t *testing.T) {
 		}
 		if away {
 			clickTab("ProgressBar")
-			s.WaitFor("16/24 files", 5*time.Second)
+			s.WaitFor("/100 files", 5*time.Second)
 		}
 		clickTab("Dialog")
 		s.WaitFor("Save changes", 5*time.Second)
@@ -383,6 +383,45 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 	s.Send("\x1b[C")
 	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 6) + "5.00\r")
 	s.WaitFor("◂    5.00 ▸", 5*time.Second)
+}
+
+func TestGalleryProgressBarFillFadeRepeat(t *testing.T) {
+	w, err := New("ProgressBar")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ticker, ok := w.(loom.Ticker)
+	if !ok || ticker.TickInterval() <= 0 {
+		t.Fatal("demo has no animation cadence")
+	}
+	value := w.(interface{ Value() float64 })
+	for cycle := 0; cycle < 3; cycle++ {
+		for step := 0; step <= 100; step += 10 {
+			if got := value.Value(); got != float64(step) {
+				t.Fatalf("cycle %d: value=%g, want %d", cycle, got, step)
+			}
+			if !strings.Contains(strings.Join(loom.Render(w, 80, 4), ""), fmt.Sprintf("%d%%", step)) {
+				t.Fatalf("step %d not rendered", step)
+			}
+			if step < 100 {
+				ticker.Tick(time.Time{})
+			}
+		}
+		ticker.Tick(time.Time{})
+		cells := renderDemoCells(w, 4)
+		if !cells[0][0].Style.Dim || value.Value() != 100 {
+			t.Fatal("completed bar did not fade at 100")
+		}
+		ticker.Tick(time.Time{})
+		for _, row := range renderDemoCells(w, 4) {
+			for _, cell := range row {
+				if strings.TrimSpace(cell.Text) != "" {
+					t.Fatal("fade did not disappear before restart")
+				}
+			}
+		}
+		ticker.Tick(time.Time{})
+	}
 }
 
 func TestGalleryTabsCycleDemos(t *testing.T) {
@@ -661,7 +700,7 @@ func TestRicherDemosPTY(t *testing.T) {
 		name, visible string
 		animated      bool
 	}{
-		{"ProgressBar", "16/24 files", true}, {"Spinner", "Syncing workspace", true},
+		{"ProgressBar", "/100 files", true}, {"Spinner", "Syncing workspace", true},
 		{"Stopwatch", "00:", true}, {"Timer", "04:", true}, {"NumberInput", "7.5", false},
 		{"TextInput", "Ada Lovelace", false}, {"Toggle", "Notifications", false},
 	}
