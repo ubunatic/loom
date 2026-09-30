@@ -193,7 +193,7 @@ upkeep.
 | 180 | [180-roadmap-close-feature-gaps-found-in-the-framework-comparisons.md](180-roadmap-close-feature-gaps-found-in-the-framework-comparisons.md) | Roadmap: close feature gaps found in the framework comparisons | Closed — roadmap delivered, execution tracked in docs/progress/roadmap.md |
 | 181 | [181-decode-bracketed-paste-into-a-paste-event-for-textinput-and-textarea.md](181-decode-bracketed-paste-into-a-paste-event-for-textinput-and-textarea.md) | Decode bracketed paste into a paste event for TextInput and TextArea | Closed |
 | 182 | [182-detect-terminal-color-profile-and-downsample-rgb-and-256-colors.md](182-detect-terminal-color-profile-and-downsample-rgb-and-256-colors.md) | Detect terminal color profile and downsample RGB and 256 colors | Closed |
-| 183 | [183-render-compact-key-help-from-keymap-bindings.md](183-render-compact-key-help-from-keymap-bindings.md) | Render compact key help from KeyMap bindings | Open |
+| 183 | [183-render-compact-key-help-from-keymap-bindings.md](183-render-compact-key-help-from-keymap-bindings.md) | Render compact key help from KeyMap bindings | Closed |
 | 184 | [184-scroll-textinput-horizontally-when-the-value-is-wider-than-the-field.md](184-scroll-textinput-horizontally-when-the-value-is-wider-than-the-field.md) | Scroll TextInput horizontally when the value is wider than the field | Closed |
 | 185 | [185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md](185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md) | Add content-driven height with min and max bounds to TextArea | Closed |
 | 186 | [186-add-a-standalone-spinner-widget.md](186-add-a-standalone-spinner-widget.md) | Add a standalone Spinner widget | Open |

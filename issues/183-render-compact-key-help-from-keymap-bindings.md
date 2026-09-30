@@ -1,6 +1,6 @@
 # 183 — Render compact key help from KeyMap bindings
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
