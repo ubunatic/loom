@@ -218,5 +218,5 @@ upkeep.
 | 205 | [205-gallery-app-options-width-height-and-full-app-theme-switch.md](205-gallery-app-options-width-height-and-full-app-theme-switch.md) | Gallery app options: --width/--height and full-app theme switch | Open |
 | 206 | [206-mouse-capture-option-for-drags-leaving-the-app.md](206-mouse-capture-option-for-drags-leaving-the-app.md) | Mouse capture option for drags leaving the app | Open |
 | 207 | [207-richer-gallery-demos-animation-seconds-variants-labels.md](207-richer-gallery-demos-animation-seconds-variants-labels.md) | Richer gallery demos: animation, seconds, variants, labels | Open |
-| 208 | [208-canvas-paint-widget-mvp-braille-lines.md](208-canvas-paint-widget-mvp-braille-lines.md) | Canvas paint widget (MVP: braille lines) | Open |
+| 208 | [208-canvas-paint-widget-mvp-braille-lines.md](208-canvas-paint-widget-mvp-braille-lines.md) | Canvas paint widget (MVP: braille lines) | Closed |
 | 209 | [209-remove-legacy-event-handling-one-eventresult-contract-for-keys-and-mouse.md](209-remove-legacy-event-handling-one-eventresult-contract-for-keys-and-mouse.md) | Remove legacy event handling: one EventResult contract for keys and mouse | Closed |

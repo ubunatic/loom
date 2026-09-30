@@ -1,6 +1,6 @@
 # 208 — Canvas paint widget (MVP: braille lines)
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
