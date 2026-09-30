@@ -1,6 +1,6 @@
 # 205 — Gallery app options: --width/--height and full-app theme switch
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
