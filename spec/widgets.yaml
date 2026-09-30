@@ -225,6 +225,18 @@ widgets:
       stack.Gap = 1
       _ = stack
     source: stack.go
+  - name: loom.Stopwatch
+    package: loom
+    purpose: Display and control elapsed time.
+    category: display
+    example: |-
+      watch := loom.NewStopwatch()
+      watch.Start()
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: watch}}}
+      _ = frame
+    source: timer.go
+    docs: docs/Widgets.md §6
+    ticket: issues/187
   - name: loom.StyledRows
     package: loom
     purpose: Render styled lines without handling input.
@@ -277,6 +289,19 @@ widgets:
       value := input.Value()
     source: textinput.go
     ticket: issues/173
+  - name: loom.Timer
+    package: loom
+    purpose: Display a controllable countdown with a completion callback.
+    category: display
+    example: |-
+      timer := loom.NewTimer(5 * time.Minute)
+      timer.OnDone = func() { fmt.Println("Time is up") }
+      timer.Start()
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: timer}}}
+      _ = frame
+    source: timer.go
+    docs: docs/Widgets.md §6
+    ticket: issues/187
   - name: loom.Toggle
     package: loom
     purpose: Present and change a boolean value.

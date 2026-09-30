@@ -168,6 +168,7 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | Lazy Media Loading (`media.Widget`) | 140 | 50 ms threshold non-blocking background render with dim loading indicator. |
 | `loom.ProgressBar` (`Set`, `Done`, `Reset`), `graph.BracketedBarStep` | 167 | Bracketed progress bar; set `Total`, `ShowPercent`, and `ShowCount` for labels. `Indeterminate` enables a bouncing pulse driven by the pane ticker. `StyleFill` and `StyleEmpty` style cells separately, and `ApplyTheme` supplies theme colors. `Set` invalidates only when a visible half-cell changes. `Done` swaps to the specced `:` pattern like the splash. |
 | `loom.Spinner` (`Start`, `Stop`) | 186 | Labeled braille activity indicator driven by the pane ticker; stopped spinners return a zero cadence and stop requesting ticks. |
+| `loom.Timer` and `loom.Stopwatch` (`Start`, `Stop`, `Reset`) | 187 | Countdown and elapsed time widgets tick once per displayed second. Inject `Now` for deterministic clocks, set `Formatter` for custom text, and use `Timer.OnDone` for one-shot completion. |
 
 ## 7. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"codeberg.org/ubunatic/loom"
 )
@@ -71,6 +72,18 @@ var demos = map[string]constructor{
 		spinner := loom.NewSpinner("Syncing workspace")
 		spinner.Start()
 		return spinner
+	},
+	"Stopwatch": func() loom.Widget {
+		watch := loom.NewStopwatch()
+		watch.Formatter = func(time.Duration) string { return "02:37" }
+		watch.Start()
+		return watch
+	},
+	"Timer": func() loom.Widget {
+		timer := loom.NewTimer(4*time.Minute + 12*time.Second)
+		timer.Formatter = func(time.Duration) string { return "04:12" }
+		timer.Start()
+		return timer
 	},
 	"Table": func() loom.Widget {
 		table := loom.NewTable(
