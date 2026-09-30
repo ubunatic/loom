@@ -1,6 +1,6 @@
 # 155 — Built-in Modal and Dialog Overlay Primitive
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

@@ -165,7 +165,7 @@ upkeep.
 | 152 | [152-run-update-desktop-database-and-gtk-update-icon-cache-in-make-install.md](152-run-update-desktop-database-and-gtk-update-icon-cache-in-make-install.md) | Run update-desktop-database and gtk-update-icon-cache in make install | Closed — Implemented in 7fb3331 (M1): invoke update-desktop-database and gtk-update-icon-cache automatically during make install |
 | 153 | [153-hide-the-filebrowser-search-ui-until-search-is-active.md](153-hide-the-filebrowser-search-ui-until-search-is-active.md) | Hide the filebrowser search UI until search is active | Closed — Implemented in 4fcac28 (M1): hide idle search UI with subtle / search hint, show prompt on slash, preserve query on enter, clear on escape |
 | 154 | [154-dynamic-cadence-and-timer-control-on-ticker.md](154-dynamic-cadence-and-timer-control-on-ticker.md) | Dynamic Cadence and Timer Control on Ticker | Closed |
-| 155 | [155-built-in-modal-and-dialog-overlay-primitive.md](155-built-in-modal-and-dialog-overlay-primitive.md) | Built-in Modal and Dialog Overlay Primitive | Open |
+| 155 | [155-built-in-modal-and-dialog-overlay-primitive.md](155-built-in-modal-and-dialog-overlay-primitive.md) | Built-in Modal and Dialog Overlay Primitive | Closed |
 | 156 | [156-canvas-subcanvas-and-blit-layer-compositing.md](156-canvas-subcanvas-and-blit-layer-compositing.md) | Canvas SubCanvas and Blit Layer Compositing | Closed |
 | 157 | [157-ansi-golden-mockup-visual-test-comparator.md](157-ansi-golden-mockup-visual-test-comparator.md) | ANSI Golden Mockup Visual Test Comparator | Open |
 | 158 | [158-keymap-and-action-key-aliasing-helper.md](158-keymap-and-action-key-aliasing-helper.md) | KeyMap and Action Key Aliasing Helper | Closed |

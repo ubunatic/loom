@@ -65,7 +65,7 @@ Whoever completes the last item closes this ticket.
 ## Roadmap 180 — human feedback queue (2026-09-30)
 
 Decided 2026-09-30 (user: host makes all decisions): the host builds these after the main list, choosing look and behavior itself. Review afterwards; they do not block. Order and dependencies are in issues/180.
-- [ ] H1 155 Dialog — button row and placement look
+- [ ] H1 155 Dialog — built (339f523); review with `loom widgets --show Dialog`. Host choices: centered by default (optional Rect), sized to content; Esc dismisses; Left/Right/Tab move the highlight, first button preselected; Enter calls OnSelect without quitting the app; Popup's sharp border, title and fill; selected button bold with ▶, others dim.
 - [ ] H2 170 Menu and MenuBar — interaction and look (after 155, 158)
 - [ ] H3 193 Nested submenus — placement and hover (after 170)
 - [ ] H4 175 DatePicker — layout, week start, time-of-day scope
