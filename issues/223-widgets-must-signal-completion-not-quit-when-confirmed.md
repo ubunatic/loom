@@ -1,6 +1,6 @@
 # 223 — Widgets must signal completion, not Quit, when confirmed
 
-**Status**: Open
+**Status**: Closed — confirm returns Done, standalone runner maps Done to exit, gallery masking removed; suite green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
