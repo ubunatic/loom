@@ -206,6 +206,21 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `loom.Tree` (`TreeNode`, `OnActivate`) | 168 | Navigate nested nodes with arrows or `hjkl`, expand/collapse branches, select rows with the mouse, and scroll long visible trees. |
 | `loom.Timer` and `loom.Stopwatch` (`Start`, `Stop`, `Reset`) | 187 | Countdown and elapsed time widgets tick once per displayed second. Inject `Now` for deterministic clocks, set `Formatter` for custom text, and use `Timer.OnDone` for one-shot completion. |
 
+## Menus (`loom.MenuBar`, `loom.Menu`)
+
+`MenuBar` lays out titled menus in one row and draws the active menu as a bordered dropdown beneath its title. Dropdown items can show shortcuts, disabled state, separators represented by a `Label` of `---`, and check marks through a `*bool` `Checked` field.
+
+```go
+bar := loom.NewMenuBar(loom.Menu{
+    Title: "File", Mnemonic: 'F', Items: []loom.MenuItem{
+        {Label: "Open", Shortcut: "Ctrl+O", Action: openFile},
+        {Label: "Autosave", Checked: &autosave},
+    },
+})
+```
+
+F10 opens the bar; `Alt+<mnemonic>` opens a matching menu. Left/Right moves between titles, Up/Down moves through items, Enter/Space invokes the selected action, Escape closes the dropdown, and a second Escape unfocuses the bar. Mouse hover changes the active title or highlighted item; a title click toggles its dropdown and an outside click dismisses it. Item shortcut labels are matched through `KeyMap`. `Submenu` is reserved for nested menus and is not opened by this one-level widget.
+
 ## 8. Root Event Loop Contract: EventResult, EventConsumer, and Quit Invariants
 
 Loom uses the small value struct `loom.EventResult` to cleanly distinguish whether an event was consumed from whether the application should terminate:

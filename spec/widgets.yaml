@@ -122,6 +122,29 @@ widgets:
       )
       help := loom.NewKeyHelp(keys)
     source: keyhelp.go
+  - name: loom.Menu
+    package: loom
+    purpose: Display and navigate a one-level dropdown menu.
+    category: input
+    example: |-
+      menu := &loom.Menu{Title: "File", Items: []loom.MenuItem{
+          {Label: "Open", Shortcut: "Ctrl+O"},
+      }}
+    source: menu.go
+    ticket: issues/170
+  - name: loom.MenuBar
+    package: loom
+    purpose: Navigate a horizontal menu bar with keyboard, mouse, and shortcut accelerators.
+    category: input
+    example: |-
+      bar := loom.NewMenuBar(loom.Menu{
+          Title: "File", Mnemonic: 'F', Items: []loom.MenuItem{
+              {Label: "Save", Shortcut: "Ctrl+S", Action: save},
+          },
+      })
+    source: menu.go
+    docs: docs/Widgets.md §7
+    ticket: issues/170
   - name: loom.Notif
     package: loom
     purpose: Show a non-interactive notification message.

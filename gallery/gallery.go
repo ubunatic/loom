@@ -60,6 +60,20 @@ var demos = map[string]constructor{
 		})
 		return loom.NewKeyHelp(keymap)
 	},
+	"MenuBar": func() loom.Widget {
+		checked := true
+		bar := loom.NewMenuBar(
+			loom.Menu{Title: "File", Mnemonic: 'F', Items: []loom.MenuItem{
+				{Label: "Open", Shortcut: "Ctrl+O"},
+				{Label: "Save", Shortcut: "Ctrl+S"},
+				{Label: "Autosave", Checked: &checked},
+			}},
+			loom.Menu{Title: "Edit", Mnemonic: 'E', Items: []loom.MenuItem{{Label: "Undo", Shortcut: "Ctrl+Z"}, {Label: "Redo", Shortcut: "Ctrl+Y"}}},
+			loom.Menu{Title: "Help", Mnemonic: 'H', Items: []loom.MenuItem{{Label: "Keyboard shortcuts", Shortcut: "F1"}}},
+		)
+		bar.Open = true
+		return bar
+	},
 	"PillCluster": func() loom.Widget {
 		return loom.NewPillCluster(
 			loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone},
