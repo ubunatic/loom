@@ -8,7 +8,6 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"time"
 
 	"codeberg.org/ubunatic/loom"
 	"codeberg.org/ubunatic/loom/gallery"
@@ -202,10 +201,12 @@ func newThemedGallery(widget loom.Widget, themeName string) *themedGallery {
 }
 
 func (g *themedGallery) applyTheme() {
-	if themeable, ok := g.widget.(loom.Themeable); ok {
+	if themeable, ok := loom.UnwrapWidget(g.widget).(loom.Themeable); ok {
 		themeable.ApplyTheme(loom.Theme(g.themeName))
 	}
 }
+
+func (g *themedGallery) Unwrap() loom.Widget { return g.widget }
 
 func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	theme := loom.Theme(g.themeName)
@@ -230,30 +231,6 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return g.widget.ConsumeMouse(e)
-}
-
-func (g *themedGallery) TickInterval() time.Duration {
-	if ticker, ok := g.widget.(loom.Ticker); ok {
-		return ticker.TickInterval()
-	}
-	return 0
-}
-func (g *themedGallery) Tick(now time.Time) {
-	if ticker, ok := g.widget.(loom.Ticker); ok {
-		ticker.Tick(now)
-	}
-}
-
-func (g *themedGallery) SetInvalidate(invalidate func()) {
-	if aware, ok := g.widget.(loom.InvalidationAware); ok {
-		aware.SetInvalidate(invalidate)
-	}
-}
-
-func (g *themedGallery) SetResetTick(reset func()) {
-	if aware, ok := g.widget.(loom.TickerControlAware); ok {
-		aware.SetResetTick(reset)
-	}
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

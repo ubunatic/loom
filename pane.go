@@ -745,7 +745,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	})
 	p.tickerReset = make(chan struct{}, 1)
 	bindTickerControlTree(root, p.ResetTicker)
-	if requester, ok := root.(PaneRequester); ok {
+	if requester, ok := UnwrapWidget(root).(PaneRequester); ok {
 		request := requester.PaneRequest()
 		if !p.mouse && request.Mouse > 0 {
 			p.setMouseMode(request.Mouse)

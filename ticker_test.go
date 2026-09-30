@@ -206,7 +206,48 @@ func (p *paneTickerProbe) hasResetTick() bool {
 	return p.reset != nil
 }
 
+type tickerWrapper struct{ child Widget }
+
+func (w *tickerWrapper) Draw(c *Canvas, r Rect)                { w.child.Draw(c, r) }
+func (w *tickerWrapper) ConsumeKey(e KeyEvent) EventResult     { return w.child.ConsumeKey(e) }
+func (w *tickerWrapper) ConsumeMouse(e MouseEvent) EventResult { return w.child.ConsumeMouse(e) }
+func (w *tickerWrapper) Unwrap() Widget                        { return w.child }
+
+func TestPaneTickerHooksReachUnwrappedWidget(t *testing.T) {
+	probe := &paneTickerProbe{interval: 120 * time.Millisecond, done: make(chan struct{})}
+	root := &tickerWrapper{child: probe}
+	runPaneTickerProbeRoot(t, probe, root, nil, func(_ *Pane, master *os.File) {
+		deadline := time.Now().Add(time.Second)
+		for !probe.hasResetTick() && time.Now().Before(deadline) {
+			time.Sleep(time.Millisecond)
+		}
+		if !probe.hasResetTick() {
+			t.Fatal("Pane did not bind ticker reset through wrapper")
+		}
+		probe.resetTick()
+		waitForPaneTicks(t, probe, 1)
+		probe.setInterval(0)
+		probe.pane.Invalidate()
+		time.Sleep(150 * time.Millisecond)
+		if got := probe.tickCount(); got != 1 {
+			t.Fatalf("ticks while wrapped ticker is paused = %d, want 1", got)
+		}
+		probe.setInterval(20 * time.Millisecond)
+		probe.resetTick()
+		probe.pane.Invalidate()
+		waitForPaneTicks(t, probe, 2)
+		_, _ = master.Write([]byte("q"))
+	})
+	if got := probe.tickCount(); got < 2 {
+		t.Fatalf("unwrapped ticker ticks after restart = %d, want at least 2", got)
+	}
+}
+
 func runPaneTickerProbe(t *testing.T, probe *paneTickerProbe, before func(*Pane), during func(*Pane, *os.File)) {
+	runPaneTickerProbeRoot(t, probe, probe, before, during)
+}
+
+func runPaneTickerProbeRoot(t *testing.T, probe *paneTickerProbe, root Widget, before func(*Pane), during func(*Pane, *os.File)) {
 	t.Helper()
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
@@ -217,7 +258,7 @@ func runPaneTickerProbe(t *testing.T, probe *paneTickerProbe, before func(*Pane)
 	}
 	drainPTY(master, probe.done)
 	errch := make(chan error, 1)
-	go func() { errch <- p.Run(probe) }()
+	go func() { errch <- p.Run(root) }()
 	if during != nil {
 		during(p, master)
 	}

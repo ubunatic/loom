@@ -8,6 +8,21 @@ weight: 35
 Loom provides composable, dependency-light widget primitives designed for inline terminal UIs.
 Widgets implement `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`) and integrate cleanly with `loom.Frame`, `loom.Pane`, and the layered compositor.
 
+### Wrapping widgets
+
+A wrapper can implement `Unwrap() loom.Widget` to expose the widget it decorates to
+the framework. `Pane` follows unwrap chains when it discovers optional lifecycle
+hooks, including ticking, invalidation, and tick reset callbacks. This lets a
+presentation wrapper focus on drawing and input without forwarding each optional
+interface. `loom.UnwrapWidget` returns the innermost widget when a host needs to
+look up another optional interface, such as `loom.Themeable`.
+
+```go
+type bordered struct{ child loom.Widget }
+
+func (b *bordered) Unwrap() loom.Widget { return b.child }
+```
+
 ---
 
 ## 1. Split Layout (`loom.Split`)

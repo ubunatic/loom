@@ -28,6 +28,28 @@ type Widget interface {
 	MouseConsumer
 }
 
+// WidgetUnwrapper exposes a wrapped widget to framework lifecycle hooks.
+// Implementations should return the wrapped widget directly.
+type WidgetUnwrapper interface {
+	Unwrap() Widget
+}
+
+// UnwrapWidget returns the innermost widget in a chain of wrappers.
+func UnwrapWidget(widget Widget) Widget {
+	for widget != nil {
+		unwrapper, ok := widget.(WidgetUnwrapper)
+		if !ok {
+			return widget
+		}
+		next := unwrapper.Unwrap()
+		if next == nil {
+			return widget
+		}
+		widget = next
+	}
+	return nil
+}
+
 // Ticker is an optional interface for widgets that need periodic updates.
 type Ticker interface {
 	Widget
@@ -44,6 +66,7 @@ type TickerControlAware interface {
 }
 
 func shortestTickInterval(root Widget) time.Duration {
+	root = UnwrapWidget(root)
 	t, ok := root.(Ticker)
 	if !ok || t.TickInterval() <= 0 {
 		return 0
@@ -52,6 +75,10 @@ func shortestTickInterval(root Widget) time.Duration {
 }
 
 func tickTree(root Widget, now time.Time, last map[Widget]time.Time) {
+	root = UnwrapWidget(root)
+	if root == nil {
+		return
+	}
 	switch node := root.(type) {
 	case *Tabs:
 		tickTree(node.active(), now, last)
@@ -107,6 +134,7 @@ type InvalidationAware interface {
 }
 
 func bindInvalidationTree(root Widget, invalidate func()) {
+	root = UnwrapWidget(root)
 	if root == nil {
 		return
 	}
@@ -134,6 +162,7 @@ func bindInvalidationTree(root Widget, invalidate func()) {
 }
 
 func bindTickerControlTree(root Widget, reset func()) {
+	root = UnwrapWidget(root)
 	if root == nil {
 		return
 	}
