@@ -1,6 +1,6 @@
 # 203 — Gallery key routing: typing and Esc quit the app
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
