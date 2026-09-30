@@ -390,7 +390,13 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 		if len(target) == 1 {
 			for i, menu := range m.Menus {
 				if unicode.ToLower(menu.Mnemonic) == unicode.ToLower(target[0]) {
+					if m.Open && m.ActiveMenu == i {
+						m.Open = false
+						m.submenus = nil
+						return Consumed()
+					}
 					m.focused, m.Open, m.ActiveMenu = true, true, i
+					m.submenus = nil
 					m.selectFirst()
 					return Consumed()
 				}

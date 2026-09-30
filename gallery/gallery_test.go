@@ -307,6 +307,43 @@ func TestGalleryTableClickSelectionPTY(t *testing.T) {
 	t.Fatal("click did not transfer selection to second data row")
 }
 
+func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "MenuBar", "Choice")
+	s.WaitFor("Autosave", 5*time.Second)
+	s.Send("\x1b") // close the initially open demo menu
+	waitAbsent := func(text string) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if !strings.Contains(strings.Join(s.Screen(), "\n"), text) {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("%q remained visible", text)
+	}
+	waitAbsent("Autosave")
+	s.Send("\x1bf")
+	s.WaitFor("Autosave", 5*time.Second)
+	s.Send("\x1bf")
+	waitAbsent("Autosave")
+	s.Send("\x1bf")
+	s.WaitFor("Autosave", 5*time.Second)
+	s.Send("\x1be")
+	s.WaitFor("Undo", 5*time.Second)
+	waitAbsent("Autosave")
+	s.Send("\x1be")
+	waitAbsent("Undo")
+	s.Send("\x1bh")
+	s.WaitFor("Keyboard shortcuts", 5*time.Second)
+	s.Send("\x1bh")
+	waitAbsent("Keyboard shortcuts")
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {
