@@ -170,9 +170,9 @@ func TestTableEnter(t *testing.T) {
 	tbl, _, _ := psTestTable()
 
 	tbl.ConsumeKey(loom.KeyEvent{Key: "down"}) // select bash
-	quit := tbl.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
-	if !quit {
-		t.Error("enter should return quit=true")
+	result := tbl.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !result.Done || result.Quit {
+		t.Errorf("enter = %+v, want completion without host quit", result)
 	}
 	item, ok := tbl.Selected()
 	if !ok {

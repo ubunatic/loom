@@ -18,7 +18,8 @@ import (
 //  1. Pane clears the Canvas and calls root.Draw(canvas, canvas.Bounds()).
 //  2. Pane reads one event (key or mouse) from the terminal.
 //  3. Pane dispatches the event to the root widget.
-//  4. If the returned EventResult requests quit, Pane.Run returns.
+//  4. If the returned EventResult requests quit, Pane.Run returns. Done marks a
+//     widget interaction complete and leaves the event loop running.
 type Widget interface {
 	// Draw renders the widget into region r of canvas c.
 	// r is guaranteed to be within c.Bounds(). Draw must not write outside r.

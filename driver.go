@@ -31,11 +31,31 @@ func RunPane(w Paneable) (item Item, ok bool, nav Nav, err error) {
 	if err != nil {
 		return Item{}, false, NavNone, err
 	}
-	err = pane.Run(w)
+	err = pane.Run(paneableRunner{Paneable: w})
 	pane.Close()
 	if err != nil {
 		return Item{}, false, NavNone, err
 	}
 	item, ok = w.Selected()
 	return item, ok, w.Nav(), nil
+}
+
+// paneableRunner adapts a standalone Paneable prompt's completion signal to
+// the event loop that owns that prompt. Embedded widgets leave Done untouched.
+type paneableRunner struct{ Paneable }
+
+func (r paneableRunner) ConsumeKey(e KeyEvent) EventResult {
+	result := r.Paneable.ConsumeKey(e)
+	if result.Done && !result.Quit {
+		return QuitResult()
+	}
+	return result
+}
+
+func (r paneableRunner) ConsumeMouse(e MouseEvent) EventResult {
+	result := r.Paneable.ConsumeMouse(e)
+	if result.Done && !result.Quit {
+		return QuitResult()
+	}
+	return result
 }

@@ -14,8 +14,8 @@ func TestConfirmDefaultYesEnter(t *testing.T) {
 	if c.Answered() {
 		t.Fatal("fresh Confirm should not be answered")
 	}
-	if quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit; !quit {
-		t.Fatal("Enter should quit")
+	if result := c.ConsumeKey(loom.KeyEvent{Key: "enter"}); !result.Done || result.Quit {
+		t.Fatalf("Enter = %+v, want completion without host quit", result)
 	}
 	if !c.Answered() || !c.Confirmed() {
 		t.Errorf("default Enter: answered=%v confirmed=%v, want true/true",
@@ -25,8 +25,8 @@ func TestConfirmDefaultYesEnter(t *testing.T) {
 
 func TestConfirmDirectNoKey(t *testing.T) {
 	c := loom.NewConfirm("Commit?")
-	if quit := c.ConsumeKey(loom.KeyEvent{Text: "n"}).Quit; !quit {
-		t.Fatal("'n' should answer and quit")
+	if result := c.ConsumeKey(loom.KeyEvent{Text: "n"}); !result.Done || result.Quit {
+		t.Fatalf("'n' = %+v, want completion without host quit", result)
 	}
 	if !c.Answered() || c.Confirmed() {
 		t.Errorf("'n': answered=%v confirmed=%v, want true/false",

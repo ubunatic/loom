@@ -146,6 +146,15 @@ func TestConsumeMouseClickSelects(t *testing.T) {
 	}
 }
 
+func TestChoiceMouseConfirmationCompletesWithoutQuittingHost(t *testing.T) {
+	c := makeChoice(2)
+	c.Draw(NewCanvas(40, 4), Rect{W: 40, H: 4})
+	result := c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1})
+	if !result.Done || result.Quit || !result.Consumed {
+		t.Fatalf("mouse confirmation = %+v, want consumed completion without quit", result)
+	}
+}
+
 func TestChoiceMouseWheelAndPromptHitTest(t *testing.T) {
 	c := makeChoice(8)
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})

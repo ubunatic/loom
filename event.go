@@ -469,12 +469,14 @@ func parseInts(s string, dst ...*int) (int, error) {
 	return n, nil
 }
 
-// EventResult indicates whether an input event (keyboard or mouse) was consumed
-// and whether the application event loop should terminate.
+// EventResult indicates whether an input event (keyboard or mouse) was consumed,
+// whether a widget interaction completed, and whether the application event loop
+// should terminate.
 // EventResult is a small value struct and must always be returned by value (not pointer).
 type EventResult struct {
 	Consumed bool
 	Quit     bool
+	Done     bool // the widget interaction is complete; the host app remains active
 }
 
 // Handled returns an EventResult indicating that the event was consumed without quitting.
@@ -505,6 +507,12 @@ func Quit() EventResult {
 // QuitResult returns an EventResult indicating that the event was consumed and requests application termination.
 func QuitResult() EventResult {
 	return EventResult{Consumed: true, Quit: true}
+}
+
+// DoneResult returns an EventResult indicating that the widget interaction is
+// complete, without requesting the host application's event loop to terminate.
+func DoneResult() EventResult {
+	return EventResult{Consumed: true, Done: true}
 }
 
 // DispatchKeyEvent dispatches a key event to a widget.

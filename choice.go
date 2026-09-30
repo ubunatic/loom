@@ -409,14 +409,14 @@ func (c *Choice) ConsumeKey(e KeyEvent) EventResult {
 		if c.MultiSelect {
 			// Confirm the whole checked set; OnSelect/single-select rules don't apply.
 			c.done = true
-			return QuitResult()
+			return DoneResult()
 		}
 		if c.OnSelect != nil && len(c.filtered) > 0 {
 			c.OnSelect(c.filtered[c.sel])
 			return Handled()
 		}
 		c.done = true
-		return QuitResult()
+		return DoneResult()
 	case "up":
 		if c.sel > 0 {
 			c.sel--
@@ -566,7 +566,7 @@ func (c *Choice) ConsumeMouse(e MouseEvent) EventResult {
 						return Handled()
 					}
 					c.done = true
-					return QuitResult()
+					return DoneResult()
 				}
 				return Handled()
 			}
@@ -578,7 +578,7 @@ func (c *Choice) ConsumeMouse(e MouseEvent) EventResult {
 				return Handled()
 			}
 			c.done = true
-			return QuitResult()
+			return DoneResult()
 		}
 	case MouseHover, MouseDrag:
 		c.sel = fi

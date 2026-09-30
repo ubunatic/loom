@@ -236,17 +236,11 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if e.Is("esc") && !result.Consumed {
 		return loom.QuitResult()
 	}
-	// Child confirmation completes its interaction, not the gallery session.
-	if !e.Is("esc") {
-		result.Quit = false
-	}
 	return result
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	result := g.widget.ConsumeMouse(e)
-	result.Quit = false
-	return result
+	return g.widget.ConsumeMouse(e)
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

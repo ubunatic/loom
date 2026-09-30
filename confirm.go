@@ -73,7 +73,7 @@ func (c *Confirm) ConsumeKey(e KeyEvent) (quit EventResult) {
 		return Ignored()
 	case "enter":
 		c.answer(c.yes)
-		return QuitResult()
+		return DoneResult()
 	case "esc", "ctrl-c":
 		c.answer(false)
 		return QuitResult()
@@ -81,10 +81,10 @@ func (c *Confirm) ConsumeKey(e KeyEvent) (quit EventResult) {
 	switch e.Text {
 	case "y", "Y":
 		c.answer(true)
-		return QuitResult()
+		return DoneResult()
 	case "n", "N":
 		c.answer(false)
-		return QuitResult()
+		return DoneResult()
 	case "h", "l":
 		c.yes = !c.yes
 	}

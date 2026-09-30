@@ -454,11 +454,11 @@ func TestChoiceAbort(t *testing.T) {
 	}
 }
 
-func TestChoiceEnterQuits(t *testing.T) {
+func TestChoiceEnterCompletesWithoutQuittingHost(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
-	quit := c.ConsumeKey(loom.KeyEvent{Key: "enter"}).Quit
-	if !quit {
-		t.Error("enter with no OnSelect should return quit=true")
+	result := c.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !result.Done || result.Quit || !result.Consumed {
+		t.Errorf("enter with no OnSelect = %+v, want consumed completion without quit", result)
 	}
 	if c.Aborted() {
 		t.Error("Aborted() should be false after enter")

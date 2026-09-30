@@ -445,7 +445,7 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			return Ignored()
 		}
 		t.done = true
-		return QuitResult()
+		return DoneResult()
 	case "up":
 		if t.sel > 0 {
 			t.sel--
