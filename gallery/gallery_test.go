@@ -383,20 +383,16 @@ func TestRicherDemosPTY(t *testing.T) {
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Stopwatch")
 		s.WaitFor("00:", 5*time.Second)
 		s.Send(" ")
+		time.Sleep(200 * time.Millisecond)
 		paused := strings.Join(s.Screen(), "\n")
 		time.Sleep(1100 * time.Millisecond)
 		if strings.Join(s.Screen(), "\n") != paused {
 			t.Fatal("Space did not pause the stopwatch")
 		}
 		s.Send("r")
-		if !strings.Contains(strings.Join(s.Screen(), "\n"), "00:00") {
-			t.Fatal("R did not reset the stopwatch")
-		}
+		s.WaitFor("00:00", 5*time.Second)
 		s.Send(" ")
-		time.Sleep(1100 * time.Millisecond)
-		if strings.Contains(strings.Join(s.Screen(), "\n"), "00:00") {
-			t.Fatal("Space did not restart the reset stopwatch")
-		}
+		s.WaitFor("00:01", 5*time.Second)
 	})
 }
 
@@ -501,20 +497,9 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 
 	t.Run("TextInput accepts typing", func(t *testing.T) {
 		s := start(t, "TextInput")
-		s.WaitFor("Name:", 5*time.Second)
-		countBullets := func() int { return strings.Count(strings.Join(s.Screen(), "\n"), "•") }
-		before := countBullets()
-		if before == 0 {
-			t.Fatal("TextInput did not render its masked sample value")
-		}
+		s.WaitFor("Ada Lovelace", 5*time.Second)
 		s.Send("Z")
-		deadline := time.Now().Add(5 * time.Second)
-		for time.Now().Before(deadline) && countBullets() <= before {
-			time.Sleep(10 * time.Millisecond)
-		}
-		if after := countBullets(); after <= before {
-			t.Fatalf("typing did not extend the masked value: before=%d after=%d", before, after)
-		}
+		s.WaitFor("Ada LovelaceZ", 5*time.Second)
 	})
 
 	t.Run("Popup closes and reopens", func(t *testing.T) {

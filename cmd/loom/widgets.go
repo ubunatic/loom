@@ -244,6 +244,18 @@ func (g *themedGallery) Tick(now time.Time) {
 	}
 }
 
+func (g *themedGallery) SetInvalidate(invalidate func()) {
+	if aware, ok := g.widget.(loom.InvalidationAware); ok {
+		aware.SetInvalidate(invalidate)
+	}
+}
+
+func (g *themedGallery) SetResetTick(reset func()) {
+	if aware, ok := g.widget.(loom.TickerControlAware); ok {
+		aware.SetResetTick(reset)
+	}
+}
+
 func readWidgetCatalog() (widgetCatalog, error) {
 	data, err := spec.WidgetsYAML()
 	if err != nil {
