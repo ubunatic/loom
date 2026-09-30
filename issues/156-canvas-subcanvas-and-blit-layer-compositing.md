@@ -1,6 +1,6 @@
 # 156 — Canvas SubCanvas and Blit Layer Compositing
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
