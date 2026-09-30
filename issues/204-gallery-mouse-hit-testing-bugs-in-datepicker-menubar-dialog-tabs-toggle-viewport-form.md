@@ -1,6 +1,6 @@
 # 204 — Gallery mouse hit-testing bugs in DatePicker, MenuBar, Dialog, Tabs, Toggle, Viewport, Form
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug

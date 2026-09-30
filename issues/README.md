@@ -214,7 +214,7 @@ upkeep.
 | 201 | [201-theme-switch-in-the-widget-gallery.md](201-theme-switch-in-the-widget-gallery.md) | Theme switch in the widget gallery | Closed |
 | 202 | [202-media-zoom-crops-instead-of-scaling.md](202-media-zoom-crops-instead-of-scaling.md) | Media zoom crops instead of scaling | Closed |
 | 203 | [203-gallery-key-routing-typing-and-esc-quit-the-app.md](203-gallery-key-routing-typing-and-esc-quit-the-app.md) | Gallery key routing: typing and Esc quit the app | Closed |
-| 204 | [204-gallery-mouse-hit-testing-bugs-in-datepicker-menubar-dialog-tabs-toggle-viewport-form.md](204-gallery-mouse-hit-testing-bugs-in-datepicker-menubar-dialog-tabs-toggle-viewport-form.md) | Gallery mouse hit-testing bugs in DatePicker, MenuBar, Dialog, Tabs, Toggle, Viewport, Form | Open |
+| 204 | [204-gallery-mouse-hit-testing-bugs-in-datepicker-menubar-dialog-tabs-toggle-viewport-form.md](204-gallery-mouse-hit-testing-bugs-in-datepicker-menubar-dialog-tabs-toggle-viewport-form.md) | Gallery mouse hit-testing bugs in DatePicker, MenuBar, Dialog, Tabs, Toggle, Viewport, Form | Closed |
 | 205 | [205-gallery-app-options-width-height-and-full-app-theme-switch.md](205-gallery-app-options-width-height-and-full-app-theme-switch.md) | Gallery app options: --width/--height and full-app theme switch | Open |
 | 206 | [206-mouse-capture-option-for-drags-leaving-the-app.md](206-mouse-capture-option-for-drags-leaving-the-app.md) | Mouse capture option for drags leaving the app | Open |
 | 207 | [207-richer-gallery-demos-animation-seconds-variants-labels.md](207-richer-gallery-demos-animation-seconds-variants-labels.md) | Richer gallery demos: animation, seconds, variants, labels | Open |
