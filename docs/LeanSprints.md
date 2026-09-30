@@ -40,3 +40,11 @@ Source: roadmap 180 session, ~30 tickets with `codex:luna:med` developers, host 
 - **Colour-dependent tests**: after `LOOMCOLOR` (182), pin `LOOMCOLOR=truecolor` in `TestMain` of packages that assert colours.
 - **Waiting on agents**: a `pgrep` waiter matches itself; wait on the PID with `kill -0` or use the background-task notification.
 - **Deliverables**: plans and roadmaps as Markdown; `.ansi` only for visible widget/example changes (`docs/progress/<Widget>.ansi`).
+
+## Widgets feedback rounds (2026-09-30, tickets 203-223)
+
+Source: two `loom widgets` feedback rounds, host `claude:opus`, developers `codex:luna:med` and `codex:sol:med`.
+- **luna:med vs. event-model work**: luna committed red suites on cross-cutting event tickets (209, 204, 223: fixed the key path but not the mouse path). `sol:med` fixed each in one short round. Rule: when luna ends red or stalls about 15 min, hand the ticket to `sol:med`.
+- **One sol:med developer for a batch**: 11 small tickets (212-222) in one run of about 47 minutes, one commit and one `make test-q1` per ticket, all green on the host rerun. Cheaper for the host than 11 dispatches.
+- **Review the diff for caller-side fixes**: two batch fixes landed only in `cmd/loom/widgets.go`. One was legitimate (220, host drew over its footer), one masked a library contract flaw (212, filed and fixed as 223).
+- **PTY tests found real library bugs**: coalesced key bytes, keys lost after a mouse report, and stale inline bounds on the alternate screen were all found by making flaky gallery tests deterministic instead of retrying them.

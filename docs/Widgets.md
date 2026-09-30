@@ -256,6 +256,7 @@ Loom uses the small value struct `loom.EventResult` to cleanly distinguish wheth
 ```go
 type EventResult struct {
     Consumed bool
+    Done     bool // the widget's interaction completed; the host keeps running
     Quit     bool
 }
 ```
@@ -264,6 +265,7 @@ Constructors and helpers (always returned by value):
 - `loom.Handled()` / `loom.Consumed()`: `EventResult{Consumed: true, Quit: false}`
 - `loom.Ignored()` / `loom.Unhandled()`: `EventResult{Consumed: false, Quit: false}`
 - `loom.Quit()` / `loom.QuitResult()`: `EventResult{Consumed: true, Quit: true}`
+- `loom.DoneResult()`: `EventResult{Consumed: true, Done: true}` (issue 223)
 
 ### Event Handling
 `Widget` has one input contract: `ConsumeKey(e KeyEvent) EventResult` and
@@ -280,6 +282,8 @@ Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`,
 ### Widget Implementation Contract
 - Widgets handling user input (e.g. navigation, typing, selection) return `loom.Handled()` when they consume an input without quitting and `loom.Ignored()` when they did not handle it.
 - Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.
+- Confirming a widget (Enter or click on a Choice item, a Table row, a Confirm button) returns `loom.DoneResult()`, never Quit: an embedded widget must not end its host app. Standalone prompt runners in `driver.go` map Done to exit; hosts never mask a child's `Quit` (issues 212, 223). Cancel keys (Esc, Ctrl-C) may still quit a standalone prompt.
+- A host that draws its own rows (footer, status bar) passes children only the remaining rect; drawing a child over those rows leaks the child's styles, e.g. the selection colour after a theme switch (issue 220).
 - `Pane` enables bracketed paste for the run and restores the terminal mode on exit. Widgets that implement `PasteConsumer` receive one `PasteEvent` per paste; other widgets ignore it. `TextInput` replaces pasted line breaks with spaces, while `TextArea` preserves them.
 - `TextInput.Mask` optionally replaces each displayed value rune with the configured rune (for example, `•`) and adjusts the caret to the mask's display width. A zero mask keeps normal text display. `Value()` continues to return the entered text to the host. `TextInput` and `TextArea` can copy via an optional `Keys` `KeyMap` binding named `copy`; `SetSelection(start, end)` selects a half-open rune range, and an empty selection copies the whole value. `Pane` sends the value through OSC 52.
 
