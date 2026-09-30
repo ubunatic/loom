@@ -4,8 +4,10 @@
 package loom
 
 import (
+	"sort"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
@@ -14,6 +16,7 @@ import (
 type ChoiceStyle struct {
 	Normal      Style
 	Selected    Style
+	Match       Style // style for matched runes; zero uses the row style with bold and underline enabled
 	Prompt      Style
 	Placeholder Style
 	Scrollbar   ScrollbarStyle
@@ -32,6 +35,8 @@ func DefaultChoiceStyle() ChoiceStyle {
 type Choice struct {
 	Items []Item
 	Style ChoiceStyle
+	// Fuzzy enables subsequence matching and score-ranked results.
+	Fuzzy bool
 	// ScrollbarMode overrides the spec default for this widget.
 	ScrollbarMode ScrollbarMode
 	Prompt        string          // default "> "
@@ -169,6 +174,29 @@ func (c *Choice) refilter() {
 	q := strings.ToLower(c.query)
 	if q == "" {
 		c.filtered = c.Items
+	} else if c.Fuzzy {
+		type rankedItem struct {
+			item  Item
+			score int
+		}
+		ranked := make([]rankedItem, 0, len(c.Items))
+		for _, it := range c.Items {
+			nameScore, nameOK := fuzzyScore(it.Name, q)
+			descScore, descOK := fuzzyScore(it.Desc, q)
+			if nameOK || descOK {
+				score := descScore
+				if nameOK && (!descOK || nameScore >= descScore) {
+					score = nameScore
+				}
+				ranked = append(ranked, rankedItem{item: it, score: score})
+			}
+		}
+		sort.SliceStable(ranked, func(i, j int) bool { return ranked[i].score > ranked[j].score })
+		out := make([]Item, len(ranked))
+		for i := range ranked {
+			out[i] = ranked[i].item
+		}
+		c.filtered = out
 	} else {
 		out := make([]Item, 0, len(c.Items))
 		for _, it := range c.Items {
@@ -182,6 +210,35 @@ func (c *Choice) refilter() {
 	if c.sel >= len(c.filtered) {
 		c.sel = max(0, len(c.filtered)-1)
 	}
+}
+
+// fuzzyScore scores a rune subsequence, rewarding adjacent matches and
+// matches at the beginning of a word. The returned score is zero on no match.
+func fuzzyScore(text, query string) (score int, matched bool) {
+	textRunes := []rune(strings.ToLower(text))
+	queryRunes := []rune(query)
+	if len(queryRunes) == 0 {
+		return 0, true
+	}
+	qi, previous := 0, -2
+	for i, r := range textRunes {
+		if r != queryRunes[qi] {
+			continue
+		}
+		score += 1
+		if i == 0 || !unicode.IsLetter(textRunes[i-1]) && !unicode.IsNumber(textRunes[i-1]) {
+			score += 4
+		}
+		if i == previous+1 {
+			score += 5
+		}
+		previous = i
+		qi++
+		if qi == len(queryRunes) {
+			return score, true
+		}
+	}
+	return 0, false
 }
 
 // clampView keeps viewOffset so that sel is always visible within itemRows.
@@ -248,6 +305,22 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 			}
 			line := c.choiceRowText(fi, contentW)
 			cv.Write(r.X, y, line, style)
+			if c.Fuzzy && c.query != "" {
+				item := c.filtered[fi]
+				markerWidth := measure.StringWidth(c.choiceMarker(fi, item))
+				matchStyle := c.Style.Match
+				if matchStyle == (Style{}) {
+					matchStyle = style
+					matchStyle.Bold = true
+					matchStyle.Underline = true
+				}
+				nameOffset := markerWidth
+				c.highlightMatch(cv, r.X+nameOffset, y, item.Name, matchStyle, contentW-nameOffset)
+				if item.Desc != "" {
+					descOffset := nameOffset + measure.StringWidth(item.Name) + 2
+					c.highlightMatch(cv, r.X+descOffset, y, item.Desc, matchStyle, contentW-descOffset)
+				}
+			}
 		}
 		if scrollable {
 			thumb := max(1, scrollbarThumbLength(itemRows, len(c.filtered), itemRows))
@@ -532,6 +605,15 @@ func (c *Choice) choiceRowText(fi, width int) string {
 		return ""
 	}
 	item := c.filtered[fi]
+	marker := c.choiceMarker(fi, item)
+	line := marker + item.Name
+	if item.Desc != "" {
+		line += "  " + item.Desc
+	}
+	return measure.Truncate(line, width, "…")
+}
+
+func (c *Choice) choiceMarker(fi int, item Item) string {
 	marker := "  "
 	if fi == c.sel {
 		marker = "▶ "
@@ -543,11 +625,35 @@ func (c *Choice) choiceRowText(fi, width int) string {
 			marker += "[ ] "
 		}
 	}
-	line := marker + item.Name
-	if item.Desc != "" {
-		line += "  " + item.Desc
+	return marker
+}
+
+func (c *Choice) highlightMatch(cv *Canvas, x, y int, text string, style Style, width int) {
+	_, query := fuzzyScore(text, strings.ToLower(c.query))
+	if !query || width <= 0 {
+		return
 	}
-	return measure.Truncate(line, width, "…")
+	runes := []rune(strings.ToLower(text))
+	queryRunes := []rune(strings.ToLower(c.query))
+	qi := 0
+	for i, r := range runes {
+		if r != queryRunes[qi] {
+			continue
+		}
+		cellX := x + measure.StringWidth(string(runes[:i]))
+		for dx := 0; dx < measure.StringWidth(string(r)); dx++ {
+			if dx+cellX-x >= width {
+				break
+			}
+			cell := cv.Get(cellX+dx, y)
+			cell.Style = style
+			cv.Set(cellX+dx, y, cell)
+		}
+		qi++
+		if qi == len(queryRunes) {
+			return
+		}
+	}
 }
 
 // choiceMouseHitRegion returns the inclusive content span in terminal cells.

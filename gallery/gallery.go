@@ -16,7 +16,16 @@ type constructor func() loom.Widget
 
 var demos = map[string]constructor{
 	"Choice": func() loom.Widget {
-		return loom.NewChoice([]loom.Item{{Name: "Build", Desc: "Compile the project"}, {Name: "Test", Desc: "Run the test suite"}, {Name: "Release", Desc: "Package a release"}})
+		choice := loom.NewChoice([]loom.Item{
+			{Name: "filebrowser-widget", Desc: "Browser widget implementation"},
+			{Name: "fuzzy-browser-widget", Desc: "Fuzzy matching example"},
+			{Name: "frame-layout", Desc: "Frame composition"},
+		})
+		choice.Fuzzy = true
+		for _, r := range "fbw" {
+			choice.HandleKey(loom.KeyEvent{Text: string(r)})
+		}
+		return choice
 	},
 	"PillCluster": func() loom.Widget {
 		return loom.NewPillCluster(

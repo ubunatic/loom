@@ -404,6 +404,45 @@ func TestChoiceFilter(t *testing.T) {
 	}
 }
 
+func TestChoiceFuzzyFilterRanksAndKeepsStableTies(t *testing.T) {
+	items := []loom.Item{
+		{Name: "filebrowser-widget"},
+		{Name: "fuzzy.browser.widget"},
+		{Name: "fuzzy-browser-widget"},
+	}
+	c := loom.NewChoice(items)
+	c.Fuzzy = true
+	for _, r := range "fbw" {
+		c.HandleKey(loom.KeyEvent{Text: string(r)})
+	}
+	want := []string{"fuzzy.browser.widget", "fuzzy-browser-widget", "filebrowser-widget"}
+	for i, name := range want {
+		if got := c.FilteredItem(i).Name; got != name {
+			t.Errorf("filtered[%d] = %q, want %q", i, got, name)
+		}
+	}
+}
+
+func TestChoiceFuzzyMatchesDescriptionAndHighlightsRunes(t *testing.T) {
+	c := loom.NewChoice([]loom.Item{{Name: "Other", Desc: "filebrowser-widget"}})
+	c.Fuzzy = true
+	for _, r := range "fbw" {
+		c.HandleKey(loom.KeyEvent{Text: string(r)})
+	}
+	if got := c.FilteredItem(0).Name; got != "Other" {
+		t.Fatalf("filtered item = %q, want Other", got)
+	}
+	cv := loom.NewCanvas(40, 2)
+	c.Draw(cv, loom.Rect{W: 40, H: 2})
+	// Marker (2 cells), name, two spaces, then description. The f/b/w matches
+	// begin at description offsets 0, 4, and 12.
+	for _, x := range []int{9, 13, 21} {
+		if cell := cv.Get(x, 0); !cell.Style.Bold || !cell.Style.Underline {
+			t.Errorf("match cell at x=%d has style %+v; want bold and underline", x, cell.Style)
+		}
+	}
+}
+
 func TestChoiceAbort(t *testing.T) {
 	c := loom.NewChoice([]loom.Item{{Name: "x"}})
 	quit := c.HandleKey(loom.KeyEvent{Key: "esc"})
