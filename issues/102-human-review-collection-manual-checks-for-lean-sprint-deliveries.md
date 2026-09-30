@@ -61,3 +61,14 @@ Whoever completes the last item closes this ticket.
   strength, star trail, pulse, smooth motion without lag, and idle CPU near zero while the mouse rests.
 
 - 134 (ZWJ width detection, 013fa84): open a Loom app with the family emoji (e.g. ansiviewer on docs/progress/096/M2-buttons.ansi) in tilix and foot; rows should end flush, no gap before `>`. `LOOM_ZWJ=join|split` forces a mode.
+
+## Roadmap 180 — human feedback queue (2026-09-30)
+
+Agents skip these; build and review them together in one session. Order and dependencies are in issues/180.
+- [ ] H1 155 Dialog — button row and placement look
+- [ ] H2 170 Menu and MenuBar — interaction and look (after 155, 158)
+- [ ] H3 193 Nested submenus — placement and hover (after 170)
+- [ ] H4 175 DatePicker — layout, week start, time-of-day scope
+- [ ] H5 192 Chart widget — axis labels and glyphs
+- [ ] H6 112 Media controls — control layout (after 160)
+- [ ] Decide: system clipboard (OSC 52) — file a ticket or drop
