@@ -1,6 +1,6 @@
 # 173 — Add masked password mode to TextInput
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
