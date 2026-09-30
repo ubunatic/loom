@@ -53,3 +53,6 @@ Delivered `progressbar.go` (`NewProgressBar`, `Set`, `Done`, `Reset`, `Value`, `
 - Tests in `progressbar_test.go`: invalidation count, clamping incl. NaN/Inf, done/reset, clipping, step-vs-render agreement.
 
 Remaining (still open): indeterminate pulse mode, percent/count labels, separate fill/empty styles, `Themeable`. `SplashView` draws its bar through `ProgressBar` since 2026-09-29 (its Progress/Pattern/BracketWidth fields are unchanged; existing splash tests pass).
+
+## Sprint goal (roadmap 180)
+/goal Finish the remaining scope — indeterminate pulse (via Ticker), percent/count labels, separate fill/empty styles, Themeable — with tests; SplashView stays unchanged; stop and report if the pulse look needs a user decision.

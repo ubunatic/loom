@@ -37,3 +37,6 @@ Provide a clean key-mapping and action-dispatching helper in `loom`.
 - [ ] Match multi-key aliases to logical action names.
 - [ ] Case-insensitive ASCII matching for character keys.
 - [ ] Unit tests covering single keys, aliases, modifiers, and unmatched events in `event_test.go`.
+
+## Sprint goal (roadmap 180)
+/goal Ship `KeyMap` with aliases and a short help label per action (used by 183), with event_test.go coverage; stop and report if existing widget key defaults (key_defaults.go) would have to change behavior.

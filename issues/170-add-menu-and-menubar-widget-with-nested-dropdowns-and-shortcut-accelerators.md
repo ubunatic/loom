@@ -56,3 +56,6 @@ Introduce `loom.MenuBar` and `loom.Menu` (implementing `loom.Widget`, `loom.Even
   - Action callback triggering and toggle checkmark updates.
   - Escape dismissal and outside click handling.
 - Document in `docs/Widgets.md`.
+
+## Sprint goal (roadmap 180)
+/goal Ship `Menu` and `MenuBar` with one level of items (submenus are 193), accelerators via 158's KeyMap, and tests plus an example for human review; stop and report when interaction details need a user decision.

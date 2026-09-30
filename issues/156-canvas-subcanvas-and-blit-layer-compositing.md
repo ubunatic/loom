@@ -34,3 +34,6 @@ Implement lightweight sub-canvas creation and blitting onto parent canvases.
 - [ ] `SubCanvas` creates a canvas with local coordinate origin `(0, 0)`.
 - [ ] `Blit` copies cells with full style and wide-character continuation cell integrity.
 - [ ] Comprehensive unit tests in `canvas_test.go`.
+
+## Sprint goal (roadmap 180)
+/goal Ship `SubCanvas` and `Blit` with wide-rune and style integrity tests in canvas_test.go; stop and report if Canvas's clip model conflicts with local origins.

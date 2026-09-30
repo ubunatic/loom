@@ -51,3 +51,6 @@ Introduce `loom.Form` and `loom.FormField` (implementing `loom.Widget`, `loom.Ev
   - Validation execution on Enter and error banner presentation.
   - Successful submission triggering `OnSubmit` callback with collected values.
 - Document in `docs/Widgets.md`.
+
+## Sprint goal (roadmap 180)
+/goal Ship `Form` over existing inputs (TextInput incl. 173 mask, 174 NumberInput/Toggle, Choice) with focus, validation, and submit tests; stop and report when the validation-summary layout needs a user decision.

@@ -55,3 +55,6 @@ Add native poster frame support and playback controls to `codeberg.org/ubunatic/
 - Reproduce and resolve the `TestMediaDemoPTYPlaysVideo` failure, then verify the complete suite under the quota-1 test target.
 - Strengthen `TestPausePlayControlsFrameAdvancement` so the paused assertion distinguishes the displayed image from the queued frame; currently both use the same image dimensions, so that assertion cannot prove frame consumption stopped.
 - Confirm public constructor validation and restart/close lifecycle behavior with focused assertions, while preserving the single-run quota rule for the next work turn.
+
+## Sprint goal (roadmap 180)
+/goal Do the M2 refinements: fix `TestMediaDemoPTYPlaysVideo`, strengthen the pause assertion, pass `make test-q1` once; stop and report if the PTY failure is outside media/.

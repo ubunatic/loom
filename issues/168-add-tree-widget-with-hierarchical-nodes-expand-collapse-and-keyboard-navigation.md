@@ -49,3 +49,6 @@ Introduce `loom.Tree` (implementing `loom.Widget`, `loom.EventConsumer`, `loom.M
   - Keyboard and mouse selection events.
   - Viewport scrolling with large tree structures.
 - Document in `docs/Widgets.md`.
+
+## Sprint goal (roadmap 180)
+/goal Ship `Tree` with keyboard/mouse navigation, expand/collapse, and scroll tests plus a docs row; stop and report if lazy-loaded children are needed for the file picker (172).

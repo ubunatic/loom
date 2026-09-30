@@ -40,3 +40,6 @@ Provide a declarative dialog and modal overlay rendering API for `loom.Canvas`.
 - [ ] Auto-clearing background cells beneath the dialog to prevent background text bleed.
 - [ ] Border styling and title truncation using standard `loom.DrawBox` rules.
 - [ ] Unit tests and canvas visual parity tests in `canvas_test.go`.
+
+## Sprint goal (roadmap 180)
+/goal Ship a `Dialog` on top of `Popup` (title, body, button row, centered or placed, background clear) with canvas tests and an example for human review; stop and report when button or placement style needs a user decision.

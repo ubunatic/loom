@@ -191,3 +191,16 @@ upkeep.
 | 178 | [178-research-compare-loom-to-ncurses-and-list-feature-gaps.md](178-research-compare-loom-to-ncurses-and-list-feature-gaps.md) | Research: compare loom to ncurses and list feature gaps | Open |
 | 179 | [179-research-compare-loom-to-tview-ratatui-and-textual-and-list-feature-gaps.md](179-research-compare-loom-to-tview-ratatui-and-textual-and-list-feature-gaps.md) | Research: compare loom to tview, Ratatui and Textual and list feature gaps | Open |
 | 180 | [180-roadmap-close-feature-gaps-found-in-the-framework-comparisons.md](180-roadmap-close-feature-gaps-found-in-the-framework-comparisons.md) | Roadmap: close feature gaps found in the framework comparisons | Open |
+| 181 | [181-decode-bracketed-paste-into-a-paste-event-for-textinput-and-textarea.md](181-decode-bracketed-paste-into-a-paste-event-for-textinput-and-textarea.md) | Decode bracketed paste into a paste event for TextInput and TextArea | Open |
+| 182 | [182-detect-terminal-color-profile-and-downsample-rgb-and-256-colors.md](182-detect-terminal-color-profile-and-downsample-rgb-and-256-colors.md) | Detect terminal color profile and downsample RGB and 256 colors | Open |
+| 183 | [183-render-compact-key-help-from-keymap-bindings.md](183-render-compact-key-help-from-keymap-bindings.md) | Render compact key help from KeyMap bindings | Open |
+| 184 | [184-scroll-textinput-horizontally-when-the-value-is-wider-than-the-field.md](184-scroll-textinput-horizontally-when-the-value-is-wider-than-the-field.md) | Scroll TextInput horizontally when the value is wider than the field | Open |
+| 185 | [185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md](185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md) | Add content-driven height with min and max bounds to TextArea | Open |
+| 186 | [186-add-a-standalone-spinner-widget.md](186-add-a-standalone-spinner-widget.md) | Add a standalone Spinner widget | Open |
+| 187 | [187-add-timer-and-stopwatch-widgets.md](187-add-timer-and-stopwatch-widgets.md) | Add Timer and Stopwatch widgets | Open |
+| 188 | [188-add-a-paginator-widget.md](188-add-a-paginator-widget.md) | Add a Paginator widget | Open |
+| 189 | [189-rank-choice-filter-matches-with-fuzzy-scoring.md](189-rank-choice-filter-matches-with-fuzzy-scoring.md) | Rank Choice filter matches with fuzzy scoring | Open |
+| 190 | [190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md](190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md) | Add a Viewport widget that scrolls arbitrary child content | Open |
+| 191 | [191-add-cell-cursor-and-frozen-header-columns-to-table.md](191-add-cell-cursor-and-frozen-header-columns-to-table.md) | Add cell cursor and frozen header columns to Table | Open |
+| 192 | [192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md](192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md) | Add an axes-based Chart widget for line and grouped bar series | Open |
+| 193 | [193-add-nested-submenus-to-menu.md](193-add-nested-submenus-to-menu.md) | Add nested submenus to Menu | Open |

@@ -19,3 +19,6 @@ zoom +/- controls, and panning when the media is zoomed in.
   Mouse events are 0-based and child-local (`docs/Widgets.md`).
 - Unit tests for the state (zoom level, pan offset clamping, play state), and a PTY test that
   clicks the controls and checks the rendered change (`docs/HoverTesting.md` method).
+
+## Sprint goal (roadmap 180)
+/goal Add play/pause, zoom, and pan controls on top of 160's playback API with state and PTY tests, and an example for human review; stop and report when control layout needs a user decision.

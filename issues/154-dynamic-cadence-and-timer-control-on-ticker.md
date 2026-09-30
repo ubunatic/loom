@@ -31,3 +31,6 @@ Provide ergonomic and responsive dynamic cadence control for `loom.Ticker` widge
 - [ ] Widgets can dynamically adjust tick rates or pause/resume with immediate pane responsiveness.
 - [ ] Unit tests verifying that interval changes take effect without needing synthetic input events.
 - [ ] Clean integration test verifying pause/resume and timer resetting in `pane_test.go`.
+
+## Sprint goal (roadmap 180)
+/goal Let a Ticker change or pause its interval and reset its countdown with immediate effect in Pane, with pane_test.go coverage; stop and report if this needs a breaking change to the Ticker interface.
