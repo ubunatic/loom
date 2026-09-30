@@ -27,6 +27,18 @@ var demos = map[string]constructor{
 		}
 		return choice
 	},
+	"KeyHelp": func() loom.Widget {
+		keymap := loom.NewKeyMapWithLabels(map[string][]string{
+			"back": {"esc"},
+			"next": {"j", "down"},
+			"open": {"enter"},
+		}, map[string]string{
+			"back": "Back",
+			"next": "Next",
+			"open": "Open",
+		})
+		return loom.NewKeyHelp(keymap)
+	},
 	"PillCluster": func() loom.Widget {
 		return loom.NewPillCluster(
 			loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone},

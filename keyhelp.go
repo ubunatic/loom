@@ -1,0 +1,74 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package loom
+
+import "sort"
+
+// KeyHelp renders the labeled bindings in a KeyMap as one compact help line.
+// The first configured key alias for each labeled action is shown.
+type KeyHelp struct {
+	KeyMap    *KeyMap
+	Separator string
+}
+
+// NewKeyHelp creates a compact key help widget for km.
+func NewKeyHelp(km *KeyMap) *KeyHelp {
+	return &KeyHelp{KeyMap: km}
+}
+
+// Text returns the compact, deterministic key help line.
+func (h *KeyHelp) Text() string {
+	if h == nil || h.KeyMap == nil {
+		return ""
+	}
+	separator := h.Separator
+	if separator == "" {
+		separator = " · "
+	}
+	actions := make([]string, 0, len(h.KeyMap.labels))
+	for action, label := range h.KeyMap.labels {
+		if label != "" && len(h.KeyMap.actions[action]) != 0 {
+			actions = append(actions, action)
+		}
+	}
+	sort.Strings(actions)
+	parts := make([]string, 0, len(actions))
+	for _, action := range actions {
+		parts = append(parts, h.KeyMap.actions[action][0]+" "+h.KeyMap.labels[action])
+	}
+	return joinKeyHelp(parts, separator)
+}
+
+// Draw renders key help clipped to the supplied rectangle.
+func (h *KeyHelp) Draw(c *Canvas, r Rect) {
+	if h == nil || c == nil || r.W <= 0 || r.H <= 0 {
+		return
+	}
+	for y := r.Y; y < r.Y+r.H; y++ {
+		for x := r.X; x < r.X+r.W; x++ {
+			c.Set(x, y, Cell{Text: " ", Style: Reset, Claim: true})
+		}
+	}
+	text := TruncateText(h.Text(), r.W, "…")
+	if text != "" {
+		c.Write(r.X, r.Y, text, Reset)
+	}
+}
+
+// HandleKey does not consume keyboard events.
+func (h *KeyHelp) HandleKey(KeyEvent) bool { return false }
+
+// HandleMouse does not consume mouse events.
+func (h *KeyHelp) HandleMouse(MouseEvent) bool { return false }
+
+func joinKeyHelp(parts []string, separator string) string {
+	if len(parts) == 0 {
+		return ""
+	}
+	text := parts[0]
+	for _, part := range parts[1:] {
+		text += separator + part
+	}
+	return text
+}

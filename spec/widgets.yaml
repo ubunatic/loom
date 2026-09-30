@@ -77,6 +77,17 @@ widgets:
       focused := grid.Focus()
       _ = focused
     source: grid.go
+  - name: loom.KeyHelp
+    package: loom
+    purpose: Render compact help text from labeled key bindings.
+    category: display
+    example: |-
+      keys := loom.NewKeyMapWithLabels(
+          map[string][]string{"quit": {"q"}},
+          map[string]string{"quit": "Quit"},
+      )
+      help := loom.NewKeyHelp(keys)
+    source: keyhelp.go
   - name: loom.Notif
     package: loom
     purpose: Show a non-interactive notification message.
