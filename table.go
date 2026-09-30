@@ -53,6 +53,8 @@ func DefaultTableStyle() TableStyle {
 //   - tab        cycle sort column forward (or complete command in command mode)
 //   - !          toggle sort direction (asc ▲ / desc ▼)
 //   - up/down    move row selection; wraps at boundaries
+//   - left/right move the cell cursor when CellCursor is enabled
+//   - pgup/pgdown (also pageup/pagedown and pgdn) move by a page of rows
 //   - enter      confirm selection (calls OnSelect if set, otherwise quits)
 //   - esc/ctrl-c abort
 //   - :  /       activate command mode (see loom.Cmd, loom.Nav)
@@ -64,6 +66,17 @@ type Table struct {
 	SortCol  int  // index of sorted column; -1 = none
 	SortDesc bool // false = ascending ▲, true = descending ▼
 
+	// CellCursor enables cell-by-cell selection. In this mode left/right move
+	// between columns and up/down move between rows; row selection remains the
+	// default when it is false.
+	CellCursor bool
+	// FrozenCols keeps this many leading columns visible during horizontal
+	// scrolling in cell-cursor mode.
+	FrozenCols int
+	// OnCellSelect runs when the cell cursor moves, with filtered row and
+	// column indexes.
+	OnCellSelect func(row, col int)
+
 	Prompt   string
 	Controls string // right-aligned hint; auto-computed from SortCol when empty
 	OnSelect func(Row)
@@ -72,10 +85,14 @@ type Table struct {
 	Style TableStyle
 
 	cmd        *cmdBar
+	keys       *KeyMap
 	cmdNav     Nav
 	query      string
 	sel        int
 	viewOffset int
+	cellCol    int
+	scrollCol  int // first non-frozen column visible during cell-cursor scrolling
+	pageRows   int
 	filtered   []Row
 	colWidths  []int
 	done       bool
@@ -92,6 +109,10 @@ func NewTable(cols []Column, rows []Row) *Table {
 		Prompt:  "> ",
 	}
 	t.cmd = newCmdBar()
+	t.keys = NewKeyMap(map[string][]string{
+		"page-up":   {"pgup", "pageup"},
+		"page-down": {"pgdown", "pgdn", "pagedown"},
+	})
 	t.refilter()
 	return t
 }
@@ -198,6 +219,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 	if itemRows < 0 {
 		itemRows = 0
 	}
+	t.pageRows = itemRows
 
 	// Clamp viewOffset so sel is always visible.
 	if t.viewOffset > t.sel {
@@ -210,20 +232,80 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 		t.viewOffset = 0
 	}
 
+	// Keep the cursor column visible in the scrollable section. Frozen columns
+	// consume space first; the remaining width is used by ScrollCol onward.
+	frozen := min(max(t.FrozenCols, 0), len(t.Columns))
+	frozenWidth := 0
+	for i := 0; i < frozen; i++ {
+		if i > 0 {
+			frozenWidth += sepW
+		}
+		frozenWidth += t.colWidths[i]
+	}
+	available := r.W - frozenWidth
+	if frozen > 0 && frozen < len(t.Columns) {
+		available -= sepW
+	}
+	available = max(0, available)
+	if t.scrollCol < frozen || t.scrollCol >= len(t.Columns) {
+		t.scrollCol = frozen
+	}
+	if !t.CellCursor {
+		t.scrollCol = frozen
+	}
+	if t.CellCursor && t.cellCol >= frozen && t.cellCol < len(t.Columns) {
+		if t.cellCol < t.scrollCol {
+			t.scrollCol = t.cellCol
+		}
+		for t.scrollCol < t.cellCol {
+			need := sepW
+			for i := t.scrollCol; i <= t.cellCol; i++ {
+				need += t.colWidths[i]
+				if i > t.scrollCol {
+					need += sepW
+				}
+			}
+			if need <= available {
+				break
+			}
+			t.scrollCol++
+		}
+	}
+	if t.scrollCol < frozen {
+		t.scrollCol = frozen
+	}
+	if t.scrollCol > len(t.Columns) {
+		t.scrollCol = len(t.Columns)
+	}
+	visible := make([]int, 0, len(t.Columns))
+	for i := 0; i < frozen; i++ {
+		visible = append(visible, i)
+	}
+	for i := t.scrollCol; i < len(t.Columns); i++ {
+		visible = append(visible, i)
+	}
+
 	// Header row.
 	x := r.X
-	for i, col := range t.Columns {
-		if i > 0 {
+	for n, i := range visible {
+		col := t.Columns[i]
+		if n > 0 {
+			if x+sepW > r.X+r.W {
+				break
+			}
 			cv.Write(x, r.Y, sep, t.Style.Header)
 			x += sepW
+		}
+		if x >= r.X+r.W {
+			break
 		}
 		style := t.Style.Header
 		if i == t.SortCol {
 			style = t.Style.SortHeader
 		}
-		w := t.colWidths[i]
+		w := min(t.colWidths[i], r.X+r.W-x)
 		cv.Write(x, r.Y, padCol(t.headerText(i), w, col.Align), style)
-		x += w
+		x += t.colWidths[i]
 	}
 
 	// Data rows.
@@ -235,21 +317,32 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 			continue
 		}
 		style := t.Style.Normal
-		if fi == t.sel {
+		if !t.CellCursor && fi == t.sel {
 			style = t.Style.Selected
 		}
 		x := r.X
-		for i, col := range t.Columns {
-			if i > 0 {
-				cv.Write(x, y, sep, style)
+		for n, i := range visible {
+			col := t.Columns[i]
+			cellStyle := style
+			if t.CellCursor && fi == t.sel && i == t.cellCol {
+				cellStyle = t.Style.Selected
+			}
+			if n > 0 {
+				if x+sepW > r.X+r.W {
+					break
+				}
+				cv.Write(x, y, sep, cellStyle)
 				x += sepW
+			}
+			if x >= r.X+r.W {
+				break
 			}
 			w := t.colWidths[i]
 			cell := ""
 			if i < len(t.filtered[fi].Cells) {
 				cell = t.filtered[fi].Cells[i]
 			}
-			cv.Write(x, y, padCol(cell, w, col.Align), style)
+			cv.Write(x, y, padCol(cell, min(w, r.X+r.W-x), col.Align), cellStyle)
 			x += w
 		}
 	}
@@ -311,6 +404,27 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 		}
 		return false
 	}
+	var action string
+	if t.keys != nil {
+		action = t.keys.Action(e)
+	}
+	if action != "" {
+		count := t.pageRows
+		if count < 1 {
+			count = 10
+		}
+		for i := 0; i < count; i++ {
+			if action == "page-up" {
+				if t.sel > 0 {
+					t.sel--
+				}
+			} else if t.sel < len(t.filtered)-1 {
+				t.sel++
+			}
+		}
+		t.cellSelectionChanged()
+		return false
+	}
 	switch e.Key {
 	case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
 		t.aborted = true
@@ -329,11 +443,23 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 		} else {
 			t.sel = max(0, len(t.filtered)-1)
 		}
+		t.cellSelectionChanged()
 	case "down":
 		if t.sel < len(t.filtered)-1 {
 			t.sel++
 		} else {
 			t.sel = 0
+		}
+		t.cellSelectionChanged()
+	case "left":
+		if t.CellCursor && t.cellCol > 0 {
+			t.cellCol--
+			t.cellSelectionChanged()
+		}
+	case "right":
+		if t.CellCursor && t.cellCol < len(t.Columns)-1 {
+			t.cellCol++
+			t.cellSelectionChanged()
 		}
 	case "tab":
 		t.cycleSortNext()
@@ -355,6 +481,18 @@ func (t *Table) HandleKey(e KeyEvent) (quit bool) {
 		}
 	}
 	return false
+}
+
+func (t *Table) cellSelectionChanged() {
+	if !t.CellCursor {
+		return
+	}
+	if t.cellCol >= len(t.Columns) {
+		t.cellCol = max(0, len(t.Columns)-1)
+	}
+	if t.OnCellSelect != nil && len(t.filtered) > 0 && len(t.Columns) > 0 {
+		t.OnCellSelect(t.sel, t.cellCol)
+	}
 }
 
 // HandleMouse is a no-op placeholder (mouse support is optional/future).

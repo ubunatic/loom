@@ -117,9 +117,12 @@ var demos = map[string]constructor{
 	},
 	"Table": func() loom.Widget {
 		table := loom.NewTable(
-			[]loom.Column{{Header: "Task", Width: 24}, {Header: "Status", Width: 14}},
-			[]loom.Row{{Cells: []string{"Compile", "done"}, Key: "compile"}, {Cells: []string{"Unit tests", "running"}, Key: "tests"}, {Cells: []string{"Package", "waiting"}, Key: "package"}},
+			[]loom.Column{{Header: "Task", Width: 18}, {Header: "Status", Width: 12}, {Header: "Owner", Width: 12}},
+			[]loom.Row{{Cells: []string{"Compile", "done", "Ada"}, Key: "compile"}, {Cells: []string{"Unit tests", "running", "Lin"}, Key: "tests"}, {Cells: []string{"Package", "waiting", "Sam"}, Key: "package"}},
 		)
+		table.CellCursor = true
+		table.FrozenCols = 1
+		table.Controls = "←/→ cell  ↑/↓ row"
 		return table
 	},
 	"Tabs": func() loom.Widget {

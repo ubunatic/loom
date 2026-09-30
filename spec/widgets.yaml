@@ -285,11 +285,13 @@ widgets:
     source: styledrows.go
   - name: loom.Table
     package: loom
-    purpose: Display, navigate, and select rows across columns.
+    purpose: Display, navigate, and select table rows or cells across columns.
     category: input
     example: |-
       table := loom.NewTable(columns, rows)
-      table.Select(0)
+      table.CellCursor = true
+      table.FrozenCols = 1
+      table.OnCellSelect = func(int, int) {}
       selected := table.Selected()
       _ = selected
     source: table.go

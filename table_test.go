@@ -65,6 +65,79 @@ func TestTableNavigation(t *testing.T) {
 	}
 }
 
+func TestTableCellCursorNavigationAndCallback(t *testing.T) {
+	tbl, _, _ := psTestTable()
+	tbl.CellCursor = true
+	var gotRow, gotCol int
+	called := false
+	tbl.OnCellSelect = func(row, col int) {
+		gotRow, gotCol, called = row, col, true
+	}
+
+	tbl.HandleKey(loom.KeyEvent{Key: "right"})
+	if !called || gotRow != 0 || gotCol != 1 {
+		t.Fatalf("right callback = (%d, %d), called %v; want (0, 1)", gotRow, gotCol, called)
+	}
+	tbl.HandleKey(loom.KeyEvent{Key: "down"})
+	if gotRow != 1 || gotCol != 1 {
+		t.Fatalf("down callback = (%d, %d), want (1, 1)", gotRow, gotCol)
+	}
+	item, ok := tbl.Selected()
+	if !ok || item.Name != "bash (200)" {
+		t.Fatalf("Selected() = (%+v, %v), want bash (200)", item, ok)
+	}
+}
+
+func TestTableCellCursorScrollsWithFrozenColumns(t *testing.T) {
+	tbl := loom.NewTable(
+		[]loom.Column{{Header: "ID", Width: 3}, {Header: "A", Width: 5}, {Header: "B", Width: 5}, {Header: "C", Width: 5}},
+		[]loom.Row{{Key: "r", Cells: []string{"row", "aaaaa", "bbbbb", "ccccc"}}},
+	)
+	tbl.CellCursor = true
+	tbl.FrozenCols = 1
+	for i := 0; i < 3; i++ {
+		tbl.HandleKey(loom.KeyEvent{Key: "right"})
+	}
+	cv := loom.NewCanvas(15, 3)
+	tbl.Draw(cv, cv.Bounds())
+	row := cv.Row(0)
+	if !containsStr(row, "ID") || !containsStr(row, "C") {
+		t.Fatalf("header should keep frozen ID and show cursor column C: %q", row)
+	}
+	data := cv.Row(1)
+	if !containsStr(data, "row") || !containsStr(data, "ccccc") {
+		t.Fatalf("data should keep frozen row id and show cursor cell: %q", data)
+	}
+}
+
+func TestTablePageKeyAliases(t *testing.T) {
+	for _, key := range []string{"pgdown", "pgdn", "pagedown"} {
+		tbl, _, _ := psTestTable()
+		tbl.HandleKey(loom.KeyEvent{Key: key})
+		item, _ := tbl.Selected()
+		if item.Name != "vim (201)" {
+			t.Errorf("key %q selected %q, want last row", key, item.Name)
+		}
+	}
+	for _, key := range []string{"pgup", "pageup"} {
+		tbl, _, _ := psTestTable()
+		tbl.HandleKey(loom.KeyEvent{Key: "down"})
+		tbl.HandleKey(loom.KeyEvent{Key: key})
+		item, _ := tbl.Selected()
+		if item.Name != "firefox (300)" {
+			t.Errorf("key %q selected %q, want first row", key, item.Name)
+		}
+	}
+}
+
+func TestTableRowModeIgnoresHorizontalKeys(t *testing.T) {
+	tbl, _, _ := psTestTable()
+	tbl.HandleKey(loom.KeyEvent{Key: "right"})
+	if _, ok := tbl.Selected(); !ok {
+		t.Fatal("row selection should remain available")
+	}
+}
+
 func TestTableEnter(t *testing.T) {
 	tbl, _, _ := psTestTable()
 
