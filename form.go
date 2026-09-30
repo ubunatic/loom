@@ -308,6 +308,20 @@ func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	y := e.Y
+	if len(f.Validation) > 0 {
+		y-- // validation heading
+		for i := range f.Fields {
+			if f.Validation[i] != "" {
+				y--
+			}
+		}
+	}
+	labelW := 0
+	for _, field := range f.Fields {
+		if width := StringWidth(field.Label) + 2; width > labelW {
+			labelW = width
+		}
+	}
 	for i, field := range f.Fields {
 		h := 1
 		if ch, ok := field.Widget.(ContentHeighter); ok {
@@ -316,6 +330,8 @@ func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 		if y >= 0 && y < h {
 			f.focused = i
 			f.syncFocus()
+			e.X -= labelW
+			e.Y = y
 			if mc, ok := field.Widget.(MouseConsumer); ok {
 				return mc.ConsumeMouse(e)
 			}
@@ -325,6 +341,9 @@ func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 			return Handled()
 		}
 		y -= h
+		if field.Help != "" {
+			y--
+		}
 	}
 	return Ignored()
 }

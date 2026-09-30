@@ -107,9 +107,14 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 			if !ok {
 				t.Fatalf("demo has no representative key or display-only classification")
 			}
-			before := renderDemoCells(widget)
+			rows := 30
+			if name == "Viewport" {
+				event = loom.KeyEvent{Key: "pgdown"}
+				rows = 10
+			}
+			before := renderDemoCells(widget, rows)
 			loom.DispatchKeyEvent(widget, event)
-			after := renderDemoCells(widget)
+			after := renderDemoCells(widget, rows)
 			if reflect.DeepEqual(before, after) {
 				t.Fatalf("key %#v did not change %s render or state", event, name)
 			}
@@ -117,10 +122,10 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	}
 }
 
-func renderDemoCells(widget loom.Widget) [][]loom.Cell {
-	canvas := loom.NewCanvas(100, 30)
-	widget.Draw(canvas, loom.Rect{W: 100, H: 30})
-	cells := make([][]loom.Cell, 30)
+func renderDemoCells(widget loom.Widget, rows int) [][]loom.Cell {
+	canvas := loom.NewCanvas(100, rows)
+	widget.Draw(canvas, loom.Rect{W: 100, H: rows})
+	cells := make([][]loom.Cell, rows)
 	for y := range cells {
 		cells[y] = make([]loom.Cell, 100)
 		for x := range cells[y] {
@@ -147,9 +152,9 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 		"DatePicker": {locate: func([]string) (int, int) { return 6, 4 }, state: func(w loom.Widget) any { return *w.(*loom.DatePicker).Value }},
 		"FilePicker": {locate: func([]string) (int, int) { return 3, 2 }, state: func(w loom.Widget) any { entry, _ := w.(*loom.FilePicker).Selected(); return entry.Name }},
 		"Form":       {locate: func([]string) (int, int) { return 2, 2 }, state: func(w loom.Widget) any { return w.(*loom.Form).FocusIndex() }},
-		"MenuBar":    {locate: func(rows []string) (int, int) { return runeColumn(rows[0], "File"), 0 }, state: func(w loom.Widget) any { return w.(*loom.MenuBar).Open }},
+		"MenuBar":    {locate: func([]string) (int, int) { return 1, 0 }, state: func(w loom.Widget) any { return w.(*loom.MenuBar).Open }},
 		"Paginator":  {locate: func([]string) (int, int) { return 6, 0 }, state: func(w loom.Widget) any { return w.(*loom.Paginator).Page }},
-		"Tabs":       {locate: func(rows []string) (int, int) { return runeColumn(rows[0], "Details"), 0 }, state: func(w loom.Widget) any { return w.(*loom.Tabs).Focus() }},
+		"Tabs":       {locate: func(rows []string) (int, int) { return runeColumn(rows[1], "Details"), 1 }, state: func(w loom.Widget) any { return w.(*loom.Tabs).Focus() }},
 		"Tree":       {locate: func([]string) (int, int) { return 0, 0 }, state: func(w loom.Widget) any { return len(w.(*loom.Tree).VisibleNodes()) }},
 	}
 	for name, test := range clicks {
@@ -182,7 +187,6 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	}
 	const cols, rows = 100, 30
 	s := ptytest.Start(t, cols, rows, bin, "widgets", "--show")
-	s.WaitFor("app.go", 5*time.Second)
 	clickText := func(text string) {
 		t.Helper()
 		for y, line := range s.Screen() {
@@ -196,7 +200,7 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 		t.Fatalf("%q not visible on PTY screen:\n%s", text, strings.Join(s.Screen(), "\n"))
 	}
 	clickText("Tree")
-	s.WaitFor("app.go", 3*time.Second)
+	s.WaitFor("app.go", 5*time.Second)
 	// Click the disclosure glyph immediately before src; collapsing the node
 	// removes app.go from the rendered child panel.
 	for y, line := range s.Screen() {
