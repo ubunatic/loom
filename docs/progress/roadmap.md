@@ -4,7 +4,7 @@ Legend: ✔ done, ▶ in sprint, · todo, ? host-decided item for later user rev
 
 | Phase | Tickets |
 |---|---|
-| 1 Foundations | ▶ 154, · 158, · 181, · 182, · 156 |
+| 1 Foundations | ✔ 154, ▶ 158, · 181, · 182, · 156 |
 | 2 Input polish | · 173, · 184, · 185, · 189, · 174, · 183 |
 | 3 Status widgets | · 186, · 167, · 187, · 188 |
 | 4 Composites | · 190, · 168, · 172, · 169, · 191 |

@@ -1,6 +1,6 @@
 # 154 — Dynamic Cadence and Timer Control on Ticker
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
