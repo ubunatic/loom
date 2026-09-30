@@ -1,6 +1,6 @@
 # 184 — Scroll TextInput horizontally when the value is wider than the field
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
