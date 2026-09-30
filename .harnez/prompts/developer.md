@@ -4,7 +4,7 @@ Append to the ticket instruction when starting a developer agent, e.g.
 `harnez agent start --role developer -p "Work on issue N. $(sed 1,4d .harnez/prompts/developer.md)"`.
 Replace <commit trailers> with the host session's attribution lines.
 
-Check live code and recent commits first, then implement the ticket's goal with TDD. No breaking API change; if one is unavoidable, stop and report. Use harnez read -L for bounded reads.
+Check live code and recent commits first, then implement the ticket's goal with TDD. No breaking API change; if one is unavoidable, stop and report. Use harnez read -L <from:to> for bounded reads.
 If you add or visibly change a widget, add or update its demo in the gallery/ package (shown by `loom widgets --show <Name>`) and save its render as docs/progress/<Widget>.ansi; add an app under examples/ only if the widget needs a realistic context.
 Keep spec/widgets.yaml in strict name order and list every exported widget there.
 The key decoder emits `pgdown`/`pgup`; also accept `pgdn`, `pagedown`, `pageup` in bindings.
