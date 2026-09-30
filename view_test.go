@@ -190,6 +190,7 @@ func TestViewPanOffsetAndANSIClipping(t *testing.T) {
 
 func TestViewHorizontalPanKeys(t *testing.T) {
 	v := NewView([]string{"abcdef"})
+	v.Draw(NewCanvas(2, 1), Rect{W: 2, H: 1})
 	v.ConsumeKey(KeyEvent{Key: "right"})
 	v.ConsumeKey(KeyEvent{Text: "l"})
 	if v.OffsetX != 2 {

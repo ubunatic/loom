@@ -192,18 +192,26 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 	halfPage := max(1, page/2)
 	switch key {
 	case "up", "k":
-		if v.Scroll > 0 {
-			v.Scroll--
-			v.OffsetY = v.Scroll
+		if v.Scroll <= 0 {
+			return Ignored()
 		}
+		v.Scroll--
+		v.OffsetY = v.Scroll
 	case "down", "j":
-		if v.Scroll < maxScroll {
-			v.Scroll++
-			v.OffsetY = v.Scroll
+		if v.Scroll >= maxScroll {
+			return Ignored()
 		}
+		v.Scroll++
+		v.OffsetY = v.Scroll
 	case "left", "h":
-		v.OffsetX = max(0, v.OffsetX-1)
+		if v.OffsetX <= 0 {
+			return Ignored()
+		}
+		v.OffsetX--
 	case "right", "l":
+		if v.OffsetX >= v.maxOffsetX() {
+			return Ignored()
+		}
 		v.OffsetX++
 	case "pgdown", "pgdn", "pagedown", "ctrl-f", " ":
 		v.Scroll = min(maxScroll, v.Scroll+page)
@@ -234,6 +242,18 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 		return Ignored()
 	}
 	return Handled()
+}
+
+func (v *View) maxOffsetX() int {
+	contentW := v.lastRect.W
+	if scrollbarVisible(v.ScrollbarMode, len(v.Lines) > v.lastH) {
+		contentW--
+	}
+	maxWidth := 0
+	for _, line := range v.Lines {
+		maxWidth = max(maxWidth, StringWidth(stripANSI(line)))
+	}
+	return max(0, maxWidth-contentW)
 }
 
 // ConsumeMouse supports wheel navigation and clicks in the scrollbar track.

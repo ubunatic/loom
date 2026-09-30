@@ -542,6 +542,9 @@ func TestGridArrowNavigation(t *testing.T) {
 		loom.NewView([]string{"4"}),
 	}
 	g := loom.NewGrid(2, children...)
+	// A grid gets arrows that the focused child cannot use. All four one-line
+	// views fit their cells, so the arrows move grid focus rather than scroll.
+	g.Draw(loom.NewCanvas(20, 8), loom.Rect{W: 20, H: 8})
 	g.ConsumeKey(loom.KeyEvent{Key: "right"}) // focus → 1
 	g.ConsumeKey(loom.KeyEvent{Key: "down"})  // focus → 3
 	if g.Focus() != 3 {

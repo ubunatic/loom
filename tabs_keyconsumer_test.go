@@ -51,11 +51,19 @@ func TestArrowSwitchTrue(t *testing.T) {
 	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
 
 	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
-	if tabs.Focus() != 1 {
-		t.Fatalf("focus after right = %d, want 1", tabs.Focus())
+	if tabs.Focus() != 0 {
+		t.Fatalf("focus after consumed right = %d, want 0", tabs.Focus())
 	}
-	if len(child.keys) != 0 {
-		t.Fatalf("child received keys = %#v, want none", child.keys)
+	if len(child.keys) != 1 {
+		t.Fatalf("child received keys = %#v, want right", child.keys)
+	}
+}
+
+func TestArrowSwitchRunsWhenChildIgnoresKey(t *testing.T) {
+	child := &keyConsumerWidget{result: loom.Ignored()}
+	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
+	if result := tabs.ConsumeKey(loom.KeyEvent{Key: "right"}); !result.Consumed || tabs.Focus() != 1 {
+		t.Fatalf("right = %+v, focus=%d, want handled at tab 1", result, tabs.Focus())
 	}
 }
 

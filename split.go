@@ -139,15 +139,20 @@ func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 		key = e.Text
 	}
 	s.ensureFocus()
+	if child := s.focusedChild(); child != nil {
+		if result := child.ConsumeKey(e); result.Consumed {
+			return result
+		}
+	}
 	switch key {
 	case "tab":
 		if !s.FocusNext() {
-			s.focusFirst()
+			return Ignored()
 		}
 		return Handled()
 	case "shift-tab":
 		if !s.FocusPrevious() {
-			s.focusLast()
+			return Ignored()
 		}
 		return Handled()
 	case "[":
@@ -156,9 +161,6 @@ func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 	case "]":
 		s.SetRatio(s.Ratio + 0.05)
 		return Handled()
-	}
-	if child := s.focusedChild(); child != nil {
-		return child.ConsumeKey(e)
 	}
 	return Ignored()
 }

@@ -138,8 +138,8 @@ func TestSplitAndBoxMouseRouting(t *testing.T) {
 	child := &focusProbe{}
 	box := &Box{Padding: 1, Child: child}
 	box.Draw(canvas, Rect{X: 3, Y: 0, W: 10, H: 6})
-	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 3, Y: 4})
-	if len(child.mice) != 1 || child.mice[0].X != 1 || child.mice[0].Y != 2 {
+	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 3, Y: 3})
+	if len(child.mice) != 1 || child.mice[0].X != 1 || child.mice[0].Y != 1 {
 		t.Fatalf("box child event = %+v", child.mice)
 	}
 	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 1, Y: 2})

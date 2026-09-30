@@ -37,6 +37,33 @@ func TestViewNavigationReportsConsumption(t *testing.T) {
 	}
 }
 
+func TestViewArrowsBubbleAtEdgesAndWhenContentFits(t *testing.T) {
+	view := NewView([]string{"abc", "def"})
+	view.Draw(NewCanvas(3, 2), Rect{W: 3, H: 2})
+	for _, key := range []string{"up", "down", "left", "right"} {
+		if result := view.ConsumeKey(KeyEvent{Key: key}); result != Ignored() {
+			t.Errorf("fitting content: %s = %+v, want ignored", key, result)
+		}
+	}
+
+	view.Draw(NewCanvas(2, 1), Rect{W: 2, H: 1})
+	if result := view.ConsumeKey(KeyEvent{Key: "right"}); result != Handled() || view.OffsetX != 1 {
+		t.Fatalf("right with horizontal overflow = %+v, offset=%d", result, view.OffsetX)
+	}
+	if result := view.ConsumeKey(KeyEvent{Key: "right"}); result != Handled() || view.OffsetX != 2 {
+		t.Fatalf("right with remaining horizontal overflow = %+v, offset=%d", result, view.OffsetX)
+	}
+	if result := view.ConsumeKey(KeyEvent{Key: "right"}); result != Ignored() {
+		t.Fatalf("right at horizontal edge = %+v, want ignored", result)
+	}
+	if result := view.ConsumeKey(KeyEvent{Key: "down"}); result != Handled() || view.Scroll != 1 {
+		t.Fatalf("down with vertical overflow = %+v, scroll=%d", result, view.Scroll)
+	}
+	if result := view.ConsumeKey(KeyEvent{Key: "down"}); result != Ignored() {
+		t.Fatalf("down at vertical edge = %+v, want ignored", result)
+	}
+}
+
 func TestViewScrollbarReportsConsumption(t *testing.T) {
 	view := NewView(make([]string, 30))
 	view.Draw(NewCanvas(14, 8), Rect{X: 2, Y: 3, W: 10, H: 4})
@@ -63,7 +90,7 @@ func TestFrameChoiceFocusAndActionRouting(t *testing.T) {
 	view := NewView(make([]string, 30))
 	frame := &Frame{
 		Boxes:   []Box{{ID: "choice", Width: 18, Height: 8, Child: choice}, {ID: "view", Width: 18, Height: 8, Child: view}},
-		Actions: []FrameAction{{Key: "q", Action: "quit"}},
+		Actions: []FrameAction{{Key: "f9", Action: "quit"}},
 	}
 	frame.Draw(NewCanvas(40, 10), Rect{W: 40, H: 10})
 	if result := frame.ConsumeKey(KeyEvent{Key: "tab"}); result != Handled() || frame.FocusedBox().ID != "view" {
@@ -76,7 +103,7 @@ func TestFrameChoiceFocusAndActionRouting(t *testing.T) {
 	if !choice.Focused() || view.Focused() {
 		t.Fatal("reverse traversal did not restore choice focus")
 	}
-	if result := frame.ConsumeKey(KeyEvent{Text: "q"}); result != QuitResult() || choice.Query() != "" {
+	if result := frame.ConsumeKey(KeyEvent{Key: "f9"}); result != QuitResult() || choice.Query() != "" {
 		t.Fatalf("frame action = %+v, query=%q", result, choice.Query())
 	}
 }

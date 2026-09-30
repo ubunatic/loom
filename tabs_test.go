@@ -197,7 +197,7 @@ func TestTabsDelegatesKeyToActiveChildOnly(t *testing.T) {
 
 	tabs.ConsumeKey(loom.KeyEvent{Key: "right"}) // switch to b
 	tabs.ConsumeKey(loom.KeyEvent{Text: "y"})
-	if len(a.keys) != 1 || len(b.keys) != 1 {
+	if len(a.keys) != 2 || a.keys[1].Key != "right" || len(b.keys) != 1 || b.keys[0].Text != "y" {
 		t.Fatalf("expected only b to receive the key after switch; a=%d b=%d", len(a.keys), len(b.keys))
 	}
 }

@@ -34,13 +34,14 @@ func TestFrameFocusRouting(t *testing.T) {
 		t.Fatal("tab did not skip hidden child")
 	}
 	c.quit = true
-	if !f.ConsumeKey(KeyEvent{Key: "down"}).Quit || len(c.keys) != 1 || len(a.keys) != 0 || len(b.keys) != 0 {
+	if !f.ConsumeKey(KeyEvent{Key: "down"}).Quit || len(c.keys) != 1 || len(a.keys) != 1 || len(b.keys) != 0 {
 		t.Fatal("key/quit was not isolated to focused child")
 	}
+	c.quit = false
 	if f.ConsumeKey(KeyEvent{Text: "x"}).Quit || !f.Boxes[2].Hidden || f.FocusedBox().ID != "a" || c.Focused() {
 		t.Fatal("toggle did not move focus from hidden child")
 	}
-	if len(c.keys) != 1 {
+	if len(c.keys) != 2 {
 		t.Fatal("frame action reached child")
 	}
 	f.ConsumeKey(KeyEvent{Key: "shift-tab"})
@@ -70,7 +71,7 @@ func TestFrameCustomFocusKeysAndBoxForwarding(t *testing.T) {
 		t.Fatal("custom backward key")
 	}
 	a.quit = true
-	if !f.Boxes[0].ConsumeKey(KeyEvent{Text: "q"}).Quit || len(a.keys) != 1 {
+	if !f.Boxes[0].ConsumeKey(KeyEvent{Text: "q"}).Quit || len(a.keys) != 2 {
 		t.Fatal("standalone box did not forward child input and quit")
 	}
 	if (&Box{}).ConsumeKey(KeyEvent{}).Quit {

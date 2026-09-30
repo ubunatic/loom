@@ -96,7 +96,9 @@ type Tabs struct {
 	Vertical bool
 	// SwitchKey optionally cycles to the next tab in addition to left/right
 	// arrow keys (e.g. "tab" or "ctrl-t"). Empty disables it.
-	SwitchKey   string
+	SwitchKey string
+	// ArrowSwitch is retained for source compatibility. Arrow bindings now
+	// follow the same child-first event bubbling as other tab bindings.
 	ArrowSwitch bool
 	OnChildQuit func(i int) (quitHost bool)
 
@@ -374,16 +376,6 @@ func (t *Tabs) ConsumeKey(e KeyEvent) EventResult {
 	if keys.Previous == "" && keys.Next == "" && keys.Cycle == "" && len(keys.Select) == 0 {
 		keys = DefaultTabsKeys()
 	}
-	if t.ArrowSwitch {
-		switch {
-		case matchesTabKey(e, keys.Previous):
-			t.Select((t.focus - 1 + n) % n)
-			return Handled()
-		case matchesTabKey(e, keys.Next):
-			t.Select((t.focus + 1) % n)
-			return Handled()
-		}
-	}
 	if child := t.active(); child != nil {
 		if res := child.ConsumeKey(e); res.Consumed {
 			if res.Quit && t.OnChildQuit != nil {
@@ -396,10 +388,10 @@ func (t *Tabs) ConsumeKey(e KeyEvent) EventResult {
 		}
 	}
 	switch {
-	case !t.ArrowSwitch && matchesTabKey(e, keys.Previous):
+	case matchesTabKey(e, keys.Previous):
 		t.Select((t.focus - 1 + n) % n)
 		return Handled()
-	case !t.ArrowSwitch && matchesTabKey(e, keys.Next):
+	case matchesTabKey(e, keys.Next):
 		t.Select((t.focus + 1) % n)
 		return Handled()
 	case matchesTabKey(e, keys.Cycle), matchesTabKey(e, t.SwitchKey):

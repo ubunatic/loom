@@ -150,7 +150,9 @@ frame.Boxes[0].Child = nav
 
 `OnSelection` runs when the current entry changes, including after directory loading. `OnActivate` handles confirmed non-directory entries. `OnOpen` runs after a directory is opened, and `OnQuit` handles ESC at the navigation root. Hosts can inspect `Directory()` and `Selected()`, style the list through `List()`, and call `SetRoot("")` when ESC should navigate to the filesystem parent without requesting a quit.
 
-`ConsumeKey` reports whether ESC or backspace belongs to the navigation contract. Hosted widgets can forward these keys to `ConsumeKey` before a frame handles other keys, preserving parent navigation and root quit behavior across focus boundaries. Other keys should pass through the normal frame routing so filtering, selection, and frame actions continue to work.
+`NavigationPane` consumes ESC and backspace when they navigate to a parent or
+request a root quit. Other keys follow normal event bubbling: the focused pane
+may consume them, and its containing frame handles only the keys left unconsumed.
 
 The pane retains one `Choice` instance while opening directories: `Choice.SetItems` replaces the rows and resets its filter, while `SelectIndex` restores a requested row. Hosts that customize list behavior can use `List()` without replacing the pane's child widget; the frame and pane then keep a consistent child identity.
 
@@ -250,8 +252,11 @@ Constructors and helpers (always returned by value):
 
 ### Event Handling
 `Widget` has one input contract: `ConsumeKey(e KeyEvent) EventResult` and
-`ConsumeMouse(e MouseEvent) EventResult`. Composite widgets pass the result back
-through the same contract, preserving both `Consumed` and `Quit` at every level.
+`ConsumeMouse(e MouseEvent) EventResult`. Key events bubble: each container
+offers the key to its focused child first and handles it only when the child
+returns unconsumed. A focused widget consumes an arrow only when it can move in
+that direction, so a parent such as `Grid` can use the key at the child's edge.
+Composite widgets preserve both `Consumed` and `Quit` while forwarding results.
 `DispatchKeyEvent` and `DispatchMouseEvent` call the corresponding widget method
 directly. `Pane` applies fallback quit keys only when a key result is unconsumed.
 Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`,
