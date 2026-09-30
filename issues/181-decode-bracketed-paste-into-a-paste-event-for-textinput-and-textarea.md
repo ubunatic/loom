@@ -1,6 +1,6 @@
 # 181 — Decode bracketed paste into a paste event for TextInput and TextArea
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
