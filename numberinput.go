@@ -19,6 +19,8 @@ type NumberInput struct {
 	Format string
 	// FixedWidth pads the complete control to a stable display width. Zero keeps the natural width.
 	FixedWidth int
+	// Align controls value alignment inside FixedWidth; the default is left.
+	Align Align
 
 	editor *TextInput
 	orig   float64
@@ -39,9 +41,13 @@ func (n *NumberInput) Draw(c *Canvas, r Rect) {
 	}
 	text := n.String()
 	if n.FixedWidth > 0 && n.Value != nil {
-		value := "◂ " + n.format(*n.Value)
-		padding := max(0, n.FixedWidth-StringWidth(value)-2)
-		text = value + strings.Repeat(" ", padding) + " ▸"
+		value := n.format(*n.Value)
+		padding := strings.Repeat(" ", max(0, n.FixedWidth-StringWidth(value)-4))
+		if n.Align == AlignRight {
+			text = "◂ " + padding + value + " ▸"
+		} else {
+			text = "◂ " + value + padding + " ▸"
+		}
 	}
 	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), Style{})
 }

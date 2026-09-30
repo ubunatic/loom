@@ -10,6 +10,30 @@ import (
 	"codeberg.org/ubunatic/loom"
 )
 
+func TestNumberInputRightAlignedFixedField(t *testing.T) {
+	value := 5.0
+	input := loom.NewNumberInput(&value, -100, 100)
+	input.Format, input.FixedWidth = "%.2f", 11
+	input.Align = loom.AlignRight
+	for _, test := range []struct {
+		value float64
+		want  string
+	}{
+		{-100, "◂ -100.00 ▸"}, {5, "◂    5.00 ▸"}, {100, "◂  100.00 ▸"},
+	} {
+		value = test.value
+		c := loom.NewCanvas(14, 2)
+		input.Draw(c, loom.Rect{X: 2, Y: 1, W: 11, H: 1})
+		var text strings.Builder
+		for x := 2; x < 13; x++ {
+			text.WriteString(c.Get(x, 1).Text)
+		}
+		if got := text.String(); got != test.want {
+			t.Fatalf("value %g: got %q, want %q", value, got, test.want)
+		}
+	}
+}
+
 func TestNumberInputStepsAndClamps(t *testing.T) {
 	value := 4.0
 	input := loom.NewNumberInput(&value, 0, 5)

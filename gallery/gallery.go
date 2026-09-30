@@ -112,9 +112,9 @@ var demos = map[string]constructor{
 	},
 	"NumberInput": func() loom.Widget {
 		value := 7.5
-		input := loom.NewNumberInput(&value, 0, 10)
+		input := loom.NewNumberInput(&value, -100, 100)
 		input.Step = .5
-		input.FixedWidth = 7
+		input.Format, input.FixedWidth, input.Align = "%.2f", 11, loom.AlignRight
 		return input
 	},
 	"Paginator": func() loom.Widget {

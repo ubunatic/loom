@@ -365,6 +365,26 @@ func TestGalleryPaintCanvasTunePTY(t *testing.T) {
 	s.WaitFor("Smoothing: 0", 5*time.Second)
 }
 
+func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
+	s.WaitFor("◂    7.50 ▸", 5*time.Second)
+	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 4) + "-100.00\r")
+	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
+	s.Send("\x1b[D")
+	s.Send("\x1bOQ")
+	s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
+	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 7) + "100.00\r")
+	s.WaitFor("◂  100.00 ▸", 5*time.Second)
+	s.Send("\x1b[C")
+	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 6) + "5.00\r")
+	s.WaitFor("◂    5.00 ▸", 5*time.Second)
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {
@@ -668,17 +688,17 @@ func TestRicherDemosPTY(t *testing.T) {
 	}
 	t.Run("NumberInputFixedWidth", func(t *testing.T) {
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
-		s.WaitFor("◂ 7.5 ▸", 5*time.Second)
+		s.WaitFor("◂    7.50 ▸", 5*time.Second)
 		before := strings.Join(s.Screen(), "\n")
-		start := strings.Index(before, "◂ 7.5 ▸")
+		start := strings.Index(before, "◂    7.50 ▸")
 		if start < 0 {
 			t.Fatal("initial number input missing")
 		}
 		s.Send("\x1b[C")
-		s.WaitFor("◂ 8", 5*time.Second)
+		s.WaitFor("◂    8.00 ▸", 5*time.Second)
 		after := strings.Join(s.Screen(), "\n")
-		left, right := strings.Index(after, "◂ 8"), strings.Index(after, "▸")
-		if left < 0 || right < 0 || utf8.RuneCountInString(after[left:right]) != utf8.RuneCountInString("◂ 7.5 ") {
+		left, right := strings.Index(after, "◂    8.00"), strings.Index(after, "▸")
+		if left < 0 || right < 0 || utf8.RuneCountInString(after[left:right]) != utf8.RuneCountInString("◂    7.50 ") {
 			t.Fatalf("fixed-width NumberInput changed its footprint after stepping:\n%s", after)
 		}
 	})
