@@ -181,8 +181,7 @@ func TestTextInputMaskedWideMaskCaretAndDeletion(t *testing.T) {
 }
 
 func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
-	in := loom.NewTextInput("ab界🙂cd")
-	in.HandleKey(loom.KeyEvent{Key: "left"}) // keep content clipped on both sides
+	in := loom.NewTextInput("ab界🙂cdef")
 	c := loom.NewCanvas(5, 1)
 	c.ColorProfile = loom.ColorProfileNone
 	in.Draw(c, c.Bounds(), true)
@@ -192,8 +191,21 @@ func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
 	if got := c.Get(0, 0).Text; got != "‹" {
 		t.Errorf("left clipped marker = %q, want ‹", got)
 	}
+	if got := c.Get(4, 0).Text; got == "›" {
+		t.Errorf("end caret showed a right marker despite no hidden suffix")
+	}
+	// Move inside the value with hidden content on both sides.
+	in.HandleKey(loom.KeyEvent{Key: "home"})
+	for range 4 {
+		in.HandleKey(loom.KeyEvent{Key: "right"})
+	}
+	c.Clear()
+	in.Draw(c, c.Bounds(), true)
+	if got := c.Get(0, 0).Text; got != "‹" {
+		t.Errorf("interior left marker = %q, want ‹", got)
+	}
 	if got := c.Get(4, 0).Text; got != "›" {
-		t.Errorf("right clipped marker = %q, want ›", got)
+		t.Errorf("interior right marker = %q, want ›", got)
 	}
 	in.HandleKey(loom.KeyEvent{Key: "home"})
 	c.Clear()
@@ -211,7 +223,7 @@ func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
 	if c.CursorX < 0 || c.CursorX >= 5 {
 		t.Errorf("caret after end backspace x = %d, want visible", c.CursorX)
 	}
-	if got := in.Value(); got != "ab界🙂c" {
-		t.Errorf("value after end backspace = %q, want ab界🙂c", got)
+	if got := in.Value(); got != "ab界🙂cde" {
+		t.Errorf("value after end backspace = %q, want ab界🙂cde", got)
 	}
 }

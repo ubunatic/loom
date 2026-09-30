@@ -127,9 +127,10 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 		available := max(0, r.X+r.W-x)
 		displayed := t.displayRunes()
 		start := min(t.view, len(t.runes))
-		// Move the window until the caret fits, accounting for one-column markers.
+		// Move the window until the caret fits. An interior caret needs room for
+		// the right marker; an end caret needs room for the terminal cursor instead.
 		for start < t.caret {
-			reserve := 1 // leave a cell for the caret after the displayed text
+			reserve := 1
 			if start > 0 {
 				reserve++ // left clipping marker
 			}
@@ -149,7 +150,7 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 		for end < len(displayed) {
 			w := RuneWidth(displayed[end])
 			remaining := available - used
-			if end+1 < len(displayed) {
+			if t.caret < len(displayed) && end+1 < len(displayed) {
 				remaining-- // reserve the right clipping marker
 			} else if focused && t.caret == len(displayed) {
 				remaining-- // keep the end caret inside the field
@@ -161,7 +162,7 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 			end++
 		}
 		c.Write(x, r.Y, string(displayed[start:end]), Style{})
-		if end < len(displayed) && available-used > 0 {
+		if end < len(displayed) && t.caret < len(displayed) && available-used > 0 {
 			c.Write(x+used, r.Y, "›", Style{})
 		}
 		if focused {
