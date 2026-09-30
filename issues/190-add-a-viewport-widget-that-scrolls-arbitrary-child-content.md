@@ -1,6 +1,6 @@
 # 190 — Add a Viewport widget that scrolls arbitrary child content
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
