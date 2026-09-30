@@ -178,16 +178,16 @@ func TestChoiceConsumeMouseOnSelectNoQuit(t *testing.T) {
 	}
 }
 
-func TestChoiceInFrameConsumeMouseUsesCanvasCoordinates(t *testing.T) {
+func TestChoiceInFrameConsumeMouseUsesLocalCoordinates(t *testing.T) {
 	choice := loom.NewChoice([]loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}})
 	choice.SelectOnlyOnClick = true
 	frame := &loom.Frame{Boxes: []loom.Box{{Child: choice, Width: 8, Height: 6}}}
 	canvas := loom.NewCanvas(24, 14)
 	frame.Draw(canvas, loom.Rect{X: 5, Y: 3, W: 16, H: 10})
 
-	// Frame chrome is one row high and the box border is one cell high. The
-	// second choice row is therefore at absolute canvas coordinate (7, 6).
-	frame.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 7, Y: 6})
+	// Frame chrome and the box border precede the second choice row.
+	// The frame's canvas origin does not affect its local mouse coordinates.
+	frame.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 3})
 	if got := choice.FilteredSel(); got != 1 {
 		t.Fatalf("selection after click = %d, want 1", got)
 	}
@@ -197,9 +197,12 @@ func TestGridConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{quit: true}
 	g := loom.NewGrid(2, a, b)
 	g.ConsumeKey(loom.KeyEvent{Key: "right"}) // focus → child 1 (b)
+	g.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
 
 	ev := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}
-	quit := g.ConsumeMouse(ev).Quit
+	click := ev
+	click.X += 10 // second drawn cell
+	quit := g.ConsumeMouse(click).Quit
 	if !b.got || a.got {
 		t.Errorf("mouse should reach focused child only: a.got=%v b.got=%v", a.got, b.got)
 	}
@@ -215,8 +218,9 @@ func TestStackConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{}
 	s := loom.NewStack(loom.Horizontal, a, b)
 	s.ConsumeKey(loom.KeyEvent{Key: "tab"}) // focus → child 1 (b)
+	s.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
 
-	s.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover})
+	s.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, X: 10})
 	if !b.got || a.got {
 		t.Errorf("stack mouse should reach focused child: a.got=%v b.got=%v", a.got, b.got)
 	}
@@ -225,8 +229,9 @@ func TestStackConsumeMouseForwardsToFocusedChild(t *testing.T) {
 func TestPopupConsumeMouseForwardsWhileOpen(t *testing.T) {
 	inner := &spyWidget{}
 	p := loom.NewPopup("t", inner)
+	p.Draw(loom.NewCanvas(20, 8), loom.Rect{W: 20, H: 8})
 
-	p.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress})
+	p.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, X: 6, Y: 3})
 	if !inner.got {
 		t.Error("open popup should forward mouse to inner")
 	}

@@ -251,16 +251,16 @@ func TestTabsVerticalMouseRoutingUsesChildLocalCoordinates(t *testing.T) {
 	c := loom.NewCanvas(40, 10)
 	tabs.Draw(c, loom.Rect{X: 5, Y: 3, W: 30, H: 6})
 
-	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 15, Y: 5})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 10, Y: 2})
 	if len(a.mice) != 1 || a.mice[0].X != 6 || a.mice[0].Y != 2 {
 		t.Fatalf("child click = %#v, want child-local (6,2)", a.mice)
 	}
-	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 15, Y: 6})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 10, Y: 3})
 	if len(a.mice) != 2 || a.mice[1].X != 6 || a.mice[1].Y != 3 || a.mice[1].Action != loom.MouseScrollDown {
 		t.Fatalf("child wheel = %#v, want child-local (6,3)", a.mice)
 	}
 
-	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 6, Y: 4})
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 1})
 	if tabs.Focus() != 1 {
 		t.Fatalf("focus after vertical tab click = %d, want 1", tabs.Focus())
 	}

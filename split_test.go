@@ -127,7 +127,7 @@ func TestSplitAndBoxMouseRouting(t *testing.T) {
 	split := NewSplit(left, right)
 	canvas := NewCanvas(20, 6)
 	split.Draw(canvas, Rect{X: 2, Y: 1, W: 15, H: 4})
-	click := MouseEvent{Action: MousePress, Button: MouseLeft, X: 14, Y: 3}
+	click := MouseEvent{Action: MousePress, Button: MouseLeft, X: 12, Y: 2}
 	if split.ConsumeMouse(click).Quit || len(left.mice) != 0 || len(right.mice) != 1 || !right.Focused() {
 		t.Fatalf("split mouse route: left=%d right=%d focused=%v", len(left.mice), len(right.mice), right.Focused())
 	}
@@ -138,11 +138,11 @@ func TestSplitAndBoxMouseRouting(t *testing.T) {
 	child := &focusProbe{}
 	box := &Box{Padding: 1, Child: child}
 	box.Draw(canvas, Rect{X: 3, Y: 0, W: 10, H: 6})
-	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 6, Y: 4})
+	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 3, Y: 4})
 	if len(child.mice) != 1 || child.mice[0].X != 1 || child.mice[0].Y != 2 {
 		t.Fatalf("box child event = %+v", child.mice)
 	}
-	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 4, Y: 2})
+	box.ConsumeMouse(MouseEvent{Action: MouseHover, X: 1, Y: 2})
 	if len(child.mice) != 1 {
 		t.Fatal("box border/padding event reached child")
 	}

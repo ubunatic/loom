@@ -275,7 +275,7 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	c := makeChoice(30)
 	c.SelectOnlyOnClick = true
 	c.Draw(NewCanvas(25, 8), Rect{X: 2, Y: 1, W: 20, H: 6})
-	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 5})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 4})
 	if c.viewOffset != 25 || c.sel != 25 {
 		t.Fatalf("bottom track click: offset=%d sel=%d, want 25", c.viewOffset, c.sel)
 	}
@@ -283,11 +283,11 @@ func TestChoiceScrollbarTrackClick(t *testing.T) {
 	if c.viewOffset != 25 {
 		t.Fatalf("redraw snapped viewport to %d", c.viewOffset)
 	}
-	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 1})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 0})
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatalf("top track click: offset=%d sel=%d, want 0 and 4", c.viewOffset, c.sel)
 	}
-	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 21, Y: 6}) // prompt
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 19, Y: 5}) // prompt
 	if c.viewOffset != 0 || c.sel != 4 {
 		t.Fatal("prompt-row click moved scrollbar")
 	}

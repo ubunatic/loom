@@ -205,10 +205,10 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 		v.OffsetX = max(0, v.OffsetX-1)
 	case "right", "l":
 		v.OffsetX++
-	case "pgdown", "pgdn", "ctrl-f", " ":
+	case "pgdown", "pgdn", "pagedown", "ctrl-f", " ":
 		v.Scroll = min(maxScroll, v.Scroll+page)
 		v.OffsetY = v.Scroll
-	case "pgup", "ctrl-b", "b":
+	case "pgup", "pageup", "ctrl-b", "b":
 		v.Scroll = max(0, v.Scroll-page)
 		v.OffsetY = v.Scroll
 	case "ctrl-d":
@@ -230,8 +230,10 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 			v.drag.cancel()
 		}
 		return QuitResult()
+	default:
+		return Ignored()
 	}
-	return Ignored()
+	return Handled()
 }
 
 // ConsumeMouse supports wheel navigation and clicks in the scrollbar track.
@@ -264,16 +266,22 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 				v.Scroll = scrollTrackPosition(row, v.lastRect.H, maxScroll)
 				v.OffsetY = v.Scroll
 			}
+			return Handled()
 		}
 	case MouseDrag:
 		if v.drag.active {
 			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y, v.drag.grab, maxScroll)
 			v.OffsetY = v.Scroll
+			return Handled()
 		}
 	case MouseRelease:
 		if v.drag.active {
 			v.drag.cancel()
+			return Handled()
 		}
+	}
+	if e.Action == MouseScrollUp || e.Action == MouseScrollDown {
+		return Handled()
 	}
 	return Ignored()
 }

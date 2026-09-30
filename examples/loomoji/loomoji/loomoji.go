@@ -1246,6 +1246,8 @@ type picker struct {
 	width      int
 	searchY    int
 	categoryY  int
+	lastRect   loom.Rect
+	gridRect   loom.Rect
 	cols       int
 	viewRows   int
 	gridStart  int
@@ -1260,7 +1262,7 @@ func (g *gridPane) Draw(c *loom.Canvas, r loom.Rect)          { g.picker.drawGri
 func (g *gridPane) ConsumeKey(loom.KeyEvent) loom.EventResult { return loom.Ignored() }
 func (g *gridPane) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if g.picker.handleGridMouse(e) {
-		return loom.Handled()
+		return loom.QuitResult()
 	}
 	return loom.Ignored()
 }
@@ -1317,6 +1319,7 @@ func (p *picker) nextCategory() {
 // ── Draw ──────────────────────────────────────────────────────────────────────
 
 func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
+	p.lastRect = r
 	if r.W <= 0 || r.H <= 0 {
 		return
 	}
@@ -1394,6 +1397,7 @@ func (p *picker) Draw(c *loom.Canvas, r loom.Rect) {
 	// ── Grid area ─────────────────────────────────────────────────────────────
 	mainY := p.searchY + 2
 	mainRect := loom.Rect{X: r.X, Y: mainY, W: r.W, H: max(0, p.categoryY-mainY)}
+	p.gridRect = mainRect
 	p.split.Draw(c, mainRect)
 }
 
@@ -1510,7 +1514,7 @@ func (p *picker) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action != loom.MousePress && e.Action != loom.MouseHover && e.Action != loom.MouseDrag {
 		return loom.Ignored()
 	}
-	x, y := e.X, e.Y
+	x, y := e.X+p.lastRect.X, e.Y+p.lastRect.Y
 	// Click on search bar → switch to search focus
 	if (y == p.searchY || y == p.searchY+1) && e.Action == loom.MousePress && e.Button == loom.MouseLeft {
 		p.gridFocus = false
@@ -1521,11 +1525,11 @@ func (p *picker) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 		if e.Action != loom.MousePress || e.Button != loom.MouseLeft {
 			return loom.Ignored()
 		}
-		if x < 2 || x >= p.width {
+		if x < p.lastRect.X+2 || x >= p.lastRect.X+p.width {
 			return loom.Ignored()
 		}
 		// Walk the category icons to find which one was clicked.
-		cx := 2
+		cx := p.lastRect.X + 2
 		for i, cat := range p.categories {
 			w := loom.StringWidth(cat.icon) + 2
 			if x >= cx && x < cx+w {
@@ -1536,6 +1540,7 @@ func (p *picker) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 		}
 		return loom.Ignored()
 	}
+	e.X, e.Y = x-p.gridRect.X, y-p.gridRect.Y
 	return p.split.ConsumeMouse(e)
 }
 

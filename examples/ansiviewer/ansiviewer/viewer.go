@@ -154,15 +154,17 @@ func (b *framedBrowser) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		b.astra.enabled = !b.astra.enabled
 		return loom.Handled()
 	}
-	result := b.browser.navigation.ConsumeKey(e)
-	if result.Consumed {
+	if b.browser.navigation.Searching() || e.Is("/", "esc", "backspace") {
+		result := b.browser.navigation.ConsumeKey(e)
 		b.browser.syncSelection()
 		if result.Quit || b.browser.quit {
 			return loom.QuitResult()
 		}
-		return result
+		if result.Consumed {
+			return result
+		}
 	}
-	result = b.frame.ConsumeKey(e)
+	result := b.frame.ConsumeKey(e)
 	b.browser.syncSelection()
 	if result.Quit || b.browser.quit {
 		return loom.QuitResult()
@@ -369,9 +371,6 @@ func (b *browser) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	b.previewView.Scroll = b.offset
 	b.previewView.OffsetX = b.offsetX
 	result := b.previewView.ConsumeKey(e)
-	if result.Consumed {
-		return result
-	}
 	b.offset = b.previewView.Scroll
 	b.offsetX = b.previewView.OffsetX
 	return result

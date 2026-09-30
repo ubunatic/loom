@@ -828,12 +828,13 @@ func (f *Frame) cycleFocus(direction int) {
 
 // ConsumeKey dispatches declared actions, focus keys, then the focused child.
 func (f *Frame) ConsumeKey(k KeyEvent) EventResult {
-	if box := f.FocusedBox(); box != nil && box.Child != nil {
-		if res := box.Child.ConsumeKey(k); res.Consumed {
-			return res
-		}
+	if res := f.handleKey(k); res.Consumed {
+		return res
 	}
-	return f.handleKey(k)
+	if box := f.FocusedBox(); box != nil && box.Child != nil {
+		return box.Child.ConsumeKey(k)
+	}
+	return Ignored()
 }
 
 func (f *Frame) handleKey(k KeyEvent) EventResult {

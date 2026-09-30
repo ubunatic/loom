@@ -164,7 +164,7 @@ func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 }
 
 // ConsumeMouse forwards an event to the child under the pointer, translating
-// terminal coordinates to that child's local 0-based coordinates.
+// split-local coordinates to that child's local 0-based coordinates.
 func (s *Split) ConsumeMouse(e MouseEvent) EventResult {
 	x, y := e.X+s.lastRect.X, e.Y+s.lastRect.Y
 	if e.Action == MousePress && e.Button == MouseLeft && s.dividerContains(x, y) {

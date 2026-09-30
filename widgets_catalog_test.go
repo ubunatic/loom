@@ -189,7 +189,8 @@ func handlerMatches(method *ast.FuncDecl, event, qualifiedEvent string) bool {
 		return false
 	}
 	parameter := typeName(method.Type.Params.List[0].Type)
-	return (parameter == event || parameter == qualifiedEvent) && typeName(method.Type.Results.List[0].Type) == "bool"
+	result := typeName(method.Type.Results.List[0].Type)
+	return (parameter == event || parameter == qualifiedEvent) && (result == "EventResult" || result == "loom.EventResult")
 }
 
 func typeName(expression ast.Expr) string {

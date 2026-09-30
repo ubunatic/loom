@@ -215,6 +215,10 @@ func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if handled, quit := p.handleSearchKey(e); handled {
 		return loom.EventResult{Consumed: true, Quit: quit}
 	}
+	// Outside search, leave printable text to the host's bindings.
+	if !p.Searching() && e.Key == "" && e.Text != "" {
+		return loom.Ignored()
+	}
 	if e.Is("esc") {
 		if p.rootDir != "" && p.directory.Path == p.rootDir {
 			if p.options.OnQuit != nil {
@@ -268,16 +272,11 @@ func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 
 // ConsumeMouse processes mouse selection and forwards quit requests.
 func (p *NavigationPane) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if p.searching && !p.options.TypeToSearch {
-		e.Y--
-	}
 	result := p.list.ConsumeMouse(e)
 	p.notifySelection()
 	return result
 }
 
-// ConsumeKey reports whether a key belongs to the navigation pane's host-level
-// navigation contract. ESC and backspace are consumed for parent navigation and root quit.
 // Searching reports whether typed text currently goes to the filter.
 func (p *NavigationPane) Searching() bool { return p.searching || p.options.TypeToSearch }
 
@@ -302,7 +301,7 @@ func (p *NavigationPane) handleSearchKey(e loom.KeyEvent) (handled, quit bool) {
 		p.notifySelection()
 		return true, false
 	case !p.searching:
-		return e.Text != "" && e.Key == "", false
+		return false, false
 	case e.Is("esc"):
 		for p.list.Query() != "" {
 			p.list.ConsumeKey(loom.KeyEvent{Key: "backspace"})

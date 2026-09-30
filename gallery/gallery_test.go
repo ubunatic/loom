@@ -150,7 +150,8 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 	clicks := map[string]clickCase{
 		"Choice":     {locate: func([]string) (int, int) { return 3, 1 }, state: func(w loom.Widget) any { return w.(*loom.Choice).FilteredSel() }},
 		"DatePicker": {locate: func([]string) (int, int) { return 6, 4 }, state: func(w loom.Widget) any { return *w.(*loom.DatePicker).Value }},
-		"FilePicker": {locate: func([]string) (int, int) { return 3, 2 }, state: func(w loom.Widget) any { entry, _ := w.(*loom.FilePicker).Selected(); return entry.Name }},
+		// Row 1 is the parent entry; row 2 is already selected on construction.
+		"FilePicker": {locate: func([]string) (int, int) { return 3, 1 }, state: func(w loom.Widget) any { entry, _ := w.(*loom.FilePicker).Selected(); return entry.Name }},
 		"Form":       {locate: func([]string) (int, int) { return 2, 2 }, state: func(w loom.Widget) any { return w.(*loom.Form).FocusIndex() }},
 		"MenuBar":    {locate: func([]string) (int, int) { return 1, 0 }, state: func(w loom.Widget) any { return w.(*loom.MenuBar).Open }},
 		"Paginator":  {locate: func([]string) (int, int) { return 6, 0 }, state: func(w loom.Widget) any { return w.(*loom.Paginator).Page }},

@@ -459,7 +459,9 @@ func (c *Choice) ConsumeKey(e KeyEvent) EventResult {
 		if e.Text != "" {
 			c.query += e.Text
 			c.refilter()
+			return Handled()
 		}
+		return Ignored()
 	}
 	return Handled()
 }
