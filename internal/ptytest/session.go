@@ -58,11 +58,12 @@ func Start(t *testing.T, cols, rows int, name string, args ...string) *Session {
 	s.cmd = exec.Command(name, args...)
 	s.cmd.Stdin, s.cmd.Stdout, s.cmd.Stderr = slave, slave, slave
 	for _, entry := range os.Environ() {
-		if !strings.HasPrefix(entry, "LOOM_ZWJ=") {
+		if !strings.HasPrefix(entry, "LOOM_ZWJ=") && !strings.HasPrefix(entry, "LOOMCOLOR=") {
 			s.cmd.Env = append(s.cmd.Env, entry)
 		}
 	}
-	s.cmd.Env = append(s.cmd.Env, "LOOM_ZWJ=join") // PTY tests have no terminal emulator to answer DSR.
+	s.cmd.Env = append(s.cmd.Env, "LOOM_ZWJ=join")       // PTY tests have no terminal emulator to answer DSR.
+	s.cmd.Env = append(s.cmd.Env, "LOOMCOLOR=truecolor") // Keep test child rendering independent of the caller's terminal environment.
 	s.cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
 	if err := s.cmd.Start(); err != nil {
 		master.Close()
