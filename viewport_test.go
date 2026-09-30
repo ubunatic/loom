@@ -82,6 +82,18 @@ func TestViewportTranslatesMouseAndScrollWheel(t *testing.T) {
 	}
 }
 
+func TestViewportScrollbarDragScrolls(t *testing.T) {
+	viewport := loom.NewViewport(&viewportChild{width: 4, height: 10})
+	canvas := loom.NewCanvas(4, 4)
+	viewport.Draw(canvas, canvas.Bounds())
+	viewport.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 3, Y: 0})
+	viewport.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 3, Y: 3})
+	viewport.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, X: 3, Y: 3})
+	if viewport.ScrollY != 6 {
+		t.Fatalf("dragged ScrollY = %d, want 6", viewport.ScrollY)
+	}
+}
+
 func TestViewportKeyAliases(t *testing.T) {
 	for _, key := range []string{"pgdown", "pgdn", "pagedown"} {
 		viewport := loom.NewViewport(&viewportChild{width: 2, height: 8})

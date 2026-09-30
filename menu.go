@@ -46,6 +46,7 @@ type MenuBar struct {
 	Style      MenuStyle
 
 	focused    bool
+	lastRect   Rect
 	barRect    Rect
 	menuRect   Rect
 	titleRects []Rect
@@ -138,6 +139,7 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 	if m == nil || c == nil || r.W <= 0 || r.H <= 0 {
 		return
 	}
+	m.lastRect = r
 	m.barRect = Rect{X: r.X, Y: r.Y, W: r.W, H: 1}
 	c.Fill(m.barRect, Cell{Text: " ", Style: m.Style.Bar})
 	m.titleRects = make([]Rect, len(m.Menus))
@@ -575,6 +577,10 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 	if m == nil {
 		return Ignored()
 	}
+	// Hit rectangles are recorded in the Draw canvas coordinate space, while
+	// events are local to the widget boundary.
+	e.X += m.lastRect.X
+	e.Y += m.lastRect.Y
 	for i := len(m.submenus) - 1; i >= 0; i-- {
 		level := &m.submenus[i]
 		if !level.rect.Contains(e.X, e.Y) {

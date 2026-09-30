@@ -33,9 +33,16 @@ func (t *Toggle) ConsumeKey(e KeyEvent) (quit EventResult) {
 	}
 	if e.Key == "enter" || e.Key == "space" || e.Text == " " {
 		*t.Value = !*t.Value
+		return Handled()
 	}
 	return Ignored()
 }
 
-// ConsumeMouse is a no-op.
-func (*Toggle) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+// ConsumeMouse toggles the value when clicked within its rendered mark.
+func (t *Toggle) ConsumeMouse(e MouseEvent) EventResult {
+	if t == nil || t.Value == nil || e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.X >= 3 || e.Y != 0 {
+		return Ignored()
+	}
+	*t.Value = !*t.Value
+	return Handled()
+}

@@ -298,6 +298,9 @@ func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 	if f == nil {
 		return Ignored()
 	}
+	if e.Action != MousePress || e.Button != MouseLeft {
+		return Ignored()
+	}
 	y := e.Y
 	if len(f.Validation) > 0 {
 		y-- // validation heading

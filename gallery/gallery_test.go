@@ -149,7 +149,7 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 	}
 	clicks := map[string]clickCase{
 		"Choice":     {locate: func([]string) (int, int) { return 3, 1 }, state: func(w loom.Widget) any { return w.(*loom.Choice).FilteredSel() }},
-		"DatePicker": {locate: func([]string) (int, int) { return 6, 4 }, state: func(w loom.Widget) any { return *w.(*loom.DatePicker).Value }},
+		"DatePicker": {locate: func([]string) (int, int) { return 18, 4 }, state: func(w loom.Widget) any { return *w.(*loom.DatePicker).Value }},
 		// Row 1 is the parent entry; row 2 is already selected on construction.
 		"FilePicker": {locate: func([]string) (int, int) { return 3, 1 }, state: func(w loom.Widget) any { entry, _ := w.(*loom.FilePicker).Selected(); return entry.Name }},
 		"Form":       {locate: func([]string) (int, int) { return 2, 2 }, state: func(w loom.Widget) any { return w.(*loom.Form).FocusIndex() }},
@@ -157,6 +157,18 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 		"Paginator":  {locate: func([]string) (int, int) { return 6, 0 }, state: func(w loom.Widget) any { return w.(*loom.Paginator).Page }},
 		"Tabs":       {locate: func(rows []string) (int, int) { return runeColumn(rows[1], "Details"), 1 }, state: func(w loom.Widget) any { return w.(*loom.Tabs).Focus() }},
 		"Tree":       {locate: func([]string) (int, int) { return 0, 0 }, state: func(w loom.Widget) any { return len(w.(*loom.Tree).VisibleNodes()) }},
+		"Toggle":     {locate: func([]string) (int, int) { return 1, 0 }, state: func(w loom.Widget) any { return w.(*loom.Toggle).String() }},
+		"Dialog": {locate: func(rows []string) (int, int) {
+			for y, line := range rows {
+				if !strings.Contains(line, "Discard") {
+					continue
+				}
+				if x := runeColumn(line, "Save"); x >= 0 {
+					return x, y
+				}
+			}
+			return -1, -1
+		}, state: func(w loom.Widget) any { return w.(*dialogDemo).dialog.Open }},
 	}
 	for name, test := range clicks {
 		name, test := name, test

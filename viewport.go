@@ -19,6 +19,7 @@ type Viewport struct {
 	content  Rect
 	childW   int
 	childH   int
+	dragging bool
 }
 
 // NewViewport wraps child in a scrollable viewport.
@@ -136,6 +137,23 @@ func (v *Viewport) ConsumeKey(e KeyEvent) EventResult {
 // the child's full content coordinate space.
 func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	maxY := max(0, v.childH-v.lastRect.H)
+	if e.Action == MousePress && e.Button == MouseLeft && e.X == v.lastRect.W-1 && maxY > 0 {
+		v.dragging = true
+		v.dragTo(e.Y, maxY)
+		return Handled()
+	}
+	if e.Action == MousePress && e.Button == MouseLeft {
+		v.dragging = false
+	}
+	if e.Action == MouseRelease && v.dragging {
+		v.dragTo(e.Y, maxY)
+		v.dragging = false
+		return Handled()
+	}
+	if e.Action == MouseDrag && v.dragging {
+		v.dragTo(e.Y, maxY)
+		return Handled()
+	}
 	switch e.Action {
 	case MouseScrollUp:
 		v.ScrollY = max(0, v.ScrollY-1)
@@ -150,4 +168,10 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	e.X += v.ScrollX
 	e.Y += v.ScrollY
 	return v.Child.ConsumeMouse(e)
+}
+
+func (v *Viewport) dragTo(y, maxY int) {
+	track := max(1, v.lastRect.H-1)
+	y = min(max(0, y), track)
+	v.ScrollY = y * maxY / track
 }

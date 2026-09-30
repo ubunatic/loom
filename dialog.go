@@ -121,11 +121,13 @@ func (d *Dialog) ConsumeMouse(e MouseEvent) EventResult {
 }
 
 type dialogContent struct {
-	dialog *Dialog
-	lines  []string
+	dialog  *Dialog
+	lines   []string
+	buttonY int
 }
 
 func (w *dialogContent) Draw(c *Canvas, r Rect) {
+	w.buttonY = r.H - 1
 	for i, line := range w.lines {
 		if i >= r.H {
 			break
@@ -145,6 +147,28 @@ func (w *dialogContent) Draw(c *Canvas, r Rect) {
 		x += c.Write(x, y, text, style)
 	}
 }
-func (*dialogContent) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
-func (*dialogContent) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
-func (w *dialogContent) ContentHeight() int                { return len(w.lines) + 1 }
+func (*dialogContent) ConsumeKey(KeyEvent) EventResult { return Ignored() }
+func (w *dialogContent) ConsumeMouse(e MouseEvent) EventResult {
+	if w == nil || w.dialog == nil || e.Action != MousePress || e.Button != MouseLeft || len(w.dialog.Buttons) == 0 || e.Y != w.buttonY {
+		return Ignored()
+	}
+	x := 0
+	for i, label := range w.dialog.Buttons {
+		text := "  " + label + "  "
+		if i == w.dialog.selected {
+			text = "▶ " + label + "  "
+		}
+		width := StringWidth(text)
+		if e.X >= x && e.X < x+width {
+			w.dialog.selected = i
+			if w.dialog.OnSelect != nil {
+				w.dialog.OnSelect(label)
+			}
+			w.dialog.Open = false
+			return Handled()
+		}
+		x += width
+	}
+	return Ignored()
+}
+func (w *dialogContent) ContentHeight() int { return len(w.lines) + 1 }
