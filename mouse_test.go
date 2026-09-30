@@ -137,13 +137,14 @@ func TestChoiceConsumeMouseClickSelects(t *testing.T) {
 	items := []loom.Item{{Name: "a"}, {Name: "b"}, {Name: "c"}}
 	c := loom.NewChoice(items)
 
-	// Left press at Y=1 selects the 2nd row (0-based) and quits (no OnSelect).
-	quit := c.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1}).Quit
-	if !quit {
-		t.Error("left click on a row should quit (done) when OnSelect is nil")
+	// Confirmation completes the Choice interaction, not its host application.
+	// The old Quit expectation conflated widget completion with application exit.
+	result := c.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, Y: 1})
+	if result != loom.DoneResult() {
+		t.Errorf("left click = %+v, want Done without Quit", result)
 	}
 	if c.FilteredSel() != 1 {
-		t.Errorf("sel = %d after click Y=2, want 1", c.FilteredSel())
+		t.Errorf("sel = %d after click Y=1, want 1", c.FilteredSel())
 	}
 }
 

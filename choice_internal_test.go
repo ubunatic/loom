@@ -155,6 +155,34 @@ func TestChoiceMouseConfirmationCompletesWithoutQuittingHost(t *testing.T) {
 	}
 }
 
+func TestChoiceConfirmationPathsCompleteWithoutQuittingHost(t *testing.T) {
+	for _, mode := range []string{"enter", "multi-select", "double-click"} {
+		t.Run(mode, func(t *testing.T) {
+			c := makeChoice(2)
+			c.MultiSelect = mode == "multi-select"
+			c.DoubleClickToActivate = mode == "double-click"
+			c.Draw(NewCanvas(40, 4), Rect{W: 40, H: 4})
+			var result EventResult
+			if c.DoubleClickToActivate {
+				now := time.Unix(0, 0)
+				c.doubleClick = NewDoubleClickRecognizer(func() time.Time { return now })
+				click := MouseEvent{Action: MousePress, Button: MouseLeft, Y: 1}
+				if first := c.ConsumeMouse(click); first != Handled() || c.done {
+					t.Fatalf("first click = %+v, done=%t; want selection only", first, c.done)
+				}
+				c.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, Y: 1})
+				now = now.Add(100 * time.Millisecond)
+				result = c.ConsumeMouse(click)
+			} else {
+				result = c.ConsumeKey(KeyEvent{Key: "enter"})
+			}
+			if result != DoneResult() || !c.done || c.Aborted() {
+				t.Fatalf("confirmation = %+v, done=%t, aborted=%t; want completion without quit", result, c.done, c.Aborted())
+			}
+		})
+	}
+}
+
 func TestChoiceMouseWheelAndPromptHitTest(t *testing.T) {
 	c := makeChoice(8)
 	c.Draw(NewCanvas(20, 4), Rect{W: 20, H: 4})

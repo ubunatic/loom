@@ -44,6 +44,9 @@ func RunPane(w Paneable) (item Item, ok bool, nav Nav, err error) {
 // the event loop that owns that prompt. Embedded widgets leave Done untouched.
 type paneableRunner struct{ Paneable }
 
+// Unwrap keeps optional lifecycle hooks visible to the host pane.
+func (r paneableRunner) Unwrap() Widget { return r.Paneable }
+
 func (r paneableRunner) ConsumeKey(e KeyEvent) EventResult {
 	result := r.Paneable.ConsumeKey(e)
 	if result.Done && !result.Quit {
