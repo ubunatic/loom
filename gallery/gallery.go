@@ -52,7 +52,7 @@ var demos = map[string]constructor{
 		return &textAreaWidget{area: loom.NewTextArea("A multi-line editor\nwith sample content.\nUse the arrow keys to move.")}
 	},
 	"TextInput": func() loom.Widget {
-		input := loom.NewTextInput("widget gallery")
+		input := loom.NewTextInput("a long gallery value with 界 and 🙂")
 		input.Prompt = "Name: "
 		input.Mask = '•'
 		return &textInputWidget{input: input}

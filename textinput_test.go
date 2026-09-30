@@ -179,3 +179,39 @@ func TestTextInputMaskedWideMaskCaretAndDeletion(t *testing.T) {
 		t.Errorf("delete in masked input = %q caret=%d, want %q caret=2", got, in.Caret(), "ab")
 	}
 }
+
+func TestTextInputScrollsWideValueWithCaret(t *testing.T) {
+	in := loom.NewTextInput("ab界🙂cd")
+	in.HandleKey(loom.KeyEvent{Key: "left"}) // keep content clipped on both sides
+	c := loom.NewCanvas(5, 1)
+	c.ColorProfile = loom.ColorProfileNone
+	in.Draw(c, c.Bounds(), true)
+	if c.CursorX < 0 || c.CursorX >= 5 {
+		t.Fatalf("end caret x = %d, want visible within width 5", c.CursorX)
+	}
+	if got := c.Get(0, 0).Text; got != "‹" {
+		t.Errorf("left clipped marker = %q, want ‹", got)
+	}
+	if got := c.Get(4, 0).Text; got != "›" {
+		t.Errorf("right clipped marker = %q, want ›", got)
+	}
+	in.HandleKey(loom.KeyEvent{Key: "home"})
+	c.Clear()
+	in.Draw(c, c.Bounds(), true)
+	if c.CursorX != 0 {
+		t.Errorf("home caret x = %d, want 0", c.CursorX)
+	}
+	if got := c.Get(0, 0).Text; got != "a" {
+		t.Errorf("home window starts with %q, want a", got)
+	}
+	in.HandleKey(loom.KeyEvent{Key: "end"})
+	in.HandleKey(loom.KeyEvent{Key: "backspace"})
+	c.Clear()
+	in.Draw(c, c.Bounds(), true)
+	if c.CursorX < 0 || c.CursorX >= 5 {
+		t.Errorf("caret after end backspace x = %d, want visible", c.CursorX)
+	}
+	if got := in.Value(); got != "ab界🙂c" {
+		t.Errorf("value after end backspace = %q, want ab界🙂c", got)
+	}
+}

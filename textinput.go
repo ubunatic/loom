@@ -21,6 +21,7 @@ type TextInput struct {
 
 	runes []rune
 	caret int // caret index in [0, len(runes)]
+	view  int // first rune shown when the value exceeds the available width
 }
 
 // NewTextInput creates a TextInput seeded with value.
@@ -46,6 +47,7 @@ func (t *TextInput) ConsumePaste(event PasteEvent) EventResult {
 func (t *TextInput) SetValue(s string) {
 	t.runes = []rune(s)
 	t.caret = len(t.runes)
+	t.view = 0
 }
 
 // Caret returns the current caret index (rune offset from the start).
@@ -60,14 +62,17 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 		if t.caret > 0 {
 			t.caret--
 		}
+		t.keepCaretInView()
 		return true
 	case "right":
 		if t.caret < len(t.runes) {
 			t.caret++
 		}
+		t.keepCaretInView()
 		return true
 	case "home":
 		t.caret = 0
+		t.view = 0
 		return true
 	case "end":
 		t.caret = len(t.runes)
@@ -77,11 +82,13 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 			t.runes = append(t.runes[:t.caret-1], t.runes[t.caret:]...)
 			t.caret--
 		}
+		t.keepCaretInView()
 		return true
 	case "delete":
 		if t.caret < len(t.runes) {
 			t.runes = append(t.runes[:t.caret], t.runes[t.caret+1:]...)
 		}
+		t.keepCaretInView()
 		return true
 	}
 	if e.Text != "" {
@@ -93,9 +100,16 @@ func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
 		next = append(next, t.runes[t.caret:]...)
 		t.runes = next
 		t.caret += len(ins)
+		t.keepCaretInView()
 		return true
 	}
 	return false
+}
+
+func (t *TextInput) keepCaretInView() {
+	if t.caret < t.view {
+		t.view = t.caret
+	}
 }
 
 // Draw renders the prompt, the value (or the dim placeholder when empty) into r,
@@ -109,11 +123,53 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 	}
 	if len(t.runes) == 0 && t.Placeholder != "" {
 		c.Write(x, r.Y, t.Placeholder, Style{Dim: true})
-	} else if t.Mask != 0 {
-		masked := strings.Repeat(string(t.Mask), len(t.runes))
-		c.Write(x, r.Y, masked, Style{})
 	} else {
-		c.Write(x, r.Y, string(t.runes), Style{})
+		available := max(0, r.X+r.W-x)
+		displayed := t.displayRunes()
+		start := min(t.view, len(t.runes))
+		// Move the window until the caret fits, accounting for one-column markers.
+		for start < t.caret {
+			reserve := 1 // leave a cell for the caret after the displayed text
+			if start > 0 {
+				reserve++ // left clipping marker
+			}
+			if displayWidth(displayed[start:t.caret]) <= max(0, available-reserve) {
+				break
+			}
+			start++
+		}
+		left := start > 0
+		used := 0
+		if left && available > 0 {
+			c.Write(x, r.Y, "‹", Style{})
+			x++
+			used++
+		}
+		end := start
+		for end < len(displayed) {
+			w := RuneWidth(displayed[end])
+			remaining := available - used
+			if end+1 < len(displayed) {
+				remaining-- // reserve the right clipping marker
+			} else if focused && t.caret == len(displayed) {
+				remaining-- // keep the end caret inside the field
+			}
+			if w > remaining {
+				break
+			}
+			used += w
+			end++
+		}
+		c.Write(x, r.Y, string(displayed[start:end]), Style{})
+		if end < len(displayed) && available-used > 0 {
+			c.Write(x+used, r.Y, "›", Style{})
+		}
+		if focused {
+			caret := min(t.caret, end)
+			c.CursorX = x + displayWidth(displayed[start:caret])
+			c.CursorY = r.Y
+		}
+		return
 	}
 	if focused {
 		if t.Mask != 0 {
@@ -123,4 +179,15 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 		}
 		c.CursorY = r.Y
 	}
+}
+
+func (t *TextInput) displayRunes() []rune {
+	if t.Mask == 0 {
+		return t.runes
+	}
+	return []rune(strings.Repeat(string(t.Mask), len(t.runes)))
+}
+
+func displayWidth(runes []rune) int {
+	return StringWidth(string(runes))
 }
