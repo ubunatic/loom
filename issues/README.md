@@ -221,3 +221,4 @@ upkeep.
 | 208 | [208-canvas-paint-widget-mvp-braille-lines.md](208-canvas-paint-widget-mvp-braille-lines.md) | Canvas paint widget (MVP: braille lines) | Closed |
 | 209 | [209-remove-legacy-event-handling-one-eventresult-contract-for-keys-and-mouse.md](209-remove-legacy-event-handling-one-eventresult-contract-for-keys-and-mouse.md) | Remove legacy event handling: one EventResult contract for keys and mouse | Closed |
 | 210 | [210-loom-info-terminal-and-capability-report-with-watch-mouse-probe.md](210-loom-info-terminal-and-capability-report-with-watch-mouse-probe.md) | loom info: terminal and capability report with --watch mouse probe | Open |
+| 211 | [211-wrappers-must-not-hand-forward-optional-widget-hooks-ticks-invalidation.md](211-wrappers-must-not-hand-forward-optional-widget-hooks-ticks-invalidation.md) | Wrappers must not hand-forward optional widget hooks (ticks, invalidation) | Open |
