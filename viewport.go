@@ -13,6 +13,7 @@ type Viewport struct {
 	ScrollY       int
 	ScrollbarMode ScrollbarMode
 	Scrollbar     ScrollbarStyle
+	Style         Style // base text and background colors
 
 	focused  bool
 	lastRect Rect
@@ -25,6 +26,16 @@ type Viewport struct {
 // NewViewport wraps child in a scrollable viewport.
 func NewViewport(child Widget) *Viewport {
 	return &Viewport{Child: child, ScrollbarMode: ScrollbarAuto, Scrollbar: DefaultScrollbarStyle()}
+}
+
+// ApplyTheme updates the viewport surface, scrollbar, and themeable child.
+func (v *Viewport) ApplyTheme(theme ThemeColors) {
+	v.Style = Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()}
+	v.Scrollbar = theme.ScrollbarStyle()
+	v.Scrollbar.Track.BG, v.Scrollbar.Thumb.BG = v.Style.BG, v.Style.BG
+	if child, ok := UnwrapWidget(v.Child).(Themeable); ok {
+		child.ApplyTheme(theme)
+	}
 }
 
 // Measure reports the viewport's natural content size.
@@ -53,7 +64,11 @@ func (v *Viewport) childSize(width, fallbackW, fallbackH int) (int, int) {
 // Draw renders the measured child offscreen, then blits the visible window.
 func (v *Viewport) Draw(c *Canvas, r Rect) {
 	v.lastRect = r
-	if c == nil || r.W <= 0 || r.H <= 0 || v.Child == nil {
+	if c == nil || r.W <= 0 || r.H <= 0 {
+		return
+	}
+	c.PaintSurface(r, v.Style)
+	if v.Child == nil {
 		return
 	}
 	w, h := v.childSize(0, r.W, r.H)
@@ -68,6 +83,7 @@ func (v *Viewport) Draw(c *Canvas, r Rect) {
 	v.ScrollY = min(max(0, v.ScrollY), max(0, h-r.H))
 	offscreen := NewCanvas(w, h)
 	offscreen.ColorProfile = c.ColorProfile
+	offscreen.PaintSurface(offscreen.Bounds(), v.Style)
 	v.Child.Draw(offscreen, offscreen.Bounds())
 	window := offscreen.SubCanvas(Rect{X: v.ScrollX, Y: v.ScrollY, W: contentW, H: r.H})
 	c.Blit(window, r.X, r.Y)

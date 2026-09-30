@@ -48,3 +48,38 @@ func visibleKeyHelpRow(row string) string {
 	}
 	return text.String()
 }
+
+func TestKeyHelpAndViewportThemeSurfaces(t *testing.T) {
+	theme := loom.Theme("mc-dark")
+	for _, entry := range []struct {
+		name   string
+		widget loom.Widget
+	}{
+		{"KeyHelp", loom.NewKeyHelp(loom.NewKeyMapWithLabels(map[string][]string{"save": {"s"}}, map[string]string{"save": "保存"}))},
+		{"Viewport", loom.NewViewport(loom.NewView([]string{"first", "second", "third", "fourth", "fifth"}))},
+		{"EmptyViewport", loom.NewViewport(nil)},
+	} {
+		t.Run(entry.name, func(t *testing.T) {
+			themeable, ok := entry.widget.(loom.Themeable)
+			if !ok {
+				t.Fatal("widget has no theme support")
+			}
+			for _, theme := range []loom.ThemeColors{theme, loom.Theme("mc")} {
+				themeable.ApplyTheme(theme)
+				c := loom.NewCanvas(14, 6)
+				r := loom.Rect{X: 2, Y: 1, W: 10, H: 4}
+				entry.widget.Draw(c, r)
+				for y := r.Y; y < r.Y+r.H; y++ {
+					for x := r.X; x < r.X+r.W; x++ {
+						if got := c.Get(x, y).Style.BG; got != theme.NormalBG.Color() {
+							t.Fatalf("background at (%d,%d) = %v, want %v", x, y, got, theme.NormalBG.Color())
+						}
+					}
+				}
+				if c.Get(0, 0).Style.BG != loom.ColorReset() {
+					t.Fatal("theme surface escaped widget bounds")
+				}
+			}
+		})
+	}
+}

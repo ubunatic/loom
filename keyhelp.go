@@ -10,6 +10,12 @@ import "sort"
 type KeyHelp struct {
 	KeyMap    *KeyMap
 	Separator string
+	Style     Style
+}
+
+// ApplyTheme sets the help text and surface colors.
+func (h *KeyHelp) ApplyTheme(theme ThemeColors) {
+	h.Style = Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()}
 }
 
 // NewKeyHelp creates a compact key help widget for km.
@@ -45,14 +51,10 @@ func (h *KeyHelp) Draw(c *Canvas, r Rect) {
 	if h == nil || c == nil || r.W <= 0 || r.H <= 0 {
 		return
 	}
-	for y := r.Y; y < r.Y+r.H; y++ {
-		for x := r.X; x < r.X+r.W; x++ {
-			c.Set(x, y, Cell{Text: " ", Style: Reset, Claim: true})
-		}
-	}
+	c.PaintSurface(r, h.Style)
 	text := TruncateText(h.Text(), r.W, "…")
 	if text != "" {
-		c.Write(r.X, r.Y, text, Reset)
+		c.Write(r.X, r.Y, text, h.Style)
 	}
 }
 
