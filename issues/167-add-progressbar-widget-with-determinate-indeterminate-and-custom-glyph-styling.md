@@ -1,6 +1,6 @@
 # 167 — Add ProgressBar widget with determinate, indeterminate, and custom glyph styling
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
