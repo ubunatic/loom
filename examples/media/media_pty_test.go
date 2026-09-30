@@ -102,7 +102,7 @@ func writeVideo(t *testing.T) string {
 		}
 	}
 	path := filepath.Join(t.TempDir(), "colors.mp4")
-	cmd := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=red:s=32x16:d=0.5:r=8", "-f", "lavfi", "-i", "color=c=blue:s=32x16:d=0.5:r=8", "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0,format=yuv420p", "-an", "-c:v", "mpeg4", "-y", path)
+	cmd := exec.Command("ffmpeg", "-v", "error", "-f", "lavfi", "-i", "color=c=red:s=32x16:d=2:r=8", "-f", "lavfi", "-i", "color=c=blue:s=32x16:d=2:r=8", "-filter_complex", "[0:v][1:v]concat=n=2:v=1:a=0,format=yuv420p", "-an", "-c:v", "mpeg4", "-y", path)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Skipf("ffmpeg cannot create the test video: %v: %s", err, output)
 	}

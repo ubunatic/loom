@@ -8,6 +8,7 @@ import (
 	"errors"
 	"image"
 	"image/color"
+	"math"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -381,11 +382,32 @@ func TestVideoPosterDrawsBeforeFirstFrame(t *testing.T) {
 	}
 }
 
+func TestNewVideoWithPosterValidatesArguments(t *testing.T) {
+	poster := solidImage(2, 2, color.RGBA{A: 255})
+	for _, tc := range []struct {
+		name string
+		mode Mode
+		fps  float64
+		img  image.Image
+	}{
+		{name: "nil poster", mode: ModeHalfblock, fps: 24},
+		{name: "unsupported mode", mode: Mode("unknown"), fps: 24, img: poster},
+		{name: "invalid frame rate", mode: ModeHalfblock, fps: math.NaN(), img: poster},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := NewVideoWithPoster("does-not-need-to-exist", tc.mode, tc.fps, tc.img); err == nil {
+				t.Fatal("NewVideoWithPoster accepted invalid arguments")
+			}
+		})
+	}
+}
+
 func TestPausePlayControlsFrameAdvancement(t *testing.T) {
-	first := solidImage(2, 2, color.RGBA{R: 100, A: 255})
+	poster := solidImage(2, 2, color.RGBA{R: 100, A: 255})
+	queued := solidImage(3, 2, color.RGBA{G: 100, A: 255})
 	frames := make(chan image.Image, 1)
-	frames <- first
-	widget, err := newVideoWithOpener("test-video", ModeHalfblock, 24, first, func(ctx context.Context, _ string, _ float64) (<-chan image.Image, func(), error) {
+	frames <- queued
+	widget, err := newVideoWithOpener("test-video", ModeHalfblock, 24, poster, func(ctx context.Context, _ string, _ float64) (<-chan image.Image, func(), error) {
 		go func() {
 			<-ctx.Done()
 			close(frames)
@@ -400,8 +422,11 @@ func TestPausePlayControlsFrameAdvancement(t *testing.T) {
 		t.Fatal("paused widget reports active playback")
 	}
 	widget.Tick(time.Now())
-	if widget.image != first {
-		t.Fatal("paused widget advanced its frame")
+	if widget.image != poster {
+		t.Fatal("paused widget changed the displayed poster frame")
+	}
+	if got := len(frames); got != 1 {
+		t.Fatalf("paused stream has %d queued frames, want 1 unconsumed frame", got)
 	}
 	resumed := make(chan image.Image, 1)
 	widget.Play()
@@ -409,8 +434,8 @@ func TestPausePlayControlsFrameAdvancement(t *testing.T) {
 		t.Fatal("Play did not resume playback")
 	}
 	widget.Tick(time.Now())
-	if got := widget.image.Bounds().Dx(); got != 2 {
-		t.Fatalf("resumed stream frame width = %d, want buffered frame width 2", got)
+	if widget.image != queued {
+		t.Fatal("resumed widget did not display the previously queued frame")
 	}
 	widget.Pause()
 	widget.openStream = func(ctx context.Context, _ string, _ float64) (<-chan image.Image, func(), error) {
@@ -420,13 +445,28 @@ func TestPausePlayControlsFrameAdvancement(t *testing.T) {
 		}()
 		return resumed, func() {}, nil
 	}
-	widget.Restart()
+	if err := widget.Restart(); err != nil {
+		t.Fatalf("Restart paused stream: %v", err)
+	}
 	resumed <- solidImage(3, 2, color.RGBA{G: 100, A: 255})
 	widget.Tick(time.Now())
 	if got := widget.image.Bounds().Dx(); got != 3 {
 		t.Fatalf("restarted stream frame width = %d, want 3", got)
 	}
 	widget.Close()
+}
+
+func TestRestartRejectsClosedWidget(t *testing.T) {
+	frames := make(chan image.Image)
+	widget := newStreamingWidget(frames, 24, func() {})
+	widget.path = "test-video"
+	widget.openStream = func(context.Context, string, float64) (<-chan image.Image, func(), error) {
+		return make(chan image.Image), func() {}, nil
+	}
+	widget.Close()
+	if err := widget.Restart(); err == nil {
+		t.Fatal("Restart on a closed widget succeeded")
+	}
 }
 
 func TestRestartAfterStreamCompletion(t *testing.T) {
