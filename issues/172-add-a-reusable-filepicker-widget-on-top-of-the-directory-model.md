@@ -1,6 +1,6 @@
 # 172 — Add a reusable FilePicker widget on top of the Directory model
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
