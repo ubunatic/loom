@@ -243,6 +243,48 @@ func TestTabsMouseClickSwitchesTab(t *testing.T) {
 	}
 }
 
+func TestTabsVerticalMouseRoutingUsesChildLocalCoordinates(t *testing.T) {
+	a, b := &tabSpy{}, &tabSpy{}
+	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: a}, loom.Tab{Title: "B", Widget: b})
+	tabs.Vertical = true
+	tabs.ArrowSwitch = false
+	c := loom.NewCanvas(40, 10)
+	tabs.Draw(c, loom.Rect{X: 5, Y: 3, W: 30, H: 6})
+
+	tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 15, Y: 5})
+	if len(a.mice) != 1 || a.mice[0].X != 6 || a.mice[0].Y != 2 {
+		t.Fatalf("child click = %#v, want child-local (6,2)", a.mice)
+	}
+	tabs.HandleMouse(loom.MouseEvent{Action: loom.MouseScrollDown, X: 15, Y: 6})
+	if len(a.mice) != 2 || a.mice[1].X != 6 || a.mice[1].Y != 3 || a.mice[1].Action != loom.MouseScrollDown {
+		t.Fatalf("child wheel = %#v, want child-local (6,3)", a.mice)
+	}
+
+	tabs.HandleMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 6, Y: 4})
+	if tabs.Focus() != 1 {
+		t.Fatalf("focus after vertical tab click = %d, want 1", tabs.Focus())
+	}
+}
+
+func TestTabsCanForwardArrowsToChildAndUseTabBindings(t *testing.T) {
+	child := &tabSpy{}
+	tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: child}, loom.Tab{Title: "B"})
+	tabs.ArrowSwitch = false
+	tabs.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
+	tabs.HandleKey(loom.KeyEvent{Key: "left"})
+	if len(child.keys) != 1 || child.keys[0].Key != "left" || tabs.Focus() != 0 {
+		t.Fatalf("arrow routing: keys=%#v focus=%d", child.keys, tabs.Focus())
+	}
+	tabs.HandleKey(loom.KeyEvent{Key: "tab"})
+	if tabs.Focus() != 1 {
+		t.Fatalf("focus after Tab = %d, want 1", tabs.Focus())
+	}
+	tabs.HandleKey(loom.KeyEvent{Key: "shift-tab"})
+	if tabs.Focus() != 0 {
+		t.Fatalf("focus after Shift-Tab = %d, want 0", tabs.Focus())
+	}
+}
+
 func TestTabsRendersActiveVsInactiveStyle(t *testing.T) {
 	tabs := loom.NewTabs(loom.Tab{Title: "One"}, loom.Tab{Title: "Two"})
 	c := loom.NewCanvas(40, 10)

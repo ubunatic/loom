@@ -446,23 +446,45 @@ func matchesTabKey(event KeyEvent, binding string) bool {
 // event is delegated to the active child. Coordinates are canvas-absolute
 // and 0-based.
 func (t *Tabs) HandleMouse(e MouseEvent) (quit bool) {
+	return t.ConsumeMouse(e).Quit
+}
+
+// ConsumeMouse selects a tab on a bar click and dispatches panel events to the
+// active child in child-local coordinates.
+func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
 	if len(t.Tabs) == 0 {
-		return false
+		return Ignored()
 	}
 	if t.drawn && e.Action == MousePress && e.Button == MouseLeft {
 		x, y := e.X, e.Y
 		for i, cr := range t.tabCols {
 			if cr.Contains(x, y) {
 				t.Select(i)
-				return false
+				return Handled()
 			}
 		}
 	}
 	child := t.active()
-	if child == nil {
-		return false
+	if child == nil || !t.drawn {
+		return Ignored()
 	}
-	return child.HandleMouse(e)
+	panel := t.childRect(t.lastRect)
+	if !panel.Contains(e.X, e.Y) {
+		return Ignored()
+	}
+	e.X -= panel.X
+	e.Y -= panel.Y
+	res := DispatchMouseEvent(child, e)
+	return EventResult{Quit: res.Quit, Consumed: true}
+}
+
+// childRect returns the active panel rectangle from the last draw allocation.
+func (t *Tabs) childRect(r Rect) Rect {
+	if t.Vertical {
+		return Rect{X: r.X + t.barWidth() + 1, Y: r.Y, W: max(0, r.W-t.barWidth()-1), H: r.H}
+	}
+	bar := t.barHeight()
+	return Rect{X: r.X, Y: r.Y + bar, W: r.W, H: max(0, r.H-bar)}
 }
 
 // ContentHeight estimates the required height: the tab bar plus the tallest

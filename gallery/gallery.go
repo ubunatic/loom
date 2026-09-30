@@ -175,10 +175,12 @@ var demos = map[string]constructor{
 	},
 	"Tabs": func() loom.Widget {
 		tabs := loom.NewTabs(
-			loom.Tab{Title: "Overview", Widget: loom.NewView([]string{"Loom widget gallery", "Switch tabs with ← and →."})},
+			loom.Tab{Title: "Overview", Widget: loom.NewView([]string{"Loom widget gallery", "Click a tab or use Tab / Shift-Tab."})},
 			loom.Tab{Title: "Details", Widget: loom.NewView([]string{"Tabs host any Loom widgets."})},
 		)
 		tabs.Vertical = true
+		tabs.ArrowSwitch = false
+		tabs.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 		return tabs
 	},
 	"TextArea": func() loom.Widget {
@@ -232,6 +234,8 @@ func NewAll() *loom.Tabs {
 	}
 	all := loom.NewTabs(tabs...)
 	all.Vertical = true
+	all.ArrowSwitch = false
+	all.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 	return all
 }
 
