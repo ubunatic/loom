@@ -1,6 +1,6 @@
 # 199 — Mouse input in the widget gallery; only Tab cycles tabs
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Feature
