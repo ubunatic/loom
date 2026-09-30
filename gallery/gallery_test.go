@@ -242,6 +242,98 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	t.Fatalf("click inside Tree did not collapse src:\n%s", strings.Join(s.Screen(), "\n"))
 }
 
+func TestWidgetsPTYSizeAndF2ThemePropagation(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build loom binary: %v\n%s", err, output)
+	}
+	themes := loom.ThemeNames()
+	if len(themes) < 2 {
+		t.Fatal("PTY theme cycle requires at least two themes")
+	}
+	const cols, rows, width, height = 100, 35, 48, 14
+	initial, next := themes[0], themes[1]
+	s := ptytest.Start(t, cols, rows, bin, "widgets", "--show", "--theme", initial, "-W", "48", "-H", "14", "Dialog", "Choice")
+	s.WaitFor("Save changes", 5*time.Second)
+	s.WaitFor("Theme: "+initial, 5*time.Second)
+
+	findText := func(text string) (int, int) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				return utf8.RuneCountInString(line[:i]), y
+			}
+		}
+		t.Fatalf("%q missing from PTY screen:\n%s", text, strings.Join(s.Screen(), "\n"))
+		return 0, 0
+	}
+	findRune := func(want rune) (int, int) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			for x, got := range []rune(line) {
+				if got == want {
+					return x, y
+				}
+			}
+		}
+		t.Fatalf("%q missing from PTY screen:\n%s", want, strings.Join(s.Screen(), "\n"))
+		return 0, 0
+	}
+	_, footerY := findText("Theme: " + initial)
+	if wantY := rows - 24 + height - 1; footerY != wantY {
+		t.Fatalf("gallery footer row = %d, want %d for -H %d:\n%s", footerY, wantY, height, strings.Join(s.Screen(), "\n"))
+	}
+	if got := s.Cell(width-1, footerY-2).Style.BG; !ptyColorMatches(got, loom.Theme(initial).NormalBG.Color()) {
+		t.Fatalf("-W %d did not paint its last column with the gallery background: got %v", width, got)
+	}
+	if got := s.Cell(width, footerY-2).Style.BG; ptyColorMatches(got, loom.Theme(initial).NormalBG.Color()) {
+		t.Fatalf("gallery background extended past -W %d into column %d", width, width)
+	}
+	if ptyColorMatches(s.Cell(width-1, footerY+1).Style.BG, loom.Theme(initial).NormalBG.Color()) {
+		t.Fatalf("gallery background extended past -H %d into row %d", height, footerY+1)
+	}
+
+	// Capture the active Choice demo before cycling, then return to the modal
+	// demo so one F2 redraw can be checked across the tab bar, modal frame, and
+	// gallery background.
+	s.Send("\t")
+	s.WaitFor("filebrowser-widget", 5*time.Second)
+	demoX, demoY := findText("filebrowser-widget")
+	oldDemoStyle := s.Cell(demoX, demoY).Style
+	s.Send("\x1b[Z")
+	s.WaitFor("Save changes", 5*time.Second)
+	tabX, tabY := findText("Dialog")
+	frameX, frameY := findRune('┌')
+	oldTabStyle := s.Cell(tabX, tabY).Style
+	oldFrameStyle := s.Cell(frameX, frameY).Style
+	oldBackgroundStyle := s.Cell(width-1, footerY-2).Style
+
+	s.SendRaw([]byte("\x1b[12~"))
+	s.WaitFor("Theme: "+next, 5*time.Second)
+	if got := s.Cell(tabX, tabY).Style; got == oldTabStyle || !ptyColorMatches(got.FG, loom.Theme(next).HeaderFG.Color()) {
+		t.Fatalf("tab bar cell did not recolor after F2: %v", got)
+	}
+	if got := s.Cell(frameX, frameY).Style; got == oldFrameStyle || !ptyColorMatches(got.BG, loom.Theme(next).NormalBG.Color()) {
+		t.Fatalf("modal frame cell did not recolor after F2: %v", got)
+	}
+	if got := s.Cell(width-1, footerY-2).Style; got == oldBackgroundStyle || !ptyColorMatches(got.BG, loom.Theme(next).NormalBG.Color()) {
+		t.Fatalf("gallery background did not recolor after F2: got %v", got)
+	}
+	s.Send("\t")
+	s.WaitFor("filebrowser-widget", 5*time.Second)
+	demoX, demoY = findText("filebrowser-widget")
+	if got := s.Cell(demoX, demoY).Style; got == oldDemoStyle || !ptyColorMatches(got.FG, loom.Theme(next).NormalFG.Color()) {
+		t.Fatalf("active demo cell did not use the new theme after F2: got %v", got)
+	}
+}
+
+func ptyColorMatches(got ptytest.Color, want loom.Color) bool {
+	gr, gg, gb, gok := got.RGB()
+	wr, wg, wb, wok := want.RGB()
+	return gok && wok && gr == wr && gg == wg && gb == wb
+}
+
 func TestPaintCanvasPTYMouseDragDrawsBrailleLine(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")

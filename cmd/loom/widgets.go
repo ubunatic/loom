@@ -136,6 +136,10 @@ var runWidgetPane = func(widget loom.Widget, width, height int) error {
 	if err != nil {
 		return err
 	}
+	if width > 0 || height > 0 {
+		pane.InlineOnly = true
+		pane.SetScreenMode(loom.ScreenInline)
+	}
 	if width > 0 {
 		pane.MaxCols = width
 	}
