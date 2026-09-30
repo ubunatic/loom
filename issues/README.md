@@ -205,4 +205,4 @@ upkeep.
 | 192 | [192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md](192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md) | Add an axes-based Chart widget for line and grouped bar series | Open |
 | 193 | [193-add-nested-submenus-to-menu.md](193-add-nested-submenus-to-menu.md) | Add nested submenus to Menu | Open |
 | 194 | [194-copy-selected-text-to-the-system-clipboard-via-osc-52.md](194-copy-selected-text-to-the-system-clipboard-via-osc-52.md) | Copy selected text to the system clipboard via OSC 52 | Open |
-| 195 | [195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md](195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md) | Widget gallery: loom widgets --show runs live widget demos | Open |
+| 195 | [195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md](195-widget-gallery-loom-widgets-show-runs-live-widget-demos.md) | Widget gallery: loom widgets --show runs live widget demos | Closed |

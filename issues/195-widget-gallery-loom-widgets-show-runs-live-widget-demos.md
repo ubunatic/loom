@@ -1,6 +1,6 @@
 # 195 — Widget gallery: loom widgets --show runs live widget demos
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Minor
 **Category**: Feature
