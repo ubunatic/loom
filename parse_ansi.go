@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom/measure"
 )
@@ -31,25 +32,28 @@ func ParseANSI(s string) []Cell {
 // ParseANSINew is the optimized ANSI parser that performs cluster collection
 // and cell mapping with continuation cells for wide characters.
 func ParseANSINew(s string) []Cell {
-	var cells []Cell
+	n := len(s)
+	if n == 0 {
+		return nil
+	}
+
+	cells := make([]Cell, 0, n)
 	style := Style{}
 
-	rs := []rune(s)
-	n := len(rs)
 	for i := 0; i < n; {
 		// Check for CSI sequence: ESC [ ... m
-		if rs[i] == '\x1b' && i+1 < n && rs[i+1] == '[' {
+		if s[i] == '\x1b' && i+1 < n && s[i+1] == '[' {
 			// Find the end of the sequence (terminated by a letter in range @ to ~)
 			j := i + 2
-			for j < n && (rs[j] < '@' || rs[j] > '~') {
+			for j < n && (s[j] < '@' || s[j] > '~') {
 				j++
 			}
 
 			if j < n {
 				// We have a complete sequence
-				if rs[j] == 'm' {
+				if s[j] == 'm' {
 					// SGR (Select Graphic Rendition) sequence
-					params := string(rs[i+2 : j])
+					params := s[i+2 : j]
 					style = applySGRSequence(style, params)
 					i = j + 1
 					continue
@@ -65,40 +69,49 @@ func ParseANSINew(s string) []Cell {
 		}
 
 		// Check for character set designation: ESC ( ... (skip these)
-		if rs[i] == '\x1b' && i+2 < n && rs[i+1] == '(' {
+		if s[i] == '\x1b' && i+2 < n && s[i+1] == '(' {
 			i += 3
 			continue
 		}
 
-		r := rs[i]
-		if unicode.IsControl(r) {
+		r, width := utf8.DecodeRuneInString(s[i:])
+		if r == utf8.RuneError && width == 1 {
 			i++
 			continue
 		}
 
+		if unicode.IsControl(r) {
+			i += width
+			continue
+		}
+
 		// Collect base rune plus any subsequent combining marks / variation selectors / ZWJs
-		j := i + 1
-		if r >= 0x1F1E6 && r <= 0x1F1FF && j < n && rs[j] >= 0x1F1E6 && rs[j] <= 0x1F1FF {
-			j++
+		j := i + width
+		if r >= 0x1F1E6 && r <= 0x1F1FF && j < n {
+			nextR, nextWidth := utf8.DecodeRuneInString(s[j:])
+			if nextR >= 0x1F1E6 && nextR <= 0x1F1FF {
+				j += nextWidth
+			}
 		} else {
 			for j < n {
-				next := rs[j]
-				if next == 0x200D {
-					j++
+				nextR, nextWidth := utf8.DecodeRuneInString(s[j:])
+				if nextR == 0x200D {
+					j += nextWidth
 					if j < n {
-						j++
+						_, zwjWidth := utf8.DecodeRuneInString(s[j:])
+						j += zwjWidth
 					}
 					continue
 				}
-				if next == 0xFE0F || next == 0xFE0E || unicode.Is(unicode.Mn, next) || unicode.Is(unicode.Me, next) {
-					j++
+				if nextR == 0xFE0F || nextR == 0xFE0E || unicode.Is(unicode.Mn, nextR) || unicode.Is(unicode.Me, nextR) {
+					j += nextWidth
 					continue
 				}
 				break
 			}
 		}
 
-		cluster := string(rs[i:j])
+		cluster := s[i:j]
 		w := measure.StringWidth(cluster)
 		if w > 0 {
 			cells = append(cells, Cell{Text: cluster, Style: style})
@@ -201,10 +214,25 @@ func applySGRSequence(style Style, params string) Style {
 		return Style{}
 	}
 
-	// Split by semicolon; an empty part (e.g. ESC[;1m or ESC[1;m) counts as 0
-	parts := strings.Split(params, ";")
-	for i := 0; i < len(parts); i++ {
-		p := parts[i]
+	// Slice parts without allocating a []string slice.
+	var parts [16][2]int
+	numParts := 0
+
+	pStart := 0
+	for pStart <= len(params) {
+		pEnd := pStart
+		for pEnd < len(params) && params[pEnd] != ';' {
+			pEnd++
+		}
+		if numParts < len(parts) {
+			parts[numParts] = [2]int{pStart, pEnd}
+			numParts++
+		}
+		pStart = pEnd + 1
+	}
+
+	for i := 0; i < numParts; i++ {
+		p := params[parts[i][0]:parts[i][1]]
 		code := 0
 		if p != "" {
 			var err error
@@ -264,42 +292,46 @@ func applySGRSequence(style Style, params string) Style {
 			// Reset background to default
 			style.BG = ColorReset()
 
-		case code == 38 && i+2 < len(parts) && parts[i+1] == "5":
+		case code == 38 && i+2 < numParts && params[parts[i+1][0]:parts[i+1][1]] == "5":
 			// 256-color foreground: 38;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
+			p2 := params[parts[i+2][0]:parts[i+2][1]]
+			v, err := strconv.Atoi(p2)
 			if err == nil && v >= 0 && v <= 255 {
 				style.FG = ColorIndex(uint8(v))
 			}
 			i += 2
 
-		case code == 48 && i+2 < len(parts) && parts[i+1] == "5":
+		case code == 48 && i+2 < numParts && params[parts[i+1][0]:parts[i+1][1]] == "5":
 			// 256-color background: 48;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
+			p2 := params[parts[i+2][0]:parts[i+2][1]]
+			v, err := strconv.Atoi(p2)
 			if err == nil && v >= 0 && v <= 255 {
 				style.BG = ColorIndex(uint8(v))
 			}
 			i += 2
 
-		case code == 38 && i+4 < len(parts) && parts[i+1] == "2":
+		case code == 38 && i+4 < numParts && params[parts[i+1][0]:parts[i+1][1]] == "2":
 			// 24-bit RGB foreground: 38;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
+			pr := params[parts[i+2][0]:parts[i+2][1]]
+			pg := params[parts[i+3][0]:parts[i+3][1]]
+			pb := params[parts[i+4][0]:parts[i+4][1]]
+			r, errR := strconv.Atoi(pr)
+			g, errG := strconv.Atoi(pg)
+			b, errB := strconv.Atoi(pb)
 			if errR == nil && errG == nil && errB == nil &&
 				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
 			}
 			i += 4
 
-		case code == 48 && i+4 < len(parts) && parts[i+1] == "2":
+		case code == 48 && i+4 < numParts && params[parts[i+1][0]:parts[i+1][1]] == "2":
 			// 24-bit RGB background: 48;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
+			pr := params[parts[i+2][0]:parts[i+2][1]]
+			pg := params[parts[i+3][0]:parts[i+3][1]]
+			pb := params[parts[i+4][0]:parts[i+4][1]]
+			r, errR := strconv.Atoi(pr)
+			g, errG := strconv.Atoi(pg)
+			b, errB := strconv.Atoi(pb)
 			if errR == nil && errG == nil && errB == nil &&
 				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))

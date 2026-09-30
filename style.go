@@ -3,7 +3,23 @@
 
 package loom
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+var (
+	fgIndexSeq [256]string
+	bgIndexSeq [256]string
+)
+
+func init() {
+	for i := 0; i < 256; i++ {
+		fgIndexSeq[i] = fmt.Sprintf("\x1b[38;5;%dm", i)
+		bgIndexSeq[i] = fmt.Sprintf("\x1b[48;5;%dm", i)
+	}
+}
 
 // Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 type Color struct {
@@ -69,12 +85,54 @@ func xterm256RGB(idx uint8) (r, g, b uint8) {
 	}
 }
 
+func (c Color) appendFGSeq(buf []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		return append(buf, fgIndexSeq[c.index]...)
+	case colorRGB:
+		buf = append(buf, "\x1b[38;2;"...)
+		buf = strconv.AppendUint(buf, uint64(c.r), 10)
+		buf = append(buf, ';')
+		buf = strconv.AppendUint(buf, uint64(c.g), 10)
+		buf = append(buf, ';')
+		buf = strconv.AppendUint(buf, uint64(c.b), 10)
+		return append(buf, 'm')
+	default:
+		return append(buf, "\x1b[39m"...) // default fg
+	}
+}
+
+func (c Color) appendBGSeq(buf []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		return append(buf, bgIndexSeq[c.index]...)
+	case colorRGB:
+		buf = append(buf, "\x1b[48;2;"...)
+		buf = strconv.AppendUint(buf, uint64(c.r), 10)
+		buf = append(buf, ';')
+		buf = strconv.AppendUint(buf, uint64(c.g), 10)
+		buf = append(buf, ';')
+		buf = strconv.AppendUint(buf, uint64(c.b), 10)
+		return append(buf, 'm')
+	default:
+		return append(buf, "\x1b[49m"...) // default bg
+	}
+}
+
 func (c Color) fgSeq() string {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[38;5;%dm", c.index)
+		return fgIndexSeq[c.index]
 	case colorRGB:
-		return fmt.Sprintf("\x1b[38;2;%d;%d;%dm", c.r, c.g, c.b)
+		var buf [32]byte
+		b := append(buf[:0], "\x1b[38;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		b = append(b, 'm')
+		return string(b)
 	default:
 		return "\x1b[39m" // default fg
 	}
@@ -83,9 +141,17 @@ func (c Color) fgSeq() string {
 func (c Color) bgSeq() string {
 	switch c.mode {
 	case colorIndex:
-		return fmt.Sprintf("\x1b[48;5;%dm", c.index)
+		return bgIndexSeq[c.index]
 	case colorRGB:
-		return fmt.Sprintf("\x1b[48;2;%d;%d;%dm", c.r, c.g, c.b)
+		var buf [32]byte
+		b := append(buf[:0], "\x1b[48;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		b = append(b, 'm')
+		return string(b)
 	default:
 		return "\x1b[49m" // default bg
 	}
@@ -100,22 +166,59 @@ type Style struct {
 	Dim       bool
 }
 
+// AppendANSI appends the escape sequence that applies this style to buf.
+// Always starts with a full reset to avoid state bleed from previous cells.
+func (s Style) AppendANSI(buf []byte) []byte {
+	buf = append(buf, "\x1b[0m"...)
+	if s.Bold {
+		buf = append(buf, "\x1b[1m"...)
+	}
+	if s.Underline {
+		buf = append(buf, "\x1b[4m"...)
+	}
+	if s.Dim {
+		buf = append(buf, "\x1b[2m"...)
+	}
+	buf = s.FG.appendFGSeq(buf)
+	buf = s.BG.appendBGSeq(buf)
+	return buf
+}
+
+// WriteANSI writes the escape sequence that applies this style directly to b.
+func (s Style) WriteANSI(b *strings.Builder) {
+	b.WriteString("\x1b[0m")
+	if s.Bold {
+		b.WriteString("\x1b[1m")
+	}
+	if s.Underline {
+		b.WriteString("\x1b[4m")
+	}
+	if s.Dim {
+		b.WriteString("\x1b[2m")
+	}
+	if s.FG.mode == colorIndex {
+		b.WriteString(fgIndexSeq[s.FG.index])
+	} else if s.FG.mode == colorRGB {
+		b.WriteString(s.FG.fgSeq())
+	} else {
+		b.WriteString("\x1b[39m")
+	}
+
+	if s.BG.mode == colorIndex {
+		b.WriteString(bgIndexSeq[s.BG.index])
+	} else if s.BG.mode == colorRGB {
+		b.WriteString(s.BG.bgSeq())
+	} else {
+		b.WriteString("\x1b[49m")
+	}
+}
+
 // ANSI returns the escape sequence that applies this style.
 // Always starts with a full reset to avoid state bleed from previous cells.
 func (s Style) ANSI() string {
-	out := "\x1b[0m" // reset all attributes
-	if s.Bold {
-		out += "\x1b[1m"
-	}
-	if s.Underline {
-		out += "\x1b[4m"
-	}
-	if s.Dim {
-		out += "\x1b[2m"
-	}
-	out += s.FG.fgSeq()
-	out += s.BG.bgSeq()
-	return out
+	var buf [64]byte
+	b := s.AppendANSI(buf[:0])
+	return string(b)
 }
 
 // Reset is a zero Style — default terminal colors, no attributes.
