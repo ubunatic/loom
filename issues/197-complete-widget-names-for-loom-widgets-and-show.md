@@ -1,6 +1,6 @@
 # 197 — Complete widget names for loom widgets and --show
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
