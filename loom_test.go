@@ -435,8 +435,8 @@ func TestChoiceFuzzyMatchesDescriptionAndHighlightsRunes(t *testing.T) {
 	cv := loom.NewCanvas(40, 2)
 	c.Draw(cv, loom.Rect{W: 40, H: 2})
 	// Marker (2 cells), name, two spaces, then description. The f/b/w matches
-	// begin at description offsets 0, 4, and 12.
-	for _, x := range []int{9, 13, 21} {
+	// begin at description offsets 0, 4, and 7 (the first matching w).
+	for _, x := range []int{9, 13, 16} {
 		if cell := cv.Get(x, 0); !cell.Style.Bold || !cell.Style.Underline {
 			t.Errorf("match cell at x=%d has style %+v; want bold and underline", x, cell.Style)
 		}
