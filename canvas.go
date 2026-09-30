@@ -46,14 +46,16 @@ var blank = Cell{Text: " "}
 // Canvas is a 2-D frame buffer. Widgets draw into it; Pane flushes it to the terminal.
 type Canvas struct {
 	cols, rows int
-	cells      [][]Cell
-	claimed    [][]bool
-	composing  bool
-	mouseX     int
-	mouseY     int
-	mouseKnown bool
-	CursorX    int // 0-based column index, -1 if hidden
-	CursorY    int // 0-based row index, -1 if hidden
+	// ColorProfile is captured when the canvas is created and controls SGR output.
+	ColorProfile ColorProfile
+	cells        [][]Cell
+	claimed      [][]bool
+	composing    bool
+	mouseX       int
+	mouseY       int
+	mouseKnown   bool
+	CursorX      int // 0-based column index, -1 if hidden
+	CursorY      int // 0-based row index, -1 if hidden
 }
 
 // NewCanvas allocates a cols×rows canvas filled with blank cells.
@@ -73,7 +75,7 @@ func NewCanvas(cols, rows int) *Canvas {
 			cells[y][x] = blank
 		}
 	}
-	return &Canvas{cols: cols, rows: rows, cells: cells, claimed: claimed, CursorX: -1, CursorY: -1}
+	return &Canvas{cols: cols, rows: rows, cells: cells, claimed: claimed, ColorProfile: DetectColorProfile(), CursorX: -1, CursorY: -1}
 }
 
 // Cols returns the canvas width.
@@ -386,7 +388,7 @@ func (c *Canvas) Row(y int) string {
 		if cell.Continuation {
 			if vteNeedPad {
 				if cell.Style != cur {
-					b.WriteString(cell.Style.ANSI())
+					b.WriteString(cell.Style.ANSIFor(c.ColorProfile))
 					cur = cell.Style
 				}
 				b.WriteByte(' ')
@@ -399,7 +401,7 @@ func (c *Canvas) Row(y int) string {
 			vteNeedPad = true
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSI())
+			b.WriteString(cell.Style.ANSIFor(c.ColorProfile))
 			cur = cell.Style
 		}
 		if cell.Text == "" {

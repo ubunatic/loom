@@ -3,7 +3,57 @@
 
 package loom
 
-import "fmt"
+import (
+	"fmt"
+	"os"
+	"strings"
+)
+
+// ColorProfile is the color capability available at an ANSI output boundary.
+type ColorProfile uint8
+
+const (
+	ColorProfileNone ColorProfile = iota
+	ColorProfile16
+	ColorProfile256
+	ColorProfileTrueColor
+)
+
+// DetectColorProfile reports the profile selected by LOOMCOLOR, NO_COLOR,
+// COLORTERM, and TERM. LOOMCOLOR accepts truecolor, 256, 16, or none.
+func DetectColorProfile() ColorProfile {
+	return DetectColorProfileFrom(os.Getenv("LOOMCOLOR"), os.Getenv("NO_COLOR"), os.Getenv("COLORTERM"), os.Getenv("TERM"))
+}
+
+// DetectColorProfileFrom applies the environment profile rules to supplied values.
+func DetectColorProfileFrom(override, noColor, colorTerm, term string) ColorProfile {
+	switch strings.ToLower(strings.TrimSpace(override)) {
+	case "truecolor", "24bit":
+		return ColorProfileTrueColor
+	case "256", "256color":
+		return ColorProfile256
+	case "16", "basic":
+		return ColorProfile16
+	case "none", "off":
+		return ColorProfileNone
+	}
+	if noColor != "" {
+		return ColorProfileNone
+	}
+	if strings.EqualFold(colorTerm, "truecolor") || strings.EqualFold(colorTerm, "24bit") {
+		return ColorProfileTrueColor
+	}
+	if strings.Contains(strings.ToLower(term), "256color") {
+		return ColorProfile256
+	}
+	if strings.EqualFold(term, "dumb") {
+		return ColorProfileNone
+	}
+	if term == "" {
+		return ColorProfileTrueColor
+	}
+	return ColorProfile16
+}
 
 // Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 type Color struct {
@@ -91,6 +141,58 @@ func (c Color) bgSeq() string {
 	}
 }
 
+func (c Color) forProfile(profile ColorProfile) Color {
+	if c.mode == colorReset || profile == ColorProfileTrueColor {
+		return c
+	}
+	limit := 256
+	if profile == ColorProfile16 {
+		limit = 16
+	} else if profile == ColorProfileNone {
+		return ColorReset()
+	}
+	if c.mode == colorIndex && int(c.index) < limit {
+		return c
+	}
+	r, g, b, ok := c.RGB()
+	if !ok {
+		return c
+	}
+	return nearestColor(r, g, b, limit)
+}
+
+func (c Color) sequence(profile ColorProfile, background bool) string {
+	resolved := c.forProfile(profile)
+	if profile == ColorProfile16 && resolved.mode == colorIndex {
+		base := 30
+		if background {
+			base = 40
+		}
+		if resolved.index >= 8 {
+			base += 60
+			return fmt.Sprintf("\x1b[%dm", base+int(resolved.index)-8)
+		}
+		return fmt.Sprintf("\x1b[%dm", base+int(resolved.index))
+	}
+	if background {
+		return resolved.bgSeq()
+	}
+	return resolved.fgSeq()
+}
+
+func nearestColor(r, g, b uint8, limit int) Color {
+	best, bestDistance := 0, int(^uint(0)>>1)
+	for i := 0; i < limit; i++ {
+		cr, cg, cb := xterm256RGB(uint8(i))
+		dr, dg, db := int(r)-int(cr), int(g)-int(cg), int(b)-int(cb)
+		distance := dr*dr + dg*dg + db*db
+		if distance < bestDistance {
+			best, bestDistance = i, distance
+		}
+	}
+	return ColorIndex(uint8(best))
+}
+
 // Style describes the visual appearance of a Canvas cell.
 type Style struct {
 	FG        Color
@@ -103,6 +205,11 @@ type Style struct {
 // ANSI returns the escape sequence that applies this style.
 // Always starts with a full reset to avoid state bleed from previous cells.
 func (s Style) ANSI() string {
+	return s.ANSIFor(ColorProfileTrueColor)
+}
+
+// ANSIFor returns the style escape sequence downsampled for profile.
+func (s Style) ANSIFor(profile ColorProfile) string {
 	out := "\x1b[0m" // reset all attributes
 	if s.Bold {
 		out += "\x1b[1m"
@@ -113,8 +220,8 @@ func (s Style) ANSI() string {
 	if s.Dim {
 		out += "\x1b[2m"
 	}
-	out += s.FG.fgSeq()
-	out += s.BG.bgSeq()
+	out += s.FG.sequence(profile, false)
+	out += s.BG.sequence(profile, true)
 	return out
 }
 

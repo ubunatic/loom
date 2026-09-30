@@ -14,6 +14,15 @@ controls:
 
 ## Authority Levels
 
+Canvas output captures a color profile when the canvas is created. Loom detects
+truecolor from `COLORTERM`, 256-color support from a `TERM` ending in
+`256color`, and otherwise uses 16 colors for a named terminal or truecolor when
+`TERM` is unset. `TERM=dumb` disables colors. `NO_COLOR` disables colors. `LOOMCOLOR` overrides detection
+with `truecolor`, `256`, `16`, or `none`. RGB colors are mapped to the nearest
+xterm palette entry only while generating SGR; widgets and themes retain their
+original colors. `Style.ANSI()` remains an explicit truecolor encoder, while
+`Style.ANSIFor(profile)` allows callers to select another output profile.
+
 A theme using an explicit foreground, background, and `dim: false` controls the
 logical color pair. A shade glyph then spatially mixes those colors without Loom
 calculating an intermediate color:
