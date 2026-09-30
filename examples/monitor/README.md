@@ -94,7 +94,7 @@ Legacy `on_key` remains accepted but does not gain new routing behavior.
 
 ```sh
 GOWORK=off make test
-sh scripts/check-no-tty.sh
+bash scripts/check-no-tty.sh
 setsid --wait env GOWORK=off go run ./examples/monitor </dev/null
 ```
 
