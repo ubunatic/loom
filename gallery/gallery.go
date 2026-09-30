@@ -54,6 +54,7 @@ var demos = map[string]constructor{
 	"TextInput": func() loom.Widget {
 		input := loom.NewTextInput("widget gallery")
 		input.Prompt = "Name: "
+		input.Mask = '•'
 		return &textInputWidget{input: input}
 	},
 }

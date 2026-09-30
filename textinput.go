@@ -17,6 +17,7 @@ import "strings"
 type TextInput struct {
 	Prompt      string // drawn before the value, e.g. "title> "
 	Placeholder string // dim hint shown when the buffer is empty
+	Mask        rune   // optional display rune repeated once per value rune; zero shows the value
 
 	runes []rune
 	caret int // caret index in [0, len(runes)]
@@ -108,11 +109,18 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 	}
 	if len(t.runes) == 0 && t.Placeholder != "" {
 		c.Write(x, r.Y, t.Placeholder, Style{Dim: true})
+	} else if t.Mask != 0 {
+		masked := strings.Repeat(string(t.Mask), len(t.runes))
+		c.Write(x, r.Y, masked, Style{})
 	} else {
 		c.Write(x, r.Y, string(t.runes), Style{})
 	}
 	if focused {
-		c.CursorX = x + StringWidth(string(t.runes[:t.caret]))
+		if t.Mask != 0 {
+			c.CursorX = x + StringWidth(strings.Repeat(string(t.Mask), t.caret))
+		} else {
+			c.CursorX = x + StringWidth(string(t.runes[:t.caret]))
+		}
 		c.CursorY = r.Y
 	}
 }

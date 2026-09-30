@@ -132,3 +132,50 @@ func TestTextInputDrawPlaceholderAndCaret(t *testing.T) {
 		t.Errorf("unfocused field set cursor to (%d,%d), want hidden", c.CursorX, c.CursorY)
 	}
 }
+
+func TestTextInputMaskedDrawKeepsValueAndMasksPerRune(t *testing.T) {
+	in := loom.NewTextInput("界🙂")
+	in.Prompt = "Password: "
+	in.Mask = '•'
+	in.HandleKey(loom.KeyEvent{Key: "left"})
+
+	c := loom.NewCanvas(30, 1)
+	c.ColorProfile = loom.ColorProfileNone
+	in.Draw(c, c.Bounds(), true)
+
+	if got := in.Value(); got != "界🙂" {
+		t.Fatalf("masked value = %q, want original runes", got)
+	}
+	if c.CursorX != loom.StringWidth("Password: •") {
+		t.Errorf("masked caret x = %d, want %d", c.CursorX, loom.StringWidth("Password: •"))
+	}
+	if got := c.Get(10, 0).Text; got != "•" {
+		t.Errorf("first masked cell = %q, want bullet", got)
+	}
+	if got := c.Get(11, 0).Text; got != "•" {
+		t.Errorf("second masked cell = %q, want bullet", got)
+	}
+	for x := 0; x < 30; x++ {
+		if got := c.Get(x, 0).Text; got == "界" || got == "🙂" {
+			t.Errorf("masked render exposed secret at x=%d: %q", x, got)
+		}
+	}
+}
+
+func TestTextInputMaskedWideMaskCaretAndDeletion(t *testing.T) {
+	in := loom.NewTextInput("ab界")
+	in.Mask = '界'
+	in.HandleKey(loom.KeyEvent{Key: "home"})
+	in.HandleKey(loom.KeyEvent{Key: "right"})
+	in.HandleKey(loom.KeyEvent{Key: "right"})
+	c := loom.NewCanvas(20, 1)
+	c.ColorProfile = loom.ColorProfileNone
+	in.Draw(c, c.Bounds(), true)
+	if c.CursorX != loom.StringWidth("界界") {
+		t.Errorf("wide mask caret x = %d, want %d", c.CursorX, loom.StringWidth("界界"))
+	}
+	in.HandleKey(loom.KeyEvent{Key: "delete"})
+	if got := in.Value(); got != "ab" || in.Caret() != 2 {
+		t.Errorf("delete in masked input = %q caret=%d, want %q caret=2", got, in.Caret(), "ab")
+	}
+}
