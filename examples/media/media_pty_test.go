@@ -114,7 +114,9 @@ func writeVideo(t *testing.T) string {
 func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
-	s.WaitFor("Cols: 120  Rows: 39  Mode: halfblock", 5*time.Second)
+	// The media request promotes this full-width pane to the alternate screen,
+	// which provides all 40 terminal rows. 39 was the old inline reservation.
+	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
 		t.Fatalf("rendered %d rows, want terminal height %d", len(screen), rows)
 	}
@@ -130,7 +132,7 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 		t.Fatal("media title was not rendered")
 	}
 	status := s.Screen()[rows-1]
-	if !strings.Contains(status, "Cols: 120  Rows: 39  Mode: halfblock") {
+	if !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") {
 		t.Fatalf("bottom row does not contain status dimensions and mode: %q", status)
 	}
 	if !strings.Contains(status, "Media: ") || !strings.Contains(status, "red.png") {
@@ -209,11 +211,13 @@ func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))
-	s.WaitFor("Cols: 120  Rows: 39  Mode: halfblock", 5*time.Second)
+	// The media request promotes this full-width pane to the alternate screen,
+	// which provides all 40 terminal rows. 39 was the old inline reservation.
+	s.WaitFor("Cols: 120  Rows: 40  Mode: halfblock", 5*time.Second)
 	if screen := s.Screen(); len(screen) != rows {
 		t.Fatalf("rendered %d rows, want full terminal height %d", len(screen), rows)
 	}
-	if status := s.Screen()[rows-1]; !strings.Contains(status, "Cols: 120  Rows: 39  Mode: halfblock") || !strings.Contains(status, "colors.mp4") {
+	if status := s.Screen()[rows-1]; !strings.Contains(status, "Cols: 120  Rows: 40  Mode: halfblock") || !strings.Contains(status, "colors.mp4") {
 		t.Fatalf("bottom row does not contain terminal status and video path: %q", status)
 	}
 	maxX := -1

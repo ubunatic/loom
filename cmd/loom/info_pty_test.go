@@ -32,10 +32,13 @@ func TestInfoPTYReportAndWatch(t *testing.T) {
 	watch := ptytest.Start(t, 40, 12, bin, "info", "--watch")
 	watch.WaitFor("pointer", time.Second*3)
 	watch.SendRaw([]byte("\x1b[<35;8;5M"))
-	watch.WaitFor("x=7 y=3 raw=8,5", time.Second*3)
+	// The alternate screen starts at terminal row 1, so raw SGR row 5 maps
+	// directly to zero-based canvas row 4. Inline panes previously reserved
+	// an earlier row below the prompt, making this expected value stale.
+	watch.WaitFor("x=7 y=4 raw=8,5", time.Second*3)
 	cells := watch.Cells()
 	if got := cells[4][7].Rune; got != '+' {
-		t.Fatalf("crosshair at (7,3) = %q, want '+'", got)
+		t.Fatalf("crosshair at (7,4) = %q, want '+'", got)
 	}
 	watch.Resize(52, 16)
 	watch.WaitFor("52 x 16", time.Second*3)
