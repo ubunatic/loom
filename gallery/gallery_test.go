@@ -62,6 +62,77 @@ func TestNewUnknownDemo(t *testing.T) {
 	}
 }
 
+func TestGalleryChoiceQuitContractPTY(t *testing.T) {
+	waitForAbsent := func(t *testing.T, s *ptytest.Session, text string) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if !strings.Contains(strings.Join(s.Screen(), "\n"), text) {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("%q remained visible:\n%s", text, strings.Join(s.Screen(), "\n"))
+	}
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	for _, names := range [][]string{{"Choice"}, {"Choice", "Popup"}} {
+		t.Run(strings.Join(names, "+"), func(t *testing.T) {
+			s := ptytest.Start(t, 100, 30, bin, append([]string{"widgets", "--show"}, names...)...)
+			s.WaitFor("fuzzy-browser-widget", 5*time.Second)
+			for y, line := range s.Screen() {
+				if i := strings.Index(line, "fuzzy-browser-widget"); i >= 0 {
+					x := utf8.RuneCountInString(line[:i])
+					s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+					break
+				}
+			}
+			s.WaitFor("▶ fuzzy-browser-widget", 5*time.Second)
+			// Enter confirms a Choice too; neither confirmation may quit a gallery.
+			s.Send("\r\x1bOQ") // Enter, then F2: a new theme proves the process remains live.
+			s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+			s.Send("q")
+			if err := s.Wait(5 * time.Second); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+	for _, key := range []string{"q", "\x1b[21~", "\x1b"} {
+		t.Run(fmt.Sprintf("exit-%q", key), func(t *testing.T) {
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "ProgressBar")
+			s.WaitFor("Theme: plain", 5*time.Second)
+			s.Send(key)
+			if err := s.Wait(5 * time.Second); err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+	t.Run("popup consumes first escape", func(t *testing.T) {
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Popup")
+		s.WaitFor("Gallery popup", 5*time.Second)
+		s.Send("\x1b")
+		waitForAbsent(t, s, "Gallery popup")
+		s.Send("\x1bOQ")
+		s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+		s.Send("\x1b")
+		if err := s.Wait(5 * time.Second); err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func nextGalleryTheme() string {
+	names := loom.ThemeNames()
+	for i, name := range names {
+		if name == "plain" {
+			return names[(i+1)%len(names)]
+		}
+	}
+	return ""
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

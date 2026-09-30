@@ -147,6 +147,7 @@ var runWidgetPane = func(widget loom.Widget, width, height int) error {
 		pane.Resize(height)
 	}
 	pane.EnableMouse()
+	pane.DisableDefaultQuit = true
 	defer pane.Close()
 	return pane.Run(widget)
 }
@@ -220,17 +221,30 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 }
 
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	if e.Is("q") || e.Is("f10") {
+		return loom.QuitResult()
+	}
 	if e.Key == "f2" {
 		g.themeIndex = (g.themeIndex + 1) % len(g.themes)
 		g.themeName = g.themes[g.themeIndex]
 		g.applyTheme()
 		return loom.Handled()
 	}
-	return g.widget.ConsumeKey(e)
+	result := g.widget.ConsumeKey(e)
+	if e.Is("esc") && !result.Consumed {
+		return loom.QuitResult()
+	}
+	// Child confirmation completes its interaction, not the gallery session.
+	if !e.Is("esc") {
+		result.Quit = false
+	}
+	return result
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	return g.widget.ConsumeMouse(e)
+	result := g.widget.ConsumeMouse(e)
+	result.Quit = false
+	return result
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {
