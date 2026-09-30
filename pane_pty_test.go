@@ -155,6 +155,62 @@ func (w *cursorEffectsPTYWidget) ConsumeMouse(e MouseEvent) EventResult {
 	return Ignored()
 }
 
+func TestFramePTYMouseDragOutsidePane(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 24, 10)
+	w := newCursorEffectsPTYWidget()
+	frame := &Frame{Boxes: []Box{{ID: "content", Width: 24, Height: 8, Child: w}}}
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 10, cols: 24, startRow: 1, DisableDefaultQuit: true}
+	p.EnableMouse()
+	done := make(chan error, 1)
+	go func() { done <- p.Run(frame) }()
+	t.Cleanup(func() {
+		_, _ = master.WriteString("q")
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Error("Pane.Run did not stop")
+		}
+	})
+
+	outer := frame.Layout(24, 10)[0]
+	inner := Rect{X: outer.X + 1, Y: outer.Y + 1, W: outer.W - 2, H: outer.H - 2}
+	pressX, pressY := inner.X+1, inner.Y+1
+	if _, err := master.WriteString(fmt.Sprintf("\x1b[<0;%d;%dM", pressX+1, pressY+2)); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case e := <-w.mouseEvents:
+		if e.Action != MousePress {
+			t.Fatalf("press delivered as %+v", e)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for press")
+	}
+	if _, err := master.WriteString(fmt.Sprintf("\x1b[<32;40;%dM", pressY+2)); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case e := <-w.mouseEvents:
+		if e.Action != MouseDrag || e.X != 38 || e.Y != pressY-inner.Y+1 {
+			t.Fatalf("outside drag delivered as %+v", e)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for outside drag")
+	}
+	if _, err := master.WriteString(fmt.Sprintf("\x1b[<0;40;%dm", pressY+3)); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case e := <-w.mouseEvents:
+		if e.Action != MouseRelease || e.X != 38 || e.Y != pressY-inner.Y+2 {
+			t.Fatalf("outside release delivered as %+v", e)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for outside release")
+	}
+}
+
 func (w *cursorEffectsPTYWidget) ConsumeKey(e KeyEvent) EventResult {
 	w.keyEvents <- e
 	return EventResult{Consumed: e.Is("q"), Quit: e.Is("q")}

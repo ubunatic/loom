@@ -281,6 +281,9 @@ type Frame struct {
 	focusManaged     bool
 	hasFocus         bool
 	lastRect         Rect
+	mouseCapture     int
+	mouseCaptureRect Rect
+	mouseCaptured    bool
 }
 
 func (f *Frame) TickInterval() (shortest time.Duration) {
@@ -918,6 +921,18 @@ func (f *Frame) focusLast() {
 // ConsumeMouse focuses clicked boxes and forwards events inside a child's bounds.
 func (f *Frame) ConsumeMouse(e MouseEvent) EventResult {
 	x, y := e.X, e.Y
+	if f.mouseCaptured && (e.Action == MouseDrag || e.Action == MouseRelease) {
+		index := f.mouseCapture
+		if index >= 0 && index < len(f.Boxes) && f.Boxes[index].Child != nil {
+			captured := f.Boxes[index].Child
+			e.X, e.Y = x-f.mouseCaptureRect.X, y-f.mouseCaptureRect.Y
+			if e.Action == MouseRelease {
+				f.mouseCaptured = false
+			}
+			return captured.ConsumeMouse(e)
+		}
+		f.mouseCaptured = false
+	}
 	for i, rect := range f.Layout(f.lastRect.W, f.lastRect.H) {
 		if rect.W < 2 || rect.H < 2 || x < rect.X || x >= rect.X+rect.W || y < rect.Y || y >= rect.Y+rect.H {
 			continue
@@ -934,6 +949,9 @@ func (f *Frame) ConsumeMouse(e MouseEvent) EventResult {
 			return Handled()
 		}
 		e.X, e.Y = x-inner.X, y-inner.Y
+		if e.Action == MousePress && e.Button == MouseLeft {
+			f.mouseCapture, f.mouseCaptureRect, f.mouseCaptured = i, inner, true
+		}
 		return box.Child.ConsumeMouse(e)
 	}
 	return Ignored()
