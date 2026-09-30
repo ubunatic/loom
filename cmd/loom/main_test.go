@@ -131,6 +131,42 @@ func TestCLIArityErrors(t *testing.T) {
 	}
 }
 
+func TestInfoReportFields(t *testing.T) {
+	t.Setenv("LOOMCOLOR", "truecolor")
+	t.Setenv("TERM", "xterm-256color")
+	t.Setenv("COLORTERM", "truecolor")
+	t.Setenv("TERM_PROGRAM", "TestTerminal")
+	var out bytes.Buffer
+	if err := writeInfo(&out, 80, 24); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"loom version: " + loom.Version,
+		"terminal size: 80 x 24 cells",
+		"TERM=xterm-256color",
+		"COLORTERM=truecolor",
+		"TERM_PROGRAM=TestTerminal",
+		"colour depth: truecolor",
+		"true colour: true",
+		"Unicode sample width:",
+		"graphics protocol:",
+	} {
+		if !strings.Contains(out.String(), want) {
+			t.Errorf("info report %q does not contain %q", out.String(), want)
+		}
+	}
+}
+
+func TestInfoReportWithoutTerminalSize(t *testing.T) {
+	var out bytes.Buffer
+	if err := writeInfo(&out, 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(out.String(), "terminal size: unknown (pixels: unknown)") {
+		t.Fatalf("info report without terminal size = %q", out.String())
+	}
+}
+
 func TestWidgetsCommandListsAndSelectsCatalogEntries(t *testing.T) {
 	var all bytes.Buffer
 	if err := execute([]string{"widgets"}, &all); err != nil {

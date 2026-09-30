@@ -26,11 +26,11 @@ func main() {
 
 func execute(args []string, out io.Writer) error {
 	root := &cobra.Command{
-		Use: "loom", Version: loom.Version, Short: "Validate, measure, and view TUI assets",
+		Use: "loom", Version: loom.Version, Short: "Inspect terminal capabilities and validate TUI assets",
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), formatCommand(), frameCommand(), widgetsCommand())
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), formatCommand(), frameCommand(), widgetsCommand())
 	root.SetArgs(args)
 	return root.Execute()
 }

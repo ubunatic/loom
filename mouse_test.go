@@ -41,6 +41,9 @@ func TestDecodeMousePressRelease(t *testing.T) {
 	if press.X != 10 || press.Y != 5 {
 		t.Errorf("press coords = (%d,%d), want (10,5)", press.X, press.Y)
 	}
+	if press.RawX != 10 || press.RawY != 5 {
+		t.Errorf("raw press coords = (%d,%d), want (10,5)", press.RawX, press.RawY)
+	}
 
 	release, ok := loom.DecodeMouse([]byte("\x1b[<0;10;5m")) // trailing m = release
 	if !ok || release.Action != loom.MouseRelease || release.Button != loom.MouseLeft {
