@@ -19,6 +19,7 @@ type Dialog struct {
 	OnSelect func(string)
 	selected int
 	popup    *Popup
+	drawRect Rect
 }
 
 // NewDialog creates an open modal dialog. The first button is highlighted.
@@ -35,6 +36,7 @@ func (d *Dialog) SelectedButton() string {
 }
 
 func (d *Dialog) Draw(c *Canvas, r Rect) {
+	d.drawRect = r
 	if !d.Open {
 		return
 	}
@@ -117,6 +119,10 @@ func (d *Dialog) ConsumeMouse(e MouseEvent) EventResult {
 	if d.popup == nil || !d.Open {
 		return Ignored()
 	}
+	// Popup receives coordinates local to the area it was drawn in. A placed
+	// dialog uses a different area from the allocation receiving this event.
+	e.X += d.drawRect.X - d.popup.lastRect.X
+	e.Y += d.drawRect.Y - d.popup.lastRect.Y
 	return d.popup.ConsumeMouse(e)
 }
 

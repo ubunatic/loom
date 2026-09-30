@@ -52,3 +52,27 @@ func TestFormFocusTraversalAndCancel(t *testing.T) {
 		t.Fatal("Esc did not invoke cancellation")
 	}
 }
+
+func TestFormHoverPreservesEditorAndClickFocusesEditor(t *testing.T) {
+	first, second := loom.NewTextInput("Ada"), loom.NewTextInput("Engineer")
+	form := loom.NewForm([]loom.FormField{
+		{Label: "Name", Widget: first, Help: "Display name"},
+		{Label: "Role", Widget: second},
+	})
+	loom.Render(form, 50, 10)
+	for _, action := range []loom.MouseAction{loom.MouseHover, loom.MouseDrag, loom.MouseRelease} {
+		res := form.ConsumeMouse(loom.MouseEvent{Action: action, Button: loom.MouseLeft, X: 7, Y: 2})
+		if res.Consumed || form.FocusIndex() != 0 {
+			t.Fatalf("motion changed focus: action=%v result=%+v focus=%d", action, res, form.FocusIndex())
+		}
+	}
+	if res := form.ConsumeKey(loom.KeyEvent{Text: "Z"}); !res.Consumed || first.Value() != "AdaZ" || second.Value() != "Engineer" {
+		t.Fatalf("typing after hover: result=%+v first=%q second=%q", res, first.Value(), second.Value())
+	}
+	if res := form.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 7, Y: 2}); !res.Consumed || form.FocusIndex() != 1 {
+		t.Fatalf("click did not focus editor: result=%+v focus=%d", res, form.FocusIndex())
+	}
+	if res := form.ConsumeKey(loom.KeyEvent{Text: "Y"}); !res.Consumed || second.Value() != "EngineerY" {
+		t.Fatalf("typing after click: result=%+v value=%q", res, second.Value())
+	}
+}

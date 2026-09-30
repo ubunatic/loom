@@ -288,7 +288,9 @@ func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 		return Handled()
 	}
 	if f.focused < len(f.Fields) {
-		if w, ok := f.Fields[f.focused].Widget.(Widget); ok {
+		// Editors such as TextInput consume events but have a focused Draw
+		// signature, so they need not implement Widget.
+		if w, ok := f.Fields[f.focused].Widget.(EventConsumer); ok {
 			return w.ConsumeKey(e)
 		}
 	}

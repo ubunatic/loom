@@ -1233,7 +1233,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				if quit {
 					return nil
 				}
-				continue
+				if len(raw) == 0 {
+					continue
+				}
+				// Process keys following the mouse reports in this same read.
 			}
 
 			// Drain every complete key event out of raw (mirroring the mouse

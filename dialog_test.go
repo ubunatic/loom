@@ -48,3 +48,42 @@ func TestDialogEscapeDismisses(t *testing.T) {
 		t.Fatal("Escape left dialog open")
 	}
 }
+
+func TestDialogMouseUsesDrawLocalCoordinates(t *testing.T) {
+	for _, placed := range []bool{false, true} {
+		t.Run(map[bool]string{false: "centered", true: "placed"}[placed], func(t *testing.T) {
+			d := loom.NewDialog("Save changes", "Keep edits?", "Discard", "Save")
+			d.Width, d.Height = 36, 7
+			if placed {
+				d.Rect = loom.Rect{X: 12, Y: 8, W: 36, H: 7}
+			}
+			allocation := loom.Rect{X: 5, Y: 3, W: 60, H: 20}
+			c := loom.NewCanvas(80, 30)
+			d.Draw(c, allocation)
+			var selected string
+			d.OnSelect = func(label string) { selected = label }
+			for y := 0; y < 30; y++ {
+				var row strings.Builder
+				for x := 0; x < 80; x++ {
+					row.WriteString(c.Get(x, y).Text)
+				}
+				// The button row also contains Discard; the title contains Save.
+				if !strings.Contains(row.String(), "Discard") {
+					continue
+				}
+				text := []rune(row.String())
+				for x := 0; x+4 <= len(text); x++ {
+					if string(text[x:x+4]) != "Save" {
+						continue
+					}
+					res := d.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: x - allocation.X, Y: y - allocation.Y})
+					if !res.Consumed || d.Open || selected != "Save" {
+						t.Fatalf("button click: result=%+v open=%v selected=%q", res, d.Open, selected)
+					}
+					return
+				}
+			}
+			t.Fatal("Save button not visible")
+		})
+	}
+}

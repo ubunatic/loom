@@ -177,7 +177,14 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			beforeRows := loom.Render(widget, 100, 30)
+			// Render returns ANSI rows; hit-testing needs visible cell columns.
+			cells := renderDemoCells(widget, 30)
+			beforeRows := make([]string, len(cells))
+			for y, row := range cells {
+				for _, cell := range row {
+					beforeRows[y] += cell.Text
+				}
+			}
 			x, y := test.locate(beforeRows)
 			if x < 0 {
 				t.Fatalf("click target for %s is not visible", name)
@@ -362,5 +369,101 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 		waitForAbsent(t, s, "Save changes")
 		s.Send("\r")
 		s.WaitFor("Save changes", 5*time.Second)
+	})
+}
+
+func TestGalleryMouseRoutingPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	start := func(t *testing.T, name string) *ptytest.Session {
+		t.Helper()
+		// Nest demos in outer tabs so their draw origins are nonzero.
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", name, "Choice")
+		s.WaitFor("Theme: plain", 5*time.Second)
+		return s
+	}
+	point := func(t *testing.T, s *ptytest.Session, text string) (int, int) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				return utf8.RuneCountInString(line[:i]), y
+			}
+		}
+		t.Fatalf("%q missing:\n%s", text, strings.Join(s.Screen(), "\n"))
+		return -1, -1
+	}
+	click := func(t *testing.T, s *ptytest.Session, text string) {
+		t.Helper()
+		x, y := point(t, s, text)
+		s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+	}
+	waitAbsent := func(t *testing.T, s *ptytest.Session, text string) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if !strings.Contains(strings.Join(s.Screen(), "\n"), text) {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("%q remained visible:\n%s", text, strings.Join(s.Screen(), "\n"))
+	}
+	t.Run("MenuBar title columns", func(t *testing.T) {
+		s := start(t, "MenuBar")
+		s.WaitFor("Autosave", 5*time.Second)
+		for _, menu := range []struct{ title, item string }{{"Edit", "Undo"}, {"Help", "Keyboard shortcuts"}, {"File", "Autosave"}} {
+			// Click every letter, including the formerly misrouted e in Help.
+			for offset := range []rune(menu.title) {
+				s.Send("\x1b")
+				waitAbsent(t, s, "Autosave")
+				waitAbsent(t, s, "Undo")
+				waitAbsent(t, s, "Keyboard shortcuts")
+				x, y := point(t, s, menu.title)
+				s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+offset+1, y+1, x+offset+1, y+1)))
+				s.WaitFor(menu.item, 5*time.Second)
+			}
+		}
+	})
+	t.Run("Tabs demo switches both ways", func(t *testing.T) {
+		s := start(t, "Tabs")
+		s.WaitFor("Loom widget gallery", 5*time.Second)
+		click(t, s, "Details")
+		s.WaitFor("Tabs host any Loom widgets.", 5*time.Second)
+		click(t, s, "Overview")
+		s.WaitFor("Loom widget gallery", 5*time.Second)
+	})
+	t.Run("Form hover preserves focus and click changes it", func(t *testing.T) {
+		s := start(t, "Form")
+		s.WaitFor("Engineer", 5*time.Second)
+		x, y := point(t, s, "Engineer")
+		// A terminal read can contain a mouse report followed by a key.
+		s.SendRaw([]byte(fmt.Sprintf("\x1b[<35;%d;%dMZ", x+1, y+1)))
+		s.WaitFor("Ada LovelaceZ", 5*time.Second)
+		click(t, s, "Engineer")
+		s.Send("Y")
+		s.WaitFor("EngineerY", 5*time.Second)
+	})
+	t.Run("Dialog clicks button rather than title", func(t *testing.T) {
+		s := start(t, "Dialog")
+		s.WaitFor("Discard", 5*time.Second)
+		// Discard uniquely identifies the button row; Save also occurs in title.
+		for y, line := range s.Screen() {
+			if !strings.Contains(line, "Discard") {
+				continue
+			}
+			i := strings.Index(line, "Save")
+			if i < 0 {
+				t.Fatal("Save button missing")
+			}
+			x := utf8.RuneCountInString(line[:i])
+			s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1)))
+			waitAbsent(t, s, "Discard")
+			s.Send("\r")
+			s.WaitFor("Discard", 5*time.Second)
+			return
+		}
+		t.Fatal("button row missing")
 	})
 }
