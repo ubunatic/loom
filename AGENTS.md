@@ -47,3 +47,4 @@ Docs in `./docs/` are managed by harnez. <!-- harnez:bundled -->
 - Spec system @docs/Spec.md,
   YAML spec files as single source of truth; Go code must not duplicate spec values
 <!-- harnez:end Language Conventions -->
+Fix the library, not the caller: no per-widget or per-app workarounds for library flaws. Change interfaces or the event approach only when needed, and then follow a proven key/mouse model (global or local routing).

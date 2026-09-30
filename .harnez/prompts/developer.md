@@ -14,3 +14,5 @@ Tests must not depend on the caller's color env (pin LOOMCOLOR=truecolor in Test
 Never change a test expectation just to make it pass without stating why the old one was wrong.
 Finish all code first, then run make test-q1 exactly once as the last step, writing output to a file, and grep it for '--- FAIL'; never interrupt it; if it fails, report instead of rerunning.
 Commit only your code changes with a conventional commit ending in: <commit trailers>. Do not edit the issue file. Run make install. Report the commit hash.
+
+- Avoid hacks: fix the library, not the caller. Change interfaces or the event approach only when needed, and then follow a proven key/mouse model.
