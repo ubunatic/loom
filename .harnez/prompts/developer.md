@@ -16,3 +16,4 @@ Finish all code first, then run make test-q1 exactly once as the last step, writ
 Commit only your code changes with a conventional commit ending in: <commit trailers>. Do not edit the issue file. Run make install. Report the commit hash.
 
 - Avoid hacks: fix the library, not the caller. Change interfaces or the event approach only when needed, and then follow a proven key/mouse model.
+- Keyboard and mouse fixes must cover both the key and the mouse path, with a test for each.
