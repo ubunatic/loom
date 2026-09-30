@@ -327,8 +327,19 @@ func cropForView(src image.Image, cols, rows int, zoom, panX, panY float64) imag
 	if box.Empty() {
 		return src
 	}
-	out := image.NewRGBA(image.Rect(0, 0, box.Dx(), box.Dy()))
-	draw.Draw(out, out.Bounds(), src, box.Min, draw.Src)
+	crop := image.NewRGBA(image.Rect(0, 0, box.Dx(), box.Dy()))
+	draw.Draw(crop, crop.Bounds(), src, box.Min, draw.Src)
+	// cati's ScaleToFit deliberately avoids upscaling. Restore the original
+	// source dimensions here so the selected region renders at the same cell
+	// size as the unzoomed image while its pixels appear magnified.
+	out := image.NewRGBA(image.Rect(0, 0, sw, sh))
+	for y := 0; y < sh; y++ {
+		srcY := y * crop.Bounds().Dy() / sh
+		for x := 0; x < sw; x++ {
+			srcX := x * crop.Bounds().Dx() / sw
+			out.Set(x, y, crop.At(srcX, srcY))
+		}
+	}
 	return out
 }
 

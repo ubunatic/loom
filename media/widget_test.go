@@ -113,11 +113,53 @@ func TestCropForViewPanChangesCropAndClampsInput(t *testing.T) {
 	left := cropForView(img, 20, 10, 2, 0, 0)
 	right := cropForView(img, 20, 10, 2, 1, 1)
 	a, b := left.Bounds(), right.Bounds()
-	if a.Dx() != b.Dx() || a.Dy() != b.Dy() {
-		t.Fatalf("crop sizes differ: %v and %v", a, b)
+	if a.Dx() != 100 || a.Dy() != 60 || b.Dx() != 100 || b.Dy() != 60 {
+		t.Fatalf("zoomed images = %v and %v, want full output size (100x60)", a, b)
 	}
 	if left.At(a.Min.X, a.Min.Y) == right.At(b.Min.X, b.Min.Y) {
 		t.Fatal("pan did not change the visible source crop")
+	}
+	if left.At(0, 0) != left.At(1, 0) {
+		t.Fatal("zoomed source pixels were not enlarged to fill the output image")
+	}
+}
+
+func TestZoomKeepsRenderedAreaAndMagnifiesPixels(t *testing.T) {
+	img := image.NewRGBA(image.Rect(0, 0, 80, 40))
+	for y := 0; y < 40; y++ {
+		for x := 0; x < 80; x++ {
+			img.Set(x, y, color.RGBA{R: uint8(x * 3), G: uint8(y * 5), B: 120, A: 255})
+		}
+	}
+	w, err := NewImage(img, ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	canvas := loom.NewCanvas(40, 8)
+	r := loom.Rect{X: 0, Y: 0, W: 40, H: 8}
+	countImageCells := func() int {
+		count := 0
+		for y := 0; y < 6; y++ {
+			for x := 0; x < 40; x++ {
+				if canvas.Get(x, y).Text != " " {
+					count++
+				}
+			}
+		}
+		return count
+	}
+	w.Draw(canvas, r)
+	fitCells := countImageCells()
+	w.setZoom(2)
+	w.Draw(canvas, r)
+	zoomCells := countImageCells()
+	if fitCells == 0 || zoomCells != fitCells {
+		t.Fatalf("rendered cell count at fit/2x = %d/%d, want same non-zero area", fitCells, zoomCells)
+	}
+
+	zoomed := cropForView(img, 40, 6, 2, 0.5, 0.5)
+	if zoomed.At(0, 20) != zoomed.At(1, 20) {
+		t.Fatal("source detail was not enlarged across adjacent output pixels")
 	}
 }
 
