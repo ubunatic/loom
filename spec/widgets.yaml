@@ -213,6 +213,18 @@ widgets:
       stack.Gap = 1
       _ = stack
     source: stack.go
+  - name: loom.Spinner
+    package: loom
+    purpose: Show a labeled activity indicator that can be started and stopped.
+    category: display
+    example: |-
+      spinner := loom.NewSpinner("Loading")
+      spinner.Start()
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: spinner}}}
+      _ = frame
+    source: spinner.go
+    docs: docs/Widgets.md §6
+    ticket: issues/186
   - name: loom.StyledRows
     package: loom
     purpose: Render styled lines without handling input.

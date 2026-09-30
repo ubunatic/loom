@@ -62,6 +62,11 @@ var demos = map[string]constructor{
 		bar.Set(.68)
 		return bar
 	},
+	"Spinner": func() loom.Widget {
+		spinner := loom.NewSpinner("Syncing workspace")
+		spinner.Start()
+		return spinner
+	},
 	"Table": func() loom.Widget {
 		table := loom.NewTable(
 			[]loom.Column{{Header: "Task", Width: 24}, {Header: "Status", Width: 14}},

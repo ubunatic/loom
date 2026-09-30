@@ -22,6 +22,7 @@ type LibDefaults struct {
 	Scrollbar        ScrollbarDefaults   `yaml:"scrollbar"`
 	Mouse            MouseDefaults       `yaml:"mouse"`
 	Splash           SplashDefaults      `yaml:"splash"`
+	Spinner          SpinnerDefaults     `yaml:"spinner"`
 	ProgressBar      ProgressBarDefaults `yaml:"progress_bar"`
 	Media            MediaDefaults       `yaml:"media"`
 }
@@ -93,6 +94,11 @@ type SplashDefaults struct {
 type ProgressBarDefaults struct {
 	Width       int    `yaml:"width"`
 	DonePattern string `yaml:"done_pattern"`
+}
+
+// SpinnerDefaults defines specced animation timing for Spinner.
+type SpinnerDefaults struct {
+	TickInterval time.Duration `yaml:"tick_interval"`
 }
 
 // SpeccedDefaults holds the loaded immutable defaults from spec/defaults.yaml.

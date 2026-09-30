@@ -29,6 +29,9 @@ splash:
   tick_interval: 80ms
   hold_duration: 400ms
 
+spinner:
+  tick_interval: 80ms
+
 progress_bar:
   width: 24
   done_pattern: ":"
