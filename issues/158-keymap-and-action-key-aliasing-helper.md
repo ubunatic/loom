@@ -1,6 +1,6 @@
 # 158 — KeyMap and Action Key Aliasing Helper
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
