@@ -1,6 +1,6 @@
 # 180 — Roadmap: close feature gaps found in the framework comparisons
 
-**Status**: Closed — roadmap delivered, execution tracked in docs/progress/roadmap.ansi
+**Status**: Closed — roadmap delivered, execution tracked in docs/progress/roadmap.md
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Planning
