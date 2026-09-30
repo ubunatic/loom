@@ -8,6 +8,8 @@ import (
 	"io"
 	"strings"
 
+	"codeberg.org/ubunatic/loom"
+	"codeberg.org/ubunatic/loom/gallery"
 	"codeberg.org/ubunatic/loom/spec"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -34,16 +36,25 @@ type widgetEntry struct {
 }
 
 func widgetsCommand() *cobra.Command {
-	return &cobra.Command{
+	var show, list bool
+	command := &cobra.Command{
 		Use:   "widgets [name]",
-		Short: "List library widgets and show their usage",
-		Args:  cobra.MaximumNArgs(1),
+		Short: "List library widgets, show usage, or run live demos",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if show {
+				return nil
+			}
+			return cobra.MaximumNArgs(1)(cmd, args)
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if show {
+				return showWidgetDemos(args)
+			}
 			catalog, err := readWidgetCatalog()
 			if err != nil {
 				return err
 			}
-			if len(args) == 0 {
+			if len(args) == 0 || list {
 				categories := []string{"input", "display", "layout", "infra"}
 				for _, cat := range categories {
 					for _, entry := range catalog.Widgets {
@@ -75,6 +86,40 @@ func widgetsCommand() *cobra.Command {
 			return fmt.Errorf("widget %q is ambiguous: %s", name, strings.Join(names, ", "))
 		},
 	}
+	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
+	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
+	return command
+}
+
+var runWidgetPane = func(widget loom.Widget) error {
+	pane, err := loom.New(24)
+	if err != nil {
+		return err
+	}
+	defer pane.Close()
+	return pane.Run(widget)
+}
+
+func showWidgetDemos(names []string) error {
+	if len(names) == 0 {
+		return runWidgetPane(gallery.NewAll())
+	}
+	if len(names) == 1 {
+		widget, err := gallery.New(names[0])
+		if err != nil {
+			return err
+		}
+		return runWidgetPane(widget)
+	}
+	tabs := make([]loom.Tab, 0, len(names))
+	for _, name := range names {
+		widget, err := gallery.New(name)
+		if err != nil {
+			return err
+		}
+		tabs = append(tabs, loom.Tab{Title: strings.TrimPrefix(name, "loom."), Widget: widget})
+	}
+	return runWidgetPane(loom.NewTabs(tabs...))
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

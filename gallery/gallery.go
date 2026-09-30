@@ -1,0 +1,104 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+// Package gallery provides live, sample-data demos for Loom widgets.
+package gallery
+
+import (
+	"fmt"
+	"sort"
+	"strings"
+
+	"codeberg.org/ubunatic/loom"
+)
+
+type constructor func() loom.Widget
+
+var demos = map[string]constructor{
+	"Choice": func() loom.Widget {
+		return loom.NewChoice([]loom.Item{{Name: "Build", Desc: "Compile the project"}, {Name: "Test", Desc: "Run the test suite"}, {Name: "Release", Desc: "Package a release"}})
+	},
+	"PillCluster": func() loom.Widget {
+		return loom.NewPillCluster(
+			loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone},
+			loom.ProviderPill{Name: "Worker", Symbol: "…", State: loom.ProviderFetching},
+			loom.ProviderPill{Name: "Cache", Symbol: "✓", State: loom.ProviderDone},
+		)
+	},
+	"Popup": func() loom.Widget {
+		popup := loom.NewPopup("Gallery popup", loom.NewView([]string{"This overlay is a live widget.", "Press Esc to close it."}))
+		popup.Width, popup.Height = 48, 7
+		return popup
+	},
+	"ProgressBar": func() loom.Widget {
+		bar := loom.NewProgressBar()
+		bar.Set(.68)
+		return bar
+	},
+	"Table": func() loom.Widget {
+		table := loom.NewTable(
+			[]loom.Column{{Header: "Task", Width: 24}, {Header: "Status", Width: 14}},
+			[]loom.Row{{Cells: []string{"Compile", "done"}, Key: "compile"}, {Cells: []string{"Unit tests", "running"}, Key: "tests"}, {Cells: []string{"Package", "waiting"}, Key: "package"}},
+		)
+		return table
+	},
+	"Tabs": func() loom.Widget {
+		return loom.NewTabs(
+			loom.Tab{Title: "Overview", Widget: loom.NewView([]string{"Loom widget gallery", "Switch tabs with ← and →."})},
+			loom.Tab{Title: "Details", Widget: loom.NewView([]string{"Tabs host any Loom widgets."})},
+		)
+	},
+	"TextArea": func() loom.Widget {
+		return &textAreaWidget{area: loom.NewTextArea("A multi-line editor\nwith sample content.\nUse the arrow keys to move.")}
+	},
+	"TextInput": func() loom.Widget {
+		input := loom.NewTextInput("widget gallery")
+		input.Prompt = "Name: "
+		return &textInputWidget{input: input}
+	},
+}
+
+// Names returns the available demo names in sorted order.
+func Names() []string {
+	names := make([]string, 0, len(demos))
+	for name := range demos {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
+// New constructs one demo by catalog widget name, accepting qualified names
+// such as "loom.TextInput" as well as short names.
+func New(name string) (loom.Widget, error) {
+	name = strings.TrimPrefix(name, "loom.")
+	build, ok := demos[name]
+	if !ok {
+		return nil, fmt.Errorf("unknown widget demo %q", name)
+	}
+	return build(), nil
+}
+
+// NewAll constructs the complete gallery as a tabbed widget.
+func NewAll() *loom.Tabs {
+	tabs := make([]loom.Tab, 0, len(demos))
+	for _, name := range Names() {
+		tabs = append(tabs, loom.Tab{Title: name, Widget: demos[name]()})
+	}
+	return loom.NewTabs(tabs...)
+}
+
+type textInputWidget struct{ input *loom.TextInput }
+
+func (w *textInputWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	c.PaintSurface(r, loom.Style{})
+	w.input.Draw(c, r, true)
+}
+func (w *textInputWidget) HandleKey(e loom.KeyEvent) bool   { return w.input.HandleKey(e) }
+func (w *textInputWidget) HandleMouse(loom.MouseEvent) bool { return false }
+
+type textAreaWidget struct{ area *loom.TextArea }
+
+func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect) { w.area.Draw(c, r, true) }
+func (w *textAreaWidget) HandleKey(e loom.KeyEvent) bool   { return w.area.HandleKey(e) }
+func (w *textAreaWidget) HandleMouse(loom.MouseEvent) bool { return false }

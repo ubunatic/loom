@@ -218,6 +218,37 @@ func TestWidgetsCommandListsAndSelectsCatalogEntries(t *testing.T) {
 	}
 }
 
+func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
+	var list bytes.Buffer
+	if err := execute([]string{"widgets", "--list"}, &list); err != nil {
+		t.Fatal(err)
+	}
+	var legacy bytes.Buffer
+	if err := execute([]string{"widgets"}, &legacy); err != nil {
+		t.Fatal(err)
+	}
+	if list.String() != legacy.String() {
+		t.Fatalf("--list output differs from existing listing")
+	}
+	var shown bytes.Buffer
+	previous := runWidgetPane
+	runWidgetPane = func(widget loom.Widget) error {
+		return loom.RenderTo(&shown, widget, 80, 24)
+	}
+	t.Cleanup(func() { runWidgetPane = previous })
+	if err := execute([]string{"widgets", "--show", "TextInput", "ProgressBar"}, &shown); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"TextInput", "ProgressBar"} {
+		if !strings.Contains(shown.String(), want) {
+			t.Errorf("--show output %q missing %q", shown.String(), want)
+		}
+	}
+	if err := execute([]string{"widgets", "--show", "NoSuchWidget"}, &shown); err == nil {
+		t.Fatal("--show accepted unknown demo")
+	}
+}
+
 func TestMissingFilesHaveCleanFilenameErrors(t *testing.T) {
 	missing := filepath.Join(t.TempDir(), "missing.ansi")
 	for _, command := range []string{"measure", "eval", "check-box", "view"} {
