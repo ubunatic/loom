@@ -136,8 +136,11 @@ func TestScreenshotScriptRoundTrip(t *testing.T) {
 	}
 	script := loom.ScreenshotScript(rows, "test\nshot")
 
-	if !strings.HasPrefix(script, "#!/usr/bin/env bash\n") {
-		t.Errorf("script missing shebang: %q", script)
+	if !strings.HasPrefix(script, "#!/usr/bin/env bash\nset -euo pipefail\n") {
+		t.Errorf("script missing shebang or strict mode on line 2: %q", script)
+	}
+	if bare := loom.ScreenshotScript(rows, ""); !strings.HasPrefix(bare, "#!/usr/bin/env bash\nset -euo pipefail\n") {
+		t.Errorf("script without comment missing strict mode on line 2: %q", bare)
 	}
 	// The header comment collapses newlines so it stays a single comment line.
 	if !strings.Contains(script, "# test shot\n") {

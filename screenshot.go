@@ -38,18 +38,20 @@ func RenderTo(w io.Writer, root Widget, cols, rows int) error {
 	return WriteRows(w, Render(root, cols, rows))
 }
 
-// ScreenshotScript turns rendered ANSI rows into a minimal, self-printing POSIX
-// shell script: running it replays the captured frame with its original colors.
+// ScreenshotScript turns rendered ANSI rows into a minimal, self-printing bash
+// script: running it replays the captured frame with its original colors.
 //
 // It is a testing/debugging utility (pair it with Render to capture a frame
 // without a terminal), not part of the interactive widget API.
 // Each row is emitted as a single-quoted argument to one printf, with ESC bytes
 // written as \033 and embedded single quotes escaped, so the file stays plain
 // 7-bit text with no raw control characters. The comment is placed in a header
-// line (newlines collapsed) to identify the shot.
+// line (newlines collapsed) to identify the shot. Line 2 is always
+// `set -euo pipefail`, as docs/Bash.md requires.
 func ScreenshotScript(rows []string, comment string) string {
 	var b strings.Builder
 	b.WriteString("#!/usr/bin/env bash\n")
+	b.WriteString("set -euo pipefail\n")
 	if comment != "" {
 		b.WriteString("# ")
 		b.WriteString(strings.ReplaceAll(comment, "\n", " "))
