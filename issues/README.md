@@ -185,7 +185,7 @@ upkeep.
 | 172 | [172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md](172-add-a-reusable-filepicker-widget-on-top-of-the-directory-model.md) | Add a reusable FilePicker widget on top of the Directory model | Closed |
 | 173 | [173-add-masked-password-mode-to-textinput.md](173-add-masked-password-mode-to-textinput.md) | Add masked password mode to TextInput | Closed |
 | 174 | [174-add-standalone-numberinput-and-toggle-widgets.md](174-add-standalone-numberinput-and-toggle-widgets.md) | Add standalone NumberInput and Toggle widgets | Closed |
-| 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Open |
+| 175 | [175-add-a-datepicker-widget.md](175-add-a-datepicker-widget.md) | Add a DatePicker widget | Closed |
 | 176 | [176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md](176-add-loom-widgets-command-listing-all-widgets-with-examples-and-a-completeness-test.md) | Add loom widgets command listing all widgets with examples and a completeness test | Closed — resolved |
 | 177 | [177-research-compare-loom-to-bubble-tea-and-list-feature-gaps.md](177-research-compare-loom-to-bubble-tea-and-list-feature-gaps.md) | Research: compare loom to Bubble Tea and list feature gaps | Open |
 | 178 | [178-research-compare-loom-to-ncurses-and-list-feature-gaps.md](178-research-compare-loom-to-ncurses-and-list-feature-gaps.md) | Research: compare loom to ncurses and list feature gaps | Open |
