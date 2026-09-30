@@ -1,6 +1,6 @@
 # 185 — Add content-driven height with min and max bounds to TextArea
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
