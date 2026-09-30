@@ -1,6 +1,6 @@
 # 169 — Add Form and FieldGroup composite layout widget with tab navigation and validation summary
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
