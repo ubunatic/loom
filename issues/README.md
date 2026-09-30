@@ -198,7 +198,7 @@ upkeep.
 | 185 | [185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md](185-add-content-driven-height-with-min-and-max-bounds-to-textarea.md) | Add content-driven height with min and max bounds to TextArea | Closed |
 | 186 | [186-add-a-standalone-spinner-widget.md](186-add-a-standalone-spinner-widget.md) | Add a standalone Spinner widget | Closed |
 | 187 | [187-add-timer-and-stopwatch-widgets.md](187-add-timer-and-stopwatch-widgets.md) | Add Timer and Stopwatch widgets | Closed |
-| 188 | [188-add-a-paginator-widget.md](188-add-a-paginator-widget.md) | Add a Paginator widget | Open |
+| 188 | [188-add-a-paginator-widget.md](188-add-a-paginator-widget.md) | Add a Paginator widget | Closed |
 | 189 | [189-rank-choice-filter-matches-with-fuzzy-scoring.md](189-rank-choice-filter-matches-with-fuzzy-scoring.md) | Rank Choice filter matches with fuzzy scoring | Closed |
 | 190 | [190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md](190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md) | Add a Viewport widget that scrolls arbitrary child content | Open |
 | 191 | [191-add-cell-cursor-and-frozen-header-columns-to-table.md](191-add-cell-cursor-and-frozen-header-columns-to-table.md) | Add cell cursor and frozen header columns to Table | Open |
