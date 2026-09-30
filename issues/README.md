@@ -199,7 +199,7 @@ upkeep.
 | 186 | [186-add-a-standalone-spinner-widget.md](186-add-a-standalone-spinner-widget.md) | Add a standalone Spinner widget | Open |
 | 187 | [187-add-timer-and-stopwatch-widgets.md](187-add-timer-and-stopwatch-widgets.md) | Add Timer and Stopwatch widgets | Open |
 | 188 | [188-add-a-paginator-widget.md](188-add-a-paginator-widget.md) | Add a Paginator widget | Open |
-| 189 | [189-rank-choice-filter-matches-with-fuzzy-scoring.md](189-rank-choice-filter-matches-with-fuzzy-scoring.md) | Rank Choice filter matches with fuzzy scoring | Open |
+| 189 | [189-rank-choice-filter-matches-with-fuzzy-scoring.md](189-rank-choice-filter-matches-with-fuzzy-scoring.md) | Rank Choice filter matches with fuzzy scoring | Closed |
 | 190 | [190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md](190-add-a-viewport-widget-that-scrolls-arbitrary-child-content.md) | Add a Viewport widget that scrolls arbitrary child content | Open |
 | 191 | [191-add-cell-cursor-and-frozen-header-columns-to-table.md](191-add-cell-cursor-and-frozen-header-columns-to-table.md) | Add cell cursor and frozen header columns to Table | Open |
 | 192 | [192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md](192-add-an-axes-based-chart-widget-for-line-and-grouped-bar-series.md) | Add an axes-based Chart widget for line and grouped bar series | Open |

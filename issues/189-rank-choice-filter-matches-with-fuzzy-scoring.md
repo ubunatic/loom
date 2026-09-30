@@ -1,6 +1,6 @@
 # 189 — Rank Choice filter matches with fuzzy scoring
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
