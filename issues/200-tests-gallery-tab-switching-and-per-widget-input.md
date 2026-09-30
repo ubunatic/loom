@@ -1,6 +1,6 @@
 # 200 — Tests: gallery tab switching and per-widget input
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Test
