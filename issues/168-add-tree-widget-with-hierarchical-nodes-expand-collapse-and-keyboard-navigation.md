@@ -1,6 +1,6 @@
 # 168 — Add Tree widget with hierarchical nodes, expand/collapse, and keyboard navigation
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Feature
