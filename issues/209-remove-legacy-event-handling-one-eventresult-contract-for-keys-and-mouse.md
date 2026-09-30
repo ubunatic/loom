@@ -1,6 +1,6 @@
 # 209 — Remove legacy event handling: one EventResult contract for keys and mouse
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Refactor
