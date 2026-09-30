@@ -221,3 +221,72 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	}
 	t.Fatalf("click inside Tree did not collapse src:\n%s", strings.Join(s.Screen(), "\n"))
 }
+
+func TestWidgetKeyRoutingPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	if output, err := build.CombinedOutput(); err != nil {
+		t.Fatalf("build loom binary: %v\n%s", err, output)
+	}
+	start := func(t *testing.T, name string) *ptytest.Session {
+		t.Helper()
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", name)
+		s.WaitFor("Theme: plain", 5*time.Second)
+		return s
+	}
+	waitForAbsent := func(t *testing.T, s *ptytest.Session, text string) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if !strings.Contains(strings.Join(s.Screen(), "\n"), text) {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("%q remained visible after close:\n%s", text, strings.Join(s.Screen(), "\n"))
+	}
+
+	t.Run("TextArea accepts typing", func(t *testing.T) {
+		s := start(t, "TextArea")
+		s.WaitFor("A multi-line editor", 5*time.Second)
+		s.Send("Z")
+		// TextArea places its initial caret at the end of the sample value.
+		s.WaitFor("Use the arrow keys to move.Z", 5*time.Second)
+	})
+
+	t.Run("TextInput accepts typing", func(t *testing.T) {
+		s := start(t, "TextInput")
+		s.WaitFor("Name:", 5*time.Second)
+		countBullets := func() int { return strings.Count(strings.Join(s.Screen(), "\n"), "•") }
+		before := countBullets()
+		if before == 0 {
+			t.Fatal("TextInput did not render its masked sample value")
+		}
+		s.Send("Z")
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) && countBullets() <= before {
+			time.Sleep(10 * time.Millisecond)
+		}
+		if after := countBullets(); after <= before {
+			t.Fatalf("typing did not extend the masked value: before=%d after=%d", before, after)
+		}
+	})
+
+	t.Run("Popup closes and reopens", func(t *testing.T) {
+		s := start(t, "Popup")
+		s.WaitFor("Gallery popup", 5*time.Second)
+		s.Send("\x1b")
+		waitForAbsent(t, s, "Gallery popup")
+		s.Send("\r")
+		s.WaitFor("Gallery popup", 5*time.Second)
+	})
+
+	t.Run("Dialog closes and reopens", func(t *testing.T) {
+		s := start(t, "Dialog")
+		s.WaitFor("Save changes", 5*time.Second)
+		s.Send("\r")
+		waitForAbsent(t, s, "Save changes")
+		s.Send("\r")
+		s.WaitFor("Save changes", 5*time.Second)
+	})
+}
