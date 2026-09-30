@@ -197,12 +197,17 @@ var demos = map[string]constructor{
 	},
 	"TextInput": func() loom.Widget {
 		input := loom.NewTextInput("Ada Lovelace")
-		input.Prompt = "Name: "
 		placeholder := loom.NewTextInput("")
-		placeholder.Prompt, placeholder.Placeholder = "Placeholder: ", "Type a value…"
+		placeholder.Placeholder = "Type a value…"
 		masked := loom.NewTextInput("correct horse")
-		masked.Prompt, masked.Mask = "Masked: ", '•'
-		return &textInputWidget{input: input, placeholder: placeholder, masked: masked}
+		masked.Mask = '•'
+		form := loom.NewForm([]loom.FormField{
+			{Label: "Name:", Widget: input},
+			{Label: "Placeholder:", Widget: placeholder},
+			{Label: "Masked:", Widget: masked},
+		})
+		form.AdvanceOnEnter = true
+		return form
 	},
 	"Toggle": func() loom.Widget {
 		value := true
@@ -252,25 +257,6 @@ func NewAll() *loom.Tabs {
 	all.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 	return all
 }
-
-type textInputWidget struct {
-	input       *loom.TextInput
-	placeholder *loom.TextInput
-	masked      *loom.TextInput
-}
-
-func (w *textInputWidget) Draw(c *loom.Canvas, r loom.Rect) {
-	c.PaintSurface(r, loom.Style{})
-	w.input.Draw(c, r, true)
-	if r.H > 2 {
-		w.placeholder.Draw(c, loom.Rect{X: r.X, Y: r.Y + 2, W: r.W, H: 1}, false)
-	}
-	if r.H > 4 {
-		w.masked.Draw(c, loom.Rect{X: r.X, Y: r.Y + 4, W: r.W, H: 1}, false)
-	}
-}
-func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.input.ConsumeKey(e) }
-func (w *textInputWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 type textAreaWidget struct{ area *loom.TextArea }
 

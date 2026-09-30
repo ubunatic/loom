@@ -133,6 +133,38 @@ func nextGalleryTheme() string {
 	return ""
 }
 
+func TestGalleryTextInputFocusPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	for _, target := range []string{"Placeholder:", "Masked:", "Enter"} {
+		t.Run(target, func(t *testing.T) {
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "TextInput", "Choice")
+			s.WaitFor("Masked:", 5*time.Second)
+			if target == "Enter" {
+				s.Send("\rZ")
+			} else {
+				for y, line := range s.Screen() {
+					if i := strings.Index(line, target); i >= 0 {
+						x := utf8.RuneCountInString(line[:i]) + utf8.RuneCountInString(target) + 2
+						s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dmZ", x+1, y+1, x+1, y+1)))
+						break
+					}
+				}
+			}
+			if target == "Masked:" {
+				s.WaitFor(strings.Repeat("•", 14), 5*time.Second)
+			} else {
+				s.WaitFor("Placeholder:  Z", 5*time.Second)
+			}
+			if strings.Contains(strings.Join(s.Screen(), "\n"), "Ada LovelaceZ") {
+				t.Fatal("typing reached the first field")
+			}
+		})
+	}
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {

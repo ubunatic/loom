@@ -28,13 +28,16 @@ type FormAction struct {
 
 // Form arranges input fields, validates them, and submits their current values.
 type Form struct {
-	Fields      []FormField
-	Actions     []FormAction
-	OnSubmit    func(map[string]any)
-	OnCancel    func()
-	Validation  map[int]string
-	focused     int
-	focusedSelf bool
+	// AdvanceOnEnter moves from a single-line text field to the next field or action.
+	// The final field retains the normal validation and submission behavior.
+	AdvanceOnEnter bool
+	Fields         []FormField
+	Actions        []FormAction
+	OnSubmit       func(map[string]any)
+	OnCancel       func()
+	Validation     map[int]string
+	focused        int
+	focusedSelf    bool
 }
 
 // NewForm constructs a form with the first field focused.
@@ -284,6 +287,11 @@ func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return Handled()
 	case "enter":
+		if f.AdvanceOnEnter && f.focused < len(f.Fields) {
+			if _, ok := f.Fields[f.focused].Widget.(*TextInput); ok && f.FocusNext() {
+				return Handled()
+			}
+		}
 		f.activate()
 		return Handled()
 	}
