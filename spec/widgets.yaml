@@ -58,7 +58,7 @@ widgets:
       picker := loom.NewDatePicker(&selected)
       picker.Min = time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
     source: datepicker.go
-    docs: docs/Widgets.md §13
+    docs: docs/Widgets.md §14
     ticket: issues/175
   - name: loom.Dialog
     package: loom
