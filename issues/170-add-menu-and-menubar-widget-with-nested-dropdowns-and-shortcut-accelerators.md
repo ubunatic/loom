@@ -1,6 +1,6 @@
 # 170 — Add Menu and MenuBar widget with nested dropdowns and shortcut accelerators
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
