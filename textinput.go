@@ -144,12 +144,14 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 		if left && available > 0 {
 			c.Write(x, r.Y, "‹", Style{})
 			x++
-			used++
 		}
 		end := start
 		for end < len(displayed) {
 			w := RuneWidth(displayed[end])
 			remaining := available - used
+			if left {
+				remaining-- // the left marker occupies one cell before x
+			}
 			if t.caret < len(displayed) && end+1 < len(displayed) {
 				remaining-- // reserve the right clipping marker
 			} else if focused && t.caret == len(displayed) {
@@ -162,7 +164,11 @@ func (t *TextInput) Draw(c *Canvas, r Rect, focused bool) {
 			end++
 		}
 		c.Write(x, r.Y, string(displayed[start:end]), Style{})
-		if end < len(displayed) && t.caret < len(displayed) && available-used > 0 {
+		remaining := available - used
+		if left {
+			remaining--
+		}
+		if end < len(displayed) && t.caret < len(displayed) && remaining > 0 {
 			c.Write(x+used, r.Y, "›", Style{})
 		}
 		if focused {
