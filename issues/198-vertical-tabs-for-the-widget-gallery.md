@@ -1,6 +1,6 @@
 # 198 — Vertical tabs for the widget gallery
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
