@@ -696,6 +696,13 @@ func (w *Widget) pan(dx, dy float64) {
 func (*Widget) HandleMouse(loom.MouseEvent) bool { return false }
 
 // ConsumeMouse uses child-local 0-based coordinates for the control bar and image.
+// ConsumeMouseEvent adapts ConsumeMouse to loom's MouseConsumer dispatch so the
+// widget receives clicks when mounted directly as a pane root.
+func (w *Widget) ConsumeMouseEvent(e loom.MouseEvent) loom.EventResult {
+	quit, consumed := w.ConsumeMouse(e)
+	return loom.EventResult{Consumed: consumed, Quit: quit}
+}
+
 func (w *Widget) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
 	if w == nil {
 		return false, false

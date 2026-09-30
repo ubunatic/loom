@@ -65,8 +65,8 @@ func (d *demo) ConsumeKey(e loom.KeyEvent) (quit, consumed bool) {
 	return false, true
 }
 func (d *demo) HandleMouse(loom.MouseEvent) bool { return false }
-func (d *demo) ConsumeMouse(e loom.MouseEvent) (quit, consumed bool) {
-	return d.image.ConsumeMouse(e)
+func (d *demo) ConsumeMouseEvent(e loom.MouseEvent) loom.EventResult {
+	return d.image.ConsumeMouseEvent(e)
 }
 
 func (d *demo) TickInterval() time.Duration { return d.image.TickInterval() }

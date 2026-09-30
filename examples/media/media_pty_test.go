@@ -14,6 +14,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"codeberg.org/ubunatic/loom/internal/ptytest"
 	"codeberg.org/ubunatic/loom/media"
@@ -185,7 +186,8 @@ func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
 	// below the shell cursor, so its screen row is not a fixed constant.
 	controlRow, controlCol := -1, -1
 	for row, line := range s.Screen() {
-		if col := strings.Index(line, "[+]"); col >= 0 {
+		if i := strings.Index(line, "[+]"); i >= 0 {
+			col := utf8.RuneCountInString(line[:i])
 			controlRow, controlCol = row, col
 			break
 		}
