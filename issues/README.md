@@ -211,3 +211,4 @@ upkeep.
 | 198 | [198-vertical-tabs-for-the-widget-gallery.md](198-vertical-tabs-for-the-widget-gallery.md) | Vertical tabs for the widget gallery | Open |
 | 199 | [199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md](199-mouse-input-in-the-widget-gallery-only-tab-cycles-tabs.md) | Mouse input in the widget gallery; only Tab cycles tabs | Open |
 | 200 | [200-tests-gallery-tab-switching-and-per-widget-input.md](200-tests-gallery-tab-switching-and-per-widget-input.md) | Tests: gallery tab switching and per-widget input | Open |
+| 201 | [201-theme-switch-in-the-widget-gallery.md](201-theme-switch-in-the-widget-gallery.md) | Theme switch in the widget gallery | Open |
