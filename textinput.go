@@ -15,14 +15,26 @@ import "strings"
 // returns consumed=true for keys it acted on (printable text, backspace, delete,
 // left/right/home/end) so the host can keep navigation keys for itself.
 type TextInput struct {
-	Prompt      string // drawn before the value, e.g. "title> "
-	Placeholder string // dim hint shown when the buffer is empty
-	Mask        rune   // optional display rune repeated once per value rune; zero shows the value
+	Prompt      string  // drawn before the value, e.g. "title> "
+	Placeholder string  // dim hint shown when the buffer is empty
+	Mask        rune    // optional display rune repeated once per value rune; zero shows the value
+	Keys        *KeyMap // optional action bindings; the "copy" action copies the selection or value
 
-	runes []rune
-	caret int // caret index in [0, len(runes)]
-	view  int // first rune shown when the value exceeds the available width
+	runes                        []rune
+	caret                        int // caret index in [0, len(runes)]
+	view                         int // first rune shown when the value exceeds the available width
+	selectionStart, selectionEnd int
+	clipboardWriter              func(string)
 }
+
+// SetSelection selects the half-open rune range [start, end).
+func (t *TextInput) SetSelection(start, end int) {
+	t.selectionStart = max(0, min(start, len(t.runes)))
+	t.selectionEnd = max(0, min(end, len(t.runes)))
+}
+
+// SetClipboardWriter sets the callback used by the "copy" KeyMap action.
+func (t *TextInput) SetClipboardWriter(write func(string)) { t.clipboardWriter = write }
 
 // NewTextInput creates a TextInput seeded with value.
 func NewTextInput(value string) *TextInput {
@@ -48,6 +60,7 @@ func (t *TextInput) SetValue(s string) {
 	t.runes = []rune(s)
 	t.caret = len(t.runes)
 	t.view = 0
+	t.selectionStart, t.selectionEnd = 0, 0
 }
 
 // Caret returns the current caret index (rune offset from the start).
@@ -57,6 +70,18 @@ func (t *TextInput) Caret() int { return t.caret }
 // editing action; the host should treat consumed=false keys (enter, esc, …) as
 // its own.
 func (t *TextInput) HandleKey(e KeyEvent) (consumed bool) {
+	if t.Keys.Matches(e, "copy") && t.clipboardWriter != nil {
+		start, end := t.selectionStart, t.selectionEnd
+		if start > end {
+			start, end = end, start
+		}
+		value := string(t.runes)
+		if start != end {
+			value = string(t.runes[start:end])
+		}
+		t.clipboardWriter(value)
+		return true
+	}
 	switch e.Key {
 	case "left":
 		if t.caret > 0 {

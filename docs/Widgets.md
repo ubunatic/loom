@@ -234,7 +234,7 @@ When an event arrives at `Pane` (or composite containers `Frame`, `Tabs`, `Stack
 - If implementing historical `HandleKey(e KeyEvent) bool`, return `false` on ordinary keystrokes and `true` ONLY when requesting application termination.
 - Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.
 - `Pane` enables bracketed paste for the run and restores the terminal mode on exit. Widgets that implement `PasteConsumer` receive one `PasteEvent` per paste; other widgets ignore it. `TextInput` replaces pasted line breaks with spaces, while `TextArea` preserves them.
-- `TextInput.Mask` optionally replaces each displayed value rune with the configured rune (for example, `•`) and adjusts the caret to the mask's display width. A zero mask keeps normal text display. `Value()` continues to return the entered text to the host; the masked display does not reveal it, and TextInput has no copy action.
+- `TextInput.Mask` optionally replaces each displayed value rune with the configured rune (for example, `•`) and adjusts the caret to the mask's display width. A zero mask keeps normal text display. `Value()` continues to return the entered text to the host. `TextInput` and `TextArea` can copy via an optional `Keys` `KeyMap` binding named `copy`; `SetSelection(start, end)` selects a half-open rune range, and an empty selection copies the whole value. `Pane` sends the value through OSC 52.
 
 ## 8. Mouse Coordinate Invariants
 

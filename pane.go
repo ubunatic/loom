@@ -738,6 +738,11 @@ func (p *Pane) RunWatch(ctx context.Context, root Widget, cadence Cadence, colle
 func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time.Time, collect func(time.Time) error) error {
 	p.invalidateOnce.Do(func() { p.invalidate = make(chan struct{}, 1) })
 	bindInvalidationTree(root, p.Invalidate)
+	bindClipboardTree(root, func(text string) {
+		if p.tty != nil {
+			_ = WriteOSC52(p.tty, text)
+		}
+	})
 	p.tickerReset = make(chan struct{}, 1)
 	bindTickerControlTree(root, p.ResetTicker)
 	if requester, ok := root.(PaneRequester); ok {

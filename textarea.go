@@ -20,19 +20,32 @@ import (
 // joins with the previous line; arrows/Home/End move the caret. HandleKey
 // returns consumed=true for keys it acted on so the host keeps its own end key.
 type TextArea struct {
-	Placeholder   string // dim hint shown when the whole buffer is empty
+	Placeholder   string  // dim hint shown when the whole buffer is empty
+	Keys          *KeyMap // optional action bindings; the "copy" action copies the selection or value
 	StyleResolver syntax.StyleResolver
 	MinHeight     int // minimum preferred content height; zero uses the content height
 	MaxHeight     int // maximum preferred content height; zero is unbounded
 
-	lines       [][]rune
-	row         int // caret line index
-	col         int // caret column (rune offset within lines[row])
-	scroll      int // first visible line index
-	lastH       int // visible height from the last Draw
-	highlighter syntax.Engine
-	folds       map[int]int // startLine -> endLine (inclusive) for collapsed blocks
+	lines                        [][]rune
+	row                          int // caret line index
+	col                          int // caret column (rune offset within lines[row])
+	scroll                       int // first visible line index
+	lastH                        int // visible height from the last Draw
+	highlighter                  syntax.Engine
+	folds                        map[int]int // startLine -> endLine (inclusive) for collapsed blocks
+	selectionStart, selectionEnd int
+	clipboardWriter              func(string)
 }
+
+// SetSelection selects the half-open rune range [start, end) in Value().
+func (t *TextArea) SetSelection(start, end int) {
+	n := len([]rune(t.Value()))
+	t.selectionStart = max(0, min(start, n))
+	t.selectionEnd = max(0, min(end, n))
+}
+
+// SetClipboardWriter sets the callback used by the "copy" KeyMap action.
+func (t *TextArea) SetClipboardWriter(write func(string)) { t.clipboardWriter = write }
 
 // NewTextArea creates a TextArea seeded with value (split on "\n").
 func NewTextArea(value string) *TextArea {
@@ -97,6 +110,7 @@ func (t *TextArea) SetValue(s string) {
 	t.row = len(t.lines) - 1
 	t.col = len(t.lines[t.row])
 	t.scroll = 0
+	t.selectionStart, t.selectionEnd = 0, 0
 	t.folds = nil
 	if t.highlighter != nil {
 		_ = t.highlighter.Parse([]byte(s))
@@ -222,6 +236,19 @@ func (t *TextArea) FoldedRanges() map[int]int {
 
 // HandleKey applies an editing key, returning consumed=true when it acted.
 func (t *TextArea) HandleKey(e KeyEvent) (consumed bool) {
+	if t.Keys.Matches(e, "copy") && t.clipboardWriter != nil {
+		value := []rune(t.Value())
+		start, end := t.selectionStart, t.selectionEnd
+		if start > end {
+			start, end = end, start
+		}
+		if start != end {
+			t.clipboardWriter(string(value[start:end]))
+		} else {
+			t.clipboardWriter(string(value))
+		}
+		return true
+	}
 	switch e.Key {
 	case "left":
 		t.moveLeft()
