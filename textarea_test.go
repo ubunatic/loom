@@ -31,6 +31,38 @@ func TestTextAreaValueRoundTrip(t *testing.T) {
 	}
 }
 
+func TestTextAreaContentDrivenHeightBounds(t *testing.T) {
+	ta := loom.NewTextArea("one\ntwo\nthree")
+	if got := ta.ContentHeight(); got != 3 {
+		t.Fatalf("default content height = %d, want 3", got)
+	}
+	ta.HandleKey(loom.KeyEvent{Key: "enter"})
+	if got := ta.Measure(20).Height; got != 4 {
+		t.Fatalf("measured height after inserting a line = %d, want 4", got)
+	}
+	ta.MinHeight = 4
+	if got := ta.Measure(20).Height; got != 4 {
+		t.Fatalf("height with minimum = %d, want 4", got)
+	}
+	ta.MaxHeight = 5
+	if got := ta.ContentHeight(); got != 4 {
+		t.Fatalf("height with minimum and maximum = %d, want 4", got)
+	}
+	ta.MaxHeight = 2
+	ta.MinHeight = 1
+	if got := ta.ContentHeight(); got != 2 {
+		t.Fatalf("height with maximum = %d, want 2", got)
+	}
+	ta.HandleKey(loom.KeyEvent{Text: "!"})
+	if got := ta.ContentHeight(); got != 2 {
+		t.Fatalf("height after editing at maximum = %d, want 2", got)
+	}
+	ta.SetValue("only")
+	if got := ta.ContentHeight(); got != 1 {
+		t.Fatalf("height after shrinking below minimum = %d, want 1", got)
+	}
+}
+
 func TestTextAreaEnterSplitsLine(t *testing.T) {
 	ta := loom.NewTextArea("abcd")
 	ta.HandleKey(loom.KeyEvent{Key: "home"})

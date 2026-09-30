@@ -6,6 +6,7 @@ package loom
 import (
 	"strings"
 
+	"codeberg.org/ubunatic/loom/measure"
 	"codeberg.org/ubunatic/loom/syntax"
 )
 
@@ -21,6 +22,8 @@ import (
 type TextArea struct {
 	Placeholder   string // dim hint shown when the whole buffer is empty
 	StyleResolver syntax.StyleResolver
+	MinHeight     int // minimum preferred content height; zero uses the content height
+	MaxHeight     int // maximum preferred content height; zero is unbounded
 
 	lines       [][]rune
 	row         int // caret line index
@@ -131,6 +134,37 @@ func (t *TextArea) Scroll() int { return t.scroll }
 
 // LineCount returns the number of text lines.
 func (t *TextArea) LineCount() int { return len(t.lines) }
+
+// ContentHeight reports the content line count clamped to MinHeight and
+// MaxHeight. A zero bound is ignored.
+func (t *TextArea) ContentHeight() int {
+	h := len(t.lines)
+	if t.MinHeight > 0 && h < t.MinHeight {
+		h = t.MinHeight
+	}
+	if t.MaxHeight > 0 && h > t.MaxHeight {
+		h = t.MaxHeight
+	}
+	return h
+}
+
+// ContentWidth reports the widest line in terminal cells.
+func (t *TextArea) ContentWidth() int {
+	w := 0
+	for _, line := range t.lines {
+		w = max(w, StringWidth(string(line)))
+	}
+	return w
+}
+
+// Measure reports the preferred content size. Width is the parent's supplied
+// width when positive; height is the content line count clamped to the bounds.
+func (t *TextArea) Measure(width int) measure.Size {
+	if width <= 0 {
+		width = t.ContentWidth()
+	}
+	return measure.Size{Width: width, Height: t.ContentHeight()}
+}
 
 // visibleLines returns the 0-based document line indices currently visible (not collapsed).
 func (t *TextArea) visibleLines() []int {
