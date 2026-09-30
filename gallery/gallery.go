@@ -28,6 +28,11 @@ var demos = map[string]constructor{
 		}
 		return choice
 	},
+	"Dialog": func() loom.Widget {
+		dialog := loom.NewDialog("Save changes", "Keep your edits before closing?", "Discard", "Save")
+		dialog.Width, dialog.Height = 50, 7
+		return dialog
+	},
 	"FilePicker": func() loom.Widget {
 		picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{Mode: loom.FilePickerFiles, Patterns: []string{"*.go", "*.md"}})
 		if err != nil {

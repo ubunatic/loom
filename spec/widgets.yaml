@@ -49,6 +49,14 @@ widgets:
           deleteItem()
       }
     source: confirm.go
+  - name: loom.Dialog
+    package: loom
+    purpose: Show a centered or positioned modal with body text and selectable buttons.
+    category: input
+    example: |-
+      dialog := loom.NewDialog("Save changes", "Keep your edits?", "Discard", "Save")
+      dialog.OnSelect = func(button string) { fmt.Println(button) }
+    source: dialog.go
   - name: loom.FilePicker
     package: loom
     purpose: Navigate directories and select files or directories by glob.

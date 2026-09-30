@@ -1,0 +1,150 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package loom
+
+import "strings"
+
+// Dialog is a centered or positioned modal prompt rendered with Popup's border
+// and background treatment. Enter selects the highlighted button; Escape closes.
+type Dialog struct {
+	Title    string
+	Body     string
+	Buttons  []string
+	Rect     Rect // explicit top-left and optional size; zero W/H are content-sized
+	Width    int  // used when Rect is unset; zero sizes from content
+	Height   int
+	Style    Style
+	Open     bool
+	OnSelect func(string)
+	selected int
+	popup    *Popup
+}
+
+// NewDialog creates an open modal dialog. The first button is highlighted.
+func NewDialog(title, body string, buttons ...string) *Dialog {
+	return &Dialog{Title: title, Body: body, Buttons: buttons, Open: true}
+}
+
+// SelectedButton reports the highlighted button label, or an empty string.
+func (d *Dialog) SelectedButton() string {
+	if len(d.Buttons) == 0 {
+		return ""
+	}
+	return d.Buttons[d.selected%len(d.Buttons)]
+}
+
+func (d *Dialog) Draw(c *Canvas, r Rect) {
+	if !d.Open {
+		return
+	}
+	lines := strings.Split(d.Body, "\n")
+	content := &dialogContent{dialog: d, lines: lines}
+	w, h := d.Width, d.Height
+	if d.Rect.W > 0 {
+		w = d.Rect.W
+	}
+	if d.Rect.H > 0 {
+		h = d.Rect.H
+	}
+	if w <= 0 {
+		w = maxDialogWidth(d.Title, lines, d.Buttons) + 4
+	}
+	if h <= 0 {
+		h = len(lines) + 2
+		if len(d.Buttons) > 0 {
+			h++
+		}
+	}
+	if w < 4 {
+		w = 4
+	}
+	if h < 3 {
+		h = 3
+	}
+	area := r
+	if d.Rect.X != 0 || d.Rect.Y != 0 || d.Rect.W > 0 || d.Rect.H > 0 {
+		area = Rect{X: d.Rect.X, Y: d.Rect.Y, W: w, H: h}
+	}
+	d.popup = NewPopup(d.Title, content)
+	d.popup.Open, d.popup.Width, d.popup.Height, d.popup.Style = true, w, h, d.Style
+	d.popup.Draw(c, area)
+}
+
+func maxDialogWidth(title string, lines, buttons []string) int {
+	w := StringWidth(title)
+	for _, line := range lines {
+		if n := StringWidth(line); n > w {
+			w = n
+		}
+	}
+	buttonsWidth := 0
+	for _, b := range buttons {
+		buttonsWidth += StringWidth(b) + 4
+	}
+	if buttonsWidth > w {
+		w = buttonsWidth
+	}
+	return w
+}
+
+func (d *Dialog) HandleKey(e KeyEvent) bool {
+	if !d.Open {
+		return false
+	}
+	if e.Key == "esc" {
+		d.Open = false
+		return false
+	}
+	if len(d.Buttons) == 0 {
+		return false
+	}
+	switch e.Key {
+	case "left":
+		d.selected = (d.selected + len(d.Buttons) - 1) % len(d.Buttons)
+	case "right", "tab":
+		d.selected = (d.selected + 1) % len(d.Buttons)
+	case "enter":
+		if d.OnSelect != nil {
+			d.OnSelect(d.SelectedButton())
+		}
+		d.Open = false
+	}
+	return false
+}
+
+func (d *Dialog) HandleMouse(e MouseEvent) bool {
+	if d.popup == nil || !d.Open {
+		return false
+	}
+	return d.popup.HandleMouse(e)
+}
+
+type dialogContent struct {
+	dialog *Dialog
+	lines  []string
+}
+
+func (w *dialogContent) Draw(c *Canvas, r Rect) {
+	for i, line := range w.lines {
+		if i >= r.H {
+			break
+		}
+		c.Write(r.X, r.Y+i, line, Style{})
+	}
+	if len(w.dialog.Buttons) == 0 || r.H == 0 {
+		return
+	}
+	y := r.Y + r.H - 1
+	x := r.X
+	for i, label := range w.dialog.Buttons {
+		text, style := "  "+label+"  ", Style{Dim: true}
+		if i == w.dialog.selected {
+			text, style = "▶ "+label+"  ", Style{Bold: true}
+		}
+		x += c.Write(x, y, text, style)
+	}
+}
+func (*dialogContent) HandleKey(KeyEvent) bool     { return false }
+func (*dialogContent) HandleMouse(MouseEvent) bool { return false }
+func (w *dialogContent) ContentHeight() int        { return len(w.lines) + 1 }
