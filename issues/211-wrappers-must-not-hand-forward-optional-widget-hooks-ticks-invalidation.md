@@ -1,6 +1,6 @@
 # 211 — Wrappers must not hand-forward optional widget hooks (ticks, invalidation)
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
