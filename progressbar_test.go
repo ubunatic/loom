@@ -7,6 +7,7 @@ import (
 	"math"
 	"strings"
 	"testing"
+	"time"
 
 	"codeberg.org/ubunatic/loom/graph"
 )
@@ -81,6 +82,30 @@ func TestProgressBarClipsToRect(t *testing.T) {
 	if got := strings.TrimRight(plainRow(c), " "); got != "[⣿⣿⣿⣿" {
 		t.Fatalf("clipped bar drew %q", got)
 	}
+}
+
+func TestProgressBarIndeterminateLabelsAndStyles(t *testing.T) {
+	bar := NewProgressBar()
+	bar.Options.Width = 6
+	bar.Total = 24
+	bar.ShowPercent, bar.ShowCount, bar.Unit = true, true, " files"
+	bar.Indeterminate = true
+	bar.Set(12)
+	if got := bar.TickInterval(); got <= 0 {
+		t.Fatal("indeterminate bar has no tick interval")
+	}
+	before := renderProgressBar(bar, 40)
+	bar.Tick(time.Time{})
+	after := renderProgressBar(bar, 40)
+	if before == after {
+		t.Fatal("tick did not move the marquee")
+	}
+	if !strings.Contains(after, "50%") || !strings.Contains(after, "12/24 files") {
+		t.Fatalf("labels missing from %q", after)
+	}
+	bar.StyleFill = Style{FG: ColorIndex(2)}
+	bar.StyleEmpty = Style{FG: ColorIndex(4)}
+	bar.Draw(NewCanvas(40, 1), Rect{W: 40, H: 1})
 }
 
 func TestBracketedBarStepMatchesRender(t *testing.T) {

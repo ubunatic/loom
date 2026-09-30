@@ -59,7 +59,12 @@ var demos = map[string]constructor{
 	},
 	"ProgressBar": func() loom.Widget {
 		bar := loom.NewProgressBar()
-		bar.Set(.68)
+		bar.Options.Width = 18
+		bar.Total = 24
+		bar.ShowPercent = true
+		bar.ShowCount = true
+		bar.Unit = " files"
+		bar.Set(16)
 		return bar
 	},
 	"Spinner": func() loom.Widget {

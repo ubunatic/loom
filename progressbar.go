@@ -4,7 +4,9 @@
 package loom
 
 import (
+	"fmt"
 	"sync"
+	"time"
 
 	"codeberg.org/ubunatic/loom/graph"
 	"codeberg.org/ubunatic/loom/layout"
@@ -26,12 +28,29 @@ type ProgressBar struct {
 	Style Style
 	// Align positions the bar horizontally inside its rect.
 	Align layout.Align
+	// Indeterminate animates a one-third-width pulse when enabled.
+	Indeterminate bool
+	// ShowPercent appends a percentage label.
+	ShowPercent bool
+	// ShowCount appends the current value and total, followed by Unit.
+	ShowCount bool
+	// Unit labels the values in the count label.
+	Unit string
+	// StyleFill and StyleEmpty style filled and empty cells independently.
+	StyleFill  Style
+	StyleEmpty Style
+	// Interval controls indeterminate animation cadence. Zero uses the default.
+	Interval time.Duration
+	// Total is the determinate maximum. Zero uses 100 for compatibility.
+	Total float64
 
 	mu         sync.Mutex
 	value      float64
 	step       int
 	done       bool
 	invalidate func()
+	resetTick  func()
+	frame      int
 }
 
 // NewProgressBar returns an empty bar with specced defaults and sub-character fill.
@@ -41,6 +60,7 @@ func NewProgressBar() *ProgressBar {
 			Width:   SpeccedDefaults.ProgressBar.Width,
 			SubChar: true,
 		},
+		Total: 100,
 	}
 }
 
@@ -55,13 +75,23 @@ func (p *ProgressBar) SetInvalidate(fn func()) {
 // the number of visible fill subunits changes.
 func (p *ProgressBar) Set(value float64) {
 	p.mu.Lock()
+	if value < 0 || value != value {
+		value = 0
+	}
+	total := p.Total
+	if total <= 0 {
+		total = 100
+	}
+	if value > total {
+		value = total
+	}
 	p.value = value
 	opts := p.Options
 	if opts.Width <= 0 {
 		opts.Width = SpeccedDefaults.ProgressBar.Width
 	}
 	opts.Pattern = ""
-	step := graph.BracketedBarStep(value, opts)
+	step := graph.BracketedBarStep(value*100/total, opts)
 	changed := step != p.step
 	p.step = step
 	fn := p.invalidate
@@ -70,6 +100,41 @@ func (p *ProgressBar) Set(value float64) {
 		fn()
 	}
 }
+
+// TickInterval implements Ticker. Determinate bars do not request ticks.
+func (p *ProgressBar) TickInterval() time.Duration {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if !p.Indeterminate {
+		return 0
+	}
+	if p.Interval > 0 {
+		return p.Interval
+	}
+	return 100 * time.Millisecond
+}
+
+// Tick advances the marquee pulse and requests a redraw.
+func (p *ProgressBar) Tick(time.Time) {
+	p.mu.Lock()
+	if !p.Indeterminate {
+		p.mu.Unlock()
+		return
+	}
+	width := p.Options.Width
+	if width <= 0 {
+		width = SpeccedDefaults.ProgressBar.Width
+	}
+	p.frame = (p.frame + 1) % max(1, width*2)
+	fn := p.invalidate
+	p.mu.Unlock()
+	if fn != nil {
+		fn()
+	}
+}
+
+// SetResetTick implements TickerControlAware.
+func (p *ProgressBar) SetResetTick(fn func()) { p.mu.Lock(); p.resetTick = fn; p.mu.Unlock() }
 
 // Value returns the last value passed to Set.
 func (p *ProgressBar) Value() float64 {
@@ -142,13 +207,88 @@ func (p *ProgressBar) Draw(c *Canvas, r Rect) {
 	p.mu.Lock()
 	opts := p.renderOptions()
 	value := p.value
+	total := p.Total
+	if total <= 0 {
+		total = 100
+	}
 	p.mu.Unlock()
-	bar := graph.RenderBracketedBar(value, opts)
+	indeterminate, frame := p.Indeterminate, p.frame
+	showPercent, showCount, unit := p.ShowPercent, p.ShowCount, p.Unit
+	fillStyle, emptyStyle, wholeStyle := p.StyleFill, p.StyleEmpty, p.Style
+	bar := graph.RenderBracketedBar(value*100/total, opts)
 	w := graph.BracketedBarWidth(opts)
+	left, right := opts.Left, opts.Right
+	if left == "" {
+		left = "["
+	}
+	if right == "" {
+		right = "]"
+	}
+	pulseStart, pulse := 0, 0
+	if indeterminate {
+		body := make([]rune, opts.Width)
+		for i := range body {
+			body[i] = ' '
+		}
+		pulse := max(1, opts.Width/3)
+		fill := opts.Fill
+		if fill == 0 {
+			fill = '⣿'
+		}
+		position := frame
+		if cycle := opts.Width*2 - pulse; cycle > 0 {
+			position %= cycle
+			if position >= cycle/2 {
+				position = cycle - position
+			}
+		}
+		pulseStart = position
+		for i := position; i < position+pulse && i < len(body); i++ {
+			body[i] = fill
+		}
+		bar = left + string(body) + right
+	}
+	label := ""
+	if showPercent {
+		label = fmt.Sprintf(" %3.0f%%", value*100/total)
+	}
+	if showCount {
+		label += fmt.Sprintf(" %.0f/%.0f%s", value, total, unit)
+	}
+	bar += label
 	if w > r.W {
 		bar = TruncateText(bar, r.W, "")
 	}
-	c.Write(r.X+layout.AlignOffset(r.W, w, p.Align), r.Y, bar, p.Style)
+	x := r.X + layout.AlignOffset(r.W, min(w+len([]rune(label)), r.W), p.Align)
+	if fillStyle == (Style{}) && emptyStyle == (Style{}) {
+		c.Write(x, r.Y, bar, wholeStyle)
+		return
+	}
+	for i, ch := range []rune(bar) {
+		style := wholeStyle
+		if i >= len([]rune(left)) && i < len([]rune(left))+opts.Width {
+			if indeterminate {
+				bodyIndex := i - len([]rune(left))
+				if bodyIndex >= pulseStart && bodyIndex < pulseStart+pulse {
+					style = fillStyle
+				} else {
+					style = emptyStyle
+				}
+			} else if ch == opts.Empty || ch == ' ' {
+				style = emptyStyle
+			} else {
+				style = fillStyle
+			}
+		}
+		c.Set(x+i, r.Y, Cell{Text: string(ch), Style: style})
+	}
+}
+
+// ApplyTheme implements Themeable.
+func (p *ProgressBar) ApplyTheme(theme ThemeColors) {
+	p.Style = Style{FG: theme.StatusFG.Color(), BG: theme.StatusBG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
+	p.StyleFill = Style{FG: theme.SelectedFG.Color(), BG: theme.SelectedBG.Color(), Bold: theme.SelectedBold}
+	p.StyleEmpty = Style{FG: theme.ScrollbarTrackFG.Color(), BG: theme.ScrollbarTrackBG.Color(), Dim: theme.ScrollbarTrackDim}
 }
 
 // HandleKey implements Widget; the bar takes no input.
