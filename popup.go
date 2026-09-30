@@ -17,6 +17,14 @@ type Popup struct {
 	innerRect Rect
 }
 
+// ApplyTheme updates popup chrome and forwards the theme to its inner widget.
+func (p *Popup) ApplyTheme(theme ThemeColors) {
+	p.Style = theme.BoxStyle().Background
+	if child, ok := p.Inner.(Themeable); ok {
+		child.ApplyTheme(theme)
+	}
+}
+
 // NewPopup creates a Popup wrapping inner with the given title.
 func NewPopup(title string, inner Widget) *Popup {
 	return &Popup{Title: title, Inner: inner, Open: true}

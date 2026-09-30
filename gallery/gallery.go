@@ -266,6 +266,8 @@ func (w *textAreaWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return
 // All active input is forwarded as the original EventResult value.
 type popupDemo struct{ popup *loom.Popup }
 
+func (w *popupDemo) ApplyTheme(theme loom.ThemeColors) { w.popup.ApplyTheme(theme) }
+
 func (w *popupDemo) Draw(c *loom.Canvas, r loom.Rect) { w.popup.Draw(c, r) }
 func (w *popupDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if !w.popup.Open && e.Key == "enter" {
@@ -279,6 +281,8 @@ func (w *popupDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 }
 
 type dialogDemo struct{ dialog *loom.Dialog }
+
+func (w *dialogDemo) ApplyTheme(theme loom.ThemeColors) { w.dialog.ApplyTheme(theme) }
 
 func (w *dialogDemo) Draw(c *loom.Canvas, r loom.Rect) { w.dialog.Draw(c, r) }
 func (w *dialogDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {

@@ -234,7 +234,7 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 	var shown bytes.Buffer
 	previous := runWidgetPane
-	runWidgetPane = func(widget loom.Widget) error {
+	runWidgetPane = func(widget loom.Widget, _, _ int) error {
 		return loom.RenderTo(&shown, widget, 80, 24)
 	}
 	t.Cleanup(func() { runWidgetPane = previous })
@@ -257,8 +257,11 @@ func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
 	}
 	previous := runWidgetPane
 	var shown loom.Widget
-	runWidgetPane = func(widget loom.Widget) error {
+	runWidgetPane = func(widget loom.Widget, width, height int) error {
 		shown = widget
+		if width != 0 || height != 0 {
+			t.Fatalf("default gallery size = %dx%d, want terminal size", width, height)
+		}
 		return nil
 	}
 	t.Cleanup(func() { runWidgetPane = previous })
@@ -291,6 +294,22 @@ func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
 	}
 	if !strings.Contains(canvas.Row(canvas.Rows()-1), "Theme: "+want) {
 		t.Fatalf("gallery chrome = %q, want active theme %q", canvas.Row(canvas.Rows()-1), want)
+	}
+}
+
+func TestWidgetsSizeFlags(t *testing.T) {
+	previous := runWidgetPane
+	var gotWidth, gotHeight int
+	runWidgetPane = func(_ loom.Widget, width, height int) error {
+		gotWidth, gotHeight = width, height
+		return nil
+	}
+	t.Cleanup(func() { runWidgetPane = previous })
+	if err := execute([]string{"widgets", "--show", "-W", "42", "-H", "11", "Chart"}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	if gotWidth != 42 || gotHeight != 11 {
+		t.Fatalf("gallery size = %dx%d, want 42x11", gotWidth, gotHeight)
 	}
 }
 

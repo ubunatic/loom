@@ -22,6 +22,14 @@ type Dialog struct {
 	drawRect Rect
 }
 
+// ApplyTheme updates dialog chrome and its modal popup.
+func (d *Dialog) ApplyTheme(theme ThemeColors) {
+	d.Style = theme.BoxStyle().Background
+	if d.popup != nil {
+		d.popup.ApplyTheme(theme)
+	}
+}
+
 // NewDialog creates an open modal dialog. The first button is highlighted.
 func NewDialog(title, body string, buttons ...string) *Dialog {
 	return &Dialog{Title: title, Body: body, Buttons: buttons, Open: true}

@@ -39,6 +39,7 @@ type widgetEntry struct {
 func widgetsCommand() *cobra.Command {
 	var show, list bool
 	var themeName string
+	var width, height int
 	command := &cobra.Command{
 		Use:   "widgets [name]",
 		Short: "List library widgets, show usage, or run live demos",
@@ -56,7 +57,7 @@ func widgetsCommand() *cobra.Command {
 				if !loom.ThemeExists(themeName) {
 					return fmt.Errorf("unknown theme %q (available: %s)", themeName, strings.Join(loom.ThemeNames(), ", "))
 				}
-				return showWidgetDemos(args, themeName)
+				return showWidgetDemos(args, themeName, width, height)
 			}
 			catalog, err := readWidgetCatalog()
 			if err != nil {
@@ -97,6 +98,8 @@ func widgetsCommand() *cobra.Command {
 	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
 	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
 	command.Flags().StringVar(&themeName, "theme", "plain", "gallery color theme")
+	command.Flags().IntVarP(&width, "width", "W", 0, "maximum gallery width in columns")
+	command.Flags().IntVarP(&height, "height", "H", 0, "gallery height in rows")
 	_ = command.RegisterFlagCompletionFunc("show", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
 	})
@@ -128,17 +131,23 @@ func completeWidgetNames(prefix string) []string {
 	return names
 }
 
-var runWidgetPane = func(widget loom.Widget) error {
+var runWidgetPane = func(widget loom.Widget, width, height int) error {
 	pane, err := loom.New(24)
 	if err != nil {
 		return err
+	}
+	if width > 0 {
+		pane.MaxCols = width
+	}
+	if height > 0 {
+		pane.Resize(height)
 	}
 	pane.EnableMouse()
 	defer pane.Close()
 	return pane.Run(widget)
 }
 
-func showWidgetDemos(names []string, themeName string) error {
+func showWidgetDemos(names []string, themeName string, width, height int) error {
 	var widget loom.Widget
 	if len(names) == 0 {
 		widget = gallery.NewAll()
@@ -147,7 +156,7 @@ func showWidgetDemos(names []string, themeName string) error {
 		if err != nil {
 			return err
 		}
-		return runWidgetPane(newThemedGallery(widget, themeName))
+		return runWidgetPane(newThemedGallery(widget, themeName), width, height)
 	} else {
 		tabs := make([]loom.Tab, 0, len(names))
 		for _, name := range names {
@@ -163,7 +172,7 @@ func showWidgetDemos(names []string, themeName string) error {
 		tabWidget.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 		widget = tabWidget
 	}
-	return runWidgetPane(newThemedGallery(widget, themeName))
+	return runWidgetPane(newThemedGallery(widget, themeName), width, height)
 }
 
 type themedGallery struct {
@@ -194,11 +203,12 @@ func (g *themedGallery) applyTheme() {
 }
 
 func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
+	theme := loom.Theme(g.themeName)
+	c.PaintSurface(r, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
 	g.widget.Draw(c, r)
 	if r.H == 0 {
 		return
 	}
-	theme := loom.Theme(g.themeName)
 	style := loom.Style{FG: theme.StatusFG.Color(), BG: theme.StatusBG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
 	c.Write(r.X, r.Y+r.H-1, " Theme: "+g.themeName+" | F2 next theme ", style)
 }
