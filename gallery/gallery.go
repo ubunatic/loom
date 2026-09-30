@@ -116,6 +116,13 @@ var demos = map[string]constructor{
 		value := true
 		return loom.NewToggle(&value)
 	},
+	"Viewport": func() loom.Widget {
+		lines := make([]string, 30)
+		for i := range lines {
+			lines[i] = fmt.Sprintf("%02d  scrollable child content", i+1)
+		}
+		return loom.NewViewport(loom.NewView(lines))
+	},
 }
 
 // Names returns the available demo names in sorted order.

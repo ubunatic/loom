@@ -332,6 +332,15 @@ widgets:
     source: view.go
     docs: docs/Widgets.md §11
     ticket: issues/138
+  - name: loom.Viewport
+    package: loom
+    purpose: Scroll a measured child widget through a clipped viewport.
+    category: layout
+    example: |-
+      viewport := loom.NewViewport(loom.NewView(lines))
+      viewport.ScrollbarMode = loom.ScrollbarAuto
+    source: viewport.go
+    docs: docs/Widgets.md §6
   - name: media.Widget
     package: media
     purpose: Render a still image or video frame inside its assigned rectangle.
