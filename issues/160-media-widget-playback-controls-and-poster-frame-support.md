@@ -1,6 +1,6 @@
 # 160 — Media Widget Playback Controls and Poster Frame Support
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
