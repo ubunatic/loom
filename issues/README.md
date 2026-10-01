@@ -255,3 +255,4 @@ upkeep.
 | 242 | [242-gallery-all-tab-dialog-demo-leaks-left-right-arrow-keys-to-the-grid.md](242-gallery-all-tab-dialog-demo-leaks-left-right-arrow-keys-to-the-grid.md) | Gallery All tab: Dialog demo leaks left/right arrow keys to the grid | Open |
 | 243 | [243-widgets-ignore-the-surrounding-cell-background-grid-focus-bg-and-unfocused-bg.md](243-widgets-ignore-the-surrounding-cell-background-grid-focus-bg-and-unfocused-bg.md) | Widgets ignore the surrounding cell background (Grid focus BG and unfocused BG) | Open |
 | 244 | [244-gallery-all-tab-focused-grid-cell-hides-the-astra-background.md](244-gallery-all-tab-focused-grid-cell-hides-the-astra-background.md) | Gallery All tab: focused Grid cell hides the astra background | Open |
+| 245 | [245-dim-placeholder-hint-in-choice-and-table-search-bars.md](245-dim-placeholder-hint-in-choice-and-table-search-bars.md) | Dim placeholder hint in Choice and Table search bars | Open |
