@@ -1179,8 +1179,8 @@ func TestAllTabInitialActiveAndLayout(t *testing.T) {
 	if grid.Cols != 3 {
 		t.Fatalf("grid columns = %d, want 3", grid.Cols)
 	}
-	if len(grid.Children) != 12 {
-		t.Fatalf("grid child count = %d, want 12", len(grid.Children))
+	if len(grid.Children) != 24 {
+		t.Fatalf("grid child count = %d, want 24", len(grid.Children))
 	}
 
 	c := loom.NewCanvas(100, 30)
@@ -1473,7 +1473,106 @@ func TestNewAllDemoDirect(t *testing.T) {
 	if grid.Cols != 3 {
 		t.Fatalf("grid.Cols = %d, want 3", grid.Cols)
 	}
-	if len(grid.Children) < 9 {
-		t.Fatalf("grid children = %d, want at least 9", len(grid.Children))
+	if len(grid.Children) != 24 {
+		t.Fatalf("grid children = %d, want 24", len(grid.Children))
 	}
 }
+
+func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
+	tabs := NewAll()
+	grid := tabs.Tabs[0].Widget.(*loom.Grid)
+	c := loom.NewCanvas(100, 40)
+	tabs.Draw(c, c.Bounds())
+
+	added := []struct {
+		index int
+		name  string
+	}{
+		{12, "TextInput"}, {13, "Choice"}, {14, "DatePicker"},
+		{15, "KeyHelp"}, {16, "MenuBar"}, {17, "Chart"},
+		{18, "Table"}, {19, "Tree"}, {20, "Dialog"},
+		{21, "Popup"}, {22, "TextArea"}, {23, "Viewport"},
+	}
+	for _, item := range added {
+		t.Run(item.name, func(t *testing.T) {
+			rect := grid.ChildRect(item.index)
+			if rect.W <= 0 || rect.H <= 0 {
+				t.Fatalf("%s cell has invalid bounds: %+v", item.name, rect)
+			}
+			// Draw the widget into an isolated cell and ensure no writes escape it.
+			cellCanvas := loom.NewCanvas(rect.W+4, rect.H+4)
+			cellCanvas.Fill(cellCanvas.Bounds(), loom.Cell{Text: "?"})
+			grid.Children[item.index].Draw(cellCanvas, loom.Rect{X: 2, Y: 2, W: rect.W, H: rect.H})
+			drew := false
+			for y := 0; y < rect.H+4; y++ {
+				for x := 0; x < rect.W+4; x++ {
+					if x >= 2 && x < rect.W+2 && y >= 2 && y < rect.H+2 {
+						if cellCanvas.Get(x, y).Text != "?" {
+							drew = true
+						}
+						continue
+					}
+					if got := cellCanvas.Get(x, y).Text; got != "?" {
+						t.Fatalf("%s drew outside its cell at (%d,%d): %q", item.name, x, y, got)
+					}
+				}
+			}
+			if !drew {
+				t.Fatalf("%s drew nothing inside its cell", item.name)
+			}
+
+			grid.setFocus(item.index)
+			if grid.Focus() != item.index {
+				t.Fatalf("focus = %d, want cell %d", grid.Focus(), item.index)
+			}
+			if focusable, ok := grid.Children[item.index].(loom.Focusable); ok && !focusable.Focused() {
+				t.Fatalf("%s did not receive focus", item.name)
+			}
+			grid.ConsumeKey(loom.KeyEvent{Key: "down"})
+
+			grid.setFocus(0)
+			localX := rect.X - gridRectX(grid) + rect.W/2
+			localY := rect.Y - gridRectY(grid) + rect.H/2
+			grid.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: localX, Y: localY})
+			if grid.Focus() != item.index {
+				t.Fatalf("click in %s cell focused %d, want %d", item.name, grid.Focus(), item.index)
+			}
+		})
+	}
+
+	grid.setFocus(20)
+	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
+	if tabs.Focus() != 1 {
+		t.Fatalf("Tab from Dialog cell selected tab %d, want 1", tabs.Focus())
+	}
+	tabs.Select(0)
+	grid.setFocus(21)
+	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
+	if tabs.Focus() != len(tabs.Tabs)-1 {
+		t.Fatalf("Shift-Tab from Popup cell selected tab %d, want %d", tabs.Focus(), len(tabs.Tabs)-1)
+	}
+
+	tabs.Select(0)
+	grid.setFocus(12)
+	textInput := grid.Children[12].(*textInputWidget).input
+	before := textInput.Value()
+	grid.ConsumeKey(loom.KeyEvent{Text: "!"})
+	if got := textInput.Value(); got != before+"!" {
+		t.Fatalf("TextInput value after key = %q, want %q", got, before+"!")
+	}
+
+	grid.setFocus(0)
+	outside := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: c.Width(), Y: 0}
+	if res := grid.ConsumeMouse(outside); res.Consumed {
+		t.Fatal("click outside grid cells was consumed")
+	}
+	last := grid.ChildRect(len(grid.Children) - 1)
+	outerEdgeX := last.X + last.W - gridRectX(grid)
+	if res := grid.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: outerEdgeX, Y: last.Y - gridRectY(grid)}); res.Consumed {
+		t.Fatal("click on the outer grid edge was consumed")
+	}
+}
+
+func gridRectX(grid *loom.Grid) int { return grid.ChildRect(0).X }
+
+func gridRectY(grid *loom.Grid) int { return grid.ChildRect(0).Y }

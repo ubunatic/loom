@@ -31,3 +31,19 @@ Re-check the live demo list in `gallery/gallery.go` before starting.
 - Extend `newAllDemo` (grid may grow more rows); keep 3 columns.
 - Extend `gallery/gallery_test.go`: each added widget draws inside its cell and receives focus/keys/mouse.
 - Run `make test-q1`, `make install`, and check `loom widgets --show` manually.
+
+## M1 delivered
+
+The All tab now has 24 demos in a 3-column grid: the original 12 plus TextInput,
+Choice, DatePicker, KeyHelp, MenuBar, Chart, Table, Tree, Dialog, Popup, TextArea,
+and Viewport. Dialog and Popup are reduced to fit a cell; they return unconsumed
+Tab and Shift-Tab events so gallery tab navigation remains available.
+
+FilePicker is omitted because its file listing needs more room; Form is omitted
+because its fields and actions need more vertical space; Media and PaintCanvas
+are omitted because their visual content needs a larger cell; Tabs is omitted
+because a nested tab bar is not useful in the compact overview.
+
+The one Quota-1 run stopped at `go vet` because TextInput does not implement the
+full Widget interface; a focus-aware gallery adapter was added afterward. The
+suite was not rerun under the single-run quota, so the final state is unverified.

@@ -431,15 +431,69 @@ func newAllDemo() *loom.Grid {
 	paginator := loom.NewPaginator(5)
 	paginator.SetPage(2)
 
+	textInput := &textInputWidget{input: loom.NewTextInput("Ada")}
+	choice := loom.NewChoice([]loom.Item{
+		{Name: "One"}, {Name: "Two"}, {Name: "Three"},
+	})
+	date := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
+	datePicker := loom.NewDatePicker(&date)
+	datePicker.Now = func() time.Time { return date }
+	keyHelp := loom.NewKeyHelp(loom.NewKeyMapWithLabels(map[string][]string{
+		"back": {"esc"}, "next": {"j", "down"}, "open": {"enter"},
+	}, map[string]string{"back": "Back", "next": "Next", "open": "Open"}))
+	menuBar := loom.NewMenuBar(
+		loom.Menu{Title: "File", Mnemonic: 'F', Items: []loom.MenuItem{{Label: "Open"}, {Label: "Save"}}},
+		loom.Menu{Title: "Edit", Mnemonic: 'E', Items: []loom.MenuItem{{Label: "Undo"}}},
+	)
+	menuBar.Open = true
+	chart := &loom.Chart{Series: []loom.ChartSeries{{Name: "Requests", Values: []float64{2, 5, 3, 7, 4}}}}
+	table := loom.NewTable(
+		[]loom.Column{{Header: "Task", Width: 10}, {Header: "State", Width: 8}},
+		[]loom.Row{{Cells: []string{"Build", "done"}, Key: "build"}, {Cells: []string{"Test", "run"}, Key: "test"}},
+	)
+	tree := loom.NewTree([]*loom.TreeNode{
+		{ID: "src", Label: "src", Expanded: true, Children: []*loom.TreeNode{{ID: "app", Label: "app.go"}}},
+		{ID: "docs", Label: "docs"},
+	})
+
+	dialog := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
+	dialog.Width, dialog.Height = 30, 4
+	popup := loom.NewPopup("Gallery", loom.NewView([]string{"A compact popup demo."}))
+	popup.Width, popup.Height = 30, 4
+	textArea := &textAreaWidget{area: loom.NewTextArea("A short text area\nwith two lines.")}
+	viewport := loom.NewViewport(loom.NewView([]string{"Viewport row 1", "Viewport row 2", "Viewport row 3", "Viewport row 4"}))
+
 	return loom.NewGrid(3,
 		button, toggle, checkbox,
 		numInput, badge, pillCluster,
 		progressBar, sparkline, spinner,
 		watch, timer, paginator,
+		textInput, choice, datePicker,
+		keyHelp, menuBar, chart,
+		table, tree, &dialogDemo{dialog: dialog},
+		&popupDemo{popup: popup}, textArea, viewport,
 	)
 }
 
 type textAreaWidget struct{ area *loom.TextArea }
+
+type textInputWidget struct {
+	input   *loom.TextInput
+	focused bool
+}
+
+func (w *textInputWidget) Draw(c *loom.Canvas, r loom.Rect) {
+	w.input.Draw(c, r, w.focused)
+}
+
+func (w *textInputWidget) Focused() bool   { return w.focused }
+func (w *textInputWidget) SetFocus(f bool) { w.focused = f }
+func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	return w.input.ConsumeKey(e)
+}
+func (w *textInputWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult {
+	return loom.Ignored()
+}
 
 // progressDemo drives a determinate bar through fill, dim, hidden, and restart.
 // It retains its own ticking hook rather than exposing the determinate child
