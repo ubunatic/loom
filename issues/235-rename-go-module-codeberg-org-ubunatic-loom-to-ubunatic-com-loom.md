@@ -37,3 +37,20 @@ The user wants loom published under the vanity path `ubunatic.com/loom` instead 
   `make install`; release after user approval; `go get ubunatic.com/loom@<tag>` from a temp module.
 - M3: switch dependents one repo at a time (`go.mod` + imports, `go mod tidy`, build/test),
   one commit per repo; no pushes without approval.
+
+## M1 delivered (host, 2026-10-01)
+The vanity page is live: `https://ubunatic.com/loom?go-get=1` redirects (301) to `/loom/`, which serves
+`go-import "ubunatic.com/loom git https://codeberg.org/ubunatic/loom"`. The earlier check missed the
+redirect. `GOPROXY=direct go list -m -versions ubunatic.com/loom` lists v0.1.0..v0.2.17. Those tags still
+declare the old module path, so `go get ubunatic.com/loom` works only from the first release after M2.
+
+## M2 — Pre-Work / Required Refinements (host)
+- Rename with `go mod edit -module ubunatic.com/loom` and a scripted rewrite of import paths in all tracked
+  `.go` files (no hand edits); then `gofmt -l` must be empty and `go build ./... && go vet ./...` pass.
+- Also update `.goreleaser.yaml`, Makefile, README.md, AGENTS.md, live docs in `docs/` and `website/` (if
+  present) and any test that builds `codeberg.org/ubunatic/loom/cmd/...`. Keep Codeberg *repository* URLs
+  (clone, issues, releases, go-source) — only the Go *module/import path* changes.
+- Leave closed `issues/`, `docs/studies/` and `dist/` untouched.
+- Final check: `git grep -n 'codeberg.org/ubunatic/loom'` — every remaining hit is a repository URL or history;
+  list the categories in "M2 delivered".
+- One `make test-q1`, `make install`. No release, tag or push.
