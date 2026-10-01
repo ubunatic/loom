@@ -1,6 +1,6 @@
 # 235 — Rename Go module codeberg.org/ubunatic/loom to ubunatic.com/loom
 
-**Status**: Open
+**Status**: Closed — Module is ubunatic.com/loom since v0.2.18 (go get verified); 8 workspace dependents switched with local commits, uzu archived; migration reports in docs/studies/2026-10-01-loom-module-migration.md
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Chore
