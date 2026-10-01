@@ -20,8 +20,14 @@ In the `loom widgets` gallery (and standalone `NumberInput`), `NumberInput` does
 
 ## 3. Implementation & Verification Plan
 
-- Implement `ConsumeMouse` in `numberinput.go` to handle mouse scroll wheel and click actions.
-- Add unit tests in `numberinput_test.go` and gallery integration test in `gallery/gallery_test.go`.
-- Verify with `make test-q1`.
+### Milestone 1 (Delivered: c8f5c0c5)
+- Implemented `NumberInput.ConsumeMouse` for scroll wheel up/down stepping and click stepping.
+- Added unit tests in `numberinput_test.go` and gallery integration test in `gallery/gallery_test.go`.
+
+### Milestone 2: Pre-Work & Refinements
+- Run `gofmt -w gallery/gallery_test.go` to fix table formatting.
+- Refine stepper click hit-testing: clicks on the left arrow (`◂` at start) step down, clicks on the right arrow (`▸` at end) step up. If clicked on the interior number text, enter inline editing or ignore.
+- Add unit tests for `lastRect` bounds rejection after `Draw` and for unformatted/default `NumberInput` layouts (`◂ 5 ▸`).
+- Run `make test-q1` and commit with message ending in `(issue 228 M2)`.
 
 /goal Implement mouse event handling for NumberInput, verify with unit and gallery tests, or stop and report when blocked on a user decision or denied permission.
