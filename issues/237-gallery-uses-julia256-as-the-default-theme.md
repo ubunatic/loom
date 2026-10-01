@@ -23,3 +23,12 @@ User request: make julia256 the gallery's default theme. Today `loom widgets` de
 ## 3. Implementation & Verification Plan
 - Change the default, update help/docs mentioning the default, test the default theme name.
 - `make test-q1`, `make install`, PTY check of `loom widgets`.
+
+## 4. Milestones
+- M1 delivered (a43a19d): `--theme` default is julia256; cmd/loom test covers the default, F9 from it and
+  explicit `--theme plain`.
+- M2 Pre-Work / Required Refinements: host `HTO=0 make test-q1` fails in `gallery/gallery_test.go`:
+  TestGalleryChoiceQuitContractPTY, TestGalleryThemeFooterSurfacePTY, TestGalleryMouseRoutingPTY and
+  TestWidgetKeyRoutingPTY start the gallery without `--theme` and wait for "Theme: plain". Pass
+  `--theme plain` explicitly where a test needs plain (keep assertions). The developer's run was cut by
+  the harnez 60 s timeout; run `HTO=0 make test-q1`.
