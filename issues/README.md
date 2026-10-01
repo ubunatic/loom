@@ -251,3 +251,4 @@ upkeep.
 | 238 | [238-gallery-all-grid-borders-and-content-fitted-row-heights.md](238-gallery-all-grid-borders-and-content-fitted-row-heights.md) | Gallery All grid: borders and content-fitted row heights | Open |
 | 239 | [239-progressbar-fill-uses-the-theme-s-selected-colors.md](239-progressbar-fill-uses-the-theme-s-selected-colors.md) | ProgressBar fill uses the theme's selected colors | Open |
 | 240 | [240-gallery-all-tab-table-selects-the-full-row-table-tab-selects-cells.md](240-gallery-all-tab-table-selects-the-full-row-table-tab-selects-cells.md) | Gallery All tab Table selects the full row, Table tab selects cells | Open |
+| 241 | [241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md](241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) | Add public grab package (SDL3 transparent input grabber) and examples/grabber demo | Open |
