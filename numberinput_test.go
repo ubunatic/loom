@@ -122,6 +122,13 @@ func TestNumberInputConsumeMouseClick(t *testing.T) {
 		t.Fatalf("click left stepper: consumed=%v, value=%g, want 5.0", res.Consumed, value)
 	}
 
+	// Click on interior text (X=5) triggers inline editing.
+	res = input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 0})
+	if !res.Consumed || !input.Editing() {
+		t.Fatalf("click interior text: consumed=%v, editing=%v, want true", res.Consumed, input.Editing())
+	}
+	input.ConsumeKey(loom.KeyEvent{Key: "esc"})
+
 	// Clicks outside bounds or wrong buttons are ignored.
 	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: 0}); res.Consumed {
 		t.Fatalf("click X=11 out of bounds should be ignored: %#v", res)
@@ -137,6 +144,80 @@ func TestNumberInputConsumeMouseClick(t *testing.T) {
 	}
 	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, X: 0, Y: 0}); res.Consumed {
 		t.Fatalf("hover should be ignored: %#v", res)
+	}
+}
+
+func TestNumberInputConsumeMouseDefaultLayout(t *testing.T) {
+	value := 5.0
+	input := loom.NewNumberInput(&value, 0, 10)
+	if got := input.String(); got != "◂ 5 ▸" {
+		t.Fatalf("default string = %q, want %q", got, "◂ 5 ▸")
+	}
+
+	// Click left stepper (X=0, X=1) steps down.
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 0}); !res.Consumed || value != 4.0 {
+		t.Fatalf("click left arrow X=0: consumed=%v, value=%g, want 4.0", res.Consumed, value)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 0}); !res.Consumed || value != 3.0 {
+		t.Fatalf("click left arrow X=1: consumed=%v, value=%g, want 3.0", res.Consumed, value)
+	}
+
+	// Click right stepper (X=3, X=4) steps up.
+	// For "◂ 3 ▸", width is 5: X=3 is ' ', X=4 is '▸' (both >= width-2).
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}); !res.Consumed || value != 4.0 {
+		t.Fatalf("click right arrow X=4: consumed=%v, value=%g, want 4.0", res.Consumed, value)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 3, Y: 0}); !res.Consumed || value != 5.0 {
+		t.Fatalf("click right arrow X=3: consumed=%v, value=%g, want 5.0", res.Consumed, value)
+	}
+
+	// Click interior number text (X=2) enters inline editing.
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 2, Y: 0}); !res.Consumed || !input.Editing() {
+		t.Fatalf("click interior number text X=2: consumed=%v, editing=%v, want true", res.Consumed, input.Editing())
+	}
+}
+
+func TestNumberInputConsumeMouseLastRectRejection(t *testing.T) {
+	value := 5.0
+	input := loom.NewNumberInput(&value, 0, 10)
+	c := loom.NewCanvas(20, 5)
+	input.Draw(c, loom.Rect{X: 2, Y: 1, W: 12, H: 3})
+
+	// Inside bounds scroll:
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 5, Y: 1}); !res.Consumed || value != 6.0 {
+		t.Fatalf("scroll inside lastRect: consumed=%v, value=%g, want 6.0", res.Consumed, value)
+	}
+
+	// Outside bounds scroll (X < 0, X >= lastRect.W, Y < 0, Y >= lastRect.H):
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MouseScrollUp, X: -1, Y: 1},
+		{Action: loom.MouseScrollUp, X: 12, Y: 1},
+		{Action: loom.MouseScrollUp, X: 5, Y: -1},
+		{Action: loom.MouseScrollUp, X: 5, Y: 3},
+		{Action: loom.MouseScrollDown, X: -1, Y: 1},
+		{Action: loom.MouseScrollDown, X: 12, Y: 1},
+		{Action: loom.MouseScrollDown, X: 5, Y: -1},
+		{Action: loom.MouseScrollDown, X: 5, Y: 3},
+	} {
+		if res := input.ConsumeMouse(e); res.Consumed {
+			t.Fatalf("scroll outside lastRect %#v should be ignored: %#v", e, res)
+		}
+	}
+
+	// Outside bounds clicks:
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: -1, Y: 0},
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 12, Y: 0},
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: -1},
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 1},
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 3},
+	} {
+		if res := input.ConsumeMouse(e); res.Consumed {
+			t.Fatalf("click outside lastRect/line0 %#v should be ignored: %#v", e, res)
+		}
+	}
+	if value != 6.0 {
+		t.Fatalf("value modified by ignored events: %g", value)
 	}
 }
 

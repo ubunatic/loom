@@ -138,11 +138,15 @@ func (n *NumberInput) ConsumeMouse(e MouseEvent) EventResult {
 		if width <= 0 || e.X < 0 || e.X >= width {
 			return Ignored()
 		}
-		if e.X < width/2 {
+		if e.X < 2 {
 			n.StepBy(-1)
-		} else {
-			n.StepBy(1)
+			return Handled()
 		}
+		if e.X >= width-2 {
+			n.StepBy(1)
+			return Handled()
+		}
+		n.beginEdit()
 		return Handled()
 	}
 	return Ignored()
