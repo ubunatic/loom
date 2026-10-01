@@ -301,10 +301,40 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 		return nil
 	}
 	t.Cleanup(func() { runWidgetPane = previous })
-	if err := execute([]string{"widgets", "--show", "--theme", "mc", "Chart"}, &bytes.Buffer{}); err != nil {
+	if err := execute([]string{"widgets", "--show", "Chart"}, &bytes.Buffer{}); err != nil {
 		t.Fatal(err)
 	}
 	gallery, ok := shown.(*themedGallery)
+	if !ok {
+		t.Fatalf("shown widget = %T, want *themedGallery", shown)
+	}
+	if gallery.themeName != "julia256" {
+		t.Fatalf("default theme = %q, want julia256", gallery.themeName)
+	}
+	names := loom.ThemeNames()
+	index := slices.Index(names, "julia256")
+	if index < 0 {
+		t.Fatal("julia256 is missing from the theme registry")
+	}
+	want := names[(index+1)%len(names)]
+	gallery.ConsumeKey(loom.KeyEvent{Key: "f9"})
+	if gallery.themeName != want {
+		t.Fatalf("F9 from default theme = %q, want %q", gallery.themeName, want)
+	}
+	if err := execute([]string{"widgets", "--show", "--theme", "plain", "Chart"}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	gallery, ok = shown.(*themedGallery)
+	if !ok {
+		t.Fatalf("shown widget = %T, want *themedGallery", shown)
+	}
+	if gallery.themeName != "plain" {
+		t.Fatalf("explicit theme = %q, want plain", gallery.themeName)
+	}
+	if err := execute([]string{"widgets", "--show", "--theme", "mc", "Chart"}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	gallery, ok = shown.(*themedGallery)
 	if !ok {
 		t.Fatalf("shown widget = %T, want *themedGallery", shown)
 	}
@@ -317,9 +347,9 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	gallery.Draw(initialCanvas, initialCanvas.Bounds())
 	initialColor := initialCanvas.Get(0, 0).Style
 	gallery.ConsumeKey(loom.KeyEvent{Key: "f9"})
-	names := loom.ThemeNames()
-	index := slices.Index(names, "mc")
-	want := names[(index+1)%len(names)]
+	names = loom.ThemeNames()
+	index = slices.Index(names, "mc")
+	want = names[(index+1)%len(names)]
 	if gallery.themeName != want || child.theme.NormalFG != loom.Theme(want).NormalFG {
 		t.Fatalf("after F9 theme = %q, child theme mismatch; want %q", gallery.themeName, want)
 	}
