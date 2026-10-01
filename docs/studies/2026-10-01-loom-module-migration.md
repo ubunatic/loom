@@ -69,3 +69,26 @@ by the developer agent (or the host, for the first three) for later assessment o
 
 - Archived instead (user decision): moved to `~/projects/archive/uzu`; it stays on
   `codeberg.org/ubunatic/loom v0.1.0`.
+
+## termaid — local `../loom` → local `../loom` (developer dev-235-termaid)
+
+- Commit a066a97. 7 files: `go.mod` (path renamed, `replace ubunatic.com/loom => ../loom` kept),
+  `examples/viewer/*.go`, `examples/docsrender/README.md`. Viewer README keeps its repository URL.
+- API: viewer moved to `ConsumeKey`/`ConsumeMouse`: quit keys `Quit()`, keys and scroll `Handled()`,
+  other mouse `Ignored()`; tests use the new key method. The local replace had hidden that the
+  example no longer compiled against current loom.
+- `make check` green; no install target. Effort: ~10 min.
+
+## uman — local `../loom` → local `../loom` (developer dev-235-uman)
+
+- Commit ee66586. 2 files: `go.mod` (replace kept), `tui.go`.
+- API: `promptInputWidget`, `confirmWidget`, `textViewWidget` moved to `ConsumeKey`/`ConsumeMouse`;
+  old `true` → `Quit()` (enter, esc, ctrl-c, q), scroll keys `Handled()`, rest `Ignored()` or delegated.
+- `make test` and `make install` green. Effort: ~15 min.
+
+## Summary
+
+8 repos switched, uzu archived. Real code changes were needed in settings, cati, harnez, termaid and
+uman (all the bool → `EventResult` key/mouse API); loom-games, voxi and psync only needed the path.
+Two review catches: harnez mapped quit to `Handled()`, settings returned `Ignored()` after consumed
+step changes. Every agent asked for the same loom improvement: a per-release migration note.
