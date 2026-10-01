@@ -1,6 +1,6 @@
 # 239 — ProgressBar fill uses the theme's selected colors
 
-**Status**: Open
+**Status**: Closed — Fixed in c45eee3: themes gain progress_fg/bg/bold (status colors, not bold); ProgressBar fill uses them. Tests cover every theme, equal-color edge case and plain glyph distinction. make test-q1 green; PTY check in plain and julia256 shows no selection look.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
