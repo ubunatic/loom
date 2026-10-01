@@ -199,3 +199,56 @@ func TestGridFocusedCellKeepsAstraDecoration(t *testing.T) {
 		t.Errorf("no astra decoration rendered inside focused grid cell")
 	}
 }
+
+// TestGridCellNormalRowsInheritCellBG covers issue 243 M3: ProgressBar fill,
+// and unselected Choice and Table rows, carry the Grid cell BG.
+func TestGridCellNormalRowsInheritCellBG(t *testing.T) {
+	theme := loom.Theme("mc-dark")
+	ambient := loom.ColorIndex(42)
+	cases := []struct {
+		name      string
+		make      func() loom.Widget
+		firstRow  int // first row that is not selected or highlighted
+		skipFirst bool
+	}{
+		{"ProgressBar", func() loom.Widget {
+			b := loom.NewProgressBar()
+			b.Options.Width = 10
+			b.ShowPercent = true
+			b.Set(50)
+			return b
+		}, 0, false},
+		{"Choice", func() loom.Widget {
+			return loom.NewChoice([]loom.Item{{Name: "One"}, {Name: "Two"}, {Name: "Three"}})
+		}, 1, true},
+		{"Table", func() loom.Widget {
+			return loom.NewTable([]loom.Column{{Header: "Col", Width: 8}},
+				[]loom.Row{{Cells: []string{"A"}}, {Cells: []string{"B"}}, {Cells: []string{"C"}}})
+		}, 2, true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := tc.make(), tc.make()
+			a.(loom.Themeable).ApplyTheme(theme)
+			b.(loom.Themeable).ApplyTheme(theme)
+			grid := loom.NewGrid(2, a, b)
+			grid.ApplyTheme(theme)
+			c := loom.NewCanvas(40, 6)
+			c.PaintSurface(c.Bounds(), loom.Style{BG: ambient})
+			grid.Draw(c, c.Bounds())
+			for i, want := range []loom.Color{grid.FocusBG, ambient} {
+				cr := grid.ChildRect(i)
+				for y := cr.Y + tc.firstRow; y < cr.Y+cr.H; y++ {
+					if tc.skipFirst && y == cr.Y+cr.H-1 {
+						continue // prompt row has its own style
+					}
+					for x := cr.X; x < cr.X+cr.W; x++ {
+						if bg := c.Get(x, y).Style.BG; bg != want {
+							t.Fatalf("cell %d (%d,%d) BG = %v, want %v", i, x, y, bg, want)
+						}
+					}
+				}
+			}
+		})
+	}
+}

@@ -311,7 +311,11 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 				style = c.Style.Selected
 			}
 			line := c.choiceRowText(fi, contentW)
-			cv.Write(r.X, y, line, style)
+			if fi == c.sel {
+				cv.Write(r.X, y, line, style)
+			} else {
+				cv.WriteDefault(r.X, y, line, style)
+			}
 			if c.Fuzzy && c.query != "" {
 				item := c.filtered[fi]
 				markerWidth := measure.StringWidth(c.choiceMarker(fi, item))

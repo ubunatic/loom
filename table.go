@@ -334,6 +334,13 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 		if !t.CellCursor && fi == t.sel {
 			style = t.Style.Selected
 		}
+		write := func(x, y int, text string, st Style) {
+			if st == t.Style.Normal {
+				cv.WriteDefault(x, y, text, st)
+			} else {
+				cv.Write(x, y, text, st)
+			}
+		}
 		x := r.X
 		for n, i := range visible {
 			col := t.Columns[i]
@@ -345,7 +352,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 				if x+sepW > r.X+r.W {
 					break
 				}
-				cv.Write(x, y, sep, cellStyle)
+				write(x, y, sep, cellStyle)
 				x += sepW
 			}
 			if x >= r.X+r.W {
@@ -356,7 +363,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 			if i < len(t.filtered[fi].Cells) {
 				cell = t.filtered[fi].Cells[i]
 			}
-			cv.Write(x, y, padCol(cell, min(w, r.X+r.W-x), col.Align), cellStyle)
+			write(x, y, padCol(cell, min(w, r.X+r.W-x), col.Align), cellStyle)
 			x += w
 		}
 	}
