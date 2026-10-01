@@ -957,6 +957,129 @@ func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
 	}
 }
 
+type runtimeBackgroundProbe struct {
+	pane     *Pane
+	frames   chan bool
+	interval time.Duration
+}
+
+func (b *runtimeBackgroundProbe) DrawBackground(*Canvas, Rect) {}
+func (b *runtimeBackgroundProbe) DrawBackgroundAt(*Canvas, Rect, time.Time) {
+	select {
+	case b.frames <- b.pane.BackgroundOnRedraw:
+	default:
+	}
+}
+func (b *runtimeBackgroundProbe) BackgroundInterval() time.Duration { return b.interval }
+
+type runtimeBackgroundWidget struct {
+	pane  *Pane
+	bg    Background
+	draws chan bool
+}
+
+func (w *runtimeBackgroundWidget) Draw(*Canvas, Rect) {
+	select {
+	case w.draws <- w.pane.BackgroundOnRedraw:
+	default:
+	}
+}
+func (*runtimeBackgroundWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (w *runtimeBackgroundWidget) ConsumeKey(e KeyEvent) EventResult {
+	switch {
+	case e.Is("a"):
+		w.pane.Background = w.bg
+	case e.Is("o"):
+		w.pane.Background = w.bg
+		w.pane.BackgroundOnRedraw = true
+	case e.Is("p"):
+		w.pane.Background = nil
+		w.pane.BackgroundOnRedraw = false
+	case e.Is("q"):
+		return QuitResult()
+	}
+	return Handled()
+}
+
+func TestPTYBackgroundTickerRuntimeLifecycle(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 80, 24)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 15, wantRows: 15, cols: 80, ResizeConfig: DefaultResizeConfig()}
+	background := &runtimeBackgroundProbe{pane: p, frames: make(chan bool, 16), interval: 15 * time.Millisecond}
+	w := &runtimeBackgroundWidget{pane: p, bg: background, draws: make(chan bool, 16)}
+	done := make(chan struct{})
+	drainPTY(master, done)
+	errC := make(chan error, 1)
+	go func() { errC <- p.Run(w) }()
+	defer func() {
+		master.Write([]byte("q")) //nolint:errcheck
+		select {
+		case <-errC:
+		case <-time.After(3 * time.Second):
+			t.Error("pane did not stop")
+		}
+		close(done)
+	}()
+
+	writeKey := func(key byte) {
+		t.Helper()
+		if _, err := master.Write([]byte{key}); err != nil {
+			t.Fatalf("write key %q: %v", key, err)
+		}
+	}
+	waitDraw := func(want bool) {
+		t.Helper()
+		deadline := time.NewTimer(time.Second)
+		defer deadline.Stop()
+		for {
+			select {
+			case got := <-w.draws:
+				if got == want {
+					return
+				}
+			case <-deadline.C:
+				t.Fatalf("pane did not redraw with BackgroundOnRedraw=%v", want)
+			}
+		}
+	}
+	waitFrame := func(want bool) {
+		t.Helper()
+		deadline := time.NewTimer(time.Second)
+		defer deadline.Stop()
+		for {
+			select {
+			case got := <-background.frames:
+				if got == want {
+					return
+				}
+			case <-deadline.C:
+				t.Fatalf("animated background did not draw in mode %v", want)
+			}
+		}
+	}
+	waitQuiet := func() {
+		t.Helper()
+		select {
+		case mode := <-background.frames:
+			t.Fatalf("background drew without a foreground redraw (on-redraw=%v)", mode)
+		case <-time.After(5 * background.interval):
+		}
+	}
+
+	waitDraw(false) // Initial plain frame.
+	writeKey('a')
+	waitDraw(false)
+	waitFrame(false) // Runtime switch redraw.
+	waitFrame(false) // Independent ticker redraw.
+	writeKey('o')
+	waitDraw(true)
+	waitFrame(true) // Runtime on-redraw switch redraw.
+	waitQuiet()
+	writeKey('p')
+	waitDraw(false) // Switching to plain redraws the foreground.
+	waitQuiet()
+}
+
 func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)

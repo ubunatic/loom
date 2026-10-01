@@ -8,7 +8,47 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
+
+type testAnimatedBackground struct{ interval time.Duration }
+
+func (testAnimatedBackground) DrawBackground(*Canvas, Rect)                {}
+func (b testAnimatedBackground) DrawBackgroundAt(*Canvas, Rect, time.Time) {}
+func (b testAnimatedBackground) BackgroundInterval() time.Duration         { return b.interval }
+
+func TestBackgroundTickerLifecycle(t *testing.T) {
+	background := testAnimatedBackground{interval: 20 * time.Millisecond}
+	var clock backgroundTicker
+	if !clock.reconcile(background, false, false) || clock.ticker == nil {
+		t.Fatal("always mode did not start the animated background ticker")
+	}
+	first := clock.ticker
+	if clock.reconcile(background, false, false) || clock.ticker != first {
+		t.Fatal("unchanged ticker configuration replaced the timer")
+	}
+	select {
+	case <-clock.frames:
+	case <-time.After(time.Second):
+		t.Fatal("always mode ticker did not fire")
+	}
+	if !clock.reconcile(background, false, true) || clock.ticker != nil || clock.frames != nil {
+		t.Fatal("on-redraw mode did not stop the background ticker")
+	}
+	if !clock.reconcile(background, false, false) || clock.ticker == nil {
+		t.Fatal("returning to always mode did not restart the background ticker")
+	}
+	if !clock.reconcile(background, true, false) || clock.ticker != nil {
+		t.Fatal("ReduceMotion did not suppress the background ticker")
+	}
+	if !clock.reconcile(background, false, false) || clock.ticker == nil {
+		t.Fatal("disabling ReduceMotion did not restart the background ticker")
+	}
+	if !clock.reconcile(nil, false, false) || clock.ticker != nil || clock.frames != nil {
+		t.Fatal("switching to a plain background did not stop the ticker")
+	}
+	clock.stop()
+}
 
 type paneSelectionWidget struct {
 	selection    int

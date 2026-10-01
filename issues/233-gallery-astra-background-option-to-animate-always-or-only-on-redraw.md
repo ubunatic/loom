@@ -46,3 +46,17 @@ Host decisions (2026-10-01, user may override):
 - Gallery: expose the mode choice and show it in the status bar.
 - Tests: switching to astra at runtime in "always" mode produces ticks without other redraws;
   "on-redraw" mode produces none. Run `make test-q1`, `make install`.
+
+## 4. M1 Delivered (2026-10-01)
+- Added `Pane.BackgroundOnRedraw` (default false) and event-loop ticker reconciliation; runtime
+  background, mode, and `ReduceMotion` changes arm or stop the ticker, while unchanged cadence
+  reuses the existing timer.
+- Updated gallery F8 cycle and status text for plain, astra, and astra (on redraw).
+- Added unit and PTY lifecycle coverage, plus gallery cycle/status assertions.
+- Files: `pane.go`, `pane_internal_test.go`, `pane_pty_test.go`, `cmd/loom/widgets.go`,
+  `cmd/loom/main_test.go`.
+- `make test-q1` ran once; it failed in `TestPTYBackgroundTickerRuntimeLifecycle` because the
+  initial test probe matched printable keys via `Key` instead of `Text`. All other packages passed.
+  The test probe was corrected afterward; the quota limit prevented a rerun in this turn.
+- `make install` passed after the correction. The test result therefore remains unverified after
+  that correction.

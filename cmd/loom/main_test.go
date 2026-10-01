@@ -336,10 +336,16 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 func TestGalleryAppKeys(t *testing.T) {
 	child := &keyProbeWidget{}
 	g := newThemedGallery(child, "mc")
-	var applied []loom.Background
-	g.setBackground = func(b loom.Background) { applied = append(applied, b) }
+	type appliedBackground struct {
+		background loom.Background
+		onRedraw   bool
+	}
+	var applied []appliedBackground
+	g.setBackground = func(b loom.Background, onRedraw bool) {
+		applied = append(applied, appliedBackground{background: b, onRedraw: onRedraw})
+	}
 
-	if r := g.ConsumeKey(loom.KeyEvent{Key: "f8"}); !r.Consumed || len(applied) != 1 || applied[0] == nil {
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "f8"}); !r.Consumed || len(applied) != 1 || applied[0].background == nil || applied[0].onRedraw {
 		t.Fatalf("first F8 should enable a background, applied=%v", applied)
 	}
 	canvas := loom.NewCanvas(60, 4)
@@ -347,9 +353,20 @@ func TestGalleryAppKeys(t *testing.T) {
 	if row := canvas.Row(canvas.Rows() - 1); !strings.Contains(row, "F8 BG: astra") || !strings.Contains(row, "F10 Quit") {
 		t.Fatalf("status bar = %q", row)
 	}
-	g.ConsumeKey(loom.KeyEvent{Key: "f8"})
-	if len(applied) != 2 || applied[1] != nil {
-		t.Fatalf("second F8 should restore plain background, applied=%v", applied)
+	for i, want := range []string{"astra (on redraw)", "plain"} {
+		g.ConsumeKey(loom.KeyEvent{Key: "f8"})
+		canvas = loom.NewCanvas(60, 4)
+		g.Draw(canvas, canvas.Bounds())
+		if row := canvas.Row(canvas.Rows() - 1); !strings.Contains(row, "F8 BG: "+want) {
+			t.Fatalf("status bar = %q, want mode %q", row, want)
+		}
+		entry := applied[i+1]
+		if want == "astra (on redraw)" && (entry.background == nil || !entry.onRedraw) {
+			t.Fatalf("on-redraw state = %+v", entry)
+		}
+		if want == "plain" && (entry.background != nil || entry.onRedraw) {
+			t.Fatalf("plain state = %+v", entry)
+		}
 	}
 	if r := g.ConsumeKey(loom.KeyEvent{Key: "f10"}); !r.Quit {
 		t.Fatal("F10 must quit")

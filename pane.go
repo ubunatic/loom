@@ -87,6 +87,10 @@ type Pane struct {
 
 	// Background is composited after the root widget on every frame.
 	Background Background
+	// BackgroundOnRedraw disables independent animation ticks for animated
+	// backgrounds. The background still renders whenever the pane redraws.
+	// The zero value keeps animated backgrounds updating continuously.
+	BackgroundOnRedraw bool
 	// ReduceMotion disables animated background ticks while retaining its static
 	// rendering on normal foreground redraws.
 	ReduceMotion bool
@@ -211,6 +215,51 @@ func (c *countingWriter) WriteString(s string) (int, error) {
 type AnimatedBackground interface {
 	Background
 	DrawBackgroundAt(*Canvas, Rect, time.Time)
+}
+
+// backgroundTicker owns the optional timer that drives animated backgrounds.
+// Reconcile avoids timer work when the requested interval is unchanged.
+type backgroundTicker struct {
+	ticker   *time.Ticker
+	frames   <-chan time.Time
+	interval time.Duration
+}
+
+func (b *backgroundTicker) reconcile(background Background, reduceMotion, onRedraw bool) bool {
+	interval := time.Duration(0)
+	if !reduceMotion && !onRedraw {
+		if _, ok := background.(AnimatedBackground); ok {
+			interval = SpeccedBackground.RedrawInterval
+			if cadence, ok := background.(BackgroundCadence); ok {
+				interval = cadence.BackgroundInterval()
+			}
+			if interval < 0 {
+				interval = 0
+			}
+		}
+	}
+	if interval == b.interval {
+		return false
+	}
+	if b.ticker != nil {
+		b.ticker.Stop()
+		b.ticker = nil
+		b.frames = nil
+	}
+	b.interval = interval
+	if interval > 0 {
+		b.ticker = time.NewTicker(interval)
+		b.frames = b.ticker.C
+	}
+	return true
+}
+
+func (b *backgroundTicker) stop() {
+	if b.ticker != nil {
+		b.ticker.Stop()
+		b.ticker = nil
+		b.frames = nil
+	}
 }
 
 // BackgroundCadence optionally lets an animated background choose its redraw
@@ -809,21 +858,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		cols = p.MaxCols
 	}
 	canvas := NewCanvas(cols, p.rows)
-	var backgroundFrames <-chan time.Time
-	var backgroundTicker *time.Ticker
-	if _, ok := p.Background.(AnimatedBackground); ok && !p.ReduceMotion {
-		interval := SpeccedBackground.RedrawInterval
-		if cadence, ok := p.Background.(BackgroundCadence); ok {
-			interval = cadence.BackgroundInterval()
-		}
-		if interval > 0 {
-			backgroundTicker = time.NewTicker(interval)
-			backgroundFrames = backgroundTicker.C
-			defer backgroundTicker.Stop()
-		}
-		if p.Metrics != nil && interval > 0 {
-			p.Metrics.AstraTargetFPS = 1 / interval.Seconds()
-		}
+	var backgroundClock backgroundTicker
+	backgroundClock.reconcile(p.Background, p.ReduceMotion, p.BackgroundOnRedraw)
+	defer backgroundClock.stop()
+	if p.Metrics != nil && backgroundClock.interval > 0 {
+		p.Metrics.AstraTargetFPS = 1 / backgroundClock.interval.Seconds()
 	}
 	var cursorFrames <-chan time.Time
 	var cursorTicker *time.Ticker
@@ -1006,6 +1045,12 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 	}()
 	for {
+		if backgroundClock.reconcile(p.Background, p.ReduceMotion, p.BackgroundOnRedraw) && p.Metrics != nil {
+			p.Metrics.AstraTargetFPS = 0
+			if backgroundClock.interval > 0 {
+				p.Metrics.AstraTargetFPS = 1 / backgroundClock.interval.Seconds()
+			}
+		}
 		now := time.Now()
 		p.expireCursorEffects(now)
 		wantedCursorFrame := cursorAnimationFrameInterval(p.cursorTrail, p.cursorPulse, now)
@@ -1098,7 +1143,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-p.tickerReset:
 			// Force the timer to adopt the current interval with a fresh countdown.
 			tickInterval = -1
-		case <-backgroundFrames:
+		case <-backgroundClock.frames:
 			dirty = true
 			animationDirty = true
 		case now := <-cursorFrames:

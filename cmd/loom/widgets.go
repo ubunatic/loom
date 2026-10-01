@@ -149,7 +149,10 @@ var runWidgetPane = func(widget loom.Widget, width, height int) error {
 	pane.EnableMouse()
 	pane.DisableDefaultQuit = true
 	if g, ok := widget.(*themedGallery); ok {
-		g.setBackground = func(b loom.Background) { pane.Background = b }
+		g.setBackground = func(b loom.Background, onRedraw bool) {
+			pane.Background = b
+			pane.BackgroundOnRedraw = onRedraw
+		}
 	}
 	defer pane.Close()
 	return pane.Run(widget)
@@ -191,15 +194,17 @@ type themedGallery struct {
 
 	bgIndex int
 	// setBackground applies a background to the running pane; nil in tests.
-	setBackground func(loom.Background)
+	setBackground func(loom.Background, bool)
 }
 
 var galleryBackgrounds = []struct {
-	name string
-	make func() loom.Background
+	name     string
+	onRedraw bool
+	make     func() loom.Background
 }{
-	{"plain", func() loom.Background { return nil }},
-	{"astra", func() loom.Background { return loom.NewAstraBackground() }},
+	{"plain", false, func() loom.Background { return nil }},
+	{"astra", false, func() loom.Background { return loom.NewAstraBackground() }},
+	{"astra (on redraw)", true, func() loom.Background { return loom.NewAstraBackground() }},
 }
 
 func newThemedGallery(widget loom.Widget, themeName string) *themedGallery {
@@ -250,7 +255,8 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	case e.Is("f8"):
 		g.bgIndex = (g.bgIndex + 1) % len(galleryBackgrounds)
 		if g.setBackground != nil {
-			g.setBackground(galleryBackgrounds[g.bgIndex].make())
+			bg := galleryBackgrounds[g.bgIndex]
+			g.setBackground(bg.make(), bg.onRedraw)
 		}
 		return loom.Handled()
 	}
