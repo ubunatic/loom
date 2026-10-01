@@ -133,7 +133,7 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 		}
 		g.childRects[i] = cr
 		if i == g.focus {
-			c.Fill(cr, Cell{Text: " ", Style: Style{BG: g.FocusBG}})
+			c.PaintSurface(cr, Style{BG: g.FocusBG})
 		}
 		child.Draw(c, cr)
 		if Debug {

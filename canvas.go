@@ -183,6 +183,29 @@ func (c *Canvas) PaintSurface(r Rect, style Style) {
 	}
 }
 
+// PaintDefaultSurface is a weak version of PaintSurface: it only paints cells
+// that have no background color yet (BG == ColorReset). This lets a parent
+// widget's PaintSurface or an ambient background take precedence. When a widget
+// is drawn standalone on a blank canvas the default surface shows through as the
+// theme's normal background, satisfying ticket 222. Explicit surfaces such as
+// Dialog and Popup should use PaintSurface instead.
+func (c *Canvas) PaintDefaultSurface(r Rect, style Style) {
+	for y := r.Y; y < r.Y+r.H; y++ {
+		if y < 0 || y >= c.rows {
+			continue
+		}
+		for x := r.X; x < r.X+r.W; x++ {
+			if x < 0 || x >= c.cols {
+				continue
+			}
+			if c.cells[y][x].Style.BG != ColorReset() {
+				continue
+			}
+			c.set(x, y, Cell{Text: " ", Style: style, Surface: true}, false)
+		}
+	}
+}
+
 // PaintForeground paints content that owns its cell, including an explicitly
 // blank cell via Claim.
 func (c *Canvas) PaintForeground(x, y int, cell Cell) {
