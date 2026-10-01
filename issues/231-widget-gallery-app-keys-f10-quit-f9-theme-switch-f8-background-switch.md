@@ -1,6 +1,6 @@
 # 231 — Widget gallery app keys: F10 quit, F9 theme switch, F8 background switch
 
-**Status**: Open
+**Status**: Closed — F10 quit, F9 theme cycle, F8 background switch (plain/astra) and updated status bar implemented with full tests
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
