@@ -72,3 +72,9 @@ Wrong (they paint the unselected/default BG over the cell):
     inherits the surface. Add a test: ProgressBar in an unfocused and a focused Grid cell, every cell
     outside the filled part has the cell's BG; 239's fill vs selection colors unchanged.
   - Check Tree, KeyHelp, Viewport the same way in the gallery before closing.
+- M2 turn 1 (dev-243-m2, agy:flash37:low): committed the M1 leftovers (da6e465). ProgressBar fix
+  (Style and StyleEmpty without BG) and new tests left uncommitted. `make test-q1`: 6 FAIL lines, all new
+  tests: KeyHelp and Tree text cells carry the theme NormalBG `{1 19}` instead of the Grid cell BG.
+- M2 turn 2 Pre-Work: KeyHelp and Tree write their normal text with an explicit NormalBG; text written
+  over a default surface must leave BG unset (inherit), the same way Choice and Table already do. Fix it in
+  the shared write path if the widgets share one, not per widget. Selected/highlighted rows keep their BG.
