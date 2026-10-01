@@ -291,7 +291,12 @@ func (b *buttonDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 
 func (b *buttonDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
+	text := fmt.Sprintf("[ %s ]", b.label)
+	if b.clicked > 0 {
+		text = fmt.Sprintf("[ %s (%d) ]", b.label, b.clicked)
+	}
+	width := loom.StringWidth(text)
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 && e.X >= 0 && e.X < width {
 		b.clicked++
 		return loom.Handled()
 	}
@@ -330,7 +335,8 @@ func (cb *checkboxDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 
 func (cb *checkboxDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 && e.X >= 0 && e.X <= len(cb.label)+4 {
+	width := loom.StringWidth("[x] " + cb.label)
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 && e.X >= 0 && e.X < width {
 		cb.checked = !cb.checked
 		return loom.Handled()
 	}
@@ -369,7 +375,8 @@ func (b *badgeDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 
 func (b *badgeDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
-	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
+	width := loom.StringWidth(fmt.Sprintf("[%s: %s ●]", b.label, b.status))
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 && e.X >= 0 && e.X < width {
 		if b.status == "Active" {
 			b.status = "Idle"
 		} else {
@@ -391,38 +398,44 @@ func newAllDemo() *loom.Grid {
 	numInput := loom.NewNumberInput(&numVal, -100, 100)
 	numInput.Step = 1.0
 	numInput.Format = "%.2f"
-	numInput.FixedWidth = 11
+	numInput.FixedWidth = 10
 	numInput.Align = loom.AlignRight
 
 	badge := &badgeDemo{label: "Badge", status: "Active"}
 	pillCluster := loom.NewPillCluster(
 		loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone},
-		loom.ProviderPill{Name: "Worker", Symbol: "…", State: loom.ProviderFetching},
-		loom.ProviderPill{Name: "Cache", Symbol: "✓", State: loom.ProviderDone},
+		loom.ProviderPill{Name: "Job", Symbol: "…", State: loom.ProviderFetching},
+		loom.ProviderPill{Name: "DB", Symbol: "✓", State: loom.ProviderDone},
 	)
 
 	bar := loom.NewProgressBar()
-	bar.Options.Width = 14
+	bar.Options.Width = 12
 	bar.ShowPercent = true
-	bar.ShowCount = true
-	bar.Unit = " files"
+	bar.ShowCount = false
 	progressBar := &progressDemo{ProgressBar: bar}
 
 	sparkline := &loom.Sparkline{
 		Values: []float64{12, 18, 14, 26, 22, 31, 27, 35, 42, 38},
-		Width:  14,
+		Width:  12,
 	}
 
-	spinner := demos["Spinner"]()
-	stopwatch := demos["Stopwatch"]()
-	timer := demos["Timer"]()
-	paginator := demos["Paginator"]()
+	spinner := loom.NewSpinner("Syncing")
+	spinner.Start()
+
+	watch := loom.NewStopwatch()
+	watch.Start()
+
+	timer := loom.NewTimer(4*time.Minute + 12*time.Second)
+	timer.Start()
+
+	paginator := loom.NewPaginator(5)
+	paginator.SetPage(2)
 
 	return loom.NewGrid(3,
 		button, toggle, checkbox,
 		numInput, badge, pillCluster,
 		progressBar, sparkline, spinner,
-		stopwatch, timer, paginator,
+		watch, timer, paginator,
 	)
 }
 

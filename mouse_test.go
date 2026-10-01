@@ -218,6 +218,33 @@ func TestGridConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	}
 }
 
+func TestGridMousePressChangesFocusAndScrollPreservesFocus(t *testing.T) {
+	a, b := &spyWidget{}, &spyWidget{}
+	g := loom.NewGrid(2, a, b)
+	g.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+
+	if g.Focus() != 0 {
+		t.Fatalf("initial grid focus = %d, want 0", g.Focus())
+	}
+
+	// Scroll on second cell should route to child b without changing focus
+	scroll := loom.MouseEvent{Action: loom.MouseScrollUp, X: 14, Y: 1}
+	g.ConsumeMouse(scroll)
+	if g.Focus() != 0 {
+		t.Fatalf("after scroll on cell 1, grid focus = %d, want 0", g.Focus())
+	}
+	if !b.got {
+		t.Fatal("scroll was not forwarded to child b")
+	}
+
+	// Mouse press on second cell should change focus to 1
+	press := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 14, Y: 1}
+	g.ConsumeMouse(press)
+	if g.Focus() != 1 {
+		t.Fatalf("after mouse press on cell 1, grid focus = %d, want 1", g.Focus())
+	}
+}
+
 func TestStackConsumeMouseForwardsToFocusedChild(t *testing.T) {
 	a, b := &spyWidget{}, &spyWidget{}
 	s := loom.NewStack(loom.Horizontal, a, b)

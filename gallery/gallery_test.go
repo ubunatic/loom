@@ -1179,9 +1179,32 @@ func TestAllTabInitialActiveAndLayout(t *testing.T) {
 	if grid.Cols != 3 {
 		t.Fatalf("grid columns = %d, want 3", grid.Cols)
 	}
+	if len(grid.Children) != 12 {
+		t.Fatalf("grid child count = %d, want 12", len(grid.Children))
+	}
 
 	c := loom.NewCanvas(100, 30)
 	tabs.Draw(c, c.Bounds())
+
+	// Verify exact 3-column cell boundaries (r.X + k*cellW)
+	r0 := grid.ChildRect(0)
+	panelX := r0.X
+	cellW := r0.W
+	cellH := r0.H
+	if cellW <= 0 || cellH <= 0 {
+		t.Fatalf("cell size invalid: %dx%d", cellW, cellH)
+	}
+	for i := range grid.Children {
+		k := i % grid.Cols
+		row := i / grid.Cols
+		wantX := panelX + k*cellW
+		wantY := r0.Y + row*cellH
+		rect := grid.ChildRect(i)
+		if rect.X != wantX || rect.Y != wantY || rect.W != cellW || rect.H != cellH {
+			t.Fatalf("child %d rect = %+v, want X=%d Y=%d W=%d H=%d", i, rect, wantX, wantY, cellW, cellH)
+		}
+	}
+
 	plainRows := make([]string, 30)
 	for y := 0; y < 30; y++ {
 		for x := 0; x < 100; x++ {
@@ -1454,4 +1477,3 @@ func TestNewAllDemoDirect(t *testing.T) {
 		t.Fatalf("grid children = %d, want at least 9", len(grid.Children))
 	}
 }
-

@@ -65,6 +65,42 @@ func (g *Grid) PaneRequest() (request PaneRequest) {
 // Focus returns the index of the currently focused child.
 func (g *Grid) Focus() int { return g.focus }
 
+// ChildRect returns the drawn bounds of child i from the most recent Draw.
+func (g *Grid) ChildRect(i int) Rect {
+	if i < 0 || i >= len(g.childRects) {
+		return Rect{}
+	}
+	return g.childRects[i]
+}
+
+func (g *Grid) setFocus(index int) {
+	n := len(g.Children)
+	if n == 0 {
+		g.focus = 0
+		return
+	}
+	if index < 0 {
+		index = 0
+	} else if index >= n {
+		index = n - 1
+	}
+	if g.focus == index {
+		return
+	}
+	old := g.focus
+	g.focus = index
+	if old >= 0 && old < n {
+		if f, ok := g.Children[old].(Focusable); ok {
+			f.SetFocus(false)
+		}
+	}
+	if index >= 0 && index < n {
+		if f, ok := g.Children[index].(Focusable); ok {
+			f.SetFocus(true)
+		}
+	}
+}
+
 // Draw renders all children into a uniform grid within r.
 // The focused cell receives a FocusBG background highlight before its child draws.
 func (g *Grid) Draw(c *Canvas, r Rect) {
@@ -112,41 +148,43 @@ func (g *Grid) ConsumeKey(e KeyEvent) EventResult {
 	if n == 0 {
 		return Ignored()
 	}
-	if res := g.Children[g.focus].ConsumeKey(e); res.Consumed {
-		return res
+	if g.focus >= 0 && g.focus < n {
+		if res := g.Children[g.focus].ConsumeKey(e); res.Consumed {
+			return res
+		}
 	}
 	switch e.Key {
 	case "left":
 		if g.focus > 0 {
-			g.focus--
+			g.setFocus(g.focus - 1)
 		} else {
-			g.focus = n - 1
+			g.setFocus(n - 1)
 		}
 		return Handled()
 	case "right":
 		if g.focus < n-1 {
-			g.focus++
+			g.setFocus(g.focus + 1)
 		} else {
-			g.focus = 0
+			g.setFocus(0)
 		}
 		return Handled()
 	case "up":
 		if g.focus >= g.Cols {
-			g.focus -= g.Cols
+			g.setFocus(g.focus - g.Cols)
 		} else {
 			last := g.focus + ((n-1)/g.Cols)*g.Cols
 			if last >= n {
 				last -= g.Cols
 			}
-			g.focus = last
+			g.setFocus(last)
 		}
 		return Handled()
 	case "down":
 		next := g.focus + g.Cols
 		if next < n {
-			g.focus = next
+			g.setFocus(next)
 		} else {
-			g.focus = g.focus % g.Cols
+			g.setFocus(g.focus % g.Cols)
 		}
 		return Handled()
 	case "enter":
@@ -170,24 +208,18 @@ func (g *Grid) ConsumeMouse(e MouseEvent) EventResult {
 	if len(g.Children) == 0 {
 		return Ignored()
 	}
-	x, y := e.X + g.lastRect.X, e.Y + g.lastRect.Y
+	x, y := e.X+g.lastRect.X, e.Y+g.lastRect.Y
 	for i, rect := range g.childRects {
 		if rect.Contains(x, y) {
-			if e.Action == MousePress {
-				oldFocus := g.focus
-				g.focus = i
-				if oldFocus != i {
-					if f, ok := g.Children[oldFocus].(Focusable); ok {
-						f.SetFocus(false)
-					}
-					if f, ok := g.Children[i].(Focusable); ok {
-						f.SetFocus(true)
-					}
-				}
+			if e.Action == MousePress && i >= 0 && i < len(g.Children) {
+				g.setFocus(i)
 			}
 			e.X = x - rect.X
 			e.Y = y - rect.Y
-			return g.Children[i].ConsumeMouse(e)
+			if i >= 0 && i < len(g.Children) {
+				return g.Children[i].ConsumeMouse(e)
+			}
+			return Ignored()
 		}
 	}
 	return Ignored()

@@ -4,20 +4,20 @@
  DatePicker  │[0m[39m[48;5;238m                      [0m[39m[49m                                            [0m
  Dialog      │[0m[39m[48;5;238m                      [0m[39m[49m                                            [0m
  FilePicker  │[0m[39m[48;5;238m                      [0m[39m[49m                                            [0m
- Form        │◂   42.00 ▸           [Badge: Active ●]     [0m[38;5;2m[49m✓ API[0m[39m[49m  [0m[38;5;3m[49m… Worker[0m[39m[49m  [0m[38;5;2m[49m✓ Cac[0m
+ Form        │◂  42.00 ▸            [Badge: Active ●]       [0m[38;5;2m[49m✓ API[0m[39m[49m  [0m[38;5;3m[49m… Job[0m[39m[49m  [0m[38;5;2m[49m✓ DB[0m[39m[49m  [0m
  KeyHelp     │                                                                  [0m
  Media       │                                                                  [0m
  MenuBar     │                                                                  [0m
  NumberInput │                                                                  [0m
  Paginator   │                                                                  [0m
- PaintCanvas │[              ]   0% ▁▁▁▁▁▁▁▁▁▂▄▅▆▇        ⠋ Syncing workspace   [0m
+ PaintCanvas │[            ]   0%   ▁▁▁▁▁▁▁▂▄▅▆▇          ⠋ Syncing             [0m
  PillCluster │                                                                  [0m
  Popup       │                                                                  [0m
  ProgressBar │                                                                  [0m
  Spinner     │                                                                  [0m
  Stopwatch   │                                                                  [0m
- Table       │00:00                 04:11                 ○ ○ ● ○ ○ ○ ○         [0m
- Tabs        │                      [Start] [Stop] [Reset]                      [0m
+ Table       │00:00                 04:11                 ○ ○ ● ○ ○             [0m
+ Tabs        │                                                                  [0m
  TextArea    │                                                                  [0m
  TextInput   │                                                                  [0m
  Timer       │                                                                  [0m
