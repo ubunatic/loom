@@ -938,3 +938,78 @@ func TestPanDeltaAndViewGeometryUnchangedForOverflow(t *testing.T) {
 		t.Fatalf("slack = %d,%d, want 0,0", sx, sy)
 	}
 }
+
+func TestZoomCrossesSmallToLargeBoundary(t *testing.T) {
+	w := smallWidget(t)
+	// Viewport is 40x20 px (10 image rows); the 20x10 px image starts smaller than it.
+	if dx, dy := panDelta(w.mode, w.image, 40, 10, w.zoom); dx <= 0 || dy <= 0 {
+		t.Fatalf("start delta = %d,%d, want both positive", dx, dy)
+	}
+	cursorX, cursorY := 20, 5
+	cx, cy := (float64(cursorX)+.5)*1, (float64(cursorY)+.5)*2
+	fraction := func() (float64, float64) {
+		dx, dy := panDelta(w.mode, w.image, 40, 10, w.zoom)
+		zw, zh, _, _, _, _ := viewGeometry(w.mode, w.image, 40, 10, w.zoom)
+		return (cx - float64(dx)/2*(1+w.panX)) / float64(zw), (cy - float64(dy)/2*(1+w.panY)) / float64(zh)
+	}
+	u0, v0 := fraction()
+	w.setZoomAt(2.5, cursorX, cursorY)
+	dx, dy := panDelta(w.mode, w.image, 40, 10, w.zoom)
+	if dx >= 0 || dy >= 0 {
+		t.Fatalf("zoomed delta = %d,%d, want both negative (overflow)", dx, dy)
+	}
+	u1, v1 := fraction()
+	if math.Abs(u0-u1) > 1e-6 || math.Abs(v0-v1) > 1e-6 {
+		t.Fatalf("image point under cursor moved across boundary: (%v,%v) -> (%v,%v)", u0, v0, u1, v1)
+	}
+}
+
+func TestMouseWheelAtControlBar(t *testing.T) {
+	w := smallWidget(t)
+	imageHeight := w.imageHeightLocked()
+	if w.lastRect.H < 3 || imageHeight != w.lastRect.H-2 {
+		t.Fatalf("rect H=%d imageHeight=%d, want a 2-row control bar", w.lastRect.H, imageHeight)
+	}
+	before := w.zoom
+	res := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 5, Y: imageHeight})
+	if !res.Consumed {
+		t.Fatal("wheel over control bar not handled")
+	}
+	if w.zoom <= before {
+		t.Fatalf("zoom = %v, want > %v", w.zoom, before)
+	}
+	for name, pan := range map[string]float64{"panX": w.panX, "panY": w.panY} {
+		if math.IsNaN(pan) || math.IsInf(pan, 0) || pan < -1 || pan > 1 {
+			t.Fatalf("%s = %v, want finite in [-1,1]", name, pan)
+		}
+	}
+}
+
+func TestMixedAxesPanDelta(t *testing.T) {
+	w, err := NewImage(solidImage(200, 10, color.RGBA{B: 255, A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 10 cols x 20 image rows (+2 control rows) = 10x40 px viewport.
+	w.Draw(loom.NewCanvas(10, 22), loom.Rect{W: 10, H: 22})
+	dx, dy := panDelta(w.mode, w.image, 10, 20, w.zoom)
+	if dx >= 0 || dy <= 0 {
+		t.Fatalf("delta = %d,%d, want x negative (overflow), y positive (slack)", dx, dy)
+	}
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 5, Y: 5},
+		{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 6, Y: 6},
+	} {
+		if res := w.ConsumeMouse(e); !res.Consumed {
+			t.Fatalf("event %#v not handled", e)
+		}
+	}
+	// Dragging content right by 1 px shows more of the left: pan decreases on the overflow axis.
+	if w.panX >= 0 {
+		t.Fatalf("panX = %v, want negative after dragging right on overflow axis", w.panX)
+	}
+	// Dragging down moves the image down within slack: pan increases.
+	if w.panY <= 0 {
+		t.Fatalf("panY = %v, want positive after dragging down on slack axis", w.panY)
+	}
+}
