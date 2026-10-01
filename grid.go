@@ -170,9 +170,21 @@ func (g *Grid) ConsumeMouse(e MouseEvent) EventResult {
 	if len(g.Children) == 0 {
 		return Ignored()
 	}
-	x, y := e.X+g.lastRect.X, e.Y+g.lastRect.Y
+	x, y := e.X + g.lastRect.X, e.Y + g.lastRect.Y
 	for i, rect := range g.childRects {
 		if rect.Contains(x, y) {
+			if e.Action == MousePress {
+				oldFocus := g.focus
+				g.focus = i
+				if oldFocus != i {
+					if f, ok := g.Children[oldFocus].(Focusable); ok {
+						f.SetFocus(false)
+					}
+					if f, ok := g.Children[i].(Focusable); ok {
+						f.SetFocus(true)
+					}
+				}
+			}
 			e.X = x - rect.X
 			e.Y = y - rect.Y
 			return g.Children[i].ConsumeMouse(e)

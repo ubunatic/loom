@@ -1143,3 +1143,315 @@ func TestGalleryMouseRoutingPTY(t *testing.T) {
 		t.Fatal("button row missing")
 	})
 }
+
+func TestAllTabInitialActiveAndLayout(t *testing.T) {
+	tabs := NewAll()
+	if got := tabs.Focus(); got != 0 {
+		t.Fatalf("initial active tab = %d, want 0", got)
+	}
+	if len(tabs.Tabs) != len(Names())+1 {
+		t.Fatalf("len(tabs.Tabs) = %d, want %d", len(tabs.Tabs), len(Names())+1)
+	}
+	if tabs.Tabs[0].Title != "All" {
+		t.Fatalf("first tab title = %q, want All", tabs.Tabs[0].Title)
+	}
+	for i, name := range Names() {
+		if tabs.Tabs[i+1].Title != name {
+			t.Fatalf("tab %d title = %q, want %q", i+1, tabs.Tabs[i+1].Title, name)
+		}
+	}
+
+	// Verify cycling through tabs
+	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
+	if tabs.Focus() != 1 {
+		t.Fatalf("after Tab, active tab = %d, want 1", tabs.Focus())
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
+	if tabs.Focus() != 0 {
+		t.Fatalf("after Shift-Tab, active tab = %d, want 0", tabs.Focus())
+	}
+
+	// Verify 3-column composite layout on the All tab
+	grid, ok := tabs.Tabs[0].Widget.(*loom.Grid)
+	if !ok {
+		t.Fatalf("first tab widget is %T, want *loom.Grid", tabs.Tabs[0].Widget)
+	}
+	if grid.Cols != 3 {
+		t.Fatalf("grid columns = %d, want 3", grid.Cols)
+	}
+
+	c := loom.NewCanvas(100, 30)
+	tabs.Draw(c, c.Bounds())
+	plainRows := make([]string, 30)
+	for y := 0; y < 30; y++ {
+		for x := 0; x < 100; x++ {
+			plainRows[y] += c.Get(x, y).Text
+		}
+	}
+
+	findCol := func(line, text string) int {
+		idx := strings.Index(line, text)
+		if idx < 0 {
+			return -1
+		}
+		return utf8.RuneCountInString(line[:idx])
+	}
+
+	// Verify row 0 widgets: Button, Toggle, Checkbox in 3 distinct columns
+	var row0Idx = -1
+	for y, line := range plainRows {
+		if strings.Contains(line, "Click Me") && strings.Contains(line, "Toggle") && strings.Contains(line, "Checkbox") {
+			row0Idx = y
+			break
+		}
+	}
+	if row0Idx < 0 {
+		t.Fatalf("row with Button, Toggle, Checkbox not found in render:\n%s", strings.Join(plainRows, "\n"))
+	}
+	line0 := plainRows[row0Idx]
+	colBtn := findCol(line0, "Click Me")
+	colTgl := findCol(line0, "Toggle")
+	colChk := findCol(line0, "Checkbox")
+	if !(colBtn < colTgl && colTgl < colChk) {
+		t.Fatalf("expected 3 columns (Button < Toggle < Checkbox), got cols %d, %d, %d", colBtn, colTgl, colChk)
+	}
+
+	// Verify row 1 widgets: NumberInput, Badge, PillCluster
+	var row1Idx = -1
+	for y, line := range plainRows {
+		if strings.Contains(line, "42.00") && strings.Contains(line, "Badge") && strings.Contains(line, "API") {
+			row1Idx = y
+			break
+		}
+	}
+	if row1Idx < 0 {
+		t.Fatalf("row with NumberInput, Badge, PillCluster not found in render:\n%s", strings.Join(plainRows, "\n"))
+	}
+	line1 := plainRows[row1Idx]
+	colNum := findCol(line1, "42.00")
+	colBdg := findCol(line1, "Badge")
+	colPill := findCol(line1, "API")
+	if !(colNum < colBdg && colBdg < colPill) {
+		t.Fatalf("expected 3 columns (NumberInput < Badge < PillCluster), got cols %d, %d, %d", colNum, colBdg, colPill)
+	}
+}
+
+func TestAllTabKeyboardInteractions(t *testing.T) {
+	tabs := NewAll()
+	grid, ok := tabs.Tabs[0].Widget.(*loom.Grid)
+	if !ok {
+		t.Fatalf("tab widget is %T, want *loom.Grid", tabs.Tabs[0].Widget)
+	}
+	c := loom.NewCanvas(100, 30)
+	tabs.Draw(c, c.Bounds())
+
+	btn, ok := grid.Children[0].(*buttonDemo)
+	if !ok {
+		t.Fatalf("child 0 is %T, want *buttonDemo", grid.Children[0])
+	}
+	toggle, ok := grid.Children[1].(*loom.Toggle)
+	if !ok {
+		t.Fatalf("child 1 is %T, want *loom.Toggle", grid.Children[1])
+	}
+	cb, ok := grid.Children[2].(*checkboxDemo)
+	if !ok {
+		t.Fatalf("child 2 is %T, want *checkboxDemo", grid.Children[2])
+	}
+	numInput, ok := grid.Children[3].(*loom.NumberInput)
+	if !ok {
+		t.Fatalf("child 3 is %T, want *loom.NumberInput", grid.Children[3])
+	}
+	badge, ok := grid.Children[4].(*badgeDemo)
+	if !ok {
+		t.Fatalf("child 4 is %T, want *badgeDemo", grid.Children[4])
+	}
+
+	// 1. Initial focus is cell 0 (Button). Pressing Enter clicks it.
+	if grid.Focus() != 0 {
+		t.Fatalf("initial grid focus = %d, want 0", grid.Focus())
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if btn.clicked != 1 {
+		t.Fatalf("after Enter, button clicks = %d, want 1", btn.clicked)
+	}
+
+	// 2. Press "right" -> moves to cell 1 (Toggle). Press Enter -> toggles.
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if grid.Focus() != 1 {
+		t.Fatalf("after right, grid focus = %d, want 1", grid.Focus())
+	}
+	if !*toggle.Value {
+		t.Fatal("toggle value initially should be true")
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if *toggle.Value {
+		t.Fatal("after Enter, toggle value should be false")
+	}
+
+	// 3. Press "right" -> moves to cell 2 (Checkbox). Press Space -> toggles.
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if grid.Focus() != 2 {
+		t.Fatalf("after right, grid focus = %d, want 2", grid.Focus())
+	}
+	if !cb.checked {
+		t.Fatal("checkbox initially should be true")
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "space"})
+	if cb.checked {
+		t.Fatal("after Space, checkbox should be false")
+	}
+
+	// 4. Navigate down and left:
+	tabs.ConsumeKey(loom.KeyEvent{Key: "down"})
+	if grid.Focus() != 5 {
+		t.Fatalf("after down, grid focus = %d, want 5", grid.Focus())
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "left"})
+	if grid.Focus() != 4 {
+		t.Fatalf("after left, grid focus = %d, want 4", grid.Focus())
+	}
+	if badge.status != "Active" {
+		t.Fatalf("badge status = %q, want Active", badge.status)
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "space"})
+	if badge.status != "Idle" {
+		t.Fatalf("after space, badge status = %q, want Idle", badge.status)
+	}
+
+	// 5. Navigate left to cell 3 (NumberInput) and step it:
+	tabs.ConsumeKey(loom.KeyEvent{Key: "left"})
+	if grid.Focus() != 3 {
+		t.Fatalf("after left, grid focus = %d, want 3", grid.Focus())
+	}
+	beforeVal := *numInput.Value
+	tabs.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if *numInput.Value != beforeVal+1.0 {
+		t.Fatalf("after right, NumberInput value = %f, want %f", *numInput.Value, beforeVal+1.0)
+	}
+}
+
+func TestAllTabMouseInteractions(t *testing.T) {
+	tabs := NewAll()
+	grid, ok := tabs.Tabs[0].Widget.(*loom.Grid)
+	if !ok {
+		t.Fatalf("tab widget is %T, want *loom.Grid", tabs.Tabs[0].Widget)
+	}
+	c := loom.NewCanvas(100, 30)
+	tabs.Draw(c, c.Bounds())
+
+	btn, ok := grid.Children[0].(*buttonDemo)
+	if !ok {
+		t.Fatalf("child 0 is %T, want *buttonDemo", grid.Children[0])
+	}
+	toggle, ok := grid.Children[1].(*loom.Toggle)
+	if !ok {
+		t.Fatalf("child 1 is %T, want *loom.Toggle", grid.Children[1])
+	}
+	cb, ok := grid.Children[2].(*checkboxDemo)
+	if !ok {
+		t.Fatalf("child 2 is %T, want *checkboxDemo", grid.Children[2])
+	}
+	numInput, ok := grid.Children[3].(*loom.NumberInput)
+	if !ok {
+		t.Fatalf("child 3 is %T, want *loom.NumberInput", grid.Children[3])
+	}
+
+	findLoc := func(target string) (int, int) {
+		for y := 0; y < 30; y++ {
+			var row strings.Builder
+			for x := 0; x < 100; x++ {
+				row.WriteString(c.Get(x, y).Text)
+			}
+			s := row.String()
+			idx := strings.Index(s, target)
+			if idx >= 0 {
+				return utf8.RuneCountInString(s[:idx]), y
+			}
+		}
+		return -1, -1
+	}
+
+	// 1. Click Button
+	btnX, btnY := findLoc("[ Click Me ]")
+	if btnX < 0 {
+		t.Fatal("Button not found on canvas")
+	}
+	initialClicks := btn.clicked
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: btnX + 1, Y: btnY})
+	if btn.clicked != initialClicks+1 {
+		t.Fatalf("after click, button clicks = %d, want %d", btn.clicked, initialClicks+1)
+	}
+	if grid.Focus() != 0 {
+		t.Fatalf("after button click, grid focus = %d, want 0", grid.Focus())
+	}
+
+	// 2. Click Toggle inside [✓] mark
+	tglX, tglY := findLoc("[✓] Toggle")
+	if tglX < 0 {
+		t.Fatal("Toggle not found on canvas")
+	}
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: tglX + 1, Y: tglY})
+	if *toggle.Value {
+		t.Fatal("after toggle click, value should be false")
+	}
+	if grid.Focus() != 1 {
+		t.Fatalf("after toggle click, grid focus = %d, want 1", grid.Focus())
+	}
+
+	// 3. Click Checkbox
+	chkX, chkY := findLoc("[x] Checkbox")
+	if chkX < 0 {
+		t.Fatal("Checkbox not found on canvas")
+	}
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: chkX + 1, Y: chkY})
+	if cb.checked {
+		t.Fatal("after checkbox click, checked should be false")
+	}
+	if grid.Focus() != 2 {
+		t.Fatalf("after checkbox click, grid focus = %d, want 2", grid.Focus())
+	}
+
+	// 4. Click NumberInput stepper ▸
+	tabs.Draw(c, c.Bounds())
+	stepperX, stepperY := findLoc("▸")
+	if stepperX < 0 {
+		t.Fatal("stepper ▸ not found on canvas")
+	}
+	beforeNum := *numInput.Value
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: stepperX, Y: stepperY})
+	if *numInput.Value != beforeNum+1.0 {
+		t.Fatalf("after stepper click, NumberInput = %f, want %f", *numInput.Value, beforeNum+1.0)
+	}
+	if grid.Focus() != 3 {
+		t.Fatalf("after numberinput click, grid focus = %d, want 3", grid.Focus())
+	}
+
+	// 5. Mouse scroll on NumberInput
+	tabs.Draw(c, c.Bounds())
+	numX, numY := findLoc("43.00")
+	if numX < 0 {
+		t.Fatal("43.00 not found on canvas")
+	}
+	tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, Button: loom.MouseNone, X: numX, Y: numY})
+	if *numInput.Value != beforeNum+2.0 {
+		t.Fatalf("after scroll up, NumberInput = %f, want %f", *numInput.Value, beforeNum+2.0)
+	}
+}
+
+func TestNewAllDemoDirect(t *testing.T) {
+	widget, err := New("All")
+	if err != nil {
+		t.Fatalf("New(\"All\") error = %v", err)
+	}
+	grid, ok := widget.(*loom.Grid)
+	if !ok {
+		t.Fatalf("New(\"All\") returned %T, want *loom.Grid", widget)
+	}
+	if grid.Cols != 3 {
+		t.Fatalf("grid.Cols = %d, want 3", grid.Cols)
+	}
+	if len(grid.Children) < 9 {
+		t.Fatalf("grid children = %d, want at least 9", len(grid.Children))
+	}
+}
+

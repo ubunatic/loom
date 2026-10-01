@@ -236,6 +236,9 @@ func Names() []string {
 // such as "loom.TextInput" as well as short names.
 func New(name string) (loom.Widget, error) {
 	name = strings.TrimPrefix(name, "loom.")
+	if strings.EqualFold(name, "all") {
+		return newAllDemo(), nil
+	}
 	build, ok := demos[name]
 	if !ok {
 		return nil, fmt.Errorf("unknown widget demo %q", name)
@@ -245,7 +248,8 @@ func New(name string) (loom.Widget, error) {
 
 // NewAll constructs the complete gallery as a tabbed widget.
 func NewAll() *loom.Tabs {
-	tabs := make([]loom.Tab, 0, len(demos))
+	tabs := make([]loom.Tab, 0, len(demos)+1)
+	tabs = append(tabs, loom.Tab{Title: "All", Widget: newAllDemo()})
 	for _, name := range Names() {
 		tabs = append(tabs, loom.Tab{Title: name, Widget: demos[name]()})
 	}
@@ -254,6 +258,172 @@ func NewAll() *loom.Tabs {
 	all.ArrowSwitch = false
 	all.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 	return all
+}
+
+type buttonDemo struct {
+	label   string
+	clicked int
+	focused bool
+}
+
+func (b *buttonDemo) Focused() bool   { return b.focused }
+func (b *buttonDemo) SetFocus(f bool) { b.focused = f }
+
+func (b *buttonDemo) Draw(c *loom.Canvas, r loom.Rect) {
+	c.PaintSurface(r, loom.Style{})
+	text := fmt.Sprintf("[ %s ]", b.label)
+	if b.clicked > 0 {
+		text = fmt.Sprintf("[ %s (%d) ]", b.label, b.clicked)
+	}
+	style := loom.Style{}
+	if b.focused {
+		style = loom.Style{Bold: true}
+	}
+	c.Write(r.X, r.Y, text, style)
+}
+
+func (b *buttonDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	if e.Key == "enter" || e.Key == "space" || e.Text == " " {
+		b.clicked++
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+func (b *buttonDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
+		b.clicked++
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+type checkboxDemo struct {
+	label   string
+	checked bool
+	focused bool
+}
+
+func (cb *checkboxDemo) Focused() bool   { return cb.focused }
+func (cb *checkboxDemo) SetFocus(f bool) { cb.focused = f }
+
+func (cb *checkboxDemo) Draw(c *loom.Canvas, r loom.Rect) {
+	c.PaintSurface(r, loom.Style{})
+	mark := "[ ]"
+	if cb.checked {
+		mark = "[x]"
+	}
+	text := mark + " " + cb.label
+	style := loom.Style{}
+	if cb.focused {
+		style = loom.Style{Bold: true}
+	}
+	c.Write(r.X, r.Y, text, style)
+}
+
+func (cb *checkboxDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	if e.Key == "enter" || e.Key == "space" || e.Text == " " {
+		cb.checked = !cb.checked
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+func (cb *checkboxDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 && e.X >= 0 && e.X <= len(cb.label)+4 {
+		cb.checked = !cb.checked
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+type badgeDemo struct {
+	label   string
+	status  string
+	focused bool
+}
+
+func (b *badgeDemo) Focused() bool   { return b.focused }
+func (b *badgeDemo) SetFocus(f bool) { b.focused = f }
+
+func (b *badgeDemo) Draw(c *loom.Canvas, r loom.Rect) {
+	c.PaintSurface(r, loom.Style{})
+	text := fmt.Sprintf("[%s: %s ●]", b.label, b.status)
+	style := loom.Style{}
+	if b.focused {
+		style = loom.Style{Bold: true}
+	}
+	c.Write(r.X, r.Y, text, style)
+}
+
+func (b *badgeDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	if e.Key == "enter" || e.Key == "space" || e.Text == " " {
+		if b.status == "Active" {
+			b.status = "Idle"
+		} else {
+			b.status = "Active"
+		}
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+func (b *badgeDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if e.Action == loom.MousePress && e.Button == loom.MouseLeft && e.Y == 0 {
+		if b.status == "Active" {
+			b.status = "Idle"
+		} else {
+			b.status = "Active"
+		}
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+
+func newAllDemo() *loom.Grid {
+	button := &buttonDemo{label: "Click Me"}
+	toggleVal := true
+	toggle := loom.NewToggle(&toggleVal)
+	toggle.Label = "Toggle"
+	checkbox := &checkboxDemo{label: "Checkbox", checked: true}
+
+	numVal := 42.0
+	numInput := loom.NewNumberInput(&numVal, -100, 100)
+	numInput.Step = 1.0
+	numInput.Format = "%.2f"
+	numInput.FixedWidth = 11
+	numInput.Align = loom.AlignRight
+
+	badge := &badgeDemo{label: "Badge", status: "Active"}
+	pillCluster := loom.NewPillCluster(
+		loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone},
+		loom.ProviderPill{Name: "Worker", Symbol: "…", State: loom.ProviderFetching},
+		loom.ProviderPill{Name: "Cache", Symbol: "✓", State: loom.ProviderDone},
+	)
+
+	bar := loom.NewProgressBar()
+	bar.Options.Width = 14
+	bar.ShowPercent = true
+	bar.ShowCount = true
+	bar.Unit = " files"
+	progressBar := &progressDemo{ProgressBar: bar}
+
+	sparkline := &loom.Sparkline{
+		Values: []float64{12, 18, 14, 26, 22, 31, 27, 35, 42, 38},
+		Width:  14,
+	}
+
+	spinner := demos["Spinner"]()
+	stopwatch := demos["Stopwatch"]()
+	timer := demos["Timer"]()
+	paginator := demos["Paginator"]()
+
+	return loom.NewGrid(3,
+		button, toggle, checkbox,
+		numInput, badge, pillCluster,
+		progressBar, sparkline, spinner,
+		stopwatch, timer, paginator,
+	)
 }
 
 type textAreaWidget struct{ area *loom.TextArea }
