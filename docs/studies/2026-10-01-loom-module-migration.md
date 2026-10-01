@@ -57,3 +57,15 @@ by the developer agent (or the host, for the first three) for later assessment o
   `graph.RenderBar` and defines no key/mouse handlers. No other dependency was bumped.
 - `make test-q1` green; `make install` skipped on purpose (reinstalls voxi's user services, and the voxi
   binary does not import loom); `go build ./examples/miclevel` green. Effort: small, one pass.
+
+## psync — v0.2.0 → v0.2.18 (developer dev-235-psync)
+
+- Commit fb1993e. 4 files: `internal/pick/pick.go` (only importer), `ROADMAP.md`, `go.mod`,
+  tool-generated `go.sum`. `docs/LoomAdoption.md` keeps its repository URL.
+- API: no breakage; `loom.Item`, `NewChoice`, `RunPane` compile unchanged; no key/mouse handlers.
+- `make check` (no test-q1 target) green, `make install` green. Effort: ~10 min.
+
+## uzu — not migrated
+
+- Archived instead (user decision): moved to `~/projects/archive/uzu`; it stays on
+  `codeberg.org/ubunatic/loom v0.1.0`.
