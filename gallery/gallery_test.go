@@ -80,7 +80,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 	}
 	for _, names := range [][]string{{"Choice"}, {"Choice", "Popup"}} {
 		t.Run(strings.Join(names, "+"), func(t *testing.T) {
-			s := ptytest.Start(t, 100, 30, bin, append([]string{"widgets", "--show"}, names...)...)
+			s := ptytest.Start(t, 100, 30, bin, append([]string{"widgets", "--show", "--theme", "plain"}, names...)...)
 			s.WaitFor("fuzzy-browser-widget", 5*time.Second)
 			for y, line := range s.Screen() {
 				if i := strings.Index(line, "fuzzy-browser-widget"); i >= 0 {
@@ -101,7 +101,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 	}
 	for _, key := range []string{"q", "\x1b[21~", "\x1b"} {
 		t.Run(fmt.Sprintf("exit-%q", key), func(t *testing.T) {
-			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "ProgressBar")
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ProgressBar")
 			s.WaitFor("Theme: plain", 5*time.Second)
 			s.Send(key)
 			if err := s.Wait(5 * time.Second); err != nil {
@@ -110,7 +110,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 		})
 	}
 	t.Run("popup consumes first escape", func(t *testing.T) {
-		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Popup")
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "Popup")
 		s.WaitFor("Gallery popup", 5*time.Second)
 		s.Send("\x1b")
 		waitForAbsent(t, s, "Gallery popup")
@@ -220,7 +220,7 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 	}
 	for _, name := range []string{"Choice", "FilePicker", "Media", "Table", "Tree"} {
 		t.Run(name, func(t *testing.T) {
-			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "-W", "100", "-H", "24", name)
+			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "-W", "100", "-H", "24", name)
 			s.WaitFor("Theme: plain", 5*time.Second)
 			s.Send("\x1b[20~")
 			themeName := nextGalleryTheme()
@@ -1001,7 +1001,7 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 	}
 	start := func(t *testing.T, name string) *ptytest.Session {
 		t.Helper()
-		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", name)
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", name)
 		s.WaitFor("Theme: plain", 5*time.Second)
 		return s
 	}
@@ -1059,7 +1059,7 @@ func TestGalleryMouseRoutingPTY(t *testing.T) {
 	start := func(t *testing.T, name string) *ptytest.Session {
 		t.Helper()
 		// Nest demos in outer tabs so their draw origins are nonzero.
-		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", name, "Choice")
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", name, "Choice")
 		s.WaitFor("Theme: plain", 5*time.Second)
 		return s
 	}
