@@ -78,3 +78,11 @@ Wrong (they paint the unselected/default BG over the cell):
 - M2 turn 2 Pre-Work: KeyHelp and Tree write their normal text with an explicit NormalBG; text written
   over a default surface must leave BG unset (inherit), the same way Choice and Table already do. Fix it in
   the shared write path if the widgets share one, not per widget. Selected/highlighted rows keep their BG.
+- M2 delivered (dev-243-sonnet2, claude:sonnet): `Canvas.WriteDefault` for normal text, used by KeyHelp
+  and Tree (0c8d646); ProgressBar BG only on the fill (4ce0d58). `make test-q1` green (32 packages).
+- M3 Pre-Work (user gallery check):
+  - ProgressBar: the filled part still shows a dark BG behind the Braille glyphs; remove it, the fill is
+    shown by FG colour only (keep 239's fill colours).
+  - Choice and Table: unselected rows still write the theme NormalBG (dark strips behind "Two", "Three",
+    "Test run"); use `WriteDefault` for normal rows, selected rows keep their BG.
+  - Tree double click is a separate bug: ticket 246.
