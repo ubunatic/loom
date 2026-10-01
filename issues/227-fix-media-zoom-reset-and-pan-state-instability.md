@@ -1,6 +1,6 @@
 # 227 — Fix media zoom reset and pan state instability
 
-**Status**: Open
+**Status**: Closed — fixed media zoom reset and pan state instability
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Bug
