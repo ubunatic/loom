@@ -86,3 +86,10 @@ Wrong (they paint the unselected/default BG over the cell):
   - Choice and Table: unselected rows still write the theme NormalBG (dark strips behind "Two", "Three",
     "Test run"); use `WriteDefault` for normal rows, selected rows keep their BG.
   - Tree double click is a separate bug: ticket 246.
+- M3 delivered (dev-243-sonnet2): ProgressBar fill by FG only, Choice and Table normal rows via
+  `WriteDefault` (85511f4). User gallery check: BG now OK. Unrelated flaky pane test: ticket 247.
+- M4 Pre-Work (user gallery check): ProgressBar's default text (brackets, `40%` label, empty track) looks
+  dimmed instead of the normal white text. Its `Style` comes from the theme's Status colours
+  (`StatusFG`, `StatusDim`); use the theme's normal foreground for the default text, keep the fill colours
+  (239) and leave the empty track visibly dimmer than the fill. Test: label cells use the normal FG and
+  are not Dim.
