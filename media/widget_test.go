@@ -797,3 +797,144 @@ func TestNewImageRejectsUnknownMode(t *testing.T) {
 		t.Fatal("NewImage accepted an unknown render mode")
 	}
 }
+
+// smallWidget draws a 20x10 px image (10 rows of 1x2 px cells at most 10x5 cells) in a 40x12 area.
+func smallWidget(t *testing.T) *Widget {
+	t.Helper()
+	w, err := NewImage(solidImage(20, 10, color.RGBA{G: 255, A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Draw(loom.NewCanvas(40, 12), loom.Rect{W: 40, H: 12})
+	return w
+}
+
+func TestSmallImagePansWithKeyboard(t *testing.T) {
+	w := smallWidget(t)
+	if !w.canPanLocked() {
+		t.Fatal("small image must be pannable")
+	}
+	for _, name := range []string{"right", "down"} {
+		before := [2]float64{w.panX, w.panY}
+		w.ConsumeKey(loom.KeyEvent{Key: name})
+		if before == [2]float64{w.panX, w.panY} {
+			t.Fatalf("key %s did not change pan", name)
+		}
+	}
+	if w.panX <= 0 || w.panY <= 0 {
+		t.Fatalf("pan = (%v,%v), want both positive", w.panX, w.panY)
+	}
+	w.pan(5, 5)
+	if w.panX != 1 || w.panY != 1 {
+		t.Fatalf("pan clamp = (%v,%v), want (1,1)", w.panX, w.panY)
+	}
+}
+
+func TestSmallImageDrawFollowsPan(t *testing.T) {
+	w := smallWidget(t)
+	firstCol := func() int {
+		c := loom.NewCanvas(40, 12)
+		w.Draw(c, loom.Rect{W: 40, H: 12})
+		for x := 0; x < 40; x++ {
+			if cell := c.Get(x, 0); cell.Text != " " && cell.Text != "" {
+				return x
+			}
+		}
+		for x := 0; x < 40; x++ {
+			if c.Get(x, 3).Text != " " && c.Get(x, 3).Text != "" {
+				return x
+			}
+		}
+		return -1
+	}
+	w.pan(-1, -1)
+	left := firstCol()
+	w.pan(2, 0)
+	right := firstCol()
+	if left < 0 || right <= left {
+		t.Fatalf("first image column left=%d right=%d, want right > left", left, right)
+	}
+}
+
+func TestSmallImagePansWithMouseDrag(t *testing.T) {
+	w := smallWidget(t)
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 20, Y: 4},
+		{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 24, Y: 6},
+	} {
+		if res := w.ConsumeMouse(e); !res.Consumed {
+			t.Fatalf("event %#v not handled", e)
+		}
+	}
+	// delta = 40 - 20 = 20 px wide, 20 - 10 = 10 px tall (rows 10 * 2px).
+	// Dragging content right by 4 px moves pan by 2*4/20 = .4; 2 rows = 4 px, 2*4/10 = .8.
+	if math.Abs(w.panX-.4) > 1e-9 || math.Abs(w.panY-.8) > 1e-9 {
+		t.Fatalf("pan = (%v,%v), want (.4,.8)", w.panX, w.panY)
+	}
+}
+
+func TestMouseWheelZoomKeepsCursorPointFixed(t *testing.T) {
+	w, err := NewImage(solidImage(100, 60, color.RGBA{A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Draw(loom.NewCanvas(20, 12), loom.Rect{W: 20, H: 12})
+	// Viewport 20x20 px; image at 2x is 200x120 px, overflow 180x100.
+	w.setZoom(2)
+	cursorX, cursorY := 4, 3
+	cx, cy := (float64(cursorX)+.5)*1, (float64(cursorY)+.5)*2
+	before := func() (float64, float64) {
+		dx, dy := panDelta(w.mode, w.image, 20, 10, w.zoom)
+		zw, zh, _, _, _, _ := viewGeometry(w.mode, w.image, 20, 10, w.zoom)
+		return (cx - float64(dx)/2*(1+w.panX)) / float64(zw), (cy - float64(dy)/2*(1+w.panY)) / float64(zh)
+	}
+	u0, v0 := before()
+	oldPanX := w.panX
+	w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: cursorX, Y: cursorY})
+	u1, v1 := before()
+	if w.zoom != 2*1.25 {
+		t.Fatalf("zoom = %v, want 2.5", w.zoom)
+	}
+	if math.Abs(u0-u1) > 1e-6 || math.Abs(v0-v1) > 1e-6 {
+		t.Fatalf("image point under cursor moved: (%v,%v) -> (%v,%v)", u0, v0, u1, v1)
+	}
+	if w.panX == oldPanX {
+		t.Fatal("off-center cursor zoom did not shift pan")
+	}
+	// Keyboard zoom still preserves the viewport center, not the cursor.
+	w.panX, w.panY = 0, 0
+	w.ConsumeKey(loom.KeyEvent{Text: "+"})
+	if w.panX != 0 || w.panY != 0 {
+		t.Fatalf("keyboard zoom changed centered pan to (%v,%v)", w.panX, w.panY)
+	}
+}
+
+func TestMouseWheelZoomOutAnchorsSmallImage(t *testing.T) {
+	w := smallWidget(t)
+	w.pan(.5, 0)
+	dx0, _ := panDelta(w.mode, w.image, 40, 10, w.zoom)
+	cx := 10.5
+	u0 := (cx - float64(dx0)/2*(1+w.panX)) / 20
+	w.setZoomAt(1/1.25, 10, 2)
+	dx1, _ := panDelta(w.mode, w.image, 40, 10, w.zoom)
+	zw, _, _, _, _, _ := viewGeometry(w.mode, w.image, 40, 10, w.zoom)
+	u1 := (cx - float64(dx1)/2*(1+w.panX)) / float64(zw)
+	if math.Abs(u0-u1) > 1e-6 {
+		t.Fatalf("cursor fraction %v -> %v", u0, u1)
+	}
+}
+
+func TestPanDeltaAndViewGeometryUnchangedForOverflow(t *testing.T) {
+	img := solidImage(100, 60, color.RGBA{A: 255})
+	zw, zh, vw, vh, mx, my := viewGeometry(ModeHalfblock, img, 20, 10, 2)
+	if zw != 200 || zh != 120 || vw != 20 || vh != 20 || mx != 180 || my != 100 {
+		t.Fatalf("geometry = %d %d %d %d %d %d", zw, zh, vw, vh, mx, my)
+	}
+	dx, dy := panDelta(ModeHalfblock, img, 20, 10, 2)
+	if dx != -180 || dy != -100 {
+		t.Fatalf("delta = %d,%d, want -180,-100", dx, dy)
+	}
+	if sx, sy := viewSlack(ModeHalfblock, img, 20, 10, 2); sx != 0 || sy != 0 {
+		t.Fatalf("slack = %d,%d, want 0,0", sx, sy)
+	}
+}

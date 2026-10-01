@@ -272,6 +272,7 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 		w.drawControls(c, playing, zoom)
 		return
 	}
+	slackX, slackY := viewSlack(w.mode, img, imageRect.W, imageRect.H, zoom)
 	img = w.cachedScaleForView(img, imageRect.W, imageRect.H, zoom, panX, panY)
 	for y := 0; y < imageRect.H; y++ {
 		for x := 0; x < imageRect.W; x++ {
@@ -302,6 +303,13 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	offsetX := (imageRect.W - grid.Width) / 2
 	offsetY := (imageRect.H - grid.Height) / 2
+	// Media smaller than the viewport is placed by pan instead of centered.
+	if slackX > 0 && imageRect.W > grid.Width {
+		offsetX = panOffset(imageRect.W-grid.Width, panX)
+	}
+	if slackY > 0 && imageRect.H > grid.Height {
+		offsetY = panOffset(imageRect.H-grid.Height, panY)
+	}
 	for y, row := range grid.Cells {
 		for x, cell := range row {
 			dstX, dstY := r.X+offsetX+x, r.Y+offsetY+y
@@ -359,6 +367,28 @@ func viewGeometry(mode Mode, img image.Image, cols, rows int, zoom float64) (zoo
 	visibleW, visibleH = min(zoomedW, cols*cellW), min(zoomedH, rows*cellH)
 	maxX, maxY = zoomedW-visibleW, zoomedH-visibleH
 	return
+}
+
+// viewSlack returns the spare viewport pixels per axis when the zoomed image is smaller than the viewport.
+func viewSlack(mode Mode, img image.Image, cols, rows int, zoom float64) (slackX, slackY int) {
+	dx, dy := panDelta(mode, img, cols, rows, zoom)
+	return max(0, dx), max(0, dy)
+}
+
+// panDelta returns viewport minus zoomed size in pixels per axis. Positive means
+// spare room, negative means overflow; the image origin is delta/2*(1+pan).
+func panDelta(mode Mode, img image.Image, cols, rows int, zoom float64) (dx, dy int) {
+	zoomedW, zoomedH, _, _, _, _ := viewGeometry(mode, img, cols, rows, zoom)
+	if zoomedW == 0 || zoomedH == 0 {
+		return 0, 0
+	}
+	cellW, cellH := pxPerCell(mode)
+	return cols*cellW - zoomedW, rows*cellH - zoomedH
+}
+
+// panOffset maps a normalized pan in [-1, 1] to a cell offset within slack cells.
+func panOffset(slack int, pan float64) int {
+	return max(0, min(slack, int(math.Round(float64(slack)/2*(1+pan)))))
 }
 
 func scaleForView(src image.Image, mode Mode, cols, rows int, zoom, panX, panY float64) image.Image {
@@ -728,20 +758,66 @@ func (w *Widget) setZoom(factor float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	img := w.image
+	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
+	oldW, oldH, _, _, oldX, oldY := viewGeometry(w.mode, img, cols, rows, w.zoom)
+	w.applyZoomLocked(factor)
+	newW, newH, _, _, newX, newY := viewGeometry(w.mode, img, cols, rows, w.zoom)
+	// Normalized pan measures displacement from the image center over half
+	// the overflow. Scale that displacement to retain the same source center.
+	w.panX = zoomPan(w.panX, oldW, newW, oldX, newX)
+	w.panY = zoomPan(w.panY, oldH, newH, oldY, newY)
+}
+
+// applyZoomLocked multiplies the zoom by factor within the allowed range.
+func (w *Widget) applyZoomLocked(factor float64) {
+	img := w.image
 	nativeW, nativeH := nativeCellSize(w.mode, img)
 	maxCells := max(nativeW, nativeH)
 	minZoom := 1.0 / 16
 	if maxCells > 0 {
 		minZoom = math.Max(minZoom, 1/float64(maxCells))
 	}
-	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
-	oldW, oldH, _, _, oldX, oldY := viewGeometry(w.mode, img, cols, rows, w.zoom)
 	w.zoom = math.Max(minZoom, math.Min(8, w.zoom*factor))
-	newW, newH, _, _, newX, newY := viewGeometry(w.mode, img, cols, rows, w.zoom)
-	// Normalized pan measures displacement from the image center over half
-	// the overflow. Scale that displacement to retain the same source center.
-	w.panX = zoomPan(w.panX, oldW, newW, oldX, newX)
-	w.panY = zoomPan(w.panY, oldH, newH, oldY, newY)
+}
+
+// setZoomAt zooms like setZoom but keeps the image point under the cursor
+// (child-local cell coordinates) fixed.
+func (w *Widget) setZoomAt(factor float64, cursorX, cursorY int) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	img := w.image
+	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
+	oldW, oldH, _, _, _, _ := viewGeometry(w.mode, img, cols, rows, w.zoom)
+	oldDX, oldDY := panDelta(w.mode, img, cols, rows, w.zoom)
+	w.applyZoomLocked(factor)
+	newW, newH, _, _, _, _ := viewGeometry(w.mode, img, cols, rows, w.zoom)
+	newDX, newDY := panDelta(w.mode, img, cols, rows, w.zoom)
+	if oldW <= 0 || oldH <= 0 || newW <= 0 || newH <= 0 {
+		return
+	}
+	cellW, cellH := pxPerCell(w.mode)
+	cx := (float64(cursorX) + .5) * float64(cellW)
+	cy := (float64(cursorY) + .5) * float64(cellH)
+	w.panX = anchorPan(w.panX, cx, oldW, oldDX, newW, newDX)
+	w.panY = anchorPan(w.panY, cy, oldH, oldDY, newH, newDY)
+}
+
+// anchorPan returns the pan that keeps the image point under cursor px fixed.
+func anchorPan(pan, cursor float64, oldSize, oldDelta, newSize, newDelta int) float64 {
+	if newDelta == 0 {
+		return 0
+	}
+	oldOrigin := float64(oldDelta) / 2 * (1 + pan)
+	frac := (cursor - oldOrigin) / float64(oldSize)
+	newOrigin := cursor - frac*float64(newSize)
+	return clampPan(2*newOrigin/float64(newDelta)-1, abs(newDelta))
+}
+
+func abs(v int) int {
+	if v < 0 {
+		return -v
+	}
+	return v
 }
 
 func zoomPan(pan float64, oldSize, newSize, oldOverflow, newOverflow int) float64 {
@@ -761,9 +837,9 @@ func (w *Widget) pan(dx, dy float64) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
-	_, _, _, _, maxX, maxY := viewGeometry(w.mode, w.image, cols, rows, w.zoom)
-	w.panX = clampPan(w.panX+dx, maxX)
-	w.panY = clampPan(w.panY+dy, maxY)
+	dX, dY := panDelta(w.mode, w.image, cols, rows, w.zoom)
+	w.panX = clampPan(w.panX+dx, abs(dX))
+	w.panY = clampPan(w.panY+dy, abs(dY))
 }
 
 // ConsumeMouse uses child-local 0-based coordinates for the control bar and image.
@@ -814,24 +890,25 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	if e.Action == loom.MouseDrag && w.dragging {
 		dx, dy := e.X-w.dragX, e.Y-w.dragY
 		w.dragX, w.dragY = e.X, e.Y
-		_, _, _, _, maxX, maxY := viewGeometry(w.mode, w.image, max(1, w.lastRect.W), max(1, w.imageHeightLocked()), w.zoom)
+		dX, dY := panDelta(w.mode, w.image, max(1, w.lastRect.W), max(1, w.imageHeightLocked()), w.zoom)
 		cellW, cellH := pxPerCell(w.mode)
-		if maxX > 0 {
-			w.panX = clampPan(w.panX-2*float64(dx)*float64(cellW)/float64(maxX), maxX)
+		// Image origin is delta/2*(1+pan), so dragging by n px moves pan by 2n/delta.
+		if dX != 0 {
+			w.panX = clampPan(w.panX+2*float64(dx)*float64(cellW)/float64(dX), abs(dX))
 		}
-		if maxY > 0 {
-			w.panY = clampPan(w.panY-2*float64(dy)*float64(cellH)/float64(maxY), maxY)
+		if dY != 0 {
+			w.panY = clampPan(w.panY+2*float64(dy)*float64(cellH)/float64(dY), abs(dY))
 		}
 		w.mu.Unlock()
 		return loom.Handled()
 	}
 	w.mu.Unlock()
 	if e.Action == loom.MouseScrollUp {
-		w.setZoom(1.25)
+		w.setZoomAt(1.25, e.X, e.Y)
 		return loom.Handled()
 	}
 	if e.Action == loom.MouseScrollDown {
-		w.setZoom(1 / 1.25)
+		w.setZoomAt(1/1.25, e.X, e.Y)
 		return loom.Handled()
 	}
 	return loom.Ignored()
@@ -840,7 +917,8 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 func (w *Widget) canPanLocked() bool {
 	cols, rows := max(1, w.lastRect.W), max(1, w.imageHeightLocked())
 	_, _, _, _, maxX, maxY := viewGeometry(w.mode, w.image, cols, rows, w.zoom)
-	return maxX > 0 || maxY > 0
+	slackX, slackY := viewSlack(w.mode, w.image, cols, rows, w.zoom)
+	return maxX > 0 || maxY > 0 || slackX > 0 || slackY > 0
 }
 
 func (w *Widget) imageHeightLocked() int {
