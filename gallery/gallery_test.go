@@ -1493,6 +1493,14 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 		{18, "Table"}, {19, "Tree"}, {20, "Dialog"},
 		{21, "Popup"}, {22, "TextArea"}, {23, "Viewport"},
 	}
+	clickCell := func(index int) {
+		rect := grid.ChildRect(index)
+		grid.ConsumeMouse(loom.MouseEvent{
+			Action: loom.MousePress, Button: loom.MouseLeft,
+			X: rect.X - gridRectX(grid) + rect.W/2,
+			Y: rect.Y - gridRectY(grid) + rect.H/2,
+		})
+	}
 	for _, item := range added {
 		t.Run(item.name, func(t *testing.T) {
 			rect := grid.ChildRect(item.index)
@@ -1521,7 +1529,7 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 				t.Fatalf("%s drew nothing inside its cell", item.name)
 			}
 
-			grid.setFocus(item.index)
+			clickCell(item.index)
 			if grid.Focus() != item.index {
 				t.Fatalf("focus = %d, want cell %d", grid.Focus(), item.index)
 			}
@@ -1530,30 +1538,28 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 			}
 			grid.ConsumeKey(loom.KeyEvent{Key: "down"})
 
-			grid.setFocus(0)
-			localX := rect.X - gridRectX(grid) + rect.W/2
-			localY := rect.Y - gridRectY(grid) + rect.H/2
-			grid.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: localX, Y: localY})
+			clickCell(0)
+			clickCell(item.index)
 			if grid.Focus() != item.index {
 				t.Fatalf("click in %s cell focused %d, want %d", item.name, grid.Focus(), item.index)
 			}
 		})
 	}
 
-	grid.setFocus(20)
+	clickCell(20)
 	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
 	if tabs.Focus() != 1 {
 		t.Fatalf("Tab from Dialog cell selected tab %d, want 1", tabs.Focus())
 	}
 	tabs.Select(0)
-	grid.setFocus(21)
+	clickCell(21)
 	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
 	if tabs.Focus() != len(tabs.Tabs)-1 {
 		t.Fatalf("Shift-Tab from Popup cell selected tab %d, want %d", tabs.Focus(), len(tabs.Tabs)-1)
 	}
 
 	tabs.Select(0)
-	grid.setFocus(12)
+	clickCell(12)
 	textInput := grid.Children[12].(*textInputWidget).input
 	before := textInput.Value()
 	grid.ConsumeKey(loom.KeyEvent{Text: "!"})
@@ -1561,8 +1567,8 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 		t.Fatalf("TextInput value after key = %q, want %q", got, before+"!")
 	}
 
-	grid.setFocus(0)
-	outside := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: c.Width(), Y: 0}
+	clickCell(0)
+	outside := loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: c.Bounds().W, Y: 0}
 	if res := grid.ConsumeMouse(outside); res.Consumed {
 		t.Fatal("click outside grid cells was consumed")
 	}

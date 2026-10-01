@@ -44,6 +44,10 @@ because its fields and actions need more vertical space; Media and PaintCanvas
 are omitted because their visual content needs a larger cell; Tabs is omitted
 because a nested tab bar is not useful in the compact overview.
 
-The one Quota-1 run stopped at `go vet` because TextInput does not implement the
-full Widget interface; a focus-aware gallery adapter was added afterward. The
-suite was not rerun under the single-run quota, so the final state is unverified.
+The follow-up fix uses public mouse routing to focus cells in tests. `go vet
+./gallery/` and `go test -count=1 -run XXX ./gallery/` passed. The subsequent
+`make test-q1` run failed in PTY-related tests (`TestPaneFirstDrawUsesScreenBounds`,
+`TestGalleryChoiceQuitContractPTY`, `TestGalleryThemeFooterSurfacePTY`,
+`TestGalleryNumberInputRangeAlignmentPTY`, `TestWidgetsPTYClickTabAndTreeDisclosure`,
+and `TestWidgetsPTYSizeAndF2ThemePropagation`). `TestAllTabAddedWidgetsStayInCellsAndRouteInput`
+passed; no `vet:` errors occurred in that run.
