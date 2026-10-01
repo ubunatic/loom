@@ -538,7 +538,9 @@ func configureChoice(choice *Choice, elem YamlElement) {
 		choice.Prompt = elem.Prompt
 	}
 	choice.CursorAlign = elem.Cursor
-	choice.Placeholder = elem.Placeholder
+	if elem.Placeholder != "" {
+		choice.Placeholder = elem.Placeholder
+	}
 	choice.Controls = elem.Controls
 	choice.MaxWidth = elem.MaxW
 }

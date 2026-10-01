@@ -157,11 +157,12 @@ func (t ThemeColors) BoxStyle() BoxStyle {
 // TableStyle returns a TableStyle derived from the theme's color roles.
 func (t ThemeColors) TableStyle() TableStyle {
 	return TableStyle{
-		Normal:     Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()},
-		Selected:   Style{FG: t.SelectedFG.Color(), BG: t.SelectedBG.Color(), Bold: t.SelectedBold},
-		Header:     Style{FG: t.HeaderFG.Color(), BG: t.HeaderBG.Color(), Bold: t.HeaderBold},
-		SortHeader: Style{FG: t.HeaderFG.Color(), BG: t.HeaderBG.Color(), Bold: t.HeaderBold, Underline: true},
-		Prompt:     Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()},
+		Normal:      Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()},
+		Selected:    Style{FG: t.SelectedFG.Color(), BG: t.SelectedBG.Color(), Bold: t.SelectedBold},
+		Header:      Style{FG: t.HeaderFG.Color(), BG: t.HeaderBG.Color(), Bold: t.HeaderBold},
+		SortHeader:  Style{FG: t.HeaderFG.Color(), BG: t.HeaderBG.Color(), Bold: t.HeaderBold, Underline: true},
+		Prompt:      Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()},
+		Placeholder: Style{FG: t.PlaceholderFG.Color(), BG: t.PlaceholderBG.Color(), Dim: t.PlaceholderDim},
 	}
 }
 

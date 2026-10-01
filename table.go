@@ -40,6 +40,8 @@ type TableStyle struct {
 	Normal     Style
 	Selected   Style
 	Prompt     Style
+	// Placeholder styles the hint shown while the query is empty; it is always dim.
+	Placeholder Style
 }
 
 // DefaultTableStyle returns a minimal monochrome style, derived from the plain theme.
@@ -77,10 +79,12 @@ type Table struct {
 	// column indexes.
 	OnCellSelect func(row, col int)
 
-	Prompt   string
-	Controls string // right-aligned hint; auto-computed from SortCol when empty
-	OnSelect func(Row)
-	OnSort   func(col int, desc bool) // called when Tab or ! changes sort
+	Prompt string
+	// Placeholder is a dim hint after the prompt while the query is empty; "" disables.
+	Placeholder string
+	Controls    string // right-aligned hint; auto-computed from SortCol when empty
+	OnSelect    func(Row)
+	OnSort      func(col int, desc bool) // called when Tab or ! changes sort
 
 	Style TableStyle
 
@@ -108,11 +112,12 @@ type tableColumnHit struct {
 // NewTable creates a ready-to-use Table with default style.
 func NewTable(cols []Column, rows []Row) *Table {
 	t := &Table{
-		Columns: cols,
-		Rows:    rows,
-		SortCol: -1,
-		Style:   DefaultTableStyle(),
-		Prompt:  "> ",
+		Columns:     cols,
+		Rows:        rows,
+		SortCol:     -1,
+		Style:       DefaultTableStyle(),
+		Prompt:      "> ",
+		Placeholder: DefaultPlaceholder,
 	}
 	t.cmd = newCmdBar()
 	t.keys = NewKeyMap(map[string][]string{
@@ -381,7 +386,12 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 		cv.CursorY = promptY
 	} else {
 		// Normal mode: base prompt + filter query + right-aligned controls.
-		cv.Write(r.X, promptY, t.Prompt+t.query, t.Style.Prompt)
+		n := cv.Write(r.X, promptY, t.Prompt+t.query, t.Style.Prompt)
+		if t.query == "" && t.Placeholder != "" {
+			hint := t.Style.Placeholder
+			hint.Dim = true
+			cv.WriteDefault(r.X+n, promptY, TruncateText(t.Placeholder, max(0, r.W-n), ""), hint)
+		}
 
 		controls := t.Controls
 		if controls == "" && t.SortCol >= 0 && t.SortCol < len(t.Columns) {

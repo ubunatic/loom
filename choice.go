@@ -28,6 +28,9 @@ func DefaultChoiceStyle() ChoiceStyle {
 	return Theme("plain").ChoiceStyle()
 }
 
+// DefaultPlaceholder is the search-bar hint of Choice and Table.
+const DefaultPlaceholder = "type to filter"
+
 // Choice is a filterable, keyboard-navigable list of Items.
 // Arrow keys move the selection; printable characters narrow the filter;
 // Enter confirms; Esc or Ctrl-C aborts.
@@ -54,7 +57,7 @@ type Choice struct {
 
 	// Input customization
 	CursorAlign string // "start" or "end", default "start"
-	Placeholder string // ghost placeholder text
+	Placeholder string // dim hint after the prompt while the query is empty; "" disables
 	Controls    string // right-aligned controls/status label
 	MaxWidth    int    // max width limit
 
@@ -81,7 +84,7 @@ type Choice struct {
 
 // NewChoice creates a ready-to-use Choice with default style.
 func NewChoice(items []Item) *Choice {
-	c := &Choice{Items: items, Style: DefaultChoiceStyle(), Prompt: "> ", focused: true}
+	c := &Choice{Items: items, Style: DefaultChoiceStyle(), Prompt: "> ", Placeholder: DefaultPlaceholder, focused: true}
 	c.cmd = newCmdBar()
 	c.refilter()
 	return c
@@ -361,7 +364,9 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 		// Normal mode: base prompt + filter query (or placeholder)
 		if c.query == "" && c.Placeholder != "" {
 			n := cv.Write(r.X, promptY, c.Prompt, c.Style.Prompt)
-			cv.Write(r.X+n, promptY, c.Placeholder, c.Style.Placeholder)
+			hint := c.Style.Placeholder
+			hint.Dim = true
+			cv.WriteDefault(r.X+n, promptY, TruncateText(c.Placeholder, max(0, drawW-n), ""), hint)
 		} else {
 			cv.Write(r.X, promptY, c.Prompt+c.query, c.Style.Prompt)
 		}

@@ -4,6 +4,7 @@
 package loom_test
 
 import (
+	"strings"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -250,5 +251,80 @@ func TestGridCellNormalRowsInheritCellBG(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func promptRowText(c *loom.Canvas, y int) string {
+	s := ""
+	for x := 0; x < c.Cols(); x++ {
+		s += c.Get(x, y).Text
+	}
+	return s
+}
+
+func TestSearchPlaceholderHint(t *testing.T) {
+	mk := map[string]func() (loom.Widget, func(string)){
+		"Choice": func() (loom.Widget, func(string)) {
+			w := loom.NewChoice([]loom.Item{{Name: "One"}})
+			return w, func(s string) { w.ConsumeKey(loom.KeyEvent{Text: s}) }
+		},
+		"Table": func() (loom.Widget, func(string)) {
+			w := loom.NewTable([]loom.Column{{Header: "C", Width: 4}}, []loom.Row{{Cells: []string{"One"}}})
+			return w, func(s string) { w.ConsumeKey(loom.KeyEvent{Text: s}) }
+		},
+	}
+	for name, make := range mk {
+		t.Run(name, func(t *testing.T) {
+			w, typ := make()
+			c := loom.NewCanvas(30, 4)
+			w.Draw(c, c.Bounds())
+			y := c.Rows() - 1
+			if got := promptRowText(c, y); !strings.HasPrefix(got, "> "+loom.DefaultPlaceholder) {
+				t.Fatalf("empty query prompt row = %q, want hint", got)
+			}
+			if !c.Get(2, y).Style.Dim {
+				t.Fatal("hint is not dim")
+			}
+			if c.Get(0, y).Style.Dim {
+				t.Fatal("prompt must not be dim")
+			}
+			typ("x")
+			c.Clear()
+			w.Draw(c, c.Bounds())
+			if got := promptRowText(c, y); strings.Contains(got, loom.DefaultPlaceholder) {
+				t.Fatalf("hint still shown after typing: %q", got)
+			}
+			// Narrow width: hint is clipped to the rect.
+			w2, _ := make()
+			n := loom.NewCanvas(8, 4)
+			w2.Draw(n, n.Bounds())
+			if got := promptRowText(n, y); got != "> type t" && got != "> type …" && !strings.HasPrefix(got, "> type") {
+				t.Fatalf("narrow prompt row = %q", got)
+			}
+			if got := promptRowText(n, y); strings.Contains(got, "filter") {
+				t.Fatalf("hint not clipped at width 8: %q", got)
+			}
+		})
+	}
+}
+
+func TestProgressBarDefaultTextUsesNormalFG(t *testing.T) {
+	theme := loom.Theme("mc-dark")
+	b := loom.NewProgressBar()
+	b.Options.Width = 10
+	b.ShowPercent = true
+	b.Set(40)
+	b.ApplyTheme(theme)
+	c := loom.NewCanvas(30, 1)
+	b.Draw(c, c.Bounds())
+	want := theme.NormalFG.Color()
+	for x := 0; x < 30; x++ {
+		cell := c.Get(x, 0)
+		switch cell.Text {
+		case "[", "]", "%", "4", "0":
+			if cell.Style.FG != want || cell.Style.Dim {
+				t.Fatalf("cell %d %q style %+v, want normal FG and not dim", x, cell.Text, cell.Style)
+			}
+		}
 	}
 }

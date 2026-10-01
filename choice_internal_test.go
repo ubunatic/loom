@@ -440,8 +440,10 @@ func TestChoiceUsesPlaceholderStyleOnlyForPlaceholder(t *testing.T) {
 	if got := canvas.Get(0, promptY).Style; got != c.Style.Prompt {
 		t.Fatalf("prompt style = %+v, want %+v", got, c.Style.Prompt)
 	}
-	if got := canvas.Get(StringWidth(c.Prompt), promptY).Style; got != c.Style.Placeholder {
-		t.Fatalf("placeholder style = %+v, want %+v", got, c.Style.Placeholder)
+	wantHint := c.Style.Placeholder
+	wantHint.Dim = true // the hint is always dim
+	if got := canvas.Get(StringWidth(c.Prompt), promptY).Style; got != wantHint {
+		t.Fatalf("placeholder style = %+v, want %+v", got, wantHint)
 	}
 	if got := canvas.Get(StringWidth(c.Prompt)+StringWidth(c.Placeholder), promptY).Style; got != c.Style.Prompt {
 		t.Fatalf("prompt-row fill style = %+v, want %+v", got, c.Style.Prompt)
