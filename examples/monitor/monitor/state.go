@@ -6,7 +6,7 @@ package monitor
 import (
 	"time"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // monitorState owns simulated producer data. Sampling is the only operation

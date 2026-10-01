@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // multiViewYAML is a minimal three-view layout used to exercise routing.

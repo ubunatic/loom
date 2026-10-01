@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/split/split"
+	"ubunatic.com/loom/examples/split/split"
 )
 
 func main() {

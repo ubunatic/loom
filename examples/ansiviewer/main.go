@@ -4,9 +4,9 @@
 package main
 
 import (
-	"codeberg.org/ubunatic/loom/examples/ansiviewer/ansiviewer"
 	"fmt"
 	"os"
+	"ubunatic.com/loom/examples/ansiviewer/ansiviewer"
 )
 
 func main() {

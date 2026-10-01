@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom/measure"
 )
 
 type frameStyle struct{ topLeft, topRight, bottomLeft, bottomRight, horizontal, vertical rune }

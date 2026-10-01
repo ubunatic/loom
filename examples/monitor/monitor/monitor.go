@@ -16,9 +16,9 @@ import (
 	"text/template"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/graph"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/graph"
 )
 
 //go:embed spec/*.yaml

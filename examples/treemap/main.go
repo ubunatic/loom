@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
+	"ubunatic.com/loom/examples/treemap/treemap"
 )
 
 func main() {

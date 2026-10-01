@@ -3,7 +3,7 @@
 
 package loom_test
 
-import "codeberg.org/ubunatic/loom"
+import "ubunatic.com/loom"
 
 // The pane-driver widgets must satisfy Paneable so RunPane can drive them.
 // RunPane itself opens /dev/tty and cannot run under `go test`; these

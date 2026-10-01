@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/screens/screens"
+	"ubunatic.com/loom/examples/screens/screens"
 )
 
 func main() {

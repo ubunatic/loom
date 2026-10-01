@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom"
 )
 
 // TestThemePlainChoiceStyleMatchesDefault asserts that the plain theme produces

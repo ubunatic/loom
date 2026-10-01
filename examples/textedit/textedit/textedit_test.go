@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestNewAppAndRender(t *testing.T) {

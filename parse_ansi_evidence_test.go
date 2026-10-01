@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // simpleCanvasWidget wraps a canvas for rendering.

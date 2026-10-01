@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestInteractiveExamplesHaveDemoArgs(t *testing.T) {
@@ -33,7 +33,7 @@ func TestANSIViewerIsRegistered(t *testing.T) {
 	if !ok {
 		t.Fatal("ansiviewer is not registered")
 	}
-	if e.Package != "codeberg.org/ubunatic/loom/examples/ansiviewer" || !e.SupportsHelp {
+	if e.Package != "ubunatic.com/loom/examples/ansiviewer" || !e.SupportsHelp {
 		t.Fatalf("registration = %#v", e)
 	}
 }

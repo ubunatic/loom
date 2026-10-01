@@ -52,7 +52,7 @@ loom-bench                    # smoke-test every example, report PASS/FAIL
 ## Usage
 
 ```go
-import "codeberg.org/ubunatic/loom"
+import "ubunatic.com/loom"
 
 choice := loom.NewChoice(items)
 choice.Prompt = ":pick> "

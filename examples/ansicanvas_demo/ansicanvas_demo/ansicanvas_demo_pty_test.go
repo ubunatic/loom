@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func buildAnsiCanvasDemo(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansicanvas_demo")
-	out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/ansicanvas_demo").CombinedOutput()
+	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansicanvas_demo").CombinedOutput()
 	if err != nil {
 		t.Fatalf("build ansicanvas_demo: %v\n%s", err, out)
 	}

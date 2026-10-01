@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func buildWinch(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "winch")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/winch").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/winch").CombinedOutput(); err != nil {
 		t.Fatalf("build winch: %v\n%s", err, out)
 	}
 	return bin

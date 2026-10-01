@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // DatePicker is a date-only calendar with optional ISO date entry.

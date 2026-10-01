@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/media"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/media"
 )
 
 type constructor func() loom.Widget

@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
 	"golang.org/x/sys/unix"
+	"ubunatic.com/loom"
 )
 
 type testWidget struct {

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // useFastANSI returns true unless LOOM_FAST_ANSI is set to "0", "false", or "off".

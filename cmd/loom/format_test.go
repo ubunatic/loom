@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 func TestFormatText(t *testing.T) {

@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/examplesreg"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/examplesreg"
 )
 
 func TestHeadlessSmokeNewWidget(t *testing.T) {

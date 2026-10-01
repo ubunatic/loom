@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // ── A1: DecodeMouse — SGR (1006) byte → MouseEvent ────────────────────────────

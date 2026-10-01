@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
+	"ubunatic.com/loom/examples/filebrowser/filebrowser"
 )
 
 func main() {

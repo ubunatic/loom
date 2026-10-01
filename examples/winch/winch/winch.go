@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // App is the Winch resize diagnostics widget.

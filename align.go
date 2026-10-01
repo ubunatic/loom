@@ -4,8 +4,8 @@
 package loom
 
 import (
-	"codeberg.org/ubunatic/loom/layout"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/layout"
+	"ubunatic.com/loom/measure"
 )
 
 // AlignBox is a container widget that positions its child according to horizontal

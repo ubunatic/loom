@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/ansicanvas_demo/ansicanvas_demo"
+	"ubunatic.com/loom/examples/ansicanvas_demo/ansicanvas_demo"
 )
 
 func main() {

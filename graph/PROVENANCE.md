@@ -18,7 +18,7 @@ SPDX-License-Identifier: AGPL-3.0-or-later
 
 ## Ported Files
 
-The following files from `harnez/internal/rograph/` were ported into `codeberg.org/ubunatic/loom/graph`:
+The following files from `harnez/internal/rograph/` were ported into `ubunatic.com/loom/graph`:
 
 1. `bar.go` -> `graph/bar.go` (`RenderProgressBar`)
 2. `sparkline.go` -> `graph/sparkline.go` (`PercentSparkline`, `percentSparkChars`)
@@ -28,7 +28,7 @@ The following files from `harnez/internal/rograph/` were ported into `codeberg.o
 ## Architectural Adaptations for Loom
 
 1. **Package Scope and Isolation**:
-   - Ported under `codeberg.org/ubunatic/loom/graph`.
+   - Ported under `ubunatic.com/loom/graph`.
    - Preserved zero external dependencies (standard library only: `fmt`, `math`, `strings`, `unicode/utf8`).
 
 2. **Elimination of Mutable Global State**:

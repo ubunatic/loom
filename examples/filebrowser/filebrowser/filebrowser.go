@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // Run parses args and runs the filebrowser example. It returns flag.ErrHelp

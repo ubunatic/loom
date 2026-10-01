@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 // ── Widget interface conformance ──────────────────────────────────────────────

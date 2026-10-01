@@ -84,7 +84,7 @@ func exportedWidgetTypes(t *testing.T) map[string]bool {
 		if len(fields) != 3 || strings.Contains(fields[1], "/examples/") || strings.Contains(fields[1], "/internal/") || strings.Contains(fields[1], "/cmd/") {
 			continue
 		}
-		if fields[1] == "codeberg.org/ubunatic/loom" {
+		if fields[1] == "ubunatic.com/loom" {
 			fields[1] = "loom"
 		}
 		if err := collectPackageWidgets(fields[0], fields[2], found); err != nil {

@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 // TestCase represents a labeled text sample with expected display width

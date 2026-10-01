@@ -6,8 +6,8 @@ package loom_test
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 type viewportChild struct {

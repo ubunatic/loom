@@ -9,7 +9,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 func TestRenderStackedBarExactWidth(t *testing.T) {

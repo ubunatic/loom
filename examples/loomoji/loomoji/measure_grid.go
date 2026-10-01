@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // RenderEmojiGrid renders a formatted ascii grid of emojis grouped by visual width using the active render path.

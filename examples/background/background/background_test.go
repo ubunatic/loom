@@ -3,7 +3,7 @@ package background
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestDemoFrameInitializesSplit(t *testing.T) {

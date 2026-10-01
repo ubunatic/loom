@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // FormField binds a label and optional validation to an existing input widget.

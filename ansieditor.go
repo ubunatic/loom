@@ -3,7 +3,7 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/measure"
+import "ubunatic.com/loom/measure"
 
 // AnsiEditor is an interactive 2D ANSI graphic cell editor widget.
 // It embeds an AnsiBuffer and provides viewport scrolling, cursor navigation,

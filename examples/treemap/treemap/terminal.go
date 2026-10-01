@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // Terminal geometry is demo plumbing: the graph renderer accepts explicit

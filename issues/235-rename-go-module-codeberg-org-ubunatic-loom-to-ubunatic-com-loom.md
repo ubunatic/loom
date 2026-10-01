@@ -54,3 +54,9 @@ declare the old module path, so `go get ubunatic.com/loom` works only from the f
 - Final check: `git grep -n 'codeberg.org/ubunatic/loom'` — every remaining hit is a repository URL or history;
   list the categories in "M2 delivered".
 - One `make test-q1`, `make install`. No release, tag or push.
+
+## M2 delivered (2026-10-01)
+- Changed the module path to `ubunatic.com/loom`, rewrote tracked Go imports and module-qualified test commands, and updated GoReleaser ldflags, README usage, live docs, and graph provenance.
+- Preserved repository URLs, including the Codeberg target in the M1 vanity-page record. Remaining `git grep -n 'codeberg.org/ubunatic/loom'` hits are in issue history/ticket context, dated `docs/studies/`, ANSI captures in `docs/data/`, and the `docs/README.md` study index. `dist/` has no matches.
+- `gofmt -l` was empty; `go build ./...`, `go vet ./...`, and one `make test-q1` passed. The test log had no `--- FAIL` matches. `make install` completed.
+- Committed as `<commit hash>`.

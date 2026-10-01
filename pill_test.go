@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom/layout"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/layout"
+	"ubunatic.com/loom/measure"
 )
 
 func TestPillDimensions(t *testing.T) {

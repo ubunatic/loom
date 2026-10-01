@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
+	"ubunatic.com/loom/examples/monitor/monitor"
 )
 
 func main() {

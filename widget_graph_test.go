@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/graph"
+	"ubunatic.com/loom/graph"
 )
 
 func TestGaugeDrawsMetricValueWithinBounds(t *testing.T) {

@@ -16,14 +16,14 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
-	"codeberg.org/ubunatic/loom/media"
+	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/media"
 )
 
 func buildMediaDemo(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "loom-media")
-	out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/media").CombinedOutput()
+	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/media").CombinedOutput()
 	if err != nil {
 		t.Fatalf("build media example: %v\n%s", err, out)
 	}

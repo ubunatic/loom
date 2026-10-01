@@ -3,7 +3,7 @@
 
 // Command treemap renders the live process CPU-usage tree (via `ps`) as a
 // graph.RenderTreemap box layout, sized to the terminal by default. It is a
-// thin, standalone demo of codeberg.org/ubunatic/loom/graph's
+// thin, standalone demo of ubunatic.com/loom/graph's
 // AggregateTreemap + RenderTreemap: all process-tree reading lives here in
 // the example, not in the dependency-free graph package.
 //
@@ -23,9 +23,9 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/graph"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/graph"
 )
 
 // buildOptions is the copyable library setup; demoPalette supplies only

@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	"codeberg.org/ubunatic/loom/layout"
+	"ubunatic.com/loom/layout"
 )
 
 func TestMeasuredStackUsesConstraintsAndGap(t *testing.T) {

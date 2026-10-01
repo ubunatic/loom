@@ -11,8 +11,8 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 func writeFixture(t *testing.T, content string) string {

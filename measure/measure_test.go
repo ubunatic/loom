@@ -112,7 +112,7 @@ func TestZWJModeFromProbeAdvance(t *testing.T) {
 func TestMeasureImportDoesNotProbeTTY(t *testing.T) {
 	dir := t.TempDir()
 	source := filepath.Join(dir, "main.go")
-	if err := os.WriteFile(source, []byte("package main\nimport _ \"codeberg.org/ubunatic/loom/measure\"\nfunc main() {}\n"), 0600); err != nil {
+	if err := os.WriteFile(source, []byte("package main\nimport _ \"ubunatic.com/loom/measure\"\nfunc main() {}\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
 	bin := filepath.Join(dir, "import-measure")

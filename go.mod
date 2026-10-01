@@ -1,4 +1,4 @@
-module codeberg.org/ubunatic/loom
+module ubunatic.com/loom
 
 go 1.25.0
 

@@ -13,8 +13,8 @@ import (
 	"os"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 var defaultTasks = []loom.ProviderTask{

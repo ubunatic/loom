@@ -14,7 +14,7 @@ builds:
       - arm64
     binary: loom
     ldflags:
-      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+      - -s -w -X ubunatic.com/loom.Version={{.Version}}
 
   - id: loom-probe
     main: ./cmd/loom-probe
@@ -27,7 +27,7 @@ builds:
       - arm64
     binary: loom-probe
     ldflags:
-      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+      - -s -w -X ubunatic.com/loom.Version={{.Version}}
 
   - id: loom-demo
     main: ./cmd/loom-demo
@@ -40,7 +40,7 @@ builds:
       - arm64
     binary: loom-demo
     ldflags:
-      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+      - -s -w -X ubunatic.com/loom.Version={{.Version}}
 
   - id: loom-bench
     main: ./cmd/loom-bench
@@ -53,7 +53,7 @@ builds:
       - arm64
     binary: loom-bench
     ldflags:
-      - -s -w -X codeberg.org/ubunatic/loom.Version={{.Version}}
+      - -s -w -X ubunatic.com/loom.Version={{.Version}}
 
 archives:
   - id: default

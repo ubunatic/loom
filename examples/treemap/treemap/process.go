@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/graph"
+	"ubunatic.com/loom/graph"
 )
 
 // Process collection is demo data plumbing. The graph package only receives

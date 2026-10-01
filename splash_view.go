@@ -4,9 +4,9 @@
 package loom
 
 import (
-	"codeberg.org/ubunatic/loom/graph"
-	"codeberg.org/ubunatic/loom/layout"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/graph"
+	"ubunatic.com/loom/layout"
+	"ubunatic.com/loom/measure"
 )
 
 // SplashView is a declarative widget that renders a complete centered splash screen.

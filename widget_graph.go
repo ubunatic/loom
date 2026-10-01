@@ -3,7 +3,7 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/graph"
+import "ubunatic.com/loom/graph"
 
 // Gauge renders the latest value from a metric store as a graph bar. When
 // Store and Metric are unset, Value is rendered directly. Width is the number

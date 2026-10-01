@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func TestFilebrowser093PTYClick(t *testing.T) {
@@ -20,7 +20,7 @@ func TestFilebrowser093PTYClick(t *testing.T) {
 		}
 	}
 	bin := filepath.Join(t.TempDir(), "filebrowser")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/filebrowser").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/filebrowser").CombinedOutput(); err != nil {
 		t.Fatalf("build filebrowser: %v\n%s", err, out)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "--theme", "plain", dir)
@@ -77,7 +77,7 @@ func TestFilebrowserPTYDoubleClickOpensFileAndEntersDirectory(t *testing.T) {
 	t.Setenv("LOOM_TEST_OPENED_FILE", openedFile)
 	t.Setenv("PATH", openStubDir+string(os.PathListSeparator)+os.Getenv("PATH"))
 	bin := filepath.Join(t.TempDir(), "filebrowser")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/filebrowser").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/filebrowser").CombinedOutput(); err != nil {
 		t.Fatalf("build filebrowser: %v\n%s", err, out)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "--theme", "plain", dir)
@@ -150,7 +150,7 @@ func TestFilebrowserPTYArrowMovesOneItem(t *testing.T) {
 		}
 	}
 	bin := filepath.Join(t.TempDir(), "filebrowser")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/filebrowser").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/filebrowser").CombinedOutput(); err != nil {
 		t.Fatalf("build filebrowser: %v\n%s", err, out)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "--theme", "plain", dir)

@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // ── Data model ────────────────────────────────────────────────────────────────

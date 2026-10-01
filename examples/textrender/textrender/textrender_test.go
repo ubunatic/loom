@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 // TestWidths verifies that all test cases have correct display widths
@@ -241,7 +241,7 @@ func findRepoRoot(t *testing.T) string {
 func buildTextrender(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "textrender")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/textrender").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/textrender").CombinedOutput(); err != nil {
 		t.Fatalf("build textrender: %v\n%s", err, out)
 	}
 	return bin

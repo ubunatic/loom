@@ -6,7 +6,7 @@ package loom
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom/layout"
+	"ubunatic.com/loom/layout"
 )
 
 type mockWidget struct {

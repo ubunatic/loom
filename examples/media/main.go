@@ -15,9 +15,9 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/media"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/media"
 )
 
 type demo struct {

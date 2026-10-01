@@ -6,7 +6,7 @@ package graph
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 func TestSpinnerFrames(t *testing.T) {

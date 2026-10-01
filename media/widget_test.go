@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
 	"ubunatic.com/cati/v1/core"
 	"ubunatic.com/cati/v1/halfblock"
+	"ubunatic.com/loom"
 )
 
 func TestStillImageDrawModesFitAndStayInsideRect(t *testing.T) {

@@ -10,8 +10,8 @@ import (
 	"strings"
 	"unicode"
 
-	"codeberg.org/ubunatic/loom/measure"
 	"golang.org/x/term"
+	"ubunatic.com/loom/measure"
 )
 
 // WriteRows writes rows to out as plain, sequential, newline-terminated

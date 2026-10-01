@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func build(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "screens")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/screens").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/screens").CombinedOutput(); err != nil {
 		t.Fatalf("build screens: %v\n%s", err, out)
 	}
 	return bin

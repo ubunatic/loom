@@ -14,9 +14,9 @@ import (
 	"os"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/examplesreg"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/examplesreg"
 )
 
 func main() {

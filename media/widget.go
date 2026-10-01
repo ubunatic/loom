@@ -13,11 +13,11 @@ import (
 	"sync"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
 	"ubunatic.com/cati/v1/core"
 	"ubunatic.com/cati/v1/halfblock"
 	"ubunatic.com/cati/v1/quadblock"
 	"ubunatic.com/cati/v1/sextant"
+	"ubunatic.com/loom"
 )
 
 // Mode selects cati's cell geometry for media rendering.

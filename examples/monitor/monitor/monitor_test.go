@@ -14,9 +14,9 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/collector"
-	"codeberg.org/ubunatic/loom/graph"
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/collector"
+	"ubunatic.com/loom/graph"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 type blockingCollector struct {

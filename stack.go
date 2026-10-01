@@ -6,7 +6,7 @@ package loom
 import (
 	"time"
 
-	"codeberg.org/ubunatic/loom/layout"
+	"ubunatic.com/loom/layout"
 )
 
 // StackDir controls the direction a Stack or Split arranges its children.

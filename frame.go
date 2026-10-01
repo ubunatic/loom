@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom/layout"
-	"codeberg.org/ubunatic/loom/measure"
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom/layout"
+	"ubunatic.com/loom/measure"
 )
 
 //go:embed spec/box.yaml

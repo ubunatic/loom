@@ -10,12 +10,12 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func TestSplitPTYScrollbarDrag(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "split")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/split").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/split").CombinedOutput(); err != nil {
 		t.Fatalf("build split: %v\n%s", err, out)
 	}
 	s := ptytest.Start(t, 80, 24, bin)

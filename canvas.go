@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // Rect describes a rectangular region within the canvas (0-based, top-left origin).

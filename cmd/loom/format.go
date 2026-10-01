@@ -8,8 +8,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom/measure"
 )
 
 func formatCommand() *cobra.Command {

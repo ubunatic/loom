@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 // TestLoomojiCategoryLineWidthsPTY validates that Loomoji's rendered screen rows
@@ -23,7 +23,7 @@ func TestLoomojiCategoryLineWidthsPTY(t *testing.T) {
 	t.Setenv("LOOM_ZWJ", "join") // The test VT is not a terminal emulator and cannot answer DSR.
 
 	bin := filepath.Join(t.TempDir(), "loomoji")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/loomoji").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/loomoji").CombinedOutput(); err != nil {
 		t.Fatalf("build loomoji: %v\n%s", err, out)
 	}
 

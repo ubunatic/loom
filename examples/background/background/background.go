@@ -4,7 +4,7 @@ package background
 import (
 	"fmt"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 var (

@@ -6,7 +6,7 @@ package treemap
 import (
 	"fmt"
 
-	"codeberg.org/ubunatic/loom/graph"
+	"ubunatic.com/loom/graph"
 )
 
 // Theme flag mapping and the demo palette are presentation choices. The

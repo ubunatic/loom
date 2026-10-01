@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/ansiedit/ansiedit"
+	"ubunatic.com/loom/examples/ansiedit/ansiedit"
 )
 
 func main() {

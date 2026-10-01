@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // ChoiceStyle controls the visual appearance of a Choice widget.

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 const measurePageSize = 20

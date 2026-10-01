@@ -3,7 +3,7 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/measure"
+import "ubunatic.com/loom/measure"
 
 // Viewport displays a scrollable window over a widget that can report its
 // preferred content size through Measurer, ContentWidther, or ContentHeighter.

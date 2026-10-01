@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	_ "codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
+	_ "ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 // TerminalProfile identifies the terminal whose rendered widths were recorded.

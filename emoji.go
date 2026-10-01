@@ -7,7 +7,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 //go:embed spec/emoji.yaml

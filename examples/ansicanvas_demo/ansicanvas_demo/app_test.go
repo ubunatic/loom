@@ -6,7 +6,7 @@ package ansicanvas_demo
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestDemoAppCreationAndDraw(t *testing.T) {

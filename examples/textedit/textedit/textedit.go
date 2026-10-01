@@ -14,10 +14,10 @@ import (
 	"strings"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
-	"codeberg.org/ubunatic/loom/syntax"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
+	"ubunatic.com/loom/syntax"
 )
 
 type focusArea int

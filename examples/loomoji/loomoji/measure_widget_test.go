@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {

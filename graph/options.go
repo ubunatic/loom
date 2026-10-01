@@ -8,7 +8,7 @@ import (
 	"math"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // DefaultBackgroundANSI is the SGR code RenderBar and RenderSparkline fall

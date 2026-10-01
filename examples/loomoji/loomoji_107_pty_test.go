@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/measure"
 )
 
 type probeCase struct {
@@ -212,7 +212,7 @@ func diffHighlight(baseline, current [][]ptytest.Cell) (minX, minY, maxX, maxY i
 // miscalculated relative to the grid viewport and padding.
 func TestLoomoji107HoverProbe(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loomoji")
-	if out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/loomoji").CombinedOutput(); err != nil {
+	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/loomoji").CombinedOutput(); err != nil {
 		t.Fatalf("build loomoji: %v\n%s", err, out)
 	}
 

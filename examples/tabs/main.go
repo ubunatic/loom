@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
+	"ubunatic.com/loom/examples/tabs/tabs"
 )
 
 func main() {

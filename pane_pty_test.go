@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 type firstDrawBoundsProbe struct {

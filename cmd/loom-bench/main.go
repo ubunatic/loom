@@ -29,8 +29,8 @@ import (
 	"os"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/examplesreg"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/examplesreg"
 )
 
 // perExampleTimeout bounds each example's smoke pass. The whole harness is

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/loomoji/loomoji"
+	"ubunatic.com/loom/examples/loomoji/loomoji"
 )
 
 func main() {

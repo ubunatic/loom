@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/usage/usage"
+	"ubunatic.com/loom/examples/usage/usage"
 )
 
 func main() {

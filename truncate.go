@@ -3,7 +3,7 @@
 
 package loom
 
-import "codeberg.org/ubunatic/loom/measure"
+import "ubunatic.com/loom/measure"
 
 // TruncateText fits text to a terminal-cell budget, adding the caller's marker
 // only when truncation is needed. It follows Canvas's supported text policy:

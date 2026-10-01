@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
 	"golang.org/x/sys/unix"
+	"ubunatic.com/loom"
 )
 
 func TestBrowserListsTextAndANSI(t *testing.T) {

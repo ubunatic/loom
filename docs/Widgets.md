@@ -298,7 +298,7 @@ In tests locate screen text by runes or display width, never byte offsets.
 
 ## 9. Syntax Highlighting and Navigation Engine (`syntax/`, `TextArea`)
 
-Loom provides a UI-neutral syntax highlighting and structural navigation framework (`codeberg.org/ubunatic/loom/syntax`):
+Loom provides a UI-neutral syntax highlighting and structural navigation framework (`ubunatic.com/loom/syntax`):
 
 ### Core Architecture & Separation of Concerns
 - **UI-Neutral Coordinates**: `syntax.Point` (0-based line and column), `syntax.Edit` (delta ranges and replacement text), and `syntax.Span` (named token captures like `"keyword"`, `"string"`, `"comment"`). The syntax engine has zero terminal or UI dependencies.

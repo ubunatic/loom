@@ -4,7 +4,7 @@
 package loom
 
 import (
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // TreeNode is one entry in a Tree. Children are drawn only while Expanded.

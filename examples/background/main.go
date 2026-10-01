@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/background/background"
+	"ubunatic.com/loom/examples/background/background"
 )
 
 func main() {

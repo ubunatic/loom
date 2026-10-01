@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/graph"
 	"github.com/spf13/pflag"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/graph"
 )
 
 // Options configures standalone rendering and the hosted treemap widget.

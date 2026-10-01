@@ -6,7 +6,7 @@ package loom
 import (
 	"time"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // Widget is the core interface every loom UI element must satisfy.

@@ -16,8 +16,8 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/examples/filebrowser/filebrowser"
 )
 
 // Kind describes the content presentation selected for a path.

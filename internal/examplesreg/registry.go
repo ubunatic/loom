@@ -9,21 +9,21 @@
 package examplesreg
 
 import (
-	"codeberg.org/ubunatic/loom/examples/ansicanvas_demo/ansicanvas_demo"
-	"codeberg.org/ubunatic/loom/examples/ansiedit/ansiedit"
-	"codeberg.org/ubunatic/loom/examples/ansiviewer/ansiviewer"
-	"codeberg.org/ubunatic/loom/examples/background/background"
-	"codeberg.org/ubunatic/loom/examples/filebrowser/filebrowser"
-	"codeberg.org/ubunatic/loom/examples/monitor/monitor"
-	"codeberg.org/ubunatic/loom/examples/screens/screens"
-	"codeberg.org/ubunatic/loom/examples/splash/splash"
-	"codeberg.org/ubunatic/loom/examples/split/split"
-	"codeberg.org/ubunatic/loom/examples/tabs/tabs"
-	"codeberg.org/ubunatic/loom/examples/textedit/textedit"
-	"codeberg.org/ubunatic/loom/examples/textrender/textrender"
-	"codeberg.org/ubunatic/loom/examples/treemap/treemap"
-	"codeberg.org/ubunatic/loom/examples/usage/usage"
-	"codeberg.org/ubunatic/loom/examples/winch/winch"
+	"ubunatic.com/loom/examples/ansicanvas_demo/ansicanvas_demo"
+	"ubunatic.com/loom/examples/ansiedit/ansiedit"
+	"ubunatic.com/loom/examples/ansiviewer/ansiviewer"
+	"ubunatic.com/loom/examples/background/background"
+	"ubunatic.com/loom/examples/filebrowser/filebrowser"
+	"ubunatic.com/loom/examples/monitor/monitor"
+	"ubunatic.com/loom/examples/screens/screens"
+	"ubunatic.com/loom/examples/splash/splash"
+	"ubunatic.com/loom/examples/split/split"
+	"ubunatic.com/loom/examples/tabs/tabs"
+	"ubunatic.com/loom/examples/textedit/textedit"
+	"ubunatic.com/loom/examples/textrender/textrender"
+	"ubunatic.com/loom/examples/treemap/treemap"
+	"ubunatic.com/loom/examples/usage/usage"
+	"ubunatic.com/loom/examples/winch/winch"
 )
 
 // Example describes one examples/* program.
@@ -57,7 +57,7 @@ var Registry = []Example{
 	{
 		Name:         "ansicanvas_demo",
 		Description:  "Minimal demonstration of embedding loom.AnsiEditor",
-		Package:      "codeberg.org/ubunatic/loom/examples/ansicanvas_demo",
+		Package:      "ubunatic.com/loom/examples/ansicanvas_demo",
 		Run:          ansicanvas_demo.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return ansicanvas_demo.NewWidget(args) },
@@ -65,25 +65,25 @@ var Registry = []Example{
 	{
 		Name:         "ansiedit",
 		Description:  "Full-featured ANSI art and graphic cell editor",
-		Package:      "codeberg.org/ubunatic/loom/examples/ansiedit",
+		Package:      "ubunatic.com/loom/examples/ansiedit",
 		Run:          ansiedit.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return ansiedit.NewWidget(args) },
 	},
 	{
 		Name: "ansiviewer", Description: "Browse and render text, ANSI, and file metadata",
-		Package: "codeberg.org/ubunatic/loom/examples/ansiviewer",
+		Package: "ubunatic.com/loom/examples/ansiviewer",
 		Run:     func(args []string) error { return ansiviewer.Run(args) }, SupportsHelp: true,
 	},
 	{
 		Name: "background", Description: "Full-screen Astra star field behind a widget",
-		Package: "codeberg.org/ubunatic/loom/examples/background",
+		Package: "ubunatic.com/loom/examples/background",
 		Run:     background.Run, SupportsHelp: false,
 	},
 	{
 		Name:         "filebrowser",
 		Description:  "File list and live metadata in split panes",
-		Package:      "codeberg.org/ubunatic/loom/examples/filebrowser",
+		Package:      "ubunatic.com/loom/examples/filebrowser",
 		Run:          filebrowser.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return filebrowser.NewWidget(args) },
@@ -91,7 +91,7 @@ var Registry = []Example{
 	{
 		Name:         "monitor",
 		Description:  "Embedded static dashboard shell / live collector watch",
-		Package:      "codeberg.org/ubunatic/loom/examples/monitor",
+		Package:      "ubunatic.com/loom/examples/monitor",
 		Run:          monitor.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch"},
@@ -100,7 +100,7 @@ var Registry = []Example{
 	{
 		Name:         "splash",
 		Description:  "Startup splash screen and transition lifecycle",
-		Package:      "codeberg.org/ubunatic/loom/examples/splash",
+		Package:      "ubunatic.com/loom/examples/splash",
 		Run:          splash.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch"},
@@ -109,7 +109,7 @@ var Registry = []Example{
 	{
 		Name:         "split",
 		Description:  "Independent scrolling and keyboard focus in a Frame",
-		Package:      "codeberg.org/ubunatic/loom/examples/split",
+		Package:      "ubunatic.com/loom/examples/split",
 		Run:          split.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return split.NewWidget(args) },
@@ -117,7 +117,7 @@ var Registry = []Example{
 	{
 		Name:         "tabs",
 		Description:  "Tabs widget hosting a View, a Choice, and a Table",
-		Package:      "codeberg.org/ubunatic/loom/examples/tabs",
+		Package:      "ubunatic.com/loom/examples/tabs",
 		Run:          tabs.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return tabs.NewWidget(args) },
@@ -125,7 +125,7 @@ var Registry = []Example{
 	{
 		Name:         "textedit",
 		Description:  "Multi-pane text editor with keybindings, MRU, filebrowser, and embedded terminal",
-		Package:      "codeberg.org/ubunatic/loom/examples/textedit",
+		Package:      "ubunatic.com/loom/examples/textedit",
 		Run:          textedit.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return textedit.NewWidget(args) },
@@ -133,7 +133,7 @@ var Registry = []Example{
 	{
 		Name:         "textrender",
 		Description:  "Non-ASCII text rendering across loom widgets",
-		Package:      "codeberg.org/ubunatic/loom/examples/textrender",
+		Package:      "ubunatic.com/loom/examples/textrender",
 		Run:          textrender.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return textrender.NewWidget(args) },
@@ -141,7 +141,7 @@ var Registry = []Example{
 	{
 		Name:         "treemap",
 		Description:  "Live process CPU-usage tree as a treemap layout",
-		Package:      "codeberg.org/ubunatic/loom/examples/treemap",
+		Package:      "ubunatic.com/loom/examples/treemap",
 		Run:          treemap.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--watch", "--ansi"},
@@ -150,14 +150,14 @@ var Registry = []Example{
 	{
 		Name:         "screens",
 		Description:  "Inline TUI that switches to full screen and the alternate screen, with auto full-screen detection",
-		Package:      "codeberg.org/ubunatic/loom/examples/screens",
+		Package:      "ubunatic.com/loom/examples/screens",
 		Run:          screens.Run,
 		SupportsHelp: true,
 	},
 	{
 		Name:         "usage",
 		Description:  "Compact colored All Usage and local Load watch",
-		Package:      "codeberg.org/ubunatic/loom/examples/usage",
+		Package:      "ubunatic.com/loom/examples/usage",
 		Run:          usage.Run,
 		SupportsHelp: true,
 		DemoArgs:     []string{"--collect", "1s"},
@@ -166,7 +166,7 @@ var Registry = []Example{
 	{
 		Name:         "winch",
 		Description:  "Diagnostic application exposing spec-backed resize modes",
-		Package:      "codeberg.org/ubunatic/loom/examples/winch",
+		Package:      "ubunatic.com/loom/examples/winch",
 		Run:          winch.Run,
 		SupportsHelp: true,
 	},

@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"codeberg.org/ubunatic/loom/graph"
+	"ubunatic.com/loom/graph"
 )
 
 // Spinner shows a braille activity indicator and an optional label. It starts

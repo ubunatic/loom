@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestDebugMeasureCommandParsesAndUsesEnvironmentProfile(t *testing.T) {

@@ -11,13 +11,13 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func buildViewer(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansiviewer")
-	out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/ansiviewer").CombinedOutput()
+	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansiviewer").CombinedOutput()
 	if err != nil {
 		t.Fatalf("build ansiviewer: %v\n%s", err, out)
 	}

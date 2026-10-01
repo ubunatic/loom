@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/syntax"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/syntax"
 )
 
 func taType(t *loom.TextArea, texts ...string) {

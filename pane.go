@@ -33,9 +33,9 @@ import (
 	"syscall"
 	"time"
 
-	"codeberg.org/ubunatic/loom/measure"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
+	"ubunatic.com/loom/measure"
 )
 
 var paneOwnership struct {

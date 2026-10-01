@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/graph"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/graph"
 )
 
 func TestNewWidgetDrawAndTickAreHeadlessAndSilent(t *testing.T) {

@@ -3,7 +3,7 @@
 
 package ansiedit
 
-import "codeberg.org/ubunatic/loom"
+import "ubunatic.com/loom"
 
 // EditMode represents character insertion vs overtype behavior.
 type EditMode = loom.AnsiEditMode

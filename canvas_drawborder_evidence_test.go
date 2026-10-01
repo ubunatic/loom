@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // ── M1: Evidence generation for DrawBorder and DrawBox ──────────────────────────

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // Align controls text alignment within a column.

@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/examplesreg"
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/examplesreg"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func buildExample(t *testing.T, name string) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), name)
-	path := "codeberg.org/ubunatic/loom/examples/" + name
+	path := "ubunatic.com/loom/examples/" + name
 	if out, err := exec.Command("go", "build", "-o", bin, path).CombinedOutput(); err != nil {
 		t.Fatalf("build %s: %v\n%s", name, err, out)
 	}

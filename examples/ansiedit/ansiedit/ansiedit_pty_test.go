@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func buildAnsiEdit(t *testing.T) string {
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansiedit")
-	out, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/examples/ansiedit").CombinedOutput()
+	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansiedit").CombinedOutput()
 	if err != nil {
 		t.Fatalf("build ansiedit: %v\n%s", err, out)
 	}
@@ -102,4 +102,3 @@ func TestAnsiEditPTYArrowNavigationDoesNotQuit(t *testing.T) {
 		}
 	}
 }
-

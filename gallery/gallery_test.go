@@ -13,10 +13,10 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/ptytest"
-	"codeberg.org/ubunatic/loom/spec"
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/spec"
 )
 
 func TestDemosMatchCatalogAndRender(t *testing.T) {
@@ -75,7 +75,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 		t.Fatalf("%q remained visible:\n%s", text, strings.Join(s.Screen(), "\n"))
 	}
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	for _, names := range [][]string{{"Choice"}, {"Choice", "Popup"}} {
@@ -135,7 +135,7 @@ func nextGalleryTheme() string {
 
 func TestGalleryTextInputFocusPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	for _, target := range []string{"Placeholder:", "Masked:", "Enter"} {
@@ -167,7 +167,7 @@ func TestGalleryTextInputFocusPTY(t *testing.T) {
 
 func TestGalleryTimerControlsPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Timer", "Choice")
@@ -215,7 +215,7 @@ func TestGalleryTimerControlsPTY(t *testing.T) {
 
 func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	for _, name := range []string{"Choice", "FilePicker", "Media", "Table", "Tree"} {
@@ -242,7 +242,7 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 
 func TestGalleryDialogReselectionPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Dialog", "ProgressBar")
@@ -278,7 +278,7 @@ func TestGalleryDialogReselectionPTY(t *testing.T) {
 
 func TestGalleryTableClickSelectionPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "Table", "Choice")
@@ -309,7 +309,7 @@ func TestGalleryTableClickSelectionPTY(t *testing.T) {
 
 func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "MenuBar", "Choice")
@@ -346,7 +346,7 @@ func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
 
 func TestGalleryPaintCanvasTunePTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "PaintCanvas", "Choice")
@@ -367,7 +367,7 @@ func TestGalleryPaintCanvasTunePTY(t *testing.T) {
 
 func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
@@ -387,7 +387,7 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 
 func TestGalleryNumberInputMousePTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
@@ -515,7 +515,7 @@ func TestGalleryMediaRetainsViewportAcrossTabSwitches(t *testing.T) {
 
 func TestGalleryMediaZoomPanPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 80, 24, bin, "widgets", "--show", "-W", "40", "-H", "16", "Media", "Choice")
@@ -728,7 +728,7 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 
 func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
@@ -774,7 +774,7 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 
 func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
@@ -860,7 +860,7 @@ func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 
 func TestRicherDemosPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
@@ -934,7 +934,7 @@ func ptyColorMatches(got ptytest.Color, want loom.Color) bool {
 
 func TestPaintCanvasPTYMouseDragDrawsBrailleLine(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
@@ -995,7 +995,7 @@ func galleryHasBrailleGlyph(text string) bool {
 
 func TestWidgetKeyRoutingPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
+	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
@@ -1053,7 +1053,7 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 
 func TestGalleryMouseRoutingPTY(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
-	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
 	}
 	start := func(t *testing.T, name string) *ptytest.Session {

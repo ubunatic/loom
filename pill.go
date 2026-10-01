@@ -6,8 +6,8 @@ package loom
 import (
 	"strings"
 
-	"codeberg.org/ubunatic/loom/layout"
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/layout"
+	"ubunatic.com/loom/measure"
 )
 
 // ProviderState represents the lifecycle status of an external provider.

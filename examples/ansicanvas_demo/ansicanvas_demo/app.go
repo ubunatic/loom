@@ -9,8 +9,8 @@ import (
 	_ "embed"
 	"fmt"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 //go:embed loom-logo.ansi

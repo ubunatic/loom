@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 const measurementDataDir = "docs/data/loomoji-widths"

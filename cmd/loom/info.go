@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 func infoCommand() *cobra.Command {

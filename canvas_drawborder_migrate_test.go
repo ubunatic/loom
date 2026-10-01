@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // ── M2: Evidence generation for migrated Box.Draw and Popup.Draw ──────────────

@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"codeberg.org/ubunatic/loom/graph"
-	"codeberg.org/ubunatic/loom/layout"
+	"ubunatic.com/loom/graph"
+	"ubunatic.com/loom/layout"
 )
 
 // ProgressBar is a determinate bracketed progress bar. Producers drive it by

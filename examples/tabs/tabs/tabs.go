@@ -8,8 +8,8 @@ package tabs
 import (
 	"fmt"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 func viewLines() []string {

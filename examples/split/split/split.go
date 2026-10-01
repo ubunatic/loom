@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"math"
 
-	"codeberg.org/ubunatic/loom"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
 )
 
 func lines(label string) []string {

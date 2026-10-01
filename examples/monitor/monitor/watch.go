@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/collector"
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/collector"
 )
 
 type watchSpec struct {

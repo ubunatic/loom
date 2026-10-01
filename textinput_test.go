@@ -6,7 +6,7 @@ package loom_test
 import (
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func typeKeys(t *loom.TextInput, texts ...string) {

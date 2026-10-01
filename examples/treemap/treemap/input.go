@@ -7,9 +7,9 @@ import (
 	"context"
 	"os"
 
-	"codeberg.org/ubunatic/loom"
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
+	"ubunatic.com/loom"
 )
 
 // This raw-terminal adapter keeps the live demo responsive to Loom's quit

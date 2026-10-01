@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // NavigationPaneOptions configures a reusable filesystem navigation pane.

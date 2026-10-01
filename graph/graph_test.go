@@ -10,7 +10,7 @@ import (
 	"testing"
 	"unicode/utf8"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 func stripAnsi(s string) string {

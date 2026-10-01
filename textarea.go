@@ -6,8 +6,8 @@ package loom
 import (
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
-	"codeberg.org/ubunatic/loom/syntax"
+	"ubunatic.com/loom/measure"
+	"ubunatic.com/loom/syntax"
 )
 
 // TextArea is a multi-line text editor — the sibling of TextInput for bodies

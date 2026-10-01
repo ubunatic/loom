@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/textedit/textedit"
+	"ubunatic.com/loom/examples/textedit/textedit"
 )
 
 func main() {

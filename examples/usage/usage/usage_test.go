@@ -13,8 +13,8 @@ import (
 	"testing"
 	"time"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/internal/ptytest"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func TestUsageWidgetLayoutAndResize(t *testing.T) {

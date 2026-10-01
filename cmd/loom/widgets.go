@@ -9,11 +9,11 @@ import (
 	"sort"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/gallery"
-	"codeberg.org/ubunatic/loom/spec"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/gallery"
+	"ubunatic.com/loom/spec"
 )
 
 type widgetCatalog struct {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/winch/winch"
+	"ubunatic.com/loom/examples/winch/winch"
 )
 
 func main() {

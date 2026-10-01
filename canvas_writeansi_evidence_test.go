@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 // TestGenerateM2Evidence generates a visual frame demonstrating Canvas.WriteANSI capabilities.

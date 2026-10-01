@@ -6,7 +6,7 @@ package graph
 import (
 	"strings"
 
-	"codeberg.org/ubunatic/loom/measure"
+	"ubunatic.com/loom/measure"
 )
 
 // BrailleSubCharacterGlyphs provides the partial-fill braille glyph for half-cell width.

@@ -9,9 +9,9 @@ import (
 	"sort"
 	"strings"
 
-	"codeberg.org/ubunatic/loom"
-	"codeberg.org/ubunatic/loom/measure"
 	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 // FocusArea denotes which panel currently possesses user keyboard focus.

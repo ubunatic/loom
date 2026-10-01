@@ -7,7 +7,7 @@ import (
 	"bytes"
 	"testing"
 
-	"codeberg.org/ubunatic/loom"
+	"ubunatic.com/loom"
 )
 
 func TestWriteOSC52ExactBytes(t *testing.T) {

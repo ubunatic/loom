@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"codeberg.org/ubunatic/loom/examples/textrender/textrender"
+	"ubunatic.com/loom/examples/textrender/textrender"
 )
 
 func main() {
