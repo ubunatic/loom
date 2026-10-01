@@ -51,3 +51,16 @@ The follow-up fix uses public mouse routing to focus cells in tests. `go vet
 `TestGalleryNumberInputRangeAlignmentPTY`, `TestWidgetsPTYClickTabAndTreeDisclosure`,
 and `TestWidgetsPTYSizeAndF2ThemePropagation`). `TestAllTabAddedWidgetsStayInCellsAndRouteInput`
 passed; no `vet:` errors occurred in that run.
+
+## M2 — Pre-Work / Required Refinements (host, 2026-10-01)
+Host review of `make test-q1` on c9a185c (log: /tmp/loom-234-test-q1.log) found gallery PTY failures:
+`TestGalleryChoiceQuitContractPTY` (Choice, Choice+Popup, popup_consumes_first_escape — timed out waiting
+for "Theme: julia256"), `TestGalleryThemeFooterSurfacePTY` (Choice, FilePicker, Media, Table, Tree),
+`TestGalleryNumberInputRangeAlignmentPTY`, `TestWidgetsPTYClickTabAndTreeDisclosure` ("click inside Tree
+did not collapse src"), `TestWidgetsPTYSizeAndF2ThemePropagation`. Also root
+`TestPaneFirstDrawUsesScreenBounds/wrapped-request-auto-alt` (W 99 vs 100).
+1. Bisect: run the failing tests (targeted `go test -run`) on 641bd44 (before 232), cc85872 and HEAD to
+   attribute each failure to 231, 232 or pre-existing/environment.
+2. Fix every failure caused by 232 or 231 in the library or gallery (not by loosening assertions);
+   failures that are pre-existing and unrelated get their attribution recorded here, not fixed.
+3. Then one `make test-q1` run; record the real result.
