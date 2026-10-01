@@ -155,6 +155,23 @@ fade behavior, and cancellation triggers. The default should be off unless a
 consumer explicitly enables it, and a reduced-motion/accessibility setting
 must disable it without affecting normal input or rendering.
 
+### Pane animation cadence (issue 233)
+
+`Pane` reconciles its background ticker at the start of every event-loop turn, so a
+background set or changed at runtime (e.g. the gallery's F8 switch) starts, stops or
+re-arms the ticker; an unchanged cadence keeps the running timer.
+
+- `Pane.BackgroundOnRedraw = false` (default): an `AnimatedBackground` animates at
+  its own interval, even when nothing else redraws.
+- `Pane.BackgroundOnRedraw = true`: no ticker; frames advance only as a side effect
+  of other redraws (spinner, timer, mouse). Saves CPU and terminal output: in a PTY
+  check idle output dropped from ~92 KB/2 s to 0.
+- `ReduceMotion` stops the ticker in both modes. `Metrics.AstraTargetFPS` reports the
+  active cadence.
+
+The gallery's F8 cycles plain → astra → astra (on redraw) and shows the mode in its
+status bar.
+
 ## Verification requirements
 
 Tests and terminal replay fixtures should verify:

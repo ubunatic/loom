@@ -18,6 +18,7 @@
 - [Terminal input](TuiInput.md): controlling tty ownership, interruptible input reads, and key decoding compatibility.
 - [Progress evidence](progress/): `.ansi` frames per ticket; view with `for f in docs/progress/*/*.ansi; do echo "== $f"; cat "$f"; done`.
 - [Emoji & Unicode measurement](EmojiWidth.md): authoritative spec system, VTE render modes (pad-1), cluster parsing, and PTY width invariants.
+- [Upgrading](Upgrading.md): breaking changes by release, the `ubunatic.com/loom` module path, switching dependents, bool → `EventResult` mapping.
 - [Widgets & framework primitives](Widgets.md): split layout, dynamic tabs, metric stores, directory navigation, and startup transition runners, progress bar, and the input widget inventory.
 
 ## Case Studies
@@ -51,5 +52,6 @@
 | [studies/2026-09-24-roadmap-now-sprint-099-101-105.md](studies/2026-09-24-roadmap-now-sprint-099-101-105.md) | Roadmap "Now" sprint: 099, 101, 105 |
 | [studies/2026-09-26-textedit-syntax-and-agentic-failover.md](studies/2026-09-26-textedit-syntax-and-agentic-failover.md) | `examples/textedit`, `codeberg.org/ubunatic/loom/syntax`, `loom.TextArea`, multi-provider agent orchestration |
 | [studies/2026-09-treesitter-syntax-engine.md](studies/2026-09-treesitter-syntax-engine.md) | Pure-Go / Wasm (wazero) Tree-Sitter Syntax Engine for Loom |
+| [studies/2026-10-01-loom-module-migration.md](studies/2026-10-01-loom-module-migration.md) | Loom module migration reports (issue 235 M3) |
 
 Study files are the source of truth for this table.

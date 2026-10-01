@@ -279,6 +279,9 @@ directly. `Pane` applies fallback quit keys only when a key result is unconsumed
 Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`,
 `backspace`) never trigger fallback quit.
 
+Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
+[Upgrading](Upgrading.md) for the mapping to `EventResult`.
+
 ### Widget Implementation Contract
 - Widgets handling user input (e.g. navigation, typing, selection) return `loom.Handled()` when they consume an input without quitting and `loom.Ignored()` when they did not handle it.
 - Explicit quit shortcuts (such as `F10` and `Ctrl-Q`) return `loom.QuitResult()`.

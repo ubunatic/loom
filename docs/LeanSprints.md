@@ -48,3 +48,22 @@ Source: two `loom widgets` feedback rounds, host `claude:opus`, developers `code
 - **One sol:med developer for a batch**: 11 small tickets (212-222) in one run of about 47 minutes, one commit and one `make test-q1` per ticket, all green on the host rerun. Cheaper for the host than 11 dispatches.
 - **Review the diff for caller-side fixes**: two batch fixes landed only in `cmd/loom/widgets.go`. One was legitimate (220, host drew over its footer), one masked a library contract flaw (212, filed and fixed as 223).
 - **PTY tests found real library bugs**: coalesced key bytes, keys lost after a mouse report, and stale inline bounds on the alternate screen were all found by making flaky gallery tests deterministic instead of retrying them.
+
+## Multi-repo migration (2026-10-01, ticket 235)
+
+Source: module rename to `ubunatic.com/loom` and switch of 8 dependent repos, host `claude:opus`,
+one `codex:luna` developer per repo. Details: [Upgrading](Upgrading.md),
+[study](studies/2026-10-01-loom-module-migration.md).
+- **One developer per repo, one repo at a time**: each dispatch named the repo, the files with hits,
+  the exact rewrite command, the test command (not every repo has `test-q1`) and foreign uncommitted
+  files. Two repos without API work (termaid, uman) ran in parallel without conflict.
+- **Prohibitions get read literally**: "do not edit go.sum" (meant: not by hand) left a stale `go.sum`
+  in cati. Say what the tool should do instead ("let `go mod tidy` update it").
+- **Hints can steer wrong**: "a used key returns `Handled`" made harnez map the old quit (`true`) to
+  `Handled`. Semantic API mappings need the full table, stated as fact, in the prompt.
+- **Green tests did not catch semantic regressions**: both review catches (quit lost, consumed key
+  reported as ignored) passed the suites. Read every `true`/`false` → result mapping in the diff.
+- **Per-repo migration reports** to a scratch file, collected by the host into one study, made the
+  upgrade cost comparable across repos and showed the common wish: a per-release breaking-change list.
+- **Bulk rewrites hit history and checksums**: exclude `issues/`, `docs/studies/`, sum files and
+  repository URLs (`(?<![/@])` lookbehind) explicitly.
