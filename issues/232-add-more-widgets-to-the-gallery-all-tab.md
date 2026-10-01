@@ -1,6 +1,6 @@
 # 232 — Add more widgets to the gallery All tab
 
-**Status**: Open
+**Status**: Closed — All tab shows 24 demos (M1 cc85872/00b3a19); M2 43ed8bc fixed PTY tests broken by 231 key move (F2->F9/F10) and Tree wait race from 232. Host: make test-q1 green (exit 0, no FAIL), make install, loom widgets --show All checked in a PTY: all 24 widgets render in their cells.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
