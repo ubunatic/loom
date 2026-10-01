@@ -257,3 +257,4 @@ upkeep.
 | 244 | [244-gallery-all-tab-focused-grid-cell-hides-the-astra-background.md](244-gallery-all-tab-focused-grid-cell-hides-the-astra-background.md) | Gallery All tab: focused Grid cell hides the astra background | Open |
 | 245 | [245-dim-placeholder-hint-in-choice-and-table-search-bars.md](245-dim-placeholder-hint-in-choice-and-table-search-bars.md) | Dim placeholder hint in Choice and Table search bars | Open |
 | 246 | [246-tree-double-click-does-not-open-or-close-nodes.md](246-tree-double-click-does-not-open-or-close-nodes.md) | Tree double click does not open or close nodes | Open |
+| 247 | [247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md](247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md) | Flaky TestPaneFirstDrawUsesScreenBounds under full test run | Open |
