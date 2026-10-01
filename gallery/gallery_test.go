@@ -91,9 +91,9 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 			}
 			s.WaitFor("▶ fuzzy-browser-widget", 5*time.Second)
 			// Enter confirms a Choice too; neither confirmation may quit a gallery.
-			s.Send("\r\x1bOQ") // Enter, then F2: a new theme proves the process remains live.
+			s.Send("\r\x1b[20~") // Enter, then F9: a new theme proves the process remains live.
 			s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
-			s.Send("q")
+			s.Send("\x1b[21~") // F10 quits even when Choice consumes text keys.
 			if err := s.Wait(5 * time.Second); err != nil {
 				t.Fatal(err)
 			}
@@ -114,7 +114,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 		s.WaitFor("Gallery popup", 5*time.Second)
 		s.Send("\x1b")
 		waitForAbsent(t, s, "Gallery popup")
-		s.Send("\x1bOQ")
+		s.Send("\x1b[20~")
 		s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
 		s.Send("\x1b")
 		if err := s.Wait(5 * time.Second); err != nil {
@@ -222,7 +222,7 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "-W", "100", "-H", "24", name)
 			s.WaitFor("Theme: plain", 5*time.Second)
-			s.Send("\x1bOQ")
+			s.Send("\x1b[20~")
 			themeName := nextGalleryTheme()
 			s.WaitFor("Theme: "+themeName, 5*time.Second)
 			for y, line := range s.Screen() {
@@ -375,7 +375,7 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 4) + "-100.00\r")
 	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
 	s.Send("\x1b[D")
-	s.Send("\x1bOQ")
+	s.Send("\x1b[20~")
 	s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
 	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
 	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 7) + "100.00\r")
@@ -748,6 +748,9 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	}
 	s.WaitFor("Tree", 5*time.Second)
 	clickText("Tree")
+	// All also contains app.go. Wait for content unique to the standalone
+	// Tree so disclosure coordinates come from the newly selected panel.
+	s.WaitFor("tree.go", 5*time.Second)
 	s.WaitFor("app.go", 5*time.Second)
 	// Click the disclosure glyph immediately before src; collapsing the node
 	// removes app.go from the rendered child panel.
@@ -769,7 +772,7 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	t.Fatalf("click inside Tree did not collapse src:\n%s", strings.Join(s.Screen(), "\n"))
 }
 
-func TestWidgetsPTYSizeAndF2ThemePropagation(t *testing.T) {
+func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -822,7 +825,7 @@ func TestWidgetsPTYSizeAndF2ThemePropagation(t *testing.T) {
 	}
 
 	// Capture the active Choice demo before cycling, then return to the modal
-	// demo so one F2 redraw can be checked across the tab bar, modal frame, and
+	// demo so one F9 redraw can be checked across the tab bar, modal frame, and
 	// gallery background.
 	s.Send("\t")
 	s.WaitFor("filebrowser-widget", 5*time.Second)
@@ -836,22 +839,22 @@ func TestWidgetsPTYSizeAndF2ThemePropagation(t *testing.T) {
 	oldFrameStyle := s.Cell(frameX, frameY).Style
 	oldBackgroundStyle := s.Cell(width-1, footerY-2).Style
 
-	s.SendRaw([]byte("\x1b[12~"))
+	s.SendRaw([]byte("\x1b[20~"))
 	s.WaitFor("Theme: "+next, 5*time.Second)
 	if got := s.Cell(tabX, tabY).Style; got == oldTabStyle || !ptyColorMatches(got.FG, loom.Theme(next).HeaderFG.Color()) {
-		t.Fatalf("tab bar cell did not recolor after F2: %v", got)
+		t.Fatalf("tab bar cell did not recolor after F9: %v", got)
 	}
 	if got := s.Cell(frameX, frameY).Style; got == oldFrameStyle || !ptyColorMatches(got.BG, loom.Theme(next).NormalBG.Color()) {
-		t.Fatalf("modal frame cell did not recolor after F2: %v", got)
+		t.Fatalf("modal frame cell did not recolor after F9: %v", got)
 	}
 	if got := s.Cell(width-1, footerY-2).Style; got == oldBackgroundStyle || !ptyColorMatches(got.BG, loom.Theme(next).NormalBG.Color()) {
-		t.Fatalf("gallery background did not recolor after F2: got %v", got)
+		t.Fatalf("gallery background did not recolor after F9: got %v", got)
 	}
 	s.Send("\t")
 	s.WaitFor("filebrowser-widget", 5*time.Second)
 	demoX, demoY = findText("filebrowser-widget")
 	if got := s.Cell(demoX, demoY).Style; got == oldDemoStyle || !ptyColorMatches(got.FG, loom.Theme(next).NormalFG.Color()) {
-		t.Fatalf("active demo cell did not use the new theme after F2: got %v", got)
+		t.Fatalf("active demo cell did not use the new theme after F9: got %v", got)
 	}
 }
 

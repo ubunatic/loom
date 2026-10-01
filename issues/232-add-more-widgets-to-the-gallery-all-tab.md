@@ -64,3 +64,48 @@ did not collapse src"), `TestWidgetsPTYSizeAndF2ThemePropagation`. Also root
 2. Fix every failure caused by 232 or 231 in the library or gallery (not by loosening assertions);
    failures that are pre-existing and unrelated get their attribution recorded here, not fixed.
 3. Then one `make test-q1` run; record the real result.
+
+## M2 delivered
+
+Ran each listed test individually with `go test -count=1 -run '^<Name>$'
+`./gallery/` (root bounds test: `./`) in isolated worktrees at 641bd44,
+cc85872, and HEAD (479d3d6). Also tested 856cd6d, the parent of the issue 231
+implementation, to distinguish 231 regressions from older failures.
+
+| Test | Before 231 (856cd6d) | 641bd44 | cc85872 (*) | HEAD | Attribution |
+|---|---|---|---|---|---|
+| `TestGalleryChoiceQuitContractPTY` | Pass | Fail: three theme waits | Same failure | Same failure | 231: stale F2 input; Choice text keys now reach the child |
+| `TestGalleryThemeFooterSurfacePTY` | Pass | Fail: all five theme waits | Same failure | Same failure | 231: stale F2 input |
+| `TestGalleryNumberInputRangeAlignmentPTY` | Pass | Fail: theme wait | Same failure | Same failure | 231: stale F2 input |
+| `TestWidgetsPTYClickTabAndTreeDisclosure` | Pass | Pass | Fail: src stays expanded | Same failure | 232: stale screen coordinates after an ambiguous content wait |
+| `TestWidgetsPTYSizeAndF2ThemePropagation` | Pass | Fail: theme wait | Same failure | Same failure | 231: stale F2 input |
+| `TestPaneFirstDrawUsesScreenBounds` | Pass | Pass | Pass | Pass | Pre-existing/environment category: reported failure not reproduced; unrelated to 231/232 |
+
+(*) Unmodified cc85872 cannot compile the gallery tests: its new All-tab test
+calls private `Grid.setFocus` and nonexistent `Canvas.Width`. Every requested
+gallery diagnostic was attempted and hit that compile failure, attributable to
+232 and already fixed by 00b3a19. The runtime results above use cc85872 with
+only 00b3a19's existing test-compilation repair applied in the scratch worktree;
+gallery production code remains exactly cc85872. Root tests pass unmodified too.
+
+Updated PTY theme inputs to F9 and renamed the theme propagation test accordingly.
+Choice confirmation still must leave the gallery running; F10 then verifies
+unconditional exit, matching 231's contract that consumed text keys do not quit.
+The existing unconsumed q, F10, and Escape exit cases remain intact. Tree switching
+now waits for standalone-only `tree.go` before locating the disclosure marker:
+232 added `app.go` to All, so the old wait could return on the previous panel.
+All color, size, range, collapse, and quit assertions remain in place.
+These were PTY test input/synchronization defects, not library routing defects;
+no widget workaround or event-routing design change was needed.
+
+The root bounds test and its Pane/resize implementation are unchanged from before
+231. Its reported 99-column failure did not recur in any targeted diagnostic or
+the final suite; no unrelated root changes were made.
+
+Validation: `go vet ./gallery/` passed before the final suite. All six targeted
+post-fix tests passed with `-count=1` (including the renamed F9 test). Exactly one
+final `make test-q1` passed, exit 0, including spec validation, geometry replay,
+repository-wide vet, and tests. Gallery passed in 24.938s; `grep -n -- '--- FAIL'`
+found no matches. Full output: `/tmp/loom-232-m2.F99puH/test-q1.log`; per-revision
+diagnostic logs and the compile-repair patch are in the same scratch directory.
+Ticket remains open for host review; no release, tag, or push performed.
