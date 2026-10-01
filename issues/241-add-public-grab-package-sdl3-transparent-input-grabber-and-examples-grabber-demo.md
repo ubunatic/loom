@@ -53,3 +53,20 @@ then imports `ubunatic.com/loom/grab` (follow-up in loom-games, via go.work duri
 - Live acceptance (user, GNOME Wayland): the demo grabs at start without a click, shows key-up events and smooth
   mouse values, releases on focus loss and release key, regrabs, quits cleanly.
 - Follow-up (separate, loom-games): switch loom-doom capture onto `ubunatic.com/loom/grab`.
+
+## 4. Latency measurement in the demo (user request)
+The demo measures the delay along the whole path and shows it live:
+user input -> SDL event -> grabber C helper -> ring write -> Go reader -> Go event handler -> TUI redraw
+-> (user sees the change).
+- Stamp each event in one clock domain (`CLOCK_MONOTONIC`, ns) at: SDL event timestamp (SDL3 `timestamp` is
+  `SDL_GetTicksNS`-based; record the offset to `CLOCK_MONOTONIC` once at helper start), helper read from
+  `SDL_PollEvent`, ring write, Go read, handler done, and after the frame that shows the event has been written
+  and flushed to the terminal.
+- Carry the helper stamps in the event record (part of the ring format decision in §2) and expose them on the
+  public `Event` type (e.g. `Event.Timing`), so library users can measure too.
+- Show per stage and end-to-end: last, mean, p50, p95, max over a sliding window, separately for keys and mouse
+  motion; also the helper poll interval and event rate. Optional CSV dump of raw samples for later analysis.
+- Limit: the last step (terminal emulator rendering and display scanout until the user sees it) cannot be
+  measured from inside the process. The demo states this. An optional external check is a flash test: a key
+  toggles a full-screen color change, filmed with a phone slow-motion camera (documented, not automated).
+- Tests: stage stamps are monotonic and non-negative; statistics are computed correctly on fixed samples.
