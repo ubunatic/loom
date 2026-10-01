@@ -1,6 +1,6 @@
 # 228 — NumberInput in widget gallery does not react to mouse
 
-**Status**: Open
+**Status**: Closed — implemented mouse scroll and click stepping for NumberInput with full test coverage
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
