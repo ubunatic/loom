@@ -75,8 +75,7 @@ by the developer agent (or the host, for the first three) for later assessment o
 - Commit a066a97. 7 files: `go.mod` (path renamed, `replace ubunatic.com/loom => ../loom` kept),
   `examples/viewer/*.go`, `examples/docsrender/README.md`. Viewer README keeps its repository URL.
 - API: viewer moved to `ConsumeKey`/`ConsumeMouse`: quit keys `Quit()`, keys and scroll `Handled()`,
-  other mouse `Ignored()`; tests use the new key method. The local replace had hidden that the
-  example no longer compiled against current loom.
+  other mouse `Ignored()`; tests use the new key method.
 - `make check` green; no install target. Effort: ~10 min.
 
 ## uman — local `../loom` → local `../loom` (developer dev-235-uman)

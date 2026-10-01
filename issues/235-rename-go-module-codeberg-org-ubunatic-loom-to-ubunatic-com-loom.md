@@ -60,3 +60,11 @@ declare the old module path, so `go get ubunatic.com/loom` works only from the f
 - Preserved repository URLs, including the Codeberg target in the M1 vanity-page record. Remaining `git grep -n 'codeberg.org/ubunatic/loom'` hits are in issue history/ticket context, dated `docs/studies/`, ANSI captures in `docs/data/`, and the `docs/README.md` study index. `dist/` has no matches.
 - `gofmt -l` was empty; `go build ./...`, `go vet ./...`, and one `make test-q1` passed. The test log had no `--- FAIL` matches. `make install` completed.
 - Committed as `5651db7`. Host review: non-Go diff checked (goreleaser ldflags, README import, docs, provenance; no repository URL changed); host rerun of `make test-q1` exit 0, no `--- FAIL`; `make install` done.
+
+## M3 delivered (host, 2026-10-01)
+v0.2.18 released; `go get ubunatic.com/loom@v0.2.18` verified from a fresh module. Dependents switched,
+one developer agent per repo, local commits only: loom-games e78fc2d/9b66920, settings 4720239/c31329c,
+cati a346b6a/c73e875, harnez 23929d4/edcee35, voxi 9052d83, psync fb1993e (+67eca8c pending doc sync,
+user request), termaid a066a97, uman ee66586 (both keep `replace ubunatic.com/loom => ../loom`).
+uzu archived to `~/projects/archive/uzu` instead (user decision). Each repo's tests ran green once.
+Per-repo migration reports: `docs/studies/2026-10-01-loom-module-migration.md`.
