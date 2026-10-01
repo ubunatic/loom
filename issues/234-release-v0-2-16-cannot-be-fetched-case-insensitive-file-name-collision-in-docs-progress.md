@@ -43,3 +43,8 @@ files is unusable as a dependency. Published tags cannot be changed; the fix nee
 - Add the collision guard and a test proving it fails on a colliding pair.
 - Verify: `make test-q1`; a module zip check of HEAD passes. Releasing v0.2.17 and checking
   `go get codeberg.org/ubunatic/loom@v0.2.17` from `loom-games` needs the user's go-ahead (outward-facing).
+
+## M1 delivered
+- Kept `docs/progress/Dialog.ansi` and removed the duplicate `docs/progress/dialog.ansi`. No in-repository writer or references for either capture were found.
+- Added a tracked-path case-insensitive collision guard and a fixture test covering both a colliding pair and matching filenames in separate directories.
+- `go vet .` passed. `make test-q1` ran once and completed with failures: `TestPaneFirstDrawUsesScreenBounds/wrapped-request-auto-alt` and several PTY tests timed out waiting for gallery theme output. The suite was not rerun.
