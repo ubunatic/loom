@@ -22,9 +22,10 @@ type NumberInput struct {
 	// Align controls value alignment inside FixedWidth; the default is left.
 	Align Align
 
-	editor *TextInput
-	orig   float64
-	err    string
+	editor   *TextInput
+	orig     float64
+	err      string
+	lastRect Rect
 }
 
 // NewNumberInput creates a bounded numeric input. A zero Step defaults to 1.
@@ -34,13 +35,21 @@ func NewNumberInput(value *float64, min, max float64) *NumberInput {
 
 // Draw renders the current value, or the active editor when focused.
 func (n *NumberInput) Draw(c *Canvas, r Rect) {
+	n.lastRect = r
 	c.PaintSurface(r, Style{})
 	if n.editor != nil {
 		n.editor.Draw(c, r, true)
 		return
 	}
+	c.Write(r.X, r.Y, TruncateText(n.renderedText(), r.W, ""), Style{})
+}
+
+func (n *NumberInput) renderedText() string {
+	if n == nil || n.Value == nil {
+		return ""
+	}
 	text := n.String()
-	if n.FixedWidth > 0 && n.Value != nil {
+	if n.FixedWidth > 0 {
 		value := n.format(*n.Value)
 		padding := strings.Repeat(" ", max(0, n.FixedWidth-StringWidth(value)-4))
 		if n.Align == AlignRight {
@@ -49,7 +58,7 @@ func (n *NumberInput) Draw(c *Canvas, r Rect) {
 			text = "◂ " + value + padding + " ▸"
 		}
 	}
-	c.Write(r.X, r.Y, TruncateText(text, r.W, ""), Style{})
+	return text
 }
 
 // String returns the formatted current value with step indicators.
@@ -100,8 +109,44 @@ func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 	return Ignored()
 }
 
-// ConsumeMouse is a no-op.
-func (n *NumberInput) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+// ConsumeMouse handles mouse scroll wheel and click stepping.
+func (n *NumberInput) ConsumeMouse(e MouseEvent) EventResult {
+	if n == nil || n.Value == nil || n.editor != nil {
+		return Ignored()
+	}
+	if n.lastRect.W > 0 && (e.X < 0 || e.X >= n.lastRect.W) {
+		return Ignored()
+	}
+	if n.lastRect.H > 0 && (e.Y < 0 || e.Y >= n.lastRect.H) {
+		return Ignored()
+	}
+	switch e.Action {
+	case MouseScrollUp:
+		n.StepBy(1)
+		return Handled()
+	case MouseScrollDown:
+		n.StepBy(-1)
+		return Handled()
+	case MousePress:
+		if e.Button != MouseLeft || e.Y != 0 {
+			return Ignored()
+		}
+		width := StringWidth(n.renderedText())
+		if n.lastRect.W > 0 && width > n.lastRect.W {
+			width = n.lastRect.W
+		}
+		if width <= 0 || e.X < 0 || e.X >= width {
+			return Ignored()
+		}
+		if e.X < width/2 {
+			n.StepBy(-1)
+		} else {
+			n.StepBy(1)
+		}
+		return Handled()
+	}
+	return Ignored()
+}
 
 // StepBy changes the value by direction times Step and clamps it to the bounds.
 func (n *NumberInput) StepBy(direction float64) {

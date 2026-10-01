@@ -385,6 +385,44 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 	s.WaitFor("◂    5.00 ▸", 5*time.Second)
 }
 
+func TestGalleryNumberInputMousePTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "NumberInput")
+	s.WaitFor("◂    7.50 ▸", 5*time.Second)
+
+	locate := func(text string) (int, int) {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if i := strings.Index(line, text); i >= 0 {
+				return utf8.RuneCountInString(line[:i]), y
+			}
+		}
+		t.Fatalf("%q missing", text)
+		return -1, -1
+	}
+
+	// Click right stepper (▸) to step up.
+	rx, ry := locate("▸")
+	s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", rx+1, ry+1, rx+1, ry+1)))
+	s.WaitFor("◂    8.00 ▸", 5*time.Second)
+
+	// Click left stepper (◂) to step down.
+	lx, ly := locate("◂")
+	s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", lx+1, ly+1, lx+1, ly+1)))
+	s.WaitFor("◂    7.50 ▸", 5*time.Second)
+
+	// Mouse wheel up to step up.
+	s.SendRaw([]byte(fmt.Sprintf("\x1b[<64;%d;%dM", rx+1, ry+1)))
+	s.WaitFor("◂    8.00 ▸", 5*time.Second)
+
+	// Mouse wheel down to step down.
+	s.SendRaw([]byte(fmt.Sprintf("\x1b[<65;%d;%dM", rx+1, ry+1)))
+	s.WaitFor("◂    7.50 ▸", 5*time.Second)
+}
+
 func TestGalleryProgressBarFillFadeRepeat(t *testing.T) {
 	w, err := New("ProgressBar")
 	if err != nil {
@@ -642,6 +680,7 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 		"FilePicker": {locate: func([]string) (int, int) { return 3, 1 }, state: func(w loom.Widget) any { entry, _ := w.(*loom.FilePicker).Selected(); return entry.Name }},
 		"Form":       {locate: func([]string) (int, int) { return 2, 2 }, state: func(w loom.Widget) any { return w.(*loom.Form).FocusIndex() }},
 		"MenuBar":    {locate: func([]string) (int, int) { return 1, 0 }, state: func(w loom.Widget) any { return w.(*loom.MenuBar).Open }},
+		"NumberInput": {locate: func(rows []string) (int, int) { return runeColumn(rows[0], "▸"), 0 }, state: func(w loom.Widget) any { return *w.(*loom.NumberInput).Value }},
 		"Paginator":  {locate: func([]string) (int, int) { return 6, 0 }, state: func(w loom.Widget) any { return w.(*loom.Paginator).Page }},
 		"Tabs":       {locate: func(rows []string) (int, int) { return runeColumn(rows[1], "Details"), 1 }, state: func(w loom.Widget) any { return w.(*loom.Tabs).Focus() }},
 		"Tree":       {locate: func([]string) (int, int) { return 0, 0 }, state: func(w loom.Widget) any { return len(w.(*loom.Tree).VisibleNodes()) }},

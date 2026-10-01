@@ -76,6 +76,99 @@ func TestNumberInputInlineEditValidationAndCancel(t *testing.T) {
 	}
 }
 
+func TestNumberInputConsumeMouseScroll(t *testing.T) {
+	value := 4.0
+	input := loom.NewNumberInput(&value, 0, 5)
+	input.Step = 0.5
+
+	res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
+	if !res.Consumed || value != 4.5 {
+		t.Fatalf("scroll up: consumed=%v, value=%g, want 4.5", res.Consumed, value)
+	}
+	input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
+	if value != 5.0 {
+		t.Fatalf("scroll up clamp: value=%g, want 5.0", value)
+	}
+	input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp})
+	if value != 5.0 {
+		t.Fatalf("scroll up beyond max: value=%g, want 5.0", value)
+	}
+	res = input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
+	if !res.Consumed || value != 4.5 {
+		t.Fatalf("scroll down: consumed=%v, value=%g, want 4.5", res.Consumed, value)
+	}
+	for range 10 {
+		input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollDown})
+	}
+	if value != 0.0 {
+		t.Fatalf("scroll down clamp: value=%g, want 0.0", value)
+	}
+}
+
+func TestNumberInputConsumeMouseClick(t *testing.T) {
+	value := 5.0
+	input := loom.NewNumberInput(&value, -100, 100)
+	input.Step = 0.5
+	input.Format, input.FixedWidth, input.Align = "%.2f", 11, loom.AlignRight
+
+	// Rendered text is "◂    5.00 ▸" (width 11).
+	// Left stepper is at X=0, right stepper is at X=10.
+	res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 10, Y: 0})
+	if !res.Consumed || value != 5.5 {
+		t.Fatalf("click right stepper: consumed=%v, value=%g, want 5.5", res.Consumed, value)
+	}
+	res = input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 0})
+	if !res.Consumed || value != 5.0 {
+		t.Fatalf("click left stepper: consumed=%v, value=%g, want 5.0", res.Consumed, value)
+	}
+
+	// Clicks outside bounds or wrong buttons are ignored.
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 11, Y: 0}); res.Consumed {
+		t.Fatalf("click X=11 out of bounds should be ignored: %#v", res)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: -1, Y: 0}); res.Consumed {
+		t.Fatalf("click X=-1 out of bounds should be ignored: %#v", res)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 1}); res.Consumed {
+		t.Fatalf("click Y=1 out of bounds should be ignored: %#v", res)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseRight, X: 0, Y: 0}); res.Consumed {
+		t.Fatalf("right click should be ignored: %#v", res)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, X: 0, Y: 0}); res.Consumed {
+		t.Fatalf("hover should be ignored: %#v", res)
+	}
+}
+
+func TestNumberInputConsumeMouseWhileEditingIgnored(t *testing.T) {
+	value := 3.0
+	input := loom.NewNumberInput(&value, 0, 10)
+	input.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !input.Editing() {
+		t.Fatal("expected input to be editing")
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp}); res.Consumed {
+		t.Fatalf("scroll while editing should be ignored: %#v", res)
+	}
+	if res := input.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 0, Y: 0}); res.Consumed {
+		t.Fatalf("click while editing should be ignored: %#v", res)
+	}
+	if value != 3.0 {
+		t.Fatalf("value changed while editing: %g", value)
+	}
+}
+
+func TestNumberInputConsumeMouseNilOrUnset(t *testing.T) {
+	var nilInput *loom.NumberInput
+	if res := nilInput.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp}); res.Consumed {
+		t.Fatalf("nil NumberInput should return Ignored: %#v", res)
+	}
+	emptyInput := &loom.NumberInput{}
+	if res := emptyInput.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp}); res.Consumed {
+		t.Fatalf("NumberInput with nil Value should return Ignored: %#v", res)
+	}
+}
+
 func TestToggleDrawAndActivate(t *testing.T) {
 	value := false
 	toggle := loom.NewToggle(&value)
