@@ -87,6 +87,10 @@ Widgets use explicit Canvas operations for these layers:
   surface shows the theme's normal background (ticket 222). Explicit surfaces
   such as Dialog and Popup must use `PaintSurface` instead. (Implemented in
   issues 243/244.)
+- `WriteDefault(x, y, text, style)` writes normal text over a default surface
+  with the style's BG dropped, so the text inherits the surface below (a Grid
+  cell's BG, or the widget's own default surface standalone). Selected or
+  highlighted text keeps its BG and uses `Write`.
 - `PaintForeground(x, y, cell)` writes content and claims the cell, including a
   deliberately blank cell.
 - `PaintDecoration(x, y, cell)` writes only to an eligible, unclaimed cell.

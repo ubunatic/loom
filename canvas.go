@@ -458,6 +458,15 @@ func (c *Canvas) Write(x, y int, text string, style Style) int {
 	return col - x
 }
 
+// WriteDefault is Write for normal text over a default surface: the style's
+// BG is dropped so every cell inherits the surface below (a parent's
+// PaintSurface, or the widget's own PaintDefaultSurface when standalone).
+// Selected or highlighted text should keep its BG and use Write.
+func (c *Canvas) WriteDefault(x, y int, text string, style Style) int {
+	style.BG = ColorReset()
+	return c.Write(x, y, text, style)
+}
+
 // WriteANSI renders ANSI-formatted text starting at (x, y), preserving inline
 // colors and styles from SGR escape sequences. Returns the number of columns
 // consumed. Clips at canvas right edge and bottom.

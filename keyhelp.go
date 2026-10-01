@@ -54,7 +54,7 @@ func (h *KeyHelp) Draw(c *Canvas, r Rect) {
 	c.PaintDefaultSurface(r, h.Style)
 	text := TruncateText(h.Text(), r.W, "…")
 	if text != "" {
-		c.Write(r.X, r.Y, text, h.Style)
+		c.WriteDefault(r.X, r.Y, text, h.Style)
 	}
 }
 

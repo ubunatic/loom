@@ -123,7 +123,12 @@ func (t *Tree) Draw(c *Canvas, r Rect) {
 			label += " "
 		}
 		label += node.Label
-		c.Write(r.X, r.Y+row, repeatTreeIndent(depth)+marker+label, style)
+		text := repeatTreeIndent(depth) + marker + label
+		if style == t.Style.Normal {
+			c.WriteDefault(r.X, r.Y+row, text, style)
+		} else {
+			c.Write(r.X, r.Y+row, text, style)
+		}
 	}
 }
 

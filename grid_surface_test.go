@@ -75,7 +75,6 @@ func TestGridCellBackgroundInheritance(t *testing.T) {
 			cr1 := grid.ChildRect(1)
 
 			// In cell 0 (focused), empty/unselected/background cells should take focusBG.
-			// Specifically, the corner or padding cells of the widget should have focusBG.
 			gotFocusCellBG := c.Get(cr0.X+cr0.W-1, cr0.Y+cr0.H-1).Style.BG
 			if gotFocusCellBG != focusBG {
 				t.Errorf("focused cell (%s) background = %v, want FocusBG %v", w.name, gotFocusCellBG, focusBG)
@@ -85,6 +84,45 @@ func TestGridCellBackgroundInheritance(t *testing.T) {
 			gotUnfocusCellBG := c.Get(cr1.X+cr1.W-1, cr1.Y+cr1.H-1).Style.BG
 			if gotUnfocusCellBG != ambientBG {
 				t.Errorf("unfocused cell (%s) background = %v, want ambient %v", w.name, gotUnfocusCellBG, ambientBG)
+			}
+
+			// Detailed check across all non-selection cells:
+			// For KeyHelp, Viewport, Tree unselected rows, etc., unselected cells must carry focusBG in cr0 and ambientBG in cr1.
+			switch w.name {
+			case "KeyHelp":
+				for x := cr0.X; x < cr0.X+cr0.W; x++ {
+					if bg := c.Get(x, cr0.Y).Style.BG; bg != focusBG {
+						t.Errorf("KeyHelp focused cell at (%d,%d) BG = %v, want FocusBG %v", x, cr0.Y, bg, focusBG)
+					}
+					if bg := c.Get(x+cr1.X-cr0.X, cr1.Y).Style.BG; bg != ambientBG {
+						t.Errorf("KeyHelp unfocused cell at (%d,%d) BG = %v, want ambientBG %v", x+cr1.X-cr0.X, cr1.Y, bg, ambientBG)
+					}
+				}
+			case "Viewport":
+				for y := cr0.Y; y < cr0.Y+cr0.H; y++ {
+					for x := cr0.X; x < cr0.X+cr0.W; x++ {
+						if bg := c.Get(x, y).Style.BG; bg != focusBG {
+							t.Errorf("Viewport focused cell at (%d,%d) BG = %v, want FocusBG %v", x, y, bg, focusBG)
+						}
+					}
+				}
+				for y := cr1.Y; y < cr1.Y+cr1.H; y++ {
+					for x := cr1.X; x < cr1.X+cr1.W; x++ {
+						if bg := c.Get(x, y).Style.BG; bg != ambientBG {
+							t.Errorf("Viewport unfocused cell at (%d,%d) BG = %v, want ambientBG %v", x, y, bg, ambientBG)
+						}
+					}
+				}
+			case "Tree":
+				// Row 0 is selected in focused tree (if focused) or row 0 is unselected in unfocused tree.
+				// In unfocused tree (cr1), all rows are unselected and must have ambientBG.
+				for y := cr1.Y; y < cr1.Y+cr1.H; y++ {
+					for x := cr1.X; x < cr1.X+cr1.W; x++ {
+						if bg := c.Get(x, y).Style.BG; bg != ambientBG {
+							t.Errorf("Tree unfocused cell at (%d,%d) BG = %v, want ambientBG %v", x, y, bg, ambientBG)
+						}
+					}
+				}
 			}
 		})
 	}
