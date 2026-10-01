@@ -1,6 +1,6 @@
 # 230 — Allow panning small media in Media widget and coordinate zoom with cursor position
 
-**Status**: Open
+**Status**: Closed — small-image panning with keyboard and mouse, cursor-anchored wheel zoom; edge-case tests for boundary crossing, control-bar wheel and mixed-axis pan
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
