@@ -67,3 +67,76 @@ func TestTreeActivateLeafAndAliases(t *testing.T) {
 		tree.ConsumeKey(loom.KeyEvent{Key: key})
 	}
 }
+
+func treeClick(tree *loom.Tree, x, y int) loom.EventResult {
+	return tree.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: x, Y: y})
+}
+
+func TestTreeDoubleClickTogglesNode(t *testing.T) {
+	leaf := &loom.TreeNode{ID: "leaf", Label: "leaf"}
+	root := &loom.TreeNode{ID: "root", Label: "root", Children: []*loom.TreeNode{leaf}}
+	tree := loom.NewTree([]*loom.TreeNode{root})
+	tree.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+
+	if res := treeClick(tree, 5, 0); res != loom.Handled() || root.Expanded {
+		t.Fatalf("single click on label: handled=%v expanded=%v, want selected only", res == loom.Handled(), root.Expanded)
+	}
+	treeClick(tree, 5, 0)
+	if !root.Expanded {
+		t.Fatal("double click did not open closed node")
+	}
+	tree.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+	treeClick(tree, 5, 0)
+	treeClick(tree, 5, 0)
+	if root.Expanded {
+		t.Fatal("double click did not close open node")
+	}
+}
+
+func TestTreeDoubleClickOnMarkerTogglesOnce(t *testing.T) {
+	root := &loom.TreeNode{ID: "root", Label: "root", Children: []*loom.TreeNode{{ID: "c", Label: "c"}}}
+	tree := loom.NewTree([]*loom.TreeNode{root})
+	tree.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+	treeClick(tree, 0, 0)
+	treeClick(tree, 0, 0)
+	if !root.Expanded {
+		t.Fatal("double click on marker should leave the node toggled once")
+	}
+}
+
+func TestTreeDoubleClickOnLeafOnlySelects(t *testing.T) {
+	leaf := &loom.TreeNode{ID: "leaf", Label: "leaf"}
+	other := &loom.TreeNode{ID: "o", Label: "other"}
+	tree := loom.NewTree([]*loom.TreeNode{other, leaf})
+	tree.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+	treeClick(tree, 5, 1)
+	treeClick(tree, 5, 1)
+	if tree.SelectedNode() != leaf || leaf.Expanded {
+		t.Fatal("double click on leaf must only select it")
+	}
+}
+
+func TestTreeClicksOnDifferentRowsAreNotDoubleClick(t *testing.T) {
+	a := &loom.TreeNode{ID: "a", Label: "a", Children: []*loom.TreeNode{{ID: "x", Label: "x"}}}
+	b := &loom.TreeNode{ID: "b", Label: "b", Children: []*loom.TreeNode{{ID: "y", Label: "y"}}}
+	tree := loom.NewTree([]*loom.TreeNode{a, b})
+	tree.Draw(loom.NewCanvas(20, 4), loom.Rect{W: 20, H: 4})
+	treeClick(tree, 5, 0)
+	treeClick(tree, 5, 1)
+	if a.Expanded || b.Expanded {
+		t.Fatal("clicks on two rows must not toggle")
+	}
+}
+
+func TestTreeKeyToggleStillWorks(t *testing.T) {
+	root := &loom.TreeNode{ID: "root", Label: "root", Children: []*loom.TreeNode{{ID: "c", Label: "c"}}}
+	tree := loom.NewTree([]*loom.TreeNode{root})
+	tree.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !root.Expanded {
+		t.Fatal("Enter did not open node")
+	}
+	tree.ConsumeKey(loom.KeyEvent{Key: " "})
+	if root.Expanded {
+		t.Fatal("Space did not close node")
+	}
+}

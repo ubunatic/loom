@@ -4,6 +4,8 @@
 package loom
 
 import (
+	"strconv"
+
 	"ubunatic.com/loom/measure"
 )
 
@@ -34,6 +36,8 @@ type Tree struct {
 	lastRect Rect
 	drawn    bool
 	focused  bool
+
+	doubleClick *DoubleClickRecognizer
 }
 
 // NewTree creates a tree with the first root selected.
@@ -220,20 +224,37 @@ func (t *Tree) ensureSelectionVisible() {
 	t.ScrollY = min(max(0, t.ScrollY), max(0, len(t.VisibleNodes())-h))
 }
 
-// ConsumeMouse selects a row or toggles a node through its disclosure marker.
+// ConsumeMouse selects a row on a click, toggles a node through its disclosure
+// marker, and toggles a node on a double click anywhere on its row.
 func (t *Tree) ConsumeMouse(e MouseEvent) EventResult {
-	if !t.drawn || e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.Y < 0 || e.X >= t.lastRect.W || e.Y >= t.lastRect.H {
+	inside := t.drawn && e.X >= 0 && e.Y >= 0 && e.X < t.lastRect.W && e.Y < t.lastRect.H
+	nodes := t.VisibleNodes()
+	i := t.ScrollY + e.Y
+	if !inside || i >= len(nodes) {
+		if t.doubleClick != nil {
+			t.doubleClick.Handle(e, "")
+		}
 		return Ignored()
 	}
-	i := t.ScrollY + e.Y
-	nodes := t.VisibleNodes()
-	if i >= len(nodes) {
+	if t.doubleClick == nil {
+		t.doubleClick = NewDoubleClickRecognizer(nil)
+	}
+	double := t.doubleClick.Handle(e, strconv.Itoa(i))
+	if e.Action != MousePress || e.Button != MouseLeft {
 		return Ignored()
 	}
 	t.selected = i
-	depth, _ := t.nodeInfo(nodes[i])
-	if e.X >= depth*2 && e.X < depth*2+2 && len(nodes[i].Children) > 0 {
-		nodes[i].Expanded = !nodes[i].Expanded
+	node := nodes[i]
+	if len(node.Children) == 0 {
+		return Handled()
+	}
+	depth, _ := t.nodeInfo(node)
+	onMarker := e.X >= depth*2 && e.X < depth*2+2
+	// A marker click already toggled on the first press of a double click.
+	if onMarker || double {
+		if !(double && onMarker) {
+			node.Expanded = !node.Expanded
+		}
 	}
 	return Handled()
 }
