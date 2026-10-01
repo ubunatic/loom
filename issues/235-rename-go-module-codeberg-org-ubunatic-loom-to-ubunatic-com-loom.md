@@ -59,4 +59,4 @@ declare the old module path, so `go get ubunatic.com/loom` works only from the f
 - Changed the module path to `ubunatic.com/loom`, rewrote tracked Go imports and module-qualified test commands, and updated GoReleaser ldflags, README usage, live docs, and graph provenance.
 - Preserved repository URLs, including the Codeberg target in the M1 vanity-page record. Remaining `git grep -n 'codeberg.org/ubunatic/loom'` hits are in issue history/ticket context, dated `docs/studies/`, ANSI captures in `docs/data/`, and the `docs/README.md` study index. `dist/` has no matches.
 - `gofmt -l` was empty; `go build ./...`, `go vet ./...`, and one `make test-q1` passed. The test log had no `--- FAIL` matches. `make install` completed.
-- Committed as `<commit hash>`.
+- Committed as `5651db7`. Host review: non-Go diff checked (goreleaser ldflags, README import, docs, provenance; no repository URL changed); host rerun of `make test-q1` exit 0, no `--- FAIL`; `make install` done.
