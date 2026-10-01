@@ -34,6 +34,7 @@
         "scrollbar_track_fg", "scrollbar_track_bg", "scrollbar_track_dim",
         "scrollbar_thumb_fg", "scrollbar_thumb_bg", "scrollbar_thumb_bold",
         "status_fg", "status_bg", "status_bold", "status_dim",
+        "progress_fg", "progress_bg", "progress_bold",
         "border_fg",   "border_bg",
         "focus_bg", "media_loading_fg", "media_loading_dim", "media_error_fg"
       ],
@@ -61,6 +62,9 @@
         "status_bg": { "$ref": "#/definitions/themeColor" },
         "status_bold": { "type": "boolean" },
         "status_dim": { "type": "boolean" },
+        "progress_fg": { "$ref": "#/definitions/themeColor" },
+        "progress_bg": { "$ref": "#/definitions/themeColor" },
+        "progress_bold": { "type": "boolean" },
         "border_fg":     { "$ref": "#/definitions/themeColor" },
         "border_bg":     { "$ref": "#/definitions/themeColor" },
         "focus_bg":      { "$ref": "#/definitions/themeColor" },

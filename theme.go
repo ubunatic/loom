@@ -102,6 +102,9 @@ type ThemeColors struct {
 	StatusBG           ThemeColor `yaml:"status_bg"`
 	StatusBold         bool       `yaml:"status_bold"`
 	StatusDim          bool       `yaml:"status_dim"`
+	ProgressFG         ThemeColor `yaml:"progress_fg"`
+	ProgressBG         ThemeColor `yaml:"progress_bg"`
+	ProgressBold       bool       `yaml:"progress_bold"`
 	BorderFG           ThemeColor `yaml:"border_fg"`
 	BorderBG           ThemeColor `yaml:"border_bg"`
 	FocusBG            ThemeColor `yaml:"focus_bg"`

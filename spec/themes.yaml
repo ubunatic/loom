@@ -35,6 +35,9 @@ themes:
     status_bg:        default
     status_bold:      false
     status_dim:       false
+    progress_fg:      default
+    progress_bg:      default
+    progress_bold:    false
     border_fg:        default
     border_bg:        default
     focus_bg:         238 # dark grey cell highlight; NewGrid's default sources this value
@@ -71,6 +74,9 @@ themes:
     status_bg:        69  # panel blue
     status_bold:      false
     status_dim:       false
+    progress_fg:      252 # soft white, matches the status text on the panel
+    progress_bg:      69  # panel blue
+    progress_bold:    false
     border_fg:        252 # soft white
     border_bg:        69  # medium steel blue
     focus_bg:         75  # bright sky blue (#5fafff) for focused grid cells
@@ -103,6 +109,9 @@ themes:
     status_bg:        27
     status_bold:      false
     status_dim:       false
+    progress_fg:      231 # white on the panel background
+    progress_bg:      27
+    progress_bold:    false
     border_fg:        231
     border_bg:        27
     focus_bg:         33
@@ -135,6 +144,9 @@ themes:
     status_bg:        19
     status_bold:      false
     status_dim:       false
+    progress_fg:      252 # soft white on navy
+    progress_bg:      19
+    progress_bold:    false
     border_fg:        252
     border_bg:        19
     focus_bg:         25
@@ -175,6 +187,9 @@ themes:
     status_bg:        237
     status_bold:      false
     status_dim:       false
+    progress_fg:      250 # lightgray on color237
+    progress_bg:      237
+    progress_bold:    false
     border_fg:        250
     border_bg:        237
     focus_bg:         240 # distinguishable dark grey: between color237 and cyan(51)

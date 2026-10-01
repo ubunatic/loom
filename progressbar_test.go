@@ -108,6 +108,55 @@ func TestProgressBarIndeterminateLabelsAndStyles(t *testing.T) {
 	bar.Draw(NewCanvas(40, 1), Rect{W: 40, H: 1})
 }
 
+func TestProgressBarThemedFillIsNotSelectionStyle(t *testing.T) {
+	for name, theme := range SpeccedThemes {
+		t.Run(name, func(t *testing.T) {
+			bar := NewProgressBar()
+			bar.ApplyTheme(theme)
+			selection := Style{FG: theme.SelectedFG.Color(), BG: theme.SelectedBG.Color(), Bold: theme.SelectedBold}
+			if bar.StyleFill == selection {
+				t.Fatalf("themed fill uses selection style: %+v", bar.StyleFill)
+			}
+			if name == "plain" {
+				if bar.StyleFill.Bold {
+					t.Error("plain themed fill is bold")
+				}
+				if strings.Contains(bar.StyleFill.ANSI(), "\x1b[7m") {
+					t.Error("plain themed fill is reversed")
+				}
+			}
+		})
+	}
+}
+
+func TestProgressBarPlainFillAndEmptyRemainGlyphDistinguishable(t *testing.T) {
+	bar := NewProgressBar()
+	bar.ApplyTheme(Theme("plain"))
+	bar.Options.Width = 4
+	bar.Set(0)
+	empty := NewCanvas(6, 1)
+	bar.Draw(empty, Rect{W: 6, H: 1})
+	bar.Set(100)
+	filled := NewCanvas(6, 1)
+	bar.Draw(filled, Rect{W: 6, H: 1})
+	if empty.Get(1, 0).Text == filled.Get(1, 0).Text {
+		t.Fatalf("filled and empty bar glyphs are equal: %q", empty.Get(1, 0).Text)
+	}
+}
+
+func TestProgressBarFillDiffersFromSelectionWhenColorsMatch(t *testing.T) {
+	theme := Theme("mc")
+	theme.ProgressFG = theme.SelectedFG
+	theme.ProgressBG = theme.SelectedBG
+	theme.SelectedBold = true
+	bar := NewProgressBar()
+	bar.ApplyTheme(theme)
+	selection := Style{FG: theme.SelectedFG.Color(), BG: theme.SelectedBG.Color(), Bold: theme.SelectedBold}
+	if bar.StyleFill == selection {
+		t.Fatalf("fill matches selection when colors match: %+v", bar.StyleFill)
+	}
+}
+
 func TestBracketedBarStepMatchesRender(t *testing.T) {
 	opts := graph.BracketedBarOptions{Width: 7, SubChar: true}
 	last, lastBar := -1, ""
