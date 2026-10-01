@@ -169,6 +169,57 @@ func TestBracketedBarStepMatchesRender(t *testing.T) {
 	}
 }
 
+func TestProgressBarGridCellBackgroundInheritance(t *testing.T) {
+	theme := Theme("mc-dark")
+
+	barFocused := NewProgressBar()
+	barFocused.Options.Width = 10
+	barFocused.ShowPercent = true
+	barFocused.Set(50)
+	barFocused.ApplyTheme(theme)
+
+	barUnfocused := NewProgressBar()
+	barUnfocused.Options.Width = 10
+	barUnfocused.ShowPercent = true
+	barUnfocused.Set(50)
+	barUnfocused.ApplyTheme(theme)
+
+	grid := NewGrid(2, barFocused, barUnfocused)
+	grid.ApplyTheme(theme)
+
+	focusBG := grid.FocusBG
+	ambientBG := ColorIndex(42)
+
+	c := NewCanvas(40, 5)
+	c.PaintSurface(c.Bounds(), Style{BG: ambientBG})
+	grid.Draw(c, c.Bounds())
+
+	cr0 := grid.ChildRect(0)
+	cr1 := grid.ChildRect(1)
+
+	// Check focused cell:
+	// Every cell outside the filled part must carry focusBG.
+	for x := cr0.X; x < cr0.X+cr0.W; x++ {
+		cell := c.Get(x, cr0.Y)
+		if cell.Text == "" || cell.Text == " " || cell.Text == "[" || cell.Text == "]" || cell.Text == "5" || cell.Text == "0" || cell.Text == "%" {
+			if cell.Style.BG != focusBG {
+				t.Errorf("focused cellProgressBar at (%d,%d) text %q BG = %v, want FocusBG %v", x, cr0.Y, cell.Text, cell.Style.BG, focusBG)
+			}
+		}
+	}
+
+	// Check unfocused cell:
+	// Every cell outside the filled part must carry ambientBG.
+	for x := cr1.X; x < cr1.X+cr1.W; x++ {
+		cell := c.Get(x, cr1.Y)
+		if cell.Text == "" || cell.Text == " " || cell.Text == "[" || cell.Text == "]" || cell.Text == "5" || cell.Text == "0" || cell.Text == "%" {
+			if cell.Style.BG != ambientBG {
+				t.Errorf("unfocused cellProgressBar at (%d,%d) text %q BG = %v, want ambient %v", x, cr1.Y, cell.Text, cell.Style.BG, ambientBG)
+			}
+		}
+	}
+}
+
 func renderProgressBar(bar *ProgressBar, w int) string {
 	c := NewCanvas(w, 1)
 	bar.Draw(c, Rect{X: 0, Y: 0, W: w, H: 1})
