@@ -48,3 +48,12 @@ by the developer agent (or the host, for the first three) for later assessment o
 - Problems: first mapped old `true` (quit) to `Handled()`; caught in host review, fixed with a test.
 - Host `make test-q1` green. Effort: ~15 min plus one review round.
 - Loom improvement (agent): migration note with minimum Go version and interface changes per release.
+
+## voxi — v0.2.1 → v0.2.18 (developer dev-235-voxi)
+
+- Commit 9052d83. 5 files: `examples/miclevel/watch.go` (only importer), its README,
+  `docs/LiveMicMeter.md`, `go.mod`, tool-generated `go.sum`.
+- API: no breakage; the example uses `Pane.RunWatch`, `BuildWidget`, `New`, `Frame`, `Cadence`,
+  `graph.RenderBar` and defines no key/mouse handlers. No other dependency was bumped.
+- `make test-q1` green; `make install` skipped on purpose (reinstalls voxi's user services, and the voxi
+  binary does not import loom); `go build ./examples/miclevel` green. Effort: small, one pass.
