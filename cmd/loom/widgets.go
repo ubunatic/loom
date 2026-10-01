@@ -148,6 +148,9 @@ var runWidgetPane = func(widget loom.Widget, width, height int) error {
 	}
 	pane.EnableMouse()
 	pane.DisableDefaultQuit = true
+	if g, ok := widget.(*themedGallery); ok {
+		g.setBackground = func(b loom.Background) { pane.Background = b }
+	}
 	defer pane.Close()
 	return pane.Run(widget)
 }
@@ -185,6 +188,18 @@ type themedGallery struct {
 	themeName  string
 	themeIndex int
 	themes     []string
+
+	bgIndex int
+	// setBackground applies a background to the running pane; nil in tests.
+	setBackground func(loom.Background)
+}
+
+var galleryBackgrounds = []struct {
+	name string
+	make func() loom.Background
+}{
+	{"plain", func() loom.Background { return nil }},
+	{"astra", func() loom.Background { return loom.NewAstraBackground() }},
 }
 
 func newThemedGallery(widget loom.Widget, themeName string) *themedGallery {
@@ -219,21 +234,28 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	style := loom.Style{FG: theme.StatusFG.Color(), BG: theme.StatusBG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
-	c.Write(r.X, r.Y+r.H-1, " Theme: "+g.themeName+" | F2 next theme ", style)
+	status := " F8 BG: " + galleryBackgrounds[g.bgIndex].name + " | F9 Theme: " + g.themeName + " | F10 Quit "
+	c.Write(r.X, r.Y+r.H-1, status, style)
 }
 
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
-	if e.Is("q") || e.Is("f10") {
+	switch {
+	case e.Is("f10"):
 		return loom.QuitResult()
-	}
-	if e.Key == "f2" {
+	case e.Is("f9"):
 		g.themeIndex = (g.themeIndex + 1) % len(g.themes)
 		g.themeName = g.themes[g.themeIndex]
 		g.applyTheme()
 		return loom.Handled()
+	case e.Is("f8"):
+		g.bgIndex = (g.bgIndex + 1) % len(galleryBackgrounds)
+		if g.setBackground != nil {
+			g.setBackground(galleryBackgrounds[g.bgIndex].make())
+		}
+		return loom.Handled()
 	}
 	result := g.widget.ConsumeKey(e)
-	if e.Is("esc") && !result.Consumed {
+	if !result.Consumed && (e.Is("esc") || e.Is("q")) {
 		return loom.QuitResult()
 	}
 	return result

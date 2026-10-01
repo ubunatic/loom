@@ -287,7 +287,7 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 }
 
-func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
+func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	if len(loom.ThemeNames()) < 2 {
 		t.Fatal("theme cycling requires at least two themes")
 	}
@@ -316,22 +316,72 @@ func TestWidgetsThemeFlagAndF2Cycle(t *testing.T) {
 	initialCanvas := loom.NewCanvas(40, 4)
 	gallery.Draw(initialCanvas, initialCanvas.Bounds())
 	initialColor := initialCanvas.Get(0, 0).Style
-	gallery.ConsumeKey(loom.KeyEvent{Key: "f2"})
+	gallery.ConsumeKey(loom.KeyEvent{Key: "f9"})
 	names := loom.ThemeNames()
 	index := slices.Index(names, "mc")
 	want := names[(index+1)%len(names)]
 	if gallery.themeName != want || child.theme.NormalFG != loom.Theme(want).NormalFG {
-		t.Fatalf("after F2 theme = %q, child theme mismatch; want %q", gallery.themeName, want)
+		t.Fatalf("after F9 theme = %q, child theme mismatch; want %q", gallery.themeName, want)
 	}
 	canvas := loom.NewCanvas(40, 4)
 	gallery.Draw(canvas, canvas.Bounds())
 	if canvas.Get(0, 0).Style == initialColor {
 		t.Fatalf("demo rendered the same color style after switching from mc to %q", want)
 	}
-	if !strings.Contains(canvas.Row(canvas.Rows()-1), "Theme: "+want) {
+	if !strings.Contains(canvas.Row(canvas.Rows()-1), "F9 Theme: "+want) {
 		t.Fatalf("gallery chrome = %q, want active theme %q", canvas.Row(canvas.Rows()-1), want)
 	}
 }
+
+func TestGalleryAppKeys(t *testing.T) {
+	child := &keyProbeWidget{}
+	g := newThemedGallery(child, "mc")
+	var applied []loom.Background
+	g.setBackground = func(b loom.Background) { applied = append(applied, b) }
+
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "f8"}); !r.Consumed || len(applied) != 1 || applied[0] == nil {
+		t.Fatalf("first F8 should enable a background, applied=%v", applied)
+	}
+	canvas := loom.NewCanvas(60, 4)
+	g.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(canvas.Rows() - 1); !strings.Contains(row, "F8 BG: astra") || !strings.Contains(row, "F10 Quit") {
+		t.Fatalf("status bar = %q", row)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "f8"})
+	if len(applied) != 2 || applied[1] != nil {
+		t.Fatalf("second F8 should restore plain background, applied=%v", applied)
+	}
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "f10"}); !r.Quit {
+		t.Fatal("F10 must quit")
+	}
+
+	child.consume = true
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "q"}); r.Quit || child.keys != 1 {
+		t.Fatalf("q consumed by child must not quit (quit=%v keys=%d)", r.Quit, child.keys)
+	}
+	child.consume = false
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "q"}); !r.Quit {
+		t.Fatal("unconsumed q must quit")
+	}
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); !r.Quit {
+		t.Fatal("unconsumed esc must quit")
+	}
+}
+
+type keyProbeWidget struct {
+	consume bool
+	keys    int
+}
+
+func (*keyProbeWidget) Draw(*loom.Canvas, loom.Rect) {}
+func (w *keyProbeWidget) ConsumeKey(loom.KeyEvent) loom.EventResult {
+	w.keys++
+	if w.consume {
+		return loom.Handled()
+	}
+	return loom.Ignored()
+}
+func (*keyProbeWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 
 func TestWidgetsSizeFlags(t *testing.T) {
 	previous := runWidgetPane
