@@ -1,6 +1,6 @@
 # 237 — Gallery uses julia256 as the default theme
 
-**Status**: Open
+**Status**: Closed — Fixed in a43a19d and 7a8edb6: loom widgets defaults to julia256; tests cover the default, F9 from it and explicit --theme plain; gallery PTY tests pin --theme plain. Quota-1 run on 7a8edb6 exit 0; host PTY check shows Theme: julia256, F9 to mc.
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
