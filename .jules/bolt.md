@@ -5,3 +5,7 @@
 ## 2026-09-23 - Measure Fast-Path StringWidth & Clusters
 **Learning:** `measure.StringWidth` previously converted strings to `[]rune` slices and constructed intermediate `strings.Builder` buffers inside `plainTerminalText` for every measurement call, causing severe heap allocations and GC pressure across all layout, truncation, alignment, and TUI canvas draw loops.
 **Action:** Preserved legacy `StringWidthOld`, `ClustersOld`, `plainTerminalTextOld`, and `plainTerminalLinesOld` reference functions alongside optimized `*New` variants. Added `LOOM_FAST_MEASURE` environment variable gating (defaulting to enabled). Implemented a zero-allocation single-pass scan in `StringWidthNew` with an O(1) length return for pure ASCII strings (0x20..0x7e) and zero-alloc ANSI escape sequence skipping. In `ClustersNew`, sliced existing string memory boundaries in-place rather than concatenating strings during combining-mark assembly.
+
+## 2026-10-01 - Zero-Allocation Canvas Row & Style ANSI Formatting
+**Learning:** `Canvas.Row` called `Style.ANSI()`, which used `fmt.Sprintf` and string concatenation (`out += ...`) for every style change across all canvas cells during frame serialization, creating allocation spikes during TUI updates.
+**Action:** Implemented `Style.AppendANSI(b []byte) []byte` with zero-alloc `strconv.AppendUint` color appenders in `style.go`. Optimized `Canvas.Row` to build rows inside a single pre-allocated byte buffer (`rowNew`), reducing allocations from 6 allocs/op to 2 allocs/op while maintaining legacy parity under `LOOM_FAST_ANSI=0`.

@@ -3,7 +3,10 @@
 
 package loom
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 // Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 type Color struct {
@@ -91,6 +94,44 @@ func (c Color) bgSeq() string {
 	}
 }
 
+func (c Color) appendFG(b []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		b = append(b, "\x1b[38;5;"...)
+		b = strconv.AppendUint(b, uint64(c.index), 10)
+		return append(b, 'm')
+	case colorRGB:
+		b = append(b, "\x1b[38;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		return append(b, 'm')
+	default:
+		return append(b, "\x1b[39m"...)
+	}
+}
+
+func (c Color) appendBG(b []byte) []byte {
+	switch c.mode {
+	case colorIndex:
+		b = append(b, "\x1b[48;5;"...)
+		b = strconv.AppendUint(b, uint64(c.index), 10)
+		return append(b, 'm')
+	case colorRGB:
+		b = append(b, "\x1b[48;2;"...)
+		b = strconv.AppendUint(b, uint64(c.r), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.g), 10)
+		b = append(b, ';')
+		b = strconv.AppendUint(b, uint64(c.b), 10)
+		return append(b, 'm')
+	default:
+		return append(b, "\x1b[49m"...)
+	}
+}
+
 // Style describes the visual appearance of a Canvas cell.
 type Style struct {
 	FG        Color
@@ -100,22 +141,30 @@ type Style struct {
 	Dim       bool
 }
 
+// AppendANSI appends the ANSI escape sequence that applies this style to b.
+// Always starts with a full reset to avoid state bleed from previous cells.
+func (s Style) AppendANSI(b []byte) []byte {
+	b = append(b, "\x1b[0m"...) // reset all attributes
+	if s.Bold {
+		b = append(b, "\x1b[1m"...)
+	}
+	if s.Underline {
+		b = append(b, "\x1b[4m"...)
+	}
+	if s.Dim {
+		b = append(b, "\x1b[2m"...)
+	}
+	b = s.FG.appendFG(b)
+	b = s.BG.appendBG(b)
+	return b
+}
+
 // ANSI returns the escape sequence that applies this style.
 // Always starts with a full reset to avoid state bleed from previous cells.
 func (s Style) ANSI() string {
-	out := "\x1b[0m" // reset all attributes
-	if s.Bold {
-		out += "\x1b[1m"
-	}
-	if s.Underline {
-		out += "\x1b[4m"
-	}
-	if s.Dim {
-		out += "\x1b[2m"
-	}
-	out += s.FG.fgSeq()
-	out += s.BG.bgSeq()
-	return out
+	var buf [64]byte
+	b := s.AppendANSI(buf[:0])
+	return string(b)
 }
 
 // Reset is a zero Style — default terminal colors, no attributes.
