@@ -1,6 +1,6 @@
 # 234 — Release v0.2.16 cannot be fetched: case-insensitive file name collision in docs/progress
 
-**Status**: Open
+**Status**: Closed — Fixed in v0.2.17: duplicate dialog.ansi removed, case-insensitive path guard test added; go get @v0.2.17 verified from a scratch module. Remaining suite failures are gallery PTY tests tracked in 232 M2
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
