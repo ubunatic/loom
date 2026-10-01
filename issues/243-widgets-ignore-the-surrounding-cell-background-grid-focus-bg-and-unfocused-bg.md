@@ -59,3 +59,16 @@ Wrong (they paint the unselected/default BG over the cell):
   - Tests: each widget in a focused and an unfocused Grid cell; standalone theme BG (222 tests unchanged);
     Dialog/Popup surface still wins inside a colored parent; astra decoration in the focused cell (244).
   - Document the default-surface rule in docs/AnimatedBackgrounds.md (compositor contract) and docs/Widgets.md.
+- M1 delivered (dev-243-sonnet, agy:sonnet): weak default surface `PaintDefaultSurface` and Grid focused
+  cell as `PaintSurface` (c3b3f76); the six widgets switched to it (2c39017). The agent stopped on the agy
+  quota and left uncommitted work in `canvas.go`, `grid_surface_test.go` and `docs/AnimatedBackgrounds.md`
+  (narrower skip rule; the astra test checks only Braille glyphs). Targeted tests green; full `make test-q1`
+  not yet run.
+- M2 Pre-Work / Required Refinements (host review + user gallery check, All tab):
+  - Review and commit or rework the uncommitted M1 leftovers first.
+  - Choice, Table: user-confirmed OK. Table's full-row selection is ticket 240, not this one.
+  - ProgressBar still wrong: the bracket, track, fill glyphs and the `90%` label keep a darker explicit BG
+    instead of the Grid cell's BG. Only a fill color may set BG; every other cell must leave BG unset so it
+    inherits the surface. Add a test: ProgressBar in an unfocused and a focused Grid cell, every cell
+    outside the filled part has the cell's BG; 239's fill vs selection colors unchanged.
+  - Check Tree, KeyHelp, Viewport the same way in the gallery before closing.
