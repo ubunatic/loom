@@ -4,7 +4,7 @@
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
-**Related**: `media/widget.go`, 112, 202, 226, 227
+**Related**: `media/widget.go`, `media/widget_test.go`, 112, 202, 226, 227
 
 ---
 
@@ -20,9 +20,20 @@ When small media is displayed inside a larger Media widget (e.g. 10x5 media on a
 
 ## 3. Implementation & Verification Plan
 
-- Update panning logic in `media/widget.go` to support small media panning across available viewport space.
-- Adjust zoom calculations to factor in mouse cursor coordinates.
-- Add unit tests in `media/widget_test.go` covering small-image panning and cursor-centered zooming.
-- Verify with `make test-q1`.
+### Milestone 1 (Delivered: 239490b)
+- Added `panDelta` / `viewSlack` helpers for unified small/large pan range [-1,1].
+- Updated `canPanLocked()` to allow dragging small images.
+- Added `setZoomAt(factor, cursorX, cursorY)` for cursor-anchored mouse wheel zoom.
+- Added `anchorPan` function keeping the image point under cursor fixed through zoom.
+- Drag sign unified across small and large images.
+- Tests: keyboard pan, screen-position draw test, mouse drag, cursor zoom in/out, geometry regression.
+- `gofmt`, `go vet`, `go test ./media` all clean.
+
+### Milestone 2: Pre-Work / Required Refinements
+- Add three missing test cases in `media/widget_test.go` (no code changes needed):
+  1. Zoom step crossing the small→large and large→small boundary: verify `anchorPan` handles the delta sign change at the crossing point.
+  2. Mouse wheel scroll aimed at the control bar row (cursor below image area): verify clamp handles out-of-image cursor gracefully.
+  3. One axis smaller than viewport, other axis overflowing: verify `panDelta` and `viewSlack` are correct in each axis independently.
+- Run `make test-q1`, commit with message ending in `(issue 230 M2)`. Run `make install`. Report the commit hash.
 
 /goal Enable small media panning and cursor-centered zooming in Media widget, verify with tests, or stop and report when blocked on a user decision or denied permission.
