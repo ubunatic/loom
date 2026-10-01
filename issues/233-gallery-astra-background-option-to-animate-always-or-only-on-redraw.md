@@ -1,6 +1,6 @@
 # 233 — Gallery astra background: option to animate always or only on redraw
 
-**Status**: Open
+**Status**: Closed — 955d5bc: Pane.BackgroundOnRedraw (default false = always animate), ticker re-armed on runtime background/mode/ReduceMotion change; gallery F8 cycles plain -> astra -> astra (on redraw). Host: make test-q1 green, make install; PTY check of loom widgets --show Dialog: idle output 92 KB/2s for astra, 0 for on-redraw and plain; status labels correct. Cosmetic: at 100 cols the longer label truncates the F10 Quit hint.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
