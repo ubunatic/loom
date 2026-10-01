@@ -241,3 +241,4 @@ upkeep.
 | 228 | [228-numberinput-in-widget-gallery-does-not-react-to-mouse.md](228-numberinput-in-widget-gallery-does-not-react-to-mouse.md) | NumberInput in widget gallery does not react to mouse | Open |
 | 229 | [229-start-widget-gallery-with-an-all-tab-showing-widgets-in-3-columns.md](229-start-widget-gallery-with-an-all-tab-showing-widgets-in-3-columns.md) | Start widget gallery with an All tab showing widgets in 3 columns | Open |
 | 230 | [230-allow-panning-small-media-in-media-widget-and-coordinate-zoom-with-cursor-position.md](230-allow-panning-small-media-in-media-widget-and-coordinate-zoom-with-cursor-position.md) | Allow panning small media in Media widget and coordinate zoom with cursor position | Open |
+| 231 | [231-widget-gallery-app-keys-f10-quit-f9-theme-switch-f8-background-switch.md](231-widget-gallery-app-keys-f10-quit-f9-theme-switch-f8-background-switch.md) | Widget gallery app keys: F10 quit, F9 theme switch, F8 background switch | Open |
