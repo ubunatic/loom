@@ -245,3 +245,4 @@ upkeep.
 | 232 | [232-add-more-widgets-to-the-gallery-all-tab.md](232-add-more-widgets-to-the-gallery-all-tab.md) | Add more widgets to the gallery All tab | Open |
 | 233 | [233-gallery-astra-background-option-to-animate-always-or-only-on-redraw.md](233-gallery-astra-background-option-to-animate-always-or-only-on-redraw.md) | Gallery astra background: option to animate always or only on redraw | Open |
 | 234 | [234-release-v0-2-16-cannot-be-fetched-case-insensitive-file-name-collision-in-docs-progress.md](234-release-v0-2-16-cannot-be-fetched-case-insensitive-file-name-collision-in-docs-progress.md) | Release v0.2.16 cannot be fetched: case-insensitive file name collision in docs/progress | Open |
+| 235 | [235-rename-go-module-codeberg-org-ubunatic-loom-to-ubunatic-com-loom.md](235-rename-go-module-codeberg-org-ubunatic-loom-to-ubunatic-com-loom.md) | Rename Go module codeberg.org/ubunatic/loom to ubunatic.com/loom | Open |
