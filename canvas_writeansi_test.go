@@ -63,6 +63,23 @@ func TestCanvasWriteANSIBasic(t *testing.T) {
 	}
 }
 
+func TestCanvasRowOldNewParity(t *testing.T) {
+	canvas := loom.NewCanvas(40, 2)
+	canvas.Set(0, 0, loom.Cell{Text: "A", Style: loom.Style{Bold: true, FG: loom.ColorIndex(1)}})
+	canvas.Set(1, 0, loom.Cell{Text: "B", Style: loom.Style{Underline: true, BG: loom.ColorRGB(10, 20, 30)}})
+	canvas.Set(2, 0, loom.Cell{Text: "C", Style: loom.Style{Dim: true, FG: loom.ColorReset(), BG: loom.ColorReset()}})
+
+	t.Setenv("LOOM_FAST_ANSI", "0")
+	rowOld := canvas.Row(0)
+
+	t.Setenv("LOOM_FAST_ANSI", "1")
+	rowNew := canvas.Row(0)
+
+	if rowOld != rowNew {
+		t.Errorf("Canvas.Row parity mismatch:\n old: %q\n new: %q", rowOld, rowNew)
+	}
+}
+
 func TestCanvasWriteANSIWithColor(t *testing.T) {
 	canvas := loom.NewCanvas(20, 3)
 	input := "\x1b[31mRED\x1b[0m \x1b[32mGREEN\x1b[0m"
@@ -315,6 +332,48 @@ func BenchmarkCanvasWriteANSI(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = canvas.WriteANSI(0, 0, input)
+	}
+}
+
+// ── Canvas.Row Benchmarks ───────────────────────────────────────────────────
+
+func setupBenchmarkCanvasRow() *loom.Canvas {
+	canvas := loom.NewCanvas(120, 1)
+	input := "\x1b[31m[ERROR]\x1b[0m " +
+		"\x1b[38;5;196mFailed to process request\x1b[0m " +
+		"\x1b[1;34;48;2;30;30;30m[User: admin]\x1b[0m " +
+		"Status: 500 Internal Server Error | Latency: 124ms | " +
+		"\x1b[32m✔ Retried 3 times\x1b[0m"
+	canvas.WriteANSI(0, 0, input)
+	return canvas
+}
+
+func BenchmarkCanvasRow(b *testing.B) {
+	canvas := setupBenchmarkCanvasRow()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.Row(0)
+	}
+}
+
+func BenchmarkCanvasRow_Old(b *testing.B) {
+	b.Setenv("LOOM_FAST_ANSI", "0")
+	canvas := setupBenchmarkCanvasRow()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.Row(0)
+	}
+}
+
+func BenchmarkCanvasRow_New(b *testing.B) {
+	b.Setenv("LOOM_FAST_ANSI", "1")
+	canvas := setupBenchmarkCanvasRow()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_ = canvas.Row(0)
 	}
 }
 
