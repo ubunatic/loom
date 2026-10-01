@@ -1,6 +1,6 @@
 # 229 — Start widget gallery with an All tab showing widgets in 3 columns
 
-**Status**: Open
+**Status**: Closed — implemented 3-column All overview tab with unified focus handling and full test suite
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
