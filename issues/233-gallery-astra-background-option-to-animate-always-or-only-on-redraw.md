@@ -34,6 +34,12 @@ Open choices, decide or ask:
 - Which mode is the default.
 - Whether the mode is a general `Pane` option (likely) or gallery-only.
 
+Host decisions (2026-10-01, user may override):
+- Mode is a general `Pane` option (library), default "always" — matches the existing intent of
+  `BackgroundInterval`; "on-redraw" is the opt-in resource saver.
+- Gallery: F8 cycles plain → astra → astra (on redraw); status bar shows `F8 BG: astra` /
+  `F8 BG: astra (on redraw)`. No new key, no CLI flag.
+
 ## 3. Implementation & Verification Plan
 - Pane: re-evaluate the background ticker on background change; add an option selecting
   on-redraw vs. always; respect `ReduceMotion`.
