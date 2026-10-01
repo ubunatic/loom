@@ -41,3 +41,21 @@ Wrong (they paint the unselected/default BG over the cell):
 - Test: render each listed widget in a Grid cell, focused and unfocused, and assert the cell BG on its
   non-highlight cells; a standalone render keeps the theme BG.
 - `make test-q1`, `make install`, PTY check in julia256 and plain.
+
+## 4. Milestones
+- Plan (dev-243, agy:flash38): root causes confirmed. Grid `grid.go:136` uses `c.Fill` (claims cells);
+  Choice, Table, Tree, KeyHelp, Viewport `PaintSurface` the theme NormalBG over their whole rect;
+  ProgressBar sets an explicit BG on every cell. The first write turn stalled 45 min without edits and was
+  stopped by the host.
+- M1 Pre-Work / Required Refinements (host review, user approved):
+  - Grid paints the focused cell with `PaintSurface`, not `Fill` (also fixes 244).
+  - Rejected: a canvas rule that skips any `PaintSurface` over an existing surface. It would also drop
+    intentional surfaces (Dialog, Popup inside a colored pane).
+  - Instead add a weak "default surface" (additive API, e.g. `PaintDefaultSurface` or a Cell flag):
+    a parent's surface replaces it at merge; standalone it shows the theme NormalBG (keeps 222).
+    Explicit surfaces stay authoritative. The six widgets paint their theme normal BG as default
+    surface; ProgressBar leaves BG unset where it would only repeat the normal/track BG, keeping 239's
+    fill vs selection distinction.
+  - Tests: each widget in a focused and an unfocused Grid cell; standalone theme BG (222 tests unchanged);
+    Dialog/Popup surface still wins inside a colored parent; astra decoration in the focused cell (244).
+  - Document the default-surface rule in docs/AnimatedBackgrounds.md (compositor contract) and docs/Widgets.md.
