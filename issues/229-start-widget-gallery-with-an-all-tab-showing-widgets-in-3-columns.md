@@ -4,7 +4,7 @@
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
-**Related**: `gallery/gallery.go`, 195, 198, 200, 207
+**Related**: `gallery/gallery.go`, `grid.go`, 195, 198, 200, 207
 
 ---
 
@@ -20,9 +20,19 @@ Currently, the `loom widgets` gallery starts on an individual widget tab. Starti
 
 ## 3. Implementation & Verification Plan
 
-- Construct the 3-column "All" composite demo in `gallery/gallery.go`.
-- Make "All" the default tab on startup.
-- Add test coverage in `gallery/gallery_test.go` and capture ANSI snapshots where applicable.
-- Verify with `make test-q1`.
+### Milestone 1 (Delivered: ed2df12d)
+- Constructed 3-column "All" composite layout in `gallery/gallery.go`.
+- Prepend "All" tab to `NewAll()` so it starts on the 3-column overview.
+- Updated `grid.go` mouse handling to route clicks to child widgets.
+- Added comprehensive layout and interaction tests in `gallery/gallery_test.go` and refreshed `docs/progress/gallery.ansi`.
+
+### Milestone 2: Pre-Work & Refinements
+- Run `gofmt -w` on `grid.go` and `gallery/gallery_test.go`.
+- In `grid.go`, guard child index bounds when setting/clearing focus (`i < len(g.Children)`).
+- Unify mouse and keyboard focus transitions using a shared helper `g.setFocus(i)` in `grid.go`.
+- Add a direct unit test in `mouse_test.go` verifying that mouse press changes grid focus and scroll does not.
+- Adjust any demo widget text widths (e.g. PillCluster or button/checkbox click widths) so 3-column display in 80x24 does not truncate.
+- Strengthen layout test assertions to verify exact column cell boundaries (`r.X + k*cellW`).
+- Run `make test-q1` and commit with message ending in `(issue 229 M2)`.
 
 /goal Add the 3-column All overview tab as the default gallery starting tab and verify with tests, or stop and report when blocked on a user decision or denied permission.
