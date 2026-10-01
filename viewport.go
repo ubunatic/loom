@@ -67,7 +67,10 @@ func (v *Viewport) Draw(c *Canvas, r Rect) {
 	if c == nil || r.W <= 0 || r.H <= 0 {
 		return
 	}
-	c.PaintSurface(r, v.Style)
+	// Establish the default surface on the main canvas. On a blank canvas this
+	// shows the theme NormalBG (ticket 222). When drawn inside a Grid cell the
+	// parent surface (focusBG or ambient) wins and this is a no-op (ticket 243).
+	c.PaintDefaultSurface(r, v.Style)
 	if v.Child == nil {
 		return
 	}
@@ -83,7 +86,11 @@ func (v *Viewport) Draw(c *Canvas, r Rect) {
 	v.ScrollY = min(max(0, v.ScrollY), max(0, h-r.H))
 	offscreen := NewCanvas(w, h)
 	offscreen.ColorProfile = c.ColorProfile
-	offscreen.PaintSurface(offscreen.Bounds(), v.Style)
+	// Propagate the parent's ambient BG (which PaintDefaultSurface either set or
+	// left as-is) into the offscreen so blitted cells inherit it rather than
+	// overwriting the main canvas's surface with ColorReset.
+	ambientBG := Style{BG: c.Get(r.X, r.Y).Style.BG}
+	offscreen.PaintSurface(offscreen.Bounds(), ambientBG)
 	v.Child.Draw(offscreen, offscreen.Bounds())
 	window := offscreen.SubCanvas(Rect{X: v.ScrollX, Y: v.ScrollY, W: contentW, H: r.H})
 	c.Blit(window, r.X, r.Y)

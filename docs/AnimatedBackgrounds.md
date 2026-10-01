@@ -75,16 +75,26 @@ surface/background color → foreground content and claims
 
 Widgets use explicit Canvas operations for these layers:
 
-- `PaintSurface(rect, style)` establishes a background without claiming cells.
+- `PaintSurface(rect, style)` establishes an authoritative background without
+  claiming cells. Use this for widget frames that own their background (Dialog,
+  Popup, Grid cell highlight). The surface marker keeps cells eligible for
+  decoration.
+- `PaintDefaultSurface(rect, style)` is a **weak** version: it only paints cells
+  whose background is still `ColorReset` (i.e. no parent surface has been
+  painted there yet). Use this for the theme's normal background — it shows
+  through when the widget is rendered standalone but yields to a parent's
+  `PaintSurface` (e.g. a Grid cell's `FocusBG`) when composed inside a
+  container. Explicit surfaces such as Dialog and Popup must use `PaintSurface`
+  instead. (Implemented in issues 243/244.)
 - `PaintForeground(x, y, cell)` writes content and claims the cell, including a
   deliberately blank cell.
 - `PaintDecoration(x, y, cell)` writes only to an eligible, unclaimed cell.
 
 `Cell.Claim` records explicit foreground ownership. `Cell.Surface` marks a
-surface cell created by `PaintSurface`; it is deliberately not a foreground
-claim. `Canvas.Set` remains the low-level compatibility operation for ordinary
-foreground writes, while new widget code should use a layered operation so
-ownership is explicit.
+surface cell created by `PaintSurface` or `PaintDefaultSurface`; it is
+deliberately not a foreground claim. `Canvas.Set` remains the low-level
+compatibility operation for ordinary foreground writes, while new widget code
+should use a layered operation so ownership is explicit.
 
 When widgets render through nested `paintClipped` canvases, a cell with no
 explicit background inherits the surface at its parent merge coordinate. An

@@ -229,6 +229,11 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 	}
 	t.pageRows = itemRows
 
+	// Establish the widget's default surface for the whole rect first.
+	// On a blank canvas this makes every background cell show the theme
+	// NormalBG (ticket 222). In a Grid cell the parent surface wins (ticket 243).
+	cv.PaintDefaultSurface(r, t.Style.Normal)
+
 	// Clamp viewOffset so sel is always visible.
 	if t.viewOffset > t.sel {
 		t.viewOffset = t.sel
@@ -320,7 +325,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 	// Data rows.
 	for row := 0; row < itemRows; row++ {
 		y := r.Y + 1 + row
-		cv.PaintSurface(Rect{r.X, y, r.W, 1}, t.Style.Normal)
+		cv.PaintDefaultSurface(Rect{r.X, y, r.W, 1}, t.Style.Normal)
 		fi := t.viewOffset + row
 		if fi < 0 || fi >= len(t.filtered) {
 			continue
@@ -358,7 +363,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 
 	// Prompt row.
 	promptY := r.Y + r.H - 1
-	cv.PaintSurface(Rect{r.X, promptY, r.W, 1}, t.Style.Prompt)
+	cv.PaintDefaultSurface(Rect{r.X, promptY, r.W, 1}, t.Style.Prompt)
 	if prefix, hint := t.cmd.PromptParts(); prefix != "" {
 		// Command mode: ":typed[completion]  dim title"
 		n := cv.Write(r.X, promptY, prefix, t.Style.Prompt)

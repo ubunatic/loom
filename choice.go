@@ -267,6 +267,13 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	c.drawn = true
 	c.lastRect = r
 
+	// Paint the whole rect with the default (normal) surface first; later rows
+	// that need a different colour use PaintDefaultSurface too, which is a
+	// no-op here since the normal BG is already set. On a blank canvas this
+	// ensures every background cell shows the theme NormalBG (ticket 222).
+	// When drawn inside a Grid cell the parent surface wins (ticket 243).
+	cv.PaintDefaultSurface(r, c.Style.Normal)
+
 	c.clampView(itemRows)
 
 	scrollable := scrollbarVisible(c.ScrollbarMode, len(c.filtered) > itemRows)
@@ -296,7 +303,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	// Draw item rows.
 	for row := 0; row < itemRows; row++ {
 		y := firstItemY + row
-		cv.PaintSurface(Rect{r.X, y, r.W, 1}, c.Style.Normal)
+		cv.PaintDefaultSurface(Rect{r.X, y, r.W, 1}, c.Style.Normal)
 		fi := c.viewOffset + row
 		if fi >= 0 && fi < len(c.filtered) {
 			style := c.Style.Normal
@@ -335,7 +342,7 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	}
 
 	// Prompt row.
-	cv.PaintSurface(Rect{r.X, promptY, drawW, 1}, c.Style.Prompt)
+	cv.PaintDefaultSurface(Rect{r.X, promptY, drawW, 1}, c.Style.Prompt)
 	if prefix, hint := c.cmd.PromptParts(); prefix != "" {
 		// Command mode: ":typed[completion]  dim title"
 		n := cv.Write(r.X, promptY, prefix, c.Style.Prompt)

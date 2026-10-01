@@ -212,6 +212,10 @@ func (p *ProgressBar) Draw(c *Canvas, r Rect) {
 		total = 100
 	}
 	p.mu.Unlock()
+	// Establish the default surface so cells outside the bar content inherit
+	// the parent's BG (e.g. Grid cell FocusBG) rather than the status colour.
+	// On a standalone canvas this shows the theme's status BG (ticket 243).
+	c.PaintDefaultSurface(r, p.Style)
 	indeterminate, frame := p.Indeterminate, p.frame
 	showPercent, showCount, unit := p.ShowPercent, p.ShowCount, p.Unit
 	fillStyle, emptyStyle, wholeStyle := p.StyleFill, p.StyleEmpty, p.Style

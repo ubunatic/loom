@@ -90,6 +90,10 @@ func (t *Tree) Draw(c *Canvas, r Rect) {
 	if len(nodes) == 0 {
 		return
 	}
+	// Establish the widget's default surface for the whole rect first.
+	// On a blank canvas this makes every background cell show the theme
+	// NormalBG (ticket 222). In a Grid cell the parent surface wins (ticket 243).
+	c.PaintDefaultSurface(r, t.Style.Normal)
 	t.selected = min(max(0, t.selected), len(nodes)-1)
 	if t.selected < t.ScrollY {
 		t.ScrollY = t.selected
@@ -105,7 +109,7 @@ func (t *Tree) Draw(c *Canvas, r Rect) {
 		if i == t.selected && t.focused {
 			style = t.Style.Selected
 		}
-		c.PaintSurface(Rect{X: r.X, Y: r.Y + row, W: r.W, H: 1}, style)
+		c.PaintDefaultSurface(Rect{X: r.X, Y: r.Y + row, W: r.W, H: 1}, style)
 		depth, _ := t.nodeInfo(node)
 		marker := "  "
 		if len(node.Children) > 0 {
