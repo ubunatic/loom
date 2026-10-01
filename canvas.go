@@ -183,12 +183,14 @@ func (c *Canvas) PaintSurface(r Rect, style Style) {
 	}
 }
 
-// PaintDefaultSurface is a weak version of PaintSurface: it only paints cells
-// that have no background color yet (BG == ColorReset). This lets a parent
-// widget's PaintSurface or an ambient background take precedence. When a widget
-// is drawn standalone on a blank canvas the default surface shows through as the
-// theme's normal background, satisfying ticket 222. Explicit surfaces such as
-// Dialog and Popup should use PaintSurface instead.
+// PaintDefaultSurface is a weak version of PaintSurface: it skips cells that
+// already carry an explicit surface paint (Surface flag set and BG non-reset),
+// preserving a parent's PaintSurface (e.g. Grid FocusBG or an ambient canvas
+// background). Cells with foreground content or no surface are overwritten,
+// clearing stale content from a previous frame. When a widget is drawn
+// standalone on a blank canvas the default surface shows the theme's normal
+// background, satisfying ticket 222. Explicit surfaces such as Dialog and Popup
+// should use PaintSurface instead.
 func (c *Canvas) PaintDefaultSurface(r Rect, style Style) {
 	for y := r.Y; y < r.Y+r.H; y++ {
 		if y < 0 || y >= c.rows {
@@ -198,7 +200,12 @@ func (c *Canvas) PaintDefaultSurface(r Rect, style Style) {
 			if x < 0 || x >= c.cols {
 				continue
 			}
-			if c.cells[y][x].Style.BG != ColorReset() {
+			existing := c.cells[y][x]
+			// Skip cells that are already owned by an explicit surface (e.g. a
+			// parent's PaintSurface). Both the Surface flag and a non-reset BG must
+			// be set — a bare Surface=true with ColorReset means no colour was
+			// established yet, and we should still paint.
+			if existing.Surface && existing.Style.BG != ColorReset() {
 				continue
 			}
 			c.set(x, y, Cell{Text: " ", Style: style, Surface: true}, false)

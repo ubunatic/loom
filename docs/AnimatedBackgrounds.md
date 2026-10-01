@@ -79,13 +79,14 @@ Widgets use explicit Canvas operations for these layers:
   claiming cells. Use this for widget frames that own their background (Dialog,
   Popup, Grid cell highlight). The surface marker keeps cells eligible for
   decoration.
-- `PaintDefaultSurface(rect, style)` is a **weak** version: it only paints cells
-  whose background is still `ColorReset` (i.e. no parent surface has been
-  painted there yet). Use this for the theme's normal background — it shows
-  through when the widget is rendered standalone but yields to a parent's
-  `PaintSurface` (e.g. a Grid cell's `FocusBG`) when composed inside a
-  container. Explicit surfaces such as Dialog and Popup must use `PaintSurface`
-  instead. (Implemented in issues 243/244.)
+- `PaintDefaultSurface(rect, style)` is a **weak** version: it skips cells that
+  already carry an explicit surface paint (both `Cell.Surface` and a non-reset
+  BG are set), preserving a parent's `PaintSurface` (e.g. a Grid cell's
+  `FocusBG`). Cells with foreground content or no surface are overwritten,
+  clearing stale content from previous frames. On a blank canvas the default
+  surface shows the theme's normal background (ticket 222). Explicit surfaces
+  such as Dialog and Popup must use `PaintSurface` instead. (Implemented in
+  issues 243/244.)
 - `PaintForeground(x, y, cell)` writes content and claims the cell, including a
   deliberately blank cell.
 - `PaintDecoration(x, y, cell)` writes only to an eligible, unclaimed cell.

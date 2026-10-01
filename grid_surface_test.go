@@ -4,9 +4,9 @@
 package loom_test
 
 import (
-	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"ubunatic.com/loom"
 )
@@ -144,11 +144,16 @@ func TestGridFocusedCellKeepsAstraDecoration(t *testing.T) {
 	for y := cr.Y; y < cr.Y+cr.H; y++ {
 		for x := cr.X; x < cr.X+cr.W; x++ {
 			cell := c.Get(x, y)
-			if cell.Text != " " && !strings.Contains("One▶", cell.Text) {
-				foundStar = true
-				if cell.Style.BG != grid.FocusBG {
-					t.Errorf("star cell (%d,%d) has BG %v, want FocusBG %v", x, y, cell.Style.BG, grid.FocusBG)
-				}
+			// Astra paints Braille Pattern glyphs (U+2800–U+28FF) into eligible
+			// (unclaimed) cells. Only check those — prompt characters and other
+			// foreground content are not astra stars.
+			r, _ := utf8.DecodeRuneInString(cell.Text)
+			if r < 0x2800 || r > 0x28FF {
+				continue
+			}
+			foundStar = true
+			if cell.Style.BG != grid.FocusBG {
+				t.Errorf("star cell (%d,%d) has BG %v, want FocusBG %v", x, y, cell.Style.BG, grid.FocusBG)
 			}
 		}
 	}
