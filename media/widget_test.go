@@ -61,6 +61,7 @@ func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	w.Draw(loom.NewCanvas(40, 12), loom.Rect{W: 40, H: 12})
 	w.setZoom(1.25)
 	if w.zoom != 1.25 {
 		t.Fatalf("zoom = %v, want 1.25", w.zoom)
@@ -84,6 +85,86 @@ func TestMediaControlsZoomPanClampAndReset(t *testing.T) {
 	}
 	if w.zoom != 1 {
 		t.Fatalf("reset zoom = %v, want 1", w.zoom)
+	}
+}
+
+func TestZoomPreservesViewportCenter(t *testing.T) {
+	w, err := NewImage(solidImage(100, 60, color.RGBA{A: 255}), ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Draw(loom.NewCanvas(20, 12), loom.Rect{W: 20, H: 12})
+	w.pan(.5, -.4)
+	// At 1x the source center is (70,22). At 2x that becomes (140,44).
+	w.setZoom(2)
+	if math.Abs(w.panX-4.0/9) > 1e-9 || math.Abs(w.panY+.32) > 1e-9 {
+		t.Fatalf("2x pan = (%v,%v), want (4/9,-.32)", w.panX, w.panY)
+	}
+	w.setZoom(.5)
+	if math.Abs(w.panX-.5) > 1e-9 || math.Abs(w.panY+.4) > 1e-9 {
+		t.Fatalf("round-trip pan = (%v,%v), want (.5,-.4)", w.panX, w.panY)
+	}
+	w.pan(2, -2)
+	w.setZoom(.5)
+	if w.panX != 1 || w.panY != -1 {
+		t.Fatalf("zoom-out edge clamp = (%v,%v), want (1,-1)", w.panX, w.panY)
+	}
+	w.setZoom(.5)
+	if w.panX != 1 || w.panY != 0 {
+		t.Fatalf("independent axis clamp = (%v,%v), want (1,0)", w.panX, w.panY)
+	}
+}
+
+func TestDragTracksPixelsAcrossControlsAndBounds(t *testing.T) {
+	for _, mode := range []Mode{ModeHalfblock, ModeQuadblock, ModeSextant} {
+		t.Run(string(mode), func(t *testing.T) {
+			w, err := NewImage(solidImage(100, 60, color.RGBA{A: 255}), mode)
+			if err != nil {
+				t.Fatal(err)
+			}
+			w.Draw(loom.NewCanvas(30, 12), loom.Rect{X: 3, Y: 2, W: 24, H: 10})
+			w.setZoom(2)
+			for _, e := range []loom.MouseEvent{
+				{Action: loom.MousePress, Button: loom.MouseLeft, X: 18, Y: 3},
+				{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 15, Y: 5},
+				{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 9, Y: 9},
+				// Repeated press reports during a drag must not click the minus button.
+				{Action: loom.MousePress, Button: loom.MouseLeft, X: 9, Y: 9},
+				{Action: loom.MouseDrag, Button: loom.MouseLeft, X: -2, Y: 13},
+			} {
+				if res := w.ConsumeMouse(e); !res.Consumed || res.Quit {
+					t.Fatalf("event %#v was not handled: %#v", e, res)
+				}
+			}
+			cw, ch := pxPerCell(mode)
+			wantX := 40 * float64(cw) / float64(200-24*cw)
+			wantY := -20 * float64(ch) / float64(120-8*ch)
+			if w.zoom != 2 || math.Abs(w.panX-wantX) > 1e-9 || math.Abs(w.panY-wantY) > 1e-9 {
+				t.Fatalf("drag state: zoom=%v pan=(%v,%v), want 2 (%v,%v)", w.zoom, w.panX, w.panY, wantX, wantY)
+			}
+			if res := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, X: -2, Y: 13}); !res.Consumed || w.dragging {
+				t.Fatal("release did not end drag")
+			}
+			if res := w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, X: 0, Y: 0}); res.Consumed || math.Abs(w.panX-wantX) > 1e-9 {
+				t.Fatal("drag after release changed pan")
+			}
+		})
+	}
+}
+
+func TestPanUsesRoundedPixelOverflow(t *testing.T) {
+	w, err := NewImage(solidImage(13, 13, color.RGBA{A: 255}), ModeQuadblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Draw(loom.NewCanvas(7, 9), loom.Rect{W: 7, H: 9})
+	w.setZoom(1.05) // 13*1.05 rounds to 14 pixels: exactly seven cells.
+	if w.canPanLocked() {
+		t.Fatal("rounded image fits but canPan reports overflow")
+	}
+	w.pan(.5, -.5)
+	if w.panX != 0 || w.panY != 0 {
+		t.Fatalf("pan changed without pixel overflow: (%v,%v)", w.panX, w.panY)
 	}
 }
 

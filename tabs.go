@@ -102,10 +102,12 @@ type Tabs struct {
 	ArrowSwitch bool
 	OnChildQuit func(i int) (quitHost bool)
 
-	focus    int    // index of the active tab
-	drawn    bool   // whether Draw has run at least once (for ConsumeMouse hit-testing)
-	lastRect Rect   // the Rect passed to the most recent Draw call
-	tabCols  []Rect // per-tab clickable rect on the bar, refreshed each Draw
+	focus            int    // index of the active tab
+	drawn            bool   // whether Draw has run at least once (for ConsumeMouse hit-testing)
+	lastRect         Rect   // the Rect passed to the most recent Draw call
+	tabCols          []Rect // per-tab clickable rect on the bar, refreshed each Draw
+	mouseCapture     Widget
+	mouseCaptureRect Rect // child origin in Tabs-local coordinates at press time
 }
 
 // NewTabs creates a Tabs widget hosting the given tabs, analogous to NewStack.
@@ -420,6 +422,14 @@ func matchesTabKey(event KeyEvent, binding string) bool {
 // ConsumeMouse selects a tab on a bar click and dispatches panel events to the
 // active child in child-local coordinates.
 func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
+	if child := t.mouseCapture; child != nil && (e.Action == MouseDrag || e.Action == MouseRelease) {
+		e.X -= t.mouseCaptureRect.X
+		e.Y -= t.mouseCaptureRect.Y
+		if e.Action == MouseRelease {
+			t.mouseCapture = nil
+		}
+		return DispatchMouseEvent(child, e)
+	}
 	if len(t.Tabs) == 0 {
 		return Ignored()
 	}
@@ -443,7 +453,12 @@ func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
 	}
 	e.X = x - panel.X
 	e.Y = y - panel.Y
-	return DispatchMouseEvent(child, e)
+	res := DispatchMouseEvent(child, e)
+	if res.Consumed && e.Action == MousePress && e.Button == MouseLeft {
+		t.mouseCapture = child
+		t.mouseCaptureRect = Rect{X: panel.X - t.lastRect.X, Y: panel.Y - t.lastRect.Y, W: panel.W, H: panel.H}
+	}
+	return res
 }
 
 // childRect returns the active panel rectangle from the last draw allocation.

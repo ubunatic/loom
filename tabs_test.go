@@ -13,11 +13,12 @@ import (
 // tabSpy is a minimal Widget that records the events it receives, used to
 // verify Tabs delegates only to the active child.
 type tabSpy struct {
-	drawn    bool
-	keys     []loom.KeyEvent
-	mice     []loom.MouseEvent
-	quitKey  bool
-	quitMice bool
+	drawn      bool
+	keys       []loom.KeyEvent
+	mice       []loom.MouseEvent
+	quitKey    bool
+	quitMice   bool
+	handleMice bool
 }
 
 type focusTabSpy struct {
@@ -35,7 +36,45 @@ func (s *tabSpy) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 func (s *tabSpy) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	s.mice = append(s.mice, e)
-	return loom.EventResult{Consumed: s.quitMice, Quit: s.quitMice}
+	return loom.EventResult{Consumed: s.quitMice || s.handleMice, Quit: s.quitMice}
+}
+
+func TestTabsCapturesHandledLeftDrag(t *testing.T) {
+	for _, vertical := range []bool{false, true} {
+		for _, handled := range []bool{false, true} {
+			for _, button := range []loom.MouseButton{loom.MouseLeft, loom.MouseRight} {
+				a, b := &tabSpy{handleMice: handled}, &tabSpy{}
+				tabs := loom.NewTabs(loom.Tab{Title: "A", Widget: a}, loom.Tab{Title: "B", Widget: b})
+				tabs.Vertical = vertical
+				tabs.Draw(loom.NewCanvas(50, 20), loom.Rect{X: 5, Y: 3, W: 30, H: 10})
+				tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: button, X: 10, Y: 4})
+				press := a.mice[0]
+				// Capture belongs to the pressed child even if selection changes.
+				tabs.Select(1)
+				tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: button, X: -2, Y: -3})
+				tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: button, X: 40, Y: 15})
+				if handled && button == loom.MouseLeft {
+					if len(a.mice) != 3 || a.mice[1].X != press.X-12 || a.mice[1].Y != press.Y-7 || a.mice[2].X != press.X+30 || a.mice[2].Y != press.Y+11 {
+						t.Fatalf("vertical=%v: captured events lost child-local coordinates: %#v", vertical, a.mice)
+					}
+				} else if len(a.mice) != 1 {
+					t.Fatalf("unhandled/right press captured drag: %#v", a.mice)
+				}
+				before := len(a.mice)
+				tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseDrag, Button: button, X: -2, Y: -3})
+				if len(a.mice) != before {
+					t.Fatal("released capture forwarded another drag to the original child")
+				}
+				if len(b.mice) != 0 {
+					t.Fatal("out-of-panel event reached the newly selected child")
+				}
+				tabs.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover, X: 10, Y: 4})
+				if len(b.mice) != 1 {
+					t.Fatal("release did not restore active-child routing")
+				}
+			}
+		}
+	}
 }
 
 func TestTabsSwitchWithArrowKeys(t *testing.T) {

@@ -424,6 +424,132 @@ func TestGalleryProgressBarFillFadeRepeat(t *testing.T) {
 	}
 }
 
+func TestGalleryMediaRetainsViewportAcrossTabSwitches(t *testing.T) {
+	w := demos["Media"]()
+	tabs := loom.NewTabs(loom.Tab{Title: "Media", Widget: w}, loom.Tab{Title: "Choice", Widget: demos["Choice"]()})
+	tabs.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
+	c := loom.NewCanvas(50, 18)
+	r := loom.Rect{X: 3, Y: 2, W: 40, H: 14}
+	draw := func() []loom.Cell {
+		tabs.Draw(c, r)
+		var cells []loom.Cell
+		for y := r.Y + 2; y < r.Y+r.H; y++ {
+			for x := r.X; x < r.X+r.W; x++ {
+				cells = append(cells, c.Get(x, y))
+			}
+		}
+		return cells
+	}
+	draw()
+	tabs.ConsumeKey(loom.KeyEvent{Text: "+"})
+	for _, key := range []string{"right", "down", "left", "up", "right", "down"} {
+		before := draw()
+		if res := tabs.ConsumeKey(loom.KeyEvent{Key: key}); !res.Consumed || tabs.Focus() != 0 {
+			t.Fatalf("media pan key %q escaped to Tabs: %#v focus=%d", key, res, tabs.Focus())
+		}
+		if reflect.DeepEqual(before, draw()) {
+			t.Fatalf("media pan key %q did not move viewport", key)
+		}
+	}
+	beforeDrag := draw()
+	for _, e := range []loom.MouseEvent{
+		{Action: loom.MousePress, Button: loom.MouseLeft, X: 20, Y: 5},
+		{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 15, Y: 7},
+		{Action: loom.MouseDrag, Button: loom.MouseLeft, X: 9, Y: 13},
+		{Action: loom.MouseDrag, Button: loom.MouseLeft, X: -3, Y: 0},
+		{Action: loom.MouseRelease, Button: loom.MouseLeft, X: -3, Y: 0},
+	} {
+		if res := tabs.ConsumeMouse(e); !res.Consumed || res.Quit || tabs.Focus() != 0 {
+			t.Fatalf("media drag escaped to Tabs: %#v result=%#v", e, res)
+		}
+	}
+	panned := draw()
+	if reflect.DeepEqual(beforeDrag, panned) {
+		t.Fatal("drag did not change viewport")
+	}
+	tabs.ConsumeKey(loom.KeyEvent{Key: "tab"})
+	draw()
+	tabs.ConsumeKey(loom.KeyEvent{Key: "shift-tab"})
+	if tabs.Focus() != 0 || tabs.Tabs[0].Widget != w || !reflect.DeepEqual(panned, draw()) {
+		t.Fatal("tab switching changed media instance, zoom or viewport")
+	}
+}
+
+func TestGalleryMediaZoomPanPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "codeberg.org/ubunatic/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 80, 24, bin, "widgets", "--show", "-W", "40", "-H", "16", "Media", "Choice")
+	latestFrame := func() [][]ptytest.Cell {
+		frames := s.CellFrames()
+		if len(frames) == 0 {
+			return nil
+		}
+		return frames[len(frames)-1]
+	}
+	waitFrame := func(text string) [][]ptytest.Cell {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			frame := latestFrame()
+			for _, row := range frame {
+				var line strings.Builder
+				for _, cell := range row {
+					line.WriteRune(cell.Rune)
+				}
+				if strings.Contains(line.String(), text) {
+					return frame
+				}
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatalf("%q missing from completed PTY frame:\n%s", text, strings.Join(s.Screen(), "\n"))
+		return nil
+	}
+	// Sample image pixels and colors from one completed synchronized frame.
+	imageState := func(frame [][]ptytest.Cell) []ptytest.Cell {
+		var cells []ptytest.Cell
+		if len(frame) < 10 {
+			return nil
+		}
+		for y := 3; y < 10; y++ {
+			cells = append(cells, frame[y][5:35]...)
+		}
+		return cells
+	}
+	waitChanged := func(before []ptytest.Cell) {
+		t.Helper()
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if frame := latestFrame(); frame != nil && !reflect.DeepEqual(imageState(frame), before) {
+				return
+			}
+			time.Sleep(10 * time.Millisecond)
+		}
+		t.Fatal("media viewport did not move on PTY")
+	}
+	waitFrame("1.00x")
+	s.Send("++")
+	before := imageState(waitFrame("1.56x"))
+	s.Send("\x1b[C\x1b[B")
+	waitChanged(before)
+	before = imageState(latestFrame())
+	// Drag across controls and beyond the panel, then release on the tab bar.
+	s.SendRaw([]byte("\x1b[<0;21;6M\x1b[<32;16;8M\x1b[<32;10;14M\x1b[<32;45;2M\x1b[<0;45;2m"))
+	waitChanged(before)
+	// A changed zoom label is a barrier after all queued drags and release.
+	// It also verifies that zooming while panned preserves the view state.
+	s.Send("+")
+	panned := imageState(waitFrame("1.95x"))
+	s.Send("\t")
+	waitFrame("filebrowser-widget")
+	s.Send("\x1b[Z")
+	if !reflect.DeepEqual(imageState(waitFrame("1.95x")), panned) {
+		t.Fatal("tab switching changed media viewport on PTY")
+	}
+}
+
 func TestGalleryTabsCycleDemos(t *testing.T) {
 	tabs := NewAll()
 	if len(tabs.Tabs) < 2 {
