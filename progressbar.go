@@ -290,7 +290,7 @@ func (p *ProgressBar) Draw(c *Canvas, r Rect) {
 
 // ApplyTheme implements Themeable.
 func (p *ProgressBar) ApplyTheme(theme ThemeColors) {
-	p.Style = Style{FG: theme.StatusFG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
+	p.Style = Style{FG: theme.NormalFG.Color()}
 	p.StyleFill = Style{FG: theme.ProgressFG.Color(), Bold: theme.ProgressBold}
 	p.StyleEmpty = Style{FG: theme.ScrollbarTrackFG.Color(), Dim: theme.ScrollbarTrackDim}
 }
