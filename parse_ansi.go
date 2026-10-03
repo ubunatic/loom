@@ -227,18 +227,36 @@ func applySGRSequence(style Style, params string) Style {
 			// Dim
 			style.Dim = true
 
+		case code == 3:
+			style.Italic = true
+
 		case code == 4:
 			// Underline
 			style.Underline = true
+
+		case code == 7:
+			style.Invert = true
+
+		case code == 9:
+			style.Strike = true
 
 		case code == 22:
 			// Bold and dim off
 			style.Bold = false
 			style.Dim = false
 
+		case code == 23:
+			style.Italic = false
+
 		case code == 24:
 			// Underline off
 			style.Underline = false
+
+		case code == 27:
+			style.Invert = false
+
+		case code == 29:
+			style.Strike = false
 
 		case code >= 30 && code <= 37:
 			// 16-color foreground (30-37)

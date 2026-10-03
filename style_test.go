@@ -22,19 +22,15 @@ func TestStyleResetANSI(t *testing.T) {
 }
 
 func TestStyleAttributesANSI(t *testing.T) {
-	s := loom.Style{Bold: true, Underline: true, Dim: true}
+	s := loom.Style{Bold: true, Underline: true, Dim: true, Italic: true, Strike: true, Invert: true}
 	got := s.ANSI()
-	// Always starts with a full reset, then bold, underline, dim, then colors.
-	want := "\x1b[0m\x1b[1m\x1b[4m\x1b[2m\x1b[39m\x1b[49m"
+	// Attributes have a stable order, followed by colors.
+	want := "\x1b[0m\x1b[1m\x1b[2m\x1b[3m\x1b[4m\x1b[7m\x1b[9m\x1b[39m\x1b[49m"
 	if got != want {
 		t.Errorf("attr ANSI() = %q, want %q", got, want)
 	}
-	// Sanity: order of attributes is bold → underline → dim.
-	if strings.Index(got, "\x1b[1m") > strings.Index(got, "\x1b[4m") {
-		t.Error("bold should precede underline")
-	}
-	if strings.Index(got, "\x1b[4m") > strings.Index(got, "\x1b[2m") {
-		t.Error("underline should precede dim")
+	if strings.Index(got, "\x1b[3m") > strings.Index(got, "\x1b[4m") || strings.Index(got, "\x1b[7m") > strings.Index(got, "\x1b[9m") {
+		t.Error("style attributes should use stable order")
 	}
 }
 

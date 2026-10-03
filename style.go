@@ -200,6 +200,9 @@ type Style struct {
 	Bold      bool
 	Underline bool
 	Dim       bool
+	Italic    bool
+	Strike    bool
+	Invert    bool
 }
 
 // ANSI returns the escape sequence that applies this style.
@@ -214,11 +217,20 @@ func (s Style) ANSIFor(profile ColorProfile) string {
 	if s.Bold {
 		out += "\x1b[1m"
 	}
+	if s.Dim {
+		out += "\x1b[2m"
+	}
+	if s.Italic {
+		out += "\x1b[3m"
+	}
 	if s.Underline {
 		out += "\x1b[4m"
 	}
-	if s.Dim {
-		out += "\x1b[2m"
+	if s.Invert {
+		out += "\x1b[7m"
+	}
+	if s.Strike {
+		out += "\x1b[9m"
 	}
 	out += s.FG.sequence(profile, false)
 	out += s.BG.sequence(profile, true)

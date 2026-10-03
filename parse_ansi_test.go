@@ -94,20 +94,19 @@ func TestParseANSIUnderline(t *testing.T) {
 	}
 }
 
-// ── Italic (code 3) – if supported ──────────────────────────────────────────
-// Currently not supported in loom.Style; unknown codes should be dropped
-
-func TestParseANSIIgnoresItalic(t *testing.T) {
-	// Code 3 (italic) is not in loom.Style, so it should be ignored
-	cells := loom.ParseANSI("\x1b[3mitalic")
-	if len(cells) != 6 {
-		t.Fatalf("got %d cells, want 6", len(cells))
+func TestParseANSIItalicStrikeAndInvert(t *testing.T) {
+	cells := loom.ParseANSI("\x1b[3;7;9mstyled\x1b[23;27;29mplain")
+	if len(cells) != 11 {
+		t.Fatalf("got %d cells, want 11", len(cells))
 	}
-	// The text should be rendered, but without italic (since loom doesn't support it)
-	for _, cell := range cells {
-		// Just verify the cells exist and have the text
-		if cell.Text == "" {
-			t.Error("cell should have text, not be empty")
+	for _, cell := range cells[:6] {
+		if !cell.Style.Italic || !cell.Style.Strike || !cell.Style.Invert {
+			t.Errorf("styled attributes not parsed: %#v", cell.Style)
+		}
+	}
+	for _, cell := range cells[6:] {
+		if cell.Style.Italic || cell.Style.Strike || cell.Style.Invert {
+			t.Errorf("attributes not reset: %#v", cell.Style)
 		}
 	}
 }
