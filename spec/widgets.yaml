@@ -236,6 +236,17 @@ widgets:
     source: progressbar.go
     docs: docs/Widgets.md §6
     ticket: issues/167
+  - name: loom.RichTextEdit
+    package: loom
+    purpose: Render a styled flow document with cursor, selection, and viewport scrolling.
+    category: input
+    example: |-
+      doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{{Text: "hello"}}}}}
+      editor := loom.NewRichTextEdit(doc)
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: editor}}}
+      _ = frame
+    source: richtextedit.go
+    ticket: issues/254
   - name: loom.Router
     package: loom
     purpose: Route between YAML-declared views.
