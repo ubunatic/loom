@@ -17,17 +17,58 @@ var defaultsYAML []byte
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
-	FallbackQuitKeys []string            `yaml:"fallback_quit_keys"`
-	Pane             PaneDefaults        `yaml:"pane"`
-	Scrollbar        ScrollbarDefaults   `yaml:"scrollbar"`
-	Mouse            MouseDefaults       `yaml:"mouse"`
-	Splash           SplashDefaults      `yaml:"splash"`
-	Spinner          SpinnerDefaults     `yaml:"spinner"`
-	ProgressBar      ProgressBarDefaults `yaml:"progress_bar"`
-	Media            MediaDefaults       `yaml:"media"`
-	Clock            ClockDefaults       `yaml:"clock"`
-	PaintCanvas      PaintCanvasDefaults `yaml:"paint_canvas"`
-	SearchBar        SearchBarDefaults   `yaml:"search_bar"`
+	FallbackQuitKeys []string             `yaml:"fallback_quit_keys"`
+	Pane             PaneDefaults         `yaml:"pane"`
+	Scrollbar        ScrollbarDefaults    `yaml:"scrollbar"`
+	Mouse            MouseDefaults        `yaml:"mouse"`
+	Splash           SplashDefaults       `yaml:"splash"`
+	Spinner          SpinnerDefaults      `yaml:"spinner"`
+	ProgressBar      ProgressBarDefaults  `yaml:"progress_bar"`
+	Media            MediaDefaults        `yaml:"media"`
+	Clock            ClockDefaults        `yaml:"clock"`
+	PaintCanvas      PaintCanvasDefaults  `yaml:"paint_canvas"`
+	SearchBar        SearchBarDefaults    `yaml:"search_bar"`
+	RichTextEdit     RichTextEditDefaults `yaml:"rich_text_edit"`
+}
+
+// RichTextEditDefaults defines selection and popover presentation defaults.
+type RichTextEditDefaults struct {
+	SelectionBG      int      `yaml:"selection_bg"`
+	ToolbarFG        int      `yaml:"toolbar_fg"`
+	ToolbarBG        int      `yaml:"toolbar_bg"`
+	SeparatorGlyph   string   `yaml:"separator_glyph"`
+	SeparatorFG      int      `yaml:"separator_fg"`
+	SeparatorBG      int      `yaml:"separator_bg"`
+	PointerUpGlyph   string   `yaml:"pointer_up_glyph"`
+	PointerDownGlyph string   `yaml:"pointer_down_glyph"`
+	PointerFG        int      `yaml:"pointer_fg"`
+	PopoverLabels    []string `yaml:"popover_labels"`
+}
+
+func (d RichTextEditDefaults) validate() error {
+	for _, color := range []struct {
+		name  string
+		value int
+	}{
+		{"selection_bg", d.SelectionBG}, {"toolbar_fg", d.ToolbarFG}, {"toolbar_bg", d.ToolbarBG},
+		{"separator_fg", d.SeparatorFG}, {"separator_bg", d.SeparatorBG}, {"pointer_fg", d.PointerFG},
+	} {
+		if color.value < 0 || color.value > 255 {
+			return fmt.Errorf("rich_text_edit.%s must be between 0 and 255", color.name)
+		}
+	}
+	if d.SeparatorGlyph == "" || d.PointerUpGlyph == "" || d.PointerDownGlyph == "" {
+		return fmt.Errorf("rich_text_edit glyphs must not be empty")
+	}
+	if len(d.PopoverLabels) != 7 {
+		return fmt.Errorf("rich_text_edit.popover_labels must contain 7 labels")
+	}
+	for _, label := range d.PopoverLabels {
+		if label == "" {
+			return fmt.Errorf("rich_text_edit.popover_labels must not contain empty labels")
+		}
+	}
+	return nil
 }
 
 // SearchBarDefaults defines specced defaults for the SearchBar widget.
@@ -136,6 +177,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Mouse.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.RichTextEdit.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	return defs

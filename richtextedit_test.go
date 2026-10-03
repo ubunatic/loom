@@ -38,7 +38,7 @@ func TestRichTextEditPaintsSelectionAcrossSpans(t *testing.T) {
 		t.Fatalf("unselected background = %v, want reset", got)
 	}
 	for _, x := range []int{1, 2, 3, 4} {
-		if got := canvas.Get(x, 0).Style.BG; got != ColorIndex(24) {
+		if got := canvas.Get(x, 0).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
 			t.Errorf("selected cell %d background = %v", x, got)
 		}
 	}
@@ -218,7 +218,7 @@ func TestRichTextEditMouseClickAndDragSelection(t *testing.T) {
 		t.Fatalf("drag selection = %+v..%+v active=%v", edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 8, H: 2})
-	if canvas.Get(5, 1).Style.BG != ColorIndex(24) || canvas.Get(3, 2).Style.BG != ColorIndex(24) {
+	if canvas.Get(5, 1).Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) || canvas.Get(3, 2).Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
 		t.Fatal("mouse selection was not painted across lines")
 	}
 }
@@ -237,11 +237,25 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	if len(edit.popoverButtons) != 7 {
 		t.Fatalf("popover buttons = %d, want 7", len(edit.popoverButtons))
 	}
+	for i, button := range edit.popoverButtons {
+		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
+			t.Fatalf("popover label %d = %q, want %q", i, button.label, SpeccedDefaults.RichTextEdit.PopoverLabels[i])
+		}
+	}
 	first := edit.popoverButtons[0].rect
 	if first.Y != 0 || canvas.Get(3+first.X-1, 1+first.Y).Text != "[" {
 		t.Fatalf("popover top-left = %+v, expected above selection in child-local coordinates", first)
 	}
-	if canvas.Get(3+first.X+4, 1+first.Y+1).Text != "▼" {
+	toolbar := canvas.Get(3+first.X+1, 1+first.Y)
+	if toolbar.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarFG)) || toolbar.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG)) {
+		t.Fatalf("toolbar style = %+v", toolbar.Style)
+	}
+	separator := canvas.Get(3+first.X+first.W, 1+first.Y)
+	if separator.Text != SpeccedDefaults.RichTextEdit.SeparatorGlyph || separator.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SeparatorFG)) || separator.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SeparatorBG)) {
+		t.Fatalf("separator cell = %+v", separator)
+	}
+	downPointer := canvas.Get(3+first.X+4, 1+first.Y+1)
+	if downPointer.Text != SpeccedDefaults.RichTextEdit.PointerDownGlyph || downPointer.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PointerFG)) {
 		t.Fatal("popover did not draw a downward anchor between toolbar and selection")
 	}
 	selection := edit.SelectionFrom
@@ -275,7 +289,8 @@ func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
 	canvas := NewCanvas(48, 5)
 	edit.Draw(canvas, Rect{W: 40, H: 5})
 	first := edit.popoverButtons[0].rect
-	if first.Y != 2 || canvas.Get(first.X, 1).Text != "▲" {
+	upPointer := canvas.Get(first.X, 1)
+	if first.Y != 2 || upPointer.Text != SpeccedDefaults.RichTextEdit.PointerUpGlyph || upPointer.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PointerFG)) {
 		t.Fatalf("popover failed below-selection placement: first=%+v pointer=%q", first, canvas.Get(first.X, 1).Text)
 	}
 	for _, label := range []string{"Link", "#FG", "#BG"} {

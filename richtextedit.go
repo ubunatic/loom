@@ -44,8 +44,9 @@ type RichTextEdit struct {
 }
 
 type richPopoverButton struct {
-	label string
-	rect  Rect
+	label  string
+	action string
+	rect   Rect
 }
 
 type richPopoverSwatch struct {
@@ -53,7 +54,7 @@ type richPopoverSwatch struct {
 	rect  Rect
 }
 
-var richPopoverLabels = []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -195,7 +196,7 @@ func richPositionBefore(a, b RichPosition) bool {
 func (e *RichTextEdit) selectionStyle(base Style) Style {
 	selection := e.SelectionStyle
 	if selection == (Style{}) {
-		base.BG = ColorIndex(24)
+		base.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG))
 		return base
 	}
 	if selection.FG != ColorReset() {
@@ -284,7 +285,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 			}
 			for _, button := range e.popoverButtons {
 				if button.rect.Contains(mouse.X, mouse.Y) {
-					e.applyPopoverAction(button.label)
+					e.applyPopoverAction(button.action)
 					e.popoverRelease = true
 					break
 				}
@@ -344,15 +345,17 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		return
 	}
 	width := 2
-	for i, label := range richPopoverLabels {
+	labels := SpeccedDefaults.RichTextEdit.PopoverLabels
+	for i, label := range labels {
 		width += len(label) + 2
 		if i > 0 {
 			width++
 		}
 	}
-	barY, pointerY, pointer := 0, 0, "▲"
+	defs := SpeccedDefaults.RichTextEdit
+	barY, pointerY, pointer := 0, 0, defs.PointerUpGlyph
 	if anchorY >= 2 {
-		barY, pointerY, pointer = anchorY-2, anchorY-1, "▼"
+		barY, pointerY, pointer = anchorY-2, anchorY-1, defs.PointerDownGlyph
 	} else if anchorY+2 < r.H {
 		barY, pointerY = anchorY+2, anchorY+1
 	} else {
@@ -362,16 +365,16 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	if barX < 0 { // Keep the complete action row visible in very narrow widgets.
 		return
 	}
-	toolbarStyle := Style{FG: ColorIndex(15), BG: ColorIndex(239), Bold: true}
+	toolbarStyle := Style{FG: ColorIndex(uint8(defs.ToolbarFG)), BG: ColorIndex(uint8(defs.ToolbarBG)), Bold: true}
 	for x := 0; x < width; x++ {
 		c.Set(r.X+barX+x, r.Y+barY, Cell{Text: " ", Style: toolbarStyle})
 	}
 	c.Set(r.X+barX, r.Y+barY, Cell{Text: "[", Style: toolbarStyle})
 	c.Set(r.X+barX+width-1, r.Y+barY, Cell{Text: "]", Style: toolbarStyle})
 	x := barX + 1
-	for i, label := range richPopoverLabels {
+	for i, label := range labels {
 		button := Rect{X: x, Y: barY, W: len(label) + 2, H: 1}
-		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, rect: button})
+		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: richPopoverActions[i], rect: button})
 		for j, ch := range " " + label + " " {
 			style := toolbarStyle
 			if label == "B" && ch == 'B' {
@@ -380,12 +383,12 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 			c.Set(r.X+x+j, r.Y+barY, Cell{Text: string(ch), Style: style})
 		}
 		x += button.W
-		if i < len(richPopoverLabels)-1 {
-			c.Set(r.X+x, r.Y+barY, Cell{Text: "│", Style: Style{FG: ColorIndex(8), BG: ColorIndex(239)}})
+		if i < len(labels)-1 {
+			c.Set(r.X+x, r.Y+barY, Cell{Text: defs.SeparatorGlyph, Style: Style{FG: ColorIndex(uint8(defs.SeparatorFG)), BG: ColorIndex(uint8(defs.SeparatorBG))}})
 			x++
 		}
 	}
-	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(8)}})
+	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(uint8(defs.PointerFG))}})
 	e.drawPopoverPalette(c, r, barX, barY)
 }
 

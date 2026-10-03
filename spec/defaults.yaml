@@ -56,3 +56,15 @@ media:
 search_bar:
   prompt: "> "
   placeholder: "type to filter"
+
+rich_text_edit:
+  selection_bg: 24
+  toolbar_fg: 15
+  toolbar_bg: 239
+  separator_glyph: "│"
+  separator_fg: 8
+  separator_bg: 239
+  pointer_up_glyph: "▲"
+  pointer_down_glyph: "▼"
+  pointer_fg: 8
+  popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG"]

@@ -42,6 +42,25 @@ func TestMediaDefaultsLoadFromSpec(t *testing.T) {
 	}
 }
 
+func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
+	got := SpeccedDefaults.RichTextEdit
+	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 {
+		t.Fatalf("rich text edit defaults = %+v", got)
+	}
+	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
+	if len(got.PopoverLabels) != len(want) {
+		t.Fatalf("popover labels = %q, want %q", got.PopoverLabels, want)
+	}
+	for i := range want {
+		if got.PopoverLabels[i] != want[i] {
+			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
+		}
+	}
+	if err := got.validate(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestPaneDefaultsLoadFromSpec(t *testing.T) {
 	got := SpeccedDefaults.Pane
 	if got.MaxCols != 50 {
