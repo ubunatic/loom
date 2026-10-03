@@ -1,6 +1,6 @@
 # 256 — respect spec: move richtextedit default styles, popover styling and labels into defaults spec
 
-**Status**: Open
+**Status**: Closed — moved RichTextEdit defaults to spec/defaults.yaml
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
