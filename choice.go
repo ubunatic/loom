@@ -21,6 +21,7 @@ type ChoiceStyle struct {
 	Placeholder Style
 	Scrollbar   ScrollbarStyle
 	Border      Style
+	SearchBar   SearchBarStyle
 }
 
 // DefaultChoiceStyle returns a minimal monochrome style, derived from the plain theme.
@@ -68,6 +69,7 @@ type Choice struct {
 
 	cmd         *cmdBar
 	cmdNav      Nav
+	searchBar   *SearchBar
 	query       string
 	sel         int
 	viewOffset  int // first visible item index (virtual scrolling)
@@ -84,10 +86,72 @@ type Choice struct {
 
 // NewChoice creates a ready-to-use Choice with default style.
 func NewChoice(items []Item) *Choice {
-	c := &Choice{Items: items, Style: DefaultChoiceStyle(), Prompt: "> ", Placeholder: DefaultPlaceholder, focused: true}
+	c := &Choice{
+		Items:       items,
+		Style:       DefaultChoiceStyle(),
+		Prompt:      SpeccedDefaults.SearchBar.Prompt,
+		Placeholder: DefaultPlaceholder,
+		focused:     true,
+	}
 	c.cmd = newCmdBar()
+	c.searchBar = NewSearchBar()
+	c.searchBar.cmd = c.cmd
+	c.searchBar.OnChange = func(q string) {
+		c.query = q
+		c.refilter()
+	}
 	c.refilter()
 	return c
+}
+
+// SearchBar returns the underlying SearchBar component.
+func (c *Choice) SearchBar() *SearchBar {
+	return c.ensureSearchBar()
+}
+
+func (c *Choice) searchBarStyle() SearchBarStyle {
+	style := c.Style.SearchBar
+	if c.Style.Prompt != (Style{}) {
+		style.Prompt = c.Style.Prompt
+	}
+	if c.Style.Placeholder != (Style{}) {
+		style.Placeholder = c.Style.Placeholder
+	}
+	if style.Container == (Style{}) {
+		style.Container = style.Prompt
+		if style.Container == (Style{}) {
+			style.Container = c.Style.Normal
+		}
+	}
+	return style
+}
+
+func (c *Choice) ensureSearchBar() *SearchBar {
+	if c.searchBar == nil {
+		c.searchBar = NewSearchBar()
+		if c.cmd != nil {
+			c.searchBar.cmd = c.cmd
+		}
+		c.searchBar.OnChange = func(q string) {
+			c.query = q
+			c.refilter()
+		}
+	}
+	if c.Prompt != "" && c.searchBar.Prompt != c.Prompt {
+		c.searchBar.Prompt = c.Prompt
+	}
+	if c.Placeholder != "" && c.searchBar.Placeholder != c.Placeholder {
+		c.searchBar.Placeholder = c.Placeholder
+	}
+	c.searchBar.Controls = c.Controls
+	c.searchBar.CursorAlign = c.CursorAlign
+	c.searchBar.MaxWidth = c.MaxWidth
+	c.searchBar.Focused = c.focused
+	if c.query != c.searchBar.Query {
+		c.searchBar.Query = c.query
+	}
+	c.searchBar.Style = c.searchBarStyle()
+	return c.searchBar
 }
 
 // Nav returns the navigation signal set by a prompt command (:home).
@@ -349,47 +413,11 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	}
 
 	// Prompt row.
-	cv.PaintDefaultSurface(Rect{r.X, promptY, drawW, 1}, c.Style.Prompt)
-	if prefix, hint := c.cmd.PromptParts(); prefix != "" {
-		// Command mode: ":typed[completion]  dim title"
-		n := cv.Write(r.X, promptY, prefix, c.Style.Prompt)
-		if hint != "" {
-			cv.Write(r.X+n, promptY, hint, Style{Dim: true})
-		}
-		if c.focused {
-			cv.CursorX = r.X + n
-			cv.CursorY = promptY
-		}
-	} else {
-		// Normal mode: base prompt + filter query (or placeholder)
-		if c.query == "" && c.Placeholder != "" {
-			n := cv.Write(r.X, promptY, c.Prompt, c.Style.Prompt)
-			hint := c.Style.Placeholder
-			hint.Dim = true
-			cv.WriteDefault(r.X+n, promptY, TruncateText(c.Placeholder, max(0, drawW-n), ""), hint)
-		} else {
-			cv.Write(r.X, promptY, c.Prompt+c.query, c.Style.Prompt)
-		}
-
-		if c.Controls != "" {
-			ctrlW := StringWidth(c.Controls)
-			if drawW > ctrlW+StringWidth(c.Prompt) {
-				cv.Write(r.X+drawW-ctrlW, promptY, c.Controls, Style{Dim: true})
-			}
-		}
-
-		if c.focused {
-			cursorX := r.X + StringWidth(c.Prompt) + StringWidth(c.query)
-			if c.CursorAlign == "end" {
-				cursorX = r.X + drawW - 1
-			}
-			if cursorX >= r.X && cursorX < r.X+drawW {
-				cv.CursorX = cursorX
-				cv.CursorY = promptY
-			}
-		}
+	sb := c.ensureSearchBar()
+	sb.Draw(cv, Rect{r.X, promptY, drawW, 1})
+	if c.cmd != nil {
+		c.cmd.drawHelp(cv, r)
 	}
-	c.cmd.drawHelp(cv, r)
 }
 
 // ConsumeKey drives navigation and filtering.

@@ -256,6 +256,16 @@ widgets:
           {Width: 20}, {Width: 10},
       }}
     source: rows.go
+  - name: loom.SearchBar
+    package: loom
+    purpose: Input and manage filter query, search prompt, placeholder hints, and command-mode actions.
+    category: input
+    example: |-
+      searchBar := loom.NewSearchBar()
+      searchBar.Prompt = "> "
+      searchBar.Placeholder = "type to filter"
+    source: searchbar.go
+    ticket: issues/250
   - name: loom.Settings
     package: loom
     purpose: Edit typed settings in a navigable list.

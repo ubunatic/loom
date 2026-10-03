@@ -42,6 +42,7 @@ type TableStyle struct {
 	Prompt     Style
 	// Placeholder styles the hint shown while the query is empty; it is always dim.
 	Placeholder Style
+	SearchBar   SearchBarStyle
 }
 
 // DefaultTableStyle returns a minimal monochrome style, derived from the plain theme.
@@ -91,6 +92,7 @@ type Table struct {
 	cmd        *cmdBar
 	keys       *KeyMap
 	cmdNav     Nav
+	searchBar  *SearchBar
 	query      string
 	sel        int
 	viewOffset int
@@ -116,16 +118,78 @@ func NewTable(cols []Column, rows []Row) *Table {
 		Rows:        rows,
 		SortCol:     -1,
 		Style:       DefaultTableStyle(),
-		Prompt:      "> ",
+		Prompt:      SpeccedDefaults.SearchBar.Prompt,
 		Placeholder: DefaultPlaceholder,
 	}
 	t.cmd = newCmdBar()
+	t.searchBar = NewSearchBar()
+	t.searchBar.cmd = t.cmd
+	t.searchBar.OnChange = func(q string) {
+		t.query = q
+		t.refilter()
+	}
 	t.keys = NewKeyMap(map[string][]string{
 		"page-up":   {"pgup", "pageup"},
 		"page-down": {"pgdown", "pgdn", "pagedown"},
 	})
 	t.refilter()
 	return t
+}
+
+// SearchBar returns the underlying SearchBar component.
+func (t *Table) SearchBar() *SearchBar {
+	return t.ensureSearchBar()
+}
+
+func (t *Table) searchBarStyle() SearchBarStyle {
+	style := t.Style.SearchBar
+	if t.Style.Prompt != (Style{}) {
+		style.Prompt = t.Style.Prompt
+	}
+	if t.Style.Placeholder != (Style{}) {
+		style.Placeholder = t.Style.Placeholder
+	}
+	if style.Container == (Style{}) {
+		style.Container = style.Prompt
+		if style.Container == (Style{}) {
+			style.Container = t.Style.Normal
+		}
+	}
+	return style
+}
+
+func (t *Table) ensureSearchBar() *SearchBar {
+	if t.searchBar == nil {
+		t.searchBar = NewSearchBar()
+		if t.cmd != nil {
+			t.searchBar.cmd = t.cmd
+		}
+		t.searchBar.OnChange = func(q string) {
+			t.query = q
+			t.refilter()
+		}
+	}
+	if t.Prompt != "" && t.searchBar.Prompt != t.Prompt {
+		t.searchBar.Prompt = t.Prompt
+	}
+	if t.Placeholder != "" && t.searchBar.Placeholder != t.Placeholder {
+		t.searchBar.Placeholder = t.Placeholder
+	}
+	controls := t.Controls
+	if controls == "" && t.SortCol >= 0 && t.SortCol < len(t.Columns) {
+		dir := "▲"
+		if t.SortDesc {
+			dir = "▼"
+		}
+		controls = fmt.Sprintf("[tab:%s%s !:flip]", dir, t.Columns[t.SortCol].Header)
+	}
+	t.searchBar.Controls = controls
+	t.searchBar.Focused = true
+	if t.query != t.searchBar.Query {
+		t.searchBar.Query = t.query
+	}
+	t.searchBar.Style = t.searchBarStyle()
+	return t.searchBar
 }
 
 // Nav returns the navigation signal set by a prompt command (:home).
@@ -375,44 +439,11 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 
 	// Prompt row.
 	promptY := r.Y + r.H - 1
-	cv.PaintDefaultSurface(Rect{r.X, promptY, r.W, 1}, t.Style.Prompt)
-	if prefix, hint := t.cmd.PromptParts(); prefix != "" {
-		// Command mode: ":typed[completion]  dim title"
-		n := cv.Write(r.X, promptY, prefix, t.Style.Prompt)
-		if hint != "" {
-			cv.Write(r.X+n, promptY, hint, Style{Dim: true})
-		}
-		cv.CursorX = r.X + n
-		cv.CursorY = promptY
-	} else {
-		// Normal mode: base prompt + filter query + right-aligned controls.
-		n := cv.Write(r.X, promptY, t.Prompt+t.query, t.Style.Prompt)
-		if t.query == "" && t.Placeholder != "" {
-			hint := t.Style.Placeholder
-			hint.Dim = true
-			cv.WriteDefault(r.X+n, promptY, TruncateText(t.Placeholder, max(0, r.W-n), ""), hint)
-		}
-
-		controls := t.Controls
-		if controls == "" && t.SortCol >= 0 && t.SortCol < len(t.Columns) {
-			dir := "▲"
-			if t.SortDesc {
-				dir = "▼"
-			}
-			controls = fmt.Sprintf("[tab:%s%s !:flip]", dir, t.Columns[t.SortCol].Header)
-		}
-		if controls != "" {
-			ctrlW := StringWidth(controls)
-			promptW := StringWidth(t.Prompt) + StringWidth(t.query)
-			if r.W > ctrlW+promptW {
-				cv.Write(r.X+r.W-ctrlW, promptY, controls, Style{Dim: true})
-			}
-		}
-
-		cv.CursorX = r.X + StringWidth(t.Prompt) + StringWidth(t.query)
-		cv.CursorY = promptY
+	sb := t.ensureSearchBar()
+	sb.Draw(cv, Rect{r.X, promptY, r.W, 1})
+	if t.cmd != nil {
+		t.cmd.drawHelp(cv, r)
 	}
-	t.cmd.drawHelp(cv, r)
 }
 
 // ConsumeKey drives navigation, filtering, and sort controls.

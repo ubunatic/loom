@@ -127,6 +127,23 @@ func (t ThemeColors) ChoiceStyle() ChoiceStyle {
 		Placeholder: Style{FG: t.PlaceholderFG.Color(), BG: t.PlaceholderBG.Color(), Dim: t.PlaceholderDim},
 		Scrollbar:   t.ScrollbarStyle(),
 		Border:      Style{FG: t.BorderFG.Color(), BG: t.BorderBG.Color()},
+		SearchBar:   t.SearchBarStyle(),
+	}
+}
+
+// SearchBarStyle returns a SearchBarStyle derived from the theme's color roles.
+func (t ThemeColors) SearchBarStyle() SearchBarStyle {
+	container := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
+	prompt := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
+	query := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
+	placeholder := Style{FG: t.PlaceholderFG.Color(), BG: t.PlaceholderBG.Color(), Dim: t.PlaceholderDim}
+	controls := Style{FG: t.PlaceholderFG.Color(), BG: t.PromptBG.Color(), Dim: true}
+	return SearchBarStyle{
+		Container:   container,
+		Prompt:      prompt,
+		Query:       query,
+		Placeholder: placeholder,
+		Controls:    controls,
 	}
 }
 
@@ -163,6 +180,7 @@ func (t ThemeColors) TableStyle() TableStyle {
 		SortHeader:  Style{FG: t.HeaderFG.Color(), BG: t.HeaderBG.Color(), Bold: t.HeaderBold, Underline: true},
 		Prompt:      Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()},
 		Placeholder: Style{FG: t.PlaceholderFG.Color(), BG: t.PlaceholderBG.Color(), Dim: t.PlaceholderDim},
+		SearchBar:   t.SearchBarStyle(),
 	}
 }
 

@@ -52,3 +52,7 @@ media:
   loading_label: "loading"
   render_error_label: "render error"
   loading_threshold: 50ms
+
+search_bar:
+  prompt: "> "
+  placeholder: "type to filter"

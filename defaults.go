@@ -27,6 +27,13 @@ type LibDefaults struct {
 	Media            MediaDefaults       `yaml:"media"`
 	Clock            ClockDefaults       `yaml:"clock"`
 	PaintCanvas      PaintCanvasDefaults `yaml:"paint_canvas"`
+	SearchBar        SearchBarDefaults   `yaml:"search_bar"`
+}
+
+// SearchBarDefaults defines specced defaults for the SearchBar widget.
+type SearchBarDefaults struct {
+	Prompt      string `yaml:"prompt"`
+	Placeholder string `yaml:"placeholder"`
 }
 
 // PaintCanvasDefaults defines stroke tuning controls.
