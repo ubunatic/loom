@@ -19,7 +19,7 @@ func newRichTextEditDemo() *richTextEditDemo {
 		{},
 		{Spans: []loom.RichSpan{{Text: "Try ", Style: loom.Style{}}, {Text: "bold", Style: loom.Style{Bold: true}}, {Text: ", ", Style: loom.Style{}}, {Text: "italic", Style: loom.Style{Italic: true}}, {Text: ", and ", Style: loom.Style{}}, {Text: "underline", Style: loom.Style{Underline: true}}, {Text: " formatting.", Style: loom.Style{}}}},
 		{Spans: []loom.RichSpan{{Text: "Mention ", Style: loom.Style{}}, {Text: "@ada", Style: loom.Style{FG: blue, Bold: true}, PillData: &loom.RichPill{Kind: "mention", ID: "ada"}}, {Text: " or open ", Style: loom.Style{}}, {Text: "loom.dev", Style: loom.Style{FG: blue, Underline: true}, Link: "https://loom.dev"}, {Text: ".", Style: loom.Style{}}}},
-		{Spans: []loom.RichSpan{{Text: "Click and drag to select; pills delete atomically.", Style: loom.Style{Dim: true}}}},
+		{Spans: []loom.RichSpan{{Text: "Drag to select; click B/I/U/S, #FG or #BG. Choose a color swatch.", Style: loom.Style{Dim: true}}}},
 	}})}
 }
 
@@ -34,7 +34,7 @@ func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	w.edit.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: editHeight})
 	if r.H > 0 {
-		c.WriteANSI(r.X, r.Y+r.H-1, "\x1b[2m[Ctrl+B] bold  [Ctrl+I] italic  [Ctrl+U] underline  [Shift+←/→] select\x1b[0m")
+		c.WriteANSI(r.X, r.Y+r.H-1, "\x1b[2m[Ctrl+B/I/U] format  [Shift+←/→] select  Drag then click #FG/#BG for colors\x1b[0m")
 	}
 }
 

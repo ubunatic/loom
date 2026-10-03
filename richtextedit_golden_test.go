@@ -42,3 +42,42 @@ func TestRichTextEditGoldenMockup(t *testing.T) {
 		}
 	}
 }
+
+func TestRichTextEditPopoverControlsMatchV2Mockup(t *testing.T) {
+	data, err := os.ReadFile("docs/data/richtext-widget-v2.ansi")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fixture := &RichDocument{}
+	fixture.FromANSI(strings.TrimSuffix(string(data), "\n"))
+	mockupText := fixture.ToPlainText()
+	for _, label := range []string{"B", "I", "U", "#FG", "#BG", "Link"} {
+		if !strings.Contains(mockupText, label) {
+			t.Fatalf("v2 mockup is missing %q control", label)
+		}
+	}
+
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "select me"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 6})
+	canvas := NewCanvas(48, 5)
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	if len(edit.popoverButtons) != len(richPopoverLabels) {
+		t.Fatalf("rendered toolbar has %d controls, want %d", len(edit.popoverButtons), len(richPopoverLabels))
+	}
+	var rendered strings.Builder
+	first, last := edit.popoverButtons[0].rect, edit.popoverButtons[len(edit.popoverButtons)-1].rect
+	for x := first.X - 1; x <= last.X+last.W; x++ {
+		cell := canvas.Get(x, first.Y)
+		if cell.Text == "" {
+			rendered.WriteByte(' ')
+		} else {
+			rendered.WriteString(cell.Text)
+		}
+	}
+	for _, label := range richPopoverLabels {
+		if !strings.Contains(rendered.String(), label) {
+			t.Fatalf("rendered toolbar %q is missing %q", rendered.String(), label)
+		}
+	}
+}

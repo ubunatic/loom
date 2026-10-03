@@ -304,10 +304,15 @@ In tests locate screen text by runes or display width, never byte offsets.
 `RichDocument` stores logical lines as styled spans. `RichTextEdit` renders those
 spans into a clipped, scrollable viewport and supports rune-based cursor
 navigation, shift-arrow selection, mouse drag selection, and inline bold,
-italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). `RichSpan` can
-also carry link, code, or `RichPill` metadata; pill spans are atomic when
-deleted. The widget gallery includes an interactive demo with formatting
-shortcuts and mention pills.
+italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). A non-empty
+selection shows a floating formatting popover by default; set `ShowPopover` to
+false to hide it. Its B/I/U/S buttons toggle styles on the selection. Click
+`#FG` or `#BG` to open a 16-color ANSI swatch row and apply a color across the
+selected spans. Mouse coordinates are child-local, so the editor can handle
+selection drags and popover clicks directly. `RichSpan` can also carry link,
+code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
+gallery demonstrates selection formatting and color picking alongside mention
+pills.
 
 ```go
 doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{
@@ -498,4 +503,3 @@ type Focusable interface {
 - **Focused Placement**: Widgets set `Canvas.CursorX` and `Canvas.CursorY` during `Draw` only when active/focused. Unfocused widgets and static views never touch canvas cursor coordinates.
 - **Compositor Propagation (`SubCanvas` & `Blit`)**: `SubCanvas` and `Blit` preserve and translate cursor positions relative to their destination bounds, ensuring cursor coordinates accurately reach the terminal when rendering through `Viewport`, `Split`, `Frame` (`paintClipped`), or nested layers.
 - **Hardware Cursor Flush**: `Canvas.FlushWithConfig` emits `\x1b[?25h` with terminal row/col addressing only when `CursorX >= 0 && CursorY >= 0`, and emits `\x1b[?25l` (hidden cursor) otherwise.
-
