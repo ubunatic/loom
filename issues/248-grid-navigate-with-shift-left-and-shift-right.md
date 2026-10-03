@@ -1,6 +1,6 @@
 # 248 — Grid: navigate with Shift-Left and Shift-Right
 
-**Status**: In Progress — extend shifted navigation to all four directions
+**Status**: Closed — Shift-Left/Right and Shift-Up/Down navigate Grid focus while regular arrows remain child-first
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
