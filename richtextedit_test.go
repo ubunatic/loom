@@ -82,3 +82,143 @@ func TestRichTextEditClipsToAssignedRectAndHidesUnfocusedCursor(t *testing.T) {
 		t.Fatalf("unfocused draw set cursor to (%d,%d)", canvas.CursorX, canvas.CursorY)
 	}
 }
+
+func TestRichTextEditTypingNewlinesAndLineJoin(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abcd"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor.Offset = 2
+	edit.ConsumeKey(KeyEvent{Text: "XY"})
+	if got := doc.ToPlainText(); got != "abXYcd" || edit.Cursor.Offset != 4 {
+		t.Fatalf("typed doc/cursor = %q/%+v", got, edit.Cursor)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "enter"})
+	edit.ConsumeKey(KeyEvent{Text: "z"})
+	if got := doc.ToPlainText(); got != "abXY\nzcd" {
+		t.Fatalf("newline insertion = %q", got)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "backspace"})
+	if got := doc.ToPlainText(); got != "abXY\ncd" {
+		t.Fatalf("backspace = %q", got)
+	}
+	edit.Cursor = RichPosition{Line: 1}
+	edit.ConsumeKey(KeyEvent{Key: "backspace"})
+	if got := doc.ToPlainText(); got != "abXYcd" || edit.Cursor != (RichPosition{Line: 0, Offset: 4}) {
+		t.Fatalf("line join = %q, cursor %+v", got, edit.Cursor)
+	}
+}
+
+func TestRichTextEditDeletesPillsAtomically(t *testing.T) {
+	newDoc := func() *RichDocument {
+		return &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+			{Text: "a"},
+			{Text: "@team-core", PillData: &RichPill{Kind: "mention", ID: "team-core"}},
+			{Text: "b"},
+		}}}}
+	}
+	t.Run("backspace", func(t *testing.T) {
+		doc := newDoc()
+		edit := NewRichTextEdit(doc)
+		edit.Cursor.Offset = 10
+		edit.ConsumeKey(KeyEvent{Key: "backspace"})
+		if got := doc.ToPlainText(); got != "ab" {
+			t.Fatalf("backspace split pill: %q", got)
+		}
+	})
+	t.Run("delete", func(t *testing.T) {
+		doc := newDoc()
+		edit := NewRichTextEdit(doc)
+		edit.Cursor.Offset = 1
+		edit.ConsumeKey(KeyEvent{Key: "delete"})
+		if got := doc.ToPlainText(); got != "ab" {
+			t.Fatalf("delete split pill: %q", got)
+		}
+	})
+	t.Run("selection", func(t *testing.T) {
+		doc := newDoc()
+		edit := NewRichTextEdit(doc)
+		edit.SetSelection(RichPosition{Offset: 3}, RichPosition{Offset: 4})
+		edit.ConsumeKey(KeyEvent{Key: "delete"})
+		if got := doc.ToPlainText(); got != "ab" {
+			t.Fatalf("selection split pill: %q", got)
+		}
+	})
+}
+
+func TestRichTextEditNavigationAndSelection(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "one two"}}},
+		{Spans: []RichSpan{{Text: "next"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-right"})
+	if edit.Cursor.Offset != 4 {
+		t.Fatalf("ctrl-right cursor = %+v, want offset 4", edit.Cursor)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-left"})
+	if edit.Cursor.Offset != 0 {
+		t.Fatalf("ctrl-left cursor = %+v, want offset 0", edit.Cursor)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "shift-right"})
+	edit.ConsumeKey(KeyEvent{Key: "shift-right"})
+	if !edit.HasSelection || edit.SelectionFrom.Offset != 0 || edit.SelectionTo.Offset != 2 {
+		t.Fatalf("shift selection = %+v..%+v active=%v", edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "shift-left"})
+	if !edit.HasSelection || edit.Cursor.Offset != 1 {
+		t.Fatalf("reversed selection = %+v active=%v", edit.Cursor, edit.HasSelection)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "left"})
+	if edit.HasSelection || edit.Cursor.Offset != 0 {
+		t.Fatalf("left should collapse selection to start: %+v active=%v", edit.Cursor, edit.HasSelection)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "end"})
+	edit.ConsumeKey(KeyEvent{Key: "down"})
+	if edit.Cursor != (RichPosition{Line: 1, Offset: 4}) {
+		t.Fatalf("vertical navigation cursor = %+v", edit.Cursor)
+	}
+}
+
+func TestRichTextEditFormattingShortcuts(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello world"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	for _, key := range []string{"ctrl-b", "ctrl-i", "ctrl-u"} {
+		edit.ConsumeKey(KeyEvent{Key: key})
+	}
+	if len(doc.Lines[0].Spans) != 2 {
+		t.Fatalf("formatting should split spans: %#v", doc.Lines[0].Spans)
+	}
+	styled := doc.Lines[0].Spans[0].Style
+	if !styled.Bold || !styled.Italic || !styled.Underline || doc.Lines[0].Spans[1].Style != (Style{}) {
+		t.Fatalf("formatting range = %#v", doc.Lines[0].Spans)
+	}
+	edit.ClearSelection()
+	edit.Cursor.Offset = 11
+	for _, key := range []string{"ctrl-b", "ctrl-i", "ctrl-u"} {
+		edit.ConsumeKey(KeyEvent{Key: key})
+	}
+	edit.ConsumeKey(KeyEvent{Text: "!"})
+	last := doc.Lines[0].Spans[len(doc.Lines[0].Spans)-1]
+	if last.Text != "!" || !last.Style.Bold || !last.Style.Italic || !last.Style.Underline {
+		t.Fatalf("active style insertion = %#v", last)
+	}
+}
+
+func TestRichTextEditMouseClickAndDragSelection(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abcdef"}}}, {Spans: []RichSpan{{Text: "ghij"}}}}}
+	edit := NewRichTextEdit(doc)
+	canvas := NewCanvas(14, 4)
+	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 8, H: 2})
+	if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 0}); !got.Consumed || edit.Cursor != (RichPosition{Offset: 2}) {
+		t.Fatalf("mouse click result=%+v cursor=%+v", got, edit.Cursor)
+	}
+	edit.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 3, Y: 1})
+	edit.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 3, Y: 1})
+	if !edit.HasSelection || edit.SelectionFrom != (RichPosition{Offset: 2}) || edit.SelectionTo != (RichPosition{Line: 1, Offset: 3}) {
+		t.Fatalf("drag selection = %+v..%+v active=%v", edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 8, H: 2})
+	if canvas.Get(5, 1).Style.BG != ColorIndex(24) || canvas.Get(3, 2).Style.BG != ColorIndex(24) {
+		t.Fatal("mouse selection was not painted across lines")
+	}
+}
