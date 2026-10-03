@@ -1,6 +1,6 @@
 # 248 — Grid: navigate with Shift-Left and Shift-Right
 
-**Status**: Open
+**Status**: In Progress — Grid shifted-arrow navigation
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
