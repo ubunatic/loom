@@ -295,3 +295,86 @@ func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
 		t.Fatal("popover remained visible after selection collapsed")
 	}
 }
+
+func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "ab", Style: Style{FG: ColorIndex(2), BG: ColorIndex(3)}},
+		{Text: "cdef", Style: Style{FG: ColorIndex(4), BG: ColorIndex(5), Italic: true}},
+		{Text: "ghij", Style: Style{FG: ColorIndex(6), BG: ColorIndex(7), Underline: true}},
+	}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 8})
+	canvas := NewCanvas(50, 5)
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+
+	clickButton := func(label string) {
+		t.Helper()
+		for _, button := range edit.popoverButtons {
+			if button.label == label {
+				if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !result.Consumed {
+					t.Fatalf("%s click was not consumed", label)
+				}
+				return
+			}
+		}
+		t.Fatalf("popover button %s not found", label)
+	}
+	clickSwatch := func(index int) {
+		t.Helper()
+		if len(edit.popoverSwatches) != 16 {
+			t.Fatalf("palette swatches = %d, want 16", len(edit.popoverSwatches))
+		}
+		swatch := edit.popoverSwatches[index]
+		if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatch.rect.X, Y: swatch.rect.Y}); !result.Consumed {
+			t.Fatalf("color %d click was not consumed", index)
+		}
+		if edit.popoverPalette != "" {
+			t.Fatalf("palette remained open after choosing color %d", index)
+		}
+	}
+	styleAt := func(offset int) Style {
+		for _, span := range doc.Lines[0].Spans {
+			length := len([]rune(span.Text))
+			if offset < length {
+				return span.Style
+			}
+			offset -= length
+		}
+		t.Fatalf("no span at offset")
+		return Style{}
+	}
+
+	clickButton("#FG")
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	clickSwatch(10)
+	if got := styleAt(0).FG; got != ColorIndex(2) {
+		t.Fatalf("unselected prefix FG = %v, want 2", got)
+	}
+	for _, offset := range []int{1, 2, 5, 6, 7} {
+		if got := styleAt(offset).FG; got != ColorIndex(10) {
+			t.Errorf("selected offset %d FG = %v, want 10", offset, got)
+		}
+	}
+	if got := styleAt(8).FG; got != ColorIndex(6) {
+		t.Fatalf("unselected suffix FG = %v, want 6", got)
+	}
+	if !styleAt(3).Italic || !styleAt(7).Underline {
+		t.Fatal("FG palette erased existing attributes")
+	}
+
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	clickButton("#BG")
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	clickSwatch(9)
+	if got := styleAt(0).BG; got != ColorIndex(3) {
+		t.Fatalf("unselected prefix BG = %v, want 3", got)
+	}
+	for _, offset := range []int{1, 2, 5, 6, 7} {
+		if got := styleAt(offset).BG; got != ColorIndex(9) {
+			t.Errorf("selected offset %d BG = %v, want 9", offset, got)
+		}
+	}
+	if got := styleAt(8).BG; got != ColorIndex(7) {
+		t.Fatalf("unselected suffix BG = %v, want 7", got)
+	}
+}

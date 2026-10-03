@@ -38,11 +38,18 @@ type RichTextEdit struct {
 	dragSelecting      bool
 	activeStyleSet     bool
 	popoverButtons     []richPopoverButton
+	popoverPalette     string
+	popoverSwatches    []richPopoverSwatch
 	popoverRelease     bool
 }
 
 type richPopoverButton struct {
 	label string
+	rect  Rect
+}
+
+type richPopoverSwatch struct {
+	color Color
 	rect  Rect
 }
 
@@ -268,6 +275,13 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 	}
 	if e.popoverHit(mouse.X, mouse.Y) {
 		if mouse.Action == MousePress && mouse.Button == MouseLeft {
+			for _, swatch := range e.popoverSwatches {
+				if swatch.rect.Contains(mouse.X, mouse.Y) {
+					e.applyPopoverColor(e.popoverPalette, swatch.color)
+					e.popoverRelease = true
+					return Handled()
+				}
+			}
 			for _, button := range e.popoverButtons {
 				if button.rect.Contains(mouse.X, mouse.Y) {
 					e.applyPopoverAction(button.label)
@@ -277,6 +291,10 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 			}
 		}
 		return Handled()
+	}
+	if mouse.Action == MousePress {
+		e.popoverPalette = ""
+		e.popoverSwatches = nil
 	}
 	switch mouse.Action {
 	case MouseScrollUp:
@@ -314,6 +332,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
+	e.popoverSwatches = nil
 	if !e.ShowPopover || !e.HasSelection || r.W < 18 || r.H < 3 {
 		return
 	}
@@ -367,9 +386,46 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		}
 	}
 	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(8)}})
+	e.drawPopoverPalette(c, r, barX, barY)
+}
+
+func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
+	if e.popoverPalette == "" || r.W < 16 {
+		return
+	}
+	var button Rect
+	for _, item := range e.popoverButtons {
+		if item.label == e.popoverPalette {
+			button = item.rect
+			break
+		}
+	}
+	if button.W == 0 {
+		e.popoverPalette = ""
+		return
+	}
+	paletteY := barY + 1
+	if paletteY >= r.H {
+		paletteY = barY - 1
+	}
+	if paletteY < 0 || paletteY >= r.H {
+		return
+	}
+	paletteX := min(max(0, button.X+button.W/2-8), r.W-16)
+	for i := 0; i < 16; i++ {
+		color := ColorIndex(uint8(i))
+		cellStyle := Style{BG: color}
+		c.Set(r.X+paletteX+i, r.Y+paletteY, Cell{Text: " ", Style: cellStyle})
+		e.popoverSwatches = append(e.popoverSwatches, richPopoverSwatch{color: color, rect: Rect{X: paletteX + i, Y: paletteY, W: 1, H: 1}})
+	}
 }
 
 func (e *RichTextEdit) popoverHit(x, y int) bool {
+	for _, swatch := range e.popoverSwatches {
+		if swatch.rect.Contains(x, y) {
+			return true
+		}
+	}
 	for _, button := range e.popoverButtons {
 		if button.rect.Contains(x, y) {
 			return true
@@ -392,7 +448,62 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case "S":
 		e.toggleAttribute(func(s *Style, on bool) { s.Strike = on }, func(s Style) bool { return s.Strike })
+	case "#FG", "#BG":
+		if e.popoverPalette == label {
+			e.popoverPalette = ""
+			e.popoverSwatches = nil
+		} else {
+			e.popoverPalette = label
+		}
 	}
+}
+
+func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {
+	if !e.HasSelection || (palette != "#FG" && palette != "#BG") {
+		e.popoverPalette = ""
+		e.popoverSwatches = nil
+		return
+	}
+	lines := e.documentLines()
+	from, to := e.selectionBounds()
+	e.clampPosition(&from, lines)
+	e.clampPosition(&to, lines)
+	from, to = expandRangeForPills(lines, from, to)
+	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
+		start, end := richSelectionLineBounds(lineIndex, from, to)
+		lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, palette, color)
+	}
+	e.popoverPalette = ""
+	e.popoverSwatches = nil
+}
+
+func colorRichLine(line RichLine, start, end int, field string, color Color) []RichSpan {
+	var result []RichSpan
+	offset := 0
+	for _, span := range line.Spans {
+		length := len([]rune(span.Text))
+		spanEnd := offset + length
+		if length == 0 || offset >= end || spanEnd <= start {
+			result = append(result, span)
+			offset = spanEnd
+			continue
+		}
+		localStart, localEnd := max(0, start-offset), min(length, end-offset)
+		prefix, rest := splitRichLine(RichLine{Spans: []RichSpan{span}}, localStart)
+		selected, suffix := splitRichLine(RichLine{Spans: rest}, localEnd-localStart)
+		result = append(result, prefix...)
+		for i := range selected {
+			if field == "#FG" {
+				selected[i].Style.FG = color
+			} else {
+				selected[i].Style.BG = color
+			}
+		}
+		result = append(result, selected...)
+		result = append(result, suffix...)
+		offset = spanEnd
+	}
+	return mergeRichSpans(result)
 }
 
 func (e *RichTextEdit) ensureDocument() {
