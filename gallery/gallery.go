@@ -143,6 +143,13 @@ var demos = map[string]constructor{
 		bar.Unit = " files"
 		return &progressDemo{ProgressBar: bar}
 	},
+	"SearchBar": func() loom.Widget {
+		sb := loom.NewSearchBar()
+		sb.Prompt = "> "
+		sb.Placeholder = "type to filter"
+		sb.Controls = "4/12"
+		return sb
+	},
 	"Spinner": func() loom.Widget {
 		spinner := loom.NewSpinner("Syncing workspace")
 		spinner.Start()
@@ -462,7 +469,6 @@ func newAllDemo() *loom.Grid {
 	popup.Width, popup.Height = 30, 4
 	textArea := &textAreaWidget{area: loom.NewTextArea("A short text area\nwith two lines.")}
 	viewport := loom.NewViewport(loom.NewView([]string{"Viewport row 1", "Viewport row 2", "Viewport row 3", "Viewport row 4"}))
-
 	return loom.NewGrid(3,
 		button, toggle, checkbox,
 		numInput, badge, pillCluster,
