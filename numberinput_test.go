@@ -49,6 +49,41 @@ func TestNumberInputStepsAndClamps(t *testing.T) {
 	}
 }
 
+func TestNumberInputArrowKeysStayInGrid(t *testing.T) {
+	value := 7.5
+	input := loom.NewNumberInput(&value, -100, 100)
+	grid := loom.NewGrid(2, input, loom.NewView([]string{"next"}))
+
+	for _, test := range []struct {
+		key  string
+		want float64
+	}{{"right", 8.5}, {"left", 7.5}} {
+		result := grid.ConsumeKey(loom.KeyEvent{Key: test.key})
+		if !result.Consumed {
+			t.Errorf("%s result = %+v, want consumed", test.key, result)
+		}
+		if value != test.want {
+			t.Errorf("value after %s = %g, want %g", test.key, value, test.want)
+		}
+		if grid.Focus() != 0 {
+			t.Errorf("focus after %s = %d, want 0", test.key, grid.Focus())
+		}
+	}
+
+	grid.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !input.Editing() {
+		t.Fatal("Enter did not start inline editing")
+	}
+	for _, key := range []string{"left", "right"} {
+		if result := grid.ConsumeKey(loom.KeyEvent{Key: key}); !result.Consumed {
+			t.Errorf("editing %s result = %+v, want consumed", key, result)
+		}
+		if grid.Focus() != 0 {
+			t.Errorf("editing %s moved grid focus to %d, want 0", key, grid.Focus())
+		}
+	}
+}
+
 func TestNumberInputInlineEditValidationAndCancel(t *testing.T) {
 	value := 3.0
 	input := loom.NewNumberInput(&value, -10, 10)

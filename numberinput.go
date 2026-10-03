@@ -86,6 +86,10 @@ func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 		return Ignored()
 	}
 	if n.editor != nil {
+		if e.Key == "left" || e.Key == "right" {
+			n.editor.ConsumeKey(e)
+			return Handled()
+		}
 		if n.handleEditKey(e) {
 			return Handled()
 		}
@@ -94,9 +98,21 @@ func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 	switch e.Key {
 	case "enter":
 		n.beginEdit()
-	case "left", "minus":
+	case "left":
+		if n.Value == nil {
+			return Ignored()
+		}
 		n.StepBy(-1)
-	case "right", "plus":
+		return Handled()
+	case "right":
+		if n.Value == nil {
+			return Ignored()
+		}
+		n.StepBy(1)
+		return Handled()
+	case "minus":
+		n.StepBy(-1)
+	case "plus":
 		n.StepBy(1)
 	default:
 		if e.Text == "+" {
