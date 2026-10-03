@@ -45,10 +45,17 @@ Design mockups for this widget are captured and validated in:
 ## 3. Implementation & Verification Plan
 
 - **M1 (Core Model & ANSI Serialization)**:
-  - Implement `RichDocument`, `RichSpan`, and parser/serializer in `richtext.go` and `richtext_test.go`.
+  - Delivered in commit `1134365` (`feat(richtext): add core document and ANSI serialization`).
+  - Added `RichDocument`, `RichLine`, `RichSpan`, and `RichPill` in `richtext.go`.
+  - Added SGR styling attributes `Italic`, `Strike`, `Invert` to `loom.Style` and updated ANSI parsing in `parse_ansi.go`.
+  - Unit tests verified roundtrip and ANSI parsing in `richtext_test.go`, `style_test.go`, and `parse_ansi_test.go`.
 - **M2 (RichTextEdit Widget & Rendering)**:
-  - Implement `loom.RichTextEdit` widget with cursor, multi-span line drawing, and selection highlighting in `richtextedit.go`.
-  - Add unit tests verifying bounds, wrapping, and clipping.
+  - **Pre-Work / Requirements**:
+    - Implement `loom.RichTextEdit` in `richtextedit.go` implementing `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`).
+    - Use `measure.StringWidth` for cell layout; render multi-span lines accurately to `loom.Canvas`.
+    - Support viewport scrolling (`ScrollX`, `ScrollY`) and visual cursor positioning (`CursorLine`, `CursorCol`).
+    - Support text selection highlighting (`SelectionStart`, `SelectionEnd`).
+    - Add tests in `richtextedit_test.go` checking layout, wrapping, clipping, and selection painting.
 - **M3 (Input Handling & Formatting Commands)**:
   - Implement `ConsumeKey` and `ConsumeMouse` with editing commands (`Insert`, `Delete`, `ToggleBold`, etc.).
   - Implement atomic pill badge traversal.
