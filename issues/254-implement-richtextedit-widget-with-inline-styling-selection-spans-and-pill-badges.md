@@ -1,6 +1,6 @@
 # 254 — implement richtextedit widget with inline styling, selection spans, and pill badges
 
-**Status**: Open
+**Status**: Closed — implemented RichTextEdit widget with inline styling, selection spans, atomic pill badges, and gallery demo
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
