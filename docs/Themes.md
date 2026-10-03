@@ -41,11 +41,11 @@ physical color seen by the user.
 
 | Theme role | Primary consumers |
 |------------|-------------------|
-| Normal | `Choice`, `Table`, `Frame` background, `Box` background/footer, `Tabs` inactive titles |
+| Normal | `Choice`, `Table`, `SearchBar`, `Frame` background, `Box` background/footer, `Tabs` inactive titles |
 | Selected | `Choice` and `Table` selected rows |
 | Header | `Table` header and sort header, `Tabs` active title |
-| Prompt | `Choice` and `Table` prompts |
-| Placeholder | Empty `Choice` filter value |
+| Prompt | `Choice`, `Table`, and `SearchBar` prompt glyph (`> `) |
+| Placeholder | `Choice`, `Table`, and `SearchBar` placeholder filter hint |
 | Scrollbar track/thumb | `Choice` and `View` scrollbars |
 | Status | `Frame` status row |
 | Border | `Box` border/title and `Frame` title, `Tabs` bar rule |
@@ -64,6 +64,7 @@ view.Scrollbar = theme.ScrollbarStyle()
 frame.Style = theme.FrameStyle()
 box.Style = theme.BoxStyle()
 table.Style = theme.TableStyle()
+searchbar.Style = theme.SearchBarStyle()
 grid.FocusBG = theme.FocusBGColor()
 tabs.Style = theme.TabsStyle()
 ```

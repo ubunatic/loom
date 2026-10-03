@@ -432,3 +432,26 @@ picker := loom.NewDatePicker(&selected)
 picker.Min = time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
 picker.OnSelect = func(date time.Time) { fmt.Println(date.Format("2006-01-02")) }
 ```
+
+## 15. Search Bar (`loom.SearchBar`)
+
+`SearchBar` provides an input line with prompt glyph (`> `), typed query tracking, placeholder hint support, cursor management, match count / status label controls (`Controls`), and command mode (`:` / `/`).
+
+```go
+sb := loom.NewSearchBar()
+sb.Prompt = "> "
+sb.Placeholder = "type to filter"
+sb.Controls = "4/12"
+sb.OnChange = func(query string) {
+    // filter items
+}
+sb.OnSubmit = func(query string) {
+    // confirm selection
+}
+```
+
+### Key Capabilities & Invariants
+- **Standalone & Embeddable**: `SearchBar` implements `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`). Search-capable container widgets like `Choice` and `Table` embed `SearchBar` directly and expose it via `.SearchBar()`.
+- **Command Mode Integration**: Supports `AddCmd(loom.Cmd)` and automatically enters command mode on `:` or `/` keypresses when commands are registered.
+- **Surface & Theme Blending**: Uses `SearchBarStyle` (`Container`, `Prompt`, `Query`, `Placeholder`, `Controls`) and paints surfaces seamlessly over parent grid/widget focus surfaces.
+
