@@ -363,6 +363,27 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	}
 }
 
+func TestWidgetsDebugFlag(t *testing.T) {
+	previousDebug := loom.Debug
+	loom.Debug = false
+	t.Cleanup(func() { loom.Debug = previousDebug })
+	previousRun := runWidgetPane
+	runWidgetPane = func(loom.Widget, int, int) error {
+		if !loom.Debug {
+			t.Error("--debug did not enable debug outlines while running the gallery")
+		}
+		return nil
+	}
+	t.Cleanup(func() { runWidgetPane = previousRun })
+
+	if err := execute([]string{"widgets", "--show", "--debug", "Chart"}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	if loom.Debug {
+		t.Fatal("--debug remained enabled after the gallery exited")
+	}
+}
+
 func TestGalleryAppKeys(t *testing.T) {
 	child := &keyProbeWidget{}
 	g := newThemedGallery(child, "mc")

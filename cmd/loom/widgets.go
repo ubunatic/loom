@@ -37,7 +37,7 @@ type widgetEntry struct {
 }
 
 func widgetsCommand() *cobra.Command {
-	var show, list bool
+	var show, list, debug bool
 	var themeName string
 	var width, height int
 	command := &cobra.Command{
@@ -57,6 +57,9 @@ func widgetsCommand() *cobra.Command {
 				if !loom.ThemeExists(themeName) {
 					return fmt.Errorf("unknown theme %q (available: %s)", themeName, strings.Join(loom.ThemeNames(), ", "))
 				}
+				previousDebug := loom.Debug
+				loom.Debug = debug
+				defer func() { loom.Debug = previousDebug }()
 				return showWidgetDemos(args, themeName, width, height)
 			}
 			catalog, err := readWidgetCatalog()
@@ -97,6 +100,7 @@ func widgetsCommand() *cobra.Command {
 	}
 	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
 	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
+	command.Flags().BoolVar(&debug, "debug", false, "show debug cell outlines in live widget demos")
 	command.Flags().StringVar(&themeName, "theme", "julia256", "gallery color theme")
 	command.Flags().IntVarP(&width, "width", "W", 0, "maximum gallery width in columns")
 	command.Flags().IntVarP(&height, "height", "H", 0, "gallery height in rows")
