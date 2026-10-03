@@ -40,14 +40,18 @@ Here is some selected text ready for styling.
 ## 3. Implementation & Verification Plan
 
 - **M1 (Popover Geometry, Rendering & Actions)**:
-  - Implement popover layout, anchor positioning, and button rendering above selection in `richtextedit.go`.
-  - Handle mouse clicks on format action buttons (`B`, `I`, `U`, `S`).
-  - Unit tests in `richtextedit_test.go`.
+  - Delivered in commit `84ef5fa` (`feat: add rich text format popover M1`).
+  - Implemented popover geometry, anchor rendering (`▲`/`▼`), button rendering (`B`, `I`, `U`, `S`, `Link`, `#FG`, `#BG`), and click hit testing.
+  - Added unit tests in `richtextedit_test.go`.
 - **M2 (Inline FG/BG Color Picker & Palette Popdown)**:
-  - Implement mini-palette popdown for `#FG` and `#BG` selection.
-  - Apply chosen FG/BG color to active selection range.
-  - Unit tests verifying color mutation across multi-span selections.
+  - **Pre-Work / Requirements**:
+    - Implement interactive mini-palette for `#FG` and `#BG` selection when clicking those popover buttons.
+    - Mini-palette renders 16 ANSI colors / hue swatches adjacent to `#FG` / `#BG`.
+    - Clicking a swatch updates `Style.FG` or `Style.BG` across all spans in the selection range and closes the sub-palette.
+    - Implement `Link` toggle or prompt helper if applicable.
+    - Add unit tests verifying FG/BG color selection and multi-span styling.
 - **M3 (Gallery Integration, Golden Coverage & Docs)**:
-  - Update `gallery/richtextedit.go` with popover demonstration.
-  - Add golden mockup test asserting rendering matches `docs/data/richtext-widget-v2.ansi`.
+  - Update `gallery/richtextedit.go` to demonstrate the floating format popover and FG/BG color selection on highlighted text.
+  - Add golden mockup comparator test in `richtextedit_golden_test.go` checking visual rendering matches `docs/data/richtext-widget-v2.ansi`.
   - Update `docs/Widgets.md`.
+  - Run `make test-q1`, run `make install`, and close issue 255 with `harnez issues close 255 "implemented floating format popover with FG/BG color picker for RichTextEdit"`.
