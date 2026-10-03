@@ -222,3 +222,76 @@ func TestRichTextEditMouseClickAndDragSelection(t *testing.T) {
 		t.Fatal("mouse selection was not painted across lines")
 	}
 }
+
+func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "first"}}},
+		{Spans: []RichSpan{{Text: "second"}}},
+		{Spans: []RichSpan{{Text: "some selected text"}}},
+		{Spans: []RichSpan{{Text: "last"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
+	canvas := NewCanvas(50, 6)
+	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
+	if len(edit.popoverButtons) != 7 {
+		t.Fatalf("popover buttons = %d, want 7", len(edit.popoverButtons))
+	}
+	first := edit.popoverButtons[0].rect
+	if first.Y != 0 || canvas.Get(3+first.X-1, 1+first.Y).Text != "[" {
+		t.Fatalf("popover top-left = %+v, expected above selection in child-local coordinates", first)
+	}
+	if canvas.Get(3+first.X+4, 1+first.Y+1).Text != "▼" {
+		t.Fatal("popover did not draw a downward anchor between toolbar and selection")
+	}
+	selection := edit.SelectionFrom
+	bold := edit.popoverButtons[0].rect
+	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: bold.X + 1, Y: bold.Y}); !result.Consumed {
+		t.Fatal("bold button click was not consumed")
+	}
+	if len(doc.Lines[2].Spans) < 2 || !doc.Lines[2].Spans[1].Style.Bold || edit.SelectionFrom != selection || !edit.HasSelection {
+		t.Fatalf("bold action/selection = %#v, %+v..%+v active=%v", doc.Lines[2].Spans, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	if result := edit.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: bold.X + 1, Y: bold.Y}); !result.Consumed {
+		t.Fatal("popover button release was not consumed")
+	}
+	for _, label := range []string{"I", "U", "S"} {
+		for _, button := range edit.popoverButtons {
+			if button.label == label {
+				edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
+				break
+			}
+		}
+	}
+	if style := doc.Lines[2].Spans[1].Style; !style.Bold || !style.Italic || !style.Underline || !style.Strike {
+		t.Fatalf("format action styles = %+v", style)
+	}
+}
+
+func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 6})
+	canvas := NewCanvas(48, 5)
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	first := edit.popoverButtons[0].rect
+	if first.Y != 2 || canvas.Get(first.X, 1).Text != "▲" {
+		t.Fatalf("popover failed below-selection placement: first=%+v pointer=%q", first, canvas.Get(first.X, 1).Text)
+	}
+	for _, label := range []string{"Link", "#FG", "#BG"} {
+		for _, button := range edit.popoverButtons {
+			if button.label == label {
+				result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
+				if !result.Consumed || !edit.HasSelection {
+					t.Fatalf("placeholder %s result=%+v selection=%v", label, result, edit.HasSelection)
+				}
+				break
+			}
+		}
+	}
+	edit.SetSelection(RichPosition{}, RichPosition{})
+	edit.Draw(canvas, Rect{W: 40, H: 5})
+	if len(edit.popoverButtons) != 0 {
+		t.Fatal("popover remained visible after selection collapsed")
+	}
+}

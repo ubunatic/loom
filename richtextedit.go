@@ -29,6 +29,7 @@ type RichTextEdit struct {
 	ScrollX        int
 	ScrollY        int
 	ShowCursor     bool
+	ShowPopover    bool
 
 	focused            bool
 	lastRect           Rect
@@ -36,14 +37,23 @@ type RichTextEdit struct {
 	selectionExtending bool
 	dragSelecting      bool
 	activeStyleSet     bool
+	popoverButtons     []richPopoverButton
+	popoverRelease     bool
 }
+
+type richPopoverButton struct {
+	label string
+	rect  Rect
+}
+
+var richPopoverLabels = []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
 // NewRichTextEdit creates a rich text view for doc. A nil document is treated
 // as an empty document.
 func NewRichTextEdit(doc *RichDocument) *RichTextEdit {
-	return &RichTextEdit{Document: doc, ShowCursor: true, focused: true}
+	return &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, focused: true}
 }
 
 // Focused reports whether the editor currently has keyboard focus.
@@ -72,6 +82,7 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		return
 	}
 	e.lastRect = r
+	e.popoverButtons = nil
 	if r.W <= 0 || r.H <= 0 {
 		return
 	}
@@ -98,6 +109,7 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	for row := 0; row < r.H && e.ScrollY+row < len(lines); row++ {
 		e.drawLine(c, r, lines[e.ScrollY+row], e.ScrollY+row)
 	}
+	e.drawPopover(c, r, lines)
 	if e.ShowCursor && e.focused {
 		x := cursorCol - e.ScrollX
 		y := e.Cursor.Line - e.ScrollY
@@ -250,6 +262,22 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 // ConsumeMouse positions the cursor and supports click-drag selection.
 func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 	e.ensureDocument()
+	if e.popoverRelease && mouse.Action == MouseRelease {
+		e.popoverRelease = false
+		return Handled()
+	}
+	if e.popoverHit(mouse.X, mouse.Y) {
+		if mouse.Action == MousePress && mouse.Button == MouseLeft {
+			for _, button := range e.popoverButtons {
+				if button.rect.Contains(mouse.X, mouse.Y) {
+					e.applyPopoverAction(button.label)
+					e.popoverRelease = true
+					break
+				}
+			}
+		}
+		return Handled()
+	}
 	switch mouse.Action {
 	case MouseScrollUp:
 		e.ScrollY = max(0, e.ScrollY-1)
@@ -281,6 +309,89 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 		return Handled()
 	default:
 		return Ignored()
+	}
+}
+
+func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
+	e.popoverButtons = nil
+	if !e.ShowPopover || !e.HasSelection || r.W < 18 || r.H < 3 {
+		return
+	}
+	from, _ := e.selectionBounds()
+	e.clampPosition(&from, lines)
+	anchorX := richLineColumn(lines[from.Line], from.Offset) - e.ScrollX
+	anchorY := from.Line - e.ScrollY
+	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
+		return
+	}
+	width := 2
+	for i, label := range richPopoverLabels {
+		width += len(label) + 2
+		if i > 0 {
+			width++
+		}
+	}
+	barY, pointerY, pointer := 0, 0, "▲"
+	if anchorY >= 2 {
+		barY, pointerY, pointer = anchorY-2, anchorY-1, "▼"
+	} else if anchorY+2 < r.H {
+		barY, pointerY = anchorY+2, anchorY+1
+	} else {
+		return
+	}
+	barX := min(max(0, anchorX-width/2), r.W-width)
+	if barX < 0 { // Keep the complete action row visible in very narrow widgets.
+		return
+	}
+	toolbarStyle := Style{FG: ColorIndex(15), BG: ColorIndex(239), Bold: true}
+	for x := 0; x < width; x++ {
+		c.Set(r.X+barX+x, r.Y+barY, Cell{Text: " ", Style: toolbarStyle})
+	}
+	c.Set(r.X+barX, r.Y+barY, Cell{Text: "[", Style: toolbarStyle})
+	c.Set(r.X+barX+width-1, r.Y+barY, Cell{Text: "]", Style: toolbarStyle})
+	x := barX + 1
+	for i, label := range richPopoverLabels {
+		button := Rect{X: x, Y: barY, W: len(label) + 2, H: 1}
+		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, rect: button})
+		for j, ch := range " " + label + " " {
+			style := toolbarStyle
+			if label == "B" && ch == 'B' {
+				style.Bold = true
+			}
+			c.Set(r.X+x+j, r.Y+barY, Cell{Text: string(ch), Style: style})
+		}
+		x += button.W
+		if i < len(richPopoverLabels)-1 {
+			c.Set(r.X+x, r.Y+barY, Cell{Text: "│", Style: Style{FG: ColorIndex(8), BG: ColorIndex(239)}})
+			x++
+		}
+	}
+	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(8)}})
+}
+
+func (e *RichTextEdit) popoverHit(x, y int) bool {
+	for _, button := range e.popoverButtons {
+		if button.rect.Contains(x, y) {
+			return true
+		}
+	}
+	if len(e.popoverButtons) == 0 {
+		return false
+	}
+	first, last := e.popoverButtons[0].rect, e.popoverButtons[len(e.popoverButtons)-1].rect
+	return y == first.Y && x >= first.X-1 && x <= last.X+last.W
+}
+
+func (e *RichTextEdit) applyPopoverAction(label string) {
+	switch label {
+	case "B":
+		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
+	case "I":
+		e.toggleAttribute(func(s *Style, on bool) { s.Italic = on }, func(s Style) bool { return s.Italic })
+	case "U":
+		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
+	case "S":
+		e.toggleAttribute(func(s *Style, on bool) { s.Strike = on }, func(s Style) bool { return s.Strike })
 	}
 }
 
