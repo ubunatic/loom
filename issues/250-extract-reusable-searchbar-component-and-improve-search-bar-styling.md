@@ -1,6 +1,6 @@
 # 250 — Extract reusable SearchBar component and improve search bar styling
 
-**Status**: Open
+**Status**: Closed — implemented reusable SearchBar component, integrated into Choice and Table, specced in defaults.yaml, verified with make test-q1
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
