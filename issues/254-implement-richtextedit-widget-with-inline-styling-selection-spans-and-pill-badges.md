@@ -55,17 +55,16 @@ Design mockups for this widget are captured and validated in:
   - Implemented multi-span line drawing, grapheme cluster width calculation with `measure`, cursor mapping, viewport scrolling (`ScrollX`, `ScrollY`), and selection range highlight styling.
   - Added tests in `richtextedit_test.go` and catalog entry in `spec/widgets.yaml`.
 - **M3 (Input Handling & Formatting Commands)**:
-  - **Pre-Work / Requirements**:
-    - Implement `ConsumeKey` on `loom.RichTextEdit` handling:
-      - Typing text (inserted at cursor with active style or adjacent span style).
-      - Enter / newline insertion (splitting lines/spans).
-      - Backspace / Delete (merging spans/lines, single-step deletion of atomic `RichPill` badges).
-      - Arrow navigation (left/right/up/down, home/end, word hop `Ctrl+Left`/`Ctrl+Right`).
-      - Selection expansion with `Shift+Arrow`.
-      - Formatting commands on selection or active style: `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline).
-    - Implement `ConsumeMouse` handling click-to-position cursor and drag-to-select range.
-    - Add comprehensive unit tests in `richtextedit_test.go` for all input actions.
+  - Delivered in commit `99ad346` (`feat(richtext): add editing and selection input`).
+  - Implemented `ConsumeKey` on `RichTextEdit`: text insertion with active style, newline splitting, span joining, backspace & delete with atomic pill badge deletion.
+  - Implemented navigation (arrows, home/end, `Ctrl+Left`/`Right` word hops, `Shift+Arrow` selection expansion).
+  - Implemented formatting shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`) for selected ranges and active input style.
+  - Implemented `ConsumeMouse` with click-to-position and drag-to-select range.
+  - Verified with comprehensive unit test suite in `richtextedit_test.go`.
 - **M4 (Gallery Demo & Golden Visual Tests)**:
-  - Add `RichTextEdit` interactive demo tab to `examples/gallery`.
-  - Add golden mockup comparator test against `docs/data/richtext-widget-v1.ansi`.
-  - Update `spec/widgets.yaml` and `docs/Widgets.md`.
+  - **Pre-Work / Requirements**:
+    - Add `RichTextEdit` interactive demo tab in `examples/gallery` demonstrating inline formatting, badges/mentions, and formatting shortcuts.
+    - Add golden mockup comparator test in `richtextedit_golden_test.go` verifying visual frame rendering matches `docs/data/richtext-widget-v1.ansi`.
+    - Update `docs/Widgets.md` with documentation for `loom.RichTextEdit` and `loom.RichDocument`.
+    - Format code, run `make test-q1`, run `make install`.
+    - When all tests pass, close the ticket with `harnez issues close 254 "implemented RichTextEdit widget with inline styling, selection spans, atomic pill badges, and gallery demo"`.
