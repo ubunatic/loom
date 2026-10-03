@@ -1,6 +1,6 @@
 # 253 — Table arrow navigation bubbles to parent Grid
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -16,8 +16,8 @@ In the widget gallery's All tab, Up/Down change the Table's row selection and al
 ## 2. Technical Specification / Findings
 - `Table.ConsumeKey` (`table.go`) falls through to `Ignored()` after arrow navigation. Up/Down wrap at row ends; Left/Right move only with `CellCursor` enabled and stop at column edges. The All-tab table currently has `CellCursor` disabled (`gallery/gallery.go`); enabling it is separate issue #240.
 - `Grid.ConsumeKey` (`grid.go`) already dispatches ordinary arrows to the focused child first and navigates only if the result is not consumed. Shift-arrows bypass the child for explicit Grid navigation.
-- Return a consumed result for arrows used by Table navigation. Determine whether no-op arrows (column edges, Left/Right in row mode, empty or single-row tables) should be consumed or bubble; do not assume a policy or confuse row wrapping with an unhandled boundary key. Stop and report if this requires a user decision.
+- Consume arrows when they change Table selection. No-op arrows bubble to Grid: Left/Right in row mode, at cell-cursor column edges, or Up/Down with fewer than two rows. Up/Down wrap and are consumed when at least two rows are available.
 
 ## 3. Implementation & Verification Plan
-- Add Table result and Grid-with-Table regression tests: Up/Down (including wrapping) and enabled cell-cursor Left/Right change selection without moving Grid focus. Cover the agreed no-op policy and preserve Shift-arrow Grid navigation.
-- Keep the fix in the library; change routing/interfaces only if needed. Event routing work starts on `codex:sol:med` per AGENTS.md. Run `make test-q1`, `make install`, and check `loom widgets --show All` before closing.
+- Implemented in the library and covered with Table and Grid regression tests, including Shift-arrow navigation and no-op boundaries. The `sol` reviewer approved the diff.
+- The latest `make test-q1` run failed in the untouched Pane PTY test and tests in the concurrent repaint-probe package. Re-run the quota suite and check `loom widgets --show All` before closing. Event routing work starts on `codex:sol:med` per AGENTS.md.
