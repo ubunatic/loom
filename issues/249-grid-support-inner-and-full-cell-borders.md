@@ -1,6 +1,6 @@
 # 249 — Grid: support inner and full cell borders
 
-**Status**: Open
+**Status**: Closed — resolved in 3d07274
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
