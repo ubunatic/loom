@@ -258,5 +258,5 @@ upkeep.
 | 245 | [245-dim-placeholder-hint-in-choice-and-table-search-bars.md](245-dim-placeholder-hint-in-choice-and-table-search-bars.md) | Dim placeholder hint in Choice and Table search bars | Open |
 | 246 | [246-tree-double-click-does-not-open-or-close-nodes.md](246-tree-double-click-does-not-open-or-close-nodes.md) | Tree double click does not open or close nodes | Open |
 | 247 | [247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md](247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md) | Flaky TestPaneFirstDrawUsesScreenBounds under full test run | Open |
-| 248 | [248-grid-navigate-with-shift-left-and-shift-right.md](248-grid-navigate-with-shift-left-and-shift-right.md) | Grid: navigate with Shift-Left and Shift-Right | Closed — Shift-Left/Right navigate Grid focus while regular arrows remain child-first |
+| 248 | [248-grid-navigate-with-shift-left-and-shift-right.md](248-grid-navigate-with-shift-left-and-shift-right.md) | Grid: navigate with Shift-Left and Shift-Right | In Progress — extend shifted navigation to all four directions |
 | 249 | [249-grid-support-inner-and-full-cell-borders.md](249-grid-support-inner-and-full-cell-borders.md) | Grid: support inner and full cell borders | Open |
