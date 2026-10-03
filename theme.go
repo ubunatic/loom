@@ -133,11 +133,11 @@ func (t ThemeColors) ChoiceStyle() ChoiceStyle {
 
 // SearchBarStyle returns a SearchBarStyle derived from the theme's color roles.
 func (t ThemeColors) SearchBarStyle() SearchBarStyle {
-	container := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
-	prompt := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
-	query := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color()}
+	container := Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()}
+	prompt := Style{FG: t.PromptFG.Color(), BG: t.PromptBG.Color(), Bold: true}
+	query := Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()}
 	placeholder := Style{FG: t.PlaceholderFG.Color(), BG: t.PlaceholderBG.Color(), Dim: t.PlaceholderDim}
-	controls := Style{FG: t.PlaceholderFG.Color(), BG: t.PromptBG.Color(), Dim: true}
+	controls := Style{FG: t.PlaceholderFG.Color(), BG: t.NormalBG.Color(), Dim: true}
 	return SearchBarStyle{
 		Container:   container,
 		Prompt:      prompt,

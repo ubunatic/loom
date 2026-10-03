@@ -59,10 +59,10 @@ themes:
     header_fg:        186 # muted yellow (#d7d787)
     header_bg:        69  # medium steel blue
     header_bold:      true
-    prompt_fg:        16  # fixed black
-    prompt_bg:        75  # muted cyan
+    prompt_fg:        75  # bright sky blue (#5fafff)
+    prompt_bg:        69  # saturated steel blue (#5f87ff)
     placeholder_fg:   243 # medium grey (#767676), lower contrast than active input
-    placeholder_bg:   75  # muted cyan
+    placeholder_bg:   69  # steel blue
     placeholder_dim:  false
     scrollbar_track_fg: 69 # panel blue; dim creates a terminal-adaptive shade
     scrollbar_track_bg: 69 # panel blue
@@ -94,10 +94,10 @@ themes:
     header_fg:        226 # yellow (#ffff00)
     header_bg:        27
     header_bold:      true
-    prompt_fg:        16
-    prompt_bg:        51
+    prompt_fg:        51
+    prompt_bg:        27
     placeholder_fg:   243
-    placeholder_bg:   51
+    placeholder_bg:   27
     placeholder_dim:  false
     scrollbar_track_fg: 33
     scrollbar_track_bg: 27
@@ -129,10 +129,10 @@ themes:
     header_fg:        186
     header_bg:        19
     header_bold:      true
-    prompt_fg:        16
-    prompt_bg:        37
+    prompt_fg:        37
+    prompt_bg:        19
     placeholder_fg:   238
-    placeholder_bg:   37
+    placeholder_bg:   19
     placeholder_dim:  false
     scrollbar_track_fg: 18
     scrollbar_track_bg: 19
@@ -160,7 +160,7 @@ themes:
   # indices, independent of the user's configurable 16-color palette):
   #   _default_ = lightgray;color237 -> normal (index 250 for lightgray)
   #   selected  = black;cyan         -> selected (index 16 for fixed black)
-  #   input     = black;cyan         -> prompt
+  #   input     = cyan;color237      -> prompt
   #   header    = yellow;color237    -> header (index 226 for yellow)
   #   frame     = lightgray;color237 -> border
   julia256:
@@ -172,10 +172,10 @@ themes:
     header_fg:        226 # yellow (#ffff00)
     header_bg:        237
     header_bold:      true
-    prompt_fg:        16
-    prompt_bg:        51
+    prompt_fg:        51
+    prompt_bg:        237
     placeholder_fg:   243
-    placeholder_bg:   51
+    placeholder_bg:   237
     placeholder_dim:  false
     scrollbar_track_fg: 237
     scrollbar_track_bg: 237

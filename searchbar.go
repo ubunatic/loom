@@ -115,9 +115,9 @@ func (s *SearchBar) Draw(cv *Canvas, r Rect) {
 	if s.cmd != nil {
 		if prefix, hint := s.cmd.PromptParts(); prefix != "" {
 			// Command mode: ":typed[completion]  dim title"
-			n := cv.Write(r.X, r.Y, prefix, promptStyle)
+			n := cv.WriteDefault(r.X, r.Y, prefix, promptStyle)
 			if hint != "" {
-				cv.Write(r.X+n, r.Y, hint, Style{Dim: true})
+				cv.WriteDefault(r.X+n, r.Y, hint, Style{Dim: true})
 			}
 			if s.Focused {
 				cv.CursorX = r.X + n
@@ -132,7 +132,7 @@ func (s *SearchBar) Draw(cv *Canvas, r Rect) {
 	if promptText == "" {
 		promptText = "> "
 	}
-	n := cv.Write(r.X, r.Y, promptText, promptStyle)
+	n := cv.WriteDefault(r.X, r.Y, promptText, promptStyle)
 
 	if s.Query == "" && s.Placeholder != "" {
 		hint := s.Style.Placeholder
@@ -146,7 +146,7 @@ func (s *SearchBar) Draw(cv *Canvas, r Rect) {
 		if queryStyle == (Style{}) {
 			queryStyle = promptStyle
 		}
-		cv.Write(r.X+n, r.Y, s.Query, queryStyle)
+		cv.WriteDefault(r.X+n, r.Y, s.Query, queryStyle)
 	}
 
 	if s.Controls != "" {
@@ -156,7 +156,7 @@ func (s *SearchBar) Draw(cv *Canvas, r Rect) {
 			if ctrlStyle == (Style{}) {
 				ctrlStyle = Style{Dim: true}
 			}
-			cv.Write(r.X+drawW-ctrlW, r.Y, s.Controls, ctrlStyle)
+			cv.WriteDefault(r.X+drawW-ctrlW, r.Y, s.Controls, ctrlStyle)
 		}
 	}
 

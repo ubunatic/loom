@@ -192,11 +192,11 @@ func TestThemeMCHasExpectedColors(t *testing.T) {
 	if cs.Selected.FG != loom.ColorIndex(16) {
 		t.Errorf("mc selected_fg: got %+v, want ColorIndex(16)", cs.Selected.FG)
 	}
-	if cs.Prompt.FG != loom.ColorIndex(16) {
-		t.Errorf("mc prompt_fg: got %+v, want ColorIndex(16)", cs.Prompt.FG)
+	if cs.Prompt.FG != loom.ColorIndex(75) {
+		t.Errorf("mc prompt_fg: got %+v, want ColorIndex(75)", cs.Prompt.FG)
 	}
-	if cs.Placeholder != (loom.Style{FG: loom.ColorIndex(243), BG: loom.ColorIndex(75)}) {
-		t.Errorf("mc placeholder: got %+v, want fixed medium grey on cyan", cs.Placeholder)
+	if cs.Placeholder != (loom.Style{FG: loom.ColorIndex(243), BG: loom.ColorIndex(69)}) {
+		t.Errorf("mc placeholder: got %+v, want fixed medium grey on panel", cs.Placeholder)
 	}
 	if cs.Scrollbar.Track != (loom.Style{FG: loom.ColorIndex(69), BG: loom.ColorIndex(69), Dim: true}) ||
 		cs.Scrollbar.Thumb != (loom.Style{FG: loom.ColorIndex(75), BG: loom.ColorIndex(69)}) {
@@ -254,8 +254,8 @@ func TestThemeJulia256(t *testing.T) {
 	if cs.Selected != (loom.Style{FG: loom.ColorIndex(16), BG: loom.ColorIndex(51)}) {
 		t.Errorf("julia256 selected: got %+v, want black on cyan", cs.Selected)
 	}
-	if cs.Prompt != (loom.Style{FG: loom.ColorIndex(16), BG: loom.ColorIndex(51)}) {
-		t.Errorf("julia256 prompt: got %+v, want black on cyan", cs.Prompt)
+	if cs.Prompt != (loom.Style{FG: loom.ColorIndex(51), BG: loom.ColorIndex(237)}) {
+		t.Errorf("julia256 prompt: got %+v, want cyan on color237", cs.Prompt)
 	}
 	ts := julia.TableStyle()
 	if ts.Header.FG != loom.ColorIndex(226) || ts.Header.BG != loom.ColorIndex(237) {
