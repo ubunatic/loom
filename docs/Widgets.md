@@ -299,6 +299,25 @@ and highlighted the row above the pointer (108). Verify hit-testing black-box wi
 [hover probe](HoverTesting.md).
 In tests locate screen text by runes or display width, never byte offsets.
 
+## Rich Text Editing (`loom.RichDocument`, `loom.RichTextEdit`)
+
+`RichDocument` stores logical lines as styled spans. `RichTextEdit` renders those
+spans into a clipped, scrollable viewport and supports rune-based cursor
+navigation, shift-arrow selection, mouse drag selection, and inline bold,
+italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). `RichSpan` can
+also carry link, code, or `RichPill` metadata; pill spans are atomic when
+deleted. The widget gallery includes an interactive demo with formatting
+shortcuts and mention pills.
+
+```go
+doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{
+    {Text: "Hello ", Style: loom.Style{Bold: true}},
+    {Text: "@ada", PillData: &loom.RichPill{Kind: "mention", ID: "ada"}},
+}}}}
+editor := loom.NewRichTextEdit(doc)
+frame.Boxes[0].Child = editor
+```
+
 ## 9. Syntax Highlighting and Navigation Engine (`syntax/`, `TextArea`)
 
 Loom provides a UI-neutral syntax highlighting and structural navigation framework (`ubunatic.com/loom/syntax`):
@@ -479,5 +498,4 @@ type Focusable interface {
 - **Focused Placement**: Widgets set `Canvas.CursorX` and `Canvas.CursorY` during `Draw` only when active/focused. Unfocused widgets and static views never touch canvas cursor coordinates.
 - **Compositor Propagation (`SubCanvas` & `Blit`)**: `SubCanvas` and `Blit` preserve and translate cursor positions relative to their destination bounds, ensuring cursor coordinates accurately reach the terminal when rendering through `Viewport`, `Split`, `Frame` (`paintClipped`), or nested layers.
 - **Hardware Cursor Flush**: `Canvas.FlushWithConfig` emits `\x1b[?25h` with terminal row/col addressing only when `CursorX >= 0 && CursorY >= 0`, and emits `\x1b[?25l` (hidden cursor) otherwise.
-
 

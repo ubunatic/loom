@@ -143,6 +143,9 @@ var demos = map[string]constructor{
 		bar.Unit = " files"
 		return &progressDemo{ProgressBar: bar}
 	},
+	"RichTextEdit": func() loom.Widget {
+		return newRichTextEditDemo()
+	},
 	"SearchBar": func() loom.Widget {
 		sb := loom.NewSearchBar()
 		sb.Prompt = "> "
