@@ -44,14 +44,14 @@ Here is some selected text ready for styling.
   - Implemented popover geometry, anchor rendering (`▲`/`▼`), button rendering (`B`, `I`, `U`, `S`, `Link`, `#FG`, `#BG`), and click hit testing.
   - Added unit tests in `richtextedit_test.go`.
 - **M2 (Inline FG/BG Color Picker & Palette Popdown)**:
-  - **Pre-Work / Requirements**:
-    - Implement interactive mini-palette for `#FG` and `#BG` selection when clicking those popover buttons.
-    - Mini-palette renders 16 ANSI colors / hue swatches adjacent to `#FG` / `#BG`.
-    - Clicking a swatch updates `Style.FG` or `Style.BG` across all spans in the selection range and closes the sub-palette.
-    - Implement `Link` toggle or prompt helper if applicable.
-    - Add unit tests verifying FG/BG color selection and multi-span styling.
+  - Delivered in commit `359bad1` (`feat: add rich text color palettes M2`).
+  - Implemented 16-color swatch mini-palette popdown triggered by `#FG` and `#BG` buttons.
+  - Implemented color application across all selected spans while preserving other styles.
+  - Added unit tests in `richtextedit_test.go`.
 - **M3 (Gallery Integration, Golden Coverage & Docs)**:
-  - Update `gallery/richtextedit.go` to demonstrate the floating format popover and FG/BG color selection on highlighted text.
-  - Add golden mockup comparator test in `richtextedit_golden_test.go` checking visual rendering matches `docs/data/richtext-widget-v2.ansi`.
-  - Update `docs/Widgets.md`.
-  - Run `make test-q1`, run `make install`, and close issue 255 with `harnez issues close 255 "implemented floating format popover with FG/BG color picker for RichTextEdit"`.
+  - **Pre-Work / Requirements**:
+    - Update `gallery/richtextedit.go` to enable/showcase the floating format popover and FG/BG color picker on selections.
+    - Add golden mockup comparator test in `richtextedit_golden_test.go` verifying visual rendering matches `docs/data/richtext-widget-v2.ansi`.
+    - Update `docs/Widgets.md` to document popover functionality and FG/BG palette actions.
+    - Run `make test-q1`, run `make install`.
+    - Close issue 255 with `harnez issues close 255 "implemented floating format popover with FG/BG color picker for RichTextEdit"`.
