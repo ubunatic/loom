@@ -43,11 +43,16 @@ installable `loom-demo` app, or smoke-test all of them at once with
 `loom-bench`:
 
 ```sh
-make install                 # installs loom-demo, loom-bench, validate-spec
+make install                 # installs loom and its command-line tools
 loom-demo --list              # list all examples
 loom-demo filebrowser         # run one directly
 loom-bench                    # smoke-test every example, report PASS/FAIL
 ```
+
+`loom-repaint-probe` is a standalone raw-terminal benchmark for comparing full
+and incremental screen repaint strategies. Run it with `loom-repaint-probe`
+after `make install`, or use `go run ./cmd/loom-repaint-probe` from this checkout.
+See [the probe guide](docs/TerminalRepaintProbe.md) for modes, tuning, and report details.
 
 ## Usage
 
