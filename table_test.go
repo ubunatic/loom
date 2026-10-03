@@ -73,7 +73,9 @@ func TestTableInitialSelection(t *testing.T) {
 func TestTableNavigation(t *testing.T) {
 	tbl, _, _ := psTestTable()
 
-	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "down"}); !result.Consumed {
+		t.Fatalf("down result = %+v, want consumed", result)
+	}
 	item, _ := tbl.Selected()
 	if item.Name != "bash (200)" {
 		t.Errorf("after down: %q, want bash (200)", item.Name)
@@ -86,7 +88,9 @@ func TestTableNavigation(t *testing.T) {
 		t.Errorf("after wrap-down: %q, want firefox (300)", item.Name)
 	}
 
-	tbl.ConsumeKey(loom.KeyEvent{Key: "up"}) // wraps to last
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "up"}); !result.Consumed { // wraps to last
+		t.Fatalf("up result = %+v, want consumed", result)
+	}
 	item, _ = tbl.Selected()
 	if item.Name != "vim (201)" {
 		t.Errorf("after wrap-up: %q, want vim (201)", item.Name)
@@ -102,17 +106,53 @@ func TestTableCellCursorNavigationAndCallback(t *testing.T) {
 		gotRow, gotCol, called = row, col, true
 	}
 
-	tbl.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "right"}); !result.Consumed {
+		t.Fatalf("right result = %+v, want consumed", result)
+	}
 	if !called || gotRow != 0 || gotCol != 1 {
 		t.Fatalf("right callback = (%d, %d), called %v; want (0, 1)", gotRow, gotCol, called)
 	}
-	tbl.ConsumeKey(loom.KeyEvent{Key: "down"})
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "down"}); !result.Consumed {
+		t.Fatalf("down result = %+v, want consumed", result)
+	}
 	if gotRow != 1 || gotCol != 1 {
 		t.Fatalf("down callback = (%d, %d), want (1, 1)", gotRow, gotCol)
 	}
 	item, ok := tbl.Selected()
 	if !ok || item.Name != "bash (200)" {
 		t.Fatalf("Selected() = (%+v, %v), want bash (200)", item, ok)
+	}
+}
+
+func TestTableNoOpArrowsBubble(t *testing.T) {
+	tbl, _, _ := psTestTable()
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "left"}); result.Consumed {
+		t.Fatalf("left in row-selection mode = %+v, want unconsumed", result)
+	}
+
+	tbl.CellCursor = true
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "left"}); result.Consumed {
+		t.Fatalf("left at first column = %+v, want unconsumed", result)
+	}
+	for i := 0; i < len(tbl.Columns)-1; i++ {
+		tbl.ConsumeKey(loom.KeyEvent{Key: "right"})
+	}
+	if result := tbl.ConsumeKey(loom.KeyEvent{Key: "right"}); result.Consumed {
+		t.Fatalf("right at last column = %+v, want unconsumed", result)
+	}
+}
+
+func TestTableVerticalArrowsBubbleWithoutMultipleRows(t *testing.T) {
+	tables := []*loom.Table{
+		loom.NewTable([]loom.Column{{Header: "Task"}}, nil),
+		loom.NewTable([]loom.Column{{Header: "Task"}}, []loom.Row{{Key: "only"}}),
+	}
+	for i, tbl := range tables {
+		for _, key := range []string{"up", "down"} {
+			if result := tbl.ConsumeKey(loom.KeyEvent{Key: key}); result.Consumed {
+				t.Errorf("table %d %s result = %+v, want unconsumed", i, key, result)
+			}
+		}
 	}
 }
 

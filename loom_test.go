@@ -598,6 +598,47 @@ func TestGridShiftArrowNavigationPrecedesFocusedChild(t *testing.T) {
 	}
 }
 
+func TestGridTableArrowConsumptionAndShiftNavigation(t *testing.T) {
+	table := loom.NewTable(
+		[]loom.Column{{Header: "Task"}, {Header: "State"}},
+		[]loom.Row{{Key: "build"}, {Key: "test"}},
+	)
+	grid := loom.NewGrid(2, table, loom.NewView([]string{"other"}))
+
+	for _, key := range []string{"down", "up"} {
+		if result := grid.ConsumeKey(loom.KeyEvent{Key: key}); !result.Consumed {
+			t.Fatalf("%s result = %+v, want consumed by table", key, result)
+		}
+		if got := grid.Focus(); got != 0 {
+			t.Fatalf("%s moved grid focus to %d, want 0", key, got)
+		}
+	}
+	if selected, ok := table.Selected(); !ok || selected.Name != "build" {
+		t.Fatalf("selected row = (%+v, %v), want build after down/up", selected, ok)
+	}
+
+	if result := grid.ConsumeKey(loom.KeyEvent{Key: "shift-right"}); !result.Consumed || grid.Focus() != 1 {
+		t.Fatalf("shift-right result/focus = %+v/%d, want consumed/1", result, grid.Focus())
+	}
+	if result := grid.ConsumeKey(loom.KeyEvent{Key: "shift-left"}); !result.Consumed || grid.Focus() != 0 {
+		t.Fatalf("shift-left result/focus = %+v/%d, want consumed/0", result, grid.Focus())
+	}
+
+	table.CellCursor = true
+	if result := grid.ConsumeKey(loom.KeyEvent{Key: "right"}); !result.Consumed || grid.Focus() != 0 {
+		t.Fatalf("cell-cursor right result/focus = %+v/%d, want consumed/0", result, grid.Focus())
+	}
+	if result := grid.ConsumeKey(loom.KeyEvent{Key: "right"}); !result.Consumed || grid.Focus() != 1 {
+		t.Fatalf("right at last column result/focus = %+v/%d, want consumed by grid/1", result, grid.Focus())
+	}
+
+	singleRowTable := loom.NewTable([]loom.Column{{Header: "Task"}}, []loom.Row{{Key: "only"}})
+	singleRowGrid := loom.NewGrid(1, singleRowTable, loom.NewView([]string{"other"}))
+	if result := singleRowGrid.ConsumeKey(loom.KeyEvent{Key: "down"}); !result.Consumed || singleRowGrid.Focus() != 1 {
+		t.Fatalf("single-row down result/focus = %+v/%d, want consumed by grid/1", result, singleRowGrid.Focus())
+	}
+}
+
 func TestGridOnSelect(t *testing.T) {
 	children := []loom.Widget{
 		loom.NewView([]string{"a"}),

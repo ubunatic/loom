@@ -512,28 +512,38 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 		t.done = true
 		return DoneResult()
 	case "up":
+		if len(t.filtered) < 2 {
+			return Ignored()
+		}
 		if t.sel > 0 {
 			t.sel--
 		} else {
 			t.sel = max(0, len(t.filtered)-1)
 		}
 		t.cellSelectionChanged()
+		return Handled()
 	case "down":
+		if len(t.filtered) < 2 {
+			return Ignored()
+		}
 		if t.sel < len(t.filtered)-1 {
 			t.sel++
 		} else {
 			t.sel = 0
 		}
 		t.cellSelectionChanged()
+		return Handled()
 	case "left":
 		if t.CellCursor && t.cellCol > 0 {
 			t.cellCol--
 			t.cellSelectionChanged()
+			return Handled()
 		}
 	case "right":
 		if t.CellCursor && t.cellCol < len(t.Columns)-1 {
 			t.cellCol++
 			t.cellSelectionChanged()
+			return Handled()
 		}
 	case "tab":
 		t.cycleSortNext()
