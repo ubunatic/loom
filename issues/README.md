@@ -260,3 +260,4 @@ upkeep.
 | 247 | [247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md](247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md) | Flaky TestPaneFirstDrawUsesScreenBounds under full test run | Open |
 | 248 | [248-grid-navigate-with-shift-left-and-shift-right.md](248-grid-navigate-with-shift-left-and-shift-right.md) | Grid: navigate with Shift-Left and Shift-Right | Closed — Shift-Left/Right and Shift-Up/Down navigate Grid focus while regular arrows remain child-first |
 | 249 | [249-grid-support-inner-and-full-cell-borders.md](249-grid-support-inner-and-full-cell-borders.md) | Grid: support inner and full cell borders | Open |
+| 250 | [250-extract-reusable-searchbar-component-and-improve-search-bar-styling.md](250-extract-reusable-searchbar-component-and-improve-search-bar-styling.md) | Extract reusable SearchBar component and improve search bar styling | Open |
