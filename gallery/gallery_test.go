@@ -616,7 +616,7 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"SearchBar": {Text: "x"},
-		"Table": {Key: "down"}, "Tabs": {Key: "tab"}, "TextArea": {Text: "x"},
+		"Table":     {Key: "down"}, "Tabs": {Key: "tab"}, "TextArea": {Text: "x"},
 		"TextInput": {Text: "x"}, "Toggle": {Key: "enter"}, "Tree": {Key: "down"},
 		"Viewport": {Key: "down"},
 	}
@@ -1183,6 +1183,9 @@ func TestAllTabInitialActiveAndLayout(t *testing.T) {
 	if grid.Cols != 3 {
 		t.Fatalf("grid columns = %d, want 3", grid.Cols)
 	}
+	if grid.BorderMode != loom.GridBorderInner {
+		t.Fatalf("grid border mode = %q, want inner", grid.BorderMode)
+	}
 	if len(grid.Children) != 24 {
 		t.Fatalf("grid child count = %d, want 24", len(grid.Children))
 	}
@@ -1190,22 +1193,43 @@ func TestAllTabInitialActiveAndLayout(t *testing.T) {
 	c := loom.NewCanvas(100, 30)
 	tabs.Draw(c, c.Bounds())
 
-	// Verify exact 3-column cell boundaries (r.X + k*cellW)
+	// Inner borders leave one-cell separators between cells without an outer edge.
 	r0 := grid.ChildRect(0)
-	panelX := r0.X
 	cellW := r0.W
-	cellH := r0.H
-	if cellW <= 0 || cellH <= 0 {
-		t.Fatalf("cell size invalid: %dx%d", cellW, cellH)
+	if cellW <= 0 || r0.H <= 0 {
+		t.Fatalf("cell size invalid: %dx%d", cellW, r0.H)
+	}
+	if got := grid.ChildRect(1).X; got != r0.X+cellW+1 {
+		t.Fatalf("second cell X = %d, want separator after first cell at %d", got, r0.X+cellW+1)
 	}
 	for i := range grid.Children {
 		k := i % grid.Cols
 		row := i / grid.Cols
-		wantX := panelX + k*cellW
-		wantY := r0.Y + row*cellH
+		rowFirst := grid.ChildRect(row * grid.Cols)
+		colFirst := grid.ChildRect(k)
+		wantX := r0.X
+		if k > 0 {
+			previousCol := grid.ChildRect(k - 1)
+			wantX = previousCol.X + previousCol.W + 1
+		}
+		wantY := r0.Y
+		if row > 0 {
+			previousRow := grid.ChildRect((row - 1) * grid.Cols)
+			wantY = previousRow.Y + previousRow.H + 1
+		}
 		rect := grid.ChildRect(i)
-		if rect.X != wantX || rect.Y != wantY || rect.W != cellW || rect.H != cellH {
-			t.Fatalf("child %d rect = %+v, want X=%d Y=%d W=%d H=%d", i, rect, wantX, wantY, cellW, cellH)
+		if rect.X != wantX || rect.Y != wantY || rect.W != colFirst.W || rect.H != rowFirst.H {
+			t.Fatalf("child %d rect = %+v, want X=%d Y=%d W=%d H=%d", i, rect, wantX, wantY, colFirst.W, rowFirst.H)
+		}
+	}
+	separatorX := r0.X + r0.W
+	separatorY := r0.Y + r0.H
+	for _, point := range []struct {
+		x, y int
+		want string
+	}{{separatorX, r0.Y, "│"}, {r0.X, separatorY, "─"}, {separatorX, separatorY, "┼"}} {
+		if got := c.Get(point.x, point.y).Text; got != point.want {
+			t.Errorf("inner grid separator (%d,%d) = %q, want %q", point.x, point.y, got, point.want)
 		}
 	}
 
@@ -1577,9 +1601,9 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 		t.Fatal("click outside grid cells was consumed")
 	}
 	last := grid.ChildRect(len(grid.Children) - 1)
-	outerEdgeX := last.X + last.W - gridRectX(grid)
-	if res := grid.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: outerEdgeX, Y: last.Y - gridRectY(grid)}); res.Consumed {
-		t.Fatal("click on the outer grid edge was consumed")
+	afterLastCellX := last.X + last.W - gridRectX(grid)
+	if res := grid.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: afterLastCellX, Y: last.Y - gridRectY(grid)}); res.Consumed {
+		t.Fatal("click after the last grid cell was consumed")
 	}
 }
 

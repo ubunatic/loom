@@ -469,7 +469,7 @@ func newAllDemo() *loom.Grid {
 	popup.Width, popup.Height = 30, 4
 	textArea := &textAreaWidget{area: loom.NewTextArea("A short text area\nwith two lines.")}
 	viewport := loom.NewViewport(loom.NewView([]string{"Viewport row 1", "Viewport row 2", "Viewport row 3", "Viewport row 4"}))
-	return loom.NewGrid(3,
+	grid := loom.NewGrid(3,
 		button, toggle, checkbox,
 		numInput, badge, pillCluster,
 		progressBar, sparkline, spinner,
@@ -479,6 +479,8 @@ func newAllDemo() *loom.Grid {
 		table, tree, &dialogDemo{dialog: dialog},
 		&popupDemo{popup: popup}, textArea, viewport,
 	)
+	grid.BorderMode = loom.GridBorderInner
+	return grid
 }
 
 type textAreaWidget struct {
