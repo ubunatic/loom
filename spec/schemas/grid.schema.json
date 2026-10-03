@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Grid widget specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["border_modes", "glyphs"],
+  "properties": {
+    "border_modes": {
+      "type": "array",
+      "minItems": 3,
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["none", "inner", "full"] }
+    },
+    "glyphs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["horizontal", "vertical", "cross", "t_down", "t_up", "t_right", "t_left", "top_left", "top_right", "bottom_left", "bottom_right"],
+      "properties": {
+        "horizontal": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "vertical": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "cross": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "t_down": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "t_up": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "t_right": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "t_left": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "top_left": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "top_right": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "bottom_left": { "type": "string", "minLength": 1, "maxLength": 1 },
+        "bottom_right": { "type": "string", "minLength": 1, "maxLength": 1 }
+      }
+    }
+  }
+}

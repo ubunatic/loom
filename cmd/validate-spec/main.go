@@ -26,6 +26,7 @@ var specPairs = []specPair{
 	{document: "version.yaml", schema: "spec/schemas/version.schema.json"},
 	{document: "spec/defaults.yaml", schema: "spec/schemas/defaults.schema.json"},
 	{document: "spec/box.yaml", schema: "spec/schemas/box.schema.json"},
+	{document: "spec/grid.yaml", schema: "spec/schemas/grid.schema.json"},
 	{document: "spec/themes.yaml", schema: "spec/schemas/themes.schema.json"},
 	{document: "spec/backgrounds.yaml", schema: "spec/schemas/backgrounds.schema.json"},
 	{document: "spec/resize.yaml", schema: "spec/schemas/resize.schema.json"},

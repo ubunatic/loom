@@ -1,0 +1,14 @@
+# yaml-language-server: $schema=schemas/grid.schema.json
+border_modes: [none, inner, full]
+glyphs:
+  horizontal: "─"
+  vertical: "│"
+  cross: "┼"
+  t_down: "┬"
+  t_up: "┴"
+  t_right: "├"
+  t_left: "┤"
+  top_left: "┌"
+  top_right: "┐"
+  bottom_left: "└"
+  bottom_right: "┘"

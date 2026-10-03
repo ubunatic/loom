@@ -3,7 +3,54 @@
 
 package loom
 
-import "time"
+import (
+	_ "embed"
+	"fmt"
+	"time"
+
+	"gopkg.in/yaml.v3"
+)
+
+// GridBorderMode controls whether Grid draws borders between cells and around
+// its outside edge.
+type GridBorderMode string
+
+const (
+	GridBorderNone  GridBorderMode = "none"
+	GridBorderInner GridBorderMode = "inner"
+	GridBorderFull  GridBorderMode = "full"
+)
+
+// GridBorderGlyphs contains the junction and line glyphs used by Grid borders.
+type GridBorderGlyphs struct {
+	Horizontal  string `yaml:"horizontal"`
+	Vertical    string `yaml:"vertical"`
+	Cross       string `yaml:"cross"`
+	TDown       string `yaml:"t_down"`
+	TUp         string `yaml:"t_up"`
+	TRight      string `yaml:"t_right"`
+	TLeft       string `yaml:"t_left"`
+	TopLeft     string `yaml:"top_left"`
+	TopRight    string `yaml:"top_right"`
+	BottomLeft  string `yaml:"bottom_left"`
+	BottomRight string `yaml:"bottom_right"`
+}
+
+//go:embed spec/grid.yaml
+var gridSpecYAML []byte
+
+type gridSpec struct {
+	BorderModes []GridBorderMode `yaml:"border_modes"`
+	Glyphs      GridBorderGlyphs `yaml:"glyphs"`
+}
+
+var speccedGrid = func() gridSpec {
+	var spec gridSpec
+	if err := yaml.Unmarshal(gridSpecYAML, &spec); err != nil {
+		panic(fmt.Sprintf("loom: parse spec/grid.yaml: %v", err))
+	}
+	return spec
+}()
 
 // Grid lays out widgets in a fixed number of columns.
 // Row count is inferred from len(Children) and Cols.
@@ -11,10 +58,12 @@ import "time"
 // OnSelect is called when Enter is pressed on a cell; if nil, Enter
 // delegates to the focused child widget (which may return quit=true).
 type Grid struct {
-	Cols     int
-	Children []Widget
-	FocusBG  Color       // background color of the focused cell; zero = default
-	OnSelect func(i int) // called on Enter if non-nil; prevents quit propagation
+	Cols        int
+	Children    []Widget
+	FocusBG     Color          // background color of the focused cell; zero = default
+	BorderMode  GridBorderMode // none, inner, or full; zero value draws no border
+	BorderStyle Style          // border appearance; zero value uses the theme border
+	OnSelect    func(i int)    // called on Enter if non-nil; prevents quit propagation
 
 	focus      int // flat index of the focused child
 	childRects []Rect
@@ -110,23 +159,32 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 		return
 	}
 	rows := (n + g.Cols - 1) / g.Cols
-	cellW := r.W / g.Cols
-	cellH := r.H / rows
-	if cellW < 1 {
-		cellW = 1
+	mode := g.BorderMode
+	if !validGridBorderMode(mode) {
+		mode = GridBorderNone
 	}
-	if cellH < 1 {
-		cellH = 1
+	bordered := mode == GridBorderInner || mode == GridBorderFull
+	full := mode == GridBorderFull
+	verticalLines, horizontalLines := 0, 0
+	if bordered {
+		verticalLines, horizontalLines = g.Cols-1, rows-1
 	}
+	insetX, insetY := 0, 0
+	if full {
+		insetX, insetY = 1, 1
+	}
+	cellWidths := gridCellSizes(r.W-2*insetX-verticalLines, g.Cols, bordered)
+	cellHeights := gridCellSizes(r.H-2*insetY-horizontalLines, rows, bordered)
 	for i, child := range g.Children {
 		if f, ok := child.(Focusable); ok {
 			f.SetFocus(i == g.focus)
 		}
+		col, row := i%g.Cols, i/g.Cols
 		cr := Rect{
-			X: r.X + (i%g.Cols)*cellW,
-			Y: r.Y + (i/g.Cols)*cellH,
-			W: cellW,
-			H: cellH,
+			X: r.X + insetX + gridCellOffset(cellWidths, col, bordered),
+			Y: r.Y + insetY + gridCellOffset(cellHeights, row, bordered),
+			W: cellWidths[col],
+			H: cellHeights[row],
 		}
 		if len(g.childRects) != n {
 			g.childRects = make([]Rect, n)
@@ -140,6 +198,154 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 			drawDebugBorder(c, cr)
 		}
 	}
+	if bordered {
+		style := g.BorderStyle
+		if style == (Style{}) {
+			style = Theme("plain").BoxStyle().Border
+		}
+		drawGridBorder(c, r, cellWidths, cellHeights, insetX, insetY, full, speccedGrid.Glyphs, style)
+	}
+}
+
+func gridCellSizes(total, count int, spread bool) []int {
+	if count < 1 {
+		return nil
+	}
+	if total < 0 {
+		total = 0
+	}
+	base, extra := total/count, total%count
+	sizes := make([]int, count)
+	for i := range sizes {
+		sizes[i] = base
+		if spread && i < extra {
+			sizes[i]++
+		}
+	}
+	return sizes
+}
+
+func gridCellOffset(sizes []int, index int, separated bool) int {
+	offset := index
+	if !separated {
+		offset = 0
+	}
+	for i := 0; i < index; i++ {
+		offset += sizes[i]
+	}
+	return offset
+}
+
+func validGridBorderMode(mode GridBorderMode) bool {
+	for _, candidate := range speccedGrid.BorderModes {
+		if mode == candidate {
+			return true
+		}
+	}
+	return false
+}
+
+func drawGridBorder(c *Canvas, r Rect, cellWidths, cellHeights []int, insetX, insetY int, full bool, g GridBorderGlyphs, style Style) {
+	if r.W <= 0 || r.H <= 0 {
+		return
+	}
+	left, top := r.X+insetX, r.Y+insetY
+	cols, rows := len(cellWidths), len(cellHeights)
+	width := sumInts(cellWidths) + cols - 1
+	height := sumInts(cellHeights) + rows - 1
+	if full {
+		width = r.W - 2*insetX
+		height = r.H - 2*insetY
+	}
+	if !full && (width <= 0 || height <= 0) {
+		return
+	}
+	put := func(x, y int, text string) {
+		if r.Contains(x, y) && c.Bounds().Contains(x, y) {
+			c.Set(x, y, Cell{Text: text, Style: style, Claim: true})
+		}
+	}
+	for col := 1; col < cols; col++ {
+		x := left + gridCellOffset(cellWidths, col, true) - 1
+		if full && (x <= r.X || x >= r.X+r.W-1) {
+			continue
+		}
+		for y := top; y < top+height; y++ {
+			put(x, y, g.Vertical)
+		}
+	}
+	for row := 1; row < rows; row++ {
+		y := top + gridCellOffset(cellHeights, row, true) - 1
+		if full && (y <= r.Y || y >= r.Y+r.H-1) {
+			continue
+		}
+		for x := left; x < left+width; x++ {
+			put(x, y, g.Horizontal)
+		}
+	}
+	if full && width > 0 && height > 0 {
+		right, bottom := r.X+r.W-1, r.Y+r.H-1
+		for x := r.X + 1; x < right; x++ {
+			put(x, r.Y, g.Horizontal)
+			put(x, bottom, g.Horizontal)
+		}
+		for y := r.Y + 1; y < bottom; y++ {
+			put(r.X, y, g.Vertical)
+			put(right, y, g.Vertical)
+		}
+		put(r.X, r.Y, g.TopLeft)
+		put(right, r.Y, g.TopRight)
+		put(r.X, bottom, g.BottomLeft)
+		put(right, bottom, g.BottomRight)
+		for col := 1; col < cols; col++ {
+			x := left + gridCellOffset(cellWidths, col, true) - 1
+			if x <= r.X || x >= right {
+				continue
+			}
+			put(x, r.Y, g.TDown)
+			put(x, bottom, g.TUp)
+		}
+		for row := 1; row < rows; row++ {
+			y := top + gridCellOffset(cellHeights, row, true) - 1
+			if y <= r.Y || y >= bottom {
+				continue
+			}
+			put(r.X, y, g.TRight)
+			put(right, y, g.TLeft)
+		}
+	} else if full {
+		right, bottom := r.X+r.W-1, r.Y+r.H-1
+		for x := r.X + 1; x < right; x++ {
+			put(x, r.Y, g.Horizontal)
+			put(x, bottom, g.Horizontal)
+		}
+		for y := r.Y + 1; y < bottom; y++ {
+			put(r.X, y, g.Vertical)
+			put(right, y, g.Vertical)
+		}
+		put(r.X, r.Y, g.TopLeft)
+		put(right, r.Y, g.TopRight)
+		put(r.X, bottom, g.BottomLeft)
+		put(right, bottom, g.BottomRight)
+	}
+	for row := 1; row < rows; row++ {
+		y := top + gridCellOffset(cellHeights, row, true) - 1
+		for col := 1; col < cols; col++ {
+			x := left + gridCellOffset(cellWidths, col, true) - 1
+			if full && (x <= r.X || x >= r.X+r.W-1 || y <= r.Y || y >= r.Y+r.H-1) {
+				continue
+			}
+			put(x, y, g.Cross)
+		}
+	}
+}
+
+func sumInts(values []int) int {
+	total := 0
+	for _, value := range values {
+		total += value
+	}
+	return total
 }
 
 // ConsumeKey moves focus with arrow keys; Enter calls OnSelect or delegates to child.
@@ -256,13 +462,21 @@ func (g *Grid) ContentHeight() int {
 	if maxH == 0 {
 		maxH = 1
 	}
-	return rows * maxH
+	height := rows * maxH
+	switch g.BorderMode {
+	case GridBorderInner:
+		height += rows - 1
+	case GridBorderFull:
+		height += rows + 1
+	}
+	return height
 }
 
 // ApplyTheme updates the focus background color and forwards the theme to all
 // children that implement Themeable.
 func (g *Grid) ApplyTheme(theme ThemeColors) {
 	g.FocusBG = theme.FocusBGColor()
+	g.BorderStyle = theme.BoxStyle().Border
 	for _, child := range g.Children {
 		if themeable, ok := child.(Themeable); ok {
 			themeable.ApplyTheme(theme)
