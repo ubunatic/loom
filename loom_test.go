@@ -554,9 +554,14 @@ func TestGridArrowNavigation(t *testing.T) {
 
 func TestGridShiftArrowNavigationPrecedesFocusedChild(t *testing.T) {
 	child := &keyConsumerWidget{result: loom.Handled()}
-	grid := loom.NewGrid(2, child, loom.NewView([]string{"second"}))
+	grid := loom.NewGrid(2,
+		child,
+		loom.NewView([]string{"second"}),
+		loom.NewView([]string{"third"}),
+		loom.NewView([]string{"fourth"}),
+	)
 
-	for _, key := range []string{"left", "right"} {
+	for _, key := range []string{"left", "right", "up", "down"} {
 		if result := grid.ConsumeKey(loom.KeyEvent{Key: key}); !result.Consumed {
 			t.Errorf("regular %s result = %+v, want consumed by child", key, result)
 		}
@@ -568,7 +573,12 @@ func TestGridShiftArrowNavigationPrecedesFocusedChild(t *testing.T) {
 	for _, step := range []struct {
 		key  string
 		want int
-	}{{"shift-right", 1}, {"shift-right", 0}, {"shift-left", 1}, {"shift-left", 0}} {
+	}{
+		{"shift-right", 1}, {"shift-left", 0},
+		{"shift-left", 3}, {"shift-right", 0},
+		{"shift-down", 2}, {"shift-up", 0},
+		{"shift-up", 2}, {"shift-down", 0},
+	} {
 		if result := grid.ConsumeKey(loom.KeyEvent{Key: step.key}); !result.Consumed {
 			t.Errorf("%s result = %+v, want consumed by grid", step.key, result)
 		}
@@ -577,8 +587,14 @@ func TestGridShiftArrowNavigationPrecedesFocusedChild(t *testing.T) {
 		}
 	}
 
-	if len(child.keys) != 2 || child.keys[0].Key != "left" || child.keys[1].Key != "right" {
-		t.Errorf("focused child received keys %v, want only regular left and right", child.keys)
+	wantKeys := []string{"left", "right", "up", "down"}
+	if len(child.keys) != len(wantKeys) {
+		t.Fatalf("focused child received %v, want regular arrows %v", child.keys, wantKeys)
+	}
+	for i, key := range wantKeys {
+		if child.keys[i].Key != key {
+			t.Errorf("focused child key %d = %q, want %q", i, child.keys[i].Key, key)
+		}
 	}
 }
 

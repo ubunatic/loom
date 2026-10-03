@@ -153,6 +153,10 @@ func (g *Grid) ConsumeKey(e KeyEvent) EventResult {
 		e.Key = "left"
 	case "shift-right":
 		e.Key = "right"
+	case "shift-up":
+		e.Key = "up"
+	case "shift-down":
+		e.Key = "down"
 	default:
 		if g.focus >= 0 && g.focus < n {
 			if res := g.Children[g.focus].ConsumeKey(e); res.Consumed {
