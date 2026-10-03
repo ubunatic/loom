@@ -50,15 +50,21 @@ Design mockups for this widget are captured and validated in:
   - Added SGR styling attributes `Italic`, `Strike`, `Invert` to `loom.Style` and updated ANSI parsing in `parse_ansi.go`.
   - Unit tests verified roundtrip and ANSI parsing in `richtext_test.go`, `style_test.go`, and `parse_ansi_test.go`.
 - **M2 (RichTextEdit Widget & Rendering)**:
-  - **Pre-Work / Requirements**:
-    - Implement `loom.RichTextEdit` in `richtextedit.go` implementing `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`).
-    - Use `measure.StringWidth` for cell layout; render multi-span lines accurately to `loom.Canvas`.
-    - Support viewport scrolling (`ScrollX`, `ScrollY`) and visual cursor positioning (`CursorLine`, `CursorCol`).
-    - Support text selection highlighting (`SelectionStart`, `SelectionEnd`).
-    - Add tests in `richtextedit_test.go` checking layout, wrapping, clipping, and selection painting.
+  - Delivered in commit `1c706e2` (`feat(richtext): render document widget viewport`).
+  - Added `loom.RichTextEdit` in `richtextedit.go` implementing `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`).
+  - Implemented multi-span line drawing, grapheme cluster width calculation with `measure`, cursor mapping, viewport scrolling (`ScrollX`, `ScrollY`), and selection range highlight styling.
+  - Added tests in `richtextedit_test.go` and catalog entry in `spec/widgets.yaml`.
 - **M3 (Input Handling & Formatting Commands)**:
-  - Implement `ConsumeKey` and `ConsumeMouse` with editing commands (`Insert`, `Delete`, `ToggleBold`, etc.).
-  - Implement atomic pill badge traversal.
+  - **Pre-Work / Requirements**:
+    - Implement `ConsumeKey` on `loom.RichTextEdit` handling:
+      - Typing text (inserted at cursor with active style or adjacent span style).
+      - Enter / newline insertion (splitting lines/spans).
+      - Backspace / Delete (merging spans/lines, single-step deletion of atomic `RichPill` badges).
+      - Arrow navigation (left/right/up/down, home/end, word hop `Ctrl+Left`/`Ctrl+Right`).
+      - Selection expansion with `Shift+Arrow`.
+      - Formatting commands on selection or active style: `Ctrl+B` (bold), `Ctrl+I` (italic), `Ctrl+U` (underline).
+    - Implement `ConsumeMouse` handling click-to-position cursor and drag-to-select range.
+    - Add comprehensive unit tests in `richtextedit_test.go` for all input actions.
 - **M4 (Gallery Demo & Golden Visual Tests)**:
   - Add `RichTextEdit` interactive demo tab to `examples/gallery`.
   - Add golden mockup comparator test against `docs/data/richtext-widget-v1.ansi`.
