@@ -1,6 +1,6 @@
 # 255 — add floating format popover with fg/bg color palette to richtextedit
 
-**Status**: Open
+**Status**: Closed — implemented floating format popover with FG/BG color picker for RichTextEdit
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
