@@ -112,6 +112,10 @@ func (c *Canvas) SubCanvas(r Rect) *Canvas {
 			sub.claimed[sy][sx] = c.claimed[py][px]
 		}
 	}
+	if c.CursorX >= r.X && c.CursorX < r.X+r.W && c.CursorY >= r.Y && c.CursorY < r.Y+r.H {
+		sub.CursorX = c.CursorX - r.X
+		sub.CursorY = c.CursorY - r.Y
+	}
 	return sub
 }
 
@@ -147,6 +151,14 @@ func (c *Canvas) Blit(src *Canvas, dstX, dstY int) {
 			c.clearCellAt(dx, dy)
 			c.cells[dy][dx] = cell
 			c.claimed[dy][dx] = src.claimed[sy][sx]
+		}
+	}
+	if src.CursorX >= 0 && src.CursorY >= 0 {
+		cx := dstX + src.CursorX
+		cy := dstY + src.CursorY
+		if cx >= 0 && cx < c.cols && cy >= 0 && cy < c.rows {
+			c.CursorX = cx
+			c.CursorY = cy
 		}
 	}
 }

@@ -62,3 +62,24 @@ func TestCanvasBlitClipsWithoutOrphaningWideCells(t *testing.T) {
 		t.Fatalf("right-clipped wide glyph wrote partial lead: %#v", got)
 	}
 }
+
+func TestCanvasSubCanvasAndBlitCursor(t *testing.T) {
+	parent := loom.NewCanvas(10, 5)
+	parent.CursorX, parent.CursorY = 4, 2
+
+	sub := parent.SubCanvas(loom.Rect{X: 2, Y: 1, W: 5, H: 3})
+	if sub.CursorX != 2 || sub.CursorY != 1 {
+		t.Fatalf("SubCanvas cursor = (%d,%d), want (2,1)", sub.CursorX, sub.CursorY)
+	}
+
+	outside := parent.SubCanvas(loom.Rect{X: 5, Y: 0, W: 3, H: 2})
+	if outside.CursorX != -1 || outside.CursorY != -1 {
+		t.Fatalf("SubCanvas outside cursor = (%d,%d), want (-1,-1)", outside.CursorX, outside.CursorY)
+	}
+
+	dst := loom.NewCanvas(12, 6)
+	dst.Blit(sub, 3, 1)
+	if dst.CursorX != 5 || dst.CursorY != 2 {
+		t.Fatalf("Blit cursor = (%d,%d), want (5,2)", dst.CursorX, dst.CursorY)
+	}
+}

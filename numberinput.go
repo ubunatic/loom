@@ -22,10 +22,25 @@ type NumberInput struct {
 	// Align controls value alignment inside FixedWidth; the default is left.
 	Align Align
 
+	focused  bool
 	editor   *TextInput
 	orig     float64
 	err      string
 	lastRect Rect
+}
+
+// Focused reports whether the numeric input owns focus.
+func (n *NumberInput) Focused() bool { return n != nil && n.focused }
+
+// SetFocus updates focus and cancels any active inline edit when focus is lost.
+func (n *NumberInput) SetFocus(f bool) {
+	if n == nil {
+		return
+	}
+	n.focused = f
+	if !f && n.editor != nil {
+		n.endEdit()
+	}
 }
 
 // NewNumberInput creates a bounded numeric input. A zero Step defaults to 1.
@@ -97,7 +112,11 @@ func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 	}
 	switch e.Key {
 	case "enter":
+		if n.Value == nil {
+			return Ignored()
+		}
 		n.beginEdit()
+		return Handled()
 	case "left":
 		if n.Value == nil {
 			return Ignored()
@@ -111,15 +130,31 @@ func (n *NumberInput) ConsumeKey(e KeyEvent) (quit EventResult) {
 		n.StepBy(1)
 		return Handled()
 	case "minus":
+		if n.Value == nil {
+			return Ignored()
+		}
 		n.StepBy(-1)
+		return Handled()
 	case "plus":
+		if n.Value == nil {
+			return Ignored()
+		}
 		n.StepBy(1)
+		return Handled()
 	default:
 		if e.Text == "+" {
+			if n.Value == nil {
+				return Ignored()
+			}
 			n.StepBy(1)
+			return Handled()
 		}
 		if e.Text == "-" {
+			if n.Value == nil {
+				return Ignored()
+			}
 			n.StepBy(-1)
+			return Handled()
 		}
 	}
 	return Ignored()
@@ -217,26 +252,28 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 		value, err := strconv.ParseFloat(n.editor.Value(), 64)
 		if err != nil {
 			n.err = "invalid number"
-			return false
+			return true
 		}
 		if n.Min > n.Max {
 			value = n.Min
 		} else if value < n.Min {
 			n.err = fmt.Sprintf("%s is below the minimum %s", n.editor.Value(), n.format(n.Min))
-			return false
+			return true
 		} else if value > n.Max {
 			n.err = fmt.Sprintf("%s is above the maximum %s", n.editor.Value(), n.format(n.Max))
-			return false
+			return true
 		}
 		if n.Value != nil {
 			*n.Value = value
 		}
 		n.endEdit()
+		return true
 	case "esc", "ctrl-c":
 		if n.Value != nil {
 			*n.Value = n.orig
 		}
 		n.endEdit()
+		return true
 	default:
 		if n.editor == nil {
 			return false
@@ -246,12 +283,12 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 				n.editor.ConsumeKey(e)
 				n.err = ""
 			}
-			return false
+			return true
 		}
 		if e.Text == "." && !strings.Contains(n.editor.Value(), ".") {
 			n.editor.ConsumeKey(e)
 			n.err = ""
-			return false
+			return true
 		}
 		if e.Text != "" {
 			valid := true
@@ -269,12 +306,12 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 			} else if invalidDot || strings.Contains(e.Text, ".") {
 				n.err = "invalid number"
 			}
-			return false
+			return true
 		}
-		n.editor.ConsumeKey(e)
+		res := n.editor.ConsumeKey(e)
 		n.err = ""
+		return res.Consumed
 	}
-	return false
 }
 
 func (n *NumberInput) endEdit() { n.editor = nil; n.err = "" }

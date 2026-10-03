@@ -1586,3 +1586,51 @@ func TestAllTabAddedWidgetsStayInCellsAndRouteInput(t *testing.T) {
 func gridRectX(grid *loom.Grid) int { return grid.ChildRect(0).X }
 
 func gridRectY(grid *loom.Grid) int { return grid.ChildRect(0).Y }
+
+func TestAllGalleryNumberInputEditCursor(t *testing.T) {
+	allTabs := NewAll()
+	c := loom.NewCanvas(100, 30)
+	allTabs.Draw(c, c.Bounds())
+
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("initial allTabs cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+
+	grid := allTabs.Tabs[0].Widget.(*loom.Grid)
+	numInput, ok := grid.Children[3].(*loom.NumberInput)
+	if !ok {
+		t.Fatalf("grid child 3 is %T, want *loom.NumberInput", grid.Children[3])
+	}
+
+	// Focus cell 3 (NumberInput)
+	rect := grid.ChildRect(3)
+	allTabs.ConsumeMouse(loom.MouseEvent{
+		Action: loom.MousePress, Button: loom.MouseLeft,
+		X: rect.X + 2, Y: rect.Y,
+	})
+
+	if grid.Focus() != 3 {
+		t.Fatalf("grid focus = %d, want 3", grid.Focus())
+	}
+	if !numInput.Editing() {
+		t.Fatal("clicking interior text of NumberInput should enter editing mode")
+	}
+
+	c.Clear()
+	allTabs.Draw(c, c.Bounds())
+	if c.CursorX < rect.X || c.CursorX >= rect.X+rect.W || c.CursorY < rect.Y || c.CursorY >= rect.Y+rect.H {
+		t.Fatalf("cursor (%d,%d) not within NumberInput rect %+v", c.CursorX, c.CursorY, rect)
+	}
+
+	// Press Esc to cancel
+	allTabs.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if numInput.Editing() {
+		t.Fatal("NumberInput should have stopped editing on Esc")
+	}
+
+	c.Clear()
+	allTabs.Draw(c, c.Bounds())
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("after Esc cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+}

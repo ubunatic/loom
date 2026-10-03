@@ -481,7 +481,13 @@ func newAllDemo() *loom.Grid {
 	)
 }
 
-type textAreaWidget struct{ area *loom.TextArea }
+type textAreaWidget struct {
+	area    *loom.TextArea
+	focused bool
+}
+
+func (w *textAreaWidget) Focused() bool   { return w.focused }
+func (w *textAreaWidget) SetFocus(f bool) { w.focused = f }
 
 type textInputWidget struct {
 	input   *loom.TextInput
@@ -554,7 +560,7 @@ func (p *progressDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 }
 
-func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect)              { w.area.Draw(c, r, true) }
+func (w *textAreaWidget) Draw(c *loom.Canvas, r loom.Rect)              { w.area.Draw(c, r, w.focused) }
 func (w *textAreaWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult   { return w.area.ConsumeKey(e) }
 func (w *textAreaWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
 

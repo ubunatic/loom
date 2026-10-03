@@ -303,3 +303,120 @@ func TestToggleDrawAndActivate(t *testing.T) {
 		t.Fatalf("on toggle render = %q", got)
 	}
 }
+
+func TestNumberInputFocusableContract(t *testing.T) {
+	var _ loom.Focusable = (*loom.NumberInput)(nil)
+	value := 10.0
+	input := loom.NewNumberInput(&value, 0, 100)
+	if input.Focused() {
+		t.Fatal("new NumberInput should not be focused")
+	}
+	input.SetFocus(true)
+	if !input.Focused() {
+		t.Fatal("SetFocus(true) should make Focused() true")
+	}
+	input.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !input.Editing() {
+		t.Fatal("Enter should begin inline editing")
+	}
+	input.SetFocus(false)
+	if input.Focused() {
+		t.Fatal("SetFocus(false) should make Focused() false")
+	}
+	if input.Editing() {
+		t.Fatal("SetFocus(false) should cancel active inline editing")
+	}
+}
+
+func TestNumberInputCursorInGridAndTabs(t *testing.T) {
+	value := 42.0
+	numInput := loom.NewNumberInput(&value, -100, 100)
+	numInput.Step = 1.0
+	numInput.Format = "%.2f"
+	numInput.FixedWidth = 10
+	numInput.Align = loom.AlignRight
+
+	grid := loom.NewGrid(1, loom.NewView([]string{"item0"}), numInput)
+	tabs := loom.NewTabs(loom.Tab{Title: "Main", Widget: grid})
+
+	c := loom.NewCanvas(40, 10)
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("initial draw cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+
+	// Move focus to child 1 (NumberInput) in Grid
+	grid.ConsumeKey(loom.KeyEvent{Key: "down"})
+	if grid.Focus() != 1 {
+		t.Fatalf("grid focus = %d, want 1", grid.Focus())
+	}
+	c.Clear()
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("focused non-editing draw cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+
+	// Press Enter to start inline editing
+	res := grid.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !res.Consumed {
+		t.Fatal("grid.ConsumeKey(enter) should be consumed by NumberInput")
+	}
+	if !numInput.Editing() {
+		t.Fatal("NumberInput should be editing after Enter")
+	}
+
+	c.Clear()
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX < 0 || c.CursorY < 0 {
+		t.Fatalf("editing NumberInput cursor = (%d,%d), want visible cursor >= 0", c.CursorX, c.CursorY)
+	}
+
+	rect := grid.ChildRect(1)
+	if c.CursorX < rect.X || c.CursorX >= rect.X+rect.W || c.CursorY < rect.Y || c.CursorY >= rect.Y+rect.H {
+		t.Fatalf("cursor (%d,%d) outside NumberInput cell bounds %+v", c.CursorX, c.CursorY, rect)
+	}
+
+	// Type a digit "5"
+	startX := c.CursorX
+	res = grid.ConsumeKey(loom.KeyEvent{Text: "5"})
+	if !res.Consumed {
+		t.Fatal("grid.ConsumeKey(5) should be consumed")
+	}
+	c.Clear()
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX != startX+1 {
+		t.Fatalf("cursor after typing 5 = %d, want %d", c.CursorX, startX+1)
+	}
+
+	// Cancel with Esc
+	res = grid.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if !res.Consumed {
+		t.Fatal("grid.ConsumeKey(esc) should be consumed")
+	}
+	if numInput.Editing() {
+		t.Fatal("NumberInput should not be editing after Esc")
+	}
+	c.Clear()
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("after cancel cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+
+	// Start editing again, then move focus away with Up key
+	grid.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !numInput.Editing() {
+		t.Fatal("NumberInput should be editing after Enter")
+	}
+	grid.ConsumeKey(loom.KeyEvent{Key: "up"})
+	if grid.Focus() != 0 {
+		t.Fatalf("grid focus = %d, want 0", grid.Focus())
+	}
+	if numInput.Editing() {
+		t.Fatal("NumberInput editing should be cancelled when focus moves away")
+	}
+	c.Clear()
+	tabs.Draw(c, c.Bounds())
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("after moving focus cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
+	}
+}

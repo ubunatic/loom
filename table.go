@@ -103,6 +103,7 @@ type Table struct {
 	colWidths  []int
 	lastRect   Rect
 	columnHits []tableColumnHit
+	focused    bool
 	done       bool
 	aborted    bool
 }
@@ -120,6 +121,7 @@ func NewTable(cols []Column, rows []Row) *Table {
 		Style:       DefaultTableStyle(),
 		Prompt:      SpeccedDefaults.SearchBar.Prompt,
 		Placeholder: DefaultPlaceholder,
+		focused:     true,
 	}
 	t.cmd = newCmdBar()
 	t.searchBar = NewSearchBar()
@@ -184,12 +186,22 @@ func (t *Table) ensureSearchBar() *SearchBar {
 		controls = fmt.Sprintf("[tab:%s%s !:flip]", dir, t.Columns[t.SortCol].Header)
 	}
 	t.searchBar.Controls = controls
-	t.searchBar.Focused = true
+	t.searchBar.Focused = t.focused
 	if t.query != t.searchBar.Query {
 		t.searchBar.Query = t.query
 	}
 	t.searchBar.Style = t.searchBarStyle()
 	return t.searchBar
+}
+
+// Focused reports whether this widget is focused.
+func (t *Table) Focused() bool {
+	return t.focused
+}
+
+// SetFocus sets the focus state of this widget.
+func (t *Table) SetFocus(f bool) {
+	t.focused = f
 }
 
 // Nav returns the navigation signal set by a prompt command (:home).
