@@ -1,6 +1,6 @@
 # 248 — Grid: navigate with Shift-Left and Shift-Right
 
-**Status**: In Progress — Grid shifted-arrow navigation
+**Status**: Closed — Shift-Left/Right navigate Grid focus while regular arrows remain child-first
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
