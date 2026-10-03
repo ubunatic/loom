@@ -455,3 +455,29 @@ sb.OnSubmit = func(query string) {
 - **Command Mode Integration**: Supports `AddCmd(loom.Cmd)` and automatically enters command mode on `:` or `/` keypresses when commands are registered.
 - **Surface & Theme Blending**: Uses `SearchBarStyle` (`Container`, `Prompt`, `Query`, `Placeholder`, `Controls`) and paints surfaces seamlessly over parent grid/widget focus surfaces.
 
+---
+
+## 16. Focus Management, Editor Activation & Cursor Routing
+
+Loom handles keyboard focus, inline editing lifecycles, and terminal cursor routing across arbitrarily nested container hierarchies (`Grid`, `Tabs`, `Split`, `Stack`, `Form`, `Frame`):
+
+### The `Focusable` Contract
+Widgets that maintain interactive or selectable states implement `loom.Focusable`:
+```go
+type Focusable interface {
+	Widget
+	Focused() bool
+	SetFocus(bool)
+}
+```
+
+- **Focus Propagation**: Composite containers forward focus to their active child during traversal (e.g. `Grid.setFocus`, `Tabs.Select`, `Split.setFocusedChild`).
+- **Inline Editor Teardown on Focus Loss**: When focus leaves an editing widget (e.g. `NumberInput`), `SetFocus(false)` automatically cancels/ends active inline editing (`endEdit()`). This prevents orphaned input editors, stale cursors, and accidental key interception.
+- **Embedded vs Standalone State**: Embedded editor primitives like `TextInput` and `TextArea` take an explicit `focused bool` parameter in `Draw(c *Canvas, r Rect, focused bool)`, delegating focus lifecycle ownership to their host widget.
+
+### Terminal Cursor Placement & Sub-Canvas Routing
+- **Focused Placement**: Widgets set `Canvas.CursorX` and `Canvas.CursorY` during `Draw` only when active/focused. Unfocused widgets and static views never touch canvas cursor coordinates.
+- **Compositor Propagation (`SubCanvas` & `Blit`)**: `SubCanvas` and `Blit` preserve and translate cursor positions relative to their destination bounds, ensuring cursor coordinates accurately reach the terminal when rendering through `Viewport`, `Split`, `Frame` (`paintClipped`), or nested layers.
+- **Hardware Cursor Flush**: `Canvas.FlushWithConfig` emits `\x1b[?25h` with terminal row/col addressing only when `CursorX >= 0 && CursorY >= 0`, and emits `\x1b[?25l` (hidden cursor) otherwise.
+
+
