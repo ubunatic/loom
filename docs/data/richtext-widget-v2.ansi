@@ -1,0 +1,8 @@
+[36m┌─ [1;97mRichTextEdit: Selection & Floating Popover[0;36m ─────────────────┐[0m
+[36m│[0m Paragraph with [1;33mrich styled annotations[0m inside a document.    [36m│[0m
+[36m│[0m Select any phrase to trigger formatting:                     [36m│[0m
+[36m│[0m    [48;5;239;1;97m[ [1;93mB[0;48;5;239m [90m│[0;48;5;239m [3;97mI[0;48;5;239m [90m│[0;48;5;239m [4;97mU[0;48;5;239m [90m│[0;48;5;239m [38;5;208m#FG[0;48;5;239m [90m│[0;48;5;239m [48;5;24;97m#BG[0;48;5;239m [90m│[0;48;5;239m [96mLink[0;48;5;239m ][0m                          [36m│[0m
+[36m│[0m    [38;5;244m▲[0m                                                         [36m│[0m
+[36m│[0m Here is [48;5;24;1;97msome selected text[0m ready for styling.                [36m│[0m
+[36m│[0m Press [1;97mCtrl+B[0m to toggle bold or [1;97mCtrl+K[0m to add hyperlink.      [36m│[0m
+[36m└──────────────────────────────────────────────────────────────┘[0m

@@ -1,0 +1,8 @@
+[36m┌─ [1;97mRichTextEdit: Inline WYSIWYG & Styling[0;36m ─────────────────────┐[0m
+[36m│[0m [1;97mWelcome to [1;38;5;208mLoom[0;1;97m RichText![0m                                    [36m│[0m
+[36m│[0m                                                              [36m│[0m
+[36m│[0m Supports [1;37mbold[0m, [3mitalic[0m, [4munderline[0m, and [9mstrikethrough[0m.         [36m│[0m
+[36m│[0m Custom [38;5;46mforeground colors[0m and [48;5;236;38;5;220m background highlights [0m.        [36m│[0m
+[36m│[0m Inline [48;5;238;38;5;81m `code spans` [0m and [38;5;39;4mhttps://loom.dev[0m links render.     [36m│[0m
+[36m│[0m Edit directly with keyboard cursor here[7;36m [0m                     [36m│[0m
+[36m└──────────────────────────────────────────────────────────────┘[0m

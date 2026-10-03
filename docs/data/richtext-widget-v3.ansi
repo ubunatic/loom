@@ -1,0 +1,5 @@
+[36m┌─ [1;97mRichTextEdit: Mentions, Pills & Metadata[0;36m ───────────────────┐[0m
+[36m│[0m [1;36mPrompt:[0m Send report to [48;5;237;1;38;5;118m @team-core [0m about [48;5;237;1;38;5;214m #issue-249 [0m       [36m│[0m
+[36m│[0m Priority: [48;5;196;1;97m P0-CRITICAL [0m [2m— review patch before merging[0m        [36m│[0m
+[36m│[0m [38;5;244mStatus: [1;32m● Ready[0m   [38;5;244mMode: [1;97mRich (ANSI/MD)[0m   [38;5;244mTokens: [1;97m42[0m          [36m│[0m
+[36m└──────────────────────────────────────────────────────────────┘[0m
