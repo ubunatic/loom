@@ -1,6 +1,6 @@
 # 251 — Nested Grid widgets do not show the NumberInput edit cursor
 
-**Status**: Open
+**Status**: Closed — implemented Focusable and cursor propagation for NumberInput, Table, SubCanvas/Blit, and fixed gallery TextArea focus
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
