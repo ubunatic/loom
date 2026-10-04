@@ -34,6 +34,6 @@ Finding: VTE terminals (Tilix, GNOME Terminal) use Shift+Home/End (and Shift+PgU
 
 ### Next milestone
 
-- Probe first (docs/Canary.md): confirm in Tilix that S-Home reaches the app in `ScreenAlt` and not inline (user runs the check by hand).
+- Probe done (user, Tilix): on the alternate screen (`ESC[?1049h` + `cat -v`) S-Home arrives as `ESC[1;2H`; inline it scrolls the terminal.
 - Make text-editing demos able to get these keys: the gallery `--show` (at least for RichTextEdit/editors) runs on the alternate screen, or a widget can request alt screen when focused for editing. Fix it in the library/pane, not per demo.
-- Document in docs/Widgets.md: on VTE inline, use C-S-a / C-S-e (CSI-u) or alt screen; S-Home/S-End are terminal-reserved there.
+- Document in docs/Widgets.md: on VTE inline, S-Home/S-End are terminal-reserved; use the alternate screen. VTE has no CSI-u, so C-S-a / C-S-e don't help there.
