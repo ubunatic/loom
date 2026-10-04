@@ -49,6 +49,9 @@ type RichTextEdit struct {
 	popoverPalette     string
 	popoverSwatches    []richPopoverSwatch
 	popoverRelease     bool
+	popoverFocus       int
+	popoverFocusSet    bool
+	popoverSuppressed  bool
 	clipboard          []RichLine
 	undoStack          []richSnapshot
 	redoStack          []richSnapshot
@@ -69,9 +72,10 @@ const (
 )
 
 type richPopoverButton struct {
-	label  string
-	action string
-	rect   Rect
+	label   string
+	action  string
+	rect    Rect
+	enabled bool
 }
 
 type richPopoverSwatch struct {
@@ -104,11 +108,16 @@ func (e *RichTextEdit) SetFocus(focused bool) {
 	if e.focused && !focused && e.BoxMode {
 		e.toggleBoxMode()
 	}
+	if !focused {
+		e.clearPopoverKeyboardState(false)
+	}
 	e.focused = focused
 }
 
 // SetSelection sets a half-open selection range in rune offsets.
 func (e *RichTextEdit) SetSelection(from, to RichPosition) {
+	e.clearPopoverKeyboardState(false)
+	e.popoverSuppressed = false
 	e.boxSelection = nil
 	e.SelectionFrom, e.SelectionTo = from, to
 	e.HasSelection = from != to
@@ -117,6 +126,8 @@ func (e *RichTextEdit) SetSelection(from, to RichPosition) {
 
 // ClearSelection removes the current selection.
 func (e *RichTextEdit) ClearSelection() {
+	e.clearPopoverKeyboardState(false)
+	e.popoverSuppressed = false
 	e.boxSelection = nil
 	e.HasSelection = false
 	e.selectionExtending = false
@@ -127,6 +138,9 @@ func (e *RichTextEdit) ClearSelection() {
 func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	if c == nil {
 		return
+	}
+	if e.ViewMode {
+		e.clearPopoverKeyboardState(false)
 	}
 	e.lastRect = r
 	e.popoverButtons = nil
@@ -269,6 +283,156 @@ func (e *RichTextEdit) selectionBounds() (RichPosition, RichPosition) {
 	return from, to
 }
 
+func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
+	e.popoverFocusSet = false
+	e.popoverPalette = ""
+	e.popoverSwatches = nil
+	if suppress {
+		e.popoverSuppressed = true
+	}
+}
+
+func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
+	if e.ViewMode || !e.ShowPopover || !e.HasSelection || e.popoverSuppressed {
+		return Ignored(), false
+	}
+	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", "esc") {
+		if e.popoverFocusSet || e.popoverPalette != "" {
+			e.clearPopoverKeyboardState(true)
+		}
+		return Ignored(), false
+	}
+	if !e.popoverCanShow() {
+		e.clearPopoverKeyboardState(true)
+		return Handled(), true
+	}
+	firstTab := !e.popoverFocusSet && key.Is("tab")
+	if !e.popoverFocusSet {
+		e.popoverFocus = e.initialPopoverFocus()
+		e.popoverFocusSet = true
+	}
+	switch {
+	case key.Is("esc"):
+		if e.popoverPalette != "" {
+			e.popoverPalette = ""
+			e.popoverSwatches = nil
+		} else {
+			e.clearPopoverKeyboardState(true)
+		}
+		return Handled(), true
+	case key.Is("tab", "shift-tab", "backtab"):
+		if firstTab {
+			return Handled(), true
+		}
+		direction := 1
+		if key.Is("shift-tab", "backtab") {
+			direction = -1
+		}
+		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
+		return Handled(), true
+	case key.Is("enter", "return", "space"):
+		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) {
+			return Handled(), true
+		}
+		action := richPopoverActions[e.popoverFocus]
+		if action == "Link" {
+			return Handled(), true
+		}
+		if action == "#FG" || action == "#BG" {
+			e.applyPopoverAction(action)
+			return Handled(), true
+		}
+		e.applyPopoverAction(action)
+		e.clearPopoverKeyboardState(action != "Draw" && e.HasSelection)
+		return Handled(), true
+	default:
+		return Ignored(), false
+	}
+}
+
+func (e *RichTextEdit) nextPopoverFocus(current, direction int) int {
+	for range len(richPopoverActions) {
+		current = (current + direction + len(richPopoverActions)) % len(richPopoverActions)
+		if richPopoverActions[current] != "Link" {
+			return current
+		}
+	}
+	return current
+}
+
+func (e *RichTextEdit) initialPopoverFocus() int {
+	if e.boxSelection != nil {
+		return 7
+	}
+	for i, active := range []func(Style) bool{
+		func(s Style) bool { return s.Bold },
+		func(s Style) bool { return s.Italic },
+		func(s Style) bool { return s.Underline },
+	} {
+		if e.selectionUniformlyHas(active) {
+			return i
+		}
+	}
+	return 0
+}
+
+func (e *RichTextEdit) selectionUniformlyHas(active func(Style) bool) bool {
+	lines := e.documentLines()
+	from, to := e.selectionBounds()
+	seen := false
+	for line := from.Line; line <= to.Line && line < len(lines); line++ {
+		start, end := e.selectionLineBounds(line)
+		if end <= start {
+			continue
+		}
+		offset := 0
+		for _, span := range lines[line].Spans {
+			n := len([]rune(span.Text))
+			lo, hi := max(start, offset), min(end, offset+n)
+			if lo < hi {
+				seen = true
+				if !active(e.spanStyle(span)) {
+					return false
+				}
+			}
+			offset += n
+		}
+	}
+	return seen
+}
+
+func (e *RichTextEdit) popoverCanShow() bool {
+	r := e.lastRect
+	if r.W < 18 || r.H < 3 || !e.HasSelection || e.ViewMode || !e.ShowPopover {
+		return false
+	}
+	lines := e.documentLines()
+	from, _ := e.selectionBounds()
+	e.clampPosition(&from, lines)
+	anchorX := richLineColumn(lines[from.Line], from.Offset) - e.ScrollX
+	anchorY := from.Line - e.ScrollY
+	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
+		return false
+	}
+	width := 2
+	for i, label := range SpeccedDefaults.RichTextEdit.PopoverLabels {
+		width += len(label) + 1
+		if i > 0 {
+			width++
+		}
+	}
+	barY := 0
+	if anchorY >= 2 {
+		barY = anchorY - 2
+	} else if anchorY+2 < r.H {
+		barY = anchorY + 2
+	} else {
+		return false
+	}
+	barX := min(max(0, anchorX-width/2), r.W-width)
+	return barX >= 0 && barY >= 0 && barY < r.H
+}
+
 func richPositionBefore(a, b RichPosition) bool {
 	return a.Line < b.Line || a.Line == b.Line && a.Offset < b.Offset
 }
@@ -303,10 +467,17 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		e.typingRun = false
 	}
 	if e.ViewMode && !richViewModeKey(key) {
+		e.clearPopoverKeyboardState(false)
 		return Ignored()
+	}
+	if e.ViewMode {
+		e.clearPopoverKeyboardState(false)
 	}
 	if e.ViewMode && e.BoxMode {
 		e.toggleBoxMode()
+	}
+	if result, handled := e.consumePopoverKey(key); handled {
+		return result
 	}
 	if key.Is("f5") {
 		e.toggleBoxMode()
@@ -343,6 +514,8 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	case key.Is("ctrl-u"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case key.Is("ctrl-space"):
+		e.clearPopoverKeyboardState(false)
+		e.popoverSuppressed = false
 		if e.selectBoxAtCursor() {
 			e.ShowPopover = true
 		} else if e.selectWord() {
@@ -431,7 +604,8 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 				}
 			}
 			for _, button := range e.popoverButtons {
-				if button.rect.Contains(mouse.X, mouse.Y) {
+				if button.enabled && button.rect.Contains(mouse.X, mouse.Y) {
+					e.popoverFocusSet = false
 					e.applyPopoverAction(button.action)
 					e.popoverRelease = true
 					break
@@ -491,7 +665,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverSwatches = nil
-	if e.ViewMode || !e.ShowPopover || !e.HasSelection || r.W < 18 || r.H < 3 {
+	if e.ViewMode || !e.ShowPopover || !e.HasSelection || e.popoverSuppressed || r.W < 18 || r.H < 3 {
 		return
 	}
 	from, _ := e.selectionBounds()
@@ -531,11 +705,21 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	x := barX + 1
 	for i, label := range labels {
 		button := Rect{X: x, Y: barY, W: len(label) + 1, H: 1}
-		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: richPopoverActions[i], rect: button})
+		action := richPopoverActions[i]
+		enabled := action != "Link"
+		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: action, rect: button, enabled: enabled})
 		for j, ch := range " " + label {
 			style := toolbarStyle
+			if !enabled {
+				style.Dim = true
+			}
 			if label == "B" && ch == 'B' {
 				style.Bold = true
+			}
+			if e.popoverFocusSet && i == e.popoverFocus {
+				style.FG = ColorIndex(uint8(defs.PopoverFocusFG))
+				style.BG = ColorIndex(uint8(defs.PopoverFocusBG))
+				style.Dim = false
 			}
 			c.Set(r.X+x+j, r.Y+barY, Cell{Text: string(ch), Style: style})
 		}
@@ -581,13 +765,16 @@ func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
 }
 
 func (e *RichTextEdit) popoverHit(x, y int) bool {
+	if e.popoverSuppressed || !e.ShowPopover || !e.HasSelection || e.ViewMode {
+		return false
+	}
 	for _, swatch := range e.popoverSwatches {
 		if swatch.rect.Contains(x, y) {
 			return true
 		}
 	}
 	for _, button := range e.popoverButtons {
-		if button.rect.Contains(x, y) {
+		if button.enabled && button.rect.Contains(x, y) {
 			return true
 		}
 	}

@@ -17,7 +17,7 @@
     "rich_text_edit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "link_fg", "link_underline"],
+      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline"],
       "properties": {
         "selection_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "toolbar_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -29,6 +29,8 @@
         "pointer_down_glyph": { "type": "string", "minLength": 1 },
         "pointer_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "popover_labels": { "type": "array", "minItems": 9, "maxItems": 9, "items": { "type": "string", "minLength": 1 } },
+        "popover_focus_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "popover_focus_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "link_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "link_underline": { "type": "boolean" }
       }

@@ -286,6 +286,99 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	}
 }
 
+func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}})
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 8})
+	canvas := NewCanvas(60, 4)
+	edit.Draw(canvas, Rect{W: 60, H: 4})
+	for i := 0; i < 8; i++ {
+		if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || result.Done || result.Quit {
+			t.Fatalf("Tab %d result = %+v", i, result)
+		}
+	}
+	if got := richPopoverActions[edit.popoverFocus]; got != "Draw" {
+		t.Fatalf("focus after cycling enabled items = %q, want Draw", got)
+	}
+	edit.Draw(canvas, Rect{W: 60, H: 4})
+	button := edit.popoverButtons[edit.popoverFocus]
+	cell := canvas.Get(button.rect.X+1, button.rect.Y)
+	if cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG)) || cell.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG)) {
+		t.Fatalf("focused Draw style = %+v", cell.Style)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "B" {
+		t.Fatalf("forward wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Draw" {
+		t.Fatalf("reverse wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Box" {
+		t.Fatalf("Link must be skipped in reverse wrap; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+	}
+}
+
+func TestRichTextEditPopoverInitialFocusAndEnter(t *testing.T) {
+	style := Style{Bold: true, Italic: true, Underline: true}
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "styled", Style: style}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
+	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || result.Done || result.Quit {
+		t.Fatalf("Enter result = %+v", result)
+	}
+	if doc.Lines[0].Spans[0].Style.Bold || !edit.HasSelection || !edit.popoverSuppressed {
+		t.Fatalf("Enter should toggle initial B and dismiss while preserving selection: style=%+v selection=%v suppressed=%v", doc.Lines[0].Spans[0].Style, edit.HasSelection, edit.popoverSuppressed)
+	}
+	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	if len(edit.popoverButtons) != 0 {
+		t.Fatal("dismissed popover reopened while selection remained")
+	}
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
+	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || result.Done || result.Quit || !edit.HasSelection {
+		t.Fatalf("Esc result/selection = %+v/%v", result, edit.HasSelection)
+	}
+	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	if len(edit.popoverButtons) != 0 {
+		t.Fatal("Esc did not close and suppress the popover")
+	}
+}
+
+func TestRichTextEditPopoverInitialFocusPriorityAndUnavailableGeometry(t *testing.T) {
+	tests := []struct {
+		name  string
+		spans []RichSpan
+		box   bool
+		want  string
+	}{
+		{name: "bold first", spans: []RichSpan{{Text: "x", Style: Style{Bold: true, Italic: true}}}, want: "B"},
+		{name: "italic", spans: []RichSpan{{Text: "x", Style: Style{Italic: true}}}, want: "I"},
+		{name: "underline", spans: []RichSpan{{Text: "x", Style: Style{Underline: true}}}, want: "U"},
+		{name: "plain", spans: []RichSpan{{Text: "xy"}}, want: "B"},
+		{name: "mixed", spans: []RichSpan{{Text: "x", Style: Style{Bold: true}}, {Text: "y"}}, want: "B"},
+		{name: "box wins", spans: []RichSpan{{Text: "x", Style: Style{Bold: true}}}, box: true, want: "Box"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: tt.spans}}})
+			edit.SetSelection(RichPosition{}, RichPosition{Offset: len([]rune("xy"))})
+			if tt.box {
+				edit.boxSelection = &richBoxSelection{}
+			}
+			edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+			if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != tt.want {
+				t.Fatalf("Tab result/focus = %+v/%q, want %q", result, richPopoverActions[edit.popoverFocus], tt.want)
+			}
+		})
+	}
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "x"}}}}})
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 1})
+	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	edit.lastRect = Rect{}
+	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || edit.popoverFocusSet || !edit.popoverSuppressed {
+		t.Fatalf("unavailable popover geometry result/state = %+v/%v/%v", result, edit.popoverFocusSet, edit.popoverSuppressed)
+	}
+}
+
 func TestRichTextEditWrapSelectionInBoxAndUndo(t *testing.T) {
 	tests := []struct {
 		name string

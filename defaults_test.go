@@ -44,7 +44,7 @@ func TestMediaDefaultsLoadFromSpec(t *testing.T) {
 
 func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	got := SpeccedDefaults.RichTextEdit
-	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 {
+	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 || got.PopoverFocusBG != 24 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
 	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"}

@@ -322,9 +322,12 @@ prefix and suffix text stays on its own line so partial-line boxes keep their
 columns aligned. F5 or the popover's Draw button toggles box mode; arrow keys
 draw a connected path and Esc ends the current stroke. When a stroke starts on
 an existing box glyph, its foreground color is carried to each glyph changed by
-that stroke. Drawing past a line
-end pads that row with spaces; drawing below the document appends rows and pads
-them to the current display column. One mode session is one undo step.
+that stroke. With a selection, Tab and Shift+Tab move through enabled popover
+actions, Enter applies the focused action, and Esc closes the popover. The
+focused action is highlighted; the initial focus follows uniformly active
+bold, italic, underline, or box selection, otherwise B. Drawing past a line end
+pads that row with spaces; drawing below the document appends rows and pads them
+to the current display column. One mode session is one undo step.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
