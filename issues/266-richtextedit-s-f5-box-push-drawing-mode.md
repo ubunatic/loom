@@ -28,6 +28,14 @@ A "natural" push: text gets out of the way of the stroke, spaces are drawn over.
 - Moving onto a cell that is a space never pushes. After a push, the stroke paints through free cells until it hits the next non-space, which triggers the next push.
 - Pushed text keeps its styles. A word that would be cut by a vertical stroke moves as a whole to the right of the stroke.
 
+### Pushing through existing boxes (user, 2026-10-04)
+
+The document model has no decoration layer: box glyphs are ordinary characters in `RichLine` spans, recognised only by glyph (`BoxGlyphArms`). Rule for v1:
+
+- A box glyph under the stroke is **not pushed**; the stroke joins it with a junction (as in F5 mode).
+- Text characters are pushed per the rules above. Example: an existing box around three lines of text, a vertical push stroke from the top through the middle: top and bottom edges get junctions (`┬`/`┴`), the text rows inside are pushed right, which shifts the outer box's right edge on those rows and breaks it. Accepted for the first version.
+- Follow-up (not in this ticket): compensate broken boxes, e.g. widen the outer box so its right edge stays aligned. File it after the live check if still wanted.
+
 Uncertain (user): the vertical case "depends on the situation"; implement the rules above first and refine after a live check.
 
 ## Acceptance
