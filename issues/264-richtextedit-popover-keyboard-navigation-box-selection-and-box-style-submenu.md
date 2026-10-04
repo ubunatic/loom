@@ -35,6 +35,15 @@ With the popover open, `Tab` / `S-Tab` cycle the bar items with a visible focus 
 
 Acceptance: forward/reverse wraparound and highlight; box focus takes precedence, otherwise first uniformly active B/I/U in that order; mixed/plain selection starts at B; Enter/Esc leave document and host focus unchanged except the requested formatting.
 
+**M2 delivered (2026-10-04, 6a4faef pre-work, e9350a0 bar navigation):** Esc no longer quits the gallery (C-q/F10 only, verified live), box strokes take start glyph color, C-S-b removed, popover box-mode button, Tab/S-Tab/Enter/Space/Esc in the bar. Host rerun green.
+
+### M3 Pre-Work / Required Refinements (host review + user, 2026-10-04)
+
+1. Full width not met: in a 160-col tmux the RichTextEdit demo still draws at most ~70 cols (no content or border beyond col 70). The editor/demo must fill the terminal width. Add a test at a wide size.
+2. Stale demo hint: the gallery line still says "F5/C-S-B Box"; drop C-S-B and mention the popover box button.
+3. User: C-space on a space character (blank cell, not on a word or box) must still open the popover, with the box-mode button usable, so box drawing can start from empty space.
+4. User: cursor Up/Down may move into the "void" (columns past the line end, rows past the last line) without inserting spaces; the virtual position is kept and drawn. Spaces/lines are padded only when the user types or draws there. Moving away without typing leaves the document unchanged. Test both.
+
 ## M3 — Box style dropdown
 
 "Box" opens a dropdown with **plain** (sharp, `┌┐└┘`) and **rounded** (`╭╮╰╯`). Choosing a style wraps the selection, or restyles the selected box (M1). Reuse the existing `BoxBorderStyle*` glyph sets; labels/defaults go in the spec per `docs/Spec.md`.
