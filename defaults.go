@@ -43,6 +43,8 @@ type RichTextEditDefaults struct {
 	PointerDownGlyph string   `yaml:"pointer_down_glyph"`
 	PointerFG        int      `yaml:"pointer_fg"`
 	PopoverLabels    []string `yaml:"popover_labels"`
+	LinkFG           int      `yaml:"link_fg"`
+	LinkUnderline    bool     `yaml:"link_underline"`
 }
 
 func (d RichTextEditDefaults) validate() error {
@@ -51,7 +53,7 @@ func (d RichTextEditDefaults) validate() error {
 		value int
 	}{
 		{"selection_bg", d.SelectionBG}, {"toolbar_fg", d.ToolbarFG}, {"toolbar_bg", d.ToolbarBG},
-		{"separator_fg", d.SeparatorFG}, {"separator_bg", d.SeparatorBG}, {"pointer_fg", d.PointerFG},
+		{"separator_fg", d.SeparatorFG}, {"separator_bg", d.SeparatorBG}, {"pointer_fg", d.PointerFG}, {"link_fg", d.LinkFG},
 	} {
 		if color.value < 0 || color.value > 255 {
 			return fmt.Errorf("rich_text_edit.%s must be between 0 and 255", color.name)

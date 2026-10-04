@@ -56,6 +56,9 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
 		}
 	}
+	if got.LinkFG != 39 || !got.LinkUnderline {
+		t.Fatalf("link defaults = %d, %v", got.LinkFG, got.LinkUnderline)
+	}
 	if err := got.validate(); err != nil {
 		t.Fatal(err)
 	}

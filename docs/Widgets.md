@@ -314,6 +314,13 @@ code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
 pills.
 
+View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
+selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
+cut, paste, undo/redo, `Ctrl+Space` and the popover are off, and those keys return
+`Ignored` so the app can use them. A span with `Link` set draws with the spec link
+style (`rich_text_edit.link_fg`, `link_underline`) in both modes, focused or not;
+the URL stays on `RichSpan.Link` (OSC 8 output is issue 259).
+
 Editing shortcuts: `Ctrl+B/I/U` style the selection, or the word under the cursor
 when nothing is selected (no word: only the typing style changes). `Ctrl+Space`
 selects the word and shows the popover. The clipboard is internal and keeps

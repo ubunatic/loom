@@ -32,6 +32,10 @@ type RichTextEdit struct {
 	ScrollY        int
 	ShowCursor     bool
 	ShowPopover    bool
+	// ViewMode makes the editor read-only: navigation, selection and copy work;
+	// every edit, style key and the format popover are disabled and edit keys
+	// return Ignored so the app can use them.
+	ViewMode bool
 
 	focused            bool
 	lastRect           Rect
@@ -77,6 +81,13 @@ var _ Widget = (*RichTextEdit)(nil)
 // as an empty document.
 func NewRichTextEdit(doc *RichDocument) *RichTextEdit {
 	return &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, focused: true}
+}
+
+// NewRichTextView creates a read-only RichTextEdit for doc (ViewMode, no popover).
+func NewRichTextView(doc *RichDocument) *RichTextEdit {
+	e := NewRichTextEdit(doc)
+	e.ViewMode, e.ShowPopover = true, false
+	return e
 }
 
 // Focused reports whether the editor currently has keyboard focus.
@@ -184,7 +195,7 @@ func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex i
 			selected := e.HasSelection && richPositionBefore(RichPosition{Line: lineIndex, Offset: offset}, end) && richPositionBefore(start, RichPosition{Line: lineIndex, Offset: offset + runeCount})
 			x := rect.X + col - e.ScrollX
 			if w > 0 && x >= rect.X && x+w <= rect.X+rect.W {
-				style := span.Style
+				style := e.spanStyle(span)
 				if selected {
 					style = e.selectionStyle(style)
 				}
@@ -194,6 +205,21 @@ func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex i
 			offset += runeCount
 		}
 	}
+}
+
+// spanStyle returns the draw style of span; link spans get the spec link style
+// for any attribute the span leaves unset, in edit and view mode, focused or not.
+func (e *RichTextEdit) spanStyle(span RichSpan) Style {
+	style := span.Style
+	if span.Link == "" {
+		return style
+	}
+	defs := SpeccedDefaults.RichTextEdit
+	if style.FG == ColorReset() {
+		style.FG = ColorIndex(uint8(defs.LinkFG))
+	}
+	style.Underline = style.Underline || defs.LinkUnderline
+	return style
 }
 
 func (e *RichTextEdit) selectionBounds() (RichPosition, RichPosition) {
@@ -236,6 +262,9 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	e.Cursor = e.normalizePosition(e.Cursor, 0)
 	if !key.Is("enter", "return") && (key.Key != "" || key.Text == "") {
 		e.typingRun = false
+	}
+	if e.ViewMode && !richViewModeKey(key) {
+		return Ignored()
 	}
 	switch {
 	case key.Is("ctrl-b"):
@@ -306,6 +335,12 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		e.mutate(true, boundary, func() { e.insertText(key.Text) })
 	}
 	return Handled()
+}
+
+// richViewModeKey reports whether key is navigation, selection or copy.
+func richViewModeKey(key KeyEvent) bool {
+	return key.Is("ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up",
+		"down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-left", "ctrl-right")
 }
 
 // ConsumeMouse positions the cursor and supports click-drag selection.
@@ -385,7 +420,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverSwatches = nil
-	if !e.ShowPopover || !e.HasSelection || r.W < 18 || r.H < 3 {
+	if e.ViewMode || !e.ShowPopover || !e.HasSelection || r.W < 18 || r.H < 3 {
 		return
 	}
 	from, _ := e.selectionBounds()

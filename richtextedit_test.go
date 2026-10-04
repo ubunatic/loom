@@ -721,3 +721,93 @@ func TestRichTextEditSlowClicksDoNotSelectWord(t *testing.T) {
 		t.Fatal("slow clicks selected text")
 	}
 }
+
+func richViewTestEditor() *RichTextEdit {
+	e := NewRichTextView(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "see "}, {Text: "loom", Link: "https://ubunatic.com/loom"}, {Text: " now"},
+	}}}})
+	return e
+}
+
+func TestRichTextViewRejectsEveryEditPath(t *testing.T) {
+	e := richViewTestEditor()
+	e.clipboard = []RichLine{{Spans: []RichSpan{{Text: "zz"}}}}
+	e.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 3})
+	e.Cursor.Offset = 3
+	before := richTestText(e)
+	for _, key := range []KeyEvent{
+		{Text: "x"}, {Key: "enter"}, {Key: "backspace"}, {Key: "delete"}, {Key: "ctrl-b"}, {Key: "ctrl-i"},
+		{Key: "ctrl-u"}, {Key: "ctrl-v"}, {Key: "shift-insert"}, {Key: "ctrl-x"}, {Key: "shift-delete"},
+		{Key: "ctrl-z"}, {Key: "ctrl-y"}, {Key: "ctrl-r"}, {Key: "ctrl-space"},
+	} {
+		if got := e.ConsumeKey(key); got != Ignored() {
+			t.Fatalf("%+v result = %v, want Ignored", key, got)
+		}
+	}
+	if got := richTestText(e); got != before || len(e.undoStack) != 0 {
+		t.Fatalf("text = %q undo=%d, want unchanged", got, len(e.undoStack))
+	}
+	if !e.HasSelection || e.ShowPopover {
+		t.Fatal("selection lost or popover enabled")
+	}
+	c := NewCanvas(40, 6)
+	e.ShowPopover = true // even if forced on, view mode draws no popover
+	e.Draw(c, Rect{W: 40, H: 6})
+	if len(e.popoverButtons) != 0 {
+		t.Fatal("view mode drew a popover")
+	}
+	e.ConsumeMouse(MouseEvent{X: 1, Y: 0, Action: MousePress, Button: MouseLeft})
+	if richTestText(e) != before {
+		t.Fatal("mouse changed text")
+	}
+}
+
+func TestRichTextViewAllowsSelectionAndCopy(t *testing.T) {
+	e := richViewTestEditor()
+	if got := e.ConsumeKey(KeyEvent{Key: "shift-right"}); got != Handled() {
+		t.Fatalf("shift-right = %v", got)
+	}
+	richTestKey(e, "shift-right", "shift-right", "shift-right")
+	if !e.HasSelection {
+		t.Fatal("no selection")
+	}
+	if got := e.ConsumeKey(KeyEvent{Key: "ctrl-c"}); got != Handled() {
+		t.Fatalf("ctrl-c = %v", got)
+	}
+	if len(e.clipboard) != 1 || e.clipboard[0].Spans[0].Text != "see " {
+		t.Fatalf("clipboard = %#v", e.clipboard)
+	}
+	e.ConsumeMouse(MouseEvent{X: 0, Y: 0, Action: MousePress, Button: MouseLeft})
+	e.ConsumeMouse(MouseEvent{X: 5, Y: 0, Action: MouseRelease, Button: MouseLeft})
+	if !e.HasSelection {
+		t.Fatal("mouse drag selection failed")
+	}
+}
+
+func TestRichTextEditLinkSpanStyleAndCopyPaste(t *testing.T) {
+	for _, focused := range []bool{true, false} {
+		e := richViewTestEditor()
+		e.SetFocus(focused)
+		c := NewCanvas(20, 2)
+		e.Draw(c, Rect{W: 20, H: 2})
+		link, plain := c.Get(4, 0).Style, c.Get(0, 0).Style
+		if link.FG != ColorIndex(39) || !link.Underline || plain.Underline || plain.FG == link.FG {
+			t.Fatalf("focused=%v link=%+v plain=%+v", focused, link, plain)
+		}
+	}
+	e := richViewTestEditor()
+	e.ViewMode = false
+	e.SetSelection(RichPosition{Offset: 4}, RichPosition{Offset: 8})
+	richTestKey(e, "ctrl-c")
+	e.ClearSelection()
+	e.Cursor.Offset = 12
+	richTestKey(e, "ctrl-v")
+	if got := richTestText(e); got != "see loom nowloom" {
+		t.Fatalf("text = %q", got)
+	}
+	spans := e.Document.Lines[0].Spans
+	last := spans[len(spans)-1]
+	if last.Text != "loom" || last.Link != "https://ubunatic.com/loom" {
+		t.Fatalf("pasted span = %#v", last)
+	}
+}
