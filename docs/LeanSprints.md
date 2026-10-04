@@ -75,7 +75,8 @@ Source: host `claude:opus` as reviewer, developers `claude:sonnet` (257, 258, 26
 - **Live PTY checks are the host's job**: developers could not inject arrows into the gallery. A tmux session (`tmux new-session -d ... ; tmux send-keys ...; tmux capture-pane -p -e`) let the host verify typing, selection and box drawing. The 258 review skipped checking the effect of a key and missed the caret bug filed as 260.
 - **tmux is not the user's terminal**: S-Home worked in tmux but VTE (Tilix) eats it on the primary screen. Ask the user for a 10-second probe (`printf '\e[?1049h'; cat -v`) before claiming key support.
 - **Decoder gaps hide behind widget code**: twice (257, 263) the widget already handled a key the decoder never produced. Check `DecodeKey` first when a binding "does nothing".
-- **Quota-1 blocks the host rerun** when no source changed since the developer's run; the host rerun uses `QUOTA_BYPASS=1` as the mandated verification.
+- **Host rerun uses plain `make test`**: quota-1 blocks a rerun when no source changed since the developer's run, and `.harnez/rules/Quota.md` forbids `QUOTA_BYPASS`; plain `make test` is the host rerun (harnez issue 704).
 - **Search before filing**: a flaky test was filed as 262 before reading the search result that showed 247; closed as duplicate.
 - **Advisor refinement in parallel with a developer** worked when the advisor was limited to committing one ticket file.
-
+- **Capture escape output, not the screen** (264): a green test suite hid that the cursor shape never reached the terminal, because the pane asked only the root widget and the gallery wraps the editor. `script -q -c '<cmd>' out.raw` under tmux plus `grep -aoE $'\x1b\\[[0-9]* q' out.raw` showed zero sequences; the nested-container test followed.
+- **User live checks drive pre-work**: each 264 milestone's live check produced 2-6 user refinements; folding them into the next milestone's "Pre-Work" section kept one ticket and one developer session for the whole sprint (one `codex:sol:med` session, seven turns).
