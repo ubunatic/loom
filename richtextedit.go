@@ -42,37 +42,39 @@ type RichTextEdit struct {
 	// document space. The default comes from spec/defaults.yaml.
 	GhostCursorEnabled bool
 
-	focused            bool
-	lastRect           Rect
-	selectionAnchor    RichPosition
-	selectionExtending bool
-	dragSelecting      bool
-	activeStyleSet     bool
-	popoverButtons     []richPopoverButton
-	popoverPalette     string
-	popoverSwatches    []richPopoverSwatch
-	popoverSubmenu     string
-	popoverBoxChoices  []richPopoverBoxChoice
-	popoverRelease     bool
-	popoverFocus       int
-	popoverFocusSet    bool
-	popoverSuppressed  bool
-	popoverAtCursor    bool
-	cursorInVoid       bool
-	voidLine           int
-	voidColumn         int
-	clipboard          []RichLine
-	undoStack          []richSnapshot
-	redoStack          []richSnapshot
-	typingRun          bool
-	clickCount         int
-	lastClickAt        time.Time
-	lastClickPos       RichPosition
-	now                func() time.Time
-	boxStrokeBefore    *richSnapshot
-	boxSelection       *richBoxSelection
-	boxStrokeFG        Color
-	boxStrokeFGSet     bool
+	focused                bool
+	lastRect               Rect
+	selectionAnchor        RichPosition
+	selectionExtending     bool
+	dragSelecting          bool
+	activeStyleSet         bool
+	popoverButtons         []richPopoverButton
+	popoverPalette         string
+	popoverSwatches        []richPopoverSwatch
+	popoverSubmenu         string
+	popoverBoxChoices      []richPopoverBoxChoice
+	popoverRelease         bool
+	popoverFocus           int
+	popoverFocusSet        bool
+	popoverSubmenuFocus    int
+	popoverSubmenuFocusSet bool
+	popoverSuppressed      bool
+	popoverAtCursor        bool
+	cursorInVoid           bool
+	voidLine               int
+	voidColumn             int
+	clipboard              []RichLine
+	undoStack              []richSnapshot
+	redoStack              []richSnapshot
+	typingRun              bool
+	clickCount             int
+	lastClickAt            time.Time
+	lastClickPos           RichPosition
+	now                    func() time.Time
+	boxStrokeBefore        *richSnapshot
+	boxSelection           *richBoxSelection
+	boxStrokeFG            Color
+	boxStrokeFGSet         bool
 }
 
 const (
@@ -357,6 +359,7 @@ func (e *RichTextEdit) selectionBounds() (RichPosition, RichPosition) {
 
 func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverFocusSet = false
+	e.popoverSubmenuFocusSet = false
 	e.popoverPalette = ""
 	e.popoverSwatches = nil
 	e.popoverSubmenu = ""
@@ -371,7 +374,9 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed {
 		return Ignored(), false
 	}
-	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", "esc") {
+	submenuOpen := e.popoverPalette != "" || e.popoverSubmenu != ""
+	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", "esc") &&
+		!(submenuOpen && key.Is("up", "down", "left", "right")) {
 		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
 			e.clearPopoverKeyboardState(true)
 		}
@@ -381,10 +386,17 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.clearPopoverKeyboardState(true)
 		return Handled(), true
 	}
+	if submenuOpen && !e.popoverSubmenuCanShow() {
+		e.clearPopoverKeyboardState(true)
+		return Handled(), true
+	}
 	firstTab := !e.popoverFocusSet && key.Is("tab")
 	if !e.popoverFocusSet {
 		e.popoverFocus = e.initialPopoverFocus()
 		e.popoverFocusSet = true
+	}
+	if submenuOpen {
+		return e.consumePopoverSubmenuKey(key)
 	}
 	switch {
 	case key.Is("esc"):
@@ -417,10 +429,20 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		}
 		if action == "#FG" || action == "#BG" {
 			e.applyPopoverAction(action)
+			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+			e.popoverSubmenuFocusSet = true
+			if !e.popoverSubmenuCanShow() {
+				e.clearPopoverKeyboardState(true)
+			}
 			return Handled(), true
 		}
 		e.applyPopoverAction(action)
 		if action == "Box" {
+			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+			e.popoverSubmenuFocusSet = true
+			if !e.popoverSubmenuCanShow() {
+				e.clearPopoverKeyboardState(true)
+			}
 			return Handled(), true
 		}
 		e.clearPopoverKeyboardState(action != "Draw" && e.HasSelection)
@@ -428,6 +450,79 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	default:
 		return Ignored(), false
 	}
+}
+
+func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool) {
+	if !e.popoverSubmenuFocusSet {
+		e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+		e.popoverSubmenuFocusSet = true
+	}
+	if key.Is("esc") {
+		e.popoverPalette = ""
+		e.popoverSwatches = nil
+		e.popoverSubmenu = ""
+		e.popoverBoxChoices = nil
+		e.popoverSubmenuFocusSet = false
+		return Handled(), true
+	}
+	if key.Is("tab", "shift-tab", "backtab", "up", "down", "left", "right") {
+		direction := 1
+		if key.Is("shift-tab", "backtab", "up", "left") {
+			direction = -1
+		}
+		count := e.popoverSubmenuChoiceCount()
+		if count > 0 {
+			e.popoverSubmenuFocus = (e.popoverSubmenuFocus + direction + count) % count
+		}
+		return Handled(), true
+	}
+	if key.Is("enter", "return", "space") {
+		if e.popoverPalette != "" {
+			palette := e.popoverPalette
+			e.applyPopoverColor(palette, ColorIndex(uint8(e.popoverSubmenuFocus)))
+			e.clearPopoverKeyboardState(e.HasSelection)
+			return Handled(), true
+		}
+		labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
+		if e.popoverSubmenu == "Box" && e.popoverSubmenuFocus >= 0 && e.popoverSubmenuFocus < len(labels) {
+			e.applyBoxStyleChoice(labels[e.popoverSubmenuFocus])
+			return Handled(), true
+		}
+		return Handled(), true
+	}
+	return Ignored(), false
+}
+
+func (e *RichTextEdit) popoverSubmenuChoiceCount() int {
+	if e.popoverPalette != "" {
+		return 16
+	}
+	if e.popoverSubmenu == "Box" {
+		return len(SpeccedDefaults.RichTextEdit.BoxStyleLabels)
+	}
+	return 0
+}
+
+func (e *RichTextEdit) initialPopoverSubmenuFocus() int { return 0 }
+
+func (e *RichTextEdit) popoverSubmenuCanShow() bool {
+	if !e.popoverCanShow() {
+		return false
+	}
+	r := e.lastRect
+	if e.popoverPalette != "" && r.W < 16 {
+		return false
+	}
+	if e.popoverSubmenu == "Box" {
+		width := 2 + len(SpeccedDefaults.RichTextEdit.BoxStyleLabels) - 1
+		for _, label := range SpeccedDefaults.RichTextEdit.BoxStyleLabels {
+			width += len(label) + 2
+		}
+		if width > r.W {
+			return false
+		}
+	}
+	return true
 }
 
 func (e *RichTextEdit) nextPopoverFocus(current, direction int) int {
@@ -795,6 +890,9 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverSwatches = nil
 	e.popoverBoxChoices = nil
+	if (e.popoverPalette != "" || e.popoverSubmenu != "") && !e.popoverSubmenuCanShow() {
+		e.clearPopoverKeyboardState(true)
+	}
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < 18 || r.H < 3 {
 		return
 	}
@@ -894,6 +992,9 @@ func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
 	for i := 0; i < 16; i++ {
 		color := ColorIndex(uint8(i))
 		cellStyle := Style{BG: color}
+		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
+			cellStyle.Invert = true
+		}
 		c.Set(r.X+paletteX+i, r.Y+paletteY, Cell{Text: " ", Style: cellStyle})
 		e.popoverSwatches = append(e.popoverSwatches, richPopoverSwatch{color: color, rect: Rect{X: paletteX + i, Y: paletteY, W: 1, H: 1}})
 	}
@@ -938,8 +1039,13 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 		choiceWidth := len(label) + 2
 		choice := richPopoverBoxChoice{label: label, style: BoxBorderStyle(i), rect: Rect{X: col, Y: y, W: choiceWidth, H: 1}}
 		e.popoverBoxChoices = append(e.popoverBoxChoices, choice)
+		choiceStyle := style
+		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
+			choiceStyle.FG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG))
+			choiceStyle.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG))
+		}
 		for j, ch := range " " + label + " " {
-			c.Set(r.X+col+j, r.Y+y, Cell{Text: string(ch), Style: style})
+			c.Set(r.X+col+j, r.Y+y, Cell{Text: string(ch), Style: choiceStyle})
 		}
 		col += choiceWidth
 		if i < len(labels)-1 {
@@ -980,6 +1086,7 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	case "Box":
 		e.popoverPalette = ""
 		e.popoverSwatches = nil
+		e.popoverSubmenuFocusSet = false
 		if e.popoverSubmenu == "Box" {
 			e.popoverSubmenu = ""
 			e.popoverBoxChoices = nil
@@ -999,6 +1106,7 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	case "#FG", "#BG":
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
+		e.popoverSubmenuFocusSet = false
 		if e.popoverPalette == label {
 			e.popoverPalette = ""
 			e.popoverSwatches = nil
@@ -1147,15 +1255,17 @@ func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {
 		e.popoverSwatches = nil
 		return
 	}
-	lines := e.documentLines()
-	from, to := e.selectionBounds()
-	e.clampPosition(&from, lines)
-	e.clampPosition(&to, lines)
-	from, to = expandRangeForPills(lines, from, to)
-	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
-		start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
-		lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, palette, color)
-	}
+	e.mutate(false, false, func() {
+		lines := e.documentLines()
+		from, to := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		e.clampPosition(&to, lines)
+		from, to = expandRangeForPills(lines, from, to)
+		for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
+			start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
+			lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, palette, color)
+		}
+	})
 	e.popoverPalette = ""
 	e.popoverSwatches = nil
 }

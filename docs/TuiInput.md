@@ -69,6 +69,12 @@ With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Enter applies the focused action and Esc closes the popover. These keys are
 consumed by the editor while the popover is available.
 
+Space opens the focused foreground, background, or box-style submenu. Within a
+submenu, Tab/Shift+Tab and the arrow keys wrap through its choices; Enter or
+Space applies the focused choice. Esc closes the submenu first and returns focus
+to the popover bar; another Esc closes the bar. These keys remain consumed when
+the editor is nested in Frame, Split, or Tabs.
+
 RichTextEdit uses a bar terminal cursor for normal typing and a block cursor
 while box drawing mode is active. Pane sends DECSCUSR only when the requested
 shape changes and restores the terminal default on close. Ghost-cursor
