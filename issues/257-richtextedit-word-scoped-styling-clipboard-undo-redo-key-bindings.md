@@ -21,6 +21,7 @@ Re-check live code and recent commits first; 254–256 shaped the current widget
 - **Clipboard is internal** for now (no `wl-copy`/OSC 52/system clipboard).
 - **Undo**: `C-z`, `C-y`.
 - **Redo**: `C-r`, `C-S-y`, `C-S-z`.
+- **Mouse**: double-click selects a word, triple-click selects the line.
 - **Common aliases**: `S-Insert` paste, `C-Insert` copy, `S-Delete` cut; add cut (`C-x`) if it fits.
 
 ## Notes / uncertainties
