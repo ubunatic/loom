@@ -1,0 +1,64 @@
+<!doctype html>
+<!-- SPDX-FileCopyrightText: 2026 Uwe Jugel
+     SPDX-License-Identifier: AGPL-3.0-or-later -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Reusable Go widgets, declarative layouts, and terminal rendering that work in the current terminal without taking over the full screen.">
+  <title>loom — reusable inline terminal UI for Go</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+<!-- Shared navbar is injected by uman website sync, as on lmcoder. -->
+<main class="container">
+  <div class="hero">
+    <p class="project-name">loom</p>
+    <h1>Terminal interfaces that stay inline</h1>
+    <p>Reusable Go widgets, declarative layouts, and terminal rendering that work in the current terminal without taking over the full screen.</p>
+    <div class="pill-row"><span class="pill">Go</span><span class="pill">YAML layouts</span><span class="pill">ANSI / OSC 52 / CSI-u</span></div>
+    <div class="actions"><a href="story.html">Read the engineering story</a><a href="https://codeberg.org/ubunatic/loom">Source on Codeberg</a><a href="https://codeberg.org/ubunatic/loom/releases">Releases</a></div>
+  </div>
+  <section id="why">
+    <h2>Why loom</h2>
+    <p>Command line tools need selection, editing, and layout without losing the surrounding shell context. Extracted from uzu, loom gives independent tools shared input and rendering behavior, with terminal restoration treated as part of the interface.</p>
+  </section>
+  <section id="capabilities">
+    <h2>What it does</h2>
+    <div class="grid">
+      <article class="card"><h3>Reusable widgets</h3><p>Choice, Table, Confirm, TextInput, TextArea, Settings, Pane, and Canvas provide selection, editing, layout, and rendering primitives.</p></article>
+      <article class="card"><h3>Declarative layouts</h3><p>YAML describes widget trees and layouts. Example applications and the loom-demo gallery make the library’s behavior inspectable.</p></article>
+      <article class="card"><h3>Rich terminal editing</h3><p>RichTextEdit supports styled spans, pills, clipboard and undo/redo, formatting popovers, and box-aware selection and drawing.</p></article>
+    </div>
+
+  </section>
+  <section id="milestones">
+    <h2>Recent milestones</h2>
+    <ul class="timeline">
+      <li><time datetime="2026-10-01">2026-10-01</time> — Module migration to ubunatic.com/loom; the study records eight dependent repositories. <a href="https://codeberg.org/ubunatic/loom/commit/f6cd21b"><code>f6cd21b</code></a></li>
+      <li><time datetime="2026-10-03">2026-10-03</time> — v0.3.0 release and successive rich text editor milestones. <a href="https://codeberg.org/ubunatic/loom/commit/e07b518"><code>e07b518</code></a></li>
+      <li><time datetime="2026-10-04">2026-10-04</time> — Cursor shape propagation through nested containers, verified through escape sequences and a live Tilix check. <a href="https://codeberg.org/ubunatic/loom/commit/d4616a0"><code>d4616a0</code></a></li>
+    </ul>
+    <p class="note">Historical milestones from the review through October 4, 2026.</p>
+  </section>
+  <section id="engineering">
+    <h2>How the work was verified</h2>
+    <p>The review through 2026-10-04 records 1,227 commits in six weeks and 1,243 test functions. These historical counts describe pace and breadth, rather than a count of unique features. Ticket acceptance checks, host reviews, and live terminal checks caught integration mistakes.</p>
+
+    <p><a href="story.html">Read the full October 4 story and its facts table</a>.</p>
+  </section>
+  <section id="scope">
+    <h2>Current scope and limits</h2>
+    <p>The API is pre-1.0 and may change. Real terminal behavior needs live checks alongside unit tests. The README’s older release status is tracked separately; the October 4 story records v0.3.0.</p>
+  </section>
+  <section id="usage"><h2>Use the library or explore the examples</h2><pre><code>go get ubunatic.com/loom
+
+# From a source checkout:
+make install
+loom-demo --list
+loom-demo filebrowser</code></pre><p>Build and installation instructions are maintained in the <a href="https://codeberg.org/ubunatic/loom">source repository</a>.</p></section>
+</main>
+<footer><div class="container">loom · <a href="story.html">Engineering story</a> · <a href="https://codeberg.org/ubunatic/loom">Codeberg</a></div></footer>
+</body>
+</html>
+

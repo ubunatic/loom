@@ -1,0 +1,42 @@
+/* SPDX-FileCopyrightText: 2026 Uwe Jugel
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * Layout and palette adapted from lmcoder/website/index.html. */
+:root { color-scheme: light; --bg:#f7f6f3; --surface:#fff; --border:#e2e0da; --text:#1c1917; --muted:#6b6762; --accent:#2563eb; }
+* { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.65 -apple-system,BlinkMacSystemFont,'Segoe UI','Liberation Sans',Helvetica,Arial,sans-serif; }
+a { color:var(--accent); text-underline-offset:3px; }
+a:hover { text-decoration-thickness:2px; }
+a:focus-visible { outline:2px solid var(--accent); outline-offset:4px; }
+.container { max-width:880px; margin:0 auto; padding:0 1.5rem; }
+.hero { padding:3.5rem 0 2.5rem; text-align:center; }
+.hero h1 { font-size:clamp(2rem,5vw,2.8rem); line-height:1.2; letter-spacing:-.03em; margin:.5rem 0 1rem; }
+.hero p { max-width:660px; margin:0 auto 1.5rem; color:var(--muted); font-size:1.15rem; }
+.hero .project-name { font-size:.9rem; font-weight:700; color:var(--accent); }
+.pill-row { display:flex; flex-wrap:wrap; justify-content:center; gap:.5rem; margin:1.5rem 0; }
+.pill { padding:.3rem .85rem; background:var(--surface); border:1px solid var(--border); border-radius:99px; font-size:.82rem; color:var(--muted); }
+.actions { display:flex; flex-wrap:wrap; justify-content:center; gap:1rem; }
+section { padding:2.5rem 0; border-top:1px solid var(--border); }
+h2 { font-size:1.4rem; letter-spacing:-.02em; margin:0 0 .75rem; }
+h3 { font-size:1.05rem; margin:0 0 .5rem; }
+p { margin:0 0 1rem; }
+.grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:1rem; }
+.card { padding:1.25rem; background:var(--surface); border:1px solid var(--border); border-radius:6px; }
+.card p { font-size:.95rem; color:var(--muted); margin:0; }
+pre { background:#1a1917; color:#d4d0c8; padding:1.25rem; border-radius:6px; overflow:auto; }
+code { font-family:'Liberation Mono','DejaVu Sans Mono',monospace; font-size:.9em; }
+pre code { white-space:pre-wrap; overflow-wrap:anywhere; }
+.timeline { padding-left:1.25rem; }
+.timeline li { margin:0 0 1rem; }
+.diagram { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; padding:0; list-style:none; }
+.diagram li { padding:.7rem; border:1px solid var(--border); border-radius:6px; background:var(--surface); }
+.diagram li + li::before { content:'→ '; color:var(--accent); }
+figure { margin:1.5rem 0; }
+figcaption, .note { color:var(--muted); font-size:.9rem; }
+footer { border-top:1px solid var(--border); padding:1.5rem 0; color:var(--muted); font-size:.9rem; }
+.story { padding:3rem 0; }
+.story h1 { line-height:1.2; font-size:clamp(1.8rem,5vw,2.5rem); }
+.story h2 { margin-top:2rem; }
+.story table { width:100%; border-collapse:collapse; font-size:.9rem; }
+.story th, .story td { padding:.6rem; border:1px solid var(--border); text-align:left; vertical-align:top; overflow-wrap:anywhere; }
+@media (max-width:520px) { .container { padding:0 1rem; } .hero { padding-top:2rem; } }
+
