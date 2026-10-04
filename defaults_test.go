@@ -47,7 +47,7 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
-	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
+	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
 	if len(got.PopoverLabels) != len(want) {
 		t.Fatalf("popover labels = %q, want %q", got.PopoverLabels, want)
 	}

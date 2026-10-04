@@ -312,7 +312,9 @@ selected spans. Mouse coordinates are child-local, so the editor can handle
 selection drags and popover clicks directly. `RichSpan` can also carry link,
 code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
-pills.
+pills. The formatting popover's Box action wraps a single- or multi-line
+selection in a sharp box; rows are padded to the widest display width and the
+selection's inline styles and metadata remain on the enclosed text.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,

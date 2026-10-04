@@ -73,7 +73,7 @@ type richPopoverSwatch struct {
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG"}
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -433,7 +433,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	width := 2
 	labels := SpeccedDefaults.RichTextEdit.PopoverLabels
 	for i, label := range labels {
-		width += len(label) + 2
+		width += len(label) + 1
 		if i > 0 {
 			width++
 		}
@@ -459,9 +459,9 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	c.Set(r.X+barX+width-1, r.Y+barY, Cell{Text: "]", Style: toolbarStyle})
 	x := barX + 1
 	for i, label := range labels {
-		button := Rect{X: x, Y: barY, W: len(label) + 2, H: 1}
+		button := Rect{X: x, Y: barY, W: len(label) + 1, H: 1}
 		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: richPopoverActions[i], rect: button})
-		for j, ch := range " " + label + " " {
+		for j, ch := range " " + label {
 			style := toolbarStyle
 			if label == "B" && ch == 'B' {
 				style.Bold = true
@@ -529,6 +529,8 @@ func (e *RichTextEdit) popoverHit(x, y int) bool {
 
 func (e *RichTextEdit) applyPopoverAction(label string) {
 	switch label {
+	case "Box":
+		e.wrapSelectionInBox()
 	case "B":
 		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
 	case "I":
@@ -545,6 +547,73 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 			e.popoverPalette = label
 		}
 	}
+}
+
+func (e *RichTextEdit) wrapSelectionInBox() {
+	if !e.HasSelection {
+		return
+	}
+	e.mutate(false, false, func() {
+		lines := e.documentLines()
+		from, to := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		e.clampPosition(&to, lines)
+		from, to = expandRangeForPills(lines, from, to)
+		if from == to {
+			return
+		}
+		prefix, firstRest := splitRichLine(lines[from.Line], from.Offset)
+		firstLength := richLineRuneCount(RichLine{Spans: firstRest})
+		if from.Line == to.Line {
+			firstLength = to.Offset - from.Offset
+		}
+		first, _ := splitRichLine(RichLine{Spans: firstRest}, firstLength)
+		_, suffix := splitRichLine(lines[to.Line], to.Offset)
+		content := make([]RichLine, 0, to.Line-from.Line+1)
+		content = append(content, RichLine{Spans: first})
+		for i := from.Line + 1; i < to.Line; i++ {
+			content = append(content, RichLine{Spans: append([]RichSpan(nil), lines[i].Spans...)})
+		}
+		last, _ := splitRichLine(lines[to.Line], to.Offset)
+		if to.Line != from.Line {
+			content = append(content, RichLine{Spans: last})
+		} else {
+			content = []RichLine{{Spans: first}}
+		}
+		width := 0
+		for _, line := range content {
+			width = max(width, richLineColumn(line, richLineRuneCount(line)))
+		}
+		border, err := getBoxBorderGlyphs(BoxBorderStyleSharp)
+		if err != nil {
+			return
+		}
+		style := Style{}
+		if len(content) > 0 && len(content[0].Spans) > 0 {
+			style = content[0].Spans[0].Style
+		}
+		boxed := []RichLine{{Spans: []RichSpan{{Text: border.TopLeft + strings.Repeat(border.Horizontal, width) + border.TopRight, Style: style}}}}
+		for _, line := range content {
+			padding := width - richLineColumn(line, richLineRuneCount(line))
+			spans := []RichSpan{{Text: border.Vertical, Style: style}}
+			spans = append(spans, line.Spans...)
+			if padding > 0 {
+				spans = append(spans, RichSpan{Text: strings.Repeat(" ", padding), Style: style})
+			}
+			spans = append(spans, RichSpan{Text: border.Vertical, Style: style})
+			boxed = append(boxed, RichLine{Spans: mergeRichSpans(spans)})
+		}
+		boxed = append(boxed, RichLine{Spans: []RichSpan{{Text: border.BottomLeft + strings.Repeat(border.Horizontal, width) + border.BottomRight, Style: style}}})
+		boxed[0].Spans = append(append([]RichSpan(nil), prefix...), boxed[0].Spans...)
+		lastIndex := len(boxed) - 1
+		boxed[lastIndex].Spans = append(boxed[lastIndex].Spans, suffix...)
+		updated := append([]RichLine(nil), lines[:from.Line]...)
+		updated = append(updated, boxed...)
+		updated = append(updated, lines[to.Line+1:]...)
+		e.Document.Lines = updated
+		e.Cursor = RichPosition{Line: from.Line + lastIndex, Offset: richLineRuneCount(boxed[lastIndex]) - richLineRuneCount(RichLine{Spans: suffix})}
+		e.ClearSelection()
+	})
 }
 
 func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {

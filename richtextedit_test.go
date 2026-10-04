@@ -238,8 +238,8 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
 	canvas := NewCanvas(50, 6)
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
-	if len(edit.popoverButtons) != 7 {
-		t.Fatalf("popover buttons = %d, want 7", len(edit.popoverButtons))
+	if len(edit.popoverButtons) != 8 {
+		t.Fatalf("popover buttons = %d, want 8", len(edit.popoverButtons))
 	}
 	for i, button := range edit.popoverButtons {
 		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
@@ -284,6 +284,77 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	if style := doc.Lines[2].Spans[1].Style; !style.Bold || !style.Italic || !style.Underline || !style.Strike {
 		t.Fatalf("format action styles = %+v", style)
 	}
+}
+
+func TestRichTextEditWrapSelectionInBoxAndUndo(t *testing.T) {
+	tests := []struct {
+		name string
+		doc  *RichDocument
+		from RichPosition
+		to   RichPosition
+		want string
+	}{
+		{
+			name: "single line",
+			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "before text after"}}}}},
+			from: RichPosition{Offset: 7}, to: RichPosition{Offset: 11},
+			want: "before ┌────┐\n│text│\n└────┘ after",
+		},
+		{
+			name: "multiple lines and wide runes",
+			doc: &RichDocument{Lines: []RichLine{
+				{Spans: []RichSpan{{Text: "界", Style: Style{Bold: true}}, {Text: "x"}}},
+				{Spans: []RichSpan{{Text: "yz"}}},
+			}},
+			from: RichPosition{}, to: RichPosition{Line: 1, Offset: 2},
+			want: "┌───┐\n│界x│\n│yz │\n└───┘",
+		},
+		{
+			name: "selection within styled span",
+			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abCDxy", Style: Style{Italic: true}}}}}},
+			from: RichPosition{Offset: 2}, to: RichPosition{Offset: 4},
+			want: "ab┌──┐\n│CD│\n└──┘xy",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			before := tt.doc.ToPlainText()
+			edit := NewRichTextEdit(tt.doc)
+			edit.SetSelection(tt.from, tt.to)
+			edit.wrapSelectionInBox()
+			if got := tt.doc.ToPlainText(); got != tt.want {
+				t.Fatalf("boxed text = %q, want %q", got, tt.want)
+			}
+			if tt.name == "multiple lines and wide runes" && !tt.doc.Lines[1].Spans[0].Style.Bold {
+				t.Fatalf("selected styled span lost style: %#v", tt.doc.Lines[1].Spans)
+			}
+			if tt.name == "selection within styled span" && !tt.doc.Lines[1].Spans[0].Style.Italic {
+				t.Fatalf("styled selection lost style: %#v", tt.doc.Lines[1].Spans)
+			}
+			edit.undo()
+			if got := tt.doc.ToPlainText(); got != before {
+				t.Fatalf("undo text = %q, want %q", got, before)
+			}
+		})
+	}
+}
+
+func TestRichTextEditBoxActionAvailableInPopover(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	canvas := NewCanvas(60, 4)
+	edit.Draw(canvas, Rect{W: 60, H: 4})
+	for _, button := range edit.popoverButtons {
+		if button.label == "Box" {
+			edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
+			if got := doc.ToPlainText(); got != "┌─────┐\n│hello│\n└─────┘" {
+				t.Fatalf("Box action text = %q", got)
+			}
+			return
+		}
+	}
+	t.Fatal("Box action missing from popover")
 }
 
 func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
