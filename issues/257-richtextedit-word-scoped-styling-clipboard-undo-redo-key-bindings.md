@@ -30,3 +30,12 @@ Re-check live code and recent commits first; 254–256 shaped the current widget
 - `C-y` as undo is unusual (often redo); implemented as requested.
 - Key bindings belong in the spec if the project specs widget keymaps (see `docs/Spec.md`).
 - Undo granularity: word level, simple best-effort for the first version (a typing run up to a word boundary is one undo step; style/paste/cut each one step).
+
+## Implementation notes
+
+Decoder finding (`event.go` `DecodeKey`): byte 0x09 is `tab`, so `ctrl-i` never
+arrives on legacy terminals. Added minimal CSI-u decoding (`\x1b[105;5u` ->
+`ctrl-i`, `ctrl-shift-y/z`, `ctrl-space`); plain 0x09 stays Tab. Also decoded:
+byte 0x00 -> `ctrl-space`; modified tilde keys `ctrl-insert`, `shift-insert`,
+`shift-delete` (previously the modifier was dropped). Key bindings are not in the
+spec (no widget keymaps are specced), so no spec changes.
