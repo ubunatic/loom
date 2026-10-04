@@ -375,8 +375,11 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		return Ignored(), false
 	}
 	submenuOpen := e.popoverPalette != "" || e.popoverSubmenu != ""
-	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", "esc") &&
-		!(submenuOpen && key.Is("up", "down", "left", "right")) {
+	popoverArrow := key.Is("up", "down", "left", "right")
+	if popoverArrow && !submenuOpen && !e.popoverFocusSet && len(e.popoverButtons) == 0 {
+		return Ignored(), false
+	}
+	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", " ", "esc", "up", "down", "left", "right") {
 		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
 			e.clearPopoverKeyboardState(true)
 		}
@@ -419,7 +422,16 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		}
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
-	case key.Is("enter", "return", "space"):
+	case key.Is("left", "right"):
+		direction := 1
+		if key.Is("left") {
+			direction = -1
+		}
+		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
+		return Handled(), true
+	case key.Is("up", "down"):
+		return Handled(), true
+	case key.Is("enter", "return", "space", " "):
 		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
 			return Handled(), true
 		}
@@ -476,7 +488,7 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		}
 		return Handled(), true
 	}
-	if key.Is("enter", "return", "space") {
+	if key.Is("enter", "return", "space", " ") {
 		if e.popoverPalette != "" {
 			palette := e.popoverPalette
 			e.applyPopoverColor(palette, ColorIndex(uint8(e.popoverSubmenuFocus)))

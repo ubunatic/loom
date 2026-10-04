@@ -2,6 +2,14 @@ package loom
 
 import "testing"
 
+type nestedRichTextEditWrapper struct{ edit *RichTextEdit }
+
+func (w *nestedRichTextEditWrapper) Draw(c *Canvas, r Rect) { w.edit.Draw(c, r) }
+func (w *nestedRichTextEditWrapper) ConsumeKey(key KeyEvent) EventResult {
+	return w.edit.ConsumeKey(key)
+}
+func (*nestedRichTextEditWrapper) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+
 func newSubmenuTestEditor() (*RichTextEdit, *Canvas) {
 	edit := richTestEditor(RichSpan{Text: "abc"})
 	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 3})
@@ -140,6 +148,60 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "tab"}))
 	if split.focus != focus {
 		t.Fatalf("Split traversed focus while submenu was open: %d -> %d", focus, split.focus)
+	}
+}
+
+func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *testing.T) {
+	edit := richTestEditor(RichSpan{Text: "abc"})
+	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 3})
+	edit.ShowPopover = true
+	wrapper := &nestedRichTextEditWrapper{edit: edit}
+	other := richEditorLines("other")
+	tabs := NewTabs(Tab{Title: "RichTextEdit", Widget: wrapper}, Tab{Title: "Other", Widget: other})
+	canvas := NewCanvas(80, 10)
+	tabs.Draw(canvas, canvas.Bounds())
+
+	popoverFocusAction(t, edit, "#FG")
+	cursor, selectionFrom, selectionTo, selection := edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection
+	focus := tabs.Focus()
+
+	// DecodeKey represents a physical Space key as printable text, not Key:"space".
+	space := DecodeKey([]byte{' '})
+	if space.Key != "" || space.Text != " " {
+		t.Fatalf("decoded Space = %+v, want printable space text", space)
+	}
+	assertMenuHandled(t, tabs.ConsumeKey(space))
+	if edit.popoverPalette != "#FG" {
+		t.Fatalf("Space did not open focused FG submenu: %q", edit.popoverPalette)
+	}
+	for _, key := range []string{"up", "down", "left", "right"} {
+		assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: key}))
+	}
+	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
+		t.Fatalf("submenu arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
+	if edit.popoverPalette != "" || !edit.popoverFocusSet {
+		t.Fatal("Escape did not return from submenu to the focused bar")
+	}
+	// Horizontal arrows move the visible bar focus, while vertical arrows are
+	// consumed without moving the document or Tabs focus.
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "right"}))
+	barFocus := edit.popoverFocus
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "left"}))
+	if edit.popoverFocus == barFocus {
+		t.Fatal("left arrow did not move focus along the bar")
+	}
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "up"}))
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "down"}))
+	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
+		t.Fatalf("bar arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	popoverFocusAction(t, edit, "#FG")
+	assertMenuHandled(t, tabs.ConsumeKey(space))
+	assertMenuHandled(t, tabs.ConsumeKey(space))
+	if edit.popoverPalette != "" || edit.HasSelection != selection || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo {
+		t.Fatalf("submenu Space did not apply in place: palette=%q cursor=%+v selection=%+v..%+v active=%v", edit.popoverPalette, edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 }
 

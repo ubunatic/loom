@@ -66,14 +66,16 @@ applications; see `KeyDefaults.md` for the library's default key actions.
 - `0x00` decodes to `ctrl-space`. In RichTextEdit, Ctrl+Space selects the smallest closed sharp or rounded box perimeter under the cursor, falls back to word selection, or opens a cursor-anchored popover on whitespace. F5 wraps a selection in the default box style; without a selection it toggles box drawing mode. The popover Draw button still enters box mode. Up/Down may place the caret past line ends or below the last line; typing or drawing there materializes padding, while navigation alone leaves the document unchanged. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`); RichTextEdit does not bind Ctrl+Shift+B.
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
-Enter applies the focused action and Esc closes the popover. These keys are
-consumed by the editor while the popover is available.
+Left/Right move along the bar, and Enter or Space activates the focused action.
+Up/Down are consumed while the bar is open. Esc closes the popover. These keys
+are consumed by the editor while the popover is available.
 
 Space opens the focused foreground, background, or box-style submenu. Within a
 submenu, Tab/Shift+Tab and the arrow keys wrap through its choices; Enter or
 Space applies the focused choice. Esc closes the submenu first and returns focus
-to the popover bar; another Esc closes the bar. These keys remain consumed when
-the editor is nested in Frame, Split, or Tabs.
+to the popover bar; another Esc closes the bar. Physical Space is decoded as
+printable text and activates the menu just like Enter. These keys remain
+consumed when the editor is nested in Frame, Split, or Tabs.
 
 RichTextEdit uses a bar terminal cursor for normal typing and a block cursor
 while box drawing mode is active. Pane sends DECSCUSR only when the requested

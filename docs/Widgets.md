@@ -335,7 +335,10 @@ selection it toggles box drawing mode. The popover's Draw button still enters
 box mode. Arrow keys draw a connected path and Esc ends the current stroke.
 When a stroke starts on an existing box glyph, its foreground color is carried
 to each glyph changed by that stroke. With a selection, Tab and Shift+Tab move through enabled popover
-actions, Enter applies the focused action, and Esc closes the popover. The
+actions, Left/Right move along the bar, and Enter or Space activates the focused
+action; arrows are consumed while the popover is open. In a submenu, Tab/Shift+Tab
+and arrows move through choices, and Enter or Space applies one. Esc closes the
+submenu before the bar. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them
