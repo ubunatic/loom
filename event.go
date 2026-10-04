@@ -4,6 +4,7 @@
 package loom
 
 import (
+	"strconv"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -123,6 +124,8 @@ func DecodeKey(b []byte) KeyEvent {
 		return KeyEvent{}
 	}
 	switch {
+	case b[0] == 0:
+		return KeyEvent{Key: "ctrl-space"}
 	case b[0] >= 1 && b[0] <= 26 && b[0] != 2 && b[0] != 3 && b[0] != 4 && b[0] != 6 && b[0] != 8 && b[0] != 9 && b[0] != 10 && b[0] != 13 && b[0] != 17 && b[0] != 21 && b[0] != 23:
 		return KeyEvent{Key: "ctrl-" + string(rune('a'+b[0]-1))}
 	case b[0] == 3:
@@ -148,6 +151,9 @@ func DecodeKey(b []byte) KeyEvent {
 	case b[0] == 27:
 		if len(b) == 1 {
 			return KeyEvent{Key: "esc"}
+		}
+		if key, ok := decodeCSIu(b); ok {
+			return key
 		}
 		// CSI 1;<mod><A|B|C|D> (xterm modified cursor keys)
 		// mod: 2=Shift, 3=Alt, 4=Shift+Alt, 5=Ctrl, 6=Ctrl+Shift
@@ -224,16 +230,22 @@ func DecodeKey(b []byte) KeyEvent {
 			// and function keys \x1b[15~ .. \x1b[24~ (f5..f12).
 			if len(b) >= 4 && b[len(b)-1] == '~' {
 				seq := string(b[2 : len(b)-1])
+				prefix := ""
 				if strings.Contains(seq, ";") {
-					seq = strings.SplitN(seq, ";", 2)[0]
+					parts := strings.SplitN(seq, ";", 2)
+					seq = parts[0]
+					// Only insert/delete keep their modifier; other tilde keys stay plain.
+					if seq == "2" || seq == "3" {
+						prefix = csiModifierPrefix(parts[1])
+					}
 				}
 				switch seq {
 				case "1", "7":
 					return KeyEvent{Key: "home"}
 				case "3":
-					return KeyEvent{Key: "delete"}
+					return KeyEvent{Key: prefix + "delete"}
 				case "2":
-					return KeyEvent{Key: "insert"}
+					return KeyEvent{Key: prefix + "insert"}
 				case "4", "8":
 					return KeyEvent{Key: "end"}
 				case "5":
@@ -279,6 +291,63 @@ func DecodeKey(b []byte) KeyEvent {
 		}
 		return KeyEvent{}
 	}
+}
+
+// csiModifierPrefix maps an xterm/kitty modifier parameter (1 + bitmask of
+// shift=1, alt=2, ctrl=4) to a key-name prefix such as "ctrl-shift-".
+func csiModifierPrefix(param string) string {
+	if i := strings.IndexByte(param, ':'); i >= 0 {
+		param = param[:i]
+	}
+	mod, err := strconv.Atoi(param)
+	if err != nil || mod < 1 {
+		return ""
+	}
+	bits := (mod - 1) & 7
+	prefix := ""
+	if bits&4 != 0 {
+		prefix += "ctrl-"
+	}
+	if bits&1 != 0 {
+		prefix += "shift-"
+	}
+	if bits&2 != 0 {
+		prefix += "alt-"
+	}
+	return prefix
+}
+
+// decodeCSIu decodes the kitty/CSI-u form \x1b[<code>;<mod>u for letters,
+// space, and tab. Legacy terminals never send it, so plain 0x09 stays "tab".
+func decodeCSIu(b []byte) (KeyEvent, bool) {
+	if len(b) < 4 || b[1] != '[' || b[len(b)-1] != 'u' {
+		return KeyEvent{}, false
+	}
+	fields := strings.SplitN(string(b[2:len(b)-1]), ";", 2)
+	codeText := fields[0]
+	if i := strings.IndexByte(codeText, ':'); i >= 0 {
+		codeText = codeText[:i]
+	}
+	code, err := strconv.Atoi(codeText)
+	if err != nil {
+		return KeyEvent{}, false
+	}
+	prefix := ""
+	if len(fields) == 2 {
+		prefix = csiModifierPrefix(fields[1])
+	}
+	switch {
+	case code == 9:
+		return KeyEvent{Key: prefix + "tab"}, true
+	case code == 32:
+		return KeyEvent{Key: prefix + "space"}, true
+	case code >= 'a' && code <= 'z':
+		if prefix == "" {
+			return KeyEvent{Text: string(rune(code))}, true
+		}
+		return KeyEvent{Key: prefix + string(rune(code))}, true
+	}
+	return KeyEvent{}, false
 }
 
 // DecodeMouse parses an SGR (\x1b[<…M or \x1b[<…m) mouse report.
