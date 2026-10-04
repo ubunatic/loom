@@ -39,3 +39,8 @@ When placing a glyph, look at all 4 neighbours (up/down/left/right) and choose t
 ### M2 Pre-Work / Required Refinements
 
 - Mid-line selection: currently the prefix text is glued before the top border (`abc┌──┐`) and the suffix after the bottom border, so the box columns don't line up with the side borders. Put prefix and suffix on their own lines (as planned), so all box rows start in the same column. Add a test for a selection that starts and ends mid-line.
+- **M2 delivered (57c1059): arrow-key box mode** (F5 / C-S-b, Esc exits, one undo per stroke; mid-line wrap pre-work done). Host rerun green; live tmux check drew a closed 4×3 box with correct corners, including the closing corner, and padded the short rows.
+
+### M3 Pre-Work / Required Refinements
+
+- None from M2. For M3 add a live-style test that crosses an existing horizontal line vertically (expect `┼`) and one that ends a stroke on an existing side (expect `├`/`┤`/`┬`/`┴`).
