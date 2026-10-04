@@ -3,7 +3,11 @@
 
 package loom
 
-import "testing"
+import (
+	"strings"
+	"testing"
+	"time"
+)
 
 func TestRichTextEditDrawsStyledSpansAndCursor(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
@@ -391,5 +395,329 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 	}
 	if got := styleAt(8).BG; got != ColorIndex(7) {
 		t.Fatalf("unselected suffix BG = %v, want 7", got)
+	}
+}
+
+func richTestEditor(spans ...RichSpan) *RichTextEdit {
+	return NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: spans}}})
+}
+
+func richTestText(e *RichTextEdit) string {
+	var out []string
+	for _, line := range e.Document.Lines {
+		var text string
+		for _, span := range line.Spans {
+			text += span.Text
+		}
+		out = append(out, text)
+	}
+	return strings.Join(out, "\n")
+}
+
+func richTestKey(e *RichTextEdit, keys ...string) {
+	for _, key := range keys {
+		e.ConsumeKey(KeyEvent{Key: key})
+	}
+}
+
+func richTestType(e *RichTextEdit, text string) {
+	for _, r := range text {
+		e.ConsumeKey(KeyEvent{Text: string(r)})
+	}
+}
+
+func TestRichTextEditWordScopedStyling(t *testing.T) {
+	for key, get := range map[string]func(Style) bool{
+		"ctrl-b": func(s Style) bool { return s.Bold },
+		"ctrl-i": func(s Style) bool { return s.Italic },
+		"ctrl-u": func(s Style) bool { return s.Underline },
+	} {
+		e := richTestEditor(RichSpan{Text: "one two three"})
+		e.Cursor.Offset = 5
+		richTestKey(e, key)
+		spans := e.Document.Lines[0].Spans
+		if len(spans) != 3 || spans[1].Text != "two" || !get(spans[1].Style) || get(spans[0].Style) || get(spans[2].Style) {
+			t.Fatalf("%s spans = %#v", key, spans)
+		}
+		richTestKey(e, key)
+		if len(e.Document.Lines[0].Spans) != 1 {
+			t.Fatalf("%s toggle off spans = %#v", key, e.Document.Lines[0].Spans)
+		}
+	}
+}
+
+func TestRichTextEditStyleWithoutWordKeepsDocument(t *testing.T) {
+	for _, offset := range []int{3, 7} { // whitespace, line end
+		e := richTestEditor(RichSpan{Text: "one two"})
+		e.Cursor.Offset = offset
+		richTestKey(e, "ctrl-b")
+		if len(e.Document.Lines[0].Spans) != 1 || e.Document.Lines[0].Spans[0].Style.Bold {
+			t.Fatalf("offset %d changed document: %#v", offset, e.Document.Lines[0].Spans)
+		}
+		if len(e.undoStack) != 0 {
+			t.Fatalf("offset %d recorded undo", offset)
+		}
+	}
+}
+
+func TestRichTextEditStyleSelectionSpanningStyledSpans(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "ab"}, RichSpan{Text: "cd", Style: Style{Bold: true}}, RichSpan{Text: "ef"})
+	e.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 5})
+	richTestKey(e, "ctrl-b")
+	spans := e.Document.Lines[0].Spans
+	if len(spans) != 3 || spans[0].Style.Bold || !spans[1].Style.Bold || spans[1].Text != "bcde" || spans[2].Style.Bold {
+		t.Fatalf("spans = %#v", spans)
+	}
+}
+
+func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "one two"})
+	e.ShowPopover = false
+	e.Cursor.Offset = 5
+	richTestKey(e, "ctrl-space")
+	from, to := e.selectionBounds()
+	if !e.HasSelection || from.Offset != 4 || to.Offset != 7 || !e.ShowPopover {
+		t.Fatalf("selection %v-%v has=%v popover=%v", from, to, e.HasSelection, e.ShowPopover)
+	}
+	e = richTestEditor(RichSpan{Text: "one two"})
+	e.ShowPopover = false
+	e.Cursor.Offset = 3
+	richTestKey(e, "ctrl-space")
+	if e.HasSelection || e.ShowPopover {
+		t.Fatal("ctrl-space on whitespace must be a no-op")
+	}
+}
+
+func TestRichTextEditCopyPasteKeepsStyles(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "ab "}, RichSpan{Text: "cd", Style: Style{Bold: true}})
+	e.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 5})
+	richTestKey(e, "ctrl-c")
+	e.ClearSelection()
+	e.Cursor.Offset = 5
+	richTestKey(e, "ctrl-v")
+	if got := richTestText(e); got != "ab cdb cd" {
+		t.Fatalf("text = %q", got)
+	}
+	spans := e.Document.Lines[0].Spans
+	if len(spans) != 4 || !spans[3].Style.Bold || spans[3].Text != "cd" || spans[2].Text != "b " {
+		t.Fatalf("spans = %#v", spans)
+	}
+}
+
+func TestRichTextEditCopyWordAndAliases(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "one two"})
+	e.Cursor.Offset = 1
+	richTestKey(e, "ctrl-c")
+	e.Cursor.Offset = 7
+	e.ClearSelection()
+	richTestKey(e, "shift-insert")
+	if got := richTestText(e); got != "one twoone" {
+		t.Fatalf("word copy/paste = %q", got)
+	}
+	e.ClearSelection()
+	e.Cursor.Offset = 5
+	richTestKey(e, "ctrl-insert")
+	e.Cursor = RichPosition{}
+	e.ClearSelection()
+	richTestKey(e, "shift-insert")
+	if got := richTestText(e); got != "twooneone twoone" {
+		t.Fatalf("aliases = %q", got)
+	}
+}
+
+func TestRichTextEditCut(t *testing.T) {
+	for _, key := range []string{"ctrl-x", "shift-delete"} {
+		e := richTestEditor(RichSpan{Text: "one two"})
+		e.SetSelection(RichPosition{Offset: 3}, RichPosition{Offset: 7})
+		richTestKey(e, key)
+		if got := richTestText(e); got != "one" || e.HasSelection {
+			t.Fatalf("%s text = %q", key, got)
+		}
+		richTestKey(e, "ctrl-v")
+		if got := richTestText(e); got != "one two" {
+			t.Fatalf("%s paste = %q", key, got)
+		}
+	}
+}
+
+func TestRichTextEditCutWordWithoutSelection(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "one two"})
+	e.Cursor.Offset = 1
+	richTestKey(e, "ctrl-x")
+	if got := richTestText(e); got != " two" {
+		t.Fatalf("text = %q", got)
+	}
+}
+
+func TestRichTextEditPasteIntoStyledSpan(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "abcd", Style: Style{Italic: true}})
+	e.clipboard = []RichLine{{Spans: []RichSpan{{Text: "XY", Style: Style{Bold: true}}}}}
+	e.Cursor.Offset = 2
+	richTestKey(e, "ctrl-v")
+	spans := e.Document.Lines[0].Spans
+	if len(spans) != 3 || spans[0].Text != "ab" || !spans[0].Style.Italic || spans[1].Text != "XY" || !spans[1].Style.Bold || spans[1].Style.Italic || spans[2].Text != "cd" || !spans[2].Style.Italic {
+		t.Fatalf("spans = %#v", spans)
+	}
+	if e.Cursor.Offset != 4 {
+		t.Fatalf("cursor = %d", e.Cursor.Offset)
+	}
+}
+
+func TestRichTextEditMultiLineCopyPaste(t *testing.T) {
+	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "abc"}}}, {Spans: []RichSpan{{Text: "def", Style: Style{Bold: true}}}}, {Spans: []RichSpan{{Text: "end"}}},
+	}})
+	e.SetSelection(RichPosition{Offset: 1}, RichPosition{Line: 1, Offset: 2})
+	richTestKey(e, "ctrl-c")
+	e.Cursor = RichPosition{Line: 2, Offset: 1}
+	e.ClearSelection()
+	richTestKey(e, "ctrl-v")
+	if got := richTestText(e); got != "abc\ndef\nebc\ndend" {
+		t.Fatalf("text = %q", got)
+	}
+	if e.Cursor != (RichPosition{Line: 3, Offset: 2}) {
+		t.Fatalf("cursor = %v", e.Cursor)
+	}
+}
+
+func TestRichTextEditEmptyClipboardPasteIsNoop(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "abc"})
+	richTestKey(e, "ctrl-v", "shift-insert")
+	if richTestText(e) != "abc" || len(e.undoStack) != 0 {
+		t.Fatalf("text = %q undo=%d", richTestText(e), len(e.undoStack))
+	}
+}
+
+func TestRichTextEditCopyWithoutWordIsIgnored(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "ab cd"})
+	e.Cursor.Offset = 2
+	if res := e.ConsumeKey(KeyEvent{Key: "ctrl-c"}); res.Consumed {
+		t.Fatal("copy on whitespace should be ignored")
+	}
+}
+
+func TestRichTextEditUndoRedoTypingRuns(t *testing.T) {
+	e := richTestEditor()
+	richTestType(e, "hello world")
+	for _, want := range []string{"hello ", ""} {
+		richTestKey(e, "ctrl-z")
+		if got := richTestText(e); got != want {
+			t.Fatalf("undo = %q, want %q", got, want)
+		}
+	}
+	richTestKey(e, "ctrl-z") // empty stack
+	richTestKey(e, "ctrl-r")
+	if got := richTestText(e); got != "hello " {
+		t.Fatalf("redo = %q", got)
+	}
+	richTestKey(e, "ctrl-shift-y")
+	if got := richTestText(e); got != "hello world" {
+		t.Fatalf("redo = %q", got)
+	}
+	richTestKey(e, "ctrl-y", "ctrl-shift-z")
+	if got := richTestText(e); got != "hello world" {
+		t.Fatalf("undo/redo roundtrip = %q", got)
+	}
+}
+
+func TestRichTextEditUndoStyleCutPasteSteps(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "one two"})
+	e.Cursor.Offset = 1
+	richTestKey(e, "ctrl-b")
+	e.Cursor.Offset = 5
+	richTestKey(e, "ctrl-x", "ctrl-v")
+	if got := richTestText(e); got != "one two" || len(e.undoStack) != 3 {
+		t.Fatalf("text = %q steps = %d", got, len(e.undoStack))
+	}
+	richTestKey(e, "ctrl-z")
+	if got := richTestText(e); got != "one " {
+		t.Fatalf("undo paste = %q", got)
+	}
+	richTestKey(e, "ctrl-z")
+	if got := richTestText(e); got != "one two" {
+		t.Fatalf("undo cut = %q", got)
+	}
+	richTestKey(e, "ctrl-z")
+	if spans := e.Document.Lines[0].Spans; len(spans) != 1 || spans[0].Style.Bold {
+		t.Fatalf("undo style = %#v", spans)
+	}
+}
+
+func TestRichTextEditNewEditClearsRedoBranch(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "ab"})
+	e.Cursor.Offset = 2
+	richTestType(e, "c")
+	richTestKey(e, "ctrl-z")
+	richTestKey(e, "left")
+	richTestType(e, "X")
+	richTestKey(e, "ctrl-r")
+	if got := richTestText(e); got != "aXb" {
+		t.Fatalf("text = %q", got)
+	}
+	richTestKey(e, "ctrl-z")
+	if got := richTestText(e); got != "ab" {
+		t.Fatalf("undo after redo branch = %q", got)
+	}
+}
+
+func TestRichTextEditUndoLimit(t *testing.T) {
+	e := richTestEditor()
+	for range richUndoLimit + 20 {
+		richTestType(e, "a ")
+	}
+	if len(e.undoStack) != richUndoLimit {
+		t.Fatalf("undo stack = %d", len(e.undoStack))
+	}
+}
+
+func TestRichTextEditDoubleAndTripleClick(t *testing.T) {
+	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "one two"}}}, {Spans: []RichSpan{{Text: "last line"}}},
+	}})
+	e.Draw(NewCanvas(20, 5), Rect{W: 20, H: 5})
+	clock := time.Unix(0, 0)
+	e.now = func() time.Time { return clock }
+	press := func(x, y int) {
+		e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: x, Y: y})
+		e.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: x, Y: y})
+		clock = clock.Add(100 * time.Millisecond)
+	}
+	press(5, 0)
+	press(5, 0)
+	if from, to := e.selectionBounds(); from.Offset != 4 || to.Offset != 7 {
+		t.Fatalf("double click selection %v-%v", from, to)
+	}
+	press(5, 0)
+	if from, to := e.selectionBounds(); from.Offset != 0 || to.Offset != 7 {
+		t.Fatalf("triple click selection %v-%v", from, to)
+	}
+	clock = clock.Add(time.Second)
+	press(2, 1)
+	press(2, 1)
+	press(2, 1)
+	from, to := e.selectionBounds()
+	if from != (RichPosition{Line: 1}) || to != (RichPosition{Line: 1, Offset: 9}) {
+		t.Fatalf("last line triple click %v-%v", from, to)
+	}
+	clock = clock.Add(time.Second)
+	press(2, 1)
+	press(2, 1)
+	if from, to := e.selectionBounds(); from.Offset != 0 || to.Offset != 4 {
+		t.Fatalf("double click on last line %v-%v", from, to)
+	}
+}
+
+func TestRichTextEditSlowClicksDoNotSelectWord(t *testing.T) {
+	e := richTestEditor(RichSpan{Text: "one two"})
+	e.Draw(NewCanvas(20, 2), Rect{W: 20, H: 2})
+	clock := time.Unix(0, 0)
+	e.now = func() time.Time { return clock }
+	for range 2 {
+		e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 5, Y: 0})
+		e.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 5, Y: 0})
+		clock = clock.Add(time.Second)
+	}
+	if e.HasSelection {
+		t.Fatal("slow clicks selected text")
 	}
 }

@@ -314,6 +314,17 @@ code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
 pills.
 
+Editing shortcuts: `Ctrl+B/I/U` style the selection, or the word under the cursor
+when nothing is selected (no word: only the typing style changes). `Ctrl+Space`
+selects the word and shows the popover. The clipboard is internal and keeps
+styled spans: `Ctrl+C`/`Ctrl+Insert` copy the selection or word, `Ctrl+X`/
+`Shift+Delete` cut, `Ctrl+V`/`Shift+Insert` paste. `Ctrl+Z`/`Ctrl+Y` undo;
+`Ctrl+R`, `Ctrl+Shift+Y`, `Ctrl+Shift+Z` redo (100 steps; a typing run up to a
+word boundary, a style change, a cut or a paste is one step). Double-click
+selects a word and triple-click a line. `Ctrl+I` arrives only from terminals
+that speak the kitty/CSI-u protocol; on legacy terminals byte 0x09 stays Tab,
+and `Ctrl+Shift+Y/Z` likewise need CSI-u.
+
 ```go
 doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{
     {Text: "Hello ", Style: loom.Style{Bold: true}},

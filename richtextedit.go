@@ -4,7 +4,9 @@
 package loom
 
 import (
+	"reflect"
 	"strings"
+	"time"
 	"unicode"
 
 	"ubunatic.com/loom/measure"
@@ -41,7 +43,20 @@ type RichTextEdit struct {
 	popoverPalette     string
 	popoverSwatches    []richPopoverSwatch
 	popoverRelease     bool
+	clipboard          []RichLine
+	undoStack          []richSnapshot
+	redoStack          []richSnapshot
+	typingRun          bool
+	clickCount         int
+	lastClickAt        time.Time
+	lastClickPos       RichPosition
+	now                func() time.Time
 }
+
+const (
+	richUndoLimit        = 100
+	richMultiClickWindow = 400 * time.Millisecond
+)
 
 type richPopoverButton struct {
 	label  string
@@ -219,6 +234,9 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	e.ensureDocument()
 	e.clampPosition(&e.Cursor, e.documentLines())
 	e.Cursor = e.normalizePosition(e.Cursor, 0)
+	if !key.Is("enter", "return") && (key.Key != "" || key.Text == "") {
+		e.typingRun = false
+	}
 	switch {
 	case key.Is("ctrl-b"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
@@ -226,6 +244,26 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		e.toggleAttribute(func(s *Style, on bool) { s.Italic = on }, func(s Style) bool { return s.Italic })
 	case key.Is("ctrl-u"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
+	case key.Is("ctrl-space"):
+		if e.selectWord() {
+			e.ShowPopover = true
+		}
+	case key.Is("ctrl-c", "ctrl-insert"):
+		if !e.copySelectionOrWord() {
+			return Ignored()
+		}
+	case key.Is("ctrl-x", "shift-delete"):
+		e.mutate(false, false, func() {
+			if e.copySelectionOrWord() {
+				e.deleteSelection()
+			}
+		})
+	case key.Is("ctrl-v", "shift-insert"):
+		e.mutate(false, false, func() { e.insertRich(e.clipboard) })
+	case key.Is("ctrl-z", "ctrl-y"):
+		e.undo()
+	case key.Is("ctrl-r", "ctrl-shift-y", "ctrl-shift-z"):
+		e.redo()
 	case key.Is("left", "shift-left"):
 		e.moveHorizontal(-1, key.Is("shift-left"))
 	case key.Is("right", "shift-right"):
@@ -253,16 +291,19 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 			e.moveCursor(e.wordPosition(1), false)
 		}
 	case key.Is("enter", "return"):
-		e.insertText("\n")
+		e.mutate(true, true, func() { e.insertText("\n") })
 	case key.Is("backspace"):
-		e.deleteDirection(-1)
+		e.mutate(false, false, func() { e.deleteDirection(-1) })
 	case key.Is("delete"):
-		e.deleteDirection(1)
+		e.mutate(false, false, func() { e.deleteDirection(1) })
 	default:
 		if key.Text == "" {
 			return Ignored()
 		}
-		e.insertText(key.Text)
+		boundary := strings.ContainsFunc(key.Text, func(r rune) bool {
+			return !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '_')
+		})
+		e.mutate(true, boundary, func() { e.insertText(key.Text) })
 	}
 	return Handled()
 }
@@ -308,10 +349,20 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 		if mouse.Button != MouseLeft || !e.mouseInBounds(mouse) {
 			return Ignored()
 		}
+		e.typingRun = false
 		position := e.mousePosition(mouse)
 		e.Cursor, e.selectionAnchor = position, position
-		e.dragSelecting = true
 		e.ClearSelection()
+		switch e.registerClick(position) {
+		case 2:
+			e.dragSelecting = false
+			e.selectWord()
+		case 3:
+			e.dragSelecting = false
+			e.selectLine()
+		default:
+			e.dragSelecting = true
+		}
 		return Handled()
 	case MouseDrag:
 		if !e.dragSelecting {
@@ -941,12 +992,20 @@ func (e *RichTextEdit) deleteDirection(direction int) {
 }
 
 func (e *RichTextEdit) toggleAttribute(set func(*Style, bool), enabled func(Style) bool) {
-	if !e.HasSelection {
-		set(&e.ActiveStyle, !enabled(e.ActiveStyle))
-		e.activeStyleSet = true
+	if e.HasSelection {
+		from, to := e.selectionBounds()
+		e.mutate(false, false, func() { e.toggleRange(from, to, set, enabled) })
 		return
 	}
-	from, to := e.selectionBounds()
+	if from, to, ok := e.wordRange(e.Cursor); ok {
+		e.mutate(false, false, func() { e.toggleRange(from, to, set, enabled) })
+		return
+	}
+	set(&e.ActiveStyle, !enabled(e.ActiveStyle))
+	e.activeStyleSet = true
+}
+
+func (e *RichTextEdit) toggleRange(from, to RichPosition, set func(*Style, bool), enabled func(Style) bool) {
 	e.clampPosition(&from, e.Document.Lines)
 	e.clampPosition(&to, e.Document.Lines)
 	from, to = expandRangeForPills(e.Document.Lines, from, to)
@@ -1033,4 +1092,183 @@ func (e *RichTextEdit) extendMouseSelection(mouse MouseEvent) {
 	e.SelectionTo = position
 	e.SelectionFrom = e.selectionAnchor
 	e.HasSelection = e.SelectionFrom != e.SelectionTo
+}
+
+// wordRange returns the word containing pos on its line. Whitespace, punctuation,
+// and the line end have no word.
+func (e *RichTextEdit) wordRange(pos RichPosition) (from, to RichPosition, ok bool) {
+	lines := e.documentLines()
+	e.clampPosition(&pos, lines)
+	units := richLineUnits(lines[pos.Line])
+	index := -1
+	for i, unit := range units {
+		if unit.start <= pos.Offset && pos.Offset < unit.end {
+			index = i
+			break
+		}
+	}
+	if index < 0 || !richUnitWord(units[index]) {
+		return pos, pos, false
+	}
+	first, last := index, index
+	for first > 0 && richUnitWord(units[first-1]) {
+		first--
+	}
+	for last+1 < len(units) && richUnitWord(units[last+1]) {
+		last++
+	}
+	return RichPosition{Line: pos.Line, Offset: units[first].start}, RichPosition{Line: pos.Line, Offset: units[last].end}, true
+}
+
+func (e *RichTextEdit) selectWord() bool {
+	from, to, ok := e.wordRange(e.Cursor)
+	if !ok {
+		return false
+	}
+	e.selectRange(from, to)
+	return true
+}
+
+func (e *RichTextEdit) selectLine() {
+	line := e.Cursor.Line
+	e.selectRange(RichPosition{Line: line}, RichPosition{Line: line, Offset: richLineRuneCount(e.documentLines()[line])})
+}
+
+func (e *RichTextEdit) selectRange(from, to RichPosition) {
+	e.SetSelection(from, to)
+	e.selectionAnchor = from
+	e.Cursor = to
+}
+
+// registerClick counts presses at the same position within the multi-click
+// window, cycling 1, 2, 3, 1.
+func (e *RichTextEdit) registerClick(pos RichPosition) int {
+	now := time.Now
+	if e.now != nil {
+		now = e.now
+	}
+	at := now()
+	if e.clickCount > 0 && e.clickCount < 3 && pos == e.lastClickPos && at.Sub(e.lastClickAt) <= richMultiClickWindow {
+		e.clickCount++
+	} else {
+		e.clickCount = 1
+	}
+	e.lastClickAt, e.lastClickPos = at, pos
+	return e.clickCount
+}
+
+// copySelectionOrWord stores the selection, or the word at the cursor, in the
+// internal clipboard. It reports whether anything was copied; a word copy
+// selects the word so that cut can delete it.
+func (e *RichTextEdit) copySelectionOrWord() bool {
+	if !e.HasSelection && !e.selectWord() {
+		return false
+	}
+	from, to := e.selectionBounds()
+	e.clampPosition(&from, e.Document.Lines)
+	e.clampPosition(&to, e.Document.Lines)
+	from, to = expandRangeForPills(e.Document.Lines, from, to)
+	if from == to {
+		return false
+	}
+	e.clipboard = nil
+	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
+		line := e.Document.Lines[lineIndex]
+		start, end := richSelectionLineBounds(lineIndex, from, to)
+		end = min(end, richLineRuneCount(line))
+		_, rest := splitRichLine(line, start)
+		part, _ := splitRichLine(RichLine{Spans: rest}, end-start)
+		e.clipboard = append(e.clipboard, RichLine{Spans: part})
+	}
+	return true
+}
+
+// insertRich inserts styled lines at the cursor, replacing any selection.
+func (e *RichTextEdit) insertRich(clip []RichLine) {
+	if len(clip) == 0 {
+		return
+	}
+	e.deleteSelection()
+	e.Cursor = e.normalizePosition(e.Cursor, 0)
+	lines := e.Document.Lines
+	left, right := splitRichLine(lines[e.Cursor.Line], e.Cursor.Offset)
+	last := len(clip) - 1
+	origin := e.Cursor.Line
+	updated := make([]RichLine, 0, len(lines)+last)
+	updated = append(updated, lines[:origin]...)
+	first := append(append([]RichSpan(nil), left...), clip[0].Spans...)
+	if last == 0 {
+		e.Cursor.Offset += richLineRuneCount(clip[0])
+		updated = append(updated, RichLine{Spans: mergeRichSpans(append(first, right...))})
+	} else {
+		updated = append(updated, RichLine{Spans: mergeRichSpans(first)})
+		for _, line := range clip[1:last] {
+			updated = append(updated, RichLine{Spans: append([]RichSpan(nil), line.Spans...)})
+		}
+		tail := append(append([]RichSpan(nil), clip[last].Spans...), right...)
+		updated = append(updated, RichLine{Spans: mergeRichSpans(tail)})
+		e.Cursor.Line += last
+		e.Cursor.Offset = richLineRuneCount(clip[last])
+	}
+	updated = append(updated, lines[origin+1:]...)
+	e.Document.Lines = updated
+}
+
+type richSnapshot struct {
+	lines        []RichLine
+	cursor       RichPosition
+	from, to     RichPosition
+	hasSelection bool
+}
+
+func (e *RichTextEdit) snapshot() richSnapshot {
+	lines := make([]RichLine, len(e.Document.Lines))
+	for i, line := range e.Document.Lines {
+		lines[i] = RichLine{Spans: append([]RichSpan(nil), line.Spans...)}
+	}
+	return richSnapshot{lines: lines, cursor: e.Cursor, from: e.SelectionFrom, to: e.SelectionTo, hasSelection: e.HasSelection}
+}
+
+func (e *RichTextEdit) restore(snap richSnapshot) {
+	e.Document.Lines = snap.lines
+	e.Cursor = snap.cursor
+	e.SelectionFrom, e.SelectionTo, e.HasSelection = snap.from, snap.to, snap.hasSelection
+	e.selectionExtending = false
+	e.typingRun = false
+}
+
+// mutate runs an edit and records one undo step when it changed the document.
+// Typing edits join the open typing run until a boundary character ends it.
+func (e *RichTextEdit) mutate(typing, boundary bool, edit func()) {
+	before := e.snapshot()
+	edit()
+	if reflect.DeepEqual(before.lines, e.Document.Lines) {
+		return
+	}
+	e.redoStack = nil
+	if !(typing && e.typingRun) {
+		e.undoStack = append(e.undoStack, before)
+		if len(e.undoStack) > richUndoLimit {
+			e.undoStack = e.undoStack[len(e.undoStack)-richUndoLimit:]
+		}
+	}
+	e.typingRun = typing && !boundary
+}
+
+func (e *RichTextEdit) undo() {
+	if len(e.undoStack) == 0 {
+		return
+	}
+	e.redoStack = append(e.redoStack, e.snapshot())
+	e.restore(e.undoStack[len(e.undoStack)-1])
+	e.undoStack = e.undoStack[:len(e.undoStack)-1]
+}
+
+func (e *RichTextEdit) redo() {
+	if len(e.redoStack) == 0 {
+		return
+	}
+	e.undoStack = append(e.undoStack, e.snapshot())
+	e.restore(e.redoStack[len(e.redoStack)-1])
+	e.redoStack = e.redoStack[:len(e.redoStack)-1]
 }
