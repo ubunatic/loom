@@ -177,8 +177,8 @@ func TestRichTextEditNavigationAndSelection(t *testing.T) {
 	}
 	edit.ConsumeKey(KeyEvent{Key: "end"})
 	edit.ConsumeKey(KeyEvent{Key: "down"})
-	if edit.Cursor != (RichPosition{Line: 1, Offset: 4}) {
-		t.Fatalf("vertical navigation cursor = %+v", edit.Cursor)
+	if !edit.cursorInVoid || edit.voidLine != 1 || edit.voidColumn != 7 {
+		t.Fatalf("vertical navigation cursor = void:%v at %d,%d", edit.cursorInVoid, edit.voidLine, edit.voidColumn)
 	}
 }
 
@@ -800,8 +800,77 @@ func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
 	e.ShowPopover = false
 	e.Cursor.Offset = 3
 	richTestKey(e, "ctrl-space")
-	if e.HasSelection || e.ShowPopover {
-		t.Fatal("ctrl-space on whitespace must be a no-op")
+	if e.HasSelection || !e.ShowPopover || !e.popoverAtCursor {
+		t.Fatal("ctrl-space on whitespace must open a cursor-anchored popover")
+	}
+	canvas := NewCanvas(60, 5)
+	e.Draw(canvas, canvas.Bounds())
+	for _, button := range e.popoverButtons {
+		if button.action == "Draw" {
+			if !button.enabled {
+				t.Fatal("Draw action is disabled without a selection")
+			}
+			if got := e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !got.Consumed || !e.BoxMode {
+				t.Fatalf("Draw from blank-cell popover = %+v, BoxMode=%v", got, e.BoxMode)
+			}
+			return
+		}
+	}
+	t.Fatal("blank-cell popover did not draw the Draw action")
+}
+
+func TestRichTextEditVerticalVoidCursorDoesNotEditUntilTyping(t *testing.T) {
+	e := richEditorLines("abcd", "x")
+	e.Cursor = RichPosition{Offset: 4}
+	before := richLinesText(e.Document.Lines)
+	if got := e.ConsumeKey(KeyEvent{Key: "down"}); !got.Consumed || !e.cursorInVoid || e.voidLine != 1 || e.voidColumn != 4 {
+		t.Fatalf("Down into short-line void = %+v, void=%v at %d,%d", got, e.cursorInVoid, e.voidLine, e.voidColumn)
+	}
+	canvas := NewCanvas(10, 4)
+	e.Draw(canvas, canvas.Bounds())
+	if canvas.CursorX != 4 || canvas.CursorY != 1 {
+		t.Fatalf("virtual cursor position = %d,%d, want 4,1", canvas.CursorX, canvas.CursorY)
+	}
+	if got := e.ConsumeKey(KeyEvent{Key: "right"}); !got.Consumed || e.voidColumn != 5 {
+		t.Fatalf("Right in void = %+v, column=%d", got, e.voidColumn)
+	}
+	if got := e.ConsumeKey(KeyEvent{Text: "Z"}); !got.Consumed || e.cursorInVoid {
+		t.Fatalf("typing in void = %+v, stillVoid=%v", got, e.cursorInVoid)
+	}
+	if got := richLinesText(e.Document.Lines); got != "abcd\nx    Z" {
+		t.Fatalf("materialized text = %q, want %q", got, "abcd\nx    Z")
+	}
+
+	e = richEditorLines("x")
+	e.Cursor.Offset = 1
+	before = richLinesText(e.Document.Lines)
+	e.ConsumeKey(KeyEvent{Key: "down"})
+	e.ConsumeKey(KeyEvent{Key: "up"})
+	if got := richLinesText(e.Document.Lines); got != before || e.cursorInVoid {
+		t.Fatalf("moving away from virtual row changed text/cursor: %q void=%v", got, e.cursorInVoid)
+	}
+}
+
+func TestRichTextEditVerticalVoidCursorCanMovePastLastLine(t *testing.T) {
+	e := richEditorLines("x")
+	e.Cursor.Offset = 1
+	before := richLinesText(e.Document.Lines)
+	for i := 1; i <= 2; i++ {
+		if got := e.ConsumeKey(KeyEvent{Key: "down"}); !got.Consumed || !e.cursorInVoid || e.voidLine != i || e.voidColumn != 1 {
+			t.Fatalf("Down %d into virtual row = %+v void=%v at %d,%d", i, got, e.cursorInVoid, e.voidLine, e.voidColumn)
+		}
+	}
+	canvas := NewCanvas(10, 4)
+	e.Draw(canvas, canvas.Bounds())
+	if canvas.CursorX != 1 || canvas.CursorY != 2 {
+		t.Fatalf("virtual cursor position = %d,%d, want 1,2", canvas.CursorX, canvas.CursorY)
+	}
+	if got := richLinesText(e.Document.Lines); got != before {
+		t.Fatalf("moving down into virtual rows changed text: %q", got)
+	}
+	e.ConsumeKey(KeyEvent{Text: "z"})
+	if got := richLinesText(e.Document.Lines); got != "x\n\n z" {
+		t.Fatalf("typing in virtual row produced %q", got)
 	}
 }
 

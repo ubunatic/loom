@@ -743,12 +743,23 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 12)
 	w.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(canvas.Row(11), "[Box mode]") || !strings.Contains(canvas.Row(11), "Esc exits") {
+	if !strings.Contains(canvas.Row(11), "[Box mode]") || !strings.Contains(canvas.Row(11), "Esc exits") || strings.Contains(canvas.Row(11), "C-S-B") {
 		t.Fatalf("box mode hint = %q", canvas.Row(11))
 	}
 	w.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	if w.edit.BoxMode {
 		t.Fatal("Esc did not leave box mode through the gallery")
+	}
+}
+
+func TestRichTextEditGalleryDrawsAcrossWideBounds(t *testing.T) {
+	w := newRichTextEditDemo()
+	w.edit.Document.Lines[0] = loom.RichLine{Spans: []loom.RichSpan{{Text: strings.Repeat("x", 150)}}}
+	w.edit.Cursor = loom.RichPosition{Offset: 149}
+	canvas := loom.NewCanvas(160, 12)
+	w.Draw(canvas, loom.Rect{W: 160, H: 12})
+	if w.area.W != 160 || w.edit.Cursor.Offset != 149 || canvas.Get(149, 0).Text != "x" {
+		t.Fatalf("wide RichTextEdit content/cursor = %q/%+v, want content at column 149", canvas.Get(149, 0).Text, w.edit.Cursor)
 	}
 }
 

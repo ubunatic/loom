@@ -52,6 +52,10 @@ type RichTextEdit struct {
 	popoverFocus       int
 	popoverFocusSet    bool
 	popoverSuppressed  bool
+	popoverAtCursor    bool
+	cursorInVoid       bool
+	voidLine           int
+	voidColumn         int
 	clipboard          []RichLine
 	undoStack          []richSnapshot
 	redoStack          []richSnapshot
@@ -118,6 +122,7 @@ func (e *RichTextEdit) SetFocus(focused bool) {
 func (e *RichTextEdit) SetSelection(from, to RichPosition) {
 	e.clearPopoverKeyboardState(false)
 	e.popoverSuppressed = false
+	e.cursorInVoid = false
 	e.boxSelection = nil
 	e.SelectionFrom, e.SelectionTo = from, to
 	e.HasSelection = from != to
@@ -149,14 +154,16 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	}
 	c.PaintSurface(r, Style{})
 	lines := e.documentLines()
-	e.clampPosition(&e.Cursor, lines)
-	e.Cursor = e.normalizePosition(e.Cursor, 0)
-	cursorCol := richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
-	if e.Cursor.Line < e.ScrollY {
-		e.ScrollY = e.Cursor.Line
+	if !e.cursorInVoid {
+		e.clampPosition(&e.Cursor, lines)
+		e.Cursor = e.normalizePosition(e.Cursor, 0)
 	}
-	if e.Cursor.Line >= e.ScrollY+r.H {
-		e.ScrollY = e.Cursor.Line - r.H + 1
+	cursorLine, cursorCol := e.cursorCoordinates(lines)
+	if cursorLine < e.ScrollY {
+		e.ScrollY = cursorLine
+	}
+	if cursorLine >= e.ScrollY+r.H {
+		e.ScrollY = cursorLine - r.H + 1
 	}
 	if cursorCol < e.ScrollX {
 		e.ScrollX = cursorCol
@@ -165,7 +172,11 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.ScrollX = cursorCol - r.W + 1
 	}
 	e.ScrollX = max(0, e.ScrollX)
-	e.ScrollY = min(max(0, e.ScrollY), max(0, len(lines)-r.H))
+	maxScrollY := max(0, len(lines)-r.H)
+	if e.cursorInVoid {
+		maxScrollY = max(maxScrollY, cursorLine-r.H+1)
+	}
+	e.ScrollY = min(max(0, e.ScrollY), maxScrollY)
 
 	for row := 0; row < r.H && e.ScrollY+row < len(lines); row++ {
 		e.drawLine(c, r, lines[e.ScrollY+row], e.ScrollY+row)
@@ -173,7 +184,7 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	e.drawPopover(c, r, lines)
 	if e.ShowCursor && e.focused && !e.ViewMode {
 		x := cursorCol - e.ScrollX
-		y := e.Cursor.Line - e.ScrollY
+		y := cursorLine - e.ScrollY
 		if x >= 0 && x < r.W && y >= 0 && y < r.H {
 			c.CursorX = r.X + x
 			c.CursorY = r.Y + y
@@ -186,6 +197,43 @@ func (e *RichTextEdit) documentLines() []RichLine {
 		return []RichLine{{}}
 	}
 	return e.Document.Lines
+}
+
+func (e *RichTextEdit) cursorCoordinates(lines []RichLine) (int, int) {
+	if e.cursorInVoid {
+		return e.voidLine, e.voidColumn
+	}
+	return e.Cursor.Line, richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
+}
+
+func (e *RichTextEdit) materializeVoidCursor() {
+	if !e.cursorInVoid {
+		return
+	}
+	e.ensureDocument()
+	for len(e.Document.Lines) <= e.voidLine {
+		e.Document.Lines = append(e.Document.Lines, RichLine{})
+	}
+	line := e.Document.Lines[e.voidLine]
+	width := richLineColumn(line, richLineRuneCount(line))
+	if width < e.voidColumn {
+		line.Spans = mergeRichSpans(append(line.Spans, RichSpan{Text: strings.Repeat(" ", e.voidColumn-width)}))
+	}
+	e.Document.Lines[e.voidLine] = line
+	e.Cursor = RichPosition{Line: e.voidLine, Offset: richLineOffsetAtColumn(line, e.voidColumn)}
+	e.cursorInVoid = false
+}
+
+func (e *RichTextEdit) moveToVoid(line, column int, extend bool) {
+	if line < 0 || column < 0 {
+		return
+	}
+	if !extend {
+		e.ClearSelection()
+	}
+	e.cursorInVoid = true
+	e.voidLine, e.voidColumn = line, column
+	e.boxSelection = nil
 }
 
 func (e *RichTextEdit) clampPosition(pos *RichPosition, lines []RichLine) {
@@ -287,17 +335,18 @@ func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverFocusSet = false
 	e.popoverPalette = ""
 	e.popoverSwatches = nil
+	e.popoverAtCursor = false
 	if suppress {
 		e.popoverSuppressed = true
 	}
 }
 
 func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
-	if e.ViewMode || !e.ShowPopover || !e.HasSelection || e.popoverSuppressed {
+	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed {
 		return Ignored(), false
 	}
 	if !key.Is("tab", "shift-tab", "backtab", "enter", "return", "space", "esc") {
-		if e.popoverFocusSet || e.popoverPalette != "" {
+		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
 			e.clearPopoverKeyboardState(true)
 		}
 		return Ignored(), false
@@ -331,7 +380,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
 	case key.Is("enter", "return", "space"):
-		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) {
+		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
 			return Handled(), true
 		}
 		action := richPopoverActions[e.popoverFocus]
@@ -353,14 +402,24 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 func (e *RichTextEdit) nextPopoverFocus(current, direction int) int {
 	for range len(richPopoverActions) {
 		current = (current + direction + len(richPopoverActions)) % len(richPopoverActions)
-		if richPopoverActions[current] != "Link" {
+		if e.popoverActionEnabled(current) {
 			return current
 		}
 	}
 	return current
 }
 
+func (e *RichTextEdit) popoverActionEnabled(index int) bool {
+	if index < 0 || index >= len(richPopoverActions) || richPopoverActions[index] == "Link" {
+		return false
+	}
+	return e.HasSelection || richPopoverActions[index] == "Draw"
+}
+
 func (e *RichTextEdit) initialPopoverFocus() int {
+	if !e.HasSelection && e.popoverAtCursor {
+		return 8
+	}
 	if e.boxSelection != nil {
 		return 7
 	}
@@ -403,14 +462,18 @@ func (e *RichTextEdit) selectionUniformlyHas(active func(Style) bool) bool {
 
 func (e *RichTextEdit) popoverCanShow() bool {
 	r := e.lastRect
-	if r.W < 18 || r.H < 3 || !e.HasSelection || e.ViewMode || !e.ShowPopover {
+	if r.W < 18 || r.H < 3 || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode || !e.ShowPopover {
 		return false
 	}
 	lines := e.documentLines()
-	from, _ := e.selectionBounds()
-	e.clampPosition(&from, lines)
-	anchorX := richLineColumn(lines[from.Line], from.Offset) - e.ScrollX
-	anchorY := from.Line - e.ScrollY
+	anchorLine, anchorCol := e.cursorCoordinates(lines)
+	if !e.popoverAtCursor {
+		from, _ := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		anchorLine, anchorCol = from.Line, richLineColumn(lines[from.Line], from.Offset)
+	}
+	anchorX := anchorCol - e.ScrollX
+	anchorY := anchorLine - e.ScrollY
 	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
 		return false
 	}
@@ -461,8 +524,10 @@ func (e *RichTextEdit) selectionStyle(base Style) Style {
 // ConsumeKey applies navigation, text editing, selection, and inline formatting.
 func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	e.ensureDocument()
-	e.clampPosition(&e.Cursor, e.documentLines())
-	e.Cursor = e.normalizePosition(e.Cursor, 0)
+	if !e.cursorInVoid {
+		e.clampPosition(&e.Cursor, e.documentLines())
+		e.Cursor = e.normalizePosition(e.Cursor, 0)
+	}
 	if !key.Is("enter", "return") && (key.Key != "" || key.Text == "") {
 		e.typingRun = false
 	}
@@ -516,16 +581,27 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	case key.Is("ctrl-space"):
 		e.clearPopoverKeyboardState(false)
 		e.popoverSuppressed = false
-		if e.selectBoxAtCursor() {
+		e.popoverAtCursor = false
+		if !e.cursorInVoid && e.selectBoxAtCursor() {
 			e.ShowPopover = true
-		} else if e.selectWord() {
+		} else if !e.cursorInVoid && e.selectWord() {
+			e.ShowPopover = true
+		} else {
+			e.ClearSelection()
+			e.popoverAtCursor = true
 			e.ShowPopover = true
 		}
 	case key.Is("ctrl-c", "ctrl-insert"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		if !e.copySelectionOrWord() {
 			return Ignored()
 		}
 	case key.Is("ctrl-x", "shift-delete"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		e.mutate(false, false, func() {
 			if e.copySelectionOrWord() {
 				e.deleteSelection()
@@ -550,6 +626,9 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	case key.Is("end", "shift-end", "ctrl-e", "ctrl-shift-e"):
 		e.moveCursor(RichPosition{Line: e.Cursor.Line, Offset: richLineRuneCount(e.documentLines()[e.Cursor.Line])}, key.Is("shift-end", "ctrl-shift-e"))
 	case key.Is("ctrl-left"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		if e.HasSelection {
 			from, _ := e.selectionBounds()
 			e.moveCursor(from, false)
@@ -557,6 +636,9 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 			e.moveCursor(e.wordPosition(-1), false)
 		}
 	case key.Is("ctrl-right"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		if e.HasSelection {
 			_, to := e.selectionBounds()
 			e.moveCursor(to, false)
@@ -566,8 +648,14 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	case key.Is("enter", "return"):
 		e.mutate(true, true, func() { e.insertText("\n") })
 	case key.Is("backspace"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		e.mutate(false, false, func() { e.deleteDirection(-1) })
 	case key.Is("delete"):
+		if e.cursorInVoid {
+			return Ignored()
+		}
 		e.mutate(false, false, func() { e.deleteDirection(1) })
 	default:
 		if key.Text == "" {
@@ -631,6 +719,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 		}
 		e.typingRun = false
 		position := e.mousePosition(mouse)
+		e.cursorInVoid = false
 		e.Cursor, e.selectionAnchor = position, position
 		e.ClearSelection()
 		switch e.registerClick(position) {
@@ -665,13 +754,17 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverSwatches = nil
-	if e.ViewMode || !e.ShowPopover || !e.HasSelection || e.popoverSuppressed || r.W < 18 || r.H < 3 {
+	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < 18 || r.H < 3 {
 		return
 	}
-	from, _ := e.selectionBounds()
-	e.clampPosition(&from, lines)
-	anchorX := richLineColumn(lines[from.Line], from.Offset) - e.ScrollX
-	anchorY := from.Line - e.ScrollY
+	anchorLine, anchorCol := e.cursorCoordinates(lines)
+	if !e.popoverAtCursor {
+		from, _ := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		anchorLine, anchorCol = from.Line, richLineColumn(lines[from.Line], from.Offset)
+	}
+	anchorX := anchorCol - e.ScrollX
+	anchorY := anchorLine - e.ScrollY
 	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
 		return
 	}
@@ -706,7 +799,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	for i, label := range labels {
 		button := Rect{X: x, Y: barY, W: len(label) + 1, H: 1}
 		action := richPopoverActions[i]
-		enabled := action != "Link"
+		enabled := e.popoverActionEnabled(i)
 		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: action, rect: button, enabled: enabled})
 		for j, ch := range " " + label {
 			style := toolbarStyle
@@ -765,7 +858,7 @@ func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
 }
 
 func (e *RichTextEdit) popoverHit(x, y int) bool {
-	if e.popoverSuppressed || !e.ShowPopover || !e.HasSelection || e.ViewMode {
+	if e.popoverSuppressed || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode {
 		return false
 	}
 	for _, swatch := range e.popoverSwatches {
@@ -1003,6 +1096,7 @@ func (e *RichTextEdit) normalizePosition(pos RichPosition, direction int) RichPo
 }
 
 func (e *RichTextEdit) moveCursor(target RichPosition, extend bool) {
+	e.cursorInVoid = false
 	e.boxSelection = nil
 	target = e.normalizePosition(target, 0)
 	if extend {
@@ -1028,6 +1122,19 @@ func (e *RichTextEdit) moveCursor(target RichPosition, extend bool) {
 }
 
 func (e *RichTextEdit) moveHorizontal(direction int, extend bool) {
+	if e.cursorInVoid {
+		line, column := e.voidLine, e.voidColumn+direction
+		if column < 0 {
+			return
+		}
+		lines := e.documentLines()
+		if line < len(lines) && column <= richLineColumn(lines[line], richLineRuneCount(lines[line])) {
+			e.moveCursor(RichPosition{Line: line, Offset: richLineOffsetAtColumn(lines[line], column)}, extend)
+			return
+		}
+		e.moveToVoid(line, column, extend)
+		return
+	}
 	if e.HasSelection && !extend {
 		from, to := e.selectionBounds()
 		if direction < 0 {
@@ -1065,11 +1172,20 @@ func (e *RichTextEdit) moveHorizontal(direction int, extend bool) {
 
 func (e *RichTextEdit) moveVertical(direction int, extend bool) {
 	lines := e.documentLines()
-	targetLine := e.Cursor.Line + direction
-	if targetLine < 0 || targetLine >= len(lines) {
+	line, column := e.cursorCoordinates(lines)
+	targetLine := line + direction
+	if targetLine < 0 {
 		return
 	}
-	column := richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
+	if targetLine >= len(lines) {
+		e.moveToVoid(targetLine, column, extend)
+		return
+	}
+	lineWidth := richLineColumn(lines[targetLine], richLineRuneCount(lines[targetLine]))
+	if column > lineWidth {
+		e.moveToVoid(targetLine, column, extend)
+		return
+	}
 	best, distance := 0, int(^uint(0)>>1)
 	for _, stop := range richLineStops(lines[targetLine]) {
 		d := richTextAbs(richLineColumn(lines[targetLine], stop) - column)
@@ -1162,6 +1278,7 @@ func (e *RichTextEdit) insertText(text string) {
 	if text == "" {
 		return
 	}
+	e.materializeVoidCursor()
 	e.deleteSelection()
 	e.Cursor = e.normalizePosition(e.Cursor, 0)
 	lines := e.Document.Lines
@@ -1571,6 +1688,7 @@ func (e *RichTextEdit) insertRich(clip []RichLine) {
 	if len(clip) == 0 {
 		return
 	}
+	e.materializeVoidCursor()
 	e.deleteSelection()
 	e.Cursor = e.normalizePosition(e.Cursor, 0)
 	lines := e.Document.Lines
@@ -1600,6 +1718,9 @@ func (e *RichTextEdit) insertRich(clip []RichLine) {
 type richSnapshot struct {
 	lines        []RichLine
 	cursor       RichPosition
+	cursorInVoid bool
+	voidLine     int
+	voidColumn   int
 	from, to     RichPosition
 	hasSelection bool
 	boxSelection *richBoxSelection
@@ -1610,12 +1731,13 @@ func (e *RichTextEdit) snapshot() richSnapshot {
 	for i, line := range e.Document.Lines {
 		lines[i] = RichLine{Spans: append([]RichSpan(nil), line.Spans...)}
 	}
-	return richSnapshot{lines: lines, cursor: e.Cursor, from: e.SelectionFrom, to: e.SelectionTo, hasSelection: e.HasSelection, boxSelection: cloneRichBoxSelection(e.boxSelection)}
+	return richSnapshot{lines: lines, cursor: e.Cursor, cursorInVoid: e.cursorInVoid, voidLine: e.voidLine, voidColumn: e.voidColumn, from: e.SelectionFrom, to: e.SelectionTo, hasSelection: e.HasSelection, boxSelection: cloneRichBoxSelection(e.boxSelection)}
 }
 
 func (e *RichTextEdit) restore(snap richSnapshot) {
 	e.Document.Lines = snap.lines
 	e.Cursor = snap.cursor
+	e.cursorInVoid, e.voidLine, e.voidColumn = snap.cursorInVoid, snap.voidLine, snap.voidColumn
 	e.SelectionFrom, e.SelectionTo, e.HasSelection = snap.from, snap.to, snap.hasSelection
 	e.selectionExtending = false
 	e.boxSelection = cloneRichBoxSelection(snap.boxSelection)
@@ -1665,10 +1787,12 @@ func (e *RichTextEdit) toggleBoxMode() {
 		e.ClearSelection()
 		e.boxStrokeFGSet = false
 		lines := e.documentLines()
-		column := richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
-		if glyph := richBoxCell(lines[e.Cursor.Line], column); glyph != "" && BoxGlyphArms(glyph) != 0 {
-			if style, ok := richLineStyleAtColumn(lines[e.Cursor.Line], column); ok {
-				e.boxStrokeFG, e.boxStrokeFGSet = style.FG, true
+		line, column := e.cursorCoordinates(lines)
+		if !e.cursorInVoid && line < len(lines) {
+			if glyph := richBoxCell(lines[line], column); glyph != "" && BoxGlyphArms(glyph) != 0 {
+				if style, ok := richLineStyleAtColumn(lines[line], column); ok {
+					e.boxStrokeFG, e.boxStrokeFGSet = style.FG, true
+				}
 			}
 		}
 		e.BoxMode = true
@@ -1701,6 +1825,7 @@ func (e *RichTextEdit) finishBoxStroke() {
 
 func (e *RichTextEdit) drawBoxStep(dy, dx int) {
 	e.boxSelection = nil
+	e.materializeVoidCursor()
 	e.ensureDocument()
 	lines := e.Document.Lines
 	fromLine, fromColumn := e.Cursor.Line, richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)

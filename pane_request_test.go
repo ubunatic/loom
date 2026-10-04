@@ -94,6 +94,20 @@ func TestPaneRequestExplicitFieldWins(t *testing.T) {
 	}
 }
 
+func TestPaneExplicitUnlimitedMaxColsWinsWidgetRequest(t *testing.T) {
+	p := &Pane{MaxCols: DefaultMaxCols}
+	p.SetMaxCols(0)
+	p.applyRequestedMaxCols(70)
+	if p.MaxCols != 0 {
+		t.Fatalf("explicit unlimited MaxCols = %d, want 0", p.MaxCols)
+	}
+	p.SetMaxCols(96)
+	p.applyRequestedMaxCols(70)
+	if p.MaxCols != 96 {
+		t.Fatalf("explicit MaxCols = %d, want 96", p.MaxCols)
+	}
+}
+
 func TestWidgetWithoutPaneRequesterYieldsDefaults(t *testing.T) {
 	var request PaneRequest
 	if _, ok := Widget(plainPaneWidget{}).(PaneRequester); ok {

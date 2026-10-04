@@ -58,6 +58,7 @@ type Pane struct {
 	cursorCol       int // original 1-based terminal column
 	cols            int // terminal width at Open time
 	MaxCols         int // canvas width cap; 0 = use terminal width
+	maxColsExplicit bool
 	restored        bool
 	ownsTTY         bool
 
@@ -562,6 +563,19 @@ func (p *Pane) Resize(newHeight int) {
 	p.rows = newHeight
 }
 
+// SetMaxCols sets the canvas width cap. A value of zero keeps the full
+// terminal width, even when the widget requests a narrower default.
+func (p *Pane) SetMaxCols(maxCols int) {
+	p.MaxCols = maxCols
+	p.maxColsExplicit = true
+}
+
+func (p *Pane) applyRequestedMaxCols(maxCols int) {
+	if !p.maxColsExplicit && (p.MaxCols == 0 || p.MaxCols == DefaultMaxCols) {
+		p.MaxCols = maxCols
+	}
+}
+
 // winchBounds recomputes pane placement after a terminal window resize. Given
 // the current top row and height and the new terminal row count, it clamps the
 // height to fit (leaving the shell prompt line) and lifts the top row if the
@@ -802,9 +816,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if !p.Resizeable {
 			p.Resizeable = request.Resizeable
 		}
-		if p.MaxCols == 0 || p.MaxCols == DefaultMaxCols {
-			p.MaxCols = request.MaxCols
-		}
+		p.applyRequestedMaxCols(request.MaxCols)
 		if request.OwnsQuit {
 			p.DisableDefaultQuit = true
 			p.DisableGlobalF10Quit = true

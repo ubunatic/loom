@@ -147,7 +147,7 @@ var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) 
 	if altScreen {
 		pane.SetScreenMode(loom.ScreenAlt)
 	}
-	pane.MaxCols = galleryPaneMaxCols(width)
+	pane.SetMaxCols(galleryPaneMaxCols(width))
 	if height > 0 {
 		pane.Resize(height)
 	}

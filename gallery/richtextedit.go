@@ -16,7 +16,7 @@ type richTextEditDemo struct {
 	area loom.Rect
 }
 
-const richTextEditHint = "[F7] View/Edit: Edit | F5/C-S-B Box | Shift+←/→ | #FG/#BG"
+const richTextEditHint = "[F7] View/Edit: Edit | F5/Draw Box | Shift+←/→ | #FG/#BG"
 
 func newRichTextEditDemo() *richTextEditDemo {
 	blue := loom.ColorIndex(39)
@@ -50,7 +50,7 @@ func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	if r.H > 0 {
 		hint := richTextEditHint
 		if w.edit.BoxMode {
-			hint = "[Box mode] arrows draw | Esc exits | F5/C-S-B toggle"
+			hint = "[Box mode] arrows draw | Esc exits | F5 toggles"
 		} else if w.edit.ViewMode {
 			hint = strings.Replace(hint, ": Edit", ": View", 1)
 		}

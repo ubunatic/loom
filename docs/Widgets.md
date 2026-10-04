@@ -327,7 +327,11 @@ actions, Enter applies the focused action, and Esc closes the popover. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them
-to the current display column. One mode session is one undo step.
+to the current display column. Up/Down can place the caret beyond the end of a
+line or below the final line without editing; typing or drawing there pads the
+document, while moving away leaves it unchanged. Ctrl+Space on blank space opens
+a cursor-anchored popover so Draw can start a box stroke there. One mode session
+is one undo step.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
@@ -345,7 +349,8 @@ cursor cell, then shows the popover; reciprocal arms must connect every edge,
 and equal-size boxes are resolved by top, left, bottom, then right position.
 Interior text is unrestricted and side text outside the rectangle stays outside
 the selection. On plain text, box interiors, or broken perimeters it selects the
-word under the cursor as before. The clipboard is internal and keeps
+word under the cursor as before; on whitespace it opens the popover at the
+cursor without selecting text. The clipboard is internal and keeps
 styled spans: `Ctrl+C`/`Ctrl+Insert` copy the selection or word, `Ctrl+X`/
 `Shift+Delete` cut, `Ctrl+V`/`Shift+Insert` paste. `Ctrl+Z`/`Ctrl+Y` undo;
 `Ctrl+R`, `Ctrl+Shift+Y`, `Ctrl+Shift+Z` redo (100 steps; a typing run up to a
