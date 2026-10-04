@@ -1,6 +1,6 @@
 # 263 — RichTextEdit Home/End and C-a/C-e line navigation with selection
 
-**Status**: Closed — decoder now keeps modifiers on Home/End (ESC[1;<m>H/F and tilde forms); RichTextEdit binds C-a/C-e and shift variants; Upgrading row (a7a26bb). Host reran make test-q1 green; live tmux: C-e/C-a moved to line end/start, End+S-Home selected the line, C-b bolded it
+**Status**: Open
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
