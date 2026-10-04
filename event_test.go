@@ -96,6 +96,7 @@ func TestDecodeKey(t *testing.T) {
 		{"shift-delete", []byte("\x1b[3;2~"), KeyEvent{Key: "shift-delete"}},
 		{"plain insert", []byte("\x1b[2~"), KeyEvent{Key: "insert"}},
 		{"csi-u ctrl-shift-z", []byte("\x1b[122;6u"), KeyEvent{Key: "ctrl-shift-z"}},
+		{"csi-u ctrl-shift-b", []byte("\x1b[98;6u"), KeyEvent{Key: "ctrl-shift-b"}},
 		{"csi-u ctrl-shift-y", []byte("\x1b[121;6u"), KeyEvent{Key: "ctrl-shift-y"}},
 		{"legacy ctrl-z", []byte{26}, KeyEvent{Key: "ctrl-z"}},
 		{"printable t", []byte{'t'}, KeyEvent{Text: "t"}},

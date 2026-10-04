@@ -314,7 +314,12 @@ code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
 pills. The formatting popover's Box action wraps a single- or multi-line
 selection in a sharp box; rows are padded to the widest display width and the
-selection's inline styles and metadata remain on the enclosed text.
+selection's inline styles and metadata remain on the enclosed text. Unselected
+prefix and suffix text stays on its own line so partial-line boxes keep their
+columns aligned. `Ctrl+Shift+B` (CSI-u terminals) or F5 toggles box mode; arrow
+keys draw a connected path and Esc ends the current stroke. Drawing past a line
+end pads that row with spaces; drawing below the document appends rows and pads
+them to the current display column. One mode session is one undo step.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,

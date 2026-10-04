@@ -36,6 +36,8 @@ type RichTextEdit struct {
 	// every edit, style key and the format popover are disabled and edit keys
 	// return Ignored so the app can use them.
 	ViewMode bool
+	// BoxMode draws box glyphs into adjacent document cells with arrow keys.
+	BoxMode bool
 
 	focused            bool
 	lastRect           Rect
@@ -55,6 +57,7 @@ type RichTextEdit struct {
 	lastClickAt        time.Time
 	lastClickPos       RichPosition
 	now                func() time.Time
+	boxStrokeBefore    *richSnapshot
 }
 
 const (
@@ -94,7 +97,12 @@ func NewRichTextView(doc *RichDocument) *RichTextEdit {
 func (e *RichTextEdit) Focused() bool { return e.focused }
 
 // SetFocus sets the editor focus state.
-func (e *RichTextEdit) SetFocus(focused bool) { e.focused = focused }
+func (e *RichTextEdit) SetFocus(focused bool) {
+	if e.focused && !focused && e.BoxMode {
+		e.toggleBoxMode()
+	}
+	e.focused = focused
+}
 
 // SetSelection sets a half-open selection range in rune offsets.
 func (e *RichTextEdit) SetSelection(from, to RichPosition) {
@@ -265,6 +273,36 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	}
 	if e.ViewMode && !richViewModeKey(key) {
 		return Ignored()
+	}
+	if e.ViewMode && e.BoxMode {
+		e.toggleBoxMode()
+	}
+	if key.Is("ctrl-shift-b", "f5") {
+		e.toggleBoxMode()
+		return Handled()
+	}
+	if e.BoxMode {
+		switch {
+		case key.Is("esc"):
+			e.toggleBoxMode()
+			return Handled()
+		case key.Is("up"):
+			e.drawBoxStep(-1, 0)
+			return Handled()
+		case key.Is("right"):
+			e.drawBoxStep(0, 1)
+			return Handled()
+		case key.Is("down"):
+			e.drawBoxStep(1, 0)
+			return Handled()
+		case key.Is("left"):
+			e.drawBoxStep(0, -1)
+			return Handled()
+		case key.Is("ctrl-z", "ctrl-y", "ctrl-r", "ctrl-shift-y", "ctrl-shift-z"):
+			e.toggleBoxMode()
+		default:
+			return Ignored()
+		}
 	}
 	switch {
 	case key.Is("ctrl-b"):
@@ -604,14 +642,19 @@ func (e *RichTextEdit) wrapSelectionInBox() {
 			boxed = append(boxed, RichLine{Spans: mergeRichSpans(spans)})
 		}
 		boxed = append(boxed, RichLine{Spans: []RichSpan{{Text: border.BottomLeft + strings.Repeat(border.Horizontal, width) + border.BottomRight, Style: style}}})
-		boxed[0].Spans = append(append([]RichSpan(nil), prefix...), boxed[0].Spans...)
 		lastIndex := len(boxed) - 1
-		boxed[lastIndex].Spans = append(boxed[lastIndex].Spans, suffix...)
 		updated := append([]RichLine(nil), lines[:from.Line]...)
+		if richLineRuneCount(RichLine{Spans: prefix}) > 0 {
+			updated = append(updated, RichLine{Spans: prefix})
+		}
+		boxLine := from.Line + len(updated) - len(lines[:from.Line])
 		updated = append(updated, boxed...)
+		if richLineRuneCount(RichLine{Spans: suffix}) > 0 {
+			updated = append(updated, RichLine{Spans: suffix})
+		}
 		updated = append(updated, lines[to.Line+1:]...)
 		e.Document.Lines = updated
-		e.Cursor = RichPosition{Line: from.Line + lastIndex, Offset: richLineRuneCount(boxed[lastIndex]) - richLineRuneCount(RichLine{Spans: suffix})}
+		e.Cursor = RichPosition{Line: boxLine + lastIndex, Offset: richLineRuneCount(boxed[lastIndex])}
 		e.ClearSelection()
 	})
 }
@@ -1375,4 +1418,155 @@ func (e *RichTextEdit) redo() {
 	e.undoStack = append(e.undoStack, e.snapshot())
 	e.restore(e.redoStack[len(e.redoStack)-1])
 	e.redoStack = e.redoStack[:len(e.redoStack)-1]
+}
+
+const (
+	richBoxUp uint8 = 1 << iota
+	richBoxRight
+	richBoxDown
+	richBoxLeft
+)
+
+var richBoxGlyphs = [...]string{" ", "╵", "╶", "└", "╷", "│", "┌", "├", "╴", "┘", "─", "┴", "┐", "┤", "┬", "┼"}
+
+func (e *RichTextEdit) toggleBoxMode() {
+	if !e.BoxMode {
+		e.BoxMode = true
+		before := e.snapshot()
+		e.boxStrokeBefore = &before
+		e.typingRun = false
+		return
+	}
+	e.BoxMode = false
+	e.finishBoxStroke()
+}
+
+func (e *RichTextEdit) finishBoxStroke() {
+	if e.boxStrokeBefore == nil {
+		return
+	}
+	before := *e.boxStrokeBefore
+	e.boxStrokeBefore = nil
+	if reflect.DeepEqual(before.lines, e.Document.Lines) {
+		return
+	}
+	e.undoStack = append(e.undoStack, before)
+	if len(e.undoStack) > richUndoLimit {
+		e.undoStack = e.undoStack[len(e.undoStack)-richUndoLimit:]
+	}
+	e.redoStack = nil
+}
+
+func (e *RichTextEdit) drawBoxStep(dy, dx int) {
+	e.ensureDocument()
+	lines := e.Document.Lines
+	fromLine, fromColumn := e.Cursor.Line, richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
+	toLine, toColumn := fromLine+dy, fromColumn+dx
+	if toColumn < 0 {
+		return
+	}
+	if toLine < 0 {
+		prepend := make([]RichLine, -toLine)
+		e.Document.Lines = append(prepend, lines...)
+		fromLine += len(prepend)
+		toLine = 0
+	} else if toLine >= len(lines) {
+		for len(e.Document.Lines) <= toLine {
+			e.Document.Lines = append(e.Document.Lines, RichLine{})
+		}
+	}
+	lines = e.Document.Lines
+	for len(lines[fromLine].Spans) > 0 && richLineColumn(lines[fromLine], richLineRuneCount(lines[fromLine])) < fromColumn {
+		lines[fromLine].Spans = append(lines[fromLine].Spans, RichSpan{Text: " "})
+	}
+	for len(lines[toLine].Spans) > 0 && richLineColumn(lines[toLine], richLineRuneCount(lines[toLine])) < toColumn {
+		lines[toLine].Spans = append(lines[toLine].Spans, RichSpan{Text: " "})
+	}
+	fromMask := richBoxGlyphArms(richLineCell(lines[fromLine], fromColumn))
+	toMask := richBoxGlyphArms(richLineCell(lines[toLine], toColumn))
+	fromArm, toArm := uint8(richBoxRight), uint8(richBoxLeft)
+	if dx < 0 {
+		fromArm, toArm = richBoxLeft, richBoxRight
+	} else if dy < 0 {
+		fromArm, toArm = richBoxUp, richBoxDown
+	} else if dy > 0 {
+		fromArm, toArm = richBoxDown, richBoxUp
+	}
+	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, richBoxGlyphs[fromMask|fromArm])
+	lines[toLine] = richLineSetCell(lines[toLine], toColumn, richBoxGlyphs[toMask|toArm])
+	e.Document.Lines = lines
+	e.Cursor = RichPosition{Line: toLine, Offset: richLineOffsetAtColumn(lines[toLine], toColumn)}
+	e.typingRun = false
+}
+
+func richBoxGlyphArms(glyph string) uint8 {
+	for arms, candidate := range richBoxGlyphs {
+		if candidate == glyph {
+			return uint8(arms)
+		}
+	}
+	return 0
+}
+
+func richLineCell(line RichLine, column int) string {
+	for _, unit := range richLineUnits(line) {
+		start := richLineColumn(line, unit.start)
+		if column >= start && column < start+measure.StringWidth(unit.text) {
+			return unit.text
+		}
+	}
+	return " "
+}
+
+func richLineOffsetAtColumn(line RichLine, column int) int {
+	for _, unit := range richLineUnits(line) {
+		start := richLineColumn(line, unit.start)
+		if column < start+measure.StringWidth(unit.text) {
+			return unit.start
+		}
+	}
+	return richLineRuneCount(line)
+}
+
+func richLineSetCell(line RichLine, column int, glyph string) RichLine {
+	var result []RichSpan
+	cellX, replaced := 0, false
+	for _, span := range line.Spans {
+		for _, cluster := range measure.Clusters(span.Text) {
+			width := measure.StringWidth(cluster)
+			if width <= 0 {
+				result = appendRichCellSpan(result, span, cluster)
+				continue
+			}
+			if !replaced && column >= cellX && column < cellX+width {
+				if span.PillData != nil {
+					return line
+				}
+				before := strings.Repeat(" ", column-cellX)
+				after := strings.Repeat(" ", cellX+width-column-1)
+				result = appendRichCellSpan(result, span, before+glyph+after)
+				replaced = true
+			} else {
+				result = appendRichCellSpan(result, span, cluster)
+			}
+			cellX += width
+		}
+	}
+	if !replaced {
+		if column > cellX {
+			result = append(result, RichSpan{Text: strings.Repeat(" ", column-cellX)})
+		}
+		result = append(result, RichSpan{Text: glyph})
+	}
+	return RichLine{Spans: mergeRichSpans(result)}
+}
+
+func appendRichCellSpan(spans []RichSpan, source RichSpan, text string) []RichSpan {
+	if text == "" {
+		return spans
+	}
+	span := source
+	span.Text = text
+	span.PillData = nil
+	return append(spans, span)
 }

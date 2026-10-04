@@ -707,6 +707,22 @@ func TestRichTextEditGalleryTypingPTY(t *testing.T) {
 	}
 }
 
+func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
+	w := newRichTextEditDemo()
+	if result := w.ConsumeKey(loom.KeyEvent{Key: "f5"}); !result.Consumed || !w.edit.BoxMode {
+		t.Fatalf("F5 box toggle result/mode = %+v/%v", result, w.edit.BoxMode)
+	}
+	canvas := loom.NewCanvas(80, 12)
+	w.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(canvas.Row(11), "[Box mode]") || !strings.Contains(canvas.Row(11), "Esc exits") {
+		t.Fatalf("box mode hint = %q", canvas.Row(11))
+	}
+	w.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if w.edit.BoxMode {
+		t.Fatal("Esc did not leave box mode through the gallery")
+	}
+}
+
 func renderDemoCells(widget loom.Widget, rows int) [][]loom.Cell {
 	canvas := loom.NewCanvas(100, rows)
 	widget.Draw(canvas, loom.Rect{W: 100, H: rows})

@@ -16,7 +16,7 @@ type richTextEditDemo struct {
 	area loom.Rect
 }
 
-const richTextEditHint = "[F7] View/Edit: Edit | Ctrl+B/I/U | Shift+←/→ | #FG/#BG | Box"
+const richTextEditHint = "[F7] View/Edit: Edit | F5/C-S-B Box | Shift+←/→ | #FG/#BG"
 
 func newRichTextEditDemo() *richTextEditDemo {
 	blue := loom.ColorIndex(39)
@@ -49,7 +49,9 @@ func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	if r.H > 0 {
 		hint := richTextEditHint
-		if w.edit.ViewMode {
+		if w.edit.BoxMode {
+			hint = "[Box mode] arrows draw | Esc exits | F5/C-S-B toggle"
+		} else if w.edit.ViewMode {
 			hint = strings.Replace(hint, ": Edit", ": View", 1)
 		}
 		c.WriteANSI(r.X, r.Y+r.H-1, "\x1b[2m"+hint+"\x1b[0m")
@@ -58,6 +60,9 @@ func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
 
 func (w *richTextEditDemo) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if key.Is("f7") {
+		if w.edit.BoxMode {
+			w.edit.ConsumeKey(loom.KeyEvent{Key: "esc"})
+		}
 		w.edit.ViewMode = !w.edit.ViewMode
 		return loom.Handled()
 	}
@@ -67,6 +72,9 @@ func (w *richTextEditDemo) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 func (w *richTextEditDemo) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 	if mouse.Action == loom.MousePress && mouse.Button == loom.MouseLeft && mouse.Y == w.area.H-1 &&
 		mouse.X >= 0 && mouse.X < loom.StringWidth(richTextEditHint) {
+		if w.edit.BoxMode {
+			w.edit.ConsumeKey(loom.KeyEvent{Key: "esc"})
+		}
 		w.edit.ViewMode = !w.edit.ViewMode
 		return loom.Handled()
 	}

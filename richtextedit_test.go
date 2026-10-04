@@ -298,7 +298,7 @@ func TestRichTextEditWrapSelectionInBoxAndUndo(t *testing.T) {
 			name: "single line",
 			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "before text after"}}}}},
 			from: RichPosition{Offset: 7}, to: RichPosition{Offset: 11},
-			want: "before ┌────┐\n│text│\n└────┘ after",
+			want: "before \n┌────┐\n│text│\n└────┘\n after",
 		},
 		{
 			name: "multiple lines and wide runes",
@@ -313,7 +313,7 @@ func TestRichTextEditWrapSelectionInBoxAndUndo(t *testing.T) {
 			name: "selection within styled span",
 			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abCDxy", Style: Style{Italic: true}}}}}},
 			from: RichPosition{Offset: 2}, to: RichPosition{Offset: 4},
-			want: "ab┌──┐\n│CD│\n└──┘xy",
+			want: "ab\n┌──┐\n│CD│\n└──┘\nxy",
 		},
 	}
 	for _, tt := range tests {
@@ -328,8 +328,8 @@ func TestRichTextEditWrapSelectionInBoxAndUndo(t *testing.T) {
 			if tt.name == "multiple lines and wide runes" && !tt.doc.Lines[1].Spans[0].Style.Bold {
 				t.Fatalf("selected styled span lost style: %#v", tt.doc.Lines[1].Spans)
 			}
-			if tt.name == "selection within styled span" && !tt.doc.Lines[1].Spans[0].Style.Italic {
-				t.Fatalf("styled selection lost style: %#v", tt.doc.Lines[1].Spans)
+			if tt.name == "selection within styled span" && !tt.doc.Lines[2].Spans[0].Style.Italic {
+				t.Fatalf("styled selection lost style: %#v", tt.doc.Lines[2].Spans)
 			}
 			edit.undo()
 			if got := tt.doc.ToPlainText(); got != before {
@@ -355,6 +355,63 @@ func TestRichTextEditBoxActionAvailableInPopover(t *testing.T) {
 		}
 	}
 	t.Fatal("Box action missing from popover")
+}
+
+func TestRichTextEditBoxModeDrawsTurnsAndUndoesOneStroke(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{}}}
+	edit := NewRichTextEdit(doc)
+	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-b"}); !got.Consumed || !edit.BoxMode {
+		t.Fatalf("box mode toggle result/mode = %+v/%v", got, edit.BoxMode)
+	}
+	for _, key := range []string{"right", "right", "down", "left"} {
+		if got := edit.ConsumeKey(KeyEvent{Key: key}); !got.Consumed {
+			t.Fatalf("%s was not consumed in box mode", key)
+		}
+	}
+	if got, want := doc.ToPlainText(), "╶─┐\n ╶┘"; got != want {
+		t.Fatalf("drawn box path = %q, want %q", got, want)
+	}
+	if got := edit.ConsumeKey(KeyEvent{Key: "esc"}); !got.Consumed || edit.BoxMode {
+		t.Fatalf("escape result/mode = %+v/%v", got, edit.BoxMode)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-z"})
+	if got := doc.ToPlainText(); got != "" {
+		t.Fatalf("one undo did not restore pre-stroke document: %q", got)
+	}
+}
+
+func TestRichTextEditBoxModePadsPastLineEndAndBelowDocument(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abc"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor.Offset = 3
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+	edit.ConsumeKey(KeyEvent{Key: "down"})
+	if got, want := doc.ToPlainText(), "abc╶┐\n    ╵"; got != want {
+		t.Fatalf("padded box path = %q, want %q", got, want)
+	}
+	if edit.Cursor != (RichPosition{Line: 1, Offset: 4}) {
+		t.Fatalf("cursor after downward stroke = %+v, want line 1 offset 4", edit.Cursor)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	if edit.BoxMode {
+		t.Fatal("F5 did not exit box mode")
+	}
+}
+
+func TestRichTextEditBoxModeHandlesCSIuToggle(t *testing.T) {
+	key := DecodeKey([]byte("\x1b[98;6u"))
+	if !key.Is("ctrl-shift-b") {
+		t.Fatalf("CSI-u Ctrl-Shift-B decoded as %+v", key)
+	}
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	edit.ConsumeKey(key)
+	if !edit.BoxMode {
+		t.Fatal("CSI-u Ctrl-Shift-B did not enter box mode")
+	}
+	if key := DecodeKey([]byte{2}); !key.Is("ctrl-b") {
+		t.Fatalf("legacy Ctrl-B changed from bold key: %+v", key)
+	}
 }
 
 func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
