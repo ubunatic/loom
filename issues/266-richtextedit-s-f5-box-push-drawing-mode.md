@@ -19,10 +19,16 @@ Re-check live code and recent commits first (264 changed F5 and draw mode).
 - Existing box glyphs are joined as today (four-neighbour junctions), not pushed.
 - One undo step per stroke, including the pushed characters.
 
-## Open questions
+## Push rules (user, 2026-10-04)
 
-- Push direction: horizontal strokes push characters right along the row, vertical strokes push them down (insert a line or shift into the next row)? Proposal: push in the stroke direction, inserting padding; record the chosen rule.
-- What happens when pushing would hit another box or the line end: shift the whole tail of the line (proposal) or stop the stroke.
+A "natural" push: text gets out of the way of the stroke, spaces are drawn over.
+
+- **Vertical stroke (Up/Down) hits a non-space:** the word under the stroke moves right, out of the box path (ideally the whole word, minimum the character), and the rest of that line shifts right with it. Example: three lines of text with no blank lines between; a vertical stroke through them pushes each line's text to the right as the stroke reaches it.
+- **Horizontal stroke (Left/Right) hits a non-space:** the whole line moves down (a blank row is inserted), so the stroke continues in free space. Continuing over spaces pushes nothing.
+- Moving onto a cell that is a space never pushes. After a push, the stroke paints through free cells until it hits the next non-space, which triggers the next push.
+- Pushed text keeps its styles. A word that would be cut by a vertical stroke moves as a whole to the right of the stroke.
+
+Uncertain (user): the vertical case "depends on the situation"; implement the rules above first and refine after a live check.
 
 ## Acceptance
 
