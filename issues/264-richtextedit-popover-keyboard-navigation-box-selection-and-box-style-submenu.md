@@ -54,6 +54,8 @@ Acceptance: forward/reverse wraparound and highlight; box focus takes precedence
 
 Acceptance: both styles wrap single/multiple lines and partial-line selections; restyle in place without changing dimensions, interior spans, outside text or crossing arms; one undo/redo step; rounded corner arm masks and sharp T/cross junctions; spec/schema/loader agree.
 
+**M3 delivered (2026-10-04, 0cba0d4 + a53b407 pre-work, 805e568 box style dropdown):** full width (130-char line fits in 160 cols live), hint updated, C-space on blank, ghost cursor option (`ghost_cursor_enabled: false` default), bar/block cursor by mode, plain/rounded dropdown. Host rerun green except the known 247 flake.
+
 ## M4 — Keyboard navigation in submenus
 
 Flow: `C-space` → bar opens → `Tab`… → `Space` opens the focused item's submenu (FG/BG color picker or box style) → `Tab`/arrows… → `Enter` applies → back to text; `Esc` steps back one level.
