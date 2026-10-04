@@ -31,3 +31,11 @@ When placing a glyph, look at all 4 neighbours (up/down/left/right) and choose t
 - Light single-line glyphs only for now; heavy/double/rounded styles are out of scope unless trivial.
 - Undo: one box-mode stroke (enter to exit) or one wrap = one undo step.
 - Verify `C-S-b` decodes (CSI-u only, per 257); legacy terminals send plain C-b. Note the fallback key if needed.
+
+## Progress
+
+- **M1 delivered (f80aeb9): wrap selection in box.** "Box" popover action, reuses `getBoxBorderGlyphs`, one undo step. Host rerun: RichTextEdit tests green; only failure is the known flaky `TestPaneFirstDrawUsesScreenBounds` (issue 247).
+
+### M2 Pre-Work / Required Refinements
+
+- Mid-line selection: currently the prefix text is glued before the top border (`abc┌──┐`) and the suffix after the bottom border, so the box columns don't line up with the side borders. Put prefix and suffix on their own lines (as planned), so all box rows start in the same column. Add a test for a selection that starts and ends mid-line.
