@@ -317,7 +317,9 @@ pills.
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
 cut, paste, undo/redo, `Ctrl+Space` and the popover are off, and those keys return
-`Ignored` so the app can use them. A span with `Link` set draws with the spec link
+`Ignored` so the app can use them. View mode does not place an edit caret, even
+when focused. The gallery editor starts editable and uses F7 or its hint row to
+switch between View and Edit; the hint row is clickable. A span with `Link` set draws with the spec link
 style (`rich_text_edit.link_fg`, `link_underline`) in both modes, focused or not;
 the URL stays on `RichSpan.Link` (OSC 8 output is issue 259).
 
