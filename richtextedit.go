@@ -1420,15 +1420,6 @@ func (e *RichTextEdit) redo() {
 	e.redoStack = e.redoStack[:len(e.redoStack)-1]
 }
 
-const (
-	richBoxUp uint8 = 1 << iota
-	richBoxRight
-	richBoxDown
-	richBoxLeft
-)
-
-var richBoxGlyphs = [...]string{" ", "╵", "╶", "└", "╷", "│", "┌", "├", "╴", "┘", "─", "┴", "┐", "┤", "┬", "┼"}
-
 func (e *RichTextEdit) toggleBoxMode() {
 	if !e.BoxMode {
 		e.BoxMode = true
@@ -1482,30 +1473,38 @@ func (e *RichTextEdit) drawBoxStep(dy, dx int) {
 	for len(lines[toLine].Spans) > 0 && richLineColumn(lines[toLine], richLineRuneCount(lines[toLine])) < toColumn {
 		lines[toLine].Spans = append(lines[toLine].Spans, RichSpan{Text: " "})
 	}
-	fromMask := richBoxGlyphArms(richLineCell(lines[fromLine], fromColumn))
-	toMask := richBoxGlyphArms(richLineCell(lines[toLine], toColumn))
-	fromArm, toArm := uint8(richBoxRight), uint8(richBoxLeft)
+	fromArm, toArm := BoxArmRight, BoxArmLeft
 	if dx < 0 {
-		fromArm, toArm = richBoxLeft, richBoxRight
+		fromArm, toArm = BoxArmLeft, BoxArmRight
 	} else if dy < 0 {
-		fromArm, toArm = richBoxUp, richBoxDown
+		fromArm, toArm = BoxArmUp, BoxArmDown
 	} else if dy > 0 {
-		fromArm, toArm = richBoxDown, richBoxUp
+		fromArm, toArm = BoxArmDown, BoxArmUp
 	}
-	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, richBoxGlyphs[fromMask|fromArm])
-	lines[toLine] = richLineSetCell(lines[toLine], toColumn, richBoxGlyphs[toMask|toArm])
+	fromMask := boxNeighbourArms(lines, fromLine, fromColumn) | fromArm
+	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, BoxGlyph(fromMask))
+	toMask := boxNeighbourArms(lines, toLine, toColumn) | toArm
+	lines[toLine] = richLineSetCell(lines[toLine], toColumn, BoxGlyph(toMask))
 	e.Document.Lines = lines
 	e.Cursor = RichPosition{Line: toLine, Offset: richLineOffsetAtColumn(lines[toLine], toColumn)}
 	e.typingRun = false
 }
 
-func richBoxGlyphArms(glyph string) uint8 {
-	for arms, candidate := range richBoxGlyphs {
-		if candidate == glyph {
-			return uint8(arms)
-		}
+func boxNeighbourArms(lines []RichLine, line, column int) BoxArms {
+	var arms BoxArms
+	if line > 0 && BoxGlyphArms(richLineCell(lines[line-1], column))&BoxArmDown != 0 {
+		arms |= BoxArmUp
 	}
-	return 0
+	if line+1 < len(lines) && BoxGlyphArms(richLineCell(lines[line+1], column))&BoxArmUp != 0 {
+		arms |= BoxArmDown
+	}
+	if column > 0 && BoxGlyphArms(richLineCell(lines[line], column-1))&BoxArmRight != 0 {
+		arms |= BoxArmLeft
+	}
+	if BoxGlyphArms(richLineCell(lines[line], column+1))&BoxArmLeft != 0 {
+		arms |= BoxArmRight
+	}
+	return arms | BoxGlyphArms(richLineCell(lines[line], column))
 }
 
 func richLineCell(line RichLine, column int) string {

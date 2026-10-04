@@ -414,6 +414,44 @@ func TestRichTextEditBoxModeHandlesCSIuToggle(t *testing.T) {
 	}
 }
 
+func TestRichTextEditBoxModeCompletesCrossingAndTJunction(t *testing.T) {
+	t.Run("crossing", func(t *testing.T) {
+		doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: " "}}}, {Spans: []RichSpan{{Text: "───"}}}, {}}}
+		edit := NewRichTextEdit(doc)
+		edit.Cursor.Offset = 1
+		edit.ConsumeKey(KeyEvent{Key: "f5"})
+		edit.ConsumeKey(KeyEvent{Key: "down"})
+		edit.ConsumeKey(KeyEvent{Key: "down"})
+		if got := richLineCell(doc.Lines[1], 1); got != "┼" {
+			t.Fatalf("crossing glyph = %q, want ┼", got)
+		}
+	})
+	t.Run("stroke ends on existing side", func(t *testing.T) {
+		doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: " "}}}, {Spans: []RichSpan{{Text: "───"}}}}}
+		edit := NewRichTextEdit(doc)
+		edit.Cursor.Offset = 1
+		edit.ConsumeKey(KeyEvent{Key: "f5"})
+		edit.ConsumeKey(KeyEvent{Key: "down"})
+		if got := richLineCell(doc.Lines[1], 1); got != "┴" {
+			t.Fatalf("T-junction glyph = %q, want ┴", got)
+		}
+	})
+}
+
+func TestRichTextEditBoxModeDoesNotModifyAdjacentBox(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "│ "}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor.Offset = 1
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+	if got := richLineCell(doc.Lines[0], 1); got != "╶" {
+		t.Fatalf("drawn cell = %q, want ╶", got)
+	}
+	if got := richLineCell(doc.Lines[0], 0); got != "│" {
+		t.Fatalf("adjacent existing glyph changed to %q", got)
+	}
+}
+
 func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}}
 	edit := NewRichTextEdit(doc)
