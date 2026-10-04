@@ -23,3 +23,7 @@ looks load- or timing-dependent. A flaky test blocks closing tickets under the o
 ## 3. Implementation & Verification Plan
 - Reproduce under load (`-count=50`, `-race`, or parallel with the full suite); fix the cause, not the
   assertion; then one green `make test-q1`.
+
+## Recurrence (2026-10-04, during issue 261 M1)
+
+Failed 3 runs in a row in different subtests (`inline`, `wrapped-request-auto-alt`): `pane_pty_test.go:70: first draw at row 7 with {X:0 Y:0 W:99 H:24}, want row 7 and 100x24`. M1 touched only RichTextEdit.
