@@ -80,3 +80,5 @@ Acceptance: complete keyboard flow for FG, BG and Box; reverse cycling and arrow
 - Rectangular selection must cover existing styling/copy/delete consumers, not just drawing; preserve pill atomicity and cluster widths. Bound candidate search to document glyphs and avoid exponential path enumeration on dense crossing art.
 - `applyPopoverColor` currently bypasses `mutate`; make color application one undo step too. `ShowPopover` is a configuration preference, not sufficient dismissal/focus state; clipping and mouse/keyboard transitions need explicit state.
 - Issue 263 concurrently changes `ConsumeKey` navigation: re-read live code before implementation, keep its changes, and start event-routing work on `codex:sol:med`. Retain each milestone's host review, live gallery check and host `make test-q1` rerun.
+
+**M4 delivered (2026-10-04, d4616a0 cursor shape via nested canvas, ac08b50 submenu navigation):** live capture now shows `ESC[6 q` at start, `ESC[2 q` on draw mode, `ESC[6 q` back, `ESC[0 q` on exit. Host rerun green. Awaiting user live check before close.
