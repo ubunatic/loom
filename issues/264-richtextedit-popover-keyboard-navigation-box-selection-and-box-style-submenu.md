@@ -18,6 +18,8 @@ When the cursor is on a closed box perimeter, `C-space` selects its rectangle an
 
 Acceptance: sharp/rounded boxes with styled text; crossing strokes; nested/adjacent/shared-edge boxes and deterministic ties; broken perimeter fallback; wide/combining text and side text outside the rectangle.
 
+**M1 delivered (2026-10-04, 7affb03):** C-space on a closed sharp or rounded box selects the box rectangle (per-row slices) and opens the popover; delete/copy/style/undo act on the rectangle; cursor moves clear it. Host rerun: green except the known 247 flake (passes 5/5 alone).
+
 ## M2 — Tab/Enter in the popover bar
 
 With the popover open, `Tab` / `S-Tab` cycle the bar items with a visible focus highlight, `Enter` applies the focused item, `Esc` closes. Initial focus follows the selection: bold → "B", italic → "I", underline → "U", box → "Box", else the first item.
