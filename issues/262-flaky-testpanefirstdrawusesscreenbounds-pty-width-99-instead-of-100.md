@@ -1,6 +1,6 @@
 # 262 — Flaky TestPaneFirstDrawUsesScreenBounds: PTY width 99 instead of 100
 
-**Status**: Open
+**Status**: Closed — duplicate of 247; observation moved there
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Bug
