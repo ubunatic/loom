@@ -1,6 +1,6 @@
 # 261 — RichTextEdit rectangle drawing: wrap selection in box, arrow-key box mode
 
-**Status**: Open
+**Status**: Closed — M1 wrap selection in box (f80aeb9), M2 arrow box mode F5/C-S-b (57c1059), M3 four-neighbour junctions (9bd7eae). Host reran make test-q1 green and drew live in tmux: closed box, then a vertical stroke from the top edge giving ┬, │, ┼ and a ╵ end cap
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
