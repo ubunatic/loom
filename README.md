@@ -93,8 +93,10 @@ Intentionally minimal:
 
 ## Status
 
-Released as `v0.1.0` and consumed by [`uzu`](https://codeberg.org/ubunatic/uzu)
-through the public module proxy. Pre-1.0: the API may still move. See
+Released as `v0.3.0` from module path `ubunatic.com/loom`. Current adopters
+include [`uman`](https://codeberg.org/ubunatic/uman) and other workspace
+projects; [`uzu`](https://codeberg.org/ubunatic/uzu) is archived and does not
+track this release. Pre-1.0: the API may still move. See
 [`issues/`](issues/) for what is open.
 
 ## License
