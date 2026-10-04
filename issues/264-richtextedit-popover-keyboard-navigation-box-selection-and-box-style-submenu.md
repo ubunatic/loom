@@ -44,6 +44,8 @@ Acceptance: forward/reverse wraparound and highlight; box focus takes precedence
 3. User: C-space on a space character (blank cell, not on a word or box) must still open the popover, with the box-mode button usable, so box drawing can start from empty space.
 4. User: cursor Up/Down may move into the "void" (columns past the line end, rows past the last line) without inserting spaces; the virtual position is kept and drawn. Spaces/lines are padded only when the user types or draws there. Moving away without typing leaves the document unchanged. Test both.
 
+5. User: cursor shape follows the mode: bar cursor for normal typing, block cursor while box drawing mode is on. Implement in the library (widget reports desired cursor shape, pane emits DECSCUSR `ESC[n q` only on change and restores the terminal default on exit), not per demo. Test the emitted sequences.
+
 ## M3 — Box style dropdown
 
 "Box" opens a dropdown with **plain** (sharp, `┌┐└┘`) and **rounded** (`╭╮╰╯`). Choosing a style wraps the selection, or restyles the selected box (M1). Reuse the existing `BoxBorderStyle*` glyph sets; labels/defaults go in the spec per `docs/Spec.md`.
