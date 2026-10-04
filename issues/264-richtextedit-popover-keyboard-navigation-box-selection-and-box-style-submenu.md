@@ -82,3 +82,7 @@ Acceptance: complete keyboard flow for FG, BG and Box; reverse cycling and arrow
 - Issue 263 concurrently changes `ConsumeKey` navigation: re-read live code before implementation, keep its changes, and start event-routing work on `codex:sol:med`. Retain each milestone's host review, live gallery check and host `make test-q1` rerun.
 
 **M4 delivered (2026-10-04, d4616a0 cursor shape via nested canvas, ac08b50 submenu navigation):** live capture now shows `ESC[6 q` at start, `ESC[2 q` on draw mode, `ESC[6 q` back, `ESC[0 q` on exit. Host rerun green. Awaiting user live check before close.
+
+### Final Pre-Work / Required Refinement (user, 2026-10-04)
+
+1. F5 with an active selection runs the default Box action (wrap the selection in a box, current box style) instead of entering draw mode; F5 with no selection toggles box drawing mode as today. Popover Draw button unchanged. Test both, plus F5 in draw mode still exits it. Update docs/Widgets.md, docs/TuiInput.md and the gallery hint.
