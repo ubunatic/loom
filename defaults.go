@@ -43,6 +43,8 @@ type RichTextEditDefaults struct {
 	PointerDownGlyph string   `yaml:"pointer_down_glyph"`
 	PointerFG        int      `yaml:"pointer_fg"`
 	PopoverLabels    []string `yaml:"popover_labels"`
+	BoxStyleLabels   []string `yaml:"box_style_labels"`
+	BoxStyleDefault  string   `yaml:"box_style_default"`
 	PopoverFocusFG   int      `yaml:"popover_focus_fg"`
 	PopoverFocusBG   int      `yaml:"popover_focus_bg"`
 	LinkFG           int      `yaml:"link_fg"`
@@ -66,6 +68,12 @@ func (d RichTextEditDefaults) validate() error {
 	}
 	if len(d.PopoverLabels) != 9 {
 		return fmt.Errorf("rich_text_edit.popover_labels must contain 9 labels")
+	}
+	if len(d.BoxStyleLabels) != 2 || d.BoxStyleLabels[0] == "" || d.BoxStyleLabels[1] == "" {
+		return fmt.Errorf("rich_text_edit.box_style_labels must contain two non-empty labels")
+	}
+	if d.BoxStyleDefault != "plain" && d.BoxStyleDefault != "rounded" {
+		return fmt.Errorf("rich_text_edit.box_style_default must be plain or rounded")
 	}
 	for _, label := range d.PopoverLabels {
 		if label == "" {

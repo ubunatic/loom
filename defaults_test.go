@@ -56,6 +56,9 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
 		}
 	}
+	if got.BoxStyleDefault != "plain" || len(got.BoxStyleLabels) != 2 || got.BoxStyleLabels[0] != "Plain" || got.BoxStyleLabels[1] != "Rounded" {
+		t.Fatalf("box style defaults = %q %q, want plain and Plain/Rounded", got.BoxStyleDefault, got.BoxStyleLabels)
+	}
 	if got.LinkFG != 39 || !got.LinkUnderline {
 		t.Fatalf("link defaults = %d, %v", got.LinkFG, got.LinkUnderline)
 	}

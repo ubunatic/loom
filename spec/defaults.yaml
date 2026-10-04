@@ -68,6 +68,8 @@ rich_text_edit:
   pointer_down_glyph: "▼"
   pointer_fg: 8
   popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"]
+  box_style_labels: ["Plain", "Rounded"]
+  box_style_default: "plain"
   popover_focus_fg: 15
   popover_focus_bg: 24
   link_fg: 39

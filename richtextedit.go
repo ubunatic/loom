@@ -48,6 +48,8 @@ type RichTextEdit struct {
 	popoverButtons     []richPopoverButton
 	popoverPalette     string
 	popoverSwatches    []richPopoverSwatch
+	popoverSubmenu     string
+	popoverBoxChoices  []richPopoverBoxChoice
 	popoverRelease     bool
 	popoverFocus       int
 	popoverFocusSet    bool
@@ -84,6 +86,12 @@ type richPopoverButton struct {
 
 type richPopoverSwatch struct {
 	color Color
+	rect  Rect
+}
+
+type richPopoverBoxChoice struct {
+	label string
+	style BoxBorderStyle
 	rect  Rect
 }
 
@@ -335,6 +343,8 @@ func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverFocusSet = false
 	e.popoverPalette = ""
 	e.popoverSwatches = nil
+	e.popoverSubmenu = ""
+	e.popoverBoxChoices = nil
 	e.popoverAtCursor = false
 	if suppress {
 		e.popoverSuppressed = true
@@ -362,9 +372,11 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	switch {
 	case key.Is("esc"):
-		if e.popoverPalette != "" {
+		if e.popoverPalette != "" || e.popoverSubmenu != "" {
 			e.popoverPalette = ""
 			e.popoverSwatches = nil
+			e.popoverSubmenu = ""
+			e.popoverBoxChoices = nil
 		} else {
 			e.clearPopoverKeyboardState(true)
 		}
@@ -392,6 +404,9 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			return Handled(), true
 		}
 		e.applyPopoverAction(action)
+		if action == "Box" {
+			return Handled(), true
+		}
 		e.clearPopoverKeyboardState(action != "Draw" && e.HasSelection)
 		return Handled(), true
 	default:
@@ -684,6 +699,13 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 	}
 	if e.popoverHit(mouse.X, mouse.Y) {
 		if mouse.Action == MousePress && mouse.Button == MouseLeft {
+			for _, choice := range e.popoverBoxChoices {
+				if choice.rect.Contains(mouse.X, mouse.Y) {
+					e.applyBoxStyleChoice(choice.label)
+					e.popoverRelease = true
+					return Handled()
+				}
+			}
 			for _, swatch := range e.popoverSwatches {
 				if swatch.rect.Contains(mouse.X, mouse.Y) {
 					e.applyPopoverColor(e.popoverPalette, swatch.color)
@@ -705,6 +727,8 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 	if mouse.Action == MousePress {
 		e.popoverPalette = ""
 		e.popoverSwatches = nil
+		e.popoverSubmenu = ""
+		e.popoverBoxChoices = nil
 	}
 	switch mouse.Action {
 	case MouseScrollUp:
@@ -754,6 +778,7 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverSwatches = nil
+	e.popoverBoxChoices = nil
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < 18 || r.H < 3 {
 		return
 	}
@@ -824,6 +849,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	}
 	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(uint8(defs.PointerFG))}})
 	e.drawPopoverPalette(c, r, barX, barY)
+	e.drawPopoverBoxStyles(c, r, barY)
 }
 
 func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
@@ -857,12 +883,67 @@ func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
 	}
 }
 
+func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
+	if e.popoverSubmenu != "Box" {
+		return
+	}
+	var button Rect
+	for _, item := range e.popoverButtons {
+		if item.action == "Box" {
+			button = item.rect
+			break
+		}
+	}
+	if button.W == 0 {
+		e.popoverSubmenu = ""
+		return
+	}
+	labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
+	width := 2 + len(labels) - 1
+	for _, label := range labels {
+		width += len(label) + 2
+	}
+	y := barY + 1
+	if y >= r.H {
+		y = barY - 1
+	}
+	if y < 0 || y >= r.H || width > r.W {
+		return
+	}
+	x := min(max(0, button.X+button.W/2-width/2), r.W-width)
+	style := Style{FG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarFG)), BG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG)), Bold: true}
+	for col := 0; col < width; col++ {
+		c.Set(r.X+x+col, r.Y+y, Cell{Text: " ", Style: style})
+	}
+	c.Set(r.X+x, r.Y+y, Cell{Text: "[", Style: style})
+	c.Set(r.X+x+width-1, r.Y+y, Cell{Text: "]", Style: style})
+	col := x + 1
+	for i, label := range labels {
+		choiceWidth := len(label) + 2
+		choice := richPopoverBoxChoice{label: label, style: BoxBorderStyle(i), rect: Rect{X: col, Y: y, W: choiceWidth, H: 1}}
+		e.popoverBoxChoices = append(e.popoverBoxChoices, choice)
+		for j, ch := range " " + label + " " {
+			c.Set(r.X+col+j, r.Y+y, Cell{Text: string(ch), Style: style})
+		}
+		col += choiceWidth
+		if i < len(labels)-1 {
+			c.Set(r.X+col, r.Y+y, Cell{Text: SpeccedDefaults.RichTextEdit.SeparatorGlyph, Style: Style{FG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SeparatorFG)), BG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SeparatorBG))}})
+			col++
+		}
+	}
+}
+
 func (e *RichTextEdit) popoverHit(x, y int) bool {
 	if e.popoverSuppressed || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode {
 		return false
 	}
 	for _, swatch := range e.popoverSwatches {
 		if swatch.rect.Contains(x, y) {
+			return true
+		}
+	}
+	for _, choice := range e.popoverBoxChoices {
+		if choice.rect.Contains(x, y) {
 			return true
 		}
 	}
@@ -881,7 +962,14 @@ func (e *RichTextEdit) popoverHit(x, y int) bool {
 func (e *RichTextEdit) applyPopoverAction(label string) {
 	switch label {
 	case "Box":
-		e.wrapSelectionInBox()
+		e.popoverPalette = ""
+		e.popoverSwatches = nil
+		if e.popoverSubmenu == "Box" {
+			e.popoverSubmenu = ""
+			e.popoverBoxChoices = nil
+		} else {
+			e.popoverSubmenu = "Box"
+		}
 	case "Draw":
 		e.toggleBoxMode()
 	case "B":
@@ -893,6 +981,8 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	case "S":
 		e.toggleAttribute(func(s *Style, on bool) { s.Strike = on }, func(s Style) bool { return s.Strike })
 	case "#FG", "#BG":
+		e.popoverSubmenu = ""
+		e.popoverBoxChoices = nil
 		if e.popoverPalette == label {
 			e.popoverPalette = ""
 			e.popoverSwatches = nil
@@ -902,7 +992,38 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	}
 }
 
+func (e *RichTextEdit) applyBoxStyleChoice(label string) {
+	labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
+	style := BoxBorderStyleSharp
+	for index, candidate := range labels {
+		if strings.EqualFold(candidate, label) {
+			style = BoxBorderStyle(index)
+			break
+		}
+	}
+	if e.boxSelection != nil {
+		e.restyleSelectedBox(style)
+	} else {
+		e.wrapSelectionInBoxStyle(style)
+	}
+	e.popoverSubmenu = ""
+	e.popoverBoxChoices = nil
+	if e.HasSelection {
+		e.clearPopoverKeyboardState(true)
+	} else {
+		e.clearPopoverKeyboardState(false)
+	}
+}
+
 func (e *RichTextEdit) wrapSelectionInBox() {
+	style := BoxBorderStyleSharp
+	if strings.EqualFold(SpeccedDefaults.RichTextEdit.BoxStyleDefault, "rounded") {
+		style = BoxBorderStyleRounded
+	}
+	e.wrapSelectionInBoxStyle(style)
+}
+
+func (e *RichTextEdit) wrapSelectionInBoxStyle(boxStyle BoxBorderStyle) {
 	if !e.HasSelection || e.boxSelection != nil {
 		return
 	}
@@ -937,7 +1058,7 @@ func (e *RichTextEdit) wrapSelectionInBox() {
 		for _, line := range content {
 			width = max(width, richLineColumn(line, richLineRuneCount(line)))
 		}
-		border, err := getBoxBorderGlyphs(BoxBorderStyleSharp)
+		border, err := getBoxBorderGlyphs(boxStyle)
 		if err != nil {
 			return
 		}
@@ -971,6 +1092,36 @@ func (e *RichTextEdit) wrapSelectionInBox() {
 		e.Document.Lines = updated
 		e.Cursor = RichPosition{Line: boxLine + lastIndex, Offset: richLineRuneCount(boxed[lastIndex])}
 		e.ClearSelection()
+	})
+}
+
+func (e *RichTextEdit) restyleSelectedBox(boxStyle BoxBorderStyle) {
+	if e.boxSelection == nil || (boxStyle != BoxBorderStyleSharp && boxStyle != BoxBorderStyleRounded) {
+		return
+	}
+	border, err := getBoxBorderGlyphs(boxStyle)
+	if err != nil {
+		return
+	}
+	e.mutate(false, false, func() {
+		selection := e.boxSelection
+		corners := []struct {
+			line, column int
+			arms         BoxArms
+			glyph        string
+		}{
+			{selection.top, selection.left, BoxArmRight | BoxArmDown, border.TopLeft},
+			{selection.top, selection.right, BoxArmLeft | BoxArmDown, border.TopRight},
+			{selection.bottom, selection.left, BoxArmRight | BoxArmUp, border.BottomLeft},
+			{selection.bottom, selection.right, BoxArmLeft | BoxArmUp, border.BottomRight},
+		}
+		for _, corner := range corners {
+			line := e.Document.Lines[corner.line]
+			if BoxGlyphArms(richLineCell(line, corner.column)) != corner.arms {
+				continue // Preserve crossing/shared-edge junction arms.
+			}
+			e.Document.Lines[corner.line] = richLineSetCell(line, corner.column, corner.glyph)
+		}
 	})
 }
 

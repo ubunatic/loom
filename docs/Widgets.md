@@ -315,9 +315,11 @@ selected spans. Mouse coordinates are child-local, so the editor can handle
 selection drags and popover clicks directly. `RichSpan` can also carry link,
 code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
-pills. The formatting popover's Box action wraps a single- or multi-line
-selection in a sharp box; rows are padded to the widest display width and the
-selection's inline styles and metadata remain on the enclosed text. Unselected
+pills. The formatting popover's Box dropdown wraps a single- or multi-line
+selection in a plain (sharp) or rounded box, defaulting to plain; rows are padded
+to the widest display width and the selection's inline styles and metadata
+remain on the enclosed text. On a selected box, the same dropdown restyles its
+corners in place while retaining dimensions and interior content. Unselected
 prefix and suffix text stays on its own line so partial-line boxes keep their
 columns aligned. F5 or the popover's Draw button toggles box mode; arrow keys
 draw a connected path and Esc ends the current stroke. When a stroke starts on

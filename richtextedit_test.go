@@ -441,13 +441,134 @@ func TestRichTextEditBoxActionAvailableInPopover(t *testing.T) {
 	for _, button := range edit.popoverButtons {
 		if button.label == "Box" {
 			edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
+			if got := doc.ToPlainText(); got != "hello" || edit.popoverSubmenu != "Box" {
+				t.Fatalf("Box action should open its style dropdown: text=%q submenu=%q", got, edit.popoverSubmenu)
+			}
+			edit.Draw(canvas, Rect{W: 60, H: 4})
+			if len(edit.popoverBoxChoices) != 2 {
+				t.Fatalf("Box style choices = %d, want Plain and Rounded", len(edit.popoverBoxChoices))
+			}
+			choice := edit.popoverBoxChoices[0]
+			if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: choice.rect.X + 1, Y: choice.rect.Y}); !got.Consumed {
+				t.Fatal("Plain style choice was not consumed")
+			}
 			if got := doc.ToPlainText(); got != "┌─────┐\n│hello│\n└─────┘" {
-				t.Fatalf("Box action text = %q", got)
+				t.Fatalf("Plain style text = %q", got)
 			}
 			return
 		}
 	}
 	t.Fatal("Box action missing from popover")
+}
+
+func TestRichTextEditRoundedStyleWrapsPartialSingleAndMultiLineSelections(t *testing.T) {
+	tests := []struct {
+		name string
+		doc  *RichDocument
+		from RichPosition
+		to   RichPosition
+		want string
+	}{
+		{
+			name: "single-line partial",
+			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "pre text post"}}}}},
+			from: RichPosition{Offset: 4}, to: RichPosition{Offset: 8},
+			want: "pre \n╭────╮\n│text│\n╰────╯\n post",
+		},
+		{
+			name: "multi-line partial",
+			doc:  &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "pre aa"}}}, {Spans: []RichSpan{{Text: "bb post"}}}}},
+			from: RichPosition{Line: 0, Offset: 4}, to: RichPosition{Line: 1, Offset: 2},
+			want: "pre \n╭──╮\n│aa│\n│bb│\n╰──╯\n post",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			edit := NewRichTextEdit(tt.doc)
+			edit.SetSelection(tt.from, tt.to)
+			before := tt.doc.ToPlainText()
+			edit.wrapSelectionInBoxStyle(BoxBorderStyleRounded)
+			if got := tt.doc.ToPlainText(); got != tt.want {
+				t.Fatalf("rounded wrap = %q, want %q", got, tt.want)
+			}
+			if len(edit.undoStack) != 1 {
+				t.Fatalf("rounded wrap undo steps = %d, want one", len(edit.undoStack))
+			}
+			edit.undo()
+			if got := tt.doc.ToPlainText(); got != before {
+				t.Fatalf("undo rounded wrap = %q, want %q", got, before)
+			}
+		})
+	}
+}
+
+func TestRichTextEditBoxDropdownChoosesRoundedWrapStyle(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	canvas := NewCanvas(60, 5)
+	edit.Draw(canvas, Rect{W: 60, H: 5})
+	var boxButton Rect
+	for _, button := range edit.popoverButtons {
+		if button.action == "Box" {
+			boxButton = button.rect
+			break
+		}
+	}
+	if boxButton.W == 0 {
+		t.Fatal("Box action missing")
+	}
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: boxButton.X + 1, Y: boxButton.Y})
+	edit.Draw(canvas, Rect{W: 60, H: 5})
+	if len(edit.popoverBoxChoices) != 2 {
+		t.Fatalf("Box dropdown choices = %d, want two", len(edit.popoverBoxChoices))
+	}
+	choice := edit.popoverBoxChoices[1]
+	if choice.label != "Rounded" {
+		t.Fatalf("second Box dropdown label = %q, want Rounded", choice.label)
+	}
+	if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: choice.rect.X + 1, Y: choice.rect.Y}); !got.Consumed {
+		t.Fatal("Rounded dropdown choice was not consumed")
+	}
+	if got := doc.ToPlainText(); got != "╭─────╮\n│hello│\n╰─────╯" {
+		t.Fatalf("Rounded dropdown output = %q", got)
+	}
+}
+
+func TestRichTextEditRestylesSelectedBoxInPlaceAndUndoes(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "x┌─┬─┐y"}}},
+		{Spans: []RichSpan{{Text: "x│"}, {Text: "a", Style: Style{Italic: true}}, {Text: "bc│y"}}},
+		{Spans: []RichSpan{{Text: "x└─┴─┘y"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor = RichPosition{Line: 0, Offset: 1}
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}); !result.Consumed || edit.boxSelection == nil {
+		t.Fatalf("C-space box selection = %+v selection=%+v", result, edit.boxSelection)
+	}
+	before := doc.ToPlainText()
+	edit.applyBoxStyleChoice("Rounded")
+	if got := doc.ToPlainText(); got != "x╭─┬─╮y\nx│abc│y\nx╰─┴─╯y" {
+		t.Fatalf("rounded restyle = %q", got)
+	}
+	if !edit.HasSelection || edit.boxSelection == nil || len(edit.undoStack) != 1 {
+		t.Fatalf("restyle selection/undo = %v/%+v/%d", edit.HasSelection, edit.boxSelection, len(edit.undoStack))
+	}
+	if !doc.Lines[1].Spans[1].Style.Italic || !strings.Contains(doc.Lines[0].Spans[0].Text, "x") || !strings.Contains(doc.Lines[0].Spans[0].Text, "y") {
+		t.Fatal("restyling changed interior style or outside text")
+	}
+	edit.undo()
+	if got := doc.ToPlainText(); got != before {
+		t.Fatalf("undo restyle = %q, want %q", got, before)
+	}
+	edit.redo()
+	if got := doc.ToPlainText(); !strings.Contains(got, "╭─┬─╮") || !strings.Contains(got, "╰─┴─╯") {
+		t.Fatalf("redo restyle = %q", got)
+	}
+	edit.applyBoxStyleChoice("Plain")
+	if got := doc.ToPlainText(); got != before {
+		t.Fatalf("plain restyle = %q, want %q", got, before)
+	}
 }
 
 func TestRichTextEditDrawButtonStartsBoxMode(t *testing.T) {
