@@ -1,6 +1,6 @@
 # 258 — RichTextEdit view mode
 
-**Status**: Open
+**Status**: Closed — ViewMode + NewRichTextView, spec link style (link_fg/link_underline), gallery shows ubunatic.com/loom (f7d666f, 3e3cdc6); Upgrading.md row (1f044cf). Host reran make test-q1 green and saw the link in color 39 in a live tmux gallery run. OSC 8 stays in 259
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
