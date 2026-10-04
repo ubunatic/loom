@@ -46,6 +46,8 @@ Acceptance: forward/reverse wraparound and highlight; box focus takes precedence
 
 5. User: cursor shape follows the mode: bar cursor for normal typing, block cursor while box drawing mode is on. Implement in the library (widget reports desired cursor shape, pane emits DECSCUSR `ESC[n q` only on change and restores the terminal default on exit), not per demo. Test the emitted sequences.
 
+6. User: make the "ghost cursor" (pre-work 4, the virtual cursor that moves into the void past line end/last line without padding, 0cba0d4) an option, disabled by default (spec default in spec/defaults.yaml; off = old clamping behavior). Box drawing still works without it. Gallery may expose a toggle. Test both settings.
+
 ## M3 — Box style dropdown
 
 "Box" opens a dropdown with **plain** (sharp, `┌┐└┘`) and **rounded** (`╭╮╰╯`). Choosing a style wraps the selection, or restyles the selected box (M1). Reuse the existing `BoxBorderStyle*` glyph sets; labels/defaults go in the spec per `docs/Spec.md`.
