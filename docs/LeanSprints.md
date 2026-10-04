@@ -67,3 +67,15 @@ one `codex:luna` developer per repo. Details: [Upgrading](Upgrading.md),
   upgrade cost comparable across repos and showed the common wish: a per-release breaking-change list.
 - **Bulk rewrites hit history and checksums**: exclude `issues/`, `docs/studies/`, sum files and
   repository URLs (`(?<![/@])` lookbehind) explicitly.
+
+## RichTextEdit rounds (2026-10-04, tickets 257-264)
+
+Source: host `claude:opus` as reviewer, developers `claude:sonnet` (257, 258, 263) and `codex:sol:med` (260, 261, advisor 264).
+- **Plan-first worked for both**: every read-only first turn returned a concrete plan; host corrections at that point (F8 key clash, which neighbour cells may change, `ViewMode` naming) cost one line each instead of a rework round.
+- **Live PTY checks are the host's job**: developers could not inject arrows into the gallery. A tmux session (`tmux new-session -d ... ; tmux send-keys ...; tmux capture-pane -p -e`) let the host verify typing, selection and box drawing. The 258 review skipped checking the effect of a key and missed the caret bug filed as 260.
+- **tmux is not the user's terminal**: S-Home worked in tmux but VTE (Tilix) eats it on the primary screen. Ask the user for a 10-second probe (`printf '\e[?1049h'; cat -v`) before claiming key support.
+- **Decoder gaps hide behind widget code**: twice (257, 263) the widget already handled a key the decoder never produced. Check `DecodeKey` first when a binding "does nothing".
+- **Quota-1 blocks the host rerun** when no source changed since the developer's run; the host rerun uses `QUOTA_BYPASS=1` as the mandated verification.
+- **Search before filing**: a flaky test was filed as 262 before reading the search result that showed 247; closed as duplicate.
+- **Advisor refinement in parallel with a developer** worked when the advisor was limited to committing one ticket file.
+

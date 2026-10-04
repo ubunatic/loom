@@ -60,6 +60,15 @@ Unknown or invalid sequences produce an empty event rather than a guessed key.
 The exact decoded names are part of the input contract used by widgets and
 applications; see `KeyDefaults.md` for the library's default key actions.
 
+### Modified navigation keys and CSI-u
+
+- Home/End, Insert/Delete keep their xterm modifier parameter (`ESC[1;2H`, `ESC[1;5F`, `ESC[2;5~`, `ESC[3;2~`): they decode to `shift-home`, `ctrl-end`, `ctrl-insert`, `shift-delete` and so on. Plain forms (`ESC[H`, `ESC[1~`, `ESC[7~`, `ESC OH`, ...) stay `home`/`end`. Callers matching only the plain name no longer see modified presses (issues 257, 263; see `Upgrading.md`).
+- `0x00` decodes to `ctrl-space`. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`), so every CSI-u-only binding needs a function-key fallback (e.g. RichTextEdit box mode: F5).
+
+### Terminal-reserved keys (VTE)
+
+VTE terminals (Tilix, GNOME Terminal) keep Shift+Home/End and Shift+PgUp/PgDn for their own scrollback while the app is on the primary screen; the app never receives them. On the alternate screen they pass through (probed in Tilix 2026-10-04: `ESC[1;2H` arrives). VTE has no CSI-u. Editing widgets that need these keys must run on the alternate screen (issue 263).
+
 After decoding, the pane handles F10 globally by default: it requests quit
 before dispatching the event to any widget, including the help overlay.
 Applications that need F10 within their widget tree can set
