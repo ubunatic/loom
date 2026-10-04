@@ -20,6 +20,15 @@ Acceptance: sharp/rounded boxes with styled text; crossing strokes; nested/adjac
 
 **M1 delivered (2026-10-04, 7affb03):** C-space on a closed sharp or rounded box selects the box rectangle (per-row slices) and opens the popover; delete/copy/style/undo act on the rectangle; cursor moves clear it. Host rerun: green except the known 247 flake (passes 5/5 alone).
 
+### M2 Pre-Work / Required Refinements (user live check of M1, 2026-10-04)
+
+M1 confirmed working live. Do these first, each with tests:
+
+1. Esc must not quit the widgets gallery app; only C-q and F10 quit. Esc stays available to widgets (e.g. closing the popover).
+2. The widgets gallery app runs full terminal width (no narrower MaxCols cap by default; explicit --width still wins).
+3. Box mode paints with the color of the starting glyph: when box drawing starts on an existing box glyph, every glyph drawn or changed along the stroke takes that glyph's foreground (grey start -> grey track, white start -> white track). Starting on non-box text keeps current behavior. Undo stays one step per stroke.
+4. Remove the C-S-b box-mode binding (keep F5); add a popover button that starts box drawing mode. Update docs/Widgets.md and docs/TuiInput.md.
+
 ## M2 — Tab/Enter in the popover bar
 
 With the popover open, `Tab` / `S-Tab` cycle the bar items with a visible focus highlight, `Enter` applies the focused item, `Esc` closes. Initial focus follows the selection: bold → "B", italic → "I", underline → "U", box → "Box", else the first item.
