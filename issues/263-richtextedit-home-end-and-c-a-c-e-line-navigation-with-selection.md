@@ -1,6 +1,6 @@
 # 263 — RichTextEdit Home/End and C-a/C-e line navigation with selection
 
-**Status**: Open
+**Status**: Closed — S-Home/S-End select full lines on VTE: editor demos and the full gallery run on the alternate screen (c7bebca); user verified in Tilix
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
