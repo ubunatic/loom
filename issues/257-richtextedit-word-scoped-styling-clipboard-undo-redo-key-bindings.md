@@ -29,4 +29,4 @@ Re-check live code and recent commits first; 254–256 shaped the current widget
 - `C-i` equals Tab in legacy terminals; distinguishing it needs kitty/CSI-u keyboard protocol. Verify what the key decoder delivers and record the fallback.
 - `C-y` as undo is unusual (often redo); implemented as requested.
 - Key bindings belong in the spec if the project specs widget keymaps (see `docs/Spec.md`).
-- Undo granularity (per keystroke vs. coalesced typing runs) is open; pick a sensible coalescing and document it.
+- Undo granularity: word level, simple best-effort for the first version (a typing run up to a word boundary is one undo step; style/paste/cut each one step).
