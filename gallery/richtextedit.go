@@ -3,7 +3,11 @@
 
 package gallery
 
-import "ubunatic.com/loom"
+import (
+	"strings"
+
+	"ubunatic.com/loom"
+)
 
 // richTextEditDemo pairs the editor with a compact keycap hint row.
 type richTextEditDemo struct {
@@ -11,6 +15,8 @@ type richTextEditDemo struct {
 	view *loom.RichTextEdit
 	area loom.Rect
 }
+
+const richTextEditHint = "[F7] View/Edit: Edit | Ctrl+B/I/U | Shift+←/→ | #FG/#BG"
 
 func newRichTextEditDemo() *richTextEditDemo {
 	blue := loom.ColorIndex(39)
@@ -42,15 +48,28 @@ func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
 		w.view.Draw(c, loom.Rect{X: r.X, Y: r.Y + editHeight, W: r.W, H: viewHeight})
 	}
 	if r.H > 0 {
-		c.WriteANSI(r.X, r.Y+r.H-1, "\x1b[2m[Ctrl+B/I/U] format  [Shift+←/→] select  Drag then click #FG/#BG for colors\x1b[0m")
+		hint := richTextEditHint
+		if w.edit.ViewMode {
+			hint = strings.Replace(hint, ": Edit", ": View", 1)
+		}
+		c.WriteANSI(r.X, r.Y+r.H-1, "\x1b[2m"+hint+"\x1b[0m")
 	}
 }
 
 func (w *richTextEditDemo) ConsumeKey(key loom.KeyEvent) loom.EventResult {
+	if key.Is("f7") {
+		w.edit.ViewMode = !w.edit.ViewMode
+		return loom.Handled()
+	}
 	return w.edit.ConsumeKey(key)
 }
 
 func (w *richTextEditDemo) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+	if mouse.Action == loom.MousePress && mouse.Button == loom.MouseLeft && mouse.Y == w.area.H-1 &&
+		mouse.X >= 0 && mouse.X < loom.StringWidth(richTextEditHint) {
+		w.edit.ViewMode = !w.edit.ViewMode
+		return loom.Handled()
+	}
 	editHeight := w.area.H - 1
 	if w.area.H >= 4 {
 		editHeight--

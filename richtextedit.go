@@ -144,7 +144,7 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.drawLine(c, r, lines[e.ScrollY+row], e.ScrollY+row)
 	}
 	e.drawPopover(c, r, lines)
-	if e.ShowCursor && e.focused {
+	if e.ShowCursor && e.focused && !e.ViewMode {
 		x := cursorCol - e.ScrollX
 		y := e.Cursor.Line - e.ScrollY
 		if x >= 0 && x < r.W && y >= 0 && y < r.H {

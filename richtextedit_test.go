@@ -762,6 +762,15 @@ func TestRichTextViewRejectsEveryEditPath(t *testing.T) {
 	}
 }
 
+func TestRichTextViewDoesNotPlaceEditCursor(t *testing.T) {
+	e := richViewTestEditor()
+	c := NewCanvas(40, 2)
+	e.Draw(c, Rect{W: 40, H: 2})
+	if c.CursorX != -1 || c.CursorY != -1 {
+		t.Fatalf("view draw placed cursor at (%d,%d)", c.CursorX, c.CursorY)
+	}
+}
+
 func TestRichTextViewAllowsSelectionAndCopy(t *testing.T) {
 	e := richViewTestEditor()
 	if got := e.ConsumeKey(KeyEvent{Key: "shift-right"}); got != Handled() {

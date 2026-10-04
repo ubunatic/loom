@@ -649,6 +649,64 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	}
 }
 
+func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
+	w := newRichTextEditDemo()
+	if !w.edit.Focused() || w.edit.ViewMode {
+		t.Fatalf("initial edit focus/view mode = %v/%v", w.edit.Focused(), w.edit.ViewMode)
+	}
+	before := w.edit.Document.ToPlainText()
+	if got := w.ConsumeKey(loom.KeyEvent{Text: "x"}); !got.Consumed {
+		t.Fatalf("typing result = %+v", got)
+	}
+	if w.edit.Document.ToPlainText() == before {
+		t.Fatal("typing did not reach editor")
+	}
+	if got := w.ConsumeKey(loom.KeyEvent{Key: "f7"}); !got.Consumed || !w.edit.ViewMode {
+		t.Fatalf("F7 view toggle result/mode = %+v/%v", got, w.edit.ViewMode)
+	}
+	viewCanvas := loom.NewCanvas(80, 12)
+	w.Draw(viewCanvas, viewCanvas.Bounds())
+	if viewCanvas.CursorX != -1 || viewCanvas.CursorY != -1 {
+		t.Fatalf("view-mode gallery placed cursor at (%d,%d)", viewCanvas.CursorX, viewCanvas.CursorY)
+	}
+	if !strings.Contains(viewCanvas.Row(11), "View/Edit: View") {
+		t.Fatalf("view mode hint missing: %q", viewCanvas.Row(11))
+	}
+	before = w.edit.Document.ToPlainText()
+	if got := w.ConsumeKey(loom.KeyEvent{Text: "y"}); got.Consumed || w.edit.Document.ToPlainText() != before {
+		t.Fatalf("view mode accepted edit: result=%+v text=%q", got, w.edit.Document.ToPlainText())
+	}
+	if got := w.ConsumeKey(loom.KeyEvent{Key: "f7"}); !got.Consumed || w.edit.ViewMode {
+		t.Fatalf("F7 edit toggle result/mode = %+v/%v", got, w.edit.ViewMode)
+	}
+	if got := w.ConsumeKey(loom.KeyEvent{Text: "z"}); !got.Consumed || w.edit.Document.ToPlainText() == before {
+		t.Fatalf("edit mode did not apply typing: result=%+v text=%q", got, w.edit.Document.ToPlainText())
+	}
+	canvas := loom.NewCanvas(80, 12)
+	w.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(canvas.Row(11), "[F7] View/Edit") {
+		t.Fatalf("toggle hint missing from hint bar: %q", canvas.Row(11))
+	}
+	w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 11})
+	if !w.edit.ViewMode {
+		t.Fatal("clicking the hint bar did not toggle to view mode")
+	}
+}
+
+func TestRichTextEditGalleryTypingPTY(t *testing.T) {
+	bin := filepath.Join(t.TempDir(), "loom")
+	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
+		t.Fatalf("build loom: %v\n%s", err, output)
+	}
+	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "RichTextEdit")
+	s.WaitFor("Try ", 5*time.Second)
+	s.Send("Q")
+	s.WaitFor("QWelcome to", 5*time.Second)
+	if !strings.Contains(strings.Join(s.Screen(), "\n"), "[F7] View/Edit") {
+		t.Fatal("F7 mode toggle hint is not visible")
+	}
+}
+
 func renderDemoCells(widget loom.Widget, rows int) [][]loom.Cell {
 	canvas := loom.NewCanvas(100, rows)
 	widget.Draw(canvas, loom.Rect{W: 100, H: rows})
