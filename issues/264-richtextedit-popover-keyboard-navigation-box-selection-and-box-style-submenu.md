@@ -56,6 +56,12 @@ Acceptance: both styles wrap single/multiple lines and partial-line selections; 
 
 **M3 delivered (2026-10-04, 0cba0d4 + a53b407 pre-work, 805e568 box style dropdown):** full width (130-char line fits in 160 cols live), hint updated, C-space on blank, ghost cursor option (`ghost_cursor_enabled: false` default), bar/block cursor by mode, plain/rounded dropdown. Host rerun green except the known 247 flake.
 
+User live check of M3: blank C-space, box style switch, ghost off all work. Cursor is NOT a bar.
+
+### M4 Pre-Work / Required Refinements (2026-10-04)
+
+1. Cursor shape never reaches the terminal: a live capture of `loom widgets --show RichTextEdit` (script(1) under tmux) contains no `ESC[n q` at all. pane.go asks only `UnwrapWidget(root).(CursorShapeProvider)`; in the gallery the root is themedGallery/Tabs, so the editor is never asked. Fix in the library: resolve the shape from the widget that owns the cursor (focus path / the widget that set Canvas.CursorX/Y, e.g. a cursor-shape field on Canvas set during Draw), so any container nesting works. Add a test with the editor nested in Tabs inside a wrapper that asserts `ESC[6 q` on start and `ESC[2 q` after entering draw mode, and `ESC[0 q` on exit.
+
 ## M4 — Keyboard navigation in submenus
 
 Flow: `C-space` → bar opens → `Tab`… → `Space` opens the focused item's submenu (FG/BG color picker or box style) → `Tab`/arrows… → `Enter` applies → back to text; `Esc` steps back one level.
