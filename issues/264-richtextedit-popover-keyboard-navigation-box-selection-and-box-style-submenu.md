@@ -86,3 +86,10 @@ Acceptance: complete keyboard flow for FG, BG and Box; reverse cycling and arrow
 ### Final Pre-Work / Required Refinement (user, 2026-10-04)
 
 1. F5 with an active selection runs the default Box action (wrap the selection in a box, current box style) instead of entering draw mode; F5 with no selection toggles box drawing mode as today. Popover Draw button unchanged. Test both, plus F5 in draw mode still exits it. Update docs/Widgets.md, docs/TuiInput.md and the gallery hint.
+
+**F5 refinement delivered (75b1ddc).** User live check: cursor shapes work, F5 boxes a selection, submenus work with Enter.
+
+### Final Pre-Work 2 (user, 2026-10-04)
+
+1. Space must work like Enter everywhere in the popover: on a bar item it activates it / opens its submenu (#FG, #BG, Box), in a submenu it picks the focused option. Today only Enter works live.
+2. While the popover (bar or submenu) is open it grabs the arrow keys: Left/Right move along the bar, Up/Down (and Left/Right) move in submenus; arrows do not move the text cursor or selection. Esc closes the submenu, then the bar, and only then arrows navigate text again. Test with the editor nested in the gallery wrapper, asserting the document cursor and selection are unchanged.
