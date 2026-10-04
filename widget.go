@@ -49,12 +49,6 @@ const (
 	CursorShapeBlock
 )
 
-// CursorShapeProvider optionally reports the terminal cursor shape for the
-// widget's current interaction mode.
-type CursorShapeProvider interface {
-	CursorShape() CursorShape
-}
-
 // UnwrapWidget returns the innermost widget in a chain of wrappers.
 func UnwrapWidget(widget Widget) Widget {
 	for widget != nil {

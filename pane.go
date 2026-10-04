@@ -212,6 +212,14 @@ type cursorShapeState struct {
 	set   bool
 }
 
+func (p *Pane) applyCanvasCursorShape(w interface{ WriteString(string) (int, error) }, canvas *Canvas) {
+	if canvas != nil && canvas.CursorShapeSet {
+		_ = p.cursorShape.apply(w, canvas.CursorShape)
+		return
+	}
+	_ = p.cursorShape.restore(w)
+}
+
 func (s *cursorShapeState) apply(w interface{ WriteString(string) (int, error) }, shape CursorShape) error {
 	if s.set && s.shape == shape {
 		return nil
@@ -1047,9 +1055,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 		composed := time.Now()
 		out := &countingWriter{w: p.tty}
-		if provider, ok := UnwrapWidget(root).(CursorShapeProvider); ok {
-			_ = p.cursorShape.apply(out, provider.CursorShape())
-		}
+		p.applyCanvasCursorShape(out, canvas)
 		canvas.FlushWithConfig(out, p.startRow, clearRows+p.staleRows, p.ResizeConfig)
 		clearRows, p.staleRows = 0, 0
 		if p.Metrics != nil {

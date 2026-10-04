@@ -1104,6 +1104,7 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 	}
 	if local.CursorX >= 0 && local.CursorY >= 0 {
 		c.CursorX, c.CursorY = x+local.CursorX, y+local.CursorY
+		c.CursorShape, c.CursorShapeSet = local.CursorShape, local.CursorShapeSet
 	}
 }
 

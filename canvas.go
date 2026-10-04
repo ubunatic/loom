@@ -47,15 +47,17 @@ var blank = Cell{Text: " "}
 type Canvas struct {
 	cols, rows int
 	// ColorProfile is captured when the canvas is created and controls SGR output.
-	ColorProfile ColorProfile
-	cells        [][]Cell
-	claimed      [][]bool
-	composing    bool
-	mouseX       int
-	mouseY       int
-	mouseKnown   bool
-	CursorX      int // 0-based column index, -1 if hidden
-	CursorY      int // 0-based row index, -1 if hidden
+	ColorProfile   ColorProfile
+	cells          [][]Cell
+	claimed        [][]bool
+	composing      bool
+	mouseX         int
+	mouseY         int
+	mouseKnown     bool
+	CursorX        int // 0-based column index, -1 if hidden
+	CursorY        int // 0-based row index, -1 if hidden
+	CursorShape    CursorShape
+	CursorShapeSet bool
 }
 
 // NewCanvas allocates a cols×rows canvas filled with blank cells.
@@ -115,6 +117,7 @@ func (c *Canvas) SubCanvas(r Rect) *Canvas {
 	if c.CursorX >= r.X && c.CursorX < r.X+r.W && c.CursorY >= r.Y && c.CursorY < r.Y+r.H {
 		sub.CursorX = c.CursorX - r.X
 		sub.CursorY = c.CursorY - r.Y
+		sub.CursorShape, sub.CursorShapeSet = c.CursorShape, c.CursorShapeSet
 	}
 	return sub
 }
@@ -159,6 +162,7 @@ func (c *Canvas) Blit(src *Canvas, dstX, dstY int) {
 		if cx >= 0 && cx < c.cols && cy >= 0 && cy < c.rows {
 			c.CursorX = cx
 			c.CursorY = cy
+			c.CursorShape, c.CursorShapeSet = src.CursorShape, src.CursorShapeSet
 		}
 	}
 }
@@ -617,6 +621,7 @@ func (c *Canvas) Clear() {
 	}
 	c.CursorX = -1
 	c.CursorY = -1
+	c.CursorShapeSet = false
 }
 
 // ── Border Drawing Primitives ────────────────────────────────────────────

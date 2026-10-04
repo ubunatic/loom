@@ -49,3 +49,37 @@ func TestRichTextEditReportsCursorShapeByMode(t *testing.T) {
 		t.Fatalf("box mode cursor shape = %v, want block", got)
 	}
 }
+
+type cursorShapeTestWrapper struct{ child Widget }
+
+func (w cursorShapeTestWrapper) Draw(c *Canvas, r Rect) { w.child.Draw(c, r) }
+func (w cursorShapeTestWrapper) ConsumeKey(e KeyEvent) EventResult {
+	return w.child.ConsumeKey(e)
+}
+func (w cursorShapeTestWrapper) ConsumeMouse(e MouseEvent) EventResult {
+	return w.child.ConsumeMouse(e)
+}
+
+func TestNestedTabsCursorShapeReachesPaneOutput(t *testing.T) {
+	edit := richEditorLines("text")
+	tabs := NewTabs(Tab{Title: "Editor", Widget: edit})
+	root := cursorShapeTestWrapper{child: tabs}
+	canvas := NewCanvas(50, 8)
+	var output bytes.Buffer
+	pane := &Pane{}
+
+	root.Draw(canvas, canvas.Bounds())
+	pane.applyCanvasCursorShape(&output, canvas)
+	if result := root.ConsumeKey(KeyEvent{Key: "f5"}); !result.Consumed || !edit.BoxMode {
+		t.Fatalf("F5 in nested editor = %+v, BoxMode=%v", result, edit.BoxMode)
+	}
+	canvas.Clear()
+	root.Draw(canvas, canvas.Bounds())
+	pane.applyCanvasCursorShape(&output, canvas)
+	if err := pane.cursorShape.restore(&output); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := output.String(), "\x1b[6 q\x1b[2 q\x1b[0 q"; got != want {
+		t.Fatalf("nested cursor shape sequences = %q, want %q", got, want)
+	}
+}

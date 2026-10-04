@@ -207,6 +207,8 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		if x >= 0 && x < r.W && y >= 0 && y < r.H {
 			c.CursorX = r.X + x
 			c.CursorY = r.Y + y
+			c.CursorShape = e.CursorShape()
+			c.CursorShapeSet = true
 		}
 	}
 }
