@@ -303,7 +303,10 @@ In tests locate screen text by runes or display width, never byte offsets.
 
 `RichDocument` stores logical lines as styled spans. `RichTextEdit` renders those
 spans into a clipped, scrollable viewport and supports rune-based cursor
-navigation, shift-arrow selection, mouse drag selection, and inline bold,
+navigation, shift-arrow selection, `Home`/`Ctrl+A` and `End`/`Ctrl+E` (line
+start/end of the logical line; the editor does not soft-wrap), their Shift
+variants (`Shift+Home`, `Shift+End`, `Ctrl+Shift+A`, `Ctrl+Shift+E`, the last two
+on CSI-u terminals) that extend the selection, mouse drag selection, and inline bold,
 italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). A non-empty
 selection shows a floating formatting popover by default; set `ShowPopover` to
 false to hide it. Its B/I/U/S buttons toggle styles on the selection. Click

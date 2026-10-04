@@ -9,6 +9,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 | Release | Change | What callers do |
 |---|---|---|
 | Unreleased | Key decoding: `shift-insert`, `ctrl-insert`, `shift-delete` and `ctrl-delete` are no longer reported as plain `insert`/`delete` (issue 257, 40c153a) | Match the modified key names (`ctrl-insert`, `shift-insert`, `shift-delete`, `ctrl-delete`) where you handled `insert`/`delete` for them |
+| Unreleased | Key decoding: modified Home/End (`ESC[1;2H`, `ESC[1;5F`, `ESC[1;2~`, `ESC[4;2~`, ...) are no longer reported as plain `home`/`end` (or dropped); they decode as `shift-home`, `ctrl-end`, `alt-home`, `ctrl-shift-end` and so on (issue 263) | Match the modified key names where you handled `home`/`end` for them |
 | Unreleased | `loom.Style` gained `Italic`, `Strike`, and `Invert` fields (issue 254 M1) | Use keyed `Style` literals or add values to positional literals |
 | v0.2.18 | Module path `codeberg.org/ubunatic/loom` → `ubunatic.com/loom` (issue 235) | Rewrite imports, require `ubunatic.com/loom` |
 | v0.2.15 | `Widget` lost the bool `HandleKey`/`HandleMouse`; only `ConsumeKey`/`ConsumeMouse` returning `EventResult` remain (9dd183b) | Map results as below |

@@ -185,6 +185,10 @@ func DecodeKey(b []byte) KeyEvent {
 					return KeyEvent{Key: prefix + "right"}
 				case 'D':
 					return KeyEvent{Key: prefix + "left"}
+				case 'H':
+					return KeyEvent{Key: prefix + "home"}
+				case 'F':
+					return KeyEvent{Key: prefix + "end"}
 				}
 			}
 		}
@@ -234,20 +238,20 @@ func DecodeKey(b []byte) KeyEvent {
 				if strings.Contains(seq, ";") {
 					parts := strings.SplitN(seq, ";", 2)
 					seq = parts[0]
-					// Only insert/delete keep their modifier; other tilde keys stay plain.
-					if seq == "2" || seq == "3" {
+					// Only insert/delete/home/end keep their modifier; other tilde keys stay plain.
+					if seq == "1" || seq == "2" || seq == "3" || seq == "4" || seq == "7" || seq == "8" {
 						prefix = csiModifierPrefix(parts[1])
 					}
 				}
 				switch seq {
 				case "1", "7":
-					return KeyEvent{Key: "home"}
+					return KeyEvent{Key: prefix + "home"}
 				case "3":
 					return KeyEvent{Key: prefix + "delete"}
 				case "2":
 					return KeyEvent{Key: prefix + "insert"}
 				case "4", "8":
-					return KeyEvent{Key: "end"}
+					return KeyEvent{Key: prefix + "end"}
 				case "5":
 					return KeyEvent{Key: "pgup"}
 				case "6":

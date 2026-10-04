@@ -986,3 +986,76 @@ func TestRichTextEditLinkSpanStyleAndCopyPaste(t *testing.T) {
 		t.Fatalf("pasted span = %#v", last)
 	}
 }
+
+func TestRichTextEditLineStartEndKeys(t *testing.T) {
+	long := strings.Repeat("abcdef ", 20)
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}, {}, {Spans: []RichSpan{{Text: long}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor = RichPosition{Line: 0, Offset: 2}
+	edit.ClearSelection()
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-e"})
+	if edit.Cursor != (RichPosition{Line: 0, Offset: 5}) || edit.HasSelection {
+		t.Fatalf("ctrl-e cursor = %+v sel=%v", edit.Cursor, edit.HasSelection)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-a"})
+	if edit.Cursor != (RichPosition{}) {
+		t.Fatalf("ctrl-a cursor = %+v", edit.Cursor)
+	}
+	edit.Cursor = RichPosition{Line: 0, Offset: 2}
+	edit.ClearSelection()
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-e"})
+	from, to := edit.selectionBounds()
+	if !edit.HasSelection || from.Offset != 2 || to.Offset != 5 {
+		t.Fatalf("ctrl-shift-e selection = %+v..%+v", from, to)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "shift-home"})
+	from, to = edit.selectionBounds()
+	if !edit.HasSelection || from.Offset != 0 || to.Offset != 2 {
+		t.Fatalf("shift-home selection = %+v..%+v", from, to)
+	}
+	edit.Cursor = RichPosition{Line: 0, Offset: 3}
+	edit.ClearSelection()
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-a"})
+	from, to = edit.selectionBounds()
+	if from.Offset != 0 || to.Offset != 3 {
+		t.Fatalf("ctrl-shift-a selection = %+v..%+v", from, to)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "shift-end"})
+	from, to = edit.selectionBounds()
+	if from.Offset != 3 || to.Offset != 5 {
+		t.Fatalf("shift-end selection = %+v..%+v", from, to)
+	}
+	edit.Cursor = RichPosition{Line: 1}
+	edit.ClearSelection()
+	for _, k := range []string{"ctrl-a", "ctrl-e", "ctrl-shift-a", "ctrl-shift-e"} {
+		edit.ConsumeKey(KeyEvent{Key: k})
+		if edit.Cursor != (RichPosition{Line: 1}) {
+			t.Fatalf("%s on empty line cursor = %+v", k, edit.Cursor)
+		}
+	}
+	edit.Cursor = RichPosition{Line: 2, Offset: 30}
+	edit.ClearSelection()
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-e"})
+	if edit.Cursor != (RichPosition{Line: 2, Offset: len([]rune(long))}) {
+		t.Fatalf("ctrl-e on long line = %+v", edit.Cursor)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-a"})
+	if edit.Cursor != (RichPosition{Line: 2}) {
+		t.Fatalf("ctrl-a on long line = %+v", edit.Cursor)
+	}
+}
+
+func TestRichTextViewLineStartEndKeys(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}}
+	view := NewRichTextView(doc)
+	view.Cursor = RichPosition{Offset: 2}
+	view.ClearSelection()
+	view.ConsumeKey(KeyEvent{Key: "ctrl-e"})
+	if view.Cursor.Offset != 5 {
+		t.Fatalf("view ctrl-e cursor = %+v", view.Cursor)
+	}
+	view.ConsumeKey(KeyEvent{Key: "ctrl-shift-a"})
+	if !view.HasSelection || doc.Lines[0].Spans[0].Text != "hello" {
+		t.Fatalf("view ctrl-shift-a sel=%v", view.HasSelection)
+	}
+}

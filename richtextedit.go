@@ -339,10 +339,10 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		e.moveVertical(-1, key.Is("shift-up"))
 	case key.Is("down", "shift-down"):
 		e.moveVertical(1, key.Is("shift-down"))
-	case key.Is("home", "shift-home"):
-		e.moveCursor(RichPosition{Line: e.Cursor.Line}, key.Is("shift-home"))
-	case key.Is("end", "shift-end"):
-		e.moveCursor(RichPosition{Line: e.Cursor.Line, Offset: richLineRuneCount(e.documentLines()[e.Cursor.Line])}, key.Is("shift-end"))
+	case key.Is("home", "shift-home", "ctrl-a", "ctrl-shift-a"):
+		e.moveCursor(RichPosition{Line: e.Cursor.Line}, key.Is("shift-home", "ctrl-shift-a"))
+	case key.Is("end", "shift-end", "ctrl-e", "ctrl-shift-e"):
+		e.moveCursor(RichPosition{Line: e.Cursor.Line, Offset: richLineRuneCount(e.documentLines()[e.Cursor.Line])}, key.Is("shift-end", "ctrl-shift-e"))
 	case key.Is("ctrl-left"):
 		if e.HasSelection {
 			from, _ := e.selectionBounds()
@@ -378,7 +378,7 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 // richViewModeKey reports whether key is navigation, selection or copy.
 func richViewModeKey(key KeyEvent) bool {
 	return key.Is("ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up",
-		"down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-left", "ctrl-right")
+		"down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-a", "ctrl-shift-a", "ctrl-e", "ctrl-shift-e", "ctrl-left", "ctrl-right")
 }
 
 // ConsumeMouse positions the cursor and supports click-drag selection.
