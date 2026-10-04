@@ -750,6 +750,10 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 	if w.edit.BoxMode {
 		t.Fatal("Esc did not leave box mode through the gallery")
 	}
+	w.Draw(canvas, canvas.Bounds())
+	if hint := canvas.Row(11); !strings.Contains(hint, "F5: Box selection / Draw mode") || !strings.Contains(hint, "Popover: Box/Draw") {
+		t.Fatalf("normal RichTextEdit hint omits F5 selection/draw behavior: %q", hint)
+	}
 }
 
 func TestRichTextEditGalleryDrawsAcrossWideBounds(t *testing.T) {

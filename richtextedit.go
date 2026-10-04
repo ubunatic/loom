@@ -671,7 +671,11 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		return result
 	}
 	if key.Is("f5") {
-		e.toggleBoxMode()
+		if e.HasSelection {
+			e.wrapSelectionInBox()
+		} else {
+			e.toggleBoxMode()
+		}
 		return Handled()
 	}
 	if e.BoxMode {

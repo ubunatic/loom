@@ -16,7 +16,7 @@ type richTextEditDemo struct {
 	area loom.Rect
 }
 
-const richTextEditHint = "[F7] View/Edit: Edit | F5/Draw Box | Shift+←/→ | #FG/#BG"
+const richTextEditHint = "[F7] View/Edit: Edit | F5: Box selection / Draw mode | Popover: Box/Draw"
 
 func newRichTextEditDemo() *richTextEditDemo {
 	blue := loom.ColorIndex(39)

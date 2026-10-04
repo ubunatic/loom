@@ -590,6 +590,51 @@ func TestRichTextEditDrawButtonStartsBoxMode(t *testing.T) {
 	t.Fatal("Draw button missing from popover")
 }
 
+func TestRichTextEditF5WrapsSelectionInDefaultBoxStyle(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "picked"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
+	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || got.Done || got.Quit {
+		t.Fatalf("F5 selection result = %+v, want consumed without Done/Quit", got)
+	}
+	borderStyle := BoxBorderStyleSharp
+	if SpeccedDefaults.RichTextEdit.BoxStyleDefault == "rounded" {
+		borderStyle = BoxBorderStyleRounded
+	}
+	border, err := getBoxBorderGlyphs(borderStyle)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := border.TopLeft + "──────" + border.TopRight + "\n" + border.Vertical + "picked" + border.Vertical + "\n" + border.BottomLeft + "──────" + border.BottomRight
+	if got := doc.ToPlainText(); got != want {
+		t.Fatalf("F5 boxed selection = %q, want %q", got, want)
+	}
+	if edit.BoxMode {
+		t.Fatal("F5 with selection entered box drawing mode")
+	}
+	if len(edit.undoStack) != 1 {
+		t.Fatalf("F5 selection undo steps = %d, want 1", len(edit.undoStack))
+	}
+	edit.undo()
+	if got := doc.ToPlainText(); got != "picked" {
+		t.Fatalf("undo F5 boxed selection = %q, want picked", got)
+	}
+}
+
+func TestRichTextEditF5WithoutSelectionTogglesDrawMode(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "plain"}}}}}
+	edit := NewRichTextEdit(doc)
+	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || !edit.BoxMode {
+		t.Fatalf("F5 without selection result/mode = %+v/%v", got, edit.BoxMode)
+	}
+	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || edit.BoxMode {
+		t.Fatalf("F5 in draw mode result/mode = %+v/%v", got, edit.BoxMode)
+	}
+	if got := doc.ToPlainText(); got != "plain" {
+		t.Fatalf("F5 mode toggles changed document to %q", got)
+	}
+}
+
 func TestRichTextEditBoxModeDrawsTurnsAndUndoesOneStroke(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{}}}
 	edit := NewRichTextEdit(doc)

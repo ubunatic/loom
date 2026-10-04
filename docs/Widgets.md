@@ -330,10 +330,11 @@ to the widest display width and the selection's inline styles and metadata
 remain on the enclosed text. On a selected box, the same dropdown restyles its
 corners in place while retaining dimensions and interior content. Unselected
 prefix and suffix text stays on its own line so partial-line boxes keep their
-columns aligned. F5 or the popover's Draw button toggles box mode; arrow keys
-draw a connected path and Esc ends the current stroke. When a stroke starts on
-an existing box glyph, its foreground color is carried to each glyph changed by
-that stroke. With a selection, Tab and Shift+Tab move through enabled popover
+columns aligned. F5 wraps a selection using the default box style; without a
+selection it toggles box drawing mode. The popover's Draw button still enters
+box mode. Arrow keys draw a connected path and Esc ends the current stroke.
+When a stroke starts on an existing box glyph, its foreground color is carried
+to each glyph changed by that stroke. With a selection, Tab and Shift+Tab move through enabled popover
 actions, Enter applies the focused action, and Esc closes the popover. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
