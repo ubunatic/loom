@@ -147,9 +147,7 @@ var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) 
 	if altScreen {
 		pane.SetScreenMode(loom.ScreenAlt)
 	}
-	if width > 0 {
-		pane.MaxCols = width
-	}
+	pane.MaxCols = galleryPaneMaxCols(width)
 	if height > 0 {
 		pane.Resize(height)
 	}
@@ -164,6 +162,8 @@ var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) 
 	defer pane.Close()
 	return pane.Run(widget)
 }
+
+func galleryPaneMaxCols(width int) int { return width }
 
 func showWidgetDemos(names []string, themeName string, width, height int) error {
 	var widget loom.Widget
@@ -252,7 +252,7 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch {
-	case e.Is("f10"):
+	case e.Is("f10", "ctrl-q"):
 		return loom.QuitResult()
 	case e.Is("f9"):
 		g.themeIndex = (g.themeIndex + 1) % len(g.themes)
@@ -267,11 +267,7 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		}
 		return loom.Handled()
 	}
-	result := g.widget.ConsumeKey(e)
-	if !result.Consumed && (e.Is("esc") || e.Is("q")) {
-		return loom.QuitResult()
-	}
-	return result
+	return g.widget.ConsumeKey(e)
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {

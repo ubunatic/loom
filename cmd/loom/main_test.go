@@ -465,11 +465,14 @@ func TestGalleryAppKeys(t *testing.T) {
 		t.Fatalf("q consumed by child must not quit (quit=%v keys=%d)", r.Quit, child.keys)
 	}
 	child.consume = false
-	if r := g.ConsumeKey(loom.KeyEvent{Key: "q"}); !r.Quit {
-		t.Fatal("unconsumed q must quit")
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "q"}); r.Quit {
+		t.Fatal("plain q must remain available to the widget")
 	}
-	if r := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); !r.Quit {
-		t.Fatal("unconsumed esc must quit")
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); r.Quit {
+		t.Fatal("Esc must remain available to the widget")
+	}
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !r.Quit {
+		t.Fatal("Ctrl+Q must quit")
 	}
 }
 
@@ -504,6 +507,30 @@ func TestWidgetsSizeFlags(t *testing.T) {
 	}
 	if gotWidth != 42 || gotHeight != 11 {
 		t.Fatalf("gallery size = %dx%d, want 42x11", gotWidth, gotHeight)
+	}
+}
+
+func TestWidgetsGalleryPaneWidthDefaultsToTerminal(t *testing.T) {
+	if got := galleryPaneMaxCols(0); got != 0 {
+		t.Fatalf("default gallery max columns = %d, want terminal width (0)", got)
+	}
+	if got := galleryPaneMaxCols(72); got != 72 {
+		t.Fatalf("explicit gallery max columns = %d, want 72", got)
+	}
+}
+
+func TestThemedGalleryQuitKeysLeaveEscToWidget(t *testing.T) {
+	g := newThemedGallery(loom.NewRichTextEdit(&loom.RichDocument{Lines: []loom.RichLine{{}}}), "julia256")
+	if got := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); got.Quit {
+		t.Fatal("Esc quit the gallery instead of reaching its widget")
+	}
+	for _, key := range []string{"ctrl-q", "f10"} {
+		if got := g.ConsumeKey(loom.KeyEvent{Key: key}); !got.Quit {
+			t.Errorf("%s did not quit the gallery: %+v", key, got)
+		}
+	}
+	if got := g.ConsumeKey(loom.KeyEvent{Key: "q"}); got.Quit {
+		t.Fatal("plain q quit the gallery; only Ctrl+Q and F10 should quit")
 	}
 }
 

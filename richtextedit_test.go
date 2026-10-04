@@ -238,8 +238,8 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
 	canvas := NewCanvas(50, 6)
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
-	if len(edit.popoverButtons) != 8 {
-		t.Fatalf("popover buttons = %d, want 8", len(edit.popoverButtons))
+	if len(edit.popoverButtons) != 9 {
+		t.Fatalf("popover buttons = %d, want 9", len(edit.popoverButtons))
 	}
 	for i, button := range edit.popoverButtons {
 		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
@@ -357,10 +357,29 @@ func TestRichTextEditBoxActionAvailableInPopover(t *testing.T) {
 	t.Fatal("Box action missing from popover")
 }
 
+func TestRichTextEditDrawButtonStartsBoxMode(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "word"}}}}})
+	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 4})
+	edit.Draw(NewCanvas(60, 5), Rect{W: 60, H: 5})
+	for _, button := range edit.popoverButtons {
+		if button.action != "Draw" {
+			continue
+		}
+		if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !got.Consumed {
+			t.Fatal("Draw button press was not consumed")
+		}
+		if !edit.BoxMode || edit.HasSelection {
+			t.Fatalf("Draw action mode/selection = %v/%v", edit.BoxMode, edit.HasSelection)
+		}
+		return
+	}
+	t.Fatal("Draw button missing from popover")
+}
+
 func TestRichTextEditBoxModeDrawsTurnsAndUndoesOneStroke(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{}}}
 	edit := NewRichTextEdit(doc)
-	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-b"}); !got.Consumed || !edit.BoxMode {
+	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || !edit.BoxMode {
 		t.Fatalf("box mode toggle result/mode = %+v/%v", got, edit.BoxMode)
 	}
 	for _, key := range []string{"right", "right", "down", "left"} {
@@ -399,18 +418,57 @@ func TestRichTextEditBoxModePadsPastLineEndAndBelowDocument(t *testing.T) {
 	}
 }
 
-func TestRichTextEditBoxModeHandlesCSIuToggle(t *testing.T) {
+func TestRichTextEditBoxModeLeavesCSIuCtrlShiftBUnbound(t *testing.T) {
 	key := DecodeKey([]byte("\x1b[98;6u"))
 	if !key.Is("ctrl-shift-b") {
 		t.Fatalf("CSI-u Ctrl-Shift-B decoded as %+v", key)
 	}
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
-	edit.ConsumeKey(key)
-	if !edit.BoxMode {
-		t.Fatal("CSI-u Ctrl-Shift-B did not enter box mode")
+	if got := edit.ConsumeKey(key); got.Consumed || edit.BoxMode {
+		t.Fatalf("CSI-u Ctrl-Shift-B was consumed or entered box mode: %+v/%v", got, edit.BoxMode)
 	}
 	if key := DecodeKey([]byte{2}); !key.Is("ctrl-b") {
 		t.Fatalf("legacy Ctrl-B changed from bold key: %+v", key)
+	}
+}
+
+func TestRichTextEditBoxModeCopiesStartingGlyphForegroundAcrossStroke(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "┌", Style: Style{FG: ColorIndex(8)}},
+		{Text: "─", Style: Style{FG: ColorIndex(15)}},
+		{Text: "─", Style: Style{FG: ColorIndex(7)}},
+		{Text: "┐", Style: Style{FG: ColorIndex(15)}},
+	}}}}
+	edit := NewRichTextEdit(doc)
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+	for col := 0; col <= 2; col++ {
+		style, ok := richLineStyleAtColumn(doc.Lines[0], col)
+		if !ok || style.FG != ColorIndex(8) {
+			t.Errorf("stroke cell %d foreground = %v, want starting grey 8", col, style.FG)
+		}
+	}
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-z"})
+	if got := richLinesText(doc.Lines); got != "┌──┐" {
+		t.Fatalf("one undo did not restore the source stroke: %q", got)
+	}
+}
+
+func TestRichTextEditBoxModeKeepsTextColorsWithoutBoxStart(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "a", Style: Style{FG: ColorIndex(8)}},
+		{Text: "b", Style: Style{FG: ColorIndex(15)}},
+	}}}}
+	edit := NewRichTextEdit(doc)
+	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+	if style, _ := richLineStyleAtColumn(doc.Lines[0], 0); style.FG != ColorIndex(8) {
+		t.Fatalf("non-box start foreground = %v, want existing color 8", style.FG)
+	}
+	if style, _ := richLineStyleAtColumn(doc.Lines[0], 1); style.FG != ColorIndex(15) {
+		t.Fatalf("non-box target foreground = %v, want existing color 15", style.FG)
 	}
 }
 

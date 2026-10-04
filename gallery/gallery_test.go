@@ -99,24 +99,43 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 			}
 		})
 	}
-	for _, key := range []string{"q", "\x1b[21~", "\x1b"} {
-		t.Run(fmt.Sprintf("exit-%q", key), func(t *testing.T) {
+	for _, key := range []string{"q", "\x1b"} {
+		t.Run(fmt.Sprintf("Esc-and-q-stay-live-%q", key), func(t *testing.T) {
 			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ProgressBar")
 			s.WaitFor("Theme: plain", 5*time.Second)
 			s.Send(key)
+			if key == "\x1b" {
+				time.Sleep(100 * time.Millisecond) // Let the terminal decoder distinguish Esc from a sequence prefix.
+			}
+			s.Send("\x1b[20~") // F9 proves the gallery is still running.
+			s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+			s.Send("\x11") // Ctrl+Q is the configured gallery quit key.
 			if err := s.Wait(5 * time.Second); err != nil {
 				t.Fatal(err)
 			}
 		})
 	}
+	t.Run("F10 quits", func(t *testing.T) {
+		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ProgressBar")
+		s.WaitFor("Theme: plain", 5*time.Second)
+		s.Send("\x1b[21~")
+		if err := s.Wait(5 * time.Second); err != nil {
+			t.Fatal(err)
+		}
+	})
 	t.Run("popup consumes first escape", func(t *testing.T) {
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "Popup")
 		s.WaitFor("Gallery popup", 5*time.Second)
 		s.Send("\x1b")
 		waitForAbsent(t, s, "Gallery popup")
+		time.Sleep(100 * time.Millisecond) // Let the terminal decoder distinguish Esc from a sequence prefix.
 		s.Send("\x1b[20~")
 		s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
 		s.Send("\x1b")
+		time.Sleep(100 * time.Millisecond)
+		s.Send("\x1b[20~")
+		s.WaitFor("Theme: "+galleryThemeAfter(nextGalleryTheme()), 5*time.Second)
+		s.Send("\x11")
 		if err := s.Wait(5 * time.Second); err != nil {
 			t.Fatal(err)
 		}
@@ -127,6 +146,16 @@ func nextGalleryTheme() string {
 	names := loom.ThemeNames()
 	for i, name := range names {
 		if name == "plain" {
+			return names[(i+1)%len(names)]
+		}
+	}
+	return ""
+}
+
+func galleryThemeAfter(theme string) string {
+	names := loom.ThemeNames()
+	for i, name := range names {
+		if name == theme {
 			return names[(i+1)%len(names)]
 		}
 	}

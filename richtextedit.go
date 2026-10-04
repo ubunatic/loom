@@ -59,6 +59,8 @@ type RichTextEdit struct {
 	now                func() time.Time
 	boxStrokeBefore    *richSnapshot
 	boxSelection       *richBoxSelection
+	boxStrokeFG        Color
+	boxStrokeFGSet     bool
 }
 
 const (
@@ -77,7 +79,7 @@ type richPopoverSwatch struct {
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -306,7 +308,7 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	if e.ViewMode && e.BoxMode {
 		e.toggleBoxMode()
 	}
-	if key.Is("ctrl-shift-b", "f5") {
+	if key.Is("f5") {
 		e.toggleBoxMode()
 		return Handled()
 	}
@@ -600,6 +602,8 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	switch label {
 	case "Box":
 		e.wrapSelectionInBox()
+	case "Draw":
+		e.toggleBoxMode()
 	case "B":
 		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
 	case "I":
@@ -1472,6 +1476,14 @@ func (e *RichTextEdit) redo() {
 func (e *RichTextEdit) toggleBoxMode() {
 	if !e.BoxMode {
 		e.ClearSelection()
+		e.boxStrokeFGSet = false
+		lines := e.documentLines()
+		column := richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
+		if glyph := richBoxCell(lines[e.Cursor.Line], column); glyph != "" && BoxGlyphArms(glyph) != 0 {
+			if style, ok := richLineStyleAtColumn(lines[e.Cursor.Line], column); ok {
+				e.boxStrokeFG, e.boxStrokeFGSet = style.FG, true
+			}
+		}
 		e.BoxMode = true
 		before := e.snapshot()
 		e.boxStrokeBefore = &before
@@ -1484,8 +1496,10 @@ func (e *RichTextEdit) toggleBoxMode() {
 
 func (e *RichTextEdit) finishBoxStroke() {
 	if e.boxStrokeBefore == nil {
+		e.boxStrokeFGSet = false
 		return
 	}
+	defer func() { e.boxStrokeFGSet = false }()
 	before := *e.boxStrokeBefore
 	e.boxStrokeBefore = nil
 	if reflect.DeepEqual(before.lines, e.Document.Lines) {
@@ -1535,9 +1549,15 @@ func (e *RichTextEdit) drawBoxStep(dy, dx int) {
 	fromCell := richLineCell(lines[fromLine], fromColumn)
 	fromMask := boxNeighbourArms(lines, fromLine, fromColumn) | fromArm
 	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, boxGlyphForStroke(fromCell, fromMask))
+	if e.boxStrokeFGSet {
+		lines[fromLine] = richLineSetCellForeground(lines[fromLine], fromColumn, e.boxStrokeFG)
+	}
 	toCell := richLineCell(lines[toLine], toColumn)
 	toMask := boxNeighbourArms(lines, toLine, toColumn) | toArm
 	lines[toLine] = richLineSetCell(lines[toLine], toColumn, boxGlyphForStroke(toCell, toMask))
+	if e.boxStrokeFGSet {
+		lines[toLine] = richLineSetCellForeground(lines[toLine], toColumn, e.boxStrokeFG)
+	}
 	e.Document.Lines = lines
 	e.Cursor = RichPosition{Line: toLine, Offset: richLineOffsetAtColumn(lines[toLine], toColumn)}
 	e.typingRun = false
@@ -1577,6 +1597,20 @@ func richLineCell(line RichLine, column int) string {
 		}
 	}
 	return " "
+}
+
+func richLineStyleAtColumn(line RichLine, column int) (Style, bool) {
+	cellX := 0
+	for _, span := range line.Spans {
+		for _, cluster := range measure.Clusters(span.Text) {
+			width := measure.StringWidth(cluster)
+			if column >= cellX && column < cellX+width {
+				return span.Style, span.PillData == nil
+			}
+			cellX += width
+		}
+	}
+	return Style{}, false
 }
 
 func richLineOffsetAtColumn(line RichLine, column int) int {
@@ -1620,6 +1654,23 @@ func richLineSetCell(line RichLine, column int, glyph string) RichLine {
 		result = append(result, RichSpan{Text: glyph})
 	}
 	return RichLine{Spans: mergeRichSpans(result)}
+}
+
+func richLineSetCellForeground(line RichLine, column int, foreground Color) RichLine {
+	for _, unit := range richLineUnits(line) {
+		start := richLineColumn(line, unit.start)
+		if column < start || column >= start+measure.StringWidth(unit.text) {
+			continue
+		}
+		if unit.pill {
+			return line
+		}
+		styled := styleRichLine(line, unit.start, unit.end, true, func(style *Style, _ bool) {
+			style.FG = foreground
+		})
+		return RichLine{Spans: styled}
+	}
+	return line
 }
 
 func appendRichCellSpan(spans []RichSpan, source RichSpan, text string) []RichSpan {
