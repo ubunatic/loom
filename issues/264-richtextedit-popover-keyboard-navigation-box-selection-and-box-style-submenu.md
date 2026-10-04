@@ -1,6 +1,6 @@
 # 264 — RichTextEdit popover keyboard navigation, box selection and box style submenu
 
-**Status**: Open
+**Status**: Closed — Popover keyboard navigation (Tab/arrows/Space/Enter/Esc), C-space box selection, box style dropdown, submenu navigation, F5 boxes selection, bar/block cursor, ghost cursor option; user verified live in Tilix
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
