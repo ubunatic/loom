@@ -135,7 +135,7 @@ func completeWidgetNames(prefix string) []string {
 	return names
 }
 
-var runWidgetPane = func(widget loom.Widget, width, height int) error {
+var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) error {
 	pane, err := loom.New(24)
 	if err != nil {
 		return err
@@ -143,6 +143,9 @@ var runWidgetPane = func(widget loom.Widget, width, height int) error {
 	if width > 0 || height > 0 {
 		pane.InlineOnly = true
 		pane.SetScreenMode(loom.ScreenInline)
+	}
+	if altScreen {
+		pane.SetScreenMode(loom.ScreenAlt)
 	}
 	if width > 0 {
 		pane.MaxCols = width
@@ -171,7 +174,7 @@ func showWidgetDemos(names []string, themeName string, width, height int) error 
 		if err != nil {
 			return err
 		}
-		return runWidgetPane(newThemedGallery(widget, themeName), width, height)
+		return runWidgetPane(newThemedGallery(widget, themeName), width, height, gallery.RequiresAltScreen(names...))
 	} else {
 		tabs := make([]loom.Tab, 0, len(names))
 		for _, name := range names {
@@ -187,7 +190,7 @@ func showWidgetDemos(names []string, themeName string, width, height int) error 
 		tabWidget.SetKeys(loom.TabsKeys{Previous: "shift-tab", Next: "tab"})
 		widget = tabWidget
 	}
-	return runWidgetPane(newThemedGallery(widget, themeName), width, height)
+	return runWidgetPane(newThemedGallery(widget, themeName), width, height, gallery.RequiresAltScreen(names...))
 }
 
 type themedGallery struct {

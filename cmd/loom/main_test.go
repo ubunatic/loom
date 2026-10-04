@@ -270,7 +270,10 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 	var shown bytes.Buffer
 	previous := runWidgetPane
-	runWidgetPane = func(widget loom.Widget, _, _ int) error {
+	runWidgetPane = func(widget loom.Widget, _, _ int, altScreen bool) error {
+		if altScreen {
+			t.Fatal("non-editor demos requested alternate screen")
+		}
 		return loom.RenderTo(&shown, widget, 80, 24)
 	}
 	t.Cleanup(func() { runWidgetPane = previous })
@@ -293,8 +296,11 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	}
 	previous := runWidgetPane
 	var shown loom.Widget
-	runWidgetPane = func(widget loom.Widget, width, height int) error {
+	runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) error {
 		shown = widget
+		if altScreen {
+			t.Fatal("Chart demo requested alternate screen")
+		}
 		if width != 0 || height != 0 {
 			t.Fatalf("default gallery size = %dx%d, want terminal size", width, height)
 		}
@@ -363,12 +369,43 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	}
 }
 
+func TestWidgetsSelectAlternateScreenFromGalleryMetadata(t *testing.T) {
+	previous := runWidgetPane
+	t.Cleanup(func() { runWidgetPane = previous })
+	for _, tc := range []struct {
+		name string
+		args []string
+		want bool
+	}{
+		{"editor", []string{"widgets", "--show", "RichTextEdit"}, true},
+		{"combined-gallery", []string{"widgets", "--show"}, true},
+		{"non-editor", []string{"widgets", "--show", "Chart"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			called := false
+			runWidgetPane = func(_ loom.Widget, _, _ int, altScreen bool) error {
+				called = true
+				if altScreen != tc.want {
+					t.Errorf("altScreen = %v, want %v", altScreen, tc.want)
+				}
+				return nil
+			}
+			if err := execute(tc.args, &bytes.Buffer{}); err != nil {
+				t.Fatal(err)
+			}
+			if !called {
+				t.Fatal("gallery runner was not called")
+			}
+		})
+	}
+}
+
 func TestWidgetsDebugFlag(t *testing.T) {
 	previousDebug := loom.Debug
 	loom.Debug = false
 	t.Cleanup(func() { loom.Debug = previousDebug })
 	previousRun := runWidgetPane
-	runWidgetPane = func(loom.Widget, int, int) error {
+	runWidgetPane = func(loom.Widget, int, int, bool) error {
 		if !loom.Debug {
 			t.Error("--debug did not enable debug outlines while running the gallery")
 		}
@@ -454,8 +491,11 @@ func (*keyProbeWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return l
 func TestWidgetsSizeFlags(t *testing.T) {
 	previous := runWidgetPane
 	var gotWidth, gotHeight int
-	runWidgetPane = func(_ loom.Widget, width, height int) error {
+	runWidgetPane = func(_ loom.Widget, width, height int, altScreen bool) error {
 		gotWidth, gotHeight = width, height
+		if altScreen {
+			t.Fatal("Chart demo requested alternate screen")
+		}
 		return nil
 	}
 	t.Cleanup(func() { runWidgetPane = previous })

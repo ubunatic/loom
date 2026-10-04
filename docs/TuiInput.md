@@ -67,7 +67,12 @@ applications; see `KeyDefaults.md` for the library's default key actions.
 
 ### Terminal-reserved keys (VTE)
 
-VTE terminals (Tilix, GNOME Terminal) keep Shift+Home/End and Shift+PgUp/PgDn for their own scrollback while the app is on the primary screen; the app never receives them. On the alternate screen they pass through (probed in Tilix 2026-10-04: `ESC[1;2H` arrives). VTE has no CSI-u. Editing widgets that need these keys must run on the alternate screen (issue 263).
+VTE terminals (Tilix, GNOME Terminal) reserve S-Home, S-End, S-PgUp, and
+S-PgDn for their own scrollback while the app is on the primary screen; the app
+never receives them. On the alternate screen they pass through (probed in Tilix
+2026-10-04: S-Home arrives as `ESC[1;2H`). VTE has no CSI-u, so CSI-u modified
+bindings such as C-S-a/C-S-e cannot substitute. Editing widgets that need these
+keys must run on the alternate screen (issue 263).
 
 After decoding, the pane handles F10 globally by default: it requests quit
 before dispatching the event to any widget, including the help overlay.

@@ -18,6 +18,15 @@ import (
 
 type constructor func() loom.Widget
 
+// demoEntry records presentation requirements alongside each gallery demo.
+type demoEntry struct {
+	AltScreen bool
+}
+
+var demoEntries = map[string]demoEntry{
+	"RichTextEdit": {AltScreen: true},
+}
+
 var demos = map[string]constructor{
 	"Chart": func() loom.Widget {
 		return &loom.Chart{Series: []loom.ChartSeries{
@@ -254,6 +263,22 @@ func New(name string) (loom.Widget, error) {
 		return nil, fmt.Errorf("unknown widget demo %q", name)
 	}
 	return build(), nil
+}
+
+// RequiresAltScreen reports whether the named demo or demos need terminal keys
+// that VTE reserves while applications run on the primary screen. The combined
+// gallery includes RichTextEdit, so it also requests the alternate screen.
+func RequiresAltScreen(names ...string) bool {
+	if len(names) == 0 {
+		return true
+	}
+	for _, name := range names {
+		name = strings.TrimPrefix(name, "loom.")
+		if strings.EqualFold(name, "all") || demoEntries[name].AltScreen {
+			return true
+		}
+	}
+	return false
 }
 
 // NewAll constructs the complete gallery as a tabbed widget.

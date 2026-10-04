@@ -344,6 +344,13 @@ selects a word and triple-click a line. `Ctrl+I` arrives only from terminals
 that speak the kitty/CSI-u protocol; on legacy terminals byte 0x09 stays Tab,
 and `Ctrl+Shift+Y/Z` likewise need CSI-u.
 
+VTE terminals such as Tilix and GNOME Terminal reserve Shift+Home, Shift+End,
+Shift+PageUp, and Shift+PageDown for scrollback while an application uses the
+primary screen. These keys reach Loom on the alternate screen. VTE does not
+support CSI-u, so `Ctrl+Shift+A/E` cannot replace Shift+Home/End there. The
+`loom widgets --show RichTextEdit` and combined `loom widgets --show` galleries
+use the alternate screen; standalone non-editor demos remain inline.
+
 ```go
 doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{
     {Text: "Hello ", Style: loom.Style{Bold: true}},

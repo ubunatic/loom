@@ -76,6 +76,30 @@ func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
 	}
 }
 
+func TestPaneAlternateScreenModeRestoresPrimaryScreen(t *testing.T) {
+	master, slave := openPTY(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 4, cols: 40, startRow: 3}
+	state, err := term.GetState(p.fd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.oldState = state
+	p.switchAltScreen(true)
+	p.Close()
+	_ = master.SetReadDeadline(time.Now().Add(time.Second))
+	buf := make([]byte, 4096)
+	n, err := master.Read(buf)
+	if err != nil {
+		t.Fatalf("read terminal output: %v", err)
+	}
+	raw := string(buf[:n])
+	enter := strings.Index(raw, "\x1b[?1049h")
+	leave := strings.Index(raw, "\x1b[?1049l")
+	if enter < 0 || leave < enter {
+		t.Fatalf("alternate screen output = %q, want enter then leave sequences", raw)
+	}
+}
+
 // openPTY opens a real Linux pseudo-terminal pair via /dev/ptmx, returning
 // the master (test-controlled) and slave (what Pane.run reads/writes) ends.
 // It skips the test rather than failing when ptys are unavailable (e.g. some
