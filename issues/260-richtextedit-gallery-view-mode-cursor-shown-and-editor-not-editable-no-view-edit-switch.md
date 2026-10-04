@@ -1,6 +1,6 @@
 # 260 — RichTextEdit gallery: view-mode cursor shown and editor not editable, no View/Edit switch
 
-**Status**: Open
+**Status**: Closed — view mode no longer places a caret; gallery editor focused and editable; F7/clickable View/Edit toggle (3d5224c, 2dd10bd). Host reran make test-q1 green and verified live in tmux: typing reaches editor, caret stays in editor, F7 switches to View and blocks typing
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
