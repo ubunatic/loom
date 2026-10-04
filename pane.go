@@ -59,6 +59,7 @@ type Pane struct {
 	cols            int // terminal width at Open time
 	MaxCols         int // canvas width cap; 0 = use terminal width
 	maxColsExplicit bool
+	cursorShape     cursorShapeState
 	restored        bool
 	ownsTTY         bool
 
@@ -204,6 +205,42 @@ func (m *RenderMetrics) record(now time.Time, astra bool, f framePhases) {
 type countingWriter struct {
 	w interface{ WriteString(string) (int, error) }
 	n int
+}
+
+type cursorShapeState struct {
+	shape CursorShape
+	set   bool
+}
+
+func (s *cursorShapeState) apply(w interface{ WriteString(string) (int, error) }, shape CursorShape) error {
+	if s.set && s.shape == shape {
+		return nil
+	}
+	sequence := ""
+	switch shape {
+	case CursorShapeBar:
+		sequence = "\x1b[6 q"
+	case CursorShapeBlock:
+		sequence = "\x1b[2 q"
+	default:
+		return fmt.Errorf("loom: unknown cursor shape %d", shape)
+	}
+	if _, err := w.WriteString(sequence); err != nil {
+		return err
+	}
+	s.shape, s.set = shape, true
+	return nil
+}
+
+func (s *cursorShapeState) restore(w interface{ WriteString(string) (int, error) }) error {
+	if !s.set {
+		return nil
+	}
+	if _, err := w.WriteString("\x1b[0 q"); err != nil {
+		return err
+	}
+	s.set = false
+	return nil
 }
 
 func (c *countingWriter) WriteString(s string) (int, error) {
@@ -1010,6 +1047,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 		composed := time.Now()
 		out := &countingWriter{w: p.tty}
+		if provider, ok := UnwrapWidget(root).(CursorShapeProvider); ok {
+			_ = p.cursorShape.apply(out, provider.CursorShape())
+		}
 		canvas.FlushWithConfig(out, p.startRow, clearRows+p.staleRows, p.ResizeConfig)
 		clearRows, p.staleRows = 0, 0
 		if p.Metrics != nil {
@@ -1472,6 +1512,7 @@ func (p *Pane) close() {
 	p.setBracketedPaste(false)
 
 	var b strings.Builder
+	_ = p.cursorShape.restore(&b)
 	if p.altActive {
 		// Leaving the alternate screen restores the shell's screen and cursor.
 		b.WriteString("\x1b[?1049l")

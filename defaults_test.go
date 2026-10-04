@@ -59,6 +59,9 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.BoxStyleDefault != "plain" || len(got.BoxStyleLabels) != 2 || got.BoxStyleLabels[0] != "Plain" || got.BoxStyleLabels[1] != "Rounded" {
 		t.Fatalf("box style defaults = %q %q, want plain and Plain/Rounded", got.BoxStyleDefault, got.BoxStyleLabels)
 	}
+	if got.GhostCursorEnabled {
+		t.Fatal("ghost cursor default = enabled, want disabled")
+	}
 	if got.LinkFG != 39 || !got.LinkUnderline {
 		t.Fatalf("link defaults = %d, %v", got.LinkFG, got.LinkUnderline)
 	}

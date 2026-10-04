@@ -70,6 +70,7 @@ rich_text_edit:
   popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"]
   box_style_labels: ["Plain", "Rounded"]
   box_style_default: "plain"
+  ghost_cursor_enabled: false
   popover_focus_fg: 15
   popover_focus_bg: 24
   link_fg: 39

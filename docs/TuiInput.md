@@ -69,6 +69,13 @@ With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Enter applies the focused action and Esc closes the popover. These keys are
 consumed by the editor while the popover is available.
 
+RichTextEdit uses a bar terminal cursor for normal typing and a block cursor
+while box drawing mode is active. Pane sends DECSCUSR only when the requested
+shape changes and restores the terminal default on close. Ghost-cursor
+navigation beyond existing text or rows is disabled by default; applications
+can enable `RichTextEdit.GhostCursorEnabled` to keep a virtual position there
+until typing or drawing creates the needed padding.
+
 The `loom widgets --show` gallery leaves Esc to its widgets. Ctrl+Q and F10 quit
 the gallery.
 

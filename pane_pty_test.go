@@ -88,11 +88,17 @@ func TestPaneAlternateScreenModeRestoresPrimaryScreen(t *testing.T) {
 	p.Close()
 	_ = master.SetReadDeadline(time.Now().Add(time.Second))
 	buf := make([]byte, 4096)
-	n, err := master.Read(buf)
-	if err != nil {
-		t.Fatalf("read terminal output: %v", err)
+	var output strings.Builder
+	for !strings.Contains(output.String(), "\x1b[?1049l") {
+		n, err := master.Read(buf)
+		if n > 0 {
+			output.Write(buf[:n])
+		}
+		if err != nil {
+			t.Fatalf("read terminal output before alternate-screen exit: %v", err)
+		}
 	}
-	raw := string(buf[:n])
+	raw := output.String()
 	enter := strings.Index(raw, "\x1b[?1049h")
 	leave := strings.Index(raw, "\x1b[?1049l")
 	if enter < 0 || leave < enter {

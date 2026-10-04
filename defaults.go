@@ -33,22 +33,23 @@ type LibDefaults struct {
 
 // RichTextEditDefaults defines selection and popover presentation defaults.
 type RichTextEditDefaults struct {
-	SelectionBG      int      `yaml:"selection_bg"`
-	ToolbarFG        int      `yaml:"toolbar_fg"`
-	ToolbarBG        int      `yaml:"toolbar_bg"`
-	SeparatorGlyph   string   `yaml:"separator_glyph"`
-	SeparatorFG      int      `yaml:"separator_fg"`
-	SeparatorBG      int      `yaml:"separator_bg"`
-	PointerUpGlyph   string   `yaml:"pointer_up_glyph"`
-	PointerDownGlyph string   `yaml:"pointer_down_glyph"`
-	PointerFG        int      `yaml:"pointer_fg"`
-	PopoverLabels    []string `yaml:"popover_labels"`
-	BoxStyleLabels   []string `yaml:"box_style_labels"`
-	BoxStyleDefault  string   `yaml:"box_style_default"`
-	PopoverFocusFG   int      `yaml:"popover_focus_fg"`
-	PopoverFocusBG   int      `yaml:"popover_focus_bg"`
-	LinkFG           int      `yaml:"link_fg"`
-	LinkUnderline    bool     `yaml:"link_underline"`
+	SelectionBG        int      `yaml:"selection_bg"`
+	ToolbarFG          int      `yaml:"toolbar_fg"`
+	ToolbarBG          int      `yaml:"toolbar_bg"`
+	SeparatorGlyph     string   `yaml:"separator_glyph"`
+	SeparatorFG        int      `yaml:"separator_fg"`
+	SeparatorBG        int      `yaml:"separator_bg"`
+	PointerUpGlyph     string   `yaml:"pointer_up_glyph"`
+	PointerDownGlyph   string   `yaml:"pointer_down_glyph"`
+	PointerFG          int      `yaml:"pointer_fg"`
+	PopoverLabels      []string `yaml:"popover_labels"`
+	BoxStyleLabels     []string `yaml:"box_style_labels"`
+	BoxStyleDefault    string   `yaml:"box_style_default"`
+	GhostCursorEnabled bool     `yaml:"ghost_cursor_enabled"`
+	PopoverFocusFG     int      `yaml:"popover_focus_fg"`
+	PopoverFocusBG     int      `yaml:"popover_focus_bg"`
+	LinkFG             int      `yaml:"link_fg"`
+	LinkUnderline      bool     `yaml:"link_underline"`
 }
 
 func (d RichTextEditDefaults) validate() error {

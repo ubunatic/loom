@@ -38,6 +38,9 @@ type RichTextEdit struct {
 	ViewMode bool
 	// BoxMode draws box glyphs into adjacent document cells with arrow keys.
 	BoxMode bool
+	// GhostCursorEnabled allows vertical and horizontal navigation into empty
+	// document space. The default comes from spec/defaults.yaml.
+	GhostCursorEnabled bool
 
 	focused            bool
 	lastRect           Rect
@@ -102,7 +105,15 @@ var _ Widget = (*RichTextEdit)(nil)
 // NewRichTextEdit creates a rich text view for doc. A nil document is treated
 // as an empty document.
 func NewRichTextEdit(doc *RichDocument) *RichTextEdit {
-	return &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, focused: true}
+	return &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, GhostCursorEnabled: SpeccedDefaults.RichTextEdit.GhostCursorEnabled, focused: true}
+}
+
+// CursorShape reports the terminal cursor style required by the editor mode.
+func (e *RichTextEdit) CursorShape() CursorShape {
+	if e.BoxMode {
+		return CursorShapeBlock
+	}
+	return CursorShapeBar
 }
 
 // NewRichTextView creates a read-only RichTextEdit for doc (ViewMode, no popover).
@@ -233,6 +244,9 @@ func (e *RichTextEdit) materializeVoidCursor() {
 }
 
 func (e *RichTextEdit) moveToVoid(line, column int, extend bool) {
+	if !e.GhostCursorEnabled {
+		return
+	}
 	if line < 0 || column < 0 {
 		return
 	}
@@ -1326,6 +1340,20 @@ func (e *RichTextEdit) moveVertical(direction int, extend bool) {
 	line, column := e.cursorCoordinates(lines)
 	targetLine := line + direction
 	if targetLine < 0 {
+		return
+	}
+	if !e.GhostCursorEnabled {
+		if targetLine >= len(lines) {
+			return
+		}
+		best, distance := 0, int(^uint(0)>>1)
+		for _, stop := range richLineStops(lines[targetLine]) {
+			d := richTextAbs(richLineColumn(lines[targetLine], stop) - column)
+			if d < distance {
+				best, distance = stop, d
+			}
+		}
+		e.moveCursor(RichPosition{Line: targetLine, Offset: best}, extend)
 		return
 	}
 	if targetLine >= len(lines) {

@@ -41,6 +41,20 @@ type WidgetActivator interface {
 	Activate()
 }
 
+// CursorShape is a terminal cursor style requested by a widget.
+type CursorShape uint8
+
+const (
+	CursorShapeBar CursorShape = iota
+	CursorShapeBlock
+)
+
+// CursorShapeProvider optionally reports the terminal cursor shape for the
+// widget's current interaction mode.
+type CursorShapeProvider interface {
+	CursorShape() CursorShape
+}
+
 // UnwrapWidget returns the innermost widget in a chain of wrappers.
 func UnwrapWidget(widget Widget) Widget {
 	for widget != nil {

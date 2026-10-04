@@ -177,8 +177,8 @@ func TestRichTextEditNavigationAndSelection(t *testing.T) {
 	}
 	edit.ConsumeKey(KeyEvent{Key: "end"})
 	edit.ConsumeKey(KeyEvent{Key: "down"})
-	if !edit.cursorInVoid || edit.voidLine != 1 || edit.voidColumn != 7 {
-		t.Fatalf("vertical navigation cursor = void:%v at %d,%d", edit.cursorInVoid, edit.voidLine, edit.voidColumn)
+	if edit.cursorInVoid || edit.Cursor != (RichPosition{Line: 1, Offset: 4}) {
+		t.Fatalf("vertical navigation cursor = void:%v at %+v, want clamped line 1 end", edit.cursorInVoid, edit.Cursor)
 	}
 }
 
@@ -942,6 +942,7 @@ func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
 
 func TestRichTextEditVerticalVoidCursorDoesNotEditUntilTyping(t *testing.T) {
 	e := richEditorLines("abcd", "x")
+	e.GhostCursorEnabled = true
 	e.Cursor = RichPosition{Offset: 4}
 	before := richLinesText(e.Document.Lines)
 	if got := e.ConsumeKey(KeyEvent{Key: "down"}); !got.Consumed || !e.cursorInVoid || e.voidLine != 1 || e.voidColumn != 4 {
@@ -963,6 +964,7 @@ func TestRichTextEditVerticalVoidCursorDoesNotEditUntilTyping(t *testing.T) {
 	}
 
 	e = richEditorLines("x")
+	e.GhostCursorEnabled = true
 	e.Cursor.Offset = 1
 	before = richLinesText(e.Document.Lines)
 	e.ConsumeKey(KeyEvent{Key: "down"})
@@ -974,6 +976,7 @@ func TestRichTextEditVerticalVoidCursorDoesNotEditUntilTyping(t *testing.T) {
 
 func TestRichTextEditVerticalVoidCursorCanMovePastLastLine(t *testing.T) {
 	e := richEditorLines("x")
+	e.GhostCursorEnabled = true
 	e.Cursor.Offset = 1
 	before := richLinesText(e.Document.Lines)
 	for i := 1; i <= 2; i++ {
@@ -992,6 +995,23 @@ func TestRichTextEditVerticalVoidCursorCanMovePastLastLine(t *testing.T) {
 	e.ConsumeKey(KeyEvent{Text: "z"})
 	if got := richLinesText(e.Document.Lines); got != "x\n\n z" {
 		t.Fatalf("typing in virtual row produced %q", got)
+	}
+}
+
+func TestRichTextEditGhostCursorDisabledClampsNavigation(t *testing.T) {
+	e := richEditorLines("abcd", "x")
+	e.Cursor.Offset = 4
+	if e.GhostCursorEnabled {
+		t.Fatal("ghost cursor must be disabled by default")
+	}
+	e.ConsumeKey(KeyEvent{Key: "down"})
+	if e.cursorInVoid || e.Cursor != (RichPosition{Line: 1, Offset: 1}) {
+		t.Fatalf("Down with ghost cursor disabled = void:%v cursor:%+v, want clamped line 1 end", e.cursorInVoid, e.Cursor)
+	}
+	before := richLinesText(e.Document.Lines)
+	e.ConsumeKey(KeyEvent{Key: "down"})
+	if e.cursorInVoid || richLinesText(e.Document.Lines) != before {
+		t.Fatalf("Down past final row should clamp without editing: void=%v text=%q", e.cursorInVoid, richLinesText(e.Document.Lines))
 	}
 }
 

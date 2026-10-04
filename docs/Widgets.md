@@ -8,6 +8,14 @@ weight: 35
 Loom provides composable, dependency-light widget primitives designed for inline terminal UIs.
 Widgets implement `loom.Widget` (`Draw`, `ConsumeKey`, `ConsumeMouse`) and integrate cleanly with `loom.Frame`, `loom.Pane`, and the layered compositor.
 
+Widgets may implement `CursorShapeProvider` to request a terminal cursor shape.
+`Pane` applies DECSCUSR bar/block changes only when the requested shape changes
+and restores the terminal default when it closes. `RichTextEdit` requests a bar
+cursor while typing and a block cursor in box drawing mode. Its optional
+`GhostCursorEnabled` setting defaults to `false` in `spec/defaults.yaml`; when
+enabled, navigation can move into empty columns and rows without changing the
+document until typing or drawing materializes that space.
+
 ### Wrapping widgets
 
 A wrapper can implement `Unwrap() loom.Widget` to expose the widget it decorates to
