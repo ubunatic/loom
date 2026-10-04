@@ -1,6 +1,6 @@
 # 257 — RichTextEdit word-scoped styling, clipboard, undo/redo key bindings
 
-**Status**: Open
+**Status**: Closed — implemented word styling, internal clipboard, word-level undo/redo, multi-click and decoder keys (40c153a, de09040); host reran make test-q1 green. Follow-up in 258: Upgrading.md row for shift-/ctrl-insert/delete now decoded with modifiers
 **Priority**: P2 (Medium)
 **Severity**: Normal
 **Category**: Feature
