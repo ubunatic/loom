@@ -1,6 +1,6 @@
 # 267 — README release status is stale
 
-**Status**: Open
+**Status**: Closed — Updated release status to v0.3.0, canonical module path, and current adoption; make check/install passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Documentation
