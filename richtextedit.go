@@ -58,6 +58,7 @@ type RichTextEdit struct {
 	lastClickPos       RichPosition
 	now                func() time.Time
 	boxStrokeBefore    *richSnapshot
+	boxSelection       *richBoxSelection
 }
 
 const (
@@ -106,6 +107,7 @@ func (e *RichTextEdit) SetFocus(focused bool) {
 
 // SetSelection sets a half-open selection range in rune offsets.
 func (e *RichTextEdit) SetSelection(from, to RichPosition) {
+	e.boxSelection = nil
 	e.SelectionFrom, e.SelectionTo = from, to
 	e.HasSelection = from != to
 	e.selectionExtending = false
@@ -113,6 +115,7 @@ func (e *RichTextEdit) SetSelection(from, to RichPosition) {
 
 // ClearSelection removes the current selection.
 func (e *RichTextEdit) ClearSelection() {
+	e.boxSelection = nil
 	e.HasSelection = false
 	e.selectionExtending = false
 }
@@ -194,13 +197,13 @@ func richLineColumn(line RichLine, offset int) int {
 }
 
 func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex int) {
-	start, end := e.selectionBounds()
+	start, end := e.selectionLineBounds(lineIndex)
 	col, offset := 0, 0
 	for _, span := range line.Spans {
 		for _, cluster := range measure.Clusters(span.Text) {
 			w := measure.StringWidth(cluster)
 			runeCount := len([]rune(cluster))
-			selected := e.HasSelection && richPositionBefore(RichPosition{Line: lineIndex, Offset: offset}, end) && richPositionBefore(start, RichPosition{Line: lineIndex, Offset: offset + runeCount})
+			selected := e.HasSelection && offset < end && offset+runeCount > start
 			x := rect.X + col - e.ScrollX
 			if w > 0 && x >= rect.X && x+w <= rect.X+rect.W {
 				style := e.spanStyle(span)
@@ -213,6 +216,32 @@ func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex i
 			offset += runeCount
 		}
 	}
+}
+
+func (e *RichTextEdit) selectionLineBounds(line int) (int, int) {
+	if e.boxSelection != nil {
+		for _, slice := range e.boxSelection.rows {
+			if slice.line == line {
+				return slice.start, slice.end
+			}
+		}
+		return 0, 0
+	}
+	from, to := e.selectionBounds()
+	if line < from.Line || line > to.Line {
+		return 0, 0
+	}
+	return richSelectionLineBounds(line, from, to)
+}
+
+func (e *RichTextEdit) selectionLineBoundsForRange(line int, from, to RichPosition) (int, int) {
+	if e.boxSelection != nil {
+		return e.selectionLineBounds(line)
+	}
+	if line < from.Line || line > to.Line {
+		return 0, 0
+	}
+	return richSelectionLineBounds(line, from, to)
 }
 
 // spanStyle returns the draw style of span; link spans get the spec link style
@@ -312,7 +341,9 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 	case key.Is("ctrl-u"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case key.Is("ctrl-space"):
-		if e.selectWord() {
+		if e.selectBoxAtCursor() {
+			e.ShowPopover = true
+		} else if e.selectWord() {
 			e.ShowPopover = true
 		}
 	case key.Is("ctrl-c", "ctrl-insert"):
@@ -588,7 +619,7 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 }
 
 func (e *RichTextEdit) wrapSelectionInBox() {
-	if !e.HasSelection {
+	if !e.HasSelection || e.boxSelection != nil {
 		return
 	}
 	e.mutate(false, false, func() {
@@ -671,7 +702,7 @@ func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {
 	e.clampPosition(&to, lines)
 	from, to = expandRangeForPills(lines, from, to)
 	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
-		start, end := richSelectionLineBounds(lineIndex, from, to)
+		start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
 		lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, palette, color)
 	}
 	e.popoverPalette = ""
@@ -781,6 +812,7 @@ func (e *RichTextEdit) normalizePosition(pos RichPosition, direction int) RichPo
 }
 
 func (e *RichTextEdit) moveCursor(target RichPosition, extend bool) {
+	e.boxSelection = nil
 	target = e.normalizePosition(target, 0)
 	if extend {
 		if !e.selectionExtending {
@@ -1071,6 +1103,18 @@ func (e *RichTextEdit) deleteSelection() bool {
 	if !e.HasSelection {
 		return false
 	}
+	if e.boxSelection != nil {
+		selection := e.boxSelection
+		for _, row := range selection.rows {
+			line := e.Document.Lines[row.line]
+			left, rest := splitRichLine(line, row.start)
+			_, right := splitRichLine(RichLine{Spans: rest}, row.end-row.start)
+			e.Document.Lines[row.line].Spans = mergeRichSpans(append(left, right...))
+		}
+		e.Cursor = RichPosition{Line: selection.top, Offset: richLineOffsetAtColumn(e.Document.Lines[selection.top], selection.left)}
+		e.ClearSelection()
+		return true
+	}
 	from, to := e.selectionBounds()
 	e.clampPosition(&from, e.Document.Lines)
 	e.clampPosition(&to, e.Document.Lines)
@@ -1158,7 +1202,7 @@ func (e *RichTextEdit) toggleRange(from, to RichPosition, set func(*Style, bool)
 	from, to = expandRangeForPills(e.Document.Lines, from, to)
 	allEnabled := true
 	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
-		start, end := richSelectionLineBounds(lineIndex, from, to)
+		start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
 		offset := 0
 		for _, span := range e.Document.Lines[lineIndex].Spans {
 			spanEnd := offset + len([]rune(span.Text))
@@ -1170,7 +1214,7 @@ func (e *RichTextEdit) toggleRange(from, to RichPosition, set func(*Style, bool)
 	}
 	state := !allEnabled
 	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
-		start, end := richSelectionLineBounds(lineIndex, from, to)
+		start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
 		e.Document.Lines[lineIndex].Spans = styleRichLine(e.Document.Lines[lineIndex], start, end, state, set)
 	}
 }
@@ -1238,6 +1282,7 @@ func (e *RichTextEdit) extendMouseSelection(mouse MouseEvent) {
 	e.Cursor = position
 	e.SelectionTo = position
 	e.SelectionFrom = e.selectionAnchor
+	e.boxSelection = nil
 	e.HasSelection = e.SelectionFrom != e.SelectionTo
 }
 
@@ -1321,7 +1366,7 @@ func (e *RichTextEdit) copySelectionOrWord() bool {
 	e.clipboard = nil
 	for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
 		line := e.Document.Lines[lineIndex]
-		start, end := richSelectionLineBounds(lineIndex, from, to)
+		start, end := e.selectionLineBounds(lineIndex)
 		end = min(end, richLineRuneCount(line))
 		_, rest := splitRichLine(line, start)
 		part, _ := splitRichLine(RichLine{Spans: rest}, end-start)
@@ -1366,6 +1411,7 @@ type richSnapshot struct {
 	cursor       RichPosition
 	from, to     RichPosition
 	hasSelection bool
+	boxSelection *richBoxSelection
 }
 
 func (e *RichTextEdit) snapshot() richSnapshot {
@@ -1373,7 +1419,7 @@ func (e *RichTextEdit) snapshot() richSnapshot {
 	for i, line := range e.Document.Lines {
 		lines[i] = RichLine{Spans: append([]RichSpan(nil), line.Spans...)}
 	}
-	return richSnapshot{lines: lines, cursor: e.Cursor, from: e.SelectionFrom, to: e.SelectionTo, hasSelection: e.HasSelection}
+	return richSnapshot{lines: lines, cursor: e.Cursor, from: e.SelectionFrom, to: e.SelectionTo, hasSelection: e.HasSelection, boxSelection: cloneRichBoxSelection(e.boxSelection)}
 }
 
 func (e *RichTextEdit) restore(snap richSnapshot) {
@@ -1381,6 +1427,8 @@ func (e *RichTextEdit) restore(snap richSnapshot) {
 	e.Cursor = snap.cursor
 	e.SelectionFrom, e.SelectionTo, e.HasSelection = snap.from, snap.to, snap.hasSelection
 	e.selectionExtending = false
+	e.boxSelection = cloneRichBoxSelection(snap.boxSelection)
+	e.revalidateBoxSelection()
 	e.typingRun = false
 }
 
@@ -1392,6 +1440,7 @@ func (e *RichTextEdit) mutate(typing, boundary bool, edit func()) {
 	if reflect.DeepEqual(before.lines, e.Document.Lines) {
 		return
 	}
+	e.revalidateBoxSelection()
 	e.redoStack = nil
 	if !(typing && e.typingRun) {
 		e.undoStack = append(e.undoStack, before)
@@ -1422,6 +1471,7 @@ func (e *RichTextEdit) redo() {
 
 func (e *RichTextEdit) toggleBoxMode() {
 	if !e.BoxMode {
+		e.ClearSelection()
 		e.BoxMode = true
 		before := e.snapshot()
 		e.boxStrokeBefore = &before
@@ -1449,6 +1499,7 @@ func (e *RichTextEdit) finishBoxStroke() {
 }
 
 func (e *RichTextEdit) drawBoxStep(dy, dx int) {
+	e.boxSelection = nil
 	e.ensureDocument()
 	lines := e.Document.Lines
 	fromLine, fromColumn := e.Cursor.Line, richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
@@ -1481,13 +1532,24 @@ func (e *RichTextEdit) drawBoxStep(dy, dx int) {
 	} else if dy > 0 {
 		fromArm, toArm = BoxArmDown, BoxArmUp
 	}
+	fromCell := richLineCell(lines[fromLine], fromColumn)
 	fromMask := boxNeighbourArms(lines, fromLine, fromColumn) | fromArm
-	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, BoxGlyph(fromMask))
+	lines[fromLine] = richLineSetCell(lines[fromLine], fromColumn, boxGlyphForStroke(fromCell, fromMask))
+	toCell := richLineCell(lines[toLine], toColumn)
 	toMask := boxNeighbourArms(lines, toLine, toColumn) | toArm
-	lines[toLine] = richLineSetCell(lines[toLine], toColumn, BoxGlyph(toMask))
+	lines[toLine] = richLineSetCell(lines[toLine], toColumn, boxGlyphForStroke(toCell, toMask))
 	e.Document.Lines = lines
 	e.Cursor = RichPosition{Line: toLine, Offset: richLineOffsetAtColumn(lines[toLine], toColumn)}
 	e.typingRun = false
+}
+
+func boxGlyphForStroke(existing string, arms BoxArms) string {
+	if existing == "╭" || existing == "╮" || existing == "╰" || existing == "╯" {
+		if BoxGlyphArms(existing) == arms {
+			return existing
+		}
+	}
+	return BoxGlyph(arms)
 }
 
 func boxNeighbourArms(lines []RichLine, line, column int) BoxArms {

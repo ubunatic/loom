@@ -19,6 +19,16 @@ func BoxGlyph(arms BoxArms) string {
 
 // BoxGlyphArms returns the connected sides of a light box-drawing glyph.
 func BoxGlyphArms(glyph string) BoxArms {
+	switch glyph {
+	case "╭":
+		return BoxArmRight | BoxArmDown
+	case "╮":
+		return BoxArmLeft | BoxArmDown
+	case "╰":
+		return BoxArmRight | BoxArmUp
+	case "╯":
+		return BoxArmLeft | BoxArmUp
+	}
 	for arms, candidate := range boxGlyphs {
 		if candidate == glyph {
 			return BoxArms(arms)

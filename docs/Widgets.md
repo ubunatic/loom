@@ -335,7 +335,12 @@ the URL stays on `RichSpan.Link` (OSC 8 output is issue 259).
 
 Editing shortcuts: `Ctrl+B/I/U` style the selection, or the word under the cursor
 when nothing is selected (no word: only the typing style changes). `Ctrl+Space`
-selects the word and shows the popover. The clipboard is internal and keeps
+selects the smallest closed sharp or rounded box whose perimeter contains the
+cursor cell, then shows the popover; reciprocal arms must connect every edge,
+and equal-size boxes are resolved by top, left, bottom, then right position.
+Interior text is unrestricted and side text outside the rectangle stays outside
+the selection. On plain text, box interiors, or broken perimeters it selects the
+word under the cursor as before. The clipboard is internal and keeps
 styled spans: `Ctrl+C`/`Ctrl+Insert` copy the selection or word, `Ctrl+X`/
 `Shift+Delete` cut, `Ctrl+V`/`Shift+Insert` paste. `Ctrl+Z`/`Ctrl+Y` undo;
 `Ctrl+R`, `Ctrl+Shift+Y`, `Ctrl+Shift+Z` redo (100 steps; a typing run up to a

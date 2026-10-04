@@ -654,6 +654,174 @@ func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
 	}
 }
 
+func TestRichTextEditCtrlSpaceSelectsSharpAndRoundedBoxRectangle(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		lines []string
+	}{
+		{name: "sharp styled", lines: []string{"┌───┐", "│abc│", "└───┘"}},
+		{name: "rounded", lines: []string{"╭───╮", "│abc│", "╰───╯"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := richEditorLines(tc.lines...)
+			e.Document.Lines[1].Spans = []RichSpan{{Text: "│"}, {Text: "abc", Style: Style{Bold: true}}, {Text: "│"}}
+			e.Cursor = RichPosition{Line: 0, Offset: 0}
+			if got := e.ConsumeKey(KeyEvent{Key: "ctrl-space"}); got != Handled() {
+				t.Fatalf("ctrl-space = %+v, want Handled", got)
+			}
+			if e.boxSelection == nil || e.boxSelection.top != 0 || e.boxSelection.left != 0 || e.boxSelection.bottom != 2 || e.boxSelection.right != 4 || !e.ShowPopover {
+				t.Fatalf("box selection = %+v, popover=%v", e.boxSelection, e.ShowPopover)
+			}
+			canvas := NewCanvas(5, 3)
+			e.Draw(canvas, Rect{W: 5, H: 3})
+			for _, pos := range [][2]int{{0, 0}, {4, 0}, {0, 1}, {4, 1}, {0, 2}, {4, 2}} {
+				if got := canvas.Get(pos[0], pos[1]).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
+					t.Errorf("perimeter cell (%d,%d) not selected: bg=%v", pos[0], pos[1], got)
+				}
+			}
+			if !canvas.Get(1, 1).Style.Bold {
+				t.Fatal("box selection erased interior span styling")
+			}
+		})
+	}
+}
+
+func TestRichTextEditCtrlSpaceBoxGeometryAndDeterministicTies(t *testing.T) {
+	t.Run("crossing arms", func(t *testing.T) {
+		e := richEditorLines("┌─┬─┐", "├─┼─┤", "└─┴─┘")
+		e.Cursor = RichPosition{Line: 1, Offset: 2}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		if e.boxSelection == nil || e.boxSelection.top != 0 || e.boxSelection.left != 0 || e.boxSelection.bottom != 1 || e.boxSelection.right != 2 {
+			t.Fatalf("crossing box selection = %+v", e.boxSelection)
+		}
+	})
+	t.Run("nested smallest rectangle", func(t *testing.T) {
+		e := richEditorLines("┌──────┐", "│┌──┐  │", "││xy│  │", "│└──┘  │", "└──────┘")
+		e.Cursor = RichPosition{Line: 1, Offset: 1}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		if got := e.boxSelection; got == nil || got.top != 1 || got.left != 1 || got.bottom != 3 || got.right != 4 {
+			t.Fatalf("nested selection = %+v, want inner box", got)
+		}
+	})
+	t.Run("shared edge ties choose left box", func(t *testing.T) {
+		e := richEditorLines("┌─┬─┐", "│a│b│", "└─┴─┘")
+		e.Cursor = RichPosition{Line: 0, Offset: 2}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		if got := e.boxSelection; got == nil || got.left != 0 || got.right != 2 {
+			t.Fatalf("shared-edge selection = %+v, want left box", got)
+		}
+	})
+}
+
+func TestRichTextEditCtrlSpaceBoxFallbackAndRectangleOperations(t *testing.T) {
+	t.Run("plain word", func(t *testing.T) {
+		e := richTestEditor(RichSpan{Text: "plain text"})
+		e.Cursor.Offset = 2
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		from, to := e.selectionBounds()
+		if e.boxSelection != nil || from.Offset != 0 || to.Offset != 5 {
+			t.Fatalf("plain fallback = %v-%v, box=%+v", from, to, e.boxSelection)
+		}
+	})
+	t.Run("word beside box", func(t *testing.T) {
+		e := richEditorLines("┌─┐word", "│x│", "└─┘")
+		e.Cursor = RichPosition{Offset: 3}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		from, to := e.selectionBounds()
+		if e.boxSelection != nil || from.Offset != 3 || to.Offset != 7 {
+			t.Fatalf("adjacent word fallback = %v-%v, box=%+v", from, to, e.boxSelection)
+		}
+	})
+	t.Run("broken perimeter falls back to word", func(t *testing.T) {
+		e := richEditorLines("┌──┐", "Xabc│", "└──┘")
+		e.Cursor = RichPosition{Line: 1, Offset: 1}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		from, to := e.selectionBounds()
+		if e.boxSelection != nil || from.Line != 1 || from.Offset != 0 || to.Offset != 4 {
+			t.Fatalf("broken fallback = %v-%v, box=%+v", from, to, e.boxSelection)
+		}
+	})
+	t.Run("partial box without word stays unselected", func(t *testing.T) {
+		e := richEditorLines("┌──┐", "│ab│", "└──x")
+		e.Cursor = RichPosition{Offset: 0}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		if e.HasSelection || e.boxSelection != nil {
+			t.Fatalf("partial perimeter selected: %+v", e.boxSelection)
+		}
+	})
+	t.Run("wide and combining text; preserve outside text on cut and undo", func(t *testing.T) {
+		e := richEditorLines("x┌───┐z", "x│界é│z", "x└───┘z")
+		e.Cursor = RichPosition{Offset: 1}
+		e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		if e.boxSelection == nil || e.boxSelection.left != 1 || e.boxSelection.right != 5 {
+			t.Fatalf("wide content box = %+v", e.boxSelection)
+		}
+		if !e.copySelectionOrWord() || richLinesText(e.clipboard) != "┌───┐\n│界é│\n└───┘" {
+			t.Fatalf("copied rectangle = %q", richLinesText(e.clipboard))
+		}
+		e.mutate(false, false, func() { e.deleteSelection() })
+		if got := richLinesText(e.Document.Lines); got != "xz\nxz\nxz" {
+			t.Fatalf("document after rectangular cut = %q", got)
+		}
+		e.undo()
+		if got := richLinesText(e.Document.Lines); got != "x┌───┐z\nx│界é│z\nx└───┘z" {
+			t.Fatalf("document after undo = %q", got)
+		}
+		if e.boxSelection == nil {
+			t.Fatal("undo did not restore the validated box selection")
+		}
+		e.redo()
+		if e.boxSelection != nil || richLinesText(e.Document.Lines) != "xz\nxz\nxz" {
+			t.Fatalf("redo left stale box selection or wrong text: box=%+v text=%q", e.boxSelection, richLinesText(e.Document.Lines))
+		}
+	})
+}
+
+func TestRichTextEditMovingCursorClearsBoxSelection(t *testing.T) {
+	e := richEditorLines("┌──┐", "│ab│", "└──┘")
+	e.Cursor = RichPosition{Offset: 0}
+	e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+	if e.boxSelection == nil {
+		t.Fatal("ctrl-space did not select the box")
+	}
+	e.ConsumeKey(KeyEvent{Key: "right"})
+	if e.boxSelection != nil || e.HasSelection {
+		t.Fatalf("cursor movement retained box selection: box=%+v has=%v", e.boxSelection, e.HasSelection)
+	}
+}
+
+func TestRichTextEditBoxRectangleFormattingLeavesSideTextOutside(t *testing.T) {
+	e := richEditorLines("x┌─┐z", "x│a│z", "x└─┘z")
+	e.Cursor = RichPosition{Offset: 1}
+	e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+	e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
+	if e.boxSelection == nil {
+		t.Fatal("styling failed to revalidate the box selection")
+	}
+	if !e.Document.Lines[0].Spans[1].Style.Bold || !e.Document.Lines[1].Spans[1].Style.Bold {
+		t.Fatal("box perimeter and interior were not styled")
+	}
+	if e.Document.Lines[0].Spans[0].Style.Bold || e.Document.Lines[0].Spans[len(e.Document.Lines[0].Spans)-1].Style.Bold {
+		t.Fatal("formatting crossed the rectangle into side text")
+	}
+}
+
+func richEditorLines(lines ...string) *RichTextEdit {
+	doc := &RichDocument{Lines: make([]RichLine, len(lines))}
+	for i, line := range lines {
+		doc.Lines[i] = RichLine{Spans: []RichSpan{{Text: line}}}
+	}
+	return NewRichTextEdit(doc)
+}
+
+func richLinesText(lines []RichLine) string {
+	parts := make([]string, len(lines))
+	for i, line := range lines {
+		parts[i] = richTestText(NewRichTextEdit(&RichDocument{Lines: []RichLine{line}}))
+	}
+	return strings.Join(parts, "\n")
+}
+
 func TestRichTextEditCopyPasteKeepsStyles(t *testing.T) {
 	e := richTestEditor(RichSpan{Text: "ab "}, RichSpan{Text: "cd", Style: Style{Bold: true}})
 	e.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 5})
