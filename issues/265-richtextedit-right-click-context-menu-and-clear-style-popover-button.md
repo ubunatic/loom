@@ -14,7 +14,7 @@ Re-check live code and recent commits first. Build on 264's popover/submenu keyb
 
 ## Pre-Work: color picker focus marker (user, 2026-10-04, after 264 closed)
 
-The keyboard focus in the #FG/#BG color picker (264 M4) is hard to see: a highlight moving over a bar of colors does not stand out. Mark the focused swatch with foreground helper characters in the neighbouring cells, e.g. `>█<`: the cells left and right of the focused swatch show `>` and `<` (in a contrasting fg), instead of relying on a color/inverse highlight. Keep the swatch itself unchanged. If the picker's layout has no free neighbouring cells, add one-cell gaps or draw the markers over the neighbouring swatches; choose and document. Test the rendered row for focus at the first, middle and last swatch.
+The keyboard focus in the #FG/#BG color picker (264 M4) is hard to see: a highlight moving over a bar of colors does not stand out. Mark the focused swatch by drawing a foreground character on it, e.g. `*`: the swatch keeps its color as background and shows `*` in a contrasting fg (black on light, white on dark swatches). No layout change, no neighbour cells used. (Earlier idea `>█<` in neighbouring cells dropped by the user.) Test the rendered row for focus at the first, middle and last swatch and the contrast choice on a light and a dark swatch.
 
 ## Right-click context menu
 
