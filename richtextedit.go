@@ -41,9 +41,18 @@ type RichTextEdit struct {
 	// GhostCursorEnabled allows vertical and horizontal navigation into empty
 	// document space. The default comes from spec/defaults.yaml.
 	GhostCursorEnabled bool
+	// FilePath is the path associated with the document by SaveAs or Save.
+	FilePath string
+	// LastSaveError holds the most recent save failure, including an error
+	// returned after choosing a destination in the asynchronous save picker.
+	LastSaveError error
+	// SerializeDocument optionally serializes the document for saving. A nil
+	// callback uses RichDocument.ToANSI.
+	SerializeDocument func(*RichDocument) ([]byte, error)
 
 	focused                bool
 	lastRect               Rect
+	savePicker             *FilePicker
 	selectionAnchor        RichPosition
 	selectionExtending     bool
 	dragSelecting          bool

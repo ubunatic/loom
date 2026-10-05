@@ -16,16 +16,23 @@ const (
 	FilePickerFiles FilePickerMode = iota
 	// FilePickerDirectories selects directories and hides files.
 	FilePickerDirectories
+	// FilePickerSave selects a file name in the current directory as a save destination.
+	FilePickerSave
 )
 
 // FilePickerOptions configures a filesystem picker.
 type FilePickerOptions struct {
 	Mode FilePickerMode
+	// FileName seeds the destination name in save mode.
+	FileName string
 	// Patterns are filepath.Match globs applied to file names; directories are never filtered.
 	Patterns []string
 	Style    ChoiceStyle
 	OnSelect func(path string)
 	OnCancel func()
+	// OnSave validates or writes a save-mode destination. An error keeps the
+	// picker open so the caller can report the problem and the user can retry.
+	OnSave func(path string) error
 }
 
 // FilePicker is a keyboard and mouse navigable filesystem picker.
@@ -35,6 +42,8 @@ type FilePicker struct {
 	entries   []FileEntry
 	items     map[string]FileEntry
 	list      *Choice
+	fileName  *TextInput
+	nameFocus bool
 	lastRect  Rect
 	listRect  Rect
 	done      bool
@@ -42,7 +51,7 @@ type FilePicker struct {
 
 // NewFilePicker reads dir and creates a reusable file or directory picker.
 func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
-	if options.Mode > FilePickerDirectories {
+	if options.Mode > FilePickerSave {
 		return nil, fmt.Errorf("loom: invalid file picker mode %d", options.Mode)
 	}
 	p := &FilePicker{options: options, list: NewChoice(nil), items: make(map[string]FileEntry)}
@@ -51,6 +60,11 @@ func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
 	p.list.DoubleClickToActivate = true
 	p.list.MouseTextOnly = true
 	p.list.OnSelect = func(Item) { p.activate() }
+	if options.Mode == FilePickerSave {
+		p.fileName = NewTextInput(options.FileName)
+		p.fileName.Prompt = "Name: "
+		p.nameFocus = options.FileName != ""
+	}
 	if options.Style != (ChoiceStyle{}) {
 		p.list.Style = options.Style
 	}
@@ -68,6 +82,14 @@ func (p *FilePicker) Entries() []FileEntry { return append([]FileEntry(nil), p.e
 
 // List returns the underlying Choice for host customization.
 func (p *FilePicker) List() *Choice { return p.list }
+
+// FileName returns the destination name entered in save mode.
+func (p *FilePicker) FileName() string {
+	if p.fileName == nil {
+		return ""
+	}
+	return p.fileName.Value()
+}
 
 // Selected returns the current directory entry, if one is selected.
 func (p *FilePicker) Selected() (FileEntry, bool) {
@@ -153,6 +175,11 @@ func (p *FilePicker) activate() {
 		_ = p.open(entry.Path, selectName)
 		return
 	}
+	if p.options.Mode == FilePickerSave && entry.Kind == FileKindRegular {
+		p.fileName.SetValue(entry.Name)
+		p.nameFocus = true
+		return
+	}
 	if entry.Kind == FileKindSymlink || entry.Kind != FileKindRegular || p.options.Mode == FilePickerDirectories {
 		return
 	}
@@ -169,7 +196,13 @@ func (p *FilePicker) parent() {
 }
 
 // ContentHeight reports the picker content height for a Viewport host.
-func (p *FilePicker) ContentHeight() int { return p.list.ContentHeight() + 1 }
+func (p *FilePicker) ContentHeight() int {
+	height := p.list.ContentHeight() + 1
+	if p.fileName != nil {
+		height++
+	}
+	return height
+}
 
 // ApplyTheme updates the embedded list style.
 func (p *FilePicker) ApplyTheme(theme ThemeColors) { p.list.ApplyTheme(theme) }
@@ -181,7 +214,12 @@ func (p *FilePicker) Draw(c *Canvas, r Rect) {
 		return
 	}
 	c.Write(r.X, r.Y, DisplayPath(p.directory.Path), p.list.Style.Normal)
-	p.listRect = Rect{X: r.X, Y: r.Y + 1, W: r.W, H: max(0, r.H-1)}
+	listHeight := max(0, r.H-1)
+	if p.fileName != nil && listHeight > 0 {
+		listHeight--
+		p.fileName.Draw(c, Rect{X: r.X, Y: r.Y + r.H - 1, W: r.W, H: 1}, p.nameFocus)
+	}
+	p.listRect = Rect{X: r.X, Y: r.Y + 1, W: r.W, H: listHeight}
 	if p.listRect.H > 0 {
 		p.list.Draw(c, p.listRect)
 	}
@@ -200,6 +238,9 @@ func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 		return Handled()
 	}
 	if e.Is("backspace") {
+		if p.fileName != nil && p.nameFocus {
+			return p.fileName.ConsumeKey(e)
+		}
 		if p.list.Query() != "" {
 			return p.list.ConsumeKey(e)
 		}
@@ -207,7 +248,30 @@ func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 		return Handled()
 	}
 	if e.Is("enter") {
+		if p.fileName != nil && p.nameFocus {
+			name := p.fileName.Value()
+			if name == "" {
+				return Handled()
+			}
+			path := filepath.Join(p.directory.Path, name)
+			if p.options.OnSave != nil {
+				if err := p.options.OnSave(path); err != nil {
+					return Handled()
+				}
+			} else if p.options.OnSelect != nil {
+				p.options.OnSelect(path)
+			}
+			p.done = true
+			return Handled()
+		}
 		return p.list.ConsumeKey(e)
+	}
+	if p.fileName != nil && e.Is("tab") {
+		p.nameFocus = !p.nameFocus
+		return Handled()
+	}
+	if p.fileName != nil && p.nameFocus {
+		return p.fileName.ConsumeKey(e)
 	}
 	return p.list.ConsumeKey(e)
 }
@@ -216,6 +280,9 @@ func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 func (p *FilePicker) ConsumeMouse(e MouseEvent) EventResult {
 	if e.X < 0 || e.Y < 1 || e.X >= p.lastRect.W || e.Y >= p.lastRect.H {
 		return Ignored()
+	}
+	if p.fileName != nil && e.Y == p.lastRect.H-1 {
+		return Handled()
 	}
 	e.X -= p.listRect.X - p.lastRect.X
 	e.Y--
