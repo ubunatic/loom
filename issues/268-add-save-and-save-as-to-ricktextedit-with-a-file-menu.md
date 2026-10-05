@@ -1,6 +1,6 @@
 # 268 — Add Save and Save as to RickTextEdit with a File menu
 
-**Status**: Open
+**Status**: Closed — Implemented and verified RichTextEdit File menu Save and Save as
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
