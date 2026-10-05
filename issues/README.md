@@ -278,3 +278,4 @@ upkeep.
 | 265 | [265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md](265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md) | RichTextEdit right-click context menu and clear-style popover button | Open |
 | 266 | [266-richtextedit-s-f5-box-push-drawing-mode.md](266-richtextedit-s-f5-box-push-drawing-mode.md) | RichTextEdit S-F5 box-push drawing mode | Open |
 | 267 | [267-readme-release-status-is-stale.md](267-readme-release-status-is-stale.md) | README release status is stale | Closed — Updated release status to v0.3.0, canonical module path, and current adoption; make check/install passed |
+| 268 | [268-add-save-and-save-as-to-ricktextedit-with-a-file-menu.md](268-add-save-and-save-as-to-ricktextedit-with-a-file-menu.md) | Add Save and Save as to RickTextEdit with a File menu | Open |
