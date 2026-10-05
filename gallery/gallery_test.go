@@ -698,7 +698,7 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	if viewCanvas.CursorX != -1 || viewCanvas.CursorY != -1 {
 		t.Fatalf("view-mode gallery placed cursor at (%d,%d)", viewCanvas.CursorX, viewCanvas.CursorY)
 	}
-	if !strings.Contains(viewCanvas.Row(11), "View/Edit: View") {
+	if !strings.Contains(viewCanvas.Row(11), "[F7] View") {
 		t.Fatalf("view mode hint missing: %q", viewCanvas.Row(11))
 	}
 	before = w.edit.Document.ToPlainText()
@@ -713,12 +713,8 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 12)
 	w.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(canvas.Row(11), "[F7] View/Edit") {
-		t.Fatalf("toggle hint missing from hint bar: %q", canvas.Row(11))
-	}
-	w.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 11})
-	if !w.edit.ViewMode {
-		t.Fatal("clicking the hint bar did not toggle to view mode")
+	if !strings.Contains(canvas.Row(11), "[F7] Edit") {
+		t.Fatalf("toggle hint missing from File bar: %q", canvas.Row(11))
 	}
 }
 
@@ -751,8 +747,8 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 		t.Fatal("Esc did not leave box mode through the gallery")
 	}
 	w.Draw(canvas, canvas.Bounds())
-	if hint := canvas.Row(11); !strings.Contains(hint, "F5: Box selection / Draw mode") || !strings.Contains(hint, "Popover: Box/Draw") {
-		t.Fatalf("normal RichTextEdit hint omits F5 selection/draw behavior: %q", hint)
+	if hint := canvas.Row(11); !strings.Contains(hint, "[F7] View/Edit") || !strings.Contains(hint, "Ctrl+S") {
+		t.Fatalf("File bar omits editor and save hints: %q", hint)
 	}
 }
 
@@ -762,8 +758,8 @@ func TestRichTextEditGalleryDrawsAcrossWideBounds(t *testing.T) {
 	w.edit.Cursor = loom.RichPosition{Offset: 149}
 	canvas := loom.NewCanvas(160, 12)
 	w.Draw(canvas, loom.Rect{W: 160, H: 12})
-	if w.area.W != 160 || w.edit.Cursor.Offset != 149 || canvas.Get(149, 0).Text != "x" {
-		t.Fatalf("wide RichTextEdit content/cursor = %q/%+v, want content at column 149", canvas.Get(149, 0).Text, w.edit.Cursor)
+	if w.editRect.W != 160 || w.edit.Cursor.Offset != 149 || canvas.Get(149, 1).Text != "x" {
+		t.Fatalf("wide RichTextEdit content/cursor = %q/%+v, want content at column 149", canvas.Get(149, 1).Text, w.edit.Cursor)
 	}
 }
 

@@ -43,7 +43,10 @@ type MenuBar struct {
 	Menus      []Menu
 	ActiveMenu int
 	Open       bool
-	Style      MenuStyle
+	// Bottom places the bar on the final row of the draw bounds and opens its
+	// dropdown upward. It is useful for editor status bars.
+	Bottom bool
+	Style  MenuStyle
 
 	focused    bool
 	lastRect   Rect
@@ -140,7 +143,11 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		return
 	}
 	m.lastRect = r
-	m.barRect = Rect{X: r.X, Y: r.Y, W: r.W, H: 1}
+	barY := r.Y
+	if m.Bottom {
+		barY += r.H - 1
+	}
+	m.barRect = Rect{X: r.X, Y: barY, W: r.W, H: 1}
 	c.Fill(m.barRect, Cell{Text: " ", Style: m.Style.Bar})
 	m.titleRects = make([]Rect, len(m.Menus))
 	x := r.X
@@ -154,8 +161,8 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		if m.Open && i == m.ActiveMenu {
 			style = m.Style.Active
 		}
-		writeMenuTitle(c, x, r.Y, menu.Title, menu.Mnemonic, style)
-		m.titleRects[i] = Rect{X: x, Y: r.Y, W: w, H: 1}
+		writeMenuTitle(c, x, barY, menu.Title, menu.Mnemonic, style)
+		m.titleRects[i] = Rect{X: x, Y: barY, W: w, H: 1}
 		x += w
 	}
 	if !m.Open || m.ActiveMenu < 0 || m.ActiveMenu >= len(m.Menus) {
@@ -181,7 +188,11 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		w = r.W
 	}
 	h := len(menu.Items) + 2
-	if h > r.H-(m.barRect.Y-r.Y+1) {
+	if m.Bottom {
+		if h > m.barRect.Y-r.Y {
+			h = m.barRect.Y - r.Y
+		}
+	} else if h > r.H-(m.barRect.Y-r.Y+1) {
 		h = r.H - (m.barRect.Y - r.Y + 1)
 	}
 	if h < 1 {
@@ -196,6 +207,9 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		x = r.X + r.W - w
 	}
 	y := r.Y + 1
+	if m.Bottom {
+		y = m.barRect.Y - h
+	}
 	m.menuRect = Rect{X: x, Y: y, W: w, H: h}
 	c.Fill(m.menuRect, Cell{Text: " ", Style: m.Style.Normal})
 	if w >= 2 && h >= 2 {

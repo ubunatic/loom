@@ -3,7 +3,10 @@
 
 package loom
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestMenuBarKeyboardAndAccelerators(t *testing.T) {
 	called := 0
@@ -80,6 +83,26 @@ func TestMenuBarDrawsClippedDropdown(t *testing.T) {
 	}
 	if rows := Render(bar, 14, 4); len(rows) != 4 {
 		t.Fatalf("render rows=%d", len(rows))
+	}
+}
+
+func TestMenuBarBottomPlacementOpensDropdownUpward(t *testing.T) {
+	bar := NewMenuBar(Menu{Title: "File", Items: []MenuItem{{Label: "Save"}, {Label: "Save as"}}})
+	bar.Bottom = true
+	bar.ConsumeKey(KeyEvent{Key: "f10"})
+	canvas := NewCanvas(24, 8)
+	bar.Draw(canvas, canvas.Bounds())
+	if bar.barRect.Y != 7 {
+		t.Fatalf("bottom bar row = %d, want 7", bar.barRect.Y)
+	}
+	if bar.titleRects[0].Y != 7 || !strings.Contains(canvas.Row(7), "File") {
+		t.Fatalf("bottom menu title is not on row 7: rect=%+v row=%q", bar.titleRects[0], canvas.Row(7))
+	}
+	if bar.menuRect.Y+bar.menuRect.H != bar.barRect.Y {
+		t.Fatalf("dropdown rect %+v does not open upward from bar %+v", bar.menuRect, bar.barRect)
+	}
+	if !bar.menuRect.Contains(bar.itemRects[0].X, bar.itemRects[0].Y) || bar.itemRects[0].Y >= bar.barRect.Y {
+		t.Fatalf("first dropdown item is not above bottom bar: %+v", bar.itemRects[0])
 	}
 }
 

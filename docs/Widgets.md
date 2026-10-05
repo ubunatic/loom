@@ -143,6 +143,11 @@ Loom extracts common terminal file-browsing and launch operations into clean, po
 ### Reusable File Picker (`loom.FilePicker`)
 `FilePicker` browses directories using `ReadDirectory`, filters files with `filepath.Match` patterns, and calls `OnSelect` with the chosen path. File mode navigates directories and selects regular files; directory mode selects directories and filters out files. Esc calls `OnCancel`; backspace navigates to the parent directory when the filter is empty.
 
+`FilePickerSave` adds a filename field and calls `OnSave` (or `OnSelect`) with
+the destination path. Tab switches between the filename field and the directory
+list; set `FocusFileName` to start with the filename field active. An `OnSave`
+error leaves the picker open for correction and retry.
+
 ```go
 picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{
     Mode: loom.FilePickerFiles,
@@ -348,12 +353,22 @@ document, while moving away leaves it unchanged. Ctrl+Space on blank space opens
 a cursor-anchored popover so Draw can start a box stroke there. One mode session
 is one undo step.
 
+Set `ShowFileBar` to reserve the final editor row for a File menu, document
+name and save status, and keyboard hints; it is off by default. F10 or Alt+F
+opens the menu, Ctrl+S saves to `FilePath`, and Ctrl+Shift+S opens Save as.
+An untitled Save opens the save picker with its filename field focused; Tab
+switches focus to directory navigation. `Save` and `SaveAs` use
+`RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
+Save errors remain available in `LastSaveError` and appear in the file bar.
+The File menu contains document actions only; Ctrl+Space continues to open the
+selection formatting popover.
+
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
 cut, paste, undo/redo, `Ctrl+Space` and the popover are off, and those keys return
 `Ignored` so the app can use them. View mode does not place an edit caret, even
-when focused. The gallery editor starts editable and uses F7 or its hint row to
-switch between View and Edit; the hint row is clickable. A span with `Link` set draws with the spec link
+when focused. The gallery editor starts editable and uses F7 to switch between
+View and Edit; its file bar shows the key hint. A span with `Link` set draws with the spec link
 style (`rich_text_edit.link_fg`, `link_underline`) in both modes, focused or not;
 the URL stays on `RichSpan.Link` (OSC 8 output is issue 259).
 

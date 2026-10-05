@@ -25,6 +25,8 @@ type FilePickerOptions struct {
 	Mode FilePickerMode
 	// FileName seeds the destination name in save mode.
 	FileName string
+	// FocusFileName starts save mode with the destination name field focused.
+	FocusFileName bool
 	// Patterns are filepath.Match globs applied to file names; directories are never filtered.
 	Patterns []string
 	Style    ChoiceStyle
@@ -63,7 +65,7 @@ func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
 	if options.Mode == FilePickerSave {
 		p.fileName = NewTextInput(options.FileName)
 		p.fileName.Prompt = "Name: "
-		p.nameFocus = options.FileName != ""
+		p.nameFocus = options.FileName != "" || options.FocusFileName
 	}
 	if options.Style != (ChoiceStyle{}) {
 		p.list.Style = options.Style

@@ -142,6 +142,23 @@ func TestFilePickerSaveModeNavigatesDirectories(t *testing.T) {
 	}
 }
 
+func TestFilePickerSaveModeCanStartWithFilenameFocused(t *testing.T) {
+	picker, err := NewFilePicker(t.TempDir(), FilePickerOptions{
+		Mode:          FilePickerSave,
+		FocusFileName: true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !picker.nameFocus {
+		t.Fatal("save picker did not honor initial filename focus")
+	}
+	picker.ConsumeKey(KeyEvent{Key: "tab"})
+	if picker.nameFocus {
+		t.Fatal("Tab did not switch focus to directory navigation")
+	}
+}
+
 func TestFilePickerSaveModeKeepsOpenWhenSaveCallbackFails(t *testing.T) {
 	wantErr := errors.New("write failed")
 	root := t.TempDir()

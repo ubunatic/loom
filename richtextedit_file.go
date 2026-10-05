@@ -44,7 +44,33 @@ func (e *RichTextEdit) SaveAs(path string) error {
 	}
 	e.FilePath = path
 	e.LastSaveError = nil
+	e.savedDocument = cloneRichDocumentLines(e.Document)
 	return nil
+}
+
+func cloneRichDocumentLines(doc *RichDocument) []RichLine {
+	if doc == nil || len(doc.Lines) == 0 {
+		return []RichLine{{}}
+	}
+	lines := make([]RichLine, len(doc.Lines))
+	for i, line := range doc.Lines {
+		lines[i].Spans = append([]RichSpan(nil), line.Spans...)
+		for j := range lines[i].Spans {
+			pill := lines[i].Spans[j].PillData
+			if pill == nil {
+				continue
+			}
+			copyPill := *pill
+			if pill.Metadata != nil {
+				copyPill.Metadata = make(map[string]string, len(pill.Metadata))
+				for key, value := range pill.Metadata {
+					copyPill.Metadata[key] = value
+				}
+			}
+			lines[i].Spans[j].PillData = &copyPill
+		}
+	}
+	return lines
 }
 
 func (e *RichTextEdit) openSavePicker() error {
@@ -53,8 +79,9 @@ func (e *RichTextEdit) openSavePicker() error {
 		directory, name = filepath.Dir(e.FilePath), filepath.Base(e.FilePath)
 	}
 	picker, err := NewFilePicker(directory, FilePickerOptions{
-		Mode:     FilePickerSave,
-		FileName: name,
+		Mode:          FilePickerSave,
+		FileName:      name,
+		FocusFileName: true,
 		OnSave: func(path string) error {
 			if err := e.SaveAs(path); err != nil {
 				return err

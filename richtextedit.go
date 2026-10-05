@@ -41,6 +41,9 @@ type RichTextEdit struct {
 	// GhostCursorEnabled allows vertical and horizontal navigation into empty
 	// document space. The default comes from spec/defaults.yaml.
 	GhostCursorEnabled bool
+	// ShowFileBar reserves the final row for Save, Save as, document status,
+	// and keyboard hints. It is disabled by default to preserve the viewport.
+	ShowFileBar bool
 	// FilePath is the path associated with the document by SaveAs or Save.
 	FilePath string
 	// LastSaveError holds the most recent save failure, including an error
@@ -53,6 +56,8 @@ type RichTextEdit struct {
 	focused                bool
 	lastRect               Rect
 	savePicker             *FilePicker
+	fileBar                *richTextEditFileBar
+	savedDocument          []RichLine
 	selectionAnchor        RichPosition
 	selectionExtending     bool
 	dragSelecting          bool
@@ -116,7 +121,9 @@ var _ Widget = (*RichTextEdit)(nil)
 // NewRichTextEdit creates a rich text view for doc. A nil document is treated
 // as an empty document.
 func NewRichTextEdit(doc *RichDocument) *RichTextEdit {
-	return &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, GhostCursorEnabled: SpeccedDefaults.RichTextEdit.GhostCursorEnabled, focused: true}
+	e := &RichTextEdit{Document: doc, ShowCursor: true, ShowPopover: true, GhostCursorEnabled: SpeccedDefaults.RichTextEdit.GhostCursorEnabled, focused: true}
+	e.savedDocument = cloneRichDocumentLines(doc)
+	return e
 }
 
 // CursorShape reports the terminal cursor style required by the editor mode.
@@ -177,9 +184,19 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	if e.ViewMode {
 		e.clearPopoverKeyboardState(false)
 	}
+	fullRect := r
+	if e.ShowFileBar && r.H > 0 {
+		r.H--
+	}
 	e.lastRect = r
 	e.popoverButtons = nil
-	if r.W <= 0 || r.H <= 0 {
+	if r.W <= 0 || fullRect.H <= 0 {
+		return
+	}
+	if r.H <= 0 {
+		if e.ShowFileBar {
+			e.ensureFileBar().Draw(c, fullRect)
+		}
 		return
 	}
 	c.PaintSurface(r, Style{})
@@ -221,6 +238,13 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 			c.CursorShape = e.CursorShape()
 			c.CursorShapeSet = true
 		}
+	}
+	if e.ShowFileBar {
+		e.ensureFileBar().Draw(c, fullRect)
+	}
+	if e.savePicker != nil {
+		c.Fill(r, Cell{Text: " ", Style: DefaultMenuStyle().Normal})
+		e.savePicker.Draw(c, r)
 	}
 }
 
@@ -670,6 +694,17 @@ func (e *RichTextEdit) selectionStyle(base Style) Style {
 
 // ConsumeKey applies navigation, text editing, selection, and inline formatting.
 func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
+	if e.savePicker != nil {
+		if result := e.savePicker.ConsumeKey(key); result.Consumed {
+			return result
+		}
+		return Handled()
+	}
+	if e.ShowFileBar {
+		if result := e.ensureFileBar().ConsumeKey(key); result.Consumed {
+			return result
+		}
+	}
 	e.ensureDocument()
 	if !e.cursorInVoid {
 		e.clampPosition(&e.Cursor, e.documentLines())
@@ -828,6 +863,28 @@ func richViewModeKey(key KeyEvent) bool {
 
 // ConsumeMouse positions the cursor and supports click-drag selection.
 func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
+	if e.savePicker != nil {
+		if result := e.savePicker.ConsumeMouse(mouse); result.Consumed {
+			return result
+		}
+		return Handled()
+	}
+	if e.ShowFileBar {
+		menu := e.ensureFileBar().menu
+		if menu.Open || menu.Focused() {
+			result := menu.ConsumeMouse(mouse)
+			if !menu.Open {
+				menu.SetFocus(false)
+			}
+			if result.Consumed {
+				return result
+			}
+			return Handled()
+		}
+		if result := menu.ConsumeMouse(mouse); result.Consumed {
+			return result
+		}
+	}
 	e.ensureDocument()
 	if e.popoverRelease && mouse.Action == MouseRelease {
 		e.popoverRelease = false
