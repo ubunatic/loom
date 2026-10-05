@@ -9,7 +9,7 @@
 ---
 
 ## 1. Problem & Motivation
-RichTextEdit currently has no Save or Save as action. Add a File menu to its bottom bar so users can save the current document or choose a destination, and clean up the bar's layout while adding it.
+RichTextEdit currently has no Save or Save as action. Add a File menu to its bottom bar so users can save the current document or choose a destination, and clean up the bar's layout while adding it. Keep the existing text-selection formatting popover (opened with Ctrl+Space) unchanged; the bottom File menu should contain file actions and other functions not already offered by that popover.
 
 ## 2. Technical Specification / Findings
 The widget is named `RichTextEdit` in the library. Exact save format and destination-picker behavior should follow the existing document serialization and file-picker APIs; confirm against live code before implementation.
