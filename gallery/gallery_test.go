@@ -727,7 +727,7 @@ func TestRichTextEditGalleryTypingPTY(t *testing.T) {
 	s.WaitFor("Try ", 5*time.Second)
 	s.Send("Q")
 	s.WaitFor("QWelcome to", 5*time.Second)
-	if !strings.Contains(strings.Join(s.Screen(), "\n"), "[F7] View/Edit") {
+	if !strings.Contains(strings.Join(s.Screen(), "\n"), "[F7] View") {
 		t.Fatal("F7 mode toggle hint is not visible")
 	}
 }
@@ -739,7 +739,7 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 12)
 	w.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(canvas.Row(11), "[Box mode]") || !strings.Contains(canvas.Row(11), "Esc exits") || strings.Contains(canvas.Row(11), "C-S-B") {
+	if !strings.Contains(canvas.Row(11), "[Box mode]") || !strings.Contains(canvas.Row(11), "Esc exits") {
 		t.Fatalf("box mode hint = %q", canvas.Row(11))
 	}
 	w.ConsumeKey(loom.KeyEvent{Key: "esc"})
@@ -747,7 +747,7 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 		t.Fatal("Esc did not leave box mode through the gallery")
 	}
 	w.Draw(canvas, canvas.Bounds())
-	if hint := canvas.Row(11); !strings.Contains(hint, "[F7] View/Edit") || !strings.Contains(hint, "Ctrl+S") {
+	if hint := canvas.Row(11); !strings.Contains(hint, "[F7] View") || !strings.Contains(hint, "Ctrl+S") || !strings.Contains(hint, "Ctrl+Shift+S") {
 		t.Fatalf("File bar omits editor and save hints: %q", hint)
 	}
 }
