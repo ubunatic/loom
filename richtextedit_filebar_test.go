@@ -22,8 +22,8 @@ func TestRichTextEditFileBarIsOptInAndReservesOneRow(t *testing.T) {
 	if edit.lastRect.H != 4 {
 		t.Fatalf("file bar body height = %d, want 4", edit.lastRect.H)
 	}
-	if !strings.Contains(canvas.Row(4), "File") {
-		t.Fatalf("bottom row has no File menu: %q", canvas.Row(4))
+	if canvas.Get(1, 4).Text != "F" || canvas.Get(2, 4).Text != "i" {
+		t.Fatalf("bottom row has no File menu title: %q%q", canvas.Get(1, 4).Text, canvas.Get(2, 4).Text)
 	}
 }
 
@@ -56,6 +56,34 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	if row := canvas.Row(4); !strings.Contains(row, "Error") {
 		t.Fatalf("error file bar row = %q", row)
 	}
+}
+
+func TestRichTextEditFileBarFitsUnsavedStatusAndHintsAt80Columns(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+	edit.ShowFileBar = true
+	canvas := NewCanvas(80, 4)
+	assertBar := func(status string) {
+		t.Helper()
+		edit.Draw(canvas, canvas.Bounds())
+		row := canvas.Row(3)
+		for _, want := range []string{status, "Ctrl+S", "Ctrl+Shift+S", "[F7] View"} {
+			if !strings.Contains(row, want) {
+				t.Fatalf("80-column file bar row omits %q: %q", want, row)
+			}
+		}
+	}
+	assertBar("Untitled · Unsaved")
+	edit.ConsumeKey(KeyEvent{Text: "!"})
+	assertBar("Untitled · Modified")
+	path := filepath.Join(t.TempDir(), "notes.rtf")
+	if err := edit.SaveAs(path); err != nil {
+		t.Fatalf("SaveAs: %v", err)
+	}
+	assertBar("notes.rtf · Saved")
+	if err := edit.SaveAs(filepath.Join(t.TempDir(), "missing", "notes.rtf")); err == nil {
+		t.Fatal("SaveAs to missing directory succeeded")
+	}
+	assertBar("notes.rtf · Error")
 }
 
 func TestRichTextEditFileBarF7HintNamesDestinationMode(t *testing.T) {

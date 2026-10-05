@@ -6,6 +6,7 @@ package loom
 import (
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 type richTextEditFileBar struct {
@@ -85,18 +86,22 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 		viewHint = "[F7] Edit"
 	}
 	hints := "[F10] File  Ctrl+S Save  Ctrl+Shift+S Save as  " + viewHint
+	compactHints := "Ctrl+S Save  Ctrl+Shift+S Save as  " + viewHint
+	available := max(0, bounds.W-titleWidth)
+	status := b.status()
+	if StringWidth(hints)+StringWidth(status)+2 > available {
+		hints = compactHints
+	}
 	if b.edit.BoxMode {
 		hints = "[Box mode] Esc exits  " + hints
 	}
-	available := max(0, bounds.W-titleWidth)
 	hints = TruncateText(hints, available, "")
 	hintWidth := StringWidth(hints)
 	hintX := bounds.X + bounds.W - hintWidth
 	statusStart := bounds.X + titleWidth
 	statusWidth := max(0, hintX-statusStart-1)
-	status := b.status()
 	if statusWidth > 0 {
-		c.Write(statusStart, row, " "+TruncateText(status, statusWidth-1, "…"), Style{Dim: true})
+		c.Write(statusStart, row, " "+truncateRichTextFileBarStatus(status, statusWidth-1), Style{Dim: true})
 	}
 	if hintWidth > 0 {
 		c.Write(hintX, row, hints, Style{Dim: true})
@@ -119,4 +124,21 @@ func (b *richTextEditFileBar) status() string {
 		status = "Unsaved"
 	}
 	return name + " · " + status
+}
+
+func truncateRichTextFileBarStatus(status string, width int) string {
+	if StringWidth(status) <= width {
+		return status
+	}
+	separator := strings.LastIndex(status, " · ")
+	if separator < 0 {
+		return TruncateText(status, width, "…")
+	}
+	suffix := status[separator:]
+	suffixWidth := StringWidth(suffix)
+	if suffixWidth >= width {
+		return TruncateText(status, width, "…")
+	}
+	nameWidth := width - suffixWidth
+	return TruncateText(status[:separator], nameWidth, "…") + suffix
 }
