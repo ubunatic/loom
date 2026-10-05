@@ -15,11 +15,17 @@ func TestRichTextEditSaveWithoutPathOpensSavePicker(t *testing.T) {
 	if err := edit.Save(); err != nil {
 		t.Fatalf("Save without path: %v", err)
 	}
-	if edit.savePicker == nil || edit.savePicker.options.Mode != FilePickerSave {
+	if edit.savePicker == nil || edit.savePicker.options.Mode != FilePickerSave || edit.savePopup == nil {
 		t.Fatalf("save picker = %#v, want save destination picker", edit.savePicker)
+	}
+	if edit.savePopup.Inner != edit.savePicker || edit.savePopup.Width != SpeccedDefaults.RichTextEdit.SavePopupMaxWidth || edit.savePopup.Height != SpeccedDefaults.RichTextEdit.SavePopupMaxHeight {
+		t.Fatalf("save popup = %+v, want bounded popup containing picker", edit.savePopup)
 	}
 	if edit.FilePath != "" {
 		t.Fatalf("path changed before destination selection: %q", edit.FilePath)
+	}
+	if edit.savePicker.nameFocus {
+		t.Fatal("pathless save picker opened with filename focus instead of directory search")
 	}
 }
 
@@ -76,6 +82,9 @@ func TestRichTextEditSaveAsCancellationPreservesAssociation(t *testing.T) {
 	edit.savePicker.ConsumeKey(KeyEvent{Key: "esc"})
 	if edit.savePicker != nil {
 		t.Fatal("cancel did not close Save as picker")
+	}
+	if edit.savePopup != nil {
+		t.Fatal("cancel did not close Save as popup")
 	}
 	if edit.FilePath != path {
 		t.Fatalf("cancel changed associated path to %q", edit.FilePath)
@@ -149,6 +158,7 @@ func TestRichTextEditSavePickerKeepsAssociationAndReportsSaveError(t *testing.T)
 		t.Fatalf("open Save as picker: %v", err)
 	}
 	edit.savePicker.fileName.SetValue("new.ansi")
+	edit.savePicker.ConsumeKey(KeyEvent{Key: "tab"})
 	edit.savePicker.ConsumeKey(KeyEvent{Key: "enter"})
 	if edit.savePicker == nil {
 		t.Fatal("save picker closed after failed save")

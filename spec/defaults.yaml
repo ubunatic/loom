@@ -75,3 +75,5 @@ rich_text_edit:
   popover_focus_bg: 24
   link_fg: 39
   link_underline: true
+  save_popup_max_width: 72
+  save_popup_max_height: 18

@@ -65,6 +65,9 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.LinkFG != 39 || !got.LinkUnderline {
 		t.Fatalf("link defaults = %d, %v", got.LinkFG, got.LinkUnderline)
 	}
+	if got.SavePopupMaxWidth != 72 || got.SavePopupMaxHeight != 18 {
+		t.Fatalf("save popup max dimensions = %dx%d, want 72x18", got.SavePopupMaxWidth, got.SavePopupMaxHeight)
+	}
 	if err := got.validate(); err != nil {
 		t.Fatal(err)
 	}

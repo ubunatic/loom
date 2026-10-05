@@ -79,21 +79,28 @@ func (e *RichTextEdit) openSavePicker() error {
 		directory, name = filepath.Dir(e.FilePath), filepath.Base(e.FilePath)
 	}
 	picker, err := NewFilePicker(directory, FilePickerOptions{
-		Mode:          FilePickerSave,
-		FileName:      name,
-		FocusFileName: true,
+		Mode:     FilePickerSave,
+		FileName: name,
 		OnSave: func(path string) error {
 			if err := e.SaveAs(path); err != nil {
 				return err
 			}
 			e.savePicker = nil
+			e.savePopup = nil
 			return nil
 		},
-		OnCancel: func() { e.savePicker = nil },
+		OnCancel: func() {
+			e.savePicker = nil
+			e.savePopup = nil
+		},
 	})
 	if err != nil {
 		return fmt.Errorf("loom: open save destination picker: %w", err)
 	}
 	e.savePicker = picker
+	e.savePopup = NewPopup("Save as", picker)
+	e.savePopup.Width = SpeccedDefaults.RichTextEdit.SavePopupMaxWidth
+	e.savePopup.Height = SpeccedDefaults.RichTextEdit.SavePopupMaxHeight
+	e.savePopup.Style = DefaultMenuStyle().Normal
 	return nil
 }

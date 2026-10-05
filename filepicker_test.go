@@ -78,9 +78,10 @@ func TestFilePickerSaveModeSelectsEnteredFileName(t *testing.T) {
 	root := t.TempDir()
 	var selected string
 	picker, err := NewFilePicker(root, FilePickerOptions{
-		Mode:     FilePickerSave,
-		FileName: "new.ansi",
-		OnSelect: func(path string) { selected = path },
+		Mode:          FilePickerSave,
+		FileName:      "new.ansi",
+		FocusFileName: true,
+		OnSelect:      func(path string) { selected = path },
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -101,6 +102,13 @@ func TestFilePickerSaveModeAcceptsTypedDestinationAndCancels(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatal(err)
+	}
+	if picker.nameFocus {
+		t.Fatal("save picker stole focus from directory search")
+	}
+	picker.ConsumeKey(KeyEvent{Text: "typed"})
+	if got := picker.List().Query(); got != "typed" {
+		t.Fatalf("save directory query = %q, want typed", got)
 	}
 	picker.ConsumeKey(KeyEvent{Key: "tab"})
 	for _, r := range "typed.ansi" {
@@ -135,27 +143,61 @@ func TestFilePickerSaveModeNavigatesDirectories(t *testing.T) {
 		t.Fatal(err)
 	}
 	picker.List().SelectIndex(1)
-	picker.ConsumeKey(KeyEvent{Key: "tab"})
 	picker.ConsumeKey(KeyEvent{Key: "enter"})
 	if picker.Directory().Path != child {
 		t.Fatalf("save picker directory = %q, want %q", picker.Directory().Path, child)
 	}
 }
 
-func TestFilePickerSaveModeCanStartWithFilenameFocused(t *testing.T) {
+func TestFilePickerSaveModeFilenameFocusIsExplicitAndSwitchable(t *testing.T) {
 	picker, err := NewFilePicker(t.TempDir(), FilePickerOptions{
-		Mode:          FilePickerSave,
-		FocusFileName: true,
+		Mode:     FilePickerSave,
+		FileName: "seed.ansi",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !picker.nameFocus {
-		t.Fatal("save picker did not honor initial filename focus")
+	if picker.nameFocus {
+		t.Fatal("seeded filename stole focus without explicit option")
 	}
 	picker.ConsumeKey(KeyEvent{Key: "tab"})
+	if !picker.nameFocus {
+		t.Fatal("Tab did not switch focus to filename editing")
+	}
+	picker.ConsumeKey(KeyEvent{Key: "shift-tab"})
 	if picker.nameFocus {
-		t.Fatal("Tab did not switch focus to directory navigation")
+		t.Fatal("Shift+Tab did not switch focus back to directory search")
+	}
+	explicit, err := NewFilePicker(t.TempDir(), FilePickerOptions{Mode: FilePickerSave, FocusFileName: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !explicit.nameFocus {
+		t.Fatal("explicit filename focus option was ignored")
+	}
+}
+
+func TestFilePickerSaveModeMouseSelectsFilenameAndDirectoryFocus(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "seed.ansi"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	picker, err := NewFilePicker(root, FilePickerOptions{Mode: FilePickerSave, FileName: "seed.ansi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	picker.Draw(NewCanvas(40, 8), Rect{W: 40, H: 8})
+	picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 7})
+	if !picker.nameFocus {
+		t.Fatal("clicking filename row did not focus filename editing")
+	}
+	picker.ConsumeKey(KeyEvent{Text: "x"})
+	if got := picker.FileName(); got != "seed.ansi"+"x" {
+		t.Fatalf("filename after click and type = %q", got)
+	}
+	picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
+	if picker.nameFocus {
+		t.Fatal("clicking directory list did not restore search focus")
 	}
 }
 
@@ -163,9 +205,10 @@ func TestFilePickerSaveModeKeepsOpenWhenSaveCallbackFails(t *testing.T) {
 	wantErr := errors.New("write failed")
 	root := t.TempDir()
 	picker, err := NewFilePicker(root, FilePickerOptions{
-		Mode:     FilePickerSave,
-		FileName: "document.ansi",
-		OnSave:   func(string) error { return wantErr },
+		Mode:          FilePickerSave,
+		FileName:      "document.ansi",
+		FocusFileName: true,
+		OnSave:        func(string) error { return wantErr },
 	})
 	if err != nil {
 		t.Fatal(err)

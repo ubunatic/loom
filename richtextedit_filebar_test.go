@@ -58,17 +58,17 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	}
 }
 
-func TestRichTextEditFileBarFitsUnsavedStatusAndHintsAt80Columns(t *testing.T) {
+func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
 	edit.ShowFileBar = true
-	canvas := NewCanvas(80, 4)
+	canvas := NewCanvas(100, 4)
 	assertBar := func(status string) {
 		t.Helper()
 		edit.Draw(canvas, canvas.Bounds())
 		row := canvas.Row(3)
-		for _, want := range []string{status, "Ctrl+S", "Ctrl+Shift+S", "[F7] View"} {
+		for _, want := range []string{status, "Alt+F", "Ctrl+S", "Ctrl+Shift+S", "[F7] View"} {
 			if !strings.Contains(row, want) {
-				t.Fatalf("80-column file bar row omits %q: %q", want, row)
+				t.Fatalf("100-column file bar row omits %q: %q", want, row)
 			}
 		}
 	}
@@ -84,6 +84,19 @@ func TestRichTextEditFileBarFitsUnsavedStatusAndHintsAt80Columns(t *testing.T) {
 		t.Fatal("SaveAs to missing directory succeeded")
 	}
 	assertBar("notes.rtf · Error")
+	canvas = NewCanvas(80, 4)
+	assertBar("notes.rtf · Error")
+	canvas = NewCanvas(40, 4)
+	edit.Draw(canvas, canvas.Bounds())
+	row := canvas.Row(3)
+	for _, want := range []string{"· Error", "Alt+F", "[F7] View"} {
+		if !strings.Contains(row, want) {
+			t.Fatalf("40-column file bar row omits %q: %q", want, row)
+		}
+	}
+	if strings.Contains(row, "F10") {
+		t.Fatalf("narrow hints advertise F10 for the File menu: %q", row)
+	}
 }
 
 func TestRichTextEditFileBarF7HintNamesDestinationMode(t *testing.T) {
@@ -140,8 +153,8 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed || edit.savePicker == nil {
 		t.Fatalf("pathless Ctrl+S result/picker = %+v/%v", result, edit.savePicker)
 	}
-	if !edit.savePicker.nameFocus {
-		t.Fatal("pathless Save picker did not focus its filename field")
+	if edit.savePicker.nameFocus {
+		t.Fatal("pathless Save picker stole focus from directory search")
 	}
 	edit.ConsumeKey(KeyEvent{Key: "esc"})
 	if edit.FilePath != "" || edit.savePicker != nil {
@@ -150,18 +163,57 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-s"}); !result.Consumed || edit.savePicker == nil {
 		t.Fatalf("Ctrl+Shift+S result/picker = %+v/%v", result, edit.savePicker)
 	}
-	if !edit.savePicker.nameFocus {
-		t.Fatal("untitled Save as picker did not focus its filename field")
+	if edit.savePicker.nameFocus {
+		t.Fatal("untitled Save as picker stole focus from directory search")
 	}
+	edit.ConsumeKey(KeyEvent{Text: "created"})
+	if got := edit.savePicker.List().Query(); got != "created" {
+		t.Fatalf("Save as directory query = %q, want created", got)
+	}
+	edit.ConsumeKey(KeyEvent{Key: "tab"})
 	newPath := filepath.Join(root, "created.ansi")
 	for _, r := range "created.ansi" {
 		edit.ConsumeKey(KeyEvent{Text: string(r)})
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || edit.savePicker != nil {
+	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || edit.savePicker != nil || edit.savePopup != nil {
 		t.Fatalf("confirm pathless Save as result/picker = %+v/%v", result, edit.savePicker)
 	}
 	if edit.FilePath != newPath {
 		t.Fatalf("Save as associated path = %q, want %q", edit.FilePath, newPath)
+	}
+}
+
+func TestRichTextEditSaveAsPopupDrawsBoundedBorderAndRoutesEvents(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "document"}}}}})
+	if err := edit.openSavePicker(); err != nil {
+		t.Fatal(err)
+	}
+	canvas := NewCanvas(100, 30)
+	edit.Draw(canvas, canvas.Bounds())
+	p := edit.savePopup
+	if p == nil || p.innerRect.W <= 0 || p.innerRect.H <= 0 {
+		t.Fatalf("popup inner rect = %+v", p)
+	}
+	if p.Width >= edit.lastRect.W || p.Height >= edit.lastRect.H {
+		t.Fatalf("popup %dx%d is not smaller than editor %dx%d", p.Width, p.Height, edit.lastRect.W, edit.lastRect.H)
+	}
+	if !strings.Contains(canvas.Row(p.innerRect.Y-1), "Save as") || canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text != "│" {
+		t.Fatalf("popup border/title missing around picker: top=%q left=%q", canvas.Row(p.innerRect.Y-1), canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Text: "notes"}); !result.Consumed || edit.savePicker.List().Query() != "notes" {
+		t.Fatalf("popup did not route search input: result=%+v query=%q", result, edit.savePicker.List().Query())
+	}
+	filenameY := p.innerRect.Y + p.innerRect.H - 1
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: p.innerRect.X + 1, Y: filenameY})
+	if !edit.savePicker.nameFocus {
+		t.Fatal("popup filename click did not focus the filename field")
+	}
+	edit.ConsumeKey(KeyEvent{Text: ".ansi"})
+	if got := edit.savePicker.FileName(); got != ".ansi" {
+		t.Fatalf("filename after popup click = %q, want .ansi", got)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || edit.savePicker != nil || edit.savePopup != nil {
+		t.Fatalf("Escape did not cancel popup: result=%+v picker=%v popup=%v", result, edit.savePicker, edit.savePopup)
 	}
 }
 
@@ -198,6 +250,20 @@ func TestRichTextEditFileBarMenuPreservesSelectionAndPopoverRouting(t *testing.T
 	}
 	if doc.ToPlainText() != text || !edit.HasSelection {
 		t.Fatal("popover navigation formatted text or cleared selection")
+	}
+}
+
+func TestRichTextEditFileBarAltFOpensFileMenuAndF10StaysGlobal(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	edit.ShowFileBar = true
+	if result := edit.ConsumeKey(KeyEvent{Key: "f10"}); result.Consumed || edit.fileBar != nil && edit.fileBar.menu.Open {
+		t.Fatalf("F10 was routed to File menu: result=%+v fileBar=%+v", result, edit.fileBar)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "alt-f"}); !result.Consumed || !edit.fileBar.menu.Open {
+		t.Fatalf("Alt+F did not open File menu: result=%+v open=%v", result, edit.fileBar.menu.Open)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || edit.fileBar.menu.Open {
+		t.Fatalf("Escape did not close File menu: result=%+v open=%v", result, edit.fileBar.menu.Open)
 	}
 }
 

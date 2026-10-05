@@ -50,6 +50,8 @@ type RichTextEditDefaults struct {
 	PopoverFocusBG     int      `yaml:"popover_focus_bg"`
 	LinkFG             int      `yaml:"link_fg"`
 	LinkUnderline      bool     `yaml:"link_underline"`
+	SavePopupMaxWidth  int      `yaml:"save_popup_max_width"`
+	SavePopupMaxHeight int      `yaml:"save_popup_max_height"`
 }
 
 func (d RichTextEditDefaults) validate() error {
@@ -75,6 +77,9 @@ func (d RichTextEditDefaults) validate() error {
 	}
 	if d.BoxStyleDefault != "plain" && d.BoxStyleDefault != "rounded" {
 		return fmt.Errorf("rich_text_edit.box_style_default must be plain or rounded")
+	}
+	if d.SavePopupMaxWidth < 8 || d.SavePopupMaxHeight < 7 {
+		return fmt.Errorf("rich_text_edit save popup dimensions must fit a bordered picker")
 	}
 	for _, label := range d.PopoverLabels {
 		if label == "" {

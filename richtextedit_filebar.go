@@ -85,17 +85,21 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	if b.edit.ViewMode {
 		viewHint = "[F7] Edit"
 	}
-	hints := "[F10] File  Ctrl+S Save  Ctrl+Shift+S Save as  " + viewHint
-	compactHints := "Ctrl+S Save  Ctrl+Shift+S Save as  " + viewHint
 	available := max(0, bounds.W-titleWidth)
 	status := b.status()
-	if StringWidth(hints)+StringWidth(status)+2 > available {
-		hints = compactHints
-	}
+	hints := "Alt+F  Ctrl+S Save  Ctrl+Shift+S As  " + viewHint
 	if b.edit.BoxMode {
-		hints = "[Box mode] Esc exits  " + hints
+		hints = "[Box] Esc exits  " + hints
 	}
-	hints = TruncateText(hints, available, "")
+	if StringWidth(hints)+StringWidth(status)+2 > available {
+		hints = "Alt+F  " + viewHint
+		if b.edit.BoxMode {
+			hints = "[Box] Esc  " + hints
+		}
+	}
+	if StringWidth(hints) > available {
+		hints = TruncateText(hints, available, "")
+	}
 	hintWidth := StringWidth(hints)
 	hintX := bounds.X + bounds.W - hintWidth
 	statusStart := bounds.X + titleWidth

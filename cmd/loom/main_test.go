@@ -459,6 +459,9 @@ func TestGalleryAppKeys(t *testing.T) {
 	if r := g.ConsumeKey(loom.KeyEvent{Key: "f10"}); !r.Quit {
 		t.Fatal("F10 must quit")
 	}
+	if r := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !r.Quit {
+		t.Fatal("Ctrl+Q must quit")
+	}
 
 	child.consume = true
 	if r := g.ConsumeKey(loom.KeyEvent{Key: "q"}); r.Quit || child.keys != 1 {
@@ -655,7 +658,7 @@ func TestANSIViewScrollAndQuit(t *testing.T) {
 		t.Fatalf("down key did not scroll: offsetY=%d", view.offsetY)
 	}
 	if !view.ConsumeKey(loom.KeyEvent{Key: "f10"}).Quit {
-		t.Fatal("F10 did not quit")
+		t.Fatal("F10 did not quit the ANSI viewer")
 	}
 }
 

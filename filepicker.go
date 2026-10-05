@@ -65,7 +65,7 @@ func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
 	if options.Mode == FilePickerSave {
 		p.fileName = NewTextInput(options.FileName)
 		p.fileName.Prompt = "Name: "
-		p.nameFocus = options.FileName != "" || options.FocusFileName
+		p.nameFocus = options.FocusFileName
 	}
 	if options.Style != (ChoiceStyle{}) {
 		p.list.Style = options.Style
@@ -268,7 +268,7 @@ func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return p.list.ConsumeKey(e)
 	}
-	if p.fileName != nil && e.Is("tab") {
+	if p.fileName != nil && e.Is("tab", "shift-tab") {
 		p.nameFocus = !p.nameFocus
 		return Handled()
 	}
@@ -284,8 +284,10 @@ func (p *FilePicker) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	if p.fileName != nil && e.Y == p.lastRect.H-1 {
+		p.nameFocus = true
 		return Handled()
 	}
+	p.nameFocus = false
 	e.X -= p.listRect.X - p.lastRect.X
 	e.Y--
 	return p.list.ConsumeMouse(e)

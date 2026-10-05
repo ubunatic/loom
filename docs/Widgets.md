@@ -261,7 +261,7 @@ bar := loom.NewMenuBar(loom.Menu{
 })
 ```
 
-F10 opens the bar; `Alt+<mnemonic>` opens a matching menu. Left/Right moves between titles, Up/Down moves through items, Enter/Space invokes the selected action, Escape closes the dropdown, and a second Escape unfocuses the bar. Mouse hover changes the active title or highlighted item; a title click toggles its dropdown and an outside click dismisses it. Item shortcut labels are matched through `KeyMap`. `Submenu` is reserved for nested menus and is not opened by this one-level widget.
+When the host permits menu routing, F10 opens the bar and `Alt+<mnemonic>` opens a matching menu. A `Pane` handles F10 as global Quit by default. Left/Right moves between titles, Up/Down moves through items, Enter/Space invokes the selected action, Escape closes the dropdown, and a second Escape unfocuses the bar. Mouse hover changes the active title or highlighted item; a title click toggles its dropdown and an outside click dismisses it. Item shortcut labels are matched through `KeyMap`. `Submenu` is reserved for nested menus and is not opened by this one-level widget.
 
 ## 8. Root Event Loop Contract: EventResult and Quit Invariants
 
@@ -354,10 +354,12 @@ a cursor-anchored popover so Draw can start a box stroke there. One mode session
 is one undo step.
 
 Set `ShowFileBar` to reserve the final editor row for a File menu, document
-name and save status, and keyboard hints; it is off by default. F10 or Alt+F
-opens the menu, Ctrl+S saves to `FilePath`, and Ctrl+Shift+S opens Save as.
-An untitled Save opens the save picker with its filename field focused; Tab
-switches focus to directory navigation. `Save` and `SaveAs` use
+name and save status, and keyboard hints; it is off by default. Alt+F or
+clicking File opens the menu, Ctrl+S saves to `FilePath`, and Ctrl+Shift+S
+opens Save as. In the `loom widgets` gallery, F10 and Ctrl+Q quit the gallery.
+The save picker opens as a bounded, bordered popup with directory search active.
+Tab or Shift+Tab switches between filename editing and search; clicking either
+region sets its focus. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the
