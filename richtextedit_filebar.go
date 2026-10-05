@@ -80,9 +80,9 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	if titleWidth == 0 {
 		titleWidth = StringWidth(" File ")
 	}
-	viewHint := "[F7] Edit"
+	viewHint := "[F7] View"
 	if b.edit.ViewMode {
-		viewHint = "[F7] View"
+		viewHint = "[F7] Edit"
 	}
 	hints := "[F10] File  Ctrl+S Save  Ctrl+Shift+S Save as  " + viewHint
 	if b.edit.BoxMode {

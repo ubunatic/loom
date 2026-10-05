@@ -58,6 +58,24 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	}
 }
 
+func TestRichTextEditFileBarF7HintNamesDestinationMode(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+	edit.ShowFileBar = true
+	canvas := NewCanvas(100, 2)
+
+	edit.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(1); !strings.Contains(row, "[F7] View") {
+		t.Fatalf("edit-mode F7 hint = %q, want destination View", row)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "f7"}); !result.Consumed || !edit.ViewMode {
+		t.Fatalf("F7 view transition = %+v, view mode=%v", result, edit.ViewMode)
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(1); !strings.Contains(row, "[F7] Edit") {
+		t.Fatalf("view-mode F7 hint = %q, want destination Edit", row)
+	}
+}
+
 func TestRichTextEditFileBarClipsNarrowBounds(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "long file bar"}}}}})
 	edit.ShowFileBar = true

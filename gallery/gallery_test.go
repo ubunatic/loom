@@ -698,7 +698,7 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	if viewCanvas.CursorX != -1 || viewCanvas.CursorY != -1 {
 		t.Fatalf("view-mode gallery placed cursor at (%d,%d)", viewCanvas.CursorX, viewCanvas.CursorY)
 	}
-	if !strings.Contains(viewCanvas.Row(11), "[F7] View") {
+	if !strings.Contains(viewCanvas.Row(11), "[F7] Edit") {
 		t.Fatalf("view mode hint missing: %q", viewCanvas.Row(11))
 	}
 	before = w.edit.Document.ToPlainText()
@@ -713,7 +713,7 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 12)
 	w.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(canvas.Row(11), "[F7] Edit") {
+	if !strings.Contains(canvas.Row(11), "[F7] View") {
 		t.Fatalf("toggle hint missing from File bar: %q", canvas.Row(11))
 	}
 }
