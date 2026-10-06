@@ -1,6 +1,6 @@
 # 271 — RichTextEdit save ends files with a final newline
 
-**Status**: Open
+**Status**: Closed — user runbook passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
