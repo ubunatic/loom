@@ -14,11 +14,11 @@ Editing a file today goes through the gallery: `loom widgets --show RichTextEdit
 ## 2. Technical Specification / Findings
 - New Cobra subcommand next to `viewCommand()` in `cmd/loom/main.go`: `loom edit <file>` opens a full-screen RichTextEdit with `ShowFileBar`, loads the file via `RichDocument.FromANSI`, binds `FilePath`, and saves with ^S (final newline per 271). A missing file starts empty, bound to that path.
 - Bottom bar: the editor's `HotkeyBar()` (278) plus F10 Quit; no gallery theme/BG controls unless a `--theme` flag is wanted.
-- Quit with unsaved changes: decide whether F10 asks to save or quits silently (gallery behaviour today). Record the choice before building.
+- Quit with unsaved changes (user decision 2026-10-06): F10 asks before quitting, offering Save, Discard and Cancel. Without unsaved changes F10 quits at once.
 - Share the load/bind code with the gallery demo (`gallery/richtextedit.go`) instead of copying it.
 - Not a duplicate of `examples/ansiedit` (125): that edits ANSI art cell by cell; this edits rich text.
 
 ## 3. Implementation & Verification Plan
-/goal `loom edit <file>` opens the file in RichTextEdit and ^S saves it back, sharing load code with the gallery demo; stop and report when blocked on a user decision (unsaved-quit behaviour) or denied permission.
+/goal `loom edit <file>` opens the file in RichTextEdit and ^S saves it back, sharing load code with the gallery demo; stop and report when blocked on a user decision or denied permission.
 
-Acceptance: CLI test for load, missing file and save round-trip; PTY test of the installed binary (open, type, ^S, F10, file content); `--help`, completion and man page list the command; `make install`.
+Acceptance: CLI test for load, missing file and save round-trip; PTY test of the installed binary (open, type, ^S, F10, file content; F10 with unsaved changes asks, and Save/Discard/Cancel each behave as named); `--help`, completion and man page list the command; `make install`.
