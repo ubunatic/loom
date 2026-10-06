@@ -312,6 +312,11 @@ directly. `Pane` applies fallback quit keys only when a key result is unconsumed
 Navigation keys (`arrows`, `home`, `end`, `pgup`, `pgdn`, `delete`, `tab`,
 `backspace`) never trigger fallback quit.
 
+Tab policy: Tab belongs to containers (Split, Form, FilePicker, the gallery's
+demo switch), which use it to move focus. A widget must not consume Tab unless
+Tab is its documented action: Dialog moves between buttons with left/right only,
+while Table uses Tab for sort and shows it as `[tab:…]` (open question in issue 277).
+
 Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
 [Upgrading](Upgrading.md) for the mapping to `EventResult`.
 
@@ -471,7 +476,7 @@ Loom provides a UI-neutral syntax highlighting and structural navigation framewo
 Loom provides 2D spatial ANSI cell grid modeling and interactive overtype/insert graphic editing:
 
 - **`loom.AnsiBuffer`**: An in-memory 2D styled cell grid (`AnsiCell` storing `Rune`, `FG`, `BG`, `Bold`, `Dim`, `Underline`, `Invert`):
-  - **SGR/CSI Parser & Serializer**: `ParseAnsiBuffer`, `LoadAnsiBuffer`, `SerializeAnsiBuffer`, and `SaveAnsiBuffer` for lossless ANSI art roundtrips.
+  - **SGR/CSI Parser & Serializer**: `ParseAnsiBuffer`, `LoadAnsiBuffer`, `SerializeAnsiBuffer`, and `SaveAnsiBuffer` for lossless ANSI art roundtrips. `CSI K` (modes 0/1/2) fills the erased cells with the current background (BCE). The screen width is the widest printed column (at least the minimum), not the size of the cursor-addressed pre-scan, which can reach hundreds of columns. `ValidateAnsiBox` (ansibox.go) is line-based and skips the edge comparison at nested box corners.
   - **2D Editing Primitives**: `Put`, `PutChar` (overtype & insert modes), `Delete`, `Backspace`, `Copy`, `Cut`, `Paste`, `NextWord`, `PrevWord`, `NextObjectRow`, `PrevObjectRow`.
 - **`loom.AnsiEditor`**: Standard widget implementing `loom.Widget`, `loom.EventConsumer`, `loom.MouseConsumer`, `loom.Focusable`, and `loom.PaneRequester`:
   - Interactive arrow/word/object navigation and character painting.

@@ -38,6 +38,11 @@ terminal's cursor-position response; its poll also retries `EINTR` and observes
 a deadline. This startup query avoids a temporary reader goroutine that could
 steal ordinary keys after timing out.
 
+Pitfall: a reader goroutine must close a channel captured in a local before
+`go func()`, never the struct field (`p.readerDone`). A later run replaces the
+field, and the old goroutine then closes the new channel twice (panic
+"close of closed channel", issue 242).
+
 During input handling, when an incomplete byte sequence or lone `ESC` arrives at a
 read boundary, `Pane` buffers the pending bytes and arms a timer governed by
 `esc_key_timeout` from `spec/defaults.yaml` (default 50 ms). This ensures a

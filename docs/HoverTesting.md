@@ -86,6 +86,7 @@ measurement.
 | Change shows the previous probe's item | settled before the redraw arrived |
 | Mostly `NO_CHANGE` on the top rows | dy = −1 lands on the padding or the focused item |
 | Second probe on the same item shows `NO_CHANGE` | off-grid hover doesn't clear the highlight, so the baseline already has it |
+| PTY test passes or fails at random | it waited for "styles differ" instead of a concrete target state; wait for the exact cell style, e.g. `Bold` on the cursor cell (issue 242) |
 
 ## Running
 

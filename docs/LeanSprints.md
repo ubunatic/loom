@@ -34,7 +34,7 @@ Source: session on `loom eval -a` annotated output feature (issues #166, #171) a
 
 Source: roadmap 180 session, ~30 tickets with `codex:luna:med` developers, host `claude:opus`.
 - **luna:med scaled well**: most widget tickets (Spinner, Tree, Form, DatePicker, Chart, …) landed in one round with a shared `devprompt.txt` (TDD, gallery demo + `.ansi`, one `make test-q1` at the end, commit trailers, `make install`).
-- **Developers report unverified fixes**: several ended with "fixed after the suite run, not rerun". Treat that as untested; the host reruns `make test-q1` (harnez prints the files changed since the last run).
+- **Developers report unverified fixes**: several ended with "fixed after the suite run, not rerun". Treat that as untested; the host reruns `make test-q1` (harnez prints the files changed since the last run). Also check that the developer's run got past `go vet`: a run stopped at vet ran no tests (issue 238).
 - **Repeated rules belong in the prompt, not in review**: catalog name order, `pgdown`/`pgup` aliases, 0-based child-local mouse. Each was found once by a failure, then added to `devprompt.txt` and never recurred.
 - **Two failed rounds → host debugs**: on 112 the developer twice "fixed" the PTY test (byte offset, row guess) while the real cause was a mouse-handler signature the dispatcher never calls (see [Widgets](Widgets.md) §Event Handling). Reading the dispatcher took the host three tool calls.
 - **Colour-dependent tests**: after `LOOMCOLOR` (182), pin `LOOMCOLOR=truecolor` in `TestMain` of packages that assert colours.
