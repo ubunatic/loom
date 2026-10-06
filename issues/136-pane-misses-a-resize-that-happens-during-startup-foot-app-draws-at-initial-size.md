@@ -1,6 +1,6 @@
 # 136 — Pane misses a resize that happens during startup (foot -- app draws at initial size)
 
-**Status**: In Progress
+**Status**: Closed — startup resize re-queried after signal registration (b45cb88)
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -42,3 +42,8 @@ Pre-Work (host):
 
 No code yet. The Sonnet dev (dev-136b) failed at start (claude exit 1, likely the usage limit).
 Resume point: dispatch a fresh developer for M1 (red test) then M2 (fix) from the plan and pre-work above.
+
+## Delivered (2026-10-06)
+
+- `8a9ee13` M1 red test (test-only hook `paneBeforeSignalHandler`, nil in production); `b45cb88` M2: `refreshStartupSize()` re-reads the size after signal registration and the ZWJ probe, before the first canvas, in every screen mode; `41438d8` (247): the run loop checks `ctx.Err()` before each frame, so a SIGWINCH that wins `select` after cancellation can no longer redraw the first frame at the guarded width (99 instead of 100).
+- Developer dev247 (codex:sol:med). Full `make test-q1` after the last commit: 0 FAIL (`/tmp/loom-final-test-q1.log`, 15:54). Host rerun was blocked by Quota-1 (no source change since); host ran the pane startup tests 20 times: all green. `make install` done.
