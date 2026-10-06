@@ -24,6 +24,6 @@ Starting points (verify against live code first):
 Event-routing change: per AGENTS.md, start on `codex:sol:med`.
 
 ## 3. Implementation & Verification Plan
-/goal Save as reopens reliably, Enter on an existing file chooses it, and focus/cursor change only on click or keys, with library-level fixes where needed; stop and report when blocked on a user decision or denied permission.
+/goal Save as reopens reliably, Enter on a listed file fills and focuses the filename input with the cursor in it, and focus/cursor change only on click or keys, with library-level fixes where needed; stop and report when blocked on a user decision or denied permission.
 
 Acceptance: regression tests per item (reopen after picker save; Enter on a listed file fills the input, focuses it and places the cursor at the end of the name; hover does not change focus or cursor); installed-binary PTY check of the user's sequence; any needed library change gets its own ticket linked here.
