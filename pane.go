@@ -689,6 +689,25 @@ func (p *Pane) applyWinch(cols *int) {
 	*cols = p.guardedCols(newCols)
 }
 
+// refreshStartupSize closes the gap between New's size read and signal
+// registration, including time spent probing the terminal. No frame exists
+// yet, so updating inline bounds needs no erasure or scrollback changes.
+func (p *Pane) refreshStartupSize() {
+	cols, rows := termSize(p.fd)
+	wantRows := p.wantRows
+	if wantRows < 1 {
+		wantRows = p.rows
+	}
+	p.startRow, p.rows = winchBounds(p.startRow, wantRows, rows)
+	if p.fullActive {
+		p.startRow, p.rows = 1, max(1, rows-1)
+	}
+	if p.altActive {
+		p.startRow, p.rows = 1, max(1, rows)
+	}
+	p.cols = cols
+}
+
 // ScreenMode is where the pane draws: a few rows below the prompt, the whole
 // terminal, or the whole alternate screen.
 type ScreenMode int
@@ -915,9 +934,12 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 	p.setBracketedPaste(true)
 	defer p.setBracketedPaste(false)
-	// New has put the owned tty in raw mode. Probe before starting the input
-	// reader so the DSR reply cannot be consumed as a key event.
+	// Probe in the selected screen before starting the input reader so the
+	// DSR reply cannot be consumed as a key event. Refresh after both signal
+	// registration and the probe, before allocating the first canvas.
 	measure.DetectZWJMode(p.tty, p.tty, p.startRow)
+	p.refreshStartupSize()
+	cols = p.cols
 	if p.MaxCols > 0 && cols > p.MaxCols {
 		cols = p.MaxCols
 	}

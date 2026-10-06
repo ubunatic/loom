@@ -91,6 +91,39 @@ func TestPaneStartupResizeHelper(t *testing.T) {
 	}
 }
 
+func TestPaneStartupRefreshInlineBounds(t *testing.T) {
+	for _, tc := range []struct {
+		name                           string
+		cols, termRows, rows, wantRows int
+		start, wantStart, wantHeight   int
+	}{
+		{"unchanged", 80, 24, 8, 8, 17, 17, 8},
+		{"grow", 100, 30, 23, 26, 2, 2, 26},
+		{"shrink", 60, 12, 8, 8, 17, 5, 8},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			master, slave := openPTY(t)
+			if err := unix.IoctlSetWinsize(int(master.Fd()), unix.TIOCSWINSZ, &unix.Winsize{
+				Col: uint16(tc.cols), Row: uint16(tc.termRows),
+			}); err != nil {
+				t.Fatal(err)
+			}
+			p := &Pane{tty: slave, fd: int(slave.Fd()), cols: 80, rows: tc.rows,
+				wantRows: tc.wantRows, startRow: tc.start, inlineStart: tc.start,
+				ResizeConfig: DefaultResizeConfig()}
+			p.ResizeConfig.OutOfBandClear = true
+			p.refreshStartupSize()
+			if p.cols != tc.cols || p.rows != tc.wantHeight || p.startRow != tc.wantStart || p.inlineStart != tc.start {
+				t.Fatalf("startup bounds = %dx%d at %d, inlineStart %d", p.cols, p.rows, p.startRow, p.inlineStart)
+			}
+			poll := []unix.PollFd{{Fd: int32(master.Fd()), Events: unix.POLLIN}}
+			if n, err := unix.Poll(poll, 0); err != nil || n != 0 {
+				t.Fatalf("startup refresh wrote terminal output: poll = %d, %v", n, err)
+			}
+		})
+	}
+}
+
 func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
 	for _, tc := range []struct {
 		name       string
