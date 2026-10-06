@@ -50,3 +50,4 @@ Docs in `./docs/` are managed by harnez. <!-- harnez:bundled -->
 <!-- harnez:end Language Conventions -->
 Fix the library, not the caller: no per-widget or per-app workarounds for library flaws. Change interfaces or the event approach only when needed, and then follow a proven key/mouse model (global or local routing).
 - Tickets that touch event routing (keys, mouse, focus, EventResult) start on `codex:sol:med`, not luna.
+- Tab belongs to containers for focus moves; a widget consumes Tab only when it is its documented action (see Tab policy in docs/Widgets.md).
