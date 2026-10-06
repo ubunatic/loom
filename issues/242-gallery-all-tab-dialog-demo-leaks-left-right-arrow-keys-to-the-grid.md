@@ -26,3 +26,11 @@ but also moves grid focus to the next cell; left arrow selects "No" and moves fo
 - Reproduction test first: Grid with a Dialog child, right/left arrow changes the Dialog selection and
   keeps grid focus. Also check that an arrow the Dialog does not use still moves grid focus.
 - Mouse path test per AGENTS.md; `make test-q1`, `make install`, PTY check in the All tab.
+
+---
+
+## Delivered
+
+- Dialog returns `Handled()` for keys it acts on (left/right selection change, Enter, Esc); Esc/Enter close only the dialog, never the host. Tab is left to the container (library focus key; the gallery uses it to switch demos). Table consumes filter, sort (Tab, `!`), paging, help, command and selection keys; no-op arrows still bubble.
+- Commits: `c3fe9a6` (dev242, codex:sol:med); host fixes `f6afcaf` (Dialog leaves Tab, Grid test layout, racy PTY check, box validator accepts a nested box in a grid cell) and `68f9ce5` (pane reader closed a reassigned channel: panic surfaced by the suite).
+- Host verification: `make test-q1` 0 FAIL; `make install`; installed `loom widgets --show All`: right arrow toggles No/Yes, Esc closes the dialog and the app keeps running.

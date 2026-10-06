@@ -24,3 +24,11 @@ In the "All" tab the table highlights the whole row in the "selected" color, whi
 ## 3. Implementation & Verification Plan
 - Test that the All-tab table has cell selection enabled (left/right move the cell cursor).
 - `make test-q1`, `make install`, PTY check of `loom widgets --show All`.
+
+---
+
+## Delivered
+
+- The All tab builds Table, Stopwatch, Timer and KeyHelp from the standalone demo constructors (`newTableDemo`, `demos[...]`), so the All Table has the cell cursor, frozen column and controls; renders refreshed.
+- Commits: `e931e73` (dev242); host made the All PTY table check wait for the cell cursor (`f6afcaf`).
+- Host verification: `make test-q1` 0 FAIL; `make install`; PTY test clicks a Table cell in All and moves the cell cursor with left/right.

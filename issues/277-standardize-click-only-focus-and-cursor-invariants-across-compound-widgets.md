@@ -17,3 +17,5 @@
 
 ## 3. Implementation & Verification Plan
 /goal Enforce click-only/key-only focus and cursor placement invariants across all Loom compound widgets.
+
+**Note (2026-10-06, from 242):** Table now consumes Tab (its documented sort key), so gallery Tab navigation stops at the Table demo (Shift-Tab and clicking tabs still work). Decide here whether widgets may own Tab or whether container focus keys take precedence.
