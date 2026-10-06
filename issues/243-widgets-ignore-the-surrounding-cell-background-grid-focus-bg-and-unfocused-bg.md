@@ -1,6 +1,6 @@
 # 243 — Widgets ignore the surrounding cell background (Grid focus BG and unfocused BG)
 
-**Status**: Open
+**Status**: Closed — M1-M4 delivered, last c588df6
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
