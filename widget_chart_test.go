@@ -95,3 +95,17 @@ func TestChartUsesNiceOutwardYTicks(t *testing.T) {
 		t.Fatalf("chart ticks omit outward-rounded bounds: %q", joined)
 	}
 }
+
+func TestChartMeasureFitsPlotAxisAndLegend(t *testing.T) {
+	one := &Chart{Series: []ChartSeries{{Values: []float64{1, 2}}}}
+	if got := one.Measure(30); got.Width != 30 || got.Height != 7 {
+		t.Fatalf("one series: %+v, want 30x7", got)
+	}
+	two := &Chart{Series: []ChartSeries{{Values: []float64{1}}, {Values: []float64{2}}}}
+	if got := two.Measure(30).Height; got != 8 {
+		t.Fatalf("two series height = %d, want 8 (legend line)", got)
+	}
+	if out := strings.Join(Render(one, 30, 7), "\n"); !strings.Contains(out, "└") || !hasBrailleGlyph(out) {
+		t.Fatalf("chart at measured height drew no axis or line:\n%s", out)
+	}
+}

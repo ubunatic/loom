@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 	"ubunatic.com/loom/media"
 )
 
@@ -652,6 +653,7 @@ func (w *dialogDemo) Unwrap() loom.Widget { return w.dialog }
 func (w *dialogDemo) ApplyTheme(theme loom.ThemeColors) { w.dialog.ApplyTheme(theme) }
 
 func (w *dialogDemo) Draw(c *loom.Canvas, r loom.Rect) { w.dialog.Draw(c, r) }
+func (w *dialogDemo) Measure(width int) measure.Size   { return w.dialog.Measure(width) }
 func (w *dialogDemo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	if !w.dialog.Open && e.Key == "enter" {
 		w.dialog.Open = true

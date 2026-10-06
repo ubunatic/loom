@@ -3,7 +3,11 @@
 
 package loom
 
-import "strings"
+import (
+	"strings"
+
+	"ubunatic.com/loom/measure"
+)
 
 // Dialog is a centered or positioned modal prompt rendered with Popup's border
 // and background treatment. Enter selects the highlighted button and closes;
@@ -55,6 +59,26 @@ func (d *Dialog) Draw(c *Canvas, r Rect) {
 	}
 	lines := strings.Split(d.Body, "\n")
 	content := &dialogContent{dialog: d, lines: lines}
+	w, h := d.size(lines)
+	area := r
+	if d.Rect.X != 0 || d.Rect.Y != 0 || d.Rect.W > 0 || d.Rect.H > 0 {
+		area = Rect{X: d.Rect.X, Y: d.Rect.Y, W: w, H: h}
+	}
+	d.popup = NewPopup(d.Title, content)
+	d.popup.Open, d.popup.Width, d.popup.Height, d.popup.Style = true, w, h, d.Style
+	d.popup.Draw(c, area)
+}
+
+// Measure returns the dialog's outer size, including its border, so a fitted
+// Grid row shows the body and buttons. The width argument is not used.
+func (d *Dialog) Measure(int) measure.Size {
+	w, h := d.size(strings.Split(d.Body, "\n"))
+	return measure.Size{Width: w, Height: h}
+}
+
+// size returns the dialog's outer width and height from Rect, Width/Height or
+// its content.
+func (d *Dialog) size(lines []string) (int, int) {
 	w, h := d.Width, d.Height
 	if d.Rect.W > 0 {
 		w = d.Rect.W
@@ -77,13 +101,7 @@ func (d *Dialog) Draw(c *Canvas, r Rect) {
 	if h < 3 {
 		h = 3
 	}
-	area := r
-	if d.Rect.X != 0 || d.Rect.Y != 0 || d.Rect.W > 0 || d.Rect.H > 0 {
-		area = Rect{X: d.Rect.X, Y: d.Rect.Y, W: w, H: h}
-	}
-	d.popup = NewPopup(d.Title, content)
-	d.popup.Open, d.popup.Width, d.popup.Height, d.popup.Style = true, w, h, d.Style
-	d.popup.Draw(c, area)
+	return w, h
 }
 
 func maxDialogWidth(title string, lines, buttons []string) int {

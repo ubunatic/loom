@@ -175,3 +175,14 @@ func TestDialogMouseUsesDrawLocalCoordinates(t *testing.T) {
 		})
 	}
 }
+
+func TestDialogMeasureShowsBodyAndButtons(t *testing.T) {
+	d := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
+	size := d.Measure(80)
+	if size.Height != 4 {
+		t.Fatalf("height = %d, want 4 (border, body, buttons)", size.Height)
+	}
+	if out := strings.Join(loom.Render(d, size.Width, size.Height), "\n"); !strings.Contains(out, "Keep edits?") || !strings.Contains(out, "Yes") {
+		t.Fatalf("dialog at measured size lost content:\n%s", out)
+	}
+}

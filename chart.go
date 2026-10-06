@@ -8,7 +8,12 @@ import (
 	"math"
 	"strconv"
 	"strings"
+
+	"ubunatic.com/loom/measure"
 )
+
+// chartPlotHeight is the plot height a Chart prefers when a container asks.
+const chartPlotHeight = 5
 
 // ChartMode selects line or grouped-bar rendering.
 type ChartMode uint8
@@ -134,6 +139,17 @@ func (ch *Chart) Draw(c *Canvas, r Rect) {
 			}
 		}
 	}
+}
+
+// Measure returns the preferred size at the given width: a plot of
+// chartPlotHeight lines plus the axis and label lines, and a legend line when
+// the chart has more than one series. Draw still fills any height it gets.
+func (ch *Chart) Measure(width int) measure.Size {
+	height := chartPlotHeight + 2
+	if ch != nil && len(ch.Series) > 1 {
+		height++
+	}
+	return measure.Size{Width: width, Height: height}
 }
 
 func (ch *Chart) valuePos(v, minV, maxV float64, y, h int) int {

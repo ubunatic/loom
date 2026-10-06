@@ -86,7 +86,7 @@ tabs := loom.NewTabs(
 `Grid` divides its width into `Cols` columns. Rows share available height by
 default. Set `FitRows = true` to give each row the largest preferred height
 reported by its children through `Measurer.Measure(cellWidth)`. Heights are at
-least one terminal line; widgets without `Measurer` receive a one-line fallback.
+least one terminal line; widgets without `Measurer` receive a one-line fallback. `Dialog` measures its border, body and buttons; `Chart` asks for a five-line plot plus axis, labels and, with several series, a legend line. A wrapper widget must forward `Measure`, because Grid does not look through `Unwrap`.
 Spare height stays below the fitted rows. Overflow is clipped to the Grid area;
 there is no scrolling, and keyboard navigation can focus an offscreen child.
 
