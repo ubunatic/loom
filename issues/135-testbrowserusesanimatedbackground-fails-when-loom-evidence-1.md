@@ -1,6 +1,6 @@
 # 135 — TestBrowserUsesAnimatedBackground fails when LOOM_EVIDENCE=1
 
-**Status**: Open
+**Status**: Closed — test pins LOOM_EVIDENCE off (t.Setenv); make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
