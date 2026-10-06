@@ -1,6 +1,6 @@
 # 236 — Gallery status bar truncates the F10 Quit hint at 100 columns
 
-**Status**: Open
+**Status**: Closed — fixed by 278 HintBar; F10 Quit visible at 100 cols with astra (on redraw)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
