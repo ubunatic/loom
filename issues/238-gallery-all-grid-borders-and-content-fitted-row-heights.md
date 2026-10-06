@@ -32,3 +32,4 @@ widget in each row should decide that row's height.
 - `make test-q1`, `make install`, PTY check of `loom widgets --show All`.
 
 **Handoff (2026-10-06):** `99b5e70` adds opt-in `Grid.FitRows`, used by the gallery All tab. dev238 fixed a vet error in `grid_fit_test.go` but never reran the suite. The host test-q1 run (log: scratchpad `q1-238-225.log`) was still running at wrap. Next: check `make test-q1`, then `make install`, then close.
+**Result (2026-10-06):** host `make test-q1` FAILED, with 2 gallery tests, probably because FitRows changed the All layout: `TestAllDialogAndTableNavigationPTY` and `TestAllTabAddedWidgetsStayInCellsAndRouteInput/Chart`. Log: `/tmp/loom-238-225-test-q1.log`. All other packages passed, including the 225 moves. Fix these two, then rerun test-q1 and close 238 and 225.
