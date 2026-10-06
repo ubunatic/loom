@@ -420,3 +420,66 @@ func TestParseAnsiBufferMcJulia256(t *testing.T) {
 		}
 	}
 }
+
+func TestParseAnsiBufferEraseInLineUsesBackground(t *testing.T) {
+	red := "\x1b[41m"
+	for _, tc := range []struct {
+		name, text string
+		want       string // per column: r = red background, . = default
+	}{
+		{"to end", "abcdef\r\x1b[2C" + red + "\x1b[K", "..rrrr"},
+		{"to start", "abcdef\r\x1b[2C" + red + "\x1b[1K", "rrr..."},
+		{"whole line", "abcdef\r\x1b[2C" + red + "\x1b[2K", "rrrrrr"},
+		{"past printed width", "abc\nabcdef" + red + "\x1b[K\x1b[1;1H\x1b[K", "rrrrrr"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			buf, err := ParseAnsiBuffer(tc.text, 1, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := ""
+			for x := 0; x < buf.Cols(); x++ {
+				if buf.Get(x, 0).BG == ColorReset() {
+					got += "."
+				} else {
+					got += "r"
+				}
+			}
+			if got != tc.want {
+				t.Fatalf("row 0 background = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// The mc recordings draw the top menu bar's background with CSI K (issue 100).
+func TestParseAnsiBufferMCTopBarReachesRightEdge(t *testing.T) {
+	for _, name := range []string{"mc-julia256.ansi", "mc-mc46.ansi"} {
+		t.Run(name, func(t *testing.T) {
+			data, err := os.ReadFile("docs/data/" + name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			buf, err := ParseAnsiBuffer(string(data), 1, 1)
+			if err != nil {
+				t.Fatal(err)
+			}
+			lastBG := func(y int) int {
+				last := -1
+				for x := 0; x < buf.Cols(); x++ {
+					if buf.Get(x, y).BG != ColorReset() {
+						last = x
+					}
+				}
+				return last
+			}
+			edge := -1
+			for y := 1; y < buf.Rows(); y++ {
+				edge = max(edge, lastBG(y))
+			}
+			if got := lastBG(0); got != edge || edge < 0 {
+				t.Fatalf("top bar background ends at column %d, other rows at %d", got, edge)
+			}
+		})
+	}
+}

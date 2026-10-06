@@ -765,6 +765,11 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 	x, y := 0, 0
 	rs := []rune(content)
 	n := len(rs)
+	// Erase in line (CSI K) paints the current background like a terminal with
+	// BCE. Lines are erased to the buffer edge first; cells past the recorded
+	// screen width (minCols or the widest printed column) are blanked at the end.
+	var erased [][]bool
+	printedCols := 0
 
 	for i := 0; i < n; {
 		// Escape sequences
@@ -790,6 +795,28 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 					x = parseAnsiCSINum(params, 1) - 1
 				case 'd':
 					y = parseAnsiCSINum(params, 1) - 1
+				case 'K':
+					if y < buf.rows {
+						from, to := x, buf.cols
+						switch params {
+						case "1":
+							from, to = 0, min(x+1, buf.cols)
+						case "2":
+							from = 0
+						}
+						if erased == nil {
+							erased = make([][]bool, buf.rows)
+						}
+						if erased[y] == nil {
+							erased[y] = make([]bool, buf.cols)
+						}
+						for cx := from; cx < to; cx++ {
+							cell := BlankAnsiCell()
+							cell.BG = curStyle.BG
+							buf.cells[y][cx] = cell
+							erased[y][cx] = true
+						}
+					}
 				case 'J':
 					if params == "2" || params == "3" {
 						for cy := 0; cy < buf.rows; cy++ {
@@ -831,6 +858,7 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 				second.Rune = rs[i+1]
 				buf.cells[y][x] = first
 				buf.cells[y][x+1] = second
+				printedCols = max(printedCols, x+2)
 			}
 			x += measure.StringWidth(string(rs[i : i+2]))
 			i += 2
@@ -842,10 +870,19 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 			cell.Rune = r
 			buf.cells[y][x] = cell
 			x += w
+			printedCols = max(printedCols, x)
 		}
 		i++
 	}
 
+	screenCols := max(minCols, printedCols)
+	for cy, row := range erased {
+		for cx := screenCols; cx < len(row); cx++ {
+			if row[cx] {
+				buf.cells[cy][cx] = BlankAnsiCell()
+			}
+		}
+	}
 	return buf, nil
 }
 
