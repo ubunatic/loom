@@ -191,16 +191,7 @@ var demos = map[string]constructor{
 			{ID: "go.mod", Label: "go.mod"},
 		})
 	},
-	"Table": func() loom.Widget {
-		table := loom.NewTable(
-			[]loom.Column{{Header: "Task", Width: 18}, {Header: "Status", Width: 12}, {Header: "Owner", Width: 12}},
-			[]loom.Row{{Cells: []string{"Compile", "done", "Ada"}, Key: "compile"}, {Cells: []string{"Unit tests", "running", "Lin"}, Key: "tests"}, {Cells: []string{"Package", "waiting", "Sam"}, Key: "package"}},
-		)
-		table.CellCursor = true
-		table.FrozenCols = 1
-		table.Controls = "←/→ cell  ↑/↓ row"
-		return table
-	},
+	"Table": func() loom.Widget { return newTableDemo() },
 	"Tabs": func() loom.Widget {
 		tabs := loom.NewTabs(
 			loom.Tab{Title: "Overview", Widget: loom.NewView([]string{"Loom widget gallery", "Click a tab or use Tab / Shift-Tab."})},
@@ -460,6 +451,17 @@ func (b *badgeDemo) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return loom.Ignored()
 }
 
+func newTableDemo() *loom.Table {
+	table := loom.NewTable(
+		[]loom.Column{{Header: "Task", Width: 18}, {Header: "Status", Width: 12}, {Header: "Owner", Width: 12}},
+		[]loom.Row{{Cells: []string{"Compile", "done", "Ada"}, Key: "compile"}, {Cells: []string{"Unit tests", "running", "Lin"}, Key: "tests"}, {Cells: []string{"Package", "waiting", "Sam"}, Key: "package"}},
+	)
+	table.CellCursor = true
+	table.FrozenCols = 1
+	table.Controls = "←/→ cell  ↑/↓ row"
+	return table
+}
+
 func newAllDemo() *loom.Grid {
 	button := &buttonDemo{label: "Click Me"}
 	toggleVal := true
@@ -495,11 +497,8 @@ func newAllDemo() *loom.Grid {
 	spinner := loom.NewSpinner("Syncing")
 	spinner.Start()
 
-	watch := loom.NewStopwatch()
-	watch.Start()
-
-	timer := loom.NewTimer(4*time.Minute + 12*time.Second)
-	timer.Start()
+	watch := demos["Stopwatch"]()
+	timer := demos["Timer"]()
 
 	paginator := loom.NewPaginator(5)
 	paginator.SetPage(2)
@@ -511,19 +510,14 @@ func newAllDemo() *loom.Grid {
 	date := time.Date(2024, time.January, 15, 0, 0, 0, 0, time.UTC)
 	datePicker := loom.NewDatePicker(&date)
 	datePicker.Now = func() time.Time { return date }
-	keyHelp := loom.NewKeyHelp(loom.NewKeyMapWithLabels(map[string][]string{
-		"back": {"esc"}, "next": {"j", "down"}, "open": {"enter"},
-	}, map[string]string{"back": "Back", "next": "Next", "open": "Open"}))
+	keyHelp := demos["KeyHelp"]()
 	menuBar := loom.NewMenuBar(
 		loom.Menu{Title: "File", Mnemonic: 'F', Items: []loom.MenuItem{{Label: "Open"}, {Label: "Save"}}},
 		loom.Menu{Title: "Edit", Mnemonic: 'E', Items: []loom.MenuItem{{Label: "Undo"}}},
 	)
 	menuBar.Open = true
 	chart := &loom.Chart{Series: []loom.ChartSeries{{Name: "Requests", Values: []float64{2, 5, 3, 7, 4}}}}
-	table := loom.NewTable(
-		[]loom.Column{{Header: "Task", Width: 10}, {Header: "State", Width: 8}},
-		[]loom.Row{{Cells: []string{"Build", "done"}, Key: "build"}, {Cells: []string{"Test", "run"}, Key: "test"}},
-	)
+	table := newTableDemo()
 	tree := loom.NewTree([]*loom.TreeNode{
 		{ID: "src", Label: "src", Expanded: true, Children: []*loom.TreeNode{{ID: "app", Label: "app.go"}}},
 		{ID: "docs", Label: "docs"},
