@@ -1,6 +1,6 @@
 # 253 — Table arrow navigation bubbles to parent Grid
 
-**Status**: In Progress
+**Status**: Closed — fixed in 7a35858; make test-q1 green twice on 2026-10-06
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
