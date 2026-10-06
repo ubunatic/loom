@@ -1,6 +1,6 @@
 # 048 — Discrepancy between Unicode / Loom width calculation and terminal rendering for emoji in box titles
 
-**Status**: Open
+**Status**: Closed — resolved 2026-09-24; flag width finding no longer reproduces (measure and check-box agree on 2 columns)
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug / Rendering
