@@ -41,8 +41,8 @@ type RichTextEdit struct {
 	// GhostCursorEnabled allows vertical and horizontal navigation into empty
 	// document space. The default comes from spec/defaults.yaml.
 	GhostCursorEnabled bool
-	// ShowFileBar reserves the final row for Save, Save as, document status,
-	// and keyboard hints. It is disabled by default to preserve the viewport.
+	// ShowFileBar reserves the final row for the File menu and document status.
+	// It is disabled by default to preserve the viewport.
 	ShowFileBar bool
 	// FilePath is the path associated with the document by SaveAs or Save.
 	FilePath string
@@ -59,6 +59,7 @@ type RichTextEdit struct {
 	savePopup              *Popup
 	helpPopup              *Popup
 	fileBar                *richTextEditFileBar
+	chromeTheme            *ThemeColors
 	savedDocument          []RichLine
 	selectionAnchor        RichPosition
 	selectionExtending     bool
@@ -148,19 +149,34 @@ func (e *RichTextEdit) Focused() bool { return e.focused }
 
 // HotkeyHint returns the most useful file and help shortcuts for the available width.
 func (e *RichTextEdit) HotkeyHint(width int) string {
-	mode := "F7 View"
+	return e.HotkeyBar().Text(width)
+}
+
+// HotkeyBar returns structured, clickable hints for the editor's key actions.
+// Draw the bar in the host's hint row and route row-local mouse events to it.
+func (e *RichTextEdit) HotkeyBar() *HintBar {
+	mode := "View"
 	if e.ViewMode {
-		mode = "F7 Edit"
+		mode = "Edit"
 	}
-	full := "F1 Help · Alt+F File · Ctrl+S Save · Ctrl+Shift+S Save as · " + mode
-	if StringWidth(full) <= width {
-		return full
+	entry := func(key, binding, label string) HintEntry {
+		return HintEntry{Key: key, Binding: binding, Label: label, Action: func() EventResult { return e.ConsumeKey(KeyEvent{Key: binding}) }}
 	}
-	compact := "F1 Help · Ctrl+S Save · Ctrl+Shift+S As"
-	if StringWidth(compact) <= width {
-		return compact
+	saveAs := entry("^Shift+S", "ctrl-shift-s", "Save as")
+	saveAs.DropPriority = 1
+	bar := NewHintBar(entry("F1", "f1", "Help"), entry("^S", "ctrl-s", "Save"), saveAs, entry("F7", "f7", mode))
+	bar.ApplyTheme(e.toolbarTheme())
+	return bar
+}
+
+// ApplyTheme updates the editor's file menu, status and hotkey chrome.
+func (e *RichTextEdit) ApplyTheme(theme ThemeColors) { e.chromeTheme = &theme }
+
+func (e *RichTextEdit) toolbarTheme() ThemeColors {
+	if e.chromeTheme != nil {
+		return *e.chromeTheme
 	}
-	return TruncateText("F1 Help · Ctrl+S Save", max(0, width), "")
+	return Theme("plain")
 }
 
 // SetFocus sets the editor focus state.

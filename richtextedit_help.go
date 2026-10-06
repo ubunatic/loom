@@ -15,7 +15,7 @@ func richTextEditHelpLines() []string {
 	return []string{
 		"F1: open this help",
 		"File menu: Alt+F open; Left/Right choose menu; Up/Down choose action; Enter/Space run; Escape close",
-		"File actions: Ctrl+S Save; Ctrl+Shift+S Save as",
+		"File actions: ^S Save; ^Shift+S Save as",
 		"Mode: F7 toggle View/Edit; F5 box selection or toggle box drawing",
 		"Move: Left/Right/Up/Down; Ctrl+Left and Ctrl+Right move by word; Home/Ctrl+A start; End/Ctrl+E end",
 		"Select: Shift+arrows; Shift+Home and Shift+End; Ctrl+Shift+A/E extend to line start/end",

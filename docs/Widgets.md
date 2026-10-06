@@ -358,8 +358,8 @@ Set `ShowFileBar` to reserve the final editor row for a File menu and document
 name/save status; it is off by default. The `loom widgets` gallery shows `F1 Help`
 and responsive file shortcut hints below the editor, with F8/F9/F10 gallery
 controls on the last row. F1 opens a scrollable list of editor, formatting, file,
-selection, and picker bindings. Alt+F or clicking File opens the menu, Ctrl+S
-saves to `FilePath`, and Ctrl+Shift+S opens Save as. F10 and Ctrl+Q quit the gallery.
+selection, and picker bindings. Alt+F or clicking File opens the menu, `^S`
+saves to `FilePath`, and `^Shift+S` opens Save as. F10 and Ctrl+Q quit the gallery.
 The save picker opens as a bounded, bordered popup with directory search active;
 clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
@@ -372,7 +372,8 @@ selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl
 cut, paste, undo/redo, `Ctrl+Space` and the popover are off, and those keys return
 `Ignored` so the app can use them. View mode does not place an edit caret, even
 when focused. The gallery editor starts editable and uses F7 to switch between
-View and Edit; its file bar shows the key hint. A span with `Link` set draws with the spec link
+View and Edit; its hotkey row shows the destination mode. The File bar never
+shows an F7 hint. A span with `Link` set draws with the spec link
 style (`rich_text_edit.link_fg`, `link_underline`) in both modes, focused or not;
 the URL stays on `RichSpan.Link` (OSC 8 output is issue 259).
 
@@ -399,6 +400,19 @@ primary screen. These keys reach Loom on the alternate screen. VTE does not
 support CSI-u, so `Ctrl+Shift+A/E` cannot replace Shift+Home/End there. The
 `loom widgets --show RichTextEdit` and combined `loom widgets --show` galleries
 use the alternate screen; standalone non-editor demos remain inline.
+
+`RichTextEdit.HotkeyBar()` returns a reusable `HintBar` with `F1 Help`, `^S Save`,
+`^Shift+S Save as`, and `F7 View/Edit`. `HotkeyHint(width)` remains available as
+plain text. The gallery draws the structured editor hints and its own
+`F8 BG`, `F9 Theme`, and `F10 Quit` controls using the same cap styles.
+
+`HintBar` accepts `HintEntry` values with a display `Key`, `Label`, decoded
+`Binding`, and `Action func() EventResult`. Its keyboard binding and a left
+press on either cap or label run that action; hover and release are inert.
+Route mouse events relative to the bar's draw rectangle. It drops optional
+`Detail` names before removing whole pairs from the end; `DropPriority` lets
+an entry drop first (the editor's Save as). Colors come from
+`ThemeColors.HintBarStyle()`; `ApplyTheme` updates the bar's styles.
 
 ```go
 doc := &loom.RichDocument{Lines: []loom.RichLine{{Spans: []loom.RichSpan{

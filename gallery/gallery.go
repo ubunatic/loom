@@ -29,6 +29,7 @@ var demoEntries = map[string]demoEntry{
 }
 
 var demos = map[string]constructor{
+	"HintBar": newHintBarDemo,
 	"Chart": func() loom.Widget {
 		return &loom.Chart{Series: []loom.ChartSeries{
 			{Name: "Requests", Values: []float64{12, 18, 14, 26, 22, 31, 27}},

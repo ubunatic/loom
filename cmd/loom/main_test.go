@@ -351,7 +351,7 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	}
 	child := &themeProbeWidget{}
 	gallery = newThemedGallery(child, "mc")
-	initialCanvas := loom.NewCanvas(40, 4)
+	initialCanvas := loom.NewCanvas(80, 4)
 	gallery.Draw(initialCanvas, initialCanvas.Bounds())
 	initialColor := initialCanvas.Get(0, 0).Style
 	gallery.ConsumeKey(loom.KeyEvent{Key: "f9"})
@@ -361,14 +361,14 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	if gallery.themeName != want || child.theme.NormalFG != loom.Theme(want).NormalFG {
 		t.Fatalf("after F9 theme = %q, child theme mismatch; want %q", gallery.themeName, want)
 	}
-	canvas := loom.NewCanvas(40, 4)
+	canvas := loom.NewCanvas(80, 4)
 	gallery.Draw(canvas, canvas.Bounds())
 	if canvas.Get(0, 0).Style == initialColor {
 		t.Fatalf("demo rendered the same color style after switching from mc to %q", want)
 	}
-	status := canvas.Row(canvas.Rows() - 1)
-	if !strings.Contains(status, "F9 Theme: "+want) && !strings.Contains(status, "F9: "+want) {
-		t.Fatalf("gallery chrome = %q, want active theme %q", canvas.Row(canvas.Rows()-1), want)
+	status := canvasPlainRow(canvas, canvas.Rows()-1)
+	if !strings.Contains(status, "F9 Theme "+want) {
+		t.Fatalf("gallery chrome = %q, want active theme %q", canvasPlainRow(canvas, canvas.Rows()-1), want)
 	}
 }
 
@@ -472,14 +472,14 @@ func TestGalleryAppKeys(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(60, 4)
 	g.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(canvas.Rows() - 1); !strings.Contains(row, "F8 BG: astra") || !strings.Contains(row, "F10 Quit") {
+	if row := canvasPlainRow(canvas, canvas.Rows()-1); !strings.Contains(row, "F8 BG astra") || !strings.Contains(row, "F10 Quit") {
 		t.Fatalf("status bar = %q", row)
 	}
 	for i, want := range []string{"astra (on redraw)", "plain"} {
 		g.ConsumeKey(loom.KeyEvent{Key: "f8"})
 		canvas = loom.NewCanvas(60, 4)
 		g.Draw(canvas, canvas.Bounds())
-		if row := canvas.Row(canvas.Rows() - 1); !strings.Contains(row, "F8 BG: "+want) {
+		if row := canvasPlainRow(canvas, canvas.Rows()-1); !strings.Contains(row, "F8 BG "+want) {
 			t.Fatalf("status bar = %q, want mode %q", row, want)
 		}
 		entry := applied[i+1]
@@ -523,25 +523,25 @@ func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 			g := newThemedGallery(widget, "plain")
 			canvas := loom.NewCanvas(width, 12)
 			g.Draw(canvas, canvas.Bounds())
-			hintRow := canvas.Row(10)
-			if !strings.Contains(hintRow, "F1 Help") || !strings.Contains(hintRow, "Ctrl+S Save") {
+			hintRow := canvasPlainRow(canvas, 10)
+			if !strings.Contains(hintRow, "F1 Help") || !strings.Contains(hintRow, "^S Save") {
 				t.Fatalf("lower hint row = %q", hintRow)
 			}
-			if width == 80 && (!strings.Contains(hintRow, "Alt+F File") || !strings.Contains(hintRow, "Ctrl+Shift+S Save as")) {
+			if width == 80 && (!strings.Contains(hintRow, "F7 View") || !strings.Contains(hintRow, "^Shift+S Save as")) {
 				t.Fatalf("normal-width hint row hides full shortcuts: %q", hintRow)
 			}
-			if strings.Contains(canvas.Row(9), "Ctrl+S") || strings.Contains(canvas.Row(9), "Ctrl+Shift+S") {
-				t.Fatalf("file bar repeats save shortcuts: %q", canvas.Row(9))
+			if strings.Contains(canvasPlainRow(canvas, 9), "^S") || strings.Contains(canvasPlainRow(canvas, 9), "^Shift+S") {
+				t.Fatalf("file bar repeats save shortcuts: %q", canvasPlainRow(canvas, 9))
 			}
-			controls := canvas.Row(11)
+			controls := canvasPlainRow(canvas, 11)
 			for _, key := range []string{"F8", "F9", "F10"} {
 				if !strings.Contains(controls, key) {
 					t.Errorf("gallery controls %q omit %s", controls, key)
 				}
 			}
 			for row := 0; row < canvas.Rows(); row++ {
-				if got := loom.StringWidth(canvas.Row(row)); got > width {
-					t.Errorf("row %d width = %d, exceeds %d: %q", row, got, width, canvas.Row(row))
+				if got := loom.StringWidth(canvasPlainRow(canvas, row)); got > width {
+					t.Errorf("row %d width = %d, exceeds %d: %q", row, got, width, canvasPlainRow(canvas, row))
 				}
 			}
 		})
@@ -559,26 +559,42 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 		t.Fatalf("F5 box toggle result = %+v", result)
 	}
 	g.Draw(canvas, canvas.Bounds())
-	if fileRow := canvas.Row(9); !strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "Esc") {
+	if fileRow := canvasPlainRow(canvas, 9); !strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "Esc") {
 		t.Fatalf("box mode file-row hint = %q", fileRow)
 	}
-	if hintRow := canvas.Row(10); !strings.Contains(hintRow, "Ctrl+S") || !strings.Contains(hintRow, "Ctrl+Shift+S") {
+	if hintRow := canvasPlainRow(canvas, 10); !strings.Contains(hintRow, "^S") || !strings.Contains(hintRow, "^Shift+S") {
 		t.Fatalf("lower hotkey row omits save shortcuts: %q", hintRow)
 	}
 	g.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	g.Draw(canvas, canvas.Bounds())
-	if fileRow := canvas.Row(9); strings.Contains(fileRow, "[Box]") || strings.Contains(fileRow, "F7") {
+	if fileRow := canvasPlainRow(canvas, 9); strings.Contains(fileRow, "[Box]") || strings.Contains(fileRow, "F7") {
 		t.Fatalf("file row after box mode shows a hint: %q", fileRow)
 	}
-	if hintRow := canvas.Row(10); !strings.Contains(hintRow, "F7 View") {
+	if hintRow := canvasPlainRow(canvas, 10); !strings.Contains(hintRow, "F7 View") {
 		t.Fatalf("lower hotkey row omits F7 View: %q", hintRow)
 	}
+}
+
+func canvasPlainRow(canvas *loom.Canvas, row int) string {
+	var text strings.Builder
+	for x := 0; x < canvas.Cols(); x++ {
+		cell := canvas.Get(x, row)
+		if cell.Continuation {
+			continue
+		}
+		if cell.Text == "" {
+			text.WriteByte(' ')
+		} else {
+			text.WriteString(cell.Text)
+		}
+	}
+	return strings.Join(strings.Fields(text.String()), " ")
 }
 
 func canvasScreenText(canvas *loom.Canvas) string {
 	rows := make([]string, canvas.Rows())
 	for row := range rows {
-		rows[row] = canvas.Row(row)
+		rows[row] = canvasPlainRow(canvas, row)
 	}
 	return strings.Join(rows, "\n")
 }

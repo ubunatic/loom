@@ -117,6 +117,9 @@ func (m *MenuBar) rebuildKeys() {
 }
 
 func menuKeyName(shortcut string) string {
+	if strings.HasPrefix(shortcut, "^") {
+		shortcut = "Ctrl+" + strings.TrimPrefix(shortcut, "^")
+	}
 	parts := strings.Split(strings.ToLower(strings.ReplaceAll(shortcut, " ", "")), "+")
 	for i := range parts {
 		switch parts[i] {

@@ -18,7 +18,7 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
 	content := strings.Join(view.lines, "\n")
-	for _, binding := range []string{"Alt+F", "Ctrl+S", "Ctrl+Shift+S", "Ctrl+B", "Ctrl+I", "Ctrl+U", "Ctrl+Space", "Ctrl+C", "Ctrl+Insert", "Ctrl+X", "Shift+Delete", "Ctrl+V", "Shift+Insert", "Ctrl+Z", "Ctrl+Y", "Ctrl+R", "Ctrl+Shift+Y", "Ctrl+Shift+Z", "Ctrl+Left", "Ctrl+Right", "Shift+Home", "Shift+End", "F5", "F7", "F1", "Tab", "Shift+Tab", "Escape"} {
+	for _, binding := range []string{"Alt+F", "^S", "^Shift+S", "Ctrl+B", "Ctrl+I", "Ctrl+U", "Ctrl+Space", "Ctrl+C", "Ctrl+Insert", "Ctrl+X", "Shift+Delete", "Ctrl+V", "Shift+Insert", "Ctrl+Z", "Ctrl+Y", "Ctrl+R", "Ctrl+Shift+Y", "Ctrl+Shift+Z", "Ctrl+Left", "Ctrl+Right", "Shift+Home", "Shift+End", "F5", "F7", "F1", "Tab", "Shift+Tab", "Escape"} {
 		if !strings.Contains(content, binding) {
 			t.Errorf("help omits binding %q", binding)
 		}
@@ -71,10 +71,10 @@ func TestRichTextEditHotkeyHintClipsAtWidthBoundaries(t *testing.T) {
 		if got := StringWidth(hint); got > width {
 			t.Errorf("hint width at %d columns = %d: %q", width, got, hint)
 		}
-		if width >= 8 && !strings.Contains(hint, "F1 Help") {
+		if width >= 10 && !strings.Contains(hint, "F1 Help") {
 			t.Errorf("hint at %d columns omits F1 Help: %q", width, hint)
 		}
-		if width == 80 && (!strings.Contains(hint, "Alt+F File") || !strings.Contains(hint, "Ctrl+Shift+S Save as")) {
+		if width == 80 && (!strings.Contains(hint, "F7 View") || !strings.Contains(hint, "^Shift+S Save as")) {
 			t.Errorf("80-column hint omits complete shortcuts: %q", hint)
 		}
 	}

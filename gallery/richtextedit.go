@@ -81,3 +81,10 @@ func (w *richTextEditDemo) consumeEditMouse(mouse loom.MouseEvent) loom.EventRes
 }
 
 func (w *richTextEditDemo) HotkeyHint(width int) string { return w.edit.HotkeyHint(width) }
+
+func (w *richTextEditDemo) HotkeyBar() *loom.HintBar { return w.edit.HotkeyBar() }
+
+func (w *richTextEditDemo) ApplyTheme(theme loom.ThemeColors) {
+	w.edit.ApplyTheme(theme)
+	w.view.ApplyTheme(theme)
+}

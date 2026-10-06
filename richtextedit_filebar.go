@@ -23,8 +23,8 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 		Title:    "File",
 		Mnemonic: 'F',
 		Items: []MenuItem{
-			{Label: "Save", Shortcut: "Ctrl+S", Action: func() { bar.save() }},
-			{Label: "Save as…", Shortcut: "Ctrl+Shift+S", Action: func() { bar.saveAs() }},
+			{Label: "Save", Shortcut: "^S", Action: func() { bar.save() }},
+			{Label: "Save as…", Shortcut: "^Shift+S", Action: func() { bar.saveAs() }},
 		},
 	})
 	bar.menu.Bottom = true
@@ -72,6 +72,11 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	if c == nil || bounds.W <= 0 || bounds.H <= 0 {
 		return
 	}
+	theme := b.edit.toolbarTheme()
+	normal := Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()}
+	selected := Style{FG: theme.SelectedFG.Color(), BG: theme.SelectedBG.Color(), Bold: theme.SelectedBold}
+	b.menu.Style = MenuStyle{Bar: normal, Normal: normal, Active: selected, Selected: selected,
+		Border: Style{FG: theme.BorderFG.Color(), BG: theme.BorderBG.Color()}, Disabled: Style{FG: theme.PlaceholderFG.Color(), BG: theme.NormalBG.Color(), Dim: true}}
 	b.menu.Draw(c, bounds)
 	row := bounds.Y + bounds.H - 1
 	titleWidth := 0
@@ -101,7 +106,24 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	statusStart := bounds.X + titleWidth
 	statusWidth := max(0, hintX-statusStart-1)
 	if statusWidth > 0 {
-		c.Write(statusStart, row, " "+truncateRichTextFileBarStatus(status, statusWidth-1), Style{Dim: true})
+		text := " " + truncateRichTextFileBarStatus(status, statusWidth-1)
+		style := Style{FG: theme.PlaceholderFG.Color(), BG: theme.NormalBG.Color()}
+		c.Write(statusStart, row, text, style)
+		if separator := strings.LastIndex(text, " · "); separator >= 0 {
+			state := text[separator+len(" · "):]
+			stateStyle := normal
+			switch state {
+			case "Unsaved":
+				stateStyle.FG, stateStyle.Dim = theme.PlaceholderFG.Color(), true
+			case "Modified":
+				stateStyle.FG = theme.ModifiedFG.Color()
+			case "Saved":
+				stateStyle.FG = theme.SavedFG.Color()
+			case "Error":
+				stateStyle.FG = theme.MediaErrorFG.Color()
+			}
+			c.Write(statusStart+StringWidth(text[:separator+len(" · ")]), row, state, stateStyle)
+		}
 	}
 	if hintWidth > 0 {
 		c.Write(hintX, row, hints, Style{Dim: true})

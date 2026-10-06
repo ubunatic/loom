@@ -70,7 +70,11 @@
         "focus_bg":      { "$ref": "#/definitions/themeColor" },
         "media_loading_fg": { "$ref": "#/definitions/themeColor" },
         "media_loading_dim": { "type": "boolean" },
-        "media_error_fg": { "$ref": "#/definitions/themeColor" }
+        "media_error_fg": { "$ref": "#/definitions/themeColor" },
+        "key_cap_fg": { "$ref": "#/definitions/themeColor" },
+        "key_cap_bg": { "$ref": "#/definitions/themeColor" },
+        "modified_fg": { "$ref": "#/definitions/themeColor" },
+        "saved_fg": { "$ref": "#/definitions/themeColor" }
       }
     }
   }

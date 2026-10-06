@@ -111,6 +111,18 @@ type ThemeColors struct {
 	MediaLoadingFG     ThemeColor `yaml:"media_loading_fg"`
 	MediaLoadingDim    bool       `yaml:"media_loading_dim"`
 	MediaErrorFG       ThemeColor `yaml:"media_error_fg"`
+	KeyCapFG           ThemeColor `yaml:"key_cap_fg"`
+	KeyCapBG           ThemeColor `yaml:"key_cap_bg"`
+	ModifiedFG         ThemeColor `yaml:"modified_fg"`
+	SavedFG            ThemeColor `yaml:"saved_fg"`
+}
+
+// HintBarStyle returns theme-sourced cap and label colors.
+func (t ThemeColors) HintBarStyle() HintBarStyle {
+	return HintBarStyle{
+		Cap:   Style{FG: t.KeyCapFG.Color(), BG: t.KeyCapBG.Color(), Bold: true},
+		Label: Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()},
+	}
 }
 
 // themesFile is the YAML wrapper for spec/themes.yaml.

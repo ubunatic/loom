@@ -32,13 +32,13 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	edit.ShowFileBar = true
 	canvas := NewCanvas(100, 5)
 	edit.Draw(canvas, canvas.Bounds())
-	row := canvas.Row(4)
+	row := hintBarRow(canvas, 4)
 	if !strings.Contains(row, "Untitled") || !strings.Contains(row, "Unsaved") || strings.Contains(row, "Alt+F") || strings.Contains(row, "Ctrl+S") || strings.Contains(row, "Ctrl+Shift+S") {
 		t.Fatalf("untitled file bar row = %q", row)
 	}
 	edit.ConsumeKey(KeyEvent{Text: "!"})
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(4); !strings.Contains(row, "Modified") {
+	if row := hintBarRow(canvas, 4); !strings.Contains(row, "Modified") {
 		t.Fatalf("modified file bar row = %q", row)
 	}
 	path := filepath.Join(t.TempDir(), "notes.rtf")
@@ -46,14 +46,14 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 		t.Fatalf("SaveAs: %v", err)
 	}
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(4); !strings.Contains(row, "notes.rtf") || !strings.Contains(row, "Saved") {
+	if row := hintBarRow(canvas, 4); !strings.Contains(row, "notes.rtf") || !strings.Contains(row, "Saved") {
 		t.Fatalf("saved file bar row = %q", row)
 	}
 	if err := edit.SaveAs(filepath.Join(t.TempDir(), "missing", "notes.rtf")); err == nil {
 		t.Fatal("SaveAs to missing directory succeeded")
 	}
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(4); !strings.Contains(row, "Error") {
+	if row := hintBarRow(canvas, 4); !strings.Contains(row, "Error") {
 		t.Fatalf("error file bar row = %q", row)
 	}
 }
@@ -65,7 +65,7 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	assertBar := func(status string) {
 		t.Helper()
 		edit.Draw(canvas, canvas.Bounds())
-		row := canvas.Row(3)
+		row := hintBarRow(canvas, 3)
 		if !strings.Contains(row, status) {
 			t.Fatalf("100-column file bar row omits %q: %q", status, row)
 		}
@@ -89,7 +89,7 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	assertBar("notes.rtf · Error")
 	canvas = NewCanvas(40, 4)
 	edit.Draw(canvas, canvas.Bounds())
-	row := canvas.Row(3)
+	row := hintBarRow(canvas, 3)
 	if !strings.Contains(row, "· Error") || strings.Contains(row, "F7") {
 		t.Fatalf("40-column file bar row = %q, want status and no F7 hint", row)
 	}
@@ -109,7 +109,7 @@ func TestRichTextEditFileBarNeverShowsF7Hint(t *testing.T) {
 		for width := 1; width <= 120; width++ {
 			canvas := NewCanvas(width, 2)
 			edit.Draw(canvas, canvas.Bounds())
-			if row := canvas.Row(1); strings.Contains(row, "F7") {
+			if row := hintBarRow(canvas, 1); strings.Contains(row, "F7") {
 				t.Fatalf("%s mode, width %d: file bar shows F7: %q", mode, width, row)
 			}
 		}
@@ -125,7 +125,7 @@ func TestRichTextEditFileBarBoxGuidanceIsAtomic(t *testing.T) {
 	for width := 1; width <= 80; width++ {
 		canvas := NewCanvas(width, 2)
 		edit.Draw(canvas, canvas.Bounds())
-		row := canvas.Row(1)
+		row := hintBarRow(canvas, 1)
 		has := strings.Contains(row, "[Box] Esc exits")
 		if !has && strings.Contains(row, "[Box") {
 			t.Fatalf("width %d renders partial Box guidance: %q", width, row)
@@ -234,7 +234,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	}
 	canvas := NewCanvas(100, 4)
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(3); !strings.Contains(row, "· Modified") {
+	if row := hintBarRow(canvas, 3); !strings.Contains(row, "· Modified") {
 		t.Fatalf("status after edit = %q, want Modified", row)
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed {
@@ -245,7 +245,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 		t.Fatalf("second Ctrl+S bytes/error = %q/%v, want current document %q", updated, err, edit.Document.ToANSI())
 	}
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(3); !strings.Contains(row, "· Saved") {
+	if row := hintBarRow(canvas, 3); !strings.Contains(row, "· Saved") {
 		t.Fatalf("status after successful second save = %q, want Saved", row)
 	}
 	if err := os.Remove(newPath); err != nil {
@@ -258,7 +258,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 		t.Fatalf("Ctrl+S to unwritable destination result = %+v", result)
 	}
 	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(3); !strings.Contains(row, "· Error") || strings.Contains(row, "· Saved") {
+	if row := hintBarRow(canvas, 3); !strings.Contains(row, "· Error") || strings.Contains(row, "· Saved") {
 		t.Fatalf("status after failed Ctrl+S = %q, want Error only", row)
 	}
 }
@@ -277,8 +277,8 @@ func TestRichTextEditSaveAsPopupDrawsBoundedBorderAndRoutesEvents(t *testing.T) 
 	if p.Width >= edit.lastRect.W || p.Height >= edit.lastRect.H {
 		t.Fatalf("popup %dx%d is not smaller than editor %dx%d", p.Width, p.Height, edit.lastRect.W, edit.lastRect.H)
 	}
-	if !strings.Contains(canvas.Row(p.innerRect.Y-1), "Save as") || canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text != "│" {
-		t.Fatalf("popup border/title missing around picker: top=%q left=%q", canvas.Row(p.innerRect.Y-1), canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text)
+	if !strings.Contains(hintBarRow(canvas, p.innerRect.Y-1), "Save as") || canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text != "│" {
+		t.Fatalf("popup border/title missing around picker: top=%q left=%q", hintBarRow(canvas, p.innerRect.Y-1), canvas.Get(p.innerRect.X-1, p.innerRect.Y).Text)
 	}
 	if result := edit.ConsumeKey(KeyEvent{Text: "notes"}); !result.Consumed || edit.savePicker.List().Query() != "notes" {
 		t.Fatalf("popup did not route search input: result=%+v query=%q", result, edit.savePicker.List().Query())

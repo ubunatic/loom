@@ -12,6 +12,10 @@ themes:
   # plain — terminal-default colors; visually identical to the current
   # hard-coded DefaultChoiceStyle / DefaultTableStyle behavior.
   plain:
+    key_cap_fg: default
+    key_cap_bg: 238
+    modified_fg: 214
+    saved_fg: 114
     normal_fg:        default
     normal_bg:        default
     selected_fg:      default # bold carries the highlight
@@ -51,6 +55,10 @@ themes:
   # Header row: muted yellow on steel blue (bold).
   # Border / title bar: soft white on steel blue.
   mc:
+    key_cap_fg: 252
+    key_cap_bg: 25
+    modified_fg: 214
+    saved_fg: 114
     normal_fg:        252 # soft white (#d0d0d0)
     normal_bg:        69  # saturated steel blue (#5f87ff)
     selected_fg:      16  # fixed black (#000000)
@@ -86,6 +94,10 @@ themes:
 
   # mc-classic — vivid fixed-palette rendering of the classic MC colors.
   mc-classic:
+    key_cap_fg: 231
+    key_cap_bg: 25
+    modified_fg: 214
+    saved_fg: 114
     normal_fg:        231 # white (#ffffff)
     normal_bg:        27  # blue (#005fd7)
     selected_fg:      16  # black (#000000)
@@ -121,6 +133,10 @@ themes:
 
   # mc-dark — darker navy panels with restrained cyan accents.
   mc-dark:
+    key_cap_fg: 252
+    key_cap_bg: 25
+    modified_fg: 214
+    saved_fg: 114
     normal_fg:        252 # soft white (#d0d0d0)
     normal_bg:        19  # navy (#0000af)
     selected_fg:      16
@@ -164,6 +180,10 @@ themes:
   #   header    = yellow;color237    -> header (index 226 for yellow)
   #   frame     = lightgray;color237 -> border
   julia256:
+    key_cap_fg: 252
+    key_cap_bg: 239
+    modified_fg: 214
+    saved_fg: 114
     normal_fg:        250 # lightgray (#bcbcbc)
     normal_bg:        237 # color237, calm dark grey panel
     selected_fg:      16  # fixed black (#000000)

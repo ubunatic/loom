@@ -214,6 +214,10 @@ type themedGallery struct {
 	themeName  string
 	themeIndex int
 	themes     []string
+	hintBar    *loom.HintBar
+	controls   *loom.HintBar
+	hintRow    int
+	controlRow int
 
 	bgIndex int
 	// setBackground applies a background to the running pane; nil in tests.
@@ -257,6 +261,9 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	c.PaintSurface(r, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
 	content := r
 	hintWidget, hasHints := g.widget.(interface{ HotkeyHint(int) string })
+	structured, hasBar := g.widget.(interface{ HotkeyBar() *loom.HintBar })
+	hasHints = hasHints || hasBar
+	g.hintBar, g.controls = nil, nil
 	content.H = max(0, r.H-1)
 	if hasHints && r.H >= 2 {
 		content.H--
@@ -265,16 +272,24 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	if r.H == 0 {
 		return
 	}
-	style := loom.Style{FG: theme.StatusFG.Color(), BG: theme.StatusBG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
-	status := " F8 BG: " + galleryBackgrounds[g.bgIndex].name + " | F9 Theme: " + g.themeName + " | F10 Quit "
+	g.controlRow = r.H - 1
 	if hasHints && r.H >= 2 {
-		hint := hintWidget.HotkeyHint(max(0, r.W-2))
-		c.Write(r.X+1, r.Y+r.H-2, loom.TruncateText(hint, max(0, r.W-2), ""), style)
+		g.hintRow = r.H - 2
+		if hasBar {
+			g.hintBar = structured.HotkeyBar()
+			g.hintBar.ApplyTheme(theme)
+			g.hintBar.Draw(c, loom.Rect{X: r.X, Y: r.Y + g.hintRow, W: r.W, H: 1})
+		} else {
+			style := theme.HintBarStyle().Label
+			c.Write(r.X+1, r.Y+g.hintRow, loom.TruncateText(hintWidget.HotkeyHint(max(0, r.W-2)), max(0, r.W-2), ""), style)
+		}
 	}
-	if r.W < loom.StringWidth(status) {
-		status = loom.TruncateText(" F8 BG · F9: "+g.themeName+" · F10 ", max(0, r.W), "")
+	entry := func(key, binding, label, detail string) loom.HintEntry {
+		return loom.HintEntry{Key: key, Binding: binding, Label: label, Detail: detail, Action: func() loom.EventResult { return g.ConsumeKey(loom.KeyEvent{Key: binding}) }}
 	}
-	c.Write(r.X, r.Y+r.H-1, status, style)
+	g.controls = loom.NewHintBar(entry("F8", "f8", "BG", galleryBackgrounds[g.bgIndex].name), entry("F9", "f9", "Theme", g.themeName), entry("F10", "f10", "Quit", ""))
+	g.controls.ApplyTheme(theme)
+	g.controls.Draw(c, loom.Rect{X: r.X, Y: r.Y + g.controlRow, W: r.W, H: 1})
 }
 
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
@@ -298,6 +313,16 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	for _, row := range []struct {
+		y   int
+		bar *loom.HintBar
+	}{{g.hintRow, g.hintBar}, {g.controlRow, g.controls}} {
+		if row.bar != nil && e.Y == row.y {
+			local := e
+			local.Y = 0
+			return row.bar.ConsumeMouse(local)
+		}
+	}
 	return g.widget.ConsumeMouse(e)
 }
 

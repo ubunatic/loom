@@ -93,7 +93,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 			s.WaitFor("▶ fuzzy-browser-widget", 5*time.Second)
 			// Enter confirms a Choice too; neither confirmation may quit a gallery.
 			s.Send("\r\x1b[20~") // Enter, then F9: a new theme proves the process remains live.
-			s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+			s.WaitFor("Theme "+nextGalleryTheme(), 5*time.Second)
 			s.Send("\x1b[21~") // F10 quits even when Choice consumes text keys.
 			if err := s.Wait(5 * time.Second); err != nil {
 				t.Fatal(err)
@@ -103,13 +103,13 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 	for _, key := range []string{"q", "\x1b"} {
 		t.Run(fmt.Sprintf("Esc-and-q-stay-live-%q", key), func(t *testing.T) {
 			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ProgressBar")
-			s.WaitFor("Theme: plain", 5*time.Second)
+			s.WaitFor("Theme plain", 5*time.Second)
 			s.Send(key)
 			if key == "\x1b" {
 				time.Sleep(100 * time.Millisecond) // Let the terminal decoder distinguish Esc from a sequence prefix.
 			}
 			s.Send("\x1b[20~") // F9 proves the gallery is still running.
-			s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+			s.WaitFor("Theme "+nextGalleryTheme(), 5*time.Second)
 			s.Send("\x11") // Ctrl+Q is the configured gallery quit key.
 			if err := s.Wait(5 * time.Second); err != nil {
 				t.Fatal(err)
@@ -118,7 +118,7 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 	}
 	t.Run("F10 quits", func(t *testing.T) {
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ProgressBar")
-		s.WaitFor("Theme: plain", 5*time.Second)
+		s.WaitFor("Theme plain", 5*time.Second)
 		s.Send("\x1b[21~")
 		if err := s.Wait(5 * time.Second); err != nil {
 			t.Fatal(err)
@@ -131,11 +131,11 @@ func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 		waitForAbsent(t, s, "Gallery popup")
 		time.Sleep(100 * time.Millisecond) // Let the terminal decoder distinguish Esc from a sequence prefix.
 		s.Send("\x1b[20~")
-		s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+		s.WaitFor("Theme "+nextGalleryTheme(), 5*time.Second)
 		s.Send("\x1b")
 		time.Sleep(100 * time.Millisecond)
 		s.Send("\x1b[20~")
-		s.WaitFor("Theme: "+galleryThemeAfter(nextGalleryTheme()), 5*time.Second)
+		s.WaitFor("Theme "+galleryThemeAfter(nextGalleryTheme()), 5*time.Second)
 		s.Send("\x11")
 		if err := s.Wait(5 * time.Second); err != nil {
 			t.Fatal(err)
@@ -251,12 +251,12 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 	for _, name := range []string{"Choice", "FilePicker", "Media", "Table", "Tree"} {
 		t.Run(name, func(t *testing.T) {
 			s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "-W", "100", "-H", "24", name)
-			s.WaitFor("Theme: plain", 5*time.Second)
+			s.WaitFor("Theme plain", 5*time.Second)
 			s.Send("\x1b[20~")
 			themeName := nextGalleryTheme()
-			s.WaitFor("Theme: "+themeName, 5*time.Second)
+			s.WaitFor("Theme "+themeName, 5*time.Second)
 			for y, line := range s.Screen() {
-				if strings.Contains(line, "Theme: "+themeName) {
+				if strings.Contains(line, "Theme "+themeName) {
 					for x := 70; x < 100; x++ {
 						if !ptyColorMatches(s.Cell(x, y).Style.BG, loom.Theme(themeName).NormalBG.Color()) {
 							t.Fatalf("footer column %d inherited child background: %+v", x, s.Cell(x, y).Style)
@@ -406,7 +406,7 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
 	s.Send("\x1b[D")
 	s.Send("\x1b[20~")
-	s.WaitFor("Theme: "+nextGalleryTheme(), 5*time.Second)
+	s.WaitFor("Theme "+nextGalleryTheme(), 5*time.Second)
 	s.WaitFor("◂ -100.00 ▸", 5*time.Second)
 	s.Send("\r\x1b[H" + strings.Repeat("\x1b[3~", 7) + "100.00\r")
 	s.WaitFor("◂  100.00 ▸", 5*time.Second)
@@ -642,7 +642,8 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 		"ProgressBar": true, "Spinner": true, "Stopwatch": true, "Timer": true,
 	}
 	keys := map[string]loom.KeyEvent{
-		"Choice": {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "tab"},
+		"HintBar": {Key: "f7"},
+		"Choice":  {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "tab"},
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"SearchBar": {Text: "x"},
@@ -952,7 +953,7 @@ func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 	initial, next := themes[0], themes[1]
 	s := ptytest.Start(t, cols, rows, bin, "widgets", "--show", "--theme", initial, "-W", "48", "-H", "14", "Dialog", "Choice")
 	s.WaitFor("Save changes", 5*time.Second)
-	s.WaitFor("Theme: "+initial, 5*time.Second)
+	s.WaitFor("Theme "+initial, 5*time.Second)
 
 	findText := func(text string) (int, int) {
 		t.Helper()
@@ -976,7 +977,7 @@ func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 		t.Fatalf("%q missing from PTY screen:\n%s", want, strings.Join(s.Screen(), "\n"))
 		return 0, 0
 	}
-	_, footerY := findText("Theme: " + initial)
+	_, footerY := findText("Theme " + initial)
 	if wantY := rows - 24 + height - 1; footerY != wantY {
 		t.Fatalf("gallery footer row = %d, want %d for -H %d:\n%s", footerY, wantY, height, strings.Join(s.Screen(), "\n"))
 	}
@@ -1006,7 +1007,7 @@ func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 	oldBackgroundStyle := s.Cell(width-1, footerY-2).Style
 
 	s.SendRaw([]byte("\x1b[20~"))
-	s.WaitFor("Theme: "+next, 5*time.Second)
+	s.WaitFor("Theme "+next, 5*time.Second)
 	if got := s.Cell(tabX, tabY).Style; got == oldTabStyle || !ptyColorMatches(got.FG, loom.Theme(next).HeaderFG.Color()) {
 		t.Fatalf("tab bar cell did not recolor after F9: %v", got)
 	}
@@ -1105,7 +1106,7 @@ func TestPaintCanvasPTYMouseDragDrawsBrailleLine(t *testing.T) {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 80, 24, bin, "widgets", "--show", "PaintCanvas")
-	s.WaitFor("Theme:", 5*time.Second)
+	s.WaitFor("Theme", 5*time.Second)
 	s.Send("c")
 	clearDeadline := time.Now().Add(3 * time.Second)
 	for time.Now().Before(clearDeadline) {
@@ -1168,7 +1169,7 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 	start := func(t *testing.T, name string) *ptytest.Session {
 		t.Helper()
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", name)
-		s.WaitFor("Theme: plain", 5*time.Second)
+		s.WaitFor("Theme plain", 5*time.Second)
 		return s
 	}
 	waitForAbsent := func(t *testing.T, s *ptytest.Session, text string) {
@@ -1226,7 +1227,7 @@ func TestGalleryMouseRoutingPTY(t *testing.T) {
 		t.Helper()
 		// Nest demos in outer tabs so their draw origins are nonzero.
 		s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", name, "Choice")
-		s.WaitFor("Theme: plain", 5*time.Second)
+		s.WaitFor("Theme plain", 5*time.Second)
 		return s
 	}
 	point := func(t *testing.T, s *ptytest.Session, text string) (int, int) {

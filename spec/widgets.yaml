@@ -134,6 +134,17 @@ widgets:
       focused := grid.Focus()
       _ = focused
     source: grid.go
+  - name: loom.HintBar
+    package: loom
+    purpose: Render clickable key caps and labels that fit as whole pairs.
+    category: input
+    example: |-
+      bar := loom.NewHintBar(loom.HintEntry{
+          Key: "F1", Binding: "f1", Label: "Help",
+          Action: func() loom.EventResult { return loom.Handled() },
+      })
+    source: hintbar.go
+    ticket: issues/278
   - name: loom.KeyHelp
     package: loom
     purpose: Render compact help text from labeled key bindings.
