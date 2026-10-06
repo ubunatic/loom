@@ -45,6 +45,7 @@ func (d *RichDocument) FromANSI(input string) {
 	}
 	input = strings.ReplaceAll(input, "\r\n", "\n")
 	input = strings.ReplaceAll(input, "\r", "\n")
+	input = stripTrailingNewline(input)
 	d.Lines = []RichLine{{}}
 	style := Style{}
 	for i := 0; i < len(input); {
@@ -113,6 +114,24 @@ func (d RichDocument) ToPlainText() string {
 		lines[i] = text.String()
 	}
 	return strings.Join(lines, "\n")
+}
+
+func stripTrailingNewline(input string) string {
+	i := len(input)
+	for i > 0 {
+		if input[i-1] == '\n' {
+			return input[:i-1] + input[i:]
+		}
+		if input[i-1] == 'm' || input[i-1] == '\a' || input[i-1] == '7' {
+			start := strings.LastIndexByte(input[:i], '\x1b')
+			if start >= 0 {
+				i = start
+				continue
+			}
+		}
+		break
+	}
+	return input
 }
 
 func appendRichText(d *RichDocument, text string, style Style) {

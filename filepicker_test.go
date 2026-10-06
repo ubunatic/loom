@@ -236,6 +236,86 @@ func TestFilePickerSaveModeMouseSelectsFilenameAndDirectoryFocus(t *testing.T) {
 	}
 }
 
+func TestFilePickerEnterOnListedFileFocusesFilenameInput(t *testing.T) {
+	root := t.TempDir()
+	filePath := filepath.Join(root, "sample.ansi")
+	if err := os.WriteFile(filePath, []byte("content"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	savedPath := ""
+	picker, err := NewFilePicker(root, FilePickerOptions{
+		Mode: FilePickerSave,
+		OnSave: func(path string) error {
+			savedPath = path
+			return nil
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Press Enter on the listed file
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
+
+	if savedPath != "" {
+		t.Fatalf("first Enter saved file immediately to %q; expected focus move only", savedPath)
+	}
+	if !picker.nameFocus {
+		t.Fatal("Enter on listed file did not set nameFocus = true")
+	}
+	if picker.FileName() != "sample.ansi" {
+		t.Fatalf("picker.FileName() = %q, want sample.ansi", picker.FileName())
+	}
+
+	canvas := NewCanvas(40, 8)
+	picker.Draw(canvas, Rect{W: 40, H: 8})
+	if canvas.CursorY != 7 {
+		t.Fatalf("canvas.CursorY = %d, want 7 (filename row)", canvas.CursorY)
+	}
+	// "Name: sample.ansi" length is 6 + 11 = 17 -> cursor at x = 17
+	if canvas.CursorX != 17 {
+		t.Fatalf("canvas.CursorX = %d, want 17 (end of filename)", canvas.CursorX)
+	}
+
+	// Second Enter while nameFocus is true saves the file
+	picker.ConsumeKey(KeyEvent{Key: "enter"})
+	if savedPath != filePath {
+		t.Fatalf("second Enter saved path = %q, want %q", savedPath, filePath)
+	}
+}
+
+func TestFilePickerMouseHoverDoesNotChangeFocus(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "seed.ansi"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	picker, err := NewFilePicker(root, FilePickerOptions{Mode: FilePickerSave, FileName: "seed.ansi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	picker.Draw(NewCanvas(40, 8), Rect{W: 40, H: 8})
+
+	// Start with filename focus
+	picker.nameFocus = true
+	picker.updateFocus()
+
+	// Hover over list area
+	picker.ConsumeMouse(MouseEvent{Action: MouseHover, X: 5, Y: 2})
+	if !picker.nameFocus {
+		t.Fatal("MouseHover over list stole focus from filename input")
+	}
+
+	// Now switch to list focus
+	picker.nameFocus = false
+	picker.updateFocus()
+
+	// Hover over filename row
+	picker.ConsumeMouse(MouseEvent{Action: MouseHover, X: 5, Y: 7})
+	if picker.nameFocus {
+		t.Fatal("MouseHover over filename row stole focus from list")
+	}
+}
+
 func TestFilePickerSaveModeKeepsOpenWhenSaveCallbackFails(t *testing.T) {
 	wantErr := errors.New("write failed")
 	root := t.TempDir()

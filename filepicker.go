@@ -181,6 +181,7 @@ func (p *FilePicker) activate() {
 	if p.options.Mode == FilePickerSave && entry.Kind == FileKindRegular {
 		p.fileName.SetValue(entry.Name)
 		p.nameFocus = true
+		p.updateFocus()
 		return
 	}
 	if entry.Kind == FileKindSymlink || entry.Kind != FileKindRegular || p.options.Mode == FilePickerDirectories {
@@ -291,13 +292,18 @@ func (p *FilePicker) ConsumeMouse(e MouseEvent) EventResult {
 	if e.X < 0 || e.Y < 1 || e.X >= p.lastRect.W || e.Y >= p.lastRect.H {
 		return Ignored()
 	}
+	if e.Action == MousePress && e.Button == MouseLeft {
+		if p.fileName != nil && e.Y == p.lastRect.H-1 {
+			p.nameFocus = true
+			p.updateFocus()
+		} else {
+			p.nameFocus = false
+			p.updateFocus()
+		}
+	}
 	if p.fileName != nil && e.Y == p.lastRect.H-1 {
-		p.nameFocus = true
-		p.updateFocus()
 		return Handled()
 	}
-	p.nameFocus = false
-	p.updateFocus()
 	e.X -= p.listRect.X - p.lastRect.X
 	e.Y -= p.listRect.Y - p.lastRect.Y
 	return p.list.ConsumeMouse(e)

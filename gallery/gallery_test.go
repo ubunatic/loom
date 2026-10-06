@@ -5,6 +5,7 @@ package gallery
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"reflect"
@@ -736,6 +737,62 @@ func TestRichTextEditGalleryTypingPTY(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	if strings.Contains(strings.Join(s.Screen(), "\n"), "Save as…") {
 		t.Fatal("Escape did not close the File menu")
+	}
+}
+
+func TestRichTextEditDemoFileLoadingAndSave(t *testing.T) {
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "doc.ansi")
+	if err := os.WriteFile(filePath, []byte("Loaded content\x1b[0m\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. Load existing file
+	widget, err := NewWithArgs("RichTextEdit", []string{filePath})
+	if err != nil {
+		t.Fatalf("NewWithArgs: %v", err)
+	}
+	demo, ok := widget.(*richTextEditDemo)
+	if !ok {
+		t.Fatalf("widget = %T, want *richTextEditDemo", widget)
+	}
+	if demo.edit.FilePath != filePath {
+		t.Fatalf("FilePath = %q, want %q", demo.edit.FilePath, filePath)
+	}
+	if got := demo.edit.Document.ToPlainText(); got != "Loaded content" {
+		t.Fatalf("plain text = %q, want 'Loaded content'", got)
+	}
+
+	// Edit and Ctrl+S save back to filePath
+	demo.ConsumeKey(loom.KeyEvent{Text: "!"})
+	if res := demo.ConsumeKey(loom.KeyEvent{Key: "ctrl-s"}); !res.Consumed {
+		t.Fatalf("Ctrl+S result = %+v", res)
+	}
+	saved, err := os.ReadFile(filePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(saved), "Loaded content!") {
+		t.Fatalf("saved content = %q, want containing 'Loaded content!'", string(saved))
+	}
+
+	// 2. Non-existent file starts empty and binds path
+	missingPath := filepath.Join(dir, "missing.ansi")
+	missingWidget, err := NewWithArgs("RichTextEdit", []string{missingPath})
+	if err != nil {
+		t.Fatalf("NewWithArgs missing: %v", err)
+	}
+	missingDemo := missingWidget.(*richTextEditDemo)
+	if missingDemo.edit.FilePath != missingPath {
+		t.Fatalf("missing FilePath = %q, want %q", missingDemo.edit.FilePath, missingPath)
+	}
+
+	// 3. Error cases
+	if _, err := NewWithArgs("Chart", []string{"arg"}); err == nil {
+		t.Fatal("Chart accepted demo arguments; expected error")
+	}
+	if _, err := NewWithArgs("RichTextEdit", []string{"file1", "file2"}); err == nil {
+		t.Fatal("RichTextEdit accepted 2 arguments; expected error")
 	}
 }
 
