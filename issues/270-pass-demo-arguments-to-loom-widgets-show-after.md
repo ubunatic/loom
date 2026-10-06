@@ -1,6 +1,6 @@
 # 270 — Pass demo arguments to loom widgets --show after --
 
-**Status**: Open
+**Status**: Closed — user runbook passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
