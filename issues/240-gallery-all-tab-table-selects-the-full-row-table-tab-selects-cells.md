@@ -1,6 +1,6 @@
 # 240 — Gallery All tab Table selects the full row, Table tab selects cells
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
