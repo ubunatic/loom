@@ -1,6 +1,6 @@
 # 269 — Refine RichTextEdit hints, picker focus, and help
 
-**Status**: Open
+**Status**: Closed — Implemented and verified RichTextEdit hint, picker, and F1 help fixes
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
