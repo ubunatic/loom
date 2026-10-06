@@ -516,6 +516,14 @@ func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 	}
 }
 
+func canvasScreenText(canvas *loom.Canvas) string {
+	rows := make([]string, canvas.Rows())
+	for row := range rows {
+		rows[row] = canvas.Row(row)
+	}
+	return strings.Join(rows, "\n")
+}
+
 func TestRichTextEditGalleryF1AndOutsideClickRouting(t *testing.T) {
 	widget, err := gallery.New("RichTextEdit")
 	if err != nil {
@@ -527,7 +535,7 @@ func TestRichTextEditGalleryF1AndOutsideClickRouting(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 14)
 	g.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(strings.Join(canvas.Screen(), "\n"), "RichTextEdit Help") {
+	if !strings.Contains(canvasScreenText(canvas), "RichTextEdit Help") {
 		t.Fatal("F1 help popup was not rendered by the gallery")
 	}
 	if result := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); !result.Consumed {
@@ -546,7 +554,7 @@ func TestRichTextEditGalleryF1AndOutsideClickRouting(t *testing.T) {
 	}
 	canvas = loom.NewCanvas(80, 12)
 	g.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(strings.Join(canvas.Screen(), "\n"), "RichTextEdit Help") {
+	if !strings.Contains(canvasScreenText(canvas), "RichTextEdit Help") {
 		t.Fatal("preview click did not dismiss Save as before routing F1")
 	}
 }
