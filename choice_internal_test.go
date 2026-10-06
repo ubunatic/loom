@@ -608,3 +608,25 @@ func names(items []Item) []string {
 	}
 	return out
 }
+
+// ChoiceStyle.Border is deprecated and ignored: Box or Frame draw borders (issue 052).
+func TestChoiceIgnoresDeprecatedBorderStyle(t *testing.T) {
+	draw := func(border Style, focused bool) *Canvas {
+		c := NewChoice([]Item{{Name: "alpha"}, {Name: "beta"}})
+		c.Style.Border = border
+		c.SetFocus(focused)
+		cv := NewCanvas(20, 6)
+		c.Draw(cv, cv.Bounds())
+		return cv
+	}
+	for _, focused := range []bool{true, false} {
+		plain, loud := draw(Style{}, focused), draw(Style{FG: ColorIndex(1), BG: ColorIndex(2), Bold: true}, focused)
+		for y := 0; y < 6; y++ {
+			for x := 0; x < 20; x++ {
+				if plain.Get(x, y) != loud.Get(x, y) {
+					t.Fatalf("focused=%v: Border changed cell (%d,%d): %+v vs %+v", focused, x, y, plain.Get(x, y), loud.Get(x, y))
+				}
+			}
+		}
+	}
+}

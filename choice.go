@@ -20,8 +20,10 @@ type ChoiceStyle struct {
 	Prompt      Style
 	Placeholder Style
 	Scrollbar   ScrollbarStyle
-	Border      Style
-	SearchBar   SearchBarStyle
+	// Deprecated: Choice draws no border and ignores Border. Frame a Choice
+	// with Box or Frame instead; the field stays for source compatibility.
+	Border    Style
+	SearchBar SearchBarStyle
 }
 
 // DefaultChoiceStyle returns a minimal monochrome style, derived from the plain theme.
@@ -44,7 +46,7 @@ type Choice struct {
 	// ScrollbarMode overrides the spec default for this widget.
 	ScrollbarMode ScrollbarMode
 	Prompt        string          // default "> "
-	focused       bool            // dims the border when false so focus is visually clear
+	focused       bool            // places the search bar cursor; Choice draws no border
 	PromptTop     bool            // place prompt on first row instead of last row
 	OnSelect      func(item Item) // called on Enter or an activating click; if nil, Enter quits
 	// SelectOnlyOnClick keeps a single click from confirming; Enter still invokes OnSelect.

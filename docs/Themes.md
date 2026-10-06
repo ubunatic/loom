@@ -125,8 +125,9 @@ is a worked example of mapping an upstream MC skin into these roles.
 - SGR dimming is terminal-defined. Use it deliberately; do not treat its output
   as a fixed color.
 - Shade glyph appearance depends partly on the terminal font and renderer.
-- `ChoiceStyle.Border` is currently populated but not rendered; [issue 052](../issues/052-resolve-unused-choicestyle-border-contract.md)
-  tracks removal or an explicit border contract.
+- `ChoiceStyle.Border` is deprecated: `ThemeColors.ChoiceStyle()` still fills it,
+  but `Choice` draws no border. The border roles reach a framed list through `Box`
+  or `Frame` ([issue 052](../issues/052-resolve-unused-choicestyle-border-contract.md)).
 - Widget geometry is separate from theme styling. The filebrowser currently
   hard-codes its box height to fill the frame; [issue 051](../issues/051-allow-frame-boxes-to-fill-available-content-height.md)
   tracks an explicit layout contract.
