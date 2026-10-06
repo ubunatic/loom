@@ -97,7 +97,7 @@ Bugs, in order:
 2. [135](../issues/135-testbrowserusesanimatedbackground-fails-when-loom-evidence-1.md) (P3, Bug): reproduced 2026-10-06: `LOOM_EVIDENCE=1 go test ./examples/filebrowser/...` fails `TestBrowserUsesAnimatedBackground`. Set the variable in the test with `t.Setenv`.
 3. [242](../issues/242-gallery-all-tab-dialog-demo-leaks-left-right-arrow-keys-to-the-grid.md) (P2, Major): `Dialog.ConsumeKey` still returns `Ignored()` after moving the selection, so arrows also move Grid focus. Same consume rule as 253.
 4. [240](../issues/240-gallery-all-tab-table-selects-the-full-row-table-tab-selects-cells.md) (P3, Bug): the All tab builds its own Table without `CellCursor`; share one constructor with the Table demo.
-5. [52](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): `ChoiceStyle.Border` is configurable but never drawn; decide remove or implement.
+5. [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): `ChoiceStyle.Border` is configurable but never drawn; decide remove or implement.
 6. [238](../issues/238-gallery-all-grid-borders-and-content-fitted-row-heights.md) (P2): Grid borders shipped in 249; rows sized to their tallest widget remain. Grid owns its cell rectangles, so mouse routing follows them without waiting for 276.
 7. [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): ansiviewer top-bar background does not reach the right edge; not re-checked on 2026-10-06, so reproduce first.
 
@@ -131,12 +131,12 @@ popups use the overlay layer instead of more local modal fields.
 - [259](../issues/259-osc-8-terminal-hyperlink-support-human-assisted.md) (P2): OSC 8 hyperlinks; needs human terminal probes.
 - [241](../issues/241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) (P2): public `grab` package and `examples/grabber`; self-contained, can run in parallel.
 - [161](../issues/161-align-media-example-with-redesign-005.md) (P2): media example to redesign 005.
-- [95](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode; re-check scope after 157.
+- [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode; re-check scope after 157.
 - [139](../issues/139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) (P2): `loom play`; needs a reuse-vs-build decision.
 - [137](../issues/137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) (P3) + [147](../issues/147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md) (P2): CLI asset-tool feedback and unclosed-box detection.
 - [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; performance only.
-- [14](../issues/014-configurable-graph-colors-and-glyph-presentation.md) (P2): configurable graph colors and glyphs.
-- [90](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed app backgrounds; no host has asked.
+- [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) (P2): configurable graph colors and glyphs.
+- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed app backgrounds; no host has asked.
 - [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine; park candidate at the next pass.
 
 ---
