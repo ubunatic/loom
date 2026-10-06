@@ -23,10 +23,17 @@ type firstDrawBoundsProbe struct {
 	cancel   context.CancelFunc
 	rect     Rect
 	startRow int
+	draws    int
+	winch    bool
 }
 
 func (w *firstDrawBoundsProbe) Draw(_ *Canvas, r Rect) {
+	w.draws++
 	w.rect, w.startRow = r, w.pane.startRow
+	if w.winch && w.draws == 1 {
+		// A ready resize notification competes with cancellation in select.
+		w.pane.winch <- unix.SIGWINCH
+	}
 	w.cancel()
 }
 func (*firstDrawBoundsProbe) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
@@ -165,6 +172,44 @@ func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
 				t.Fatalf("saved inline bounds = row %d, height %d, want row 7, height 24", p.savedStart, p.savedRows)
 			}
 		})
+	}
+}
+
+func TestPaneCanceledDrawDoesNotReflow(t *testing.T) {
+	master, slave := openPTY(t)
+	if err := unix.IoctlSetWinsize(int(master.Fd()), unix.TIOCSWINSZ, &unix.Winsize{Col: 100, Row: 30}); err != nil {
+		t.Fatal(err)
+	}
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 24, wantRows: 24,
+		cols: 100, startRow: 7, ResizeConfig: DefaultResizeConfig()}
+	state, err := term.GetState(p.fd)
+	if err != nil {
+		t.Fatal(err)
+	}
+	p.oldState = state
+	p.SetScreenMode(ScreenInline)
+	p.ResizeConfig.AutoFullscreen = false
+	// Register before drawing, with a larger queue so an external WINCH
+	// cannot block the test's explicit notification in Draw.
+	p.installSignalHandler()
+	signal.Stop(p.winch)
+	p.winch = make(chan os.Signal, 2)
+	defer p.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	probe := &firstDrawBoundsProbe{pane: p, cancel: cancel, winch: true}
+	done := make(chan struct{})
+	drainPTY(master, done)
+	defer close(done)
+	if err := p.run(ctx, probe, nil, nil, nil); err != context.Canceled {
+		t.Fatalf("run = %v", err)
+	}
+	if probe.draws != 1 || probe.rect.W != 100 {
+		t.Fatalf("canceled first draw was overwritten: draws %d, bounds %+v", probe.draws, probe.rect)
+	}
+	// An already canceled context must also leave the last draw untouched.
+	if err := p.run(ctx, probe, nil, nil, nil); err != context.Canceled || probe.draws != 1 {
+		t.Fatalf("already canceled run = %v, draws = %d; want canceled without drawing", err, probe.draws)
 	}
 }
 

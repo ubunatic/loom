@@ -1132,6 +1132,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		}
 	}()
 	for {
+		// A ready input or resize event may win select even after cancellation.
+		// Check before doing another frame so a canceled Draw stays final.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		if backgroundClock.reconcile(p.Background, p.ReduceMotion, p.BackgroundOnRedraw) && p.Metrics != nil {
 			p.Metrics.AstraTargetFPS = 0
 			if backgroundClock.interval > 0 {
