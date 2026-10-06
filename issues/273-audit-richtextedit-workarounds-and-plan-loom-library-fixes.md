@@ -1,6 +1,6 @@
 # 273 — Audit RichTextEdit workarounds and plan Loom library fixes
 
-**Status**: Open
+**Status**: Closed — user runbook passed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Research
