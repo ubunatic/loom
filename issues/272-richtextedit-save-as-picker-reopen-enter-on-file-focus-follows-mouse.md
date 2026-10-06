@@ -1,6 +1,6 @@
 # 272 — RichTextEdit Save as picker: reopen, Enter on file, focus follows mouse
 
-**Status**: Open
+**Status**: Closed — user runbook passed
 **Priority**: P1 (High)
 **Severity**: Moderate
 **Category**: Bug
