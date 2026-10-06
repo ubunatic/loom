@@ -51,110 +51,99 @@ Earlier passes: 162 to 166, 171, 167 M1 (2026-09-29); 141 to 146, 148 to 153,
 124, 128, 130, 131; 063, 099, 101, 105, 129; 117 to 123; 034, 037, 051, 060 to
 062, 081, 088, 092 to 097, 107, 108; 036, 038, 057 to 059, 085. See the stage table.
 
+### Closed by the backlog triage (2026-10-06)
+
+Before the cleanup sprint every open ticket was checked against the current code.
+Eleven were already done or obsolete and are closed: 236 (F10 Quit truncation,
+fixed by 278's `HintBar`), 243 (cell background, M1 to M4, last `c588df6`),
+244 (`c3b3f76`), 245 (`297f222`), 246 (`8c1ccfd`), 253 (`7a35858`, two green
+`make test-q1` runs), 098 (superseded by 233), 177 to 179 (consumed by 180),
+and 048 (width model specced 2026-09-24; the DE flag finding no longer reproduces).
+
 ## What moved since the last pass
 
-- 136 (startup resize) stays in Now and is now paired with the new 247 (flaky first-draw test): both sit in the Pane's initial size read, and 247 blocks ticket closes under Quota-1.
-- 135 (LOOM_EVIDENCE test leak) stays in Now as a rider of that test-reliability sprint.
-- 133 (debug ruler overlay) moves Now to Next: its pane-level mouse offset should reuse the container translation from 276 rather than add a Pane special case.
-- 161 (media example to redesign 005) moves Now to Later: 160 shipped, so it is unblocked, but it changes an example, not the library.
-- 102 (manual checks) moves out of Now into a standing user-owned item: it collects checks only a human can do and no longer gates engineering work.
-- 095 (PTY view mode), 116 (ansi subpackage), 137 and 147 (CLI asset tools) move Next to Later: no host is waiting on them, and the event-contract work below has a direct user-facing cost today.
-- 098 (AnimatedBackground ticker pitfall) moves Later to Close: 233 made the pane re-arm its ticker on runtime background changes, which removes the pitfall.
-- 177, 178, 179 (framework comparisons) were never placed; their findings fed 180, which is closed, so they go to Close.
+- **The current sprint is a cleanup sprint** (user decision 2026-10-06): fix verified bugs and bring the repo into better shape before new features. Every ticket in it was re-checked against the code on 2026-10-06; re-check again before starting work on any older ticket.
+- 052 (unused `ChoiceStyle.Border`), 100 (ansiviewer top bar), 225 (split large files) and 252 (spec defaults audit) move Later to Now as repo-shape work.
+- 238 (Grid rows sized to content) and 240 (All-tab Table cell selection) move Next to Now as verified bugs.
+- 136, 247, 135, 242, 277 and 275 stay in Now; 253, 243, 246, 236, 244, 245 left the roadmap (closed above).
 
 ---
 
 ## Themes in the open backlog
 
-The 42 open tickets fall into eight themes:
+The 31 open tickets fall into six themes:
 
-1. **Event routing, focus and overlays** (253, 242, 277, 275, 274, 276, 238, 246): the library contract that 273 found incomplete. Every item removes a class of caller workaround.
-2. **Test and terminal reliability** (247, 136, 135, 133): a flaky PTY test, a startup-resize race, an environment-leaking test, and a debug overlay.
-3. **Compositor and backgrounds** (243, 244, 090, 098): cell background inheritance in Grid, image backgrounds.
-4. **RichTextEdit as a tool** (279, 265, 266, 259): `loom edit`, context menu, box-push drawing, OSC 8 links.
-5. **Gallery review follow-ups** (240, 245, 236): small fixes found while reviewing the All tab.
-6. **Visual testing and CLI asset tools** (157, 095, 139, 137, 147, 102).
-7. **Text width and ANSI core** (048, 100, 116).
-8. **Spec, code health and extensions** (252, 225, 052, 014, 241, 120, 161, 177 to 179).
+1. **Test and terminal reliability** (247, 136, 135, 133): a flaky PTY test, a startup-resize race, an environment-leaking test, a debug overlay.
+2. **Event routing, focus and overlays** (242, 277, 275, 274, 276, 238): the library contract that 273 found incomplete.
+3. **Repo shape** (225, 252, 052, 240, 100): large files, unspecced defaults, a dead style field, demo drift, an ANSI replay gap.
+4. **RichTextEdit as a tool** (279, 265, 266, 259).
+5. **Visual testing and CLI asset tools** (157, 095, 139, 137, 147, 102).
+6. **Extensions and presentation** (014, 090, 116, 120, 161, 241).
 
 ---
 
-## Now: make the event, focus and test contract trustworthy
+## Now: cleanup sprint — verified bugs, then repo shape
 
-**Rationale.** Loom just gained about twenty widgets and a gallery; the open
-bugs are no longer missing features but contract gaps that every host hits
-(keys leaking to the parent Grid, hover moving focus, `Draw` changing focus).
-Closing them in the library is the highest-value work, and 273 already ranked
-them. The flaky test goes first because under Quota-1 one red run blocks
-closing any ticket, including 253, which is already implemented. Event-routing
-tickets start on `codex:sol:med` (AGENTS.md).
+**Rationale.** The backlog check showed that a third of the open tickets were
+already done, so the tracker itself had drifted. This sprint fixes only bugs
+confirmed in the current code and the structural debt that slows every later
+change, before any new feature. The flaky test goes first: under Quota-1 one red
+run blocks closing any ticket. Event-routing tickets start on `codex:sol:med`
+(AGENTS.md).
 
-- [247](../issues/247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md) (P2, Bug) + [136](../issues/136-pane-misses-a-resize-that-happens-during-startup-foot-app-draws-at-initial-size.md) (P2, Bug): **247 new.** The first-draw PTY test sees width 99 instead of 100 and failed three runs in a row during 261. 136 is the same code path: the Pane reads its size before the SIGWINCH handler is installed. 136 has a host-reviewed M1 (red test) / M2 (re-query after handler install) plan and no code yet; do both in one sprint.
-- [135](../issues/135-testbrowserusesanimatedbackground-fails-when-loom-evidence-1.md) (P3, Bug): rider. The filebrowser test reads `LOOM_EVIDENCE` from the environment; set it with `t.Setenv`.
-- [253](../issues/253-table-arrow-navigation-bubbles-to-parent-grid.md) (P2, Bug, In Progress): **new.** Table arrows also move Grid focus. Implemented and approved; needs one green `make test-q1` (after 247) and a gallery check to close.
-- [242](../issues/242-gallery-all-tab-dialog-demo-leaks-left-right-arrow-keys-to-the-grid.md) (P2, Major): **new.** Dialog arrows leak to the Grid. Confirmed in code: `Dialog.ConsumeKey` returns `Ignored()` even after moving the selection. Same consume rule as 253; small.
-- [243](../issues/243-widgets-ignore-the-surrounding-cell-background-grid-focus-bg-and-unfocused-bg.md) (P2): **new, in flight.** Widgets ignore the Grid cell background. M1 to M3 shipped (`PaintDefaultSurface`, `WriteDefault`); M4 is one item: ProgressBar default text uses the dim status colors instead of the normal foreground.
-- [277](../issues/277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) (P2): **new, 273 rank 1.** Hover must never move focus, field activation or the text cursor; only a click or a navigation key does. Audit FilePicker, Choice, Form, Table, DatePicker. Prevents the 272 class of bugs in every compound widget.
-- [275](../issues/275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) (P2): **new, 273 rank 2.** `Popup.Draw` calls `SetFocus`; move focus changes to open/close and navigation. Prerequisite for 274, whose overlay layer must own focus on open and close.
+Bugs, in order:
+
+1. [247](../issues/247-flaky-testpanefirstdrawusesscreenbounds-under-full-test-run.md) (P2, Bug) + [136](../issues/136-pane-misses-a-resize-that-happens-during-startup-foot-app-draws-at-initial-size.md) (P2, Bug): the first-draw PTY test sometimes sees width 99 instead of 100; 136 is the same code path. Verified 2026-10-06: `New()` still reads the size before `installSignalHandler`, and `run` re-queries only for `full && !alt`. 136 has a host-reviewed M1 (red test) / M2 (re-query after handler install) plan.
+2. [135](../issues/135-testbrowserusesanimatedbackground-fails-when-loom-evidence-1.md) (P3, Bug): reproduced 2026-10-06: `LOOM_EVIDENCE=1 go test ./examples/filebrowser/...` fails `TestBrowserUsesAnimatedBackground`. Set the variable in the test with `t.Setenv`.
+3. [242](../issues/242-gallery-all-tab-dialog-demo-leaks-left-right-arrow-keys-to-the-grid.md) (P2, Major): `Dialog.ConsumeKey` still returns `Ignored()` after moving the selection, so arrows also move Grid focus. Same consume rule as 253.
+4. [240](../issues/240-gallery-all-tab-table-selects-the-full-row-table-tab-selects-cells.md) (P3, Bug): the All tab builds its own Table without `CellCursor`; share one constructor with the Table demo.
+5. [52](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): `ChoiceStyle.Border` is configurable but never drawn; decide remove or implement.
+6. [238](../issues/238-gallery-all-grid-borders-and-content-fitted-row-heights.md) (P2): Grid borders shipped in 249; rows sized to their tallest widget remain. Grid owns its cell rectangles, so mouse routing follows them without waiting for 276.
+7. [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): ansiviewer top-bar background does not reach the right edge; not re-checked on 2026-10-06, so reproduce first.
+
+Repo shape:
+
+8. [225](../issues/225-modularize-high-loc-core-components-and-example-packages.md) (P3): split the largest files (`richtextedit.go` about 2,450 lines, `pane.go` about 1,600, plus `frame.go`, `ansibuffer.go`, `yaml.go`). Pure moves, no behaviour change.
+9. [252](../issues/252-audit-library-defaults-that-are-missing-from-the-spec.md) (P2): library defaults missing from the spec.
+10. [277](../issues/277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) (P2, 273 rank 1): hover never moves focus, field activation or the text cursor.
+11. [275](../issues/275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) (P2, 273 rank 2): `Popup.Draw` calls `SetFocus`; move focus changes to open/close and navigation. Prerequisite for 274.
 
 ---
 
 ## Next: shared overlay layer, container mouse model, then RichTextEdit as a tool
 
-**Rationale.** 274 and 276 finish 273's plan. They are larger than the Now
-items and depend on them: 274 needs 275's explicit focus transitions, and 276
-needs a fresh example (its gallery case was removed on 2026-10-06). The
-RichTextEdit tickets wait for 274 on purpose: `loom edit`'s unsaved-changes
-prompt and the right-click menu are both popups, and building them before the
-overlay layer would add a fourth and fifth local modal field to the widget 274
-is meant to clean up. 157 is the main testing gain for hosts (loom-games) and
-for gallery regressions.
+**Rationale.** 274 and 276 finish 273's plan and depend on the sprint (274 needs
+275's explicit focus transitions). The RichTextEdit tickets wait for 274 so their
+popups use the overlay layer instead of more local modal fields.
 
-- [274](../issues/274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md) (P2): **new, 273 rank 3.** Overlay and modal layer on Canvas/Pane that owns z-order, placement, Esc and input capture. Generalize the existing hook pattern in [`RootOverlays.md`](RootOverlays.md) instead of a second mechanism; migrate RichTextEdit's `helpPopup`, `savePopup`, `savePicker` as the proof.
-- [276](../issues/276-container-owned-coordinate-translation-and-mouse-event-clipping.md) (P2): **new, 273 rank 4.** Containers (`VStack`, `Split`, `Viewport`, `Grid`) translate and clip mouse events for their children. Find a current caller that does its own math before starting.
-- [238](../issues/238-gallery-all-grid-borders-and-content-fitted-row-heights.md) (P2): **new.** Grid rows sized to their tallest widget. Borders already shipped in 249, so the remaining scope is content-fitted rows; after 276, because mouse routing must follow the new cell rectangles.
-- [246](../issues/246-tree-double-click-does-not-open-or-close-nodes.md) (P2, Bug): **new.** Tree double click does nothing. After 277, so it uses the settled click model and the library's existing double-click detection.
-- [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) (P3): **new.** `loom edit <file>` opens RichTextEdit full screen; F10 asks Save/Discard/Cancel on unsaved changes (user decision 2026-10-06). P3, but it turns the editor into a daily-use command at low cost; sequenced after 274 so the quit prompt is an overlay.
-- [265](../issues/265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md) (P2): **new.** RichTextEdit right-click menu (copy/cut/paste, paste style, change case) and a clear-style button. After 274; its color-picker focus marker pre-work can go any time.
+- [274](../issues/274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md) (P2, 273 rank 3): overlay and modal layer on Canvas/Pane; generalize the hook pattern in [`RootOverlays.md`](RootOverlays.md) and migrate RichTextEdit's `helpPopup`, `savePopup`, `savePicker`.
+- [276](../issues/276-container-owned-coordinate-translation-and-mouse-event-clipping.md) (P2, 273 rank 4): containers translate and clip mouse events; find a current caller doing its own math first (the gallery RTE case was removed 2026-10-06).
+- [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) (P3): `loom edit <file>`; F10 asks Save/Discard/Cancel on unsaved changes. After 274 so the prompt is an overlay.
+- [265](../issues/265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md) (P2): RichTextEdit right-click menu and clear-style button. After 274.
 - [157](../issues/157-ansi-golden-mockup-visual-test-comparator.md) (P2): golden ANSI canvas comparator (`loomtest`) with cell-level diffs.
-- [133](../issues/133-pane-debug-mode-with-ruler-overlay-shift-f12-loom-debug.md) (P2): pane debug mode with a ruler overlay (Shift-F12, `LOOM_DEBUG`). After 276, whose translation model it should reuse for its 1-cell mouse offset.
-- [240](../issues/240-gallery-all-tab-table-selects-the-full-row-table-tab-selects-cells.md) (P3, Bug) + [236](../issues/236-gallery-status-bar-truncates-the-f10-quit-hint-at-100-columns.md) (P3, Bug): **new.** Gallery riders: one shared Table constructor so the All tab gets cell selection; keep "F10 Quit" visible at 100 columns with a layout rule, not a shorter label.
+- [133](../issues/133-pane-debug-mode-with-ruler-overlay-shift-f12-loom-debug.md) (P2): pane debug mode with a ruler overlay; after 276.
 
 ---
 
-## Later: tooling, ANSI core, spec hygiene, extensions
+## Later: tooling, ANSI core, extensions
 
-- [266](../issues/266-richtextedit-s-f5-box-push-drawing-mode.md) (P3): **new.** RichTextEdit box-push drawing mode (S-F5). The user marked the vertical push rule as uncertain; it needs a live check after 265.
-- [259](../issues/259-osc-8-terminal-hyperlink-support-human-assisted.md) (P2): **new.** OSC 8 hyperlinks in RichTextEdit view mode. Needs a link attribute in the cell layer and screen diff, and human probes in real terminals (`docs/Canary.md`); schedule when the user has time for the probes.
-- [252](../issues/252-audit-library-defaults-that-are-missing-from-the-spec.md) (P2): **new.** Audit of library defaults missing from the spec. Its strongest candidate, widget key bindings, should move after the routing work above settles, otherwise it specs a moving target.
-- [225](../issues/225-modularize-high-loc-core-components-and-example-packages.md) (P3): **new.** Split large files (`frame.go`, `ansibuffer.go`, `yaml.go`, graph). Add `richtextedit.go` (about 2,400 lines), and do it after 274 shrinks it. Its `ansibox.go` extraction prepares 147.
-- [241](../issues/241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) (P2): **new.** Public `grab` package (SDL3 input grabber) and `examples/grabber` with latency measurement. Self-contained and Linux-only; its only consumer is loom-games, so it can run in parallel whenever a developer is free without touching core code.
-- [161](../issues/161-align-media-example-with-redesign-005.md) (P2): media example to redesign 005; unblocked since 160 shipped. Example-only filler.
-- [095](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode. Re-check its scope once 157 lands; a reusable comparator may cover part of it.
-- [139](../issues/139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) (P2): `loom play`; needs a reuse-vs-build decision (ansiviewer `--record`, Reelang, tmux, asciinema, VHS).
+- [266](../issues/266-richtextedit-s-f5-box-push-drawing-mode.md) (P3): RichTextEdit box-push drawing mode (S-F5); after 265.
+- [259](../issues/259-osc-8-terminal-hyperlink-support-human-assisted.md) (P2): OSC 8 hyperlinks; needs human terminal probes.
+- [241](../issues/241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) (P2): public `grab` package and `examples/grabber`; self-contained, can run in parallel.
+- [161](../issues/161-align-media-example-with-redesign-005.md) (P2): media example to redesign 005.
+- [95](../issues/095-add-human-observable-pty-test-view-mode-and-feedback-flow.md) (P1): human-observable PTY test view mode; re-check scope after 157.
+- [139](../issues/139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) (P2): `loom play`; needs a reuse-vs-build decision.
 - [137](../issues/137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) (P3) + [147](../issues/147-detect-unclosed-boxes-and-prioritize-box-validation-errors.md) (P2): CLI asset-tool feedback and unclosed-box detection.
-- [048](../issues/048-emoji-rune-width-discrepancy-causes-horizontal-border-drift.md) (P2, Bug): width model is specced (`spec/emoji.yaml`, [`EmojiWidth.md`](EmojiWidth.md)); the remaining defect is Loom disagreeing with itself about the DE flag (4 columns in box check, 2 in ANSI replay).
-- [100](../issues/100-investigate-full-width-ansi-top-bar-background-in-ansiviewer.md) (P3): full-width top-bar background in ansiviewer; re-check on `AnsiBuffer` (162/163), may fold into 116.
-- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; performance only, no host waiting.
-- [052](../issues/052-resolve-unused-choicestyle-border-contract.md) (P2): unused `ChoiceStyle.Border`; needs a remove-or-implement decision.
-- [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md) (P2): configurable graph colors and glyphs; pure presentation.
-- [090](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed app backgrounds; no host has asked.
-- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine; large, dependency-heavy, no dashboard use case. Park candidate if it is still unscheduled at the next pass.
+- [116](../issues/116-extract-zero-alloc-ansi-styling-and-parsing-into-dedicated-ansi-subpackage.md) (P2): zero-alloc `ansi` subpackage; performance only.
+- [14](../issues/014-configurable-graph-colors-and-glyph-presentation.md) (P2): configurable graph colors and glyphs.
+- [90](../issues/090-support-image-backed-app-backgrounds-and-background-theme-switching.md) (P1): image-backed app backgrounds; no host has asked.
+- [120](../issues/120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) (P2): wazero Tree-Sitter engine; park candidate at the next pass.
 
 ---
 
 ## Standing (user-owned)
 
-- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks that no headless test can settle, plus the roadmap-180 host-choice review queue (H1 to H5). The user works it at their own pace; it does not gate engineering work.
-
----
-
-## Close / Park
-
-- [177](../issues/177-research-compare-loom-to-bubble-tea-and-list-feature-gaps.md), [178](../issues/178-research-compare-loom-to-ncurses-and-list-feature-gaps.md), [179](../issues/179-research-compare-loom-to-tview-ratatui-and-textual-and-list-feature-gaps.md): close. The Findings sections are complete (2026-09-30) and were consumed by 180, which is closed.
-- [098](../issues/098-document-animatedbackground-ticker-initialization-pitfall.md): close as superseded by 233, which re-arms the background ticker on runtime background changes (`pane.go` `backgroundTicker.reconcile`). Confirm a regression test covers "enable after start" when closing.
-- [244](../issues/244-gallery-all-tab-focused-grid-cell-hides-the-astra-background.md): close with 243. The fix (Grid focused cell as surface) landed in `c3b3f76`; it only needs the user's F8 astra check.
-- [245](../issues/245-dim-placeholder-hint-in-choice-and-table-search-bars.md): likely delivered by 250. `SearchBar` renders a "type to filter" placeholder (`spec/defaults.yaml`) for Choice and Table; verify it is dim in the gallery, then close.
+- [102](../issues/102-human-review-collection-manual-checks-for-lean-sprint-deliveries.md) (P2): manual checks no headless test can settle, plus the roadmap-180 host-choice queue (H1 to H5).
 
 ---
 
@@ -163,23 +152,19 @@ for gallery regressions.
 ```mermaid
 graph LR
   T136[136 startup resize] --- T247[247 flaky first draw]
-  T247 --> T253[253 Table arrows: close]
-  T253 -. same consume rule .- T242[242 Dialog arrows]
-  T277[277 click-only focus] --> T246[246 Tree double click]
-  T275[275 focus out of Draw] --> T274[274 overlay layer]
+  T247 --> T135[135 LOOM_EVIDENCE test]
+  T242[242 Dialog arrows] -. same consume rule as 253 .- T240[240 All-tab Table]
+  T277[277 click-only focus] --> T274[274 overlay layer]
+  T275[275 focus out of Draw] --> T274
   T274 --> T279[279 loom edit]
   T274 --> T265[265 RTE context menu]
   T265 --> T266[266 box-push mode]
-  T274 --> T225[225 split large files]
-  T276[276 container mouse translation] --> T238[238 Grid fitted rows]
-  T276 --> T133[133 debug ruler]
-  T243[243 M4 ProgressBar text] --> T244[244 close]
+  T276[276 container mouse translation] --> T133[133 debug ruler]
+  T225[225 split large files] -. ansibox.go .- T147[147 unclosed boxes]
+  T137[137 CLI feedback] --> T147
   T157[157 golden comparator] -. re-check .- T095[095 PTY view mode]
-  T137[137 CLI feedback] --> T147[147 unclosed boxes]
-  T225 -. ansibox.go .- T147
   T116[116 ansi subpackage] -. may absorb .- T100[100 ansiviewer top bar]
-  T253 --> T252[252 spec key bindings]
-  T274 --> T252
+  T274 --> T252[252 spec key bindings]
 ```
 
 ---
@@ -213,6 +198,7 @@ graph LR
 | 28 — Widget gallery and one event contract (Shipped) | 176, 195 to 207, 209 to 223, 228 to 233, 237, 239, 248 to 251 |
 | 29 — RichTextEdit (Shipped) | 254 to 258, 260, 261, 263, 264, 268 to 273, 278 |
 | 30 — Media, PaintCanvas, module path, release (Shipped) | 202, 208, 216, 224, 226, 227, 230, 234, 235, 267 |
+| 31 — Cleanup sprint (Now) | 247, 136, 135, 242, 240, 052, 238, 100, 225, 252, 277, 275; triage closed 236, 243 to 246, 253, 098, 177 to 179, 048 |
 | Closed — Data sources & targets (parked; 014 still open, see Later) | [014](../issues/014-configurable-graph-colors-and-glyph-presentation.md), [015](../issues/015-simulated-voxi-transcript-and-daemon-panels.md), [016](../issues/016-complete-harnez-and-voxi-simulated-ui-milestone.md), [017](../issues/017-external-file-and-socket-adapters-with-separate-producer-fixtures.md), [018](../issues/018-explore-bounded-linux-and-daemon-source-adapters.md), [019](../issues/019-evaluate-declarative-source-and-action-wiring.md), [056](../issues/056-embed-real-applications-as-pty-hosted-widgets-tmux-screen-style.md) |
 
 ## Long-term outcome
