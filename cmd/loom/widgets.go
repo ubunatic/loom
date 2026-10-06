@@ -256,7 +256,7 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 		c.Write(r.X+1, r.Y+r.H-2, loom.TruncateText(hint, max(0, r.W-2), ""), style)
 	}
 	if r.W < loom.StringWidth(status) {
-		status = " F8 BG · F9 Theme · F10 Quit "
+		status = loom.TruncateText(" F8 BG · F9: "+g.themeName+" · F10 ", max(0, r.W), "")
 	}
 	c.Write(r.X, r.Y+r.H-1, status, style)
 }

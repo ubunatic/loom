@@ -23,11 +23,10 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 			t.Errorf("help omits binding %q", binding)
 		}
 	}
-	edit.ConsumeKey(KeyEvent{Key: "esc"})
-	if edit.helpPopup != nil {
+	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || edit.helpPopup != nil {
 		t.Fatal("Escape did not close F1 help")
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}); !result.Consumed || !edit.popoverAtCursor {
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}); !result.Consumed || !edit.ShowPopover || (!edit.HasSelection && !edit.popoverAtCursor) || edit.helpPopup != nil {
 		t.Fatalf("Ctrl+Space did not open its formatting popover separately: %+v", result)
 	}
 }

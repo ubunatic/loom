@@ -14,23 +14,23 @@ type richTextEditHelp struct {
 func richTextEditHelpLines() []string {
 	return []string{
 		"F1: open this help",
-		"File menu: Alt+F open; Left/Right choose menu; Up/Down choose action; Enter/Space run; Esc close",
+		"File menu: Alt+F open; Left/Right choose menu; Up/Down choose action; Enter/Space run; Escape close",
 		"File actions: Ctrl+S Save; Ctrl+Shift+S Save as",
 		"Mode: F7 toggle View/Edit; F5 box selection or toggle box drawing",
-		"Move: Left/Right/Up/Down; Ctrl+Left/Right by word; Home/Ctrl+A start; End/Ctrl+E end",
-		"Select: Shift+arrows; Shift+Home/End; Ctrl+Shift+A/E extend to line start/end",
+		"Move: Left/Right/Up/Down; Ctrl+Left and Ctrl+Right move by word; Home/Ctrl+A start; End/Ctrl+E end",
+		"Select: Shift+arrows; Shift+Home and Shift+End; Ctrl+Shift+A/E extend to line start/end",
 		"Text: printable keys insert; Enter/Return newline; Backspace/Delete erase",
 		"Style: Ctrl+B bold; Ctrl+I italic; Ctrl+U underline",
 		"Format: Ctrl+Space opens selection formatting popover, separate from File actions",
-		"Popover: Tab/Shift+Tab or Left/Right choose; Enter/Space applies; Esc closes",
+		"Popover: Tab/Shift+Tab or Left/Right choose; Enter/Space applies; Escape closes",
 		"Popover: B/I/U/S, Link, #FG/#BG colors, Box styles, and Draw are available",
 		"Clipboard: Ctrl+C/Ctrl+Insert copy; Ctrl+X/Shift+Delete cut; Ctrl+V/Shift+Insert paste",
 		"History: Ctrl+Z/Ctrl+Y undo; Ctrl+R/Ctrl+Shift+Y/Ctrl+Shift+Z redo",
 		"Selection: mouse drag; double-click word; triple-click line",
-		"Box drawing: arrows draw connected lines; Esc ends a stroke",
+		"Box drawing: arrows draw connected lines; Escape ends a stroke",
 		"Save as: Tab/Shift+Tab switch search and filename; click either field",
 		"Save as: type to search or name; arrows navigate; Enter opens folder or saves",
-		"Save as: Backspace edits search or moves to parent; Esc cancels",
+		"Save as: Backspace edits search or moves to parent; Escape cancels",
 	}
 }
 

@@ -366,7 +366,8 @@ func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	if canvas.Get(0, 0).Style == initialColor {
 		t.Fatalf("demo rendered the same color style after switching from mc to %q", want)
 	}
-	if !strings.Contains(canvas.Row(canvas.Rows()-1), "F9 Theme: "+want) {
+	status := canvas.Row(canvas.Rows() - 1)
+	if !strings.Contains(status, "F9 Theme: "+want) && !strings.Contains(status, "F9: "+want) {
 		t.Fatalf("gallery chrome = %q, want active theme %q", canvas.Row(canvas.Rows()-1), want)
 	}
 }
@@ -513,6 +514,30 @@ func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
+	widget, err := gallery.New("RichTextEdit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := newThemedGallery(widget, "plain")
+	canvas := loom.NewCanvas(80, 12)
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "f5"}); !result.Consumed {
+		t.Fatalf("F5 box toggle result = %+v", result)
+	}
+	g.Draw(canvas, canvas.Bounds())
+	if fileRow := canvas.Row(9); !strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "Esc") {
+		t.Fatalf("box mode file-row hint = %q", fileRow)
+	}
+	if hintRow := canvas.Row(10); !strings.Contains(hintRow, "Ctrl+S") || !strings.Contains(hintRow, "Ctrl+Shift+S") {
+		t.Fatalf("lower hotkey row omits save shortcuts: %q", hintRow)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	g.Draw(canvas, canvas.Bounds())
+	if fileRow := canvas.Row(9); strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "[F7] View") {
+		t.Fatalf("box mode did not return to the editor hint: %q", fileRow)
 	}
 }
 
