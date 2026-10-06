@@ -1,6 +1,6 @@
 # 238 — Gallery All grid: borders and content-fitted row heights
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
