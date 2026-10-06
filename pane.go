@@ -46,6 +46,10 @@ var paneOwnership struct {
 // DefaultMaxCols is the default maximum canvas width loaded from SpeccedDefaults.
 var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
 
+// paneBeforeSignalHandler is a test hook for a resize after New's size read.
+// It is nil in production and only set in isolated test subprocesses.
+var paneBeforeSignalHandler func(*Pane)
+
 // Pane manages an inline terminal region and drives the widget event loop.
 type Pane struct {
 	tty             *os.File
@@ -402,6 +406,9 @@ func New(height int) (*Pane, error) {
 		MaxCols:         DefaultMaxCols,
 		ResizeConfig:    DefaultResizeConfig(),
 		ownsTTY:         true,
+	}
+	if paneBeforeSignalHandler != nil {
+		paneBeforeSignalHandler(p)
 	}
 	p.installSignalHandler()
 	return p, nil

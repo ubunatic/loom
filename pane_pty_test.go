@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
 	"testing"
@@ -31,6 +32,64 @@ func (w *firstDrawBoundsProbe) Draw(_ *Canvas, r Rect) {
 func (*firstDrawBoundsProbe) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
 func (*firstDrawBoundsProbe) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (*firstDrawBoundsProbe) PaneRequest() PaneRequest            { return PaneRequest{} }
+
+func TestPaneStartupResize(t *testing.T) {
+	for _, mode := range []string{"inline", "full", "alt"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Setenv("LOOM_STARTUP_RESIZE_HELPER", mode)
+			s := ptytest.Start(t, 80, 24, os.Args[0], "-test.run=^TestPaneStartupResizeHelper$")
+			if err := s.Wait(5 * time.Second); err != nil {
+				t.Fatalf("startup resize: %v\n%s", err, s.Raw())
+			}
+		})
+	}
+}
+
+func TestPaneStartupResizeHelper(t *testing.T) {
+	mode := os.Getenv("LOOM_STARTUP_RESIZE_HELPER")
+	if mode == "" {
+		return
+	}
+	// Ensure the pre-registration signal is discarded even if Go's signal
+	// goroutine would otherwise deliver it after New installs Notify.
+	signal.Ignore(unix.SIGWINCH)
+	paneBeforeSignalHandler = func(p *Pane) {
+		if p.cols != 80 || p.winch != nil {
+			t.Fatal("hook must run after the initial size read and before signal registration")
+		}
+		// The controlling PTY sends SIGWINCH here, before Notify is installed.
+		set := &unix.Winsize{Col: 100, Row: 30}
+		if err := unix.IoctlSetWinsize(p.fd, unix.TIOCSWINSZ, set); err != nil {
+			t.Fatal(err)
+		}
+	}
+	defer func() { paneBeforeSignalHandler = nil }()
+	p, err := New(8)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer p.Close()
+	p.SetScreenMode(ScreenInline)
+	p.ResizeConfig.AutoFullscreen = false
+	wantStart, wantHeight := 17, 8
+	switch mode {
+	case "full":
+		p.SetScreenMode(ScreenFull)
+		wantStart, wantHeight = 1, 29
+	case "alt":
+		p.SetScreenMode(ScreenAlt)
+		wantStart, wantHeight = 1, 30
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	probe := &firstDrawBoundsProbe{pane: p, cancel: cancel}
+	if err := p.run(ctx, probe, nil, nil, nil); err != context.Canceled {
+		t.Fatalf("run = %v", err)
+	}
+	if probe.startRow != wantStart || probe.rect != (Rect{W: 100, H: wantHeight}) {
+		t.Fatalf("first draw row %d, %+v; want row %d, 100x%d", probe.startRow, probe.rect, wantStart, wantHeight)
+	}
+}
 
 func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
 	for _, tc := range []struct {
