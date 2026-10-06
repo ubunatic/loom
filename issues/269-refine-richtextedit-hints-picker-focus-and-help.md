@@ -1,6 +1,6 @@
 # 269 — Refine RichTextEdit hints, picker focus, and help
 
-**Status**: Open
+**Status**: Closed — user runbook passed
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature

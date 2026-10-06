@@ -279,7 +279,7 @@ upkeep.
 | 266 | [266-richtextedit-s-f5-box-push-drawing-mode.md](266-richtextedit-s-f5-box-push-drawing-mode.md) | RichTextEdit S-F5 box-push drawing mode | Open |
 | 267 | [267-readme-release-status-is-stale.md](267-readme-release-status-is-stale.md) | README release status is stale | Closed — Updated release status to v0.3.0, canonical module path, and current adoption; make check/install passed |
 | 268 | [268-add-save-and-save-as-to-ricktextedit-with-a-file-menu.md](268-add-save-and-save-as-to-ricktextedit-with-a-file-menu.md) | Add Save and Save as to RickTextEdit with a File menu | Closed — Implemented and verified RichTextEdit Save as popup and compact hints |
-| 269 | [269-refine-richtextedit-hints-picker-focus-and-help.md](269-refine-richtextedit-hints-picker-focus-and-help.md) | Refine RichTextEdit hints, picker focus, and help | Open |
+| 269 | [269-refine-richtextedit-hints-picker-focus-and-help.md](269-refine-richtextedit-hints-picker-focus-and-help.md) | Refine RichTextEdit hints, picker focus, and help | Closed — user runbook passed |
 | 270 | [270-pass-demo-arguments-to-loom-widgets-show-after.md](270-pass-demo-arguments-to-loom-widgets-show-after.md) | Pass demo arguments to loom widgets --show after -- | Open |
 | 271 | [271-richtextedit-save-ends-files-with-a-final-newline.md](271-richtextedit-save-ends-files-with-a-final-newline.md) | RichTextEdit save ends files with a final newline | Open |
 | 272 | [272-richtextedit-save-as-picker-reopen-enter-on-file-focus-follows-mouse.md](272-richtextedit-save-as-picker-reopen-enter-on-file-focus-follows-mouse.md) | RichTextEdit Save as picker: reopen, Enter on file, focus follows mouse | Open |
