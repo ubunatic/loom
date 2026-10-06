@@ -1,6 +1,6 @@
 # 238 — Gallery All grid: borders and content-fitted row heights
 
-**Status**: In Progress
+**Status**: Closed — Grid.FitRows (99b5e70) plus Dialog/Chart Measure (3e985f6); host make test-q1 green, make install done
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
