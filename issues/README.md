@@ -288,3 +288,4 @@ upkeep.
 | 275 | [275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md](275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) | Decouple focus state updates from Popup and Widget Draw rendering | Open |
 | 276 | [276-container-owned-coordinate-translation-and-mouse-event-clipping.md](276-container-owned-coordinate-translation-and-mouse-event-clipping.md) | Container-owned coordinate translation and mouse event clipping | Open |
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
+| 278 | [278-richtextedit-toolbar-redesign-key-caps-and-short-form.md](278-richtextedit-toolbar-redesign-key-caps-and-short-form.md) | RichTextEdit toolbar redesign: key caps and ^ short form | Open |
