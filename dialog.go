@@ -6,7 +6,9 @@ package loom
 import "strings"
 
 // Dialog is a centered or positioned modal prompt rendered with Popup's border
-// and background treatment. Enter selects the highlighted button; Escape closes.
+// and background treatment. Enter selects the highlighted button and closes;
+// without buttons it does nothing. Escape closes without calling OnSelect.
+// Closing consumes the event without quitting or completing the hosting pane.
 type Dialog struct {
 	Title    string
 	Body     string
@@ -101,17 +103,20 @@ func maxDialogWidth(title string, lines, buttons []string) int {
 	return w
 }
 
+// ConsumeKey consumes closing actions and changes to the button selection.
+// Unused keys and navigation with fewer than two buttons bubble to the parent.
 func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 	if !d.Open {
 		return Ignored()
 	}
 	if e.Key == "esc" {
 		d.Open = false
-		return Ignored()
+		return Handled()
 	}
 	if len(d.Buttons) == 0 {
 		return Ignored()
 	}
+	previous := d.selected
 	switch e.Key {
 	case "left":
 		d.selected = (d.selected + len(d.Buttons) - 1) % len(d.Buttons)
@@ -122,6 +127,10 @@ func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 			d.OnSelect(d.SelectedButton())
 		}
 		d.Open = false
+		return Handled()
+	}
+	if d.selected != previous {
+		return Handled()
 	}
 	return Ignored()
 }

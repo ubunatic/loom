@@ -97,6 +97,25 @@ func TestTableNavigation(t *testing.T) {
 	}
 }
 
+func TestTableActionsConsumeAndNoOpsBubble(t *testing.T) {
+	tbl, _, _ := psTestTable()
+	selected := 0
+	tbl.OnSelect = func(loom.Row) { selected++ }
+	for _, e := range []loom.KeyEvent{{Key: "tab"}, {Text: "!"}, {Key: "pgdown"}, {Key: "pgup"}, {Text: "v"}, {Key: "backspace"}, {Key: "enter"}, {Text: ":"}, {Text: "help"}, {Key: "enter"}, {Key: "esc"}, {Text: ":"}, {Text: "x"}, {Key: "backspace"}, {Key: "esc"}} {
+		if res := tbl.ConsumeKey(e); !res.Consumed || res.Quit {
+			t.Fatalf("%+v result=%+v, want handled", e, res)
+		}
+	}
+	if selected != 1 {
+		t.Fatalf("selection callbacks=%d", selected)
+	}
+	for _, e := range []loom.KeyEvent{{Key: "backspace"}, {Key: "f9"}, {Key: "pgup"}} {
+		if res := tbl.ConsumeKey(e); res.Consumed {
+			t.Fatalf("no-op %+v result=%+v", e, res)
+		}
+	}
+}
+
 func TestTableCellCursorNavigationAndCallback(t *testing.T) {
 	tbl, _, _ := psTestTable()
 	tbl.CellCursor = true

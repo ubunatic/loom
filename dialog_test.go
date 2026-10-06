@@ -7,6 +7,93 @@ import (
 	"ubunatic.com/loom"
 )
 
+func TestDialogConsumesOnlyActions(t *testing.T) {
+	for _, tc := range []struct {
+		name, key      string
+		buttons        []string
+		consumed, open bool
+		selected       string
+	}{
+		{"right", "right", []string{"No", "Yes"}, true, true, "Yes"},
+		{"left wraps", "left", []string{"No", "Yes"}, true, true, "Yes"},
+		{"tab", "tab", []string{"No", "Yes"}, true, true, "Yes"},
+		{"enter", "enter", []string{"OK"}, true, false, "OK"},
+		{"escape", "esc", nil, true, false, ""},
+		{"buttonless enter", "enter", nil, false, true, ""},
+		{"single right", "right", []string{"OK"}, false, true, "OK"},
+		{"single left", "left", []string{"OK"}, false, true, "OK"},
+		{"single tab", "tab", []string{"OK"}, false, true, "OK"},
+		{"unused", "down", []string{"OK"}, false, true, "OK"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			d := loom.NewDialog("Prompt", "Body", tc.buttons...)
+			calls := 0
+			d.OnSelect = func(string) { calls++ }
+			res := d.ConsumeKey(loom.KeyEvent{Key: tc.key})
+			if res.Consumed != tc.consumed || res.Quit || res.Done || d.Open != tc.open || d.SelectedButton() != tc.selected {
+				t.Fatalf("result=%+v open=%v selected=%q", res, d.Open, d.SelectedButton())
+			}
+			wantCalls := 0
+			if tc.key == "enter" && len(tc.buttons) > 0 {
+				wantCalls = 1
+			}
+			if calls != wantCalls {
+				t.Fatalf("callback calls=%d, want %d", calls, wantCalls)
+			}
+			if !d.Open && d.ConsumeKey(loom.KeyEvent{Key: tc.key}).Consumed {
+				t.Fatal("closed dialog consumed key")
+			}
+		})
+	}
+}
+
+func TestGridDialogActionsStayInChild(t *testing.T) {
+	d := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
+	g := loom.NewGrid(2, d, loom.NewView(nil))
+	parentCalls := 0
+	g.OnSelect = func(int) { parentCalls++ }
+	for _, key := range []string{"right", "left", "tab", "enter"} {
+		if res := g.ConsumeKey(loom.KeyEvent{Key: key}); !res.Consumed || res.Quit || g.Focus() != 0 {
+			t.Fatalf("%s: result=%+v focus=%d", key, res, g.Focus())
+		}
+	}
+	if d.Open || parentCalls != 0 {
+		t.Fatalf("open=%v parent callbacks=%d", d.Open, parentCalls)
+	}
+	d.Activate()
+	if res := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); !res.Consumed || d.Open {
+		t.Fatalf("escape: %+v open=%v", res, d.Open)
+	}
+	d.Activate()
+	g.ConsumeKey(loom.KeyEvent{Key: "down"})
+	if g.Focus() != 1 {
+		t.Fatal("unused arrow did not bubble")
+	}
+}
+
+func TestGridDialogButtonClickConsumesAndCloses(t *testing.T) {
+	d := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
+	d.Width, d.Height = 24, 5
+	g := loom.NewGrid(2, loom.NewView(nil), d)
+	c := loom.NewCanvas(80, 12)
+	allocation := loom.Rect{X: 4, Y: 2, W: 70, H: 8}
+	g.Draw(c, allocation)
+	selected := ""
+	d.OnSelect = func(s string) { selected = s }
+	for y := 0; y < 12; y++ {
+		for x := 0; x < 78; x++ {
+			if c.Get(x, y).Text == "Y" && c.Get(x+1, y).Text == "e" && c.Get(x+2, y).Text == "s" {
+				res := g.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: x - allocation.X, Y: y - allocation.Y})
+				if !res.Consumed || res.Quit || d.Open || selected != "Yes" || g.Focus() != 1 {
+					t.Fatalf("click: %+v open=%v selected=%q focus=%d", res, d.Open, selected, g.Focus())
+				}
+				return
+			}
+		}
+	}
+	t.Fatal("Yes button not drawn")
+}
+
 func TestDialogCentersClearsAndTruncatesTitle(t *testing.T) {
 	c := loom.NewCanvas(30, 10)
 	c.Fill(c.Bounds(), loom.Cell{Text: "x"})

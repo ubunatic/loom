@@ -462,7 +462,7 @@ func (t *Table) Draw(cv *Canvas, r Rect) {
 // ':' or '/' activates command mode; Tab completes commands when active.
 func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if t.cmd.handleHelp(e) {
-		return Ignored()
+		return Handled()
 	}
 	if consumed, result := t.cmd.ConsumeKey(e); consumed {
 		switch result {
@@ -476,13 +476,14 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			t.done = true
 			return QuitResult()
 		}
-		return Ignored()
+		return Handled()
 	}
 	var action string
 	if t.keys != nil {
 		action = t.keys.Action(e)
 	}
 	if action != "" {
+		previous := t.sel
 		count := t.pageRows
 		if count < 1 {
 			count = 10
@@ -496,7 +497,10 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 				t.sel++
 			}
 		}
-		t.cellSelectionChanged()
+		if t.sel != previous {
+			t.cellSelectionChanged()
+			return Handled()
+		}
 		return Ignored()
 	}
 	switch e.Key {
@@ -507,7 +511,7 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 	case "enter":
 		if t.OnSelect != nil && len(t.filtered) > 0 {
 			t.OnSelect(t.filtered[t.sel])
-			return Ignored()
+			return Handled()
 		}
 		t.done = true
 		return DoneResult()
@@ -546,12 +550,17 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			return Handled()
 		}
 	case "tab":
+		if len(t.Columns) == 0 {
+			return Ignored()
+		}
 		t.cycleSortNext()
+		return Handled()
 	case "backspace":
 		if len(t.query) > 0 {
 			runes := []rune(t.query)
 			t.query = string(runes[:len(runes)-1])
 			t.refilter()
+			return Handled()
 		}
 	default:
 		if e.Text == "!" {
@@ -559,9 +568,11 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			if t.OnSort != nil && t.SortCol >= 0 {
 				t.OnSort(t.SortCol, t.SortDesc)
 			}
+			return Handled()
 		} else if e.Text != "" {
 			t.query += e.Text
 			t.refilter()
+			return Handled()
 		}
 	}
 	return Ignored()
