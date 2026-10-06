@@ -1,6 +1,6 @@
 # 052 — Resolve unused ChoiceStyle Border contract
 
-**Status**: Open
+**Status**: Closed — ChoiceStyle.Border deprecated and documented as ignored; focus comment fixed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
