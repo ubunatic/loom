@@ -1,6 +1,6 @@
 # 247 — Flaky TestPaneFirstDrawUsesScreenBounds under full test run
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
