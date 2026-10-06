@@ -24,3 +24,12 @@ of the Julia256 viewer theme.
 Add regression coverage using both mc ANSI fixtures and verify that the top row
 background reaches the terminal's right edge without changing pane or status-row
 colors.
+
+---
+
+## Delivered
+
+- Cause: `ParseAnsiBuffer` skipped `CSI K` (erase in line). mc draws the top bar's titles and then erases the rest of the row with the bar background.
+- Fix (`a140612`): `CSI K` modes 0/1/2 fill with the current background (BCE). Cells past the recorded screen width (`minCols` or widest printed column) are blanked, because cursor-addressed recordings prescan to a much wider buffer (652 columns for the mc fixtures).
+- Tests: erase modes; both mc fixtures assert the top-row background ends at the same column as the other rows.
+- Host verification: `make test-q1` 0 FAIL; `make install`; installed `loom view docs/data/mc-mc46.ansi` paints the top bar to column 78, like the panes.
