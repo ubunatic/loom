@@ -1,6 +1,6 @@
 # 245 — Dim placeholder hint in Choice and Table search bars
 
-**Status**: Open
+**Status**: Closed — fixed in 297f222
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
