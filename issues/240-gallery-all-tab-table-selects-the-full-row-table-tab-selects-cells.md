@@ -1,6 +1,6 @@
 # 240 — Gallery All tab Table selects the full row, Table tab selects cells
 
-**Status**: In Progress
+**Status**: Closed — All tab shares standalone demo constructors; test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
