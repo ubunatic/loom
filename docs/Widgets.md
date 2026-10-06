@@ -81,6 +81,24 @@ tabs := loom.NewTabs(
 
 ---
 
+### Grid layout (`loom.Grid`)
+
+`Grid` divides its width into `Cols` columns. Rows share available height by
+default. Set `FitRows = true` to give each row the largest preferred height
+reported by its children through `Measurer.Measure(cellWidth)`. Heights are at
+least one terminal line; widgets without `Measurer` receive a one-line fallback.
+Spare height stays below the fitted rows. Overflow is clipped to the Grid area;
+there is no scrolling, and keyboard navigation can focus an offscreen child.
+
+`ChildRect(i)` returns the full cell bounds from the most recent draw, including
+clipped portions. Mouse routing uses those bounds and passes 0-based child-local
+coordinates only for points inside the visible Grid area. Arrow keys move focus
+between columns and rows; Shift-arrow keys bypass the child's key handler.
+`GridBorderInner` adds one-cell separators, and `GridBorderFull` also borders the
+assigned area's outside edge, including any spare height. Border cells do not
+route mouse events to children. The gallery **All** demo enables fitted rows and
+inner borders (`loom widgets --show All`).
+
 ## 3. Metrics & Monitoring Primitives
 
 Loom provides concurrency-safe metric history storage and bound visualization widgets.

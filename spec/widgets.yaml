@@ -131,6 +131,7 @@ widgets:
     category: layout
     example: |-
       grid := loom.NewGrid(2, header, body, footer)
+      grid.FitRows = true // tallest measured child determines each row height
       focused := grid.Focus()
       _ = focused
     source: grid.go

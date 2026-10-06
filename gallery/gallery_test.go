@@ -1361,6 +1361,9 @@ func TestAllTabInitialActiveAndLayout(t *testing.T) {
 	tabs.Draw(c, c.Bounds())
 
 	// Inner borders leave one-cell separators between cells without an outer edge.
+	if !grid.FitRows {
+		t.Fatal("All demo must enable fitted row heights")
+	}
 	r0 := grid.ChildRect(0)
 	cellW := r0.W
 	if cellW <= 0 || r0.H <= 0 {

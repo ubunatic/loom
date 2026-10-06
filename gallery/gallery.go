@@ -540,6 +540,7 @@ func newAllDemo() *loom.Grid {
 		&popupDemo{popup: popup}, textArea, viewport,
 	)
 	grid.BorderMode = loom.GridBorderInner
+	grid.FitRows = true
 	return grid
 }
 

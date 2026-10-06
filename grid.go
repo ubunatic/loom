@@ -54,6 +54,12 @@ var speccedGrid = func() gridSpec {
 
 // Grid lays out widgets in a fixed number of columns.
 // Row count is inferred from len(Children) and Cols.
+// By default rows share the available height. With FitRows, each row uses the
+// tallest child's Measurer height at its cell width, with a minimum of one line.
+// Children without Measurer use one line. Spare height remains below the rows;
+// overflow is clipped to the Grid area without scrolling. ChildRect reports the
+// full layout bounds, including clipped portions. Borders occupy separate cells;
+// a full border stays at the area's outside edge even when rows do not fill it.
 // Navigation: Left/Right move within a row; Up/Down move between rows.
 // OnSelect is called when Enter is pressed on a cell; if nil, Enter
 // delegates to the focused child widget (which may return quit=true).
@@ -63,6 +69,7 @@ type Grid struct {
 	FocusBG     Color          // background color of the focused cell; zero = default
 	BorderMode  GridBorderMode // none, inner, or full; zero value draws no border
 	BorderStyle Style          // border appearance; zero value uses the theme border
+	FitRows     bool           // size each row to its tallest measured child
 	OnSelect    func(i int)    // called on Enter if non-nil; prevents quit propagation
 
 	focus      int // flat index of the focused child
@@ -150,13 +157,23 @@ func (g *Grid) setFocus(index int) {
 	}
 }
 
-// Draw renders all children into a uniform grid within r.
+// Draw renders all children into the grid within r.
 // The focused cell receives a FocusBG background highlight before its child draws.
 func (g *Grid) Draw(c *Canvas, r Rect) {
 	g.lastRect = r
+	g.childRects = nil
 	n := len(g.Children)
-	if n == 0 || g.Cols == 0 {
+	if n == 0 || g.Cols <= 0 || r.W <= 0 || r.H <= 0 {
 		return
+	}
+	originX, originY := 0, 0
+	if g.FitRows {
+		// Preserve the ambient surface while confining children to the Grid area.
+		parent := c
+		c = parent.SubCanvas(r)
+		defer parent.Blit(c, r.X, r.Y)
+		originX, originY = r.X, r.Y
+		r = c.Bounds()
 	}
 	rows := (n + g.Cols - 1) / g.Cols
 	mode := g.BorderMode
@@ -175,6 +192,18 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 	}
 	cellWidths := gridCellSizes(r.W-2*insetX-verticalLines, g.Cols, bordered)
 	cellHeights := gridCellSizes(r.H-2*insetY-horizontalLines, rows, bordered)
+	if g.FitRows {
+		cellHeights = make([]int, rows)
+		for i, child := range g.Children {
+			height := 1
+			if measured, ok := child.(Measurer); ok {
+				height = max(1, measured.Measure(cellWidths[i%g.Cols]).Height)
+			}
+			row := i / g.Cols
+			cellHeights[row] = max(cellHeights[row], height)
+		}
+	}
+	g.childRects = make([]Rect, n)
 	for i, child := range g.Children {
 		if f, ok := child.(Focusable); ok {
 			f.SetFocus(i == g.focus)
@@ -186,14 +215,28 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 			W: cellWidths[col],
 			H: cellHeights[row],
 		}
-		if len(g.childRects) != n {
-			g.childRects = make([]Rect, n)
-		}
 		g.childRects[i] = cr
+		g.childRects[i].X += originX
+		g.childRects[i].Y += originY
 		if i == g.focus {
 			c.PaintSurface(cr, Style{BG: g.FocusBG})
 		}
-		child.Draw(c, cr)
+		if g.FitRows {
+			visible := cr
+			visible.W = min(cr.W, r.X+r.W-cr.X)
+			visible.H = min(cr.H, r.Y+r.H-cr.Y)
+			if full {
+				visible.W = min(visible.W, r.X+r.W-1-cr.X)
+				visible.H = min(visible.H, r.Y+r.H-1-cr.Y)
+			}
+			if visible.W > 0 && visible.H > 0 {
+				local := c.SubCanvas(visible)
+				child.Draw(local, Rect{W: cr.W, H: cr.H})
+				c.Blit(local, cr.X, cr.Y)
+			}
+		} else {
+			child.Draw(c, cr)
+		}
 		if Debug {
 			drawDebugBorder(c, cr)
 		}
@@ -426,6 +469,13 @@ func (g *Grid) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	x, y := e.X+g.lastRect.X, e.Y+g.lastRect.Y
+	if !g.lastRect.Contains(x, y) {
+		return Ignored()
+	}
+	if g.FitRows && g.BorderMode == GridBorderFull &&
+		(x == g.lastRect.X || y == g.lastRect.Y || x == g.lastRect.X+g.lastRect.W-1 || y == g.lastRect.Y+g.lastRect.H-1) {
+		return Ignored()
+	}
 	for i, rect := range g.childRects {
 		if rect.Contains(x, y) {
 			if e.Action == MousePress && i >= 0 && i < len(g.Children) {
