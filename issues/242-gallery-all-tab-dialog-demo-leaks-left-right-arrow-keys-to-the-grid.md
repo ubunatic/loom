@@ -1,6 +1,6 @@
 # 242 — Gallery All tab: Dialog demo leaks left/right arrow keys to the grid
 
-**Status**: In Progress
+**Status**: Closed — Dialog/Table consume keys they act on; test-q1 green
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
