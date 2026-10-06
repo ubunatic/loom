@@ -1,6 +1,6 @@
 # 100 — Investigate full-width ANSI top-bar background in ansiviewer
 
-**Status**: Open
+**Status**: Closed — CSI K paints the current background; mc top bar reaches the right edge
 **Priority**: P3
 **Severity**: Minor
 **Category**: Bug
