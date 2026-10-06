@@ -1,6 +1,6 @@
 # 225 — Modularize high-LOC core components and example packages
 
-**Status**: Open
+**Status**: Closed — Modularization moves on main (box.go, router.go, ansibox.go, graph and loomoji splits); host make test-q1 green with 3e985f6
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Refactor
