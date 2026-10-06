@@ -1,6 +1,6 @@
 # 177 — Research: compare loom to Bubble Tea and list feature gaps
 
-**Status**: Open
+**Status**: Closed — findings consumed by 180
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research
