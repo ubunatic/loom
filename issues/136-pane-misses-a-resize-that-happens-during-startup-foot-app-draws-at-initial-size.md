@@ -1,6 +1,6 @@
 # 136 — Pane misses a resize that happens during startup (foot -- app draws at initial size)
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
