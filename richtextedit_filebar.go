@@ -91,8 +91,14 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	if b.edit.BoxMode {
 		hints = "[Box] Esc exits  " + hints
 	}
-	if StringWidth(hints) > available {
-		hints = TruncateText(hints, available, "")
+	statusSeparator := strings.LastIndex(status, " · ")
+	minimumStatusWidth := StringWidth(status)
+	if statusSeparator >= 0 {
+		minimumStatusWidth = StringWidth("…" + status[statusSeparator:])
+	}
+	minimumRowWidth := titleWidth + 1 + minimumStatusWidth + 1 + StringWidth(hints)
+	if StringWidth(hints) > available || bounds.W < minimumRowWidth {
+		hints = ""
 	}
 	hintWidth := StringWidth(hints)
 	hintX := bounds.X + bounds.W - hintWidth

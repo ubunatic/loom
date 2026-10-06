@@ -99,6 +99,101 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	}
 }
 
+func TestRichTextEditFileBarF7HintIsAtomicAtStatusBoundaries(t *testing.T) {
+	tests := []struct {
+		name      string
+		threshold int
+		want      string
+		prepare   func(*testing.T, *RichTextEdit)
+	}{
+		{
+			name:      "unsaved",
+			threshold: 28,
+			want:      "· Unsaved",
+			prepare:   func(*testing.T, *RichTextEdit) {},
+		},
+		{
+			name:      "modified",
+			threshold: 29,
+			want:      "· Modified",
+			prepare: func(_ *testing.T, edit *RichTextEdit) {
+				edit.ConsumeKey(KeyEvent{Text: "!"})
+			},
+		},
+		{
+			name:      "saved",
+			threshold: 26,
+			want:      "· Saved",
+			prepare: func(t *testing.T, edit *RichTextEdit) {
+				if err := edit.SaveAs(filepath.Join(t.TempDir(), "notes.rtf")); err != nil {
+					t.Fatalf("SaveAs: %v", err)
+				}
+			},
+		},
+		{
+			name:      "error",
+			threshold: 26,
+			want:      "· Error",
+			prepare: func(t *testing.T, edit *RichTextEdit) {
+				if err := edit.SaveAs(filepath.Join(t.TempDir(), "notes.rtf")); err != nil {
+					t.Fatalf("initial SaveAs: %v", err)
+				}
+				if err := edit.SaveAs(filepath.Join(t.TempDir(), "missing", "notes.rtf")); err == nil {
+					t.Fatal("SaveAs to missing directory succeeded")
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+			edit.ShowFileBar = true
+			tt.prepare(t, edit)
+			for _, width := range []int{tt.threshold - 1, tt.threshold, tt.threshold + 1} {
+				canvas := NewCanvas(width, 2)
+				edit.Draw(canvas, canvas.Bounds())
+				row := canvas.Row(1)
+				if !strings.Contains(row, tt.want) {
+					t.Errorf("width %d status row omits %q: %q", width, tt.want, row)
+				}
+				hasWholeHint := strings.Contains(row, "[F7] View")
+				if strings.Contains(row, "[F7] Vie") && !hasWholeHint {
+					t.Errorf("width %d renders a partial F7 hint: %q", width, row)
+				}
+				if width < tt.threshold && hasWholeHint {
+					t.Errorf("width %d shows F7 hint before its fit boundary: %q", width, row)
+				}
+				if width >= tt.threshold && !hasWholeHint {
+					t.Errorf("width %d omits complete F7 hint at its fit boundary: %q", width, row)
+				}
+			}
+		})
+	}
+
+	t.Run("box guidance and F7 hint are atomic", func(t *testing.T) {
+		edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+		edit.ShowFileBar = true
+		edit.ConsumeKey(KeyEvent{Text: "!"})
+		edit.BoxMode = true
+		for _, width := range []int{45, 46, 47} {
+			canvas := NewCanvas(width, 2)
+			edit.Draw(canvas, canvas.Bounds())
+			row := canvas.Row(1)
+			hasWholeHint := strings.Contains(row, "[F7] View")
+			if strings.Contains(row, "[F7] Vie") && !hasWholeHint {
+				t.Errorf("width %d renders a partial Box-mode F7 hint: %q", width, row)
+			}
+			if width < 46 && hasWholeHint {
+				t.Errorf("width %d shows Box-mode F7 hint before its fit boundary: %q", width, row)
+			}
+			if width >= 46 && (!strings.Contains(row, "[Box] Esc exits") || !hasWholeHint) {
+				t.Errorf("width %d omits complete Box-mode guidance at its fit boundary: %q", width, row)
+			}
+		}
+	})
+}
+
 func TestRichTextEditFileBarF7HintNamesDestinationMode(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
 	edit.ShowFileBar = true
@@ -166,9 +261,16 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if edit.savePicker.nameFocus {
 		t.Fatal("untitled Save as picker stole focus from directory search")
 	}
+	edit.ConsumeKey(KeyEvent{Key: "esc"})
+	if edit.FilePath != "" || edit.savePicker != nil {
+		t.Fatalf("cancelled Save as changed path/picker = %q/%v", edit.FilePath, edit.savePicker)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed || edit.savePicker == nil {
+		t.Fatalf("pathless Ctrl+S result/picker = %+v/%v", result, edit.savePicker)
+	}
 	edit.ConsumeKey(KeyEvent{Text: "created"})
 	if got := edit.savePicker.List().Query(); got != "created" {
-		t.Fatalf("Save as directory query = %q, want created", got)
+		t.Fatalf("Save directory query = %q, want created", got)
 	}
 	edit.ConsumeKey(KeyEvent{Key: "tab"})
 	newPath := filepath.Join(root, "created.ansi")
@@ -176,10 +278,46 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 		edit.ConsumeKey(KeyEvent{Text: string(r)})
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || edit.savePicker != nil || edit.savePopup != nil {
-		t.Fatalf("confirm pathless Save as result/picker = %+v/%v", result, edit.savePicker)
+		t.Fatalf("confirm pathless Save result/picker = %+v/%v", result, edit.savePicker)
 	}
 	if edit.FilePath != newPath {
-		t.Fatalf("Save as associated path = %q, want %q", edit.FilePath, newPath)
+		t.Fatalf("picker save associated path = %q, want %q", edit.FilePath, newPath)
+	}
+	initial, err := os.ReadFile(newPath)
+	if err != nil || string(initial) != edit.Document.ToANSI() {
+		t.Fatalf("picker save bytes/error = %q/%v, want current document %q", initial, err, edit.Document.ToANSI())
+	}
+	if result := edit.ConsumeKey(KeyEvent{Text: "!"}); !result.Consumed {
+		t.Fatalf("edit after picker save = %+v", result)
+	}
+	canvas := NewCanvas(100, 4)
+	edit.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(3); !strings.Contains(row, "· Modified") {
+		t.Fatalf("status after edit = %q, want Modified", row)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed {
+		t.Fatalf("second Ctrl+S result = %+v", result)
+	}
+	updated, err := os.ReadFile(newPath)
+	if err != nil || string(updated) != edit.Document.ToANSI() {
+		t.Fatalf("second Ctrl+S bytes/error = %q/%v, want current document %q", updated, err, edit.Document.ToANSI())
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(3); !strings.Contains(row, "· Saved") {
+		t.Fatalf("status after successful second save = %q, want Saved", row)
+	}
+	if err := os.Remove(newPath); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(newPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed {
+		t.Fatalf("Ctrl+S to unwritable destination result = %+v", result)
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	if row := canvas.Row(3); !strings.Contains(row, "· Error") || strings.Contains(row, "· Saved") {
+		t.Fatalf("status after failed Ctrl+S = %q, want Error only", row)
 	}
 }
 
