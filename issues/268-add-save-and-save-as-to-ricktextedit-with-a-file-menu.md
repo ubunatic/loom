@@ -1,6 +1,6 @@
 # 268 — Add Save and Save as to RickTextEdit with a File menu
 
-**Status**: Open — Follow-up: restore picker search and refine Save as popup and hints
+**Status**: Closed — Implemented and verified RichTextEdit Save as popup and compact hints
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
