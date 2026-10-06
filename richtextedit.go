@@ -723,10 +723,16 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 		return result
 	}
 	if e.savePopup != nil {
-		if key.Is("esc") {
-			return e.savePicker.ConsumeKey(key)
+		popup := e.savePopup
+		result := popup.ConsumeKey(key)
+		if e.savePopup != nil && !e.savePopup.Open {
+			if e.savePicker != nil && e.savePicker.options.OnCancel != nil {
+				e.savePicker.options.OnCancel()
+			}
+			e.savePicker = nil
+			e.savePopup = nil
 		}
-		return e.savePopup.ConsumeKey(key)
+		return result
 	}
 	if key.Is("f1") {
 		e.ensureFileBar()
@@ -911,6 +917,9 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 	if e.savePopup != nil {
 		result := e.savePopup.ConsumeMouse(mouse)
 		if !e.savePopup.Open {
+			if e.savePicker != nil && e.savePicker.options.OnCancel != nil {
+				e.savePicker.options.OnCancel()
+			}
 			e.savePicker = nil
 			e.savePopup = nil
 		}

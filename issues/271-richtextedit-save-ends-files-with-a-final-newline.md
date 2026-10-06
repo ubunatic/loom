@@ -22,3 +22,12 @@ Files saved by RichTextEdit have no trailing newline, so `cat file` leaves the s
 /goal RTE-saved files end with exactly one newline and save/load/save is byte-stable; stop and report when blocked on a user decision or denied permission.
 
 Acceptance: tests for save output ending in `\x1b[0m\n`; load→save→load round-trip keeps the line count for documents with and without a trailing empty line; custom `SerializeDocument` output is written as returned.
+
+---
+
+## Delivered
+
+- **Symmetric Trailing Newline**: Updated default `RichTextEdit.SaveAs` serialization to append `\n` to `ToANSI()`, writing `…\x1b[0m\n`. Updated `RichDocument.FromANSI` to symmetrically drop exactly one trailing newline (including when followed by SGR codes).
+- **Custom Serialization Preserved**: Custom `SerializeDocument` outputs remain untouched.
+- **Commits**: `be35086`
+- **Tests**: `make test-q1` passed. Single-line and empty-line round-trip tests verified in `richtext_test.go` and `richtextedit_file_test.go`.

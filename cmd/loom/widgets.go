@@ -41,7 +41,7 @@ func widgetsCommand() *cobra.Command {
 	var themeName string
 	var width, height int
 	command := &cobra.Command{
-		Use:   "widgets [name]",
+		Use:   "widgets [name] [-- <demo-args>]",
 		Short: "List library widgets, show usage, or run live demos",
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
@@ -60,7 +60,16 @@ func widgetsCommand() *cobra.Command {
 				previousDebug := loom.Debug
 				loom.Debug = debug
 				defer func() { loom.Debug = previousDebug }()
-				return showWidgetDemos(args, themeName, width, height)
+
+				dash := cmd.ArgsLenAtDash()
+				var names, demoArgs []string
+				if dash != -1 {
+					names = args[:dash]
+					demoArgs = args[dash:]
+				} else {
+					names = args
+				}
+				return showWidgetDemos(names, demoArgs, themeName, width, height)
 			}
 			catalog, err := readWidgetCatalog()
 			if err != nil {
@@ -165,17 +174,24 @@ var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) 
 
 func galleryPaneMaxCols(width int) int { return width }
 
-func showWidgetDemos(names []string, themeName string, width, height int) error {
+func showWidgetDemos(names []string, demoArgs []string, themeName string, width, height int) error {
 	var widget loom.Widget
 	if len(names) == 0 {
+		if len(demoArgs) > 0 {
+			return fmt.Errorf("demo arguments after -- can only be passed when showing a single widget demo")
+		}
 		widget = gallery.NewAll()
 	} else if len(names) == 1 {
-		widget, err := gallery.New(names[0])
+		var err error
+		widget, err = gallery.NewWithArgs(names[0], demoArgs)
 		if err != nil {
 			return err
 		}
 		return runWidgetPane(newThemedGallery(widget, themeName), width, height, gallery.RequiresAltScreen(names...))
 	} else {
+		if len(demoArgs) > 0 {
+			return fmt.Errorf("demo arguments after -- can only be passed when showing a single widget demo")
+		}
 		tabs := make([]loom.Tab, 0, len(names))
 		for _, name := range names {
 			child, err := gallery.New(name)

@@ -424,6 +424,37 @@ func TestWidgetsDebugFlag(t *testing.T) {
 	}
 }
 
+func TestWidgetsShowDemoArgs(t *testing.T) {
+	previousRun := runWidgetPane
+	var shownWidget loom.Widget
+	runWidgetPane = func(w loom.Widget, _, _ int, _ bool) error {
+		shownWidget = w
+		return nil
+	}
+	t.Cleanup(func() { runWidgetPane = previousRun })
+
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "test.ansi")
+
+	// Valid single widget with demo args after --
+	if err := execute([]string{"widgets", "--show", "RichTextEdit", "--", filePath}, &bytes.Buffer{}); err != nil {
+		t.Fatalf("widgets --show RichTextEdit -- file: %v", err)
+	}
+	if shownWidget == nil {
+		t.Fatal("gallery runner was not called")
+	}
+
+	// Demo args with multiple widgets -> error
+	if err := execute([]string{"widgets", "--show", "RichTextEdit", "Chart", "--", filePath}, &bytes.Buffer{}); err == nil {
+		t.Fatal("widgets --show with multiple widgets accepted -- args")
+	}
+
+	// Demo args with demo that takes none -> error
+	if err := execute([]string{"widgets", "--show", "Chart", "--", "arg"}, &bytes.Buffer{}); err == nil {
+		t.Fatal("widgets --show Chart accepted -- args")
+	}
+}
+
 func TestGalleryAppKeys(t *testing.T) {
 	child := &keyProbeWidget{}
 	g := newThemedGallery(child, "mc")
