@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2026 Uwe Jugel
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+title: loom — terminal tools and reusable Go widgets
+kicker: Terminal inspection · ANSI validation · inline interfaces
+title_lead: loom
+title_main: inspect terminal output and build inline terminal tools.
+lead: >-
+  The loom CLI reports terminal capabilities, measures and evaluates ANSI assets, checks box alignment,
+  views and formats terminal artwork, and demonstrates interactive widgets. The Go library supplies
+  reusable widgets and layout primitives to applications that need to stay in the current terminal.
+go_package: true
+install: go install ubunatic.com/loom/cmd/loom@latest
+cta_primary:
+  label: View source
+  href: https://codeberg.org/ubunatic/loom
+sections:
+  - id: inspect
+    tag: Terminal inspection
+    title: Check the terminal and its output
+    blocks:
+      - cards:
+          - title: info
+            text: Report terminal dimensions, environment capabilities, colour depth, mouse support, and Unicode width.
+          - title: measure
+            text: Measure visible row widths in terminal cells, accounting for ANSI control sequences and wide characters.
+          - title: eval
+            text: Evaluate terminal dimensions and row geometry, with optional diagnostic annotations.
+  - id: validate
+    tag: ANSI asset validation
+    title: Validate and normalize terminal artwork
+    blocks:
+      - cards:
+          - title: check-box
+            text: Validate Unicode box-border alignment across one or more files.
+          - title: format
+            text: Normalize ANSI row widths, trim trailing whitespace, or align complete box edges; write changes only when requested.
+      - text: |
+          ~~~sh
+          loom measure loom-logo.ansi
+          loom eval loom-logo.ansi
+          loom check-box docs/data/ansiedit-design-001.ansi
+          loom format --trim-trailing artwork.ansi
+          ~~~
+  - id: view
+    tag: Inspect interactively
+    title: View terminal artwork in place
+    blocks:
+      - text: The view command interactively displays an ANSI file while preserving the surrounding terminal context.
+  - id: widgets
+    tag: Live widget demos
+    title: Try the interactive widgets
+    blocks:
+      - cards:
+          - title: frame
+            text: Wrap file contents in a Unicode border with configurable style, title, padding, and colour.
+          - title: widgets
+            text: Browse the widget catalog, inspect usage, or run live demos for individual widgets and the gallery.
+      - text: |
+          ~~~sh
+          loom frame README.md --title "loom"
+          loom widgets --list
+          loom widgets --show Chart
+          ~~~
+  - id: library
+    tag: Go library
+    title: Reusable inline terminal UI
+    blocks:
+      - text: |
+          Applications can use loom directly for selection, editing, layout, and terminal rendering.
+
+          ~~~sh
+          go get ubunatic.com/loom
+          ~~~
