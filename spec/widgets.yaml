@@ -28,7 +28,7 @@ widgets:
       box := &loom.Box{Child: child, Title: "Details"}
       frame := &loom.Frame{Boxes: []loom.Box{*box}}
       _ = frame
-    source: frame.go
+    source: box.go
   - name: loom.Chart
     package: loom
     purpose: Plot numeric series with labeled axes as lines or grouped bars.
@@ -269,7 +269,7 @@ widgets:
           return err
       }
       _, _ = widget, config
-    source: yaml.go
+    source: router.go
   - name: loom.Rows
     package: loom
     purpose: Render aligned rows of styled text columns.
