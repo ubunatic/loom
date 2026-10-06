@@ -289,3 +289,4 @@ upkeep.
 | 276 | [276-container-owned-coordinate-translation-and-mouse-event-clipping.md](276-container-owned-coordinate-translation-and-mouse-event-clipping.md) | Container-owned coordinate translation and mouse event clipping | Open |
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
 | 278 | [278-richtextedit-toolbar-redesign-key-caps-and-short-form.md](278-richtextedit-toolbar-redesign-key-caps-and-short-form.md) | RichTextEdit toolbar redesign: key caps and ^ short form | Closed |
+| 279 | [279-add-loom-edit-command-to-open-a-file-in-richtextedit.md](279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) | Add loom edit command to open a file in RichTextEdit | Open |
