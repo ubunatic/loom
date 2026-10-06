@@ -54,5 +54,6 @@
 | [studies/2026-09-26-textedit-syntax-and-agentic-failover.md](studies/2026-09-26-textedit-syntax-and-agentic-failover.md) | `examples/textedit`, `codeberg.org/ubunatic/loom/syntax`, `loom.TextArea`, multi-provider agent orchestration |
 | [studies/2026-09-treesitter-syntax-engine.md](studies/2026-09-treesitter-syntax-engine.md) | Pure-Go / Wasm (wazero) Tree-Sitter Syntax Engine for Loom |
 | [studies/2026-10-01-loom-module-migration.md](studies/2026-10-01-loom-module-migration.md) | Loom module migration reports (issue 235 M3) |
+| [studies/2026-10-04-inline-tui-library-agentic-build-story.md](studies/2026-10-04-inline-tui-library-agentic-build-story.md) | Loom: building a terminal UI library in fast, testable slices |
 
 Study files are the source of truth for this table.
