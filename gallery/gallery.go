@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -254,15 +255,51 @@ func Names() []string {
 // New constructs one demo by catalog widget name, accepting qualified names
 // such as "loom.TextInput" as well as short names.
 func New(name string) (loom.Widget, error) {
+	return NewWithArgs(name, nil)
+}
+
+// NewWithArgs constructs one demo by catalog widget name, passing demo arguments.
+func NewWithArgs(name string, args []string) (loom.Widget, error) {
 	name = strings.TrimPrefix(name, "loom.")
 	if strings.EqualFold(name, "all") {
+		if len(args) > 0 {
+			return nil, fmt.Errorf("gallery demo %q does not accept arguments", "all")
+		}
 		return newAllDemo(), nil
+	}
+	if strings.EqualFold(name, "RichTextEdit") {
+		return newRichTextEditDemoWithArgs(args)
+	}
+	if len(args) > 0 {
+		return nil, fmt.Errorf("widget demo %q does not accept arguments", name)
 	}
 	build, ok := demos[name]
 	if !ok {
 		return nil, fmt.Errorf("unknown widget demo %q", name)
 	}
 	return build(), nil
+}
+
+func newRichTextEditDemoWithArgs(args []string) (loom.Widget, error) {
+	if len(args) == 0 {
+		return newRichTextEditDemo(), nil
+	}
+	if len(args) > 1 {
+		return nil, fmt.Errorf("RichTextEdit demo accepts at most one file path argument")
+	}
+	path := args[0]
+	doc := &loom.RichDocument{}
+	data, err := os.ReadFile(path)
+	if err == nil {
+		doc.FromANSI(string(data))
+	} else if os.IsNotExist(err) {
+		doc.Lines = []loom.RichLine{{}}
+	} else {
+		return nil, fmt.Errorf("read RichTextEdit demo file %q: %w", path, err)
+	}
+	demo := newRichTextEditDemoWithDoc(doc)
+	demo.edit.FilePath = path
+	return demo, nil
 }
 
 // RequiresAltScreen reports whether the named demo or demos need terminal keys

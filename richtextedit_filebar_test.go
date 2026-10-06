@@ -240,7 +240,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !result.Consumed {
 		t.Fatalf("Ctrl+S result = %+v", result)
 	}
-	if data, err := os.ReadFile(path); err != nil || string(data) != edit.Document.ToANSI() {
+	if data, err := os.ReadFile(path); err != nil || string(data) != edit.Document.ToANSI()+"\n" {
 		t.Fatalf("Ctrl+S bytes/error = %q/%v", data, err)
 	}
 
@@ -284,7 +284,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 		t.Fatalf("picker save associated path = %q, want %q", edit.FilePath, newPath)
 	}
 	initial, err := os.ReadFile(newPath)
-	if err != nil || string(initial) != edit.Document.ToANSI() {
+	if err != nil || string(initial) != edit.Document.ToANSI()+"\n" {
 		t.Fatalf("picker save bytes/error = %q/%v, want current document %q", initial, err, edit.Document.ToANSI())
 	}
 	if result := edit.ConsumeKey(KeyEvent{Text: "!"}); !result.Consumed {
@@ -299,7 +299,7 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 		t.Fatalf("second Ctrl+S result = %+v", result)
 	}
 	updated, err := os.ReadFile(newPath)
-	if err != nil || string(updated) != edit.Document.ToANSI() {
+	if err != nil || string(updated) != edit.Document.ToANSI()+"\n" {
 		t.Fatalf("second Ctrl+S bytes/error = %q/%v, want current document %q", updated, err, edit.Document.ToANSI())
 	}
 	edit.Draw(canvas, canvas.Bounds())

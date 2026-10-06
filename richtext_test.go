@@ -12,11 +12,11 @@ import (
 func TestRichDocumentFromANSIAndPlainText(t *testing.T) {
 	var doc RichDocument
 	doc.FromANSI("A\x1b[1;3;4;9;7;38;5;202m界e\u0301\x1b[22;23;24;29;27m!\r\n\nend\n")
-	if got, want := doc.ToPlainText(), "A界e\u0301!\n\nend\n"; got != want {
+	if got, want := doc.ToPlainText(), "A界e\u0301!\n\nend"; got != want {
 		t.Fatalf("plain text = %q, want %q", got, want)
 	}
-	if len(doc.Lines) != 4 {
-		t.Fatalf("got %d lines, want 4", len(doc.Lines))
+	if len(doc.Lines) != 3 {
+		t.Fatalf("got %d lines, want 3", len(doc.Lines))
 	}
 	styled := doc.Lines[0].Spans[1]
 	if styled.Text != "界e\u0301" || !styled.Style.Bold || !styled.Style.Italic || !styled.Style.Underline || !styled.Style.Strike || !styled.Style.Invert || styled.Style.FG != ColorIndex(202) {
@@ -64,6 +64,28 @@ func TestRichDocumentPreservesPillMetadataInMemory(t *testing.T) {
 	}
 	if doc.Lines[0].Spans[1].PillData.Metadata["team"] != "core" {
 		t.Fatal("pill metadata changed")
+	}
+}
+
+func TestRichDocumentFromANSITrailingNewlineSymmetric(t *testing.T) {
+	// Single line with trailing SGR and newline
+	var doc1 RichDocument
+	doc1.FromANSI("hello\x1b[0m\n")
+	if len(doc1.Lines) != 1 {
+		t.Fatalf("got %d lines, want 1", len(doc1.Lines))
+	}
+	if got, want := doc1.ToPlainText(), "hello"; got != want {
+		t.Fatalf("doc1 plain text = %q, want %q", got, want)
+	}
+
+	// Document ending in an empty line (hello\n)
+	var doc2 RichDocument
+	doc2.FromANSI("hello\n\x1b[0m\n")
+	if len(doc2.Lines) != 2 {
+		t.Fatalf("got %d lines, want 2", len(doc2.Lines))
+	}
+	if got, want := doc2.ToPlainText(), "hello\n"; got != want {
+		t.Fatalf("doc2 plain text = %q, want %q", got, want)
 	}
 }
 

@@ -30,7 +30,7 @@ func (e *RichTextEdit) SaveAs(path string) error {
 	var data []byte
 	var err error
 	if e.SerializeDocument == nil {
-		data = []byte(e.Document.ToANSI())
+		data = []byte(e.Document.ToANSI() + "\n")
 	} else {
 		data, err = e.SerializeDocument(e.Document)
 		if err != nil {

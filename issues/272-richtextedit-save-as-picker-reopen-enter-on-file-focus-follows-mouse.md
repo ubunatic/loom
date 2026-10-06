@@ -27,3 +27,13 @@ Event-routing change: per AGENTS.md, start on `codex:sol:med`.
 /goal Save as reopens reliably, Enter on a listed file fills and focuses the filename input with the cursor in it, and focus/cursor change only on click or keys, with library-level fixes where needed; stop and report when blocked on a user decision or denied permission.
 
 Acceptance: regression tests per item (reopen after picker save; Enter on a listed file fills the input, focuses it and places the cursor at the end of the name; hover does not change focus or cursor); installed-binary PTY check of the user's sequence; any needed library change gets its own ticket linked here.
+
+---
+
+## Delivered
+
+- **Save as Reopen (272a)**: Cleared `savePicker` and `savePopup` when `savePopup.Open` becomes false or Escape/outside click closes the popup.
+- **Enter on File in List (272b)**: `FilePicker.activate()` in save mode calls `updateFocus()`, focusing filename entry, positioning the caret at the end of the filename, and shifting focus state from the directory list. A second Enter in the input saves.
+- **Hover Focus Stability (272c)**: `FilePicker.ConsumeMouse` only toggles focus on left mouse press, preventing `MouseHover` from stealing focus or moving the cursor.
+- **Commits**: `8a41b2a`
+- **Tests**: `make test-q1` passed. Unit and PTY regressions verified.
