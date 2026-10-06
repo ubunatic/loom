@@ -17,3 +17,5 @@ In `gallery/richtextedit.go:52-70`, `richTextEditDemo` calculates `w.viewH`, man
 
 ## 3. Implementation & Verification Plan
 /goal Standardize mouse event coordinate translation and clipping across composite containers so host widgets do not need manual coordinate math.
+
+> Update (2026-10-06): the gallery RTE demo no longer has the read-only preview row, so its `viewH` offset and out-of-bounds routing are gone. The ticket still applies to containers in general; find a current example before starting.

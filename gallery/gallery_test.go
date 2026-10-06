@@ -811,8 +811,8 @@ func TestRichTextEditGalleryDrawsAcrossWideBounds(t *testing.T) {
 	w.edit.Cursor = loom.RichPosition{Offset: 149}
 	canvas := loom.NewCanvas(160, 12)
 	w.Draw(canvas, loom.Rect{W: 160, H: 12})
-	if w.editRect.W != 160 || w.edit.Cursor.Offset != 149 || canvas.Get(149, 1).Text != "x" {
-		t.Fatalf("wide RichTextEdit content/cursor = %q/%+v, want content at column 149", canvas.Get(149, 1).Text, w.edit.Cursor)
+	if w.edit.Cursor.Offset != 149 || canvas.Get(149, 0).Text != "x" {
+		t.Fatalf("wide RichTextEdit content/cursor = %q/%+v, want content at column 149", canvas.Get(149, 0).Text, w.edit.Cursor)
 	}
 }
 

@@ -7,12 +7,9 @@ import (
 	"ubunatic.com/loom"
 )
 
-// richTextEditDemo pairs the editor with a read-only link preview.
+// richTextEditDemo shows the editor with its File bar; F7 toggles View mode.
 type richTextEditDemo struct {
-	edit     *loom.RichTextEdit
-	view     *loom.RichTextEdit
-	editRect loom.Rect
-	viewH    int
+	edit *loom.RichTextEdit
 }
 
 func newRichTextEditDemo() *richTextEditDemo {
@@ -29,55 +26,19 @@ func newRichTextEditDemo() *richTextEditDemo {
 }
 
 func newRichTextEditDemoWithDoc(doc *loom.RichDocument) *richTextEditDemo {
-	view := loom.NewRichTextView(&loom.RichDocument{Lines: []loom.RichLine{
-		{Spans: []loom.RichSpan{{Text: "View mode (read-only): ", Style: loom.Style{Dim: true}}, {Text: "https://ubunatic.com/loom", Link: "https://ubunatic.com/loom"}}},
-	}})
 	edit := loom.NewRichTextEdit(doc)
 	edit.ShowFileBar = true
-	return &richTextEditDemo{view: view, edit: edit}
+	return &richTextEditDemo{edit: edit}
 }
 
-func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) {
-	if r.W <= 0 || r.H <= 0 {
-		return
-	}
-	viewHeight := 0
-	if r.H >= 4 {
-		viewHeight = 1
-	}
-	w.viewH = viewHeight
-	editHeight := max(0, r.H-viewHeight)
-	w.editRect = loom.Rect{X: r.X, Y: r.Y + viewHeight, W: r.W, H: editHeight}
-	if viewHeight > 0 {
-		w.view.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: viewHeight})
-	}
-	w.edit.Draw(c, w.editRect)
-}
+func (w *richTextEditDemo) Draw(c *loom.Canvas, r loom.Rect) { w.edit.Draw(c, r) }
 
 func (w *richTextEditDemo) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	return w.edit.ConsumeKey(key)
 }
 
 func (w *richTextEditDemo) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
-	if w.viewH > 0 && mouse.Y < w.viewH {
-		if result := w.consumeEditMouse(mouse); result.Consumed {
-			return result
-		}
-		return w.view.ConsumeMouse(mouse)
-	}
-	if mouse.Y < w.viewH || mouse.Y >= w.viewH+w.editRect.H {
-		if result := w.consumeEditMouse(mouse); result.Consumed {
-			return result
-		}
-		return loom.Ignored()
-	}
-	return w.consumeEditMouse(mouse)
-}
-
-func (w *richTextEditDemo) consumeEditMouse(mouse loom.MouseEvent) loom.EventResult {
-	mouselocal := mouse
-	mouselocal.Y -= w.viewH
-	return w.edit.ConsumeMouse(mouselocal)
+	return w.edit.ConsumeMouse(mouse)
 }
 
 func (w *richTextEditDemo) HotkeyHint(width int) string { return w.edit.HotkeyHint(width) }
@@ -86,5 +47,4 @@ func (w *richTextEditDemo) HotkeyBar() *loom.HintBar { return w.edit.HotkeyBar()
 
 func (w *richTextEditDemo) ApplyTheme(theme loom.ThemeColors) {
 	w.edit.ApplyTheme(theme)
-	w.view.ApplyTheme(theme)
 }
