@@ -25,6 +25,7 @@ func TestValidateAnsiBox(t *testing.T) {
 		{name: "unboxed uneven text", text: "plain text\nshort"},
 		{name: "adjacent separate boxes", text: "┌──┐\n│a │\n└──┘\n┌────┐\n│ b  │\n└────┘"},
 		{name: "padding outside box", text: "┌───┐   \n│abc│\n└───┘", wantErr: true},
+		{name: "nested box closing in grid cell", text: "│ab│ ┌──┐\n│cd│ └──┘\n│ef│     \n"},
 		{name: "cursor-addressed recording", text: "\x1b[2;1H┌───┐\x1b[3;1H│abc│"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

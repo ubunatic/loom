@@ -105,6 +105,7 @@ func maxDialogWidth(title string, lines, buttons []string) int {
 
 // ConsumeKey consumes closing actions and changes to the button selection.
 // Unused keys and navigation with fewer than two buttons bubble to the parent.
+// Tab is left to the container, which uses it to move focus between widgets.
 func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 	if !d.Open {
 		return Ignored()
@@ -120,7 +121,7 @@ func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 	switch e.Key {
 	case "left":
 		d.selected = (d.selected + len(d.Buttons) - 1) % len(d.Buttons)
-	case "right", "tab":
+	case "right":
 		d.selected = (d.selected + 1) % len(d.Buttons)
 	case "enter":
 		if d.OnSelect != nil {

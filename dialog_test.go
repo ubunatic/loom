@@ -16,7 +16,7 @@ func TestDialogConsumesOnlyActions(t *testing.T) {
 	}{
 		{"right", "right", []string{"No", "Yes"}, true, true, "Yes"},
 		{"left wraps", "left", []string{"No", "Yes"}, true, true, "Yes"},
-		{"tab", "tab", []string{"No", "Yes"}, true, true, "Yes"},
+		{"tab bubbles", "tab", []string{"No", "Yes"}, false, true, "No"},
 		{"enter", "enter", []string{"OK"}, true, false, "OK"},
 		{"escape", "esc", nil, true, false, ""},
 		{"buttonless enter", "enter", nil, false, true, ""},
@@ -49,10 +49,11 @@ func TestDialogConsumesOnlyActions(t *testing.T) {
 
 func TestGridDialogActionsStayInChild(t *testing.T) {
 	d := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
-	g := loom.NewGrid(2, d, loom.NewView(nil))
+	// One column, so "down" has a sibling to move to.
+	g := loom.NewGrid(1, d, loom.NewView(nil))
 	parentCalls := 0
 	g.OnSelect = func(int) { parentCalls++ }
-	for _, key := range []string{"right", "left", "tab", "enter"} {
+	for _, key := range []string{"right", "left", "enter"} {
 		if res := g.ConsumeKey(loom.KeyEvent{Key: key}); !res.Consumed || res.Quit || g.Focus() != 0 {
 			t.Fatalf("%s: result=%+v focus=%d", key, res, g.Focus())
 		}

@@ -89,8 +89,13 @@ func TestAllDialogAndTableNavigationPTY(t *testing.T) {
 	x, y = point("Compile")
 	sx, sy := point("done")
 	click(x, y)
-	wait := func(check func() bool) {
+	// The plain theme draws the cell cursor bold; wait for each cursor move
+	// instead of comparing against styles captured before the click lands.
+	wait := func(cursorOnCompile bool) {
 		t.Helper()
+		check := func() bool {
+			return s.Cell(x, y).Style.Bold == cursorOnCompile && s.Cell(sx, sy).Style.Bold == !cursorOnCompile
+		}
 		deadline := time.Now().Add(5 * time.Second)
 		for time.Now().Before(deadline) {
 			if check() {
@@ -98,14 +103,13 @@ func TestAllDialogAndTableNavigationPTY(t *testing.T) {
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
-		t.Fatal("table cell highlight did not move")
+		t.Fatalf("table cell cursor on Compile=%v not shown; Compile %+v, done %+v; screen:\n%s", cursorOnCompile, s.Cell(x, y).Style, s.Cell(sx, sy).Style, strings.Join(s.Screen(), "\n"))
 	}
-	wait(func() bool { return s.Cell(x, y).Style != s.Cell(sx, sy).Style })
-	first, normal := s.Cell(x, y).Style, s.Cell(sx, sy).Style
+	wait(true)
 	s.Send("\x1b[C")
-	wait(func() bool { return s.Cell(x, y).Style == normal && s.Cell(sx, sy).Style == first })
+	wait(false)
 	s.Send("\x1b[D")
-	wait(func() bool { return s.Cell(x, y).Style == first && s.Cell(sx, sy).Style == normal })
+	wait(true)
 }
 
 func TestAllSharedControlsMatchStandalone(t *testing.T) {

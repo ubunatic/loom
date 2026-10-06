@@ -19,7 +19,7 @@ func ValidateAnsiBox(text string) error {
 	lines := strings.Split(strings.ReplaceAll(text, "\r\n", "\n"), "\n")
 	type edge struct {
 		line, left, right, width int
-		kind                     rune
+		kind, first, last        rune
 	}
 	var framed []edge
 	for i, line := range lines {
@@ -51,17 +51,22 @@ func ValidateAnsiBox(text string) error {
 		trimmed := strings.TrimSpace(plain)
 		if left >= 0 && len(trimmed) > 1 && isBoxEdge(firstRune(trimmed)) && isBoxEdge(lastRune(trimmed)) {
 			kind := boxRowKind(firstRune(trimmed), lastRune(trimmed))
-			framed = append(framed, edge{line: i + 1, left: left, right: right, width: col, kind: kind})
+			framed = append(framed, edge{line: i + 1, left: left, right: right, width: col, kind: kind, first: firstRune(trimmed), last: lastRune(trimmed)})
 		}
 	}
 	if len(framed) < 2 {
 		return nil
 	}
 	// Compare rows within a box. A bottom row followed by another top row starts
-	// a new box, even when there is no blank line between the two.
+	// a new box, even when there is no blank line between the two. A nested box
+	// that closes or opens at either end of a row (a dialog inside a grid cell)
+	// also ends the comparison, because its corner moves that row's edge.
 	for i := 1; i < len(framed); i++ {
 		base, row := framed[i-1], framed[i]
 		if row.line != base.line+1 || base.kind == 'b' || row.kind == 't' {
+			continue
+		}
+		if isBoxBottomLeft(base.first) || isBoxBottomRight(base.last) || isBoxTopLeft(row.first) || isBoxTopRight(row.last) {
 			continue
 		}
 		if row.left != base.left || row.right != base.right || row.width != base.width {
