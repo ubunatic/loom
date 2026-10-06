@@ -191,6 +191,8 @@ func TestBrowserBackspaceNavigatesToParentAndPreventsExit(t *testing.T) {
 }
 
 func TestBrowserUsesAnimatedBackground(t *testing.T) {
+	// Evidence mode turns the background off on purpose; this test checks normal runs.
+	t.Setenv("LOOM_EVIDENCE", "")
 	pane := &loom.Pane{}
 	configurePane(pane)
 	if pane.Background == nil {
