@@ -1,6 +1,6 @@
 # 242 — Gallery All tab: Dialog demo leaks left/right arrow keys to the grid
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
