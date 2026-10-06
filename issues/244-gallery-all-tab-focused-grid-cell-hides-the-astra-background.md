@@ -1,6 +1,6 @@
 # 244 — Gallery All tab: focused Grid cell hides the astra background
 
-**Status**: Open
+**Status**: Closed — fixed in c3b3f76
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
