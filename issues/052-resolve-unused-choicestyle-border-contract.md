@@ -43,3 +43,12 @@ primitives, coordinate the decision with issue 037.
   requested.
 - Theme role documentation names only actual consumers.
 - Tests demonstrate the selected contract and `go test ./...` passes.
+
+---
+
+## Delivered
+
+- Decision: deprecate, not remove (removal would break callers that set the field). `ChoiceStyle.Border` carries a `Deprecated:` comment: Choice draws no border and ignores it; Box or Frame own framing. `ThemeColors.ChoiceStyle()` still fills it for compatibility. No geometry change.
+- The `focused` comment now says focus places the search bar cursor. `docs/Themes.md` names Box/Frame as the border roles' consumers.
+- Test `TestChoiceIgnoresDeprecatedBorderStyle` (focused and unfocused). Commit `1995459`.
+- Host verification: `make test-q1` 0 FAIL; `make install`.
