@@ -84,3 +84,9 @@ Evidence date: 2026-09-10. Automated/headless results: passed. Human visual
 confirmation: requested, not yet recorded. No desktop/raster capture claimed.
 Unattended continuation is permitted after the automated gate passes; a visual
 report of misalignment reopens this gate before further dependent work.
+
+For widgets embedded in an application, verify the exact host composition and
+viewport reported by the user as well as the standalone widget view. A matching
+column count in a standalone PTY does not exercise clipping or space allocation
+imposed by the parent layout. When user evidence still shows a defect, keep the
+visual gate open until that same host path is reproduced or the defect is removed.
