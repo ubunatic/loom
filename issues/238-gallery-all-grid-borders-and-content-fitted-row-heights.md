@@ -30,3 +30,5 @@ widget in each row should decide that row's height.
 ## 3. Implementation & Verification Plan
 - Tests: row height = max measured height in the row; borders drawn; mouse hits map to the right child.
 - `make test-q1`, `make install`, PTY check of `loom widgets --show All`.
+
+**Handoff (2026-10-06):** `99b5e70` adds opt-in `Grid.FitRows`, used by the gallery All tab. dev238 fixed a vet error in `grid_fit_test.go` but never reran the suite. The host test-q1 run (log: scratchpad `q1-238-225.log`) was still running at wrap. Next: check `make test-q1`, then `make install`, then close.

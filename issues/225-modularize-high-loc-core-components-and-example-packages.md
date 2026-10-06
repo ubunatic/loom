@@ -28,3 +28,5 @@ Decompose monolithic multi-responsibility files flagged during repo assessment (
 - Static emoji data in `examples/loomoji` moved to `entries.go`.
 - 100% backwards compatibility maintained for public APIs, tests, and examples.
 - `make test` passes without regressions.
+
+**Handoff (2026-10-06):** all moves are on main (`7be0c2d`..`cd75008`): ansibox.go, box.go, router.go, grid_ascii.go, graph split, loomoji entries.go, widgets.yaml source paths. Build, vet and the package tests passed in the worktree; full `make test-q1` still pending. Next: close once test-q1 is green.
