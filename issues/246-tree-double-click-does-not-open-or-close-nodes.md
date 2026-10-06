@@ -1,6 +1,6 @@
 # 246 — Tree double click does not open or close nodes
 
-**Status**: Open
+**Status**: Closed — fixed in 8c1ccfd
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
