@@ -971,9 +971,12 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	reads := make(chan readResult)
 	done := make(chan struct{})
 	defer close(done)
-	p.readerDone = make(chan struct{})
+	// Capture the channel before the goroutine starts: a quick return and a new
+	// run() would otherwise reassign the field and both readers close the new one.
+	readerDone := make(chan struct{})
+	p.readerDone = readerDone
 	go func() {
-		defer close(p.readerDone) // let close() join us so no read is left racing
+		defer close(readerDone) // let close() join us so no read is left racing
 		// Poll with a short timeout instead of blocking in Read: os.File.Fd (called
 		// in New) detaches the tty from the runtime poller and puts it in blocking
 		// mode, so Close cannot interrupt a bare Read — the goroutine would leak and
