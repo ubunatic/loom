@@ -57,6 +57,7 @@ type RichTextEdit struct {
 	lastRect               Rect
 	savePicker             *FilePicker
 	savePopup              *Popup
+	helpPopup              *Popup
 	fileBar                *richTextEditFileBar
 	savedDocument          []RichLine
 	selectionAnchor        RichPosition
@@ -144,6 +145,19 @@ func NewRichTextView(doc *RichDocument) *RichTextEdit {
 
 // Focused reports whether the editor currently has keyboard focus.
 func (e *RichTextEdit) Focused() bool { return e.focused }
+
+// HotkeyHint returns the most useful file and help shortcuts for the available width.
+func (e *RichTextEdit) HotkeyHint(width int) string {
+	full := "F1 Help · Alt+F File · Ctrl+S Save · Ctrl+Shift+S Save as"
+	if StringWidth(full) <= width {
+		return full
+	}
+	compact := "F1 Help · Ctrl+S Save · Ctrl+Shift+S As"
+	if StringWidth(compact) <= width {
+		return compact
+	}
+	return TruncateText("F1 Help · Ctrl+S Save", max(0, width), "")
+}
 
 // SetFocus sets the editor focus state.
 func (e *RichTextEdit) SetFocus(focused bool) {
@@ -247,6 +261,11 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.savePopup.Width = min(SpeccedDefaults.RichTextEdit.SavePopupMaxWidth, max(4, r.W-4))
 		e.savePopup.Height = min(SpeccedDefaults.RichTextEdit.SavePopupMaxHeight, max(3, r.H-2))
 		e.savePopup.Draw(c, r)
+	}
+	if e.helpPopup != nil {
+		e.helpPopup.Width = min(72, max(4, r.W-2))
+		e.helpPopup.Height = min(18, max(3, r.H))
+		e.helpPopup.Draw(c, r)
 	}
 }
 
@@ -696,11 +715,25 @@ func (e *RichTextEdit) selectionStyle(base Style) Style {
 
 // ConsumeKey applies navigation, text editing, selection, and inline formatting.
 func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
+	if e.helpPopup != nil {
+		result := e.helpPopup.ConsumeKey(key)
+		if !e.helpPopup.Open {
+			e.helpPopup = nil
+		}
+		return result
+	}
 	if e.savePopup != nil {
 		if key.Is("esc") {
 			return e.savePicker.ConsumeKey(key)
 		}
 		return e.savePopup.ConsumeKey(key)
+	}
+	if key.Is("f1") {
+		e.ensureFileBar()
+		e.fileBar.menu.Open = false
+		e.fileBar.menu.SetFocus(false)
+		e.helpPopup = NewPopup("RichTextEdit Help", newRichTextEditHelp())
+		return Handled()
 	}
 	if key.Is("f10") {
 		return Ignored()
@@ -868,8 +901,20 @@ func richViewModeKey(key KeyEvent) bool {
 
 // ConsumeMouse positions the cursor and supports click-drag selection.
 func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
+	if e.helpPopup != nil {
+		result := e.helpPopup.ConsumeMouse(mouse)
+		if !e.helpPopup.Open {
+			e.helpPopup = nil
+		}
+		return result
+	}
 	if e.savePopup != nil {
-		return e.savePopup.ConsumeMouse(mouse)
+		result := e.savePopup.ConsumeMouse(mouse)
+		if !e.savePopup.Open {
+			e.savePicker = nil
+			e.savePopup = nil
+		}
+		return result
 	}
 	if e.ShowFileBar {
 		menu := e.ensureFileBar().menu

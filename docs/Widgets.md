@@ -144,9 +144,10 @@ Loom extracts common terminal file-browsing and launch operations into clean, po
 `FilePicker` browses directories using `ReadDirectory`, filters files with `filepath.Match` patterns, and calls `OnSelect` with the chosen path. File mode navigates directories and selects regular files; directory mode selects directories and filters out files. Esc calls `OnCancel`; backspace navigates to the parent directory when the filter is empty.
 
 `FilePickerSave` adds a filename field and calls `OnSave` (or `OnSelect`) with
-the destination path. Tab switches between the filename field and the directory
-list; set `FocusFileName` to start with the filename field active. An `OnSave`
-error leaves the picker open for correction and retry.
+the destination path. A divider separates the directory search/list from the
+filename field. Tab and Shift+Tab switch focus and cursor between the filename
+field and directory search; set `FocusFileName` to start with the filename field
+active. An `OnSave` error leaves the picker open for correction and retry.
 
 ```go
 picker, err := loom.NewFilePicker(".", loom.FilePickerOptions{
@@ -353,13 +354,14 @@ document, while moving away leaves it unchanged. Ctrl+Space on blank space opens
 a cursor-anchored popover so Draw can start a box stroke there. One mode session
 is one undo step.
 
-Set `ShowFileBar` to reserve the final editor row for a File menu, document
-name and save status, and keyboard hints; it is off by default. Alt+F or
-clicking File opens the menu, Ctrl+S saves to `FilePath`, and Ctrl+Shift+S
-opens Save as. In the `loom widgets` gallery, F10 and Ctrl+Q quit the gallery.
-The save picker opens as a bounded, bordered popup with directory search active.
-Tab or Shift+Tab switches between filename editing and search; clicking either
-region sets its focus. `Save` and `SaveAs` use
+Set `ShowFileBar` to reserve the final editor row for a File menu and document
+name/save status; it is off by default. The `loom widgets` gallery shows `F1 Help`
+and responsive file shortcut hints below the editor, with F8/F9/F10 gallery
+controls on the last row. F1 opens a scrollable list of editor, formatting, file,
+selection, and picker bindings. Alt+F or clicking File opens the menu, Ctrl+S
+saves to `FilePath`, and Ctrl+Shift+S opens Save as. F10 and Ctrl+Q quit the gallery.
+The save picker opens as a bounded, bordered popup with directory search active;
+clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the

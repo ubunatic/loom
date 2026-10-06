@@ -7,14 +7,17 @@ package loom
 // While Open, it captures all keyboard and mouse events before the
 // background widget. Set Open=false to dismiss.
 type Popup struct {
-	Title     string
-	Inner     Widget
-	Open      bool
-	Width     int // 0 = half the canvas width
-	Height    int // 0 = half the canvas height
-	Style     Style
-	lastRect  Rect
-	innerRect Rect
+	Title  string
+	Inner  Widget
+	Open   bool
+	Width  int // 0 = half the canvas width
+	Height int // 0 = half the canvas height
+	Style  Style
+	// DismissOnOutsideClick closes the popup after a left click outside its inner widget.
+	DismissOnOutsideClick bool
+	lastRect              Rect
+	popupRect             Rect
+	innerRect             Rect
 }
 
 // ApplyTheme updates popup chrome and forwards the theme to its inner widget.
@@ -47,6 +50,7 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	if y < r.Y {
 		y = r.Y
 	}
+	p.popupRect = Rect{X: x, Y: y, W: pw, H: ph}
 
 	// Fill background.
 	c.Fill(Rect{x, y, pw, ph}, Cell{Text: " ", Style: p.Style})
@@ -92,6 +96,9 @@ func (p *Popup) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	}
 	x, y := e.X+p.lastRect.X, e.Y+p.lastRect.Y
 	if !p.innerRect.Contains(x, y) {
+		if p.DismissOnOutsideClick && !p.popupRect.Contains(x, y) && e.Action == MousePress && e.Button == MouseLeft {
+			p.Open = false
+		}
 		return Handled()
 	}
 	e.X, e.Y = x-p.innerRect.X, y-p.innerRect.Y

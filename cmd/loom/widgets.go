@@ -240,13 +240,24 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	theme := loom.Theme(g.themeName)
 	c.PaintSurface(r, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
 	content := r
+	hintWidget, hasHints := g.widget.(interface{ HotkeyHint(int) string })
 	content.H = max(0, r.H-1)
+	if hasHints && r.H >= 2 {
+		content.H--
+	}
 	g.widget.Draw(c, content)
 	if r.H == 0 {
 		return
 	}
 	style := loom.Style{FG: theme.StatusFG.Color(), BG: theme.StatusBG.Color(), Bold: theme.StatusBold, Dim: theme.StatusDim}
 	status := " F8 BG: " + galleryBackgrounds[g.bgIndex].name + " | F9 Theme: " + g.themeName + " | F10 Quit "
+	if hasHints && r.H >= 2 {
+		hint := hintWidget.HotkeyHint(max(0, r.W-2))
+		c.Write(r.X+1, r.Y+r.H-2, loom.TruncateText(hint, max(0, r.W-2), ""), style)
+	}
+	if r.W < loom.StringWidth(status) {
+		status = " F8 BG · F9 Theme · F10 Quit "
+	}
 	c.Write(r.X, r.Y+r.H-1, status, style)
 }
 

@@ -177,6 +177,31 @@ func TestFilePickerSaveModeFilenameFocusIsExplicitAndSwitchable(t *testing.T) {
 	}
 }
 
+func TestFilePickerSaveModeFocusMovesCursorAndSeparatesFilename(t *testing.T) {
+	picker, err := NewFilePicker(t.TempDir(), FilePickerOptions{Mode: FilePickerSave, FileName: "report.ansi"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	canvas := NewCanvas(40, 8)
+	picker.Draw(canvas, Rect{W: 40, H: 8})
+	if canvas.CursorY != 5 {
+		t.Fatalf("search cursor row = %d, want 5", canvas.CursorY)
+	}
+	picker.ConsumeKey(KeyEvent{Key: "tab"})
+	picker.Draw(canvas, Rect{W: 40, H: 8})
+	if canvas.CursorY != 7 || canvas.CursorX < 6 {
+		t.Fatalf("filename cursor = (%d,%d), want filename input row and column", canvas.CursorX, canvas.CursorY)
+	}
+	if got := canvas.Get(0, 6).Text; got != "─" {
+		t.Fatalf("filename divider cell = %q, want horizontal divider", got)
+	}
+	picker.ConsumeKey(KeyEvent{Key: "shift-tab"})
+	picker.Draw(canvas, Rect{W: 40, H: 8})
+	if canvas.CursorY != 5 {
+		t.Fatalf("search cursor row after Shift+Tab = %d, want 5", canvas.CursorY)
+	}
+}
+
 func TestFilePickerSaveModeMouseSelectsFilenameAndDirectoryFocus(t *testing.T) {
 	root := t.TempDir()
 	if err := os.WriteFile(filepath.Join(root, "seed.ansi"), nil, 0o644); err != nil {
@@ -191,6 +216,11 @@ func TestFilePickerSaveModeMouseSelectsFilenameAndDirectoryFocus(t *testing.T) {
 	if !picker.nameFocus {
 		t.Fatal("clicking filename row did not focus filename editing")
 	}
+	filenameCanvas := NewCanvas(40, 8)
+	picker.Draw(filenameCanvas, Rect{W: 40, H: 8})
+	if filenameCanvas.CursorY != 7 {
+		t.Fatalf("filename cursor row after click = %d, want 7", filenameCanvas.CursorY)
+	}
 	picker.ConsumeKey(KeyEvent{Text: "x"})
 	if got := picker.FileName(); got != "seed.ansi"+"x" {
 		t.Fatalf("filename after click and type = %q", got)
@@ -198,6 +228,11 @@ func TestFilePickerSaveModeMouseSelectsFilenameAndDirectoryFocus(t *testing.T) {
 	picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
 	if picker.nameFocus {
 		t.Fatal("clicking directory list did not restore search focus")
+	}
+	searchCanvas := NewCanvas(40, 8)
+	picker.Draw(searchCanvas, Rect{W: 40, H: 8})
+	if searchCanvas.CursorY != 5 {
+		t.Fatalf("search cursor row after click = %d, want 5", searchCanvas.CursorY)
 	}
 }
 

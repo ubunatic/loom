@@ -55,11 +55,24 @@ func (w *richTextEditDemo) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 
 func (w *richTextEditDemo) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 	if w.viewH > 0 && mouse.Y < w.viewH {
+		if result := w.consumeEditMouse(mouse); result.Consumed {
+			return result
+		}
 		return w.view.ConsumeMouse(mouse)
 	}
 	if mouse.Y < w.viewH || mouse.Y >= w.viewH+w.editRect.H {
+		if result := w.consumeEditMouse(mouse); result.Consumed {
+			return result
+		}
 		return loom.Ignored()
 	}
-	mouse.Y -= w.viewH
-	return w.edit.ConsumeMouse(mouse)
+	return w.consumeEditMouse(mouse)
 }
+
+func (w *richTextEditDemo) consumeEditMouse(mouse loom.MouseEvent) loom.EventResult {
+	mouselocal := mouse
+	mouselocal.Y -= w.viewH
+	return w.edit.ConsumeMouse(mouselocal)
+}
+
+func (w *richTextEditDemo) HotkeyHint(width int) string { return w.edit.HotkeyHint(width) }

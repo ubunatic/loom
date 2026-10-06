@@ -5,6 +5,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"slices"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/gallery"
 )
 
 func writeFixture(t *testing.T, content string) string {
@@ -476,6 +478,76 @@ func TestGalleryAppKeys(t *testing.T) {
 	}
 	if r := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"}); !r.Quit {
 		t.Fatal("Ctrl+Q must quit")
+	}
+}
+
+func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
+	widget, err := gallery.New("RichTextEdit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, width := range []int{80, 40} {
+		t.Run(fmt.Sprintf("%d columns", width), func(t *testing.T) {
+			g := newThemedGallery(widget, "plain")
+			canvas := loom.NewCanvas(width, 12)
+			g.Draw(canvas, canvas.Bounds())
+			hintRow := canvas.Row(10)
+			if !strings.Contains(hintRow, "F1 Help") || !strings.Contains(hintRow, "Ctrl+S Save") {
+				t.Fatalf("lower hint row = %q", hintRow)
+			}
+			if width == 80 && (!strings.Contains(hintRow, "Alt+F File") || !strings.Contains(hintRow, "Ctrl+Shift+S Save as")) {
+				t.Fatalf("normal-width hint row hides full shortcuts: %q", hintRow)
+			}
+			if strings.Contains(canvas.Row(9), "Ctrl+S") || strings.Contains(canvas.Row(9), "Ctrl+Shift+S") {
+				t.Fatalf("file bar repeats save shortcuts: %q", canvas.Row(9))
+			}
+			controls := canvas.Row(11)
+			for _, key := range []string{"F8", "F9", "F10"} {
+				if !strings.Contains(controls, key) {
+					t.Errorf("gallery controls %q omit %s", controls, key)
+				}
+			}
+			for row := 0; row < canvas.Rows(); row++ {
+				if got := loom.StringWidth(canvas.Row(row)); got > width {
+					t.Errorf("row %d width = %d, exceeds %d: %q", row, got, width, canvas.Row(row))
+				}
+			}
+		})
+	}
+}
+
+func TestRichTextEditGalleryF1AndOutsideClickRouting(t *testing.T) {
+	widget, err := gallery.New("RichTextEdit")
+	if err != nil {
+		t.Fatal(err)
+	}
+	g := newThemedGallery(widget, "plain")
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "f1"}); !result.Consumed {
+		t.Fatalf("F1 result = %+v, want consumed", result)
+	}
+	canvas := loom.NewCanvas(80, 14)
+	g.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(strings.Join(canvas.Screen(), "\n"), "RichTextEdit Help") {
+		t.Fatal("F1 help popup was not rendered by the gallery")
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "esc"}); !result.Consumed {
+		t.Fatalf("close F1 popup result = %+v", result)
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-s"}); !result.Consumed {
+		t.Fatalf("open Save as result = %+v", result)
+	}
+	canvas = loom.NewCanvas(80, 12)
+	g.Draw(canvas, canvas.Bounds())
+	if result := g.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 4, Y: 0}); !result.Consumed {
+		t.Fatalf("preview click result = %+v, want consumed by Save as popup", result)
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "f1"}); !result.Consumed {
+		t.Fatalf("F1 after outside click result = %+v", result)
+	}
+	canvas = loom.NewCanvas(80, 12)
+	g.Draw(canvas, canvas.Bounds())
+	if !strings.Contains(strings.Join(canvas.Screen(), "\n"), "RichTextEdit Help") {
+		t.Fatal("preview click did not dismiss Save as before routing F1")
 	}
 }
 

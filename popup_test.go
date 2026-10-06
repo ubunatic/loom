@@ -58,3 +58,16 @@ func TestPopupASCIITitleRenderingUnchanged(t *testing.T) {
 		t.Fatalf("ASCII popup title row = %q, want %q", got, want)
 	}
 }
+
+func TestPopupCanDismissOnOutsideClick(t *testing.T) {
+	p := NewPopup("Modal", NewView(nil))
+	p.Width, p.Height, p.DismissOnOutsideClick = 8, 3, true
+	c := NewCanvas(20, 8)
+	p.Draw(c, c.Bounds())
+	if result := p.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: p.popupRect.X, Y: p.popupRect.Y}); !result.Consumed || !p.Open {
+		t.Fatalf("popup border click result/open = %+v/%v, want consumed and open", result, p.Open)
+	}
+	if result := p.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 0, Y: 0}); !result.Consumed || p.Open {
+		t.Fatalf("outside click result/open = %+v/%v, want consumed and closed", result, p.Open)
+	}
+}

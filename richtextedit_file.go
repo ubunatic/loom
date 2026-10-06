@@ -102,5 +102,6 @@ func (e *RichTextEdit) openSavePicker() error {
 	e.savePopup.Width = SpeccedDefaults.RichTextEdit.SavePopupMaxWidth
 	e.savePopup.Height = SpeccedDefaults.RichTextEdit.SavePopupMaxHeight
 	e.savePopup.Style = DefaultMenuStyle().Normal
+	e.savePopup.DismissOnOutsideClick = true
 	return nil
 }

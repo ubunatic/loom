@@ -1,0 +1,24 @@
+[38;5;39m╭──────────────────────── RichTextEdit hints and help ─────────────────────────╮[0m
+[38;5;39m│[0mNORMAL · 80 columns                                                           [38;5;39m│[0m
+[38;5;39m│[0mWelcome to Loom RichText!                                                     [38;5;39m│[0m
+[38;5;39m│[0m                                                                              [38;5;39m│[0m
+[38;5;39m│[0mFile  notes.ansi · Modified                                      [F7] View    [38;5;39m│[0m
+[38;5;39m│[0mF1 Help · Alt+F File · Ctrl+S Save · Ctrl+Shift+S Save as                     [38;5;39m│[0m
+[38;5;39m│[0mF8 BG: plain · F9 Theme: plain · F10 Quit                                     [38;5;39m│[0m
+[38;5;39m│[0m                                                                              [38;5;39m│[0m
+[38;5;39m│[0mCOMPACT · 40 columns                                                          [38;5;39m│[0m
+[38;5;39m│[0mFile notes… [F7] View                                                         [38;5;39m│[0m
+[38;5;39m│[0mF1 Help · Ctrl+S Save                                                         [38;5;39m│[0m
+[38;5;39m│[0mF8 BG · F9 Theme · F10 Quit                                                   [38;5;39m│[0m
+[38;5;39m│[0m                                                                              [38;5;39m│[0m
+[38;5;39m│[0mHELP · scroll for complete bindings                                           [38;5;39m│[0m
+[38;5;39m│[0mFile: Alt+F menu · Ctrl+S Save · Ctrl+Shift+S Save as                         [38;5;39m│[0m
+[38;5;39m│[0mEdit: Ctrl+B/I/U · Ctrl+Space format · Ctrl+C/X/V clipboard                   [38;5;39m│[0m
+[38;5;39m│[0mMove/select: arrows · Shift+arrows · Home/End · Ctrl+arrows                   [38;5;39m│[0m
+[38;5;39m│[0mUndo/redo: Ctrl+Z/Y · Ctrl+R · Ctrl+Shift+Y/Z · F5 · F7                       [38;5;39m│[0m
+[38;5;39m│[0mSAVE AS · search/list above filename                                          [38;5;39m│[0m
+[38;5;39m│[0m> report.ansi                                                                 [38;5;39m│[0m
+[38;5;39m│[0m  readme.md                                                                   [38;5;39m│[0m
+[38;5;39m│[0m──────────────────────────────────────────────────────────────────────────────[38;5;39m│[0m
+[38;5;39m│[0mName: report.ansi                         Tab/Shift+Tab changes focus         [38;5;39m│[0m
+[38;5;39m╰──────────────────────────────────────────────────────────────────────────────╯[0m

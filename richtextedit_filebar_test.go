@@ -33,7 +33,7 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	canvas := NewCanvas(100, 5)
 	edit.Draw(canvas, canvas.Bounds())
 	row := canvas.Row(4)
-	if !strings.Contains(row, "Untitled") || !strings.Contains(row, "Unsaved") || !strings.Contains(row, "Ctrl+S") || !strings.Contains(row, "Ctrl+Shift+S") {
+	if !strings.Contains(row, "Untitled") || !strings.Contains(row, "Unsaved") || strings.Contains(row, "Alt+F") || strings.Contains(row, "Ctrl+S") || strings.Contains(row, "Ctrl+Shift+S") {
 		t.Fatalf("untitled file bar row = %q", row)
 	}
 	edit.ConsumeKey(KeyEvent{Text: "!"})
@@ -66,7 +66,7 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 		t.Helper()
 		edit.Draw(canvas, canvas.Bounds())
 		row := canvas.Row(3)
-		for _, want := range []string{status, "Alt+F", "Ctrl+S", "Ctrl+Shift+S", "[F7] View"} {
+		for _, want := range []string{status, "[F7] View"} {
 			if !strings.Contains(row, want) {
 				t.Fatalf("100-column file bar row omits %q: %q", want, row)
 			}
@@ -89,7 +89,7 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	canvas = NewCanvas(40, 4)
 	edit.Draw(canvas, canvas.Bounds())
 	row := canvas.Row(3)
-	for _, want := range []string{"· Error", "Alt+F", "[F7] View"} {
+	for _, want := range []string{"· Error", "[F7] View"} {
 		if !strings.Contains(row, want) {
 			t.Fatalf("40-column file bar row omits %q: %q", want, row)
 		}
@@ -214,6 +214,18 @@ func TestRichTextEditSaveAsPopupDrawsBoundedBorderAndRoutesEvents(t *testing.T) 
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || edit.savePicker != nil || edit.savePopup != nil {
 		t.Fatalf("Escape did not cancel popup: result=%+v picker=%v popup=%v", result, edit.savePicker, edit.savePopup)
+	}
+}
+
+func TestRichTextEditSaveAsPopupClosesOnOutsideClick(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	if err := edit.openSavePicker(); err != nil {
+		t.Fatal(err)
+	}
+	canvas := NewCanvas(80, 24)
+	edit.Draw(canvas, canvas.Bounds())
+	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 0, Y: 0}); !result.Consumed || edit.savePicker != nil || edit.savePopup != nil {
+		t.Fatalf("outside click result/picker/popup = %+v/%v/%v, want consumed and dismissed", result, edit.savePicker, edit.savePopup)
 	}
 }
 

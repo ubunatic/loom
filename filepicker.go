@@ -70,6 +70,7 @@ func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
 	if options.Style != (ChoiceStyle{}) {
 		p.list.Style = options.Style
 	}
+	p.updateFocus()
 	if err := p.open(dir, ""); err != nil {
 		return nil, err
 	}
@@ -201,7 +202,7 @@ func (p *FilePicker) parent() {
 func (p *FilePicker) ContentHeight() int {
 	height := p.list.ContentHeight() + 1
 	if p.fileName != nil {
-		height++
+		height += 2
 	}
 	return height
 }
@@ -220,6 +221,12 @@ func (p *FilePicker) Draw(c *Canvas, r Rect) {
 	if p.fileName != nil && listHeight > 0 {
 		listHeight--
 		p.fileName.Draw(c, Rect{X: r.X, Y: r.Y + r.H - 1, W: r.W, H: 1}, p.nameFocus)
+		if listHeight > 0 {
+			listHeight--
+			for x := r.X; x < r.X+r.W; x++ {
+				c.Set(x, r.Y+1+listHeight, Cell{Text: "─", Style: p.list.Style.Normal})
+			}
+		}
 	}
 	p.listRect = Rect{X: r.X, Y: r.Y + 1, W: r.W, H: listHeight}
 	if p.listRect.H > 0 {
@@ -270,6 +277,7 @@ func (p *FilePicker) ConsumeKey(e KeyEvent) EventResult {
 	}
 	if p.fileName != nil && e.Is("tab", "shift-tab") {
 		p.nameFocus = !p.nameFocus
+		p.updateFocus()
 		return Handled()
 	}
 	if p.fileName != nil && p.nameFocus {
@@ -285,12 +293,18 @@ func (p *FilePicker) ConsumeMouse(e MouseEvent) EventResult {
 	}
 	if p.fileName != nil && e.Y == p.lastRect.H-1 {
 		p.nameFocus = true
+		p.updateFocus()
 		return Handled()
 	}
 	p.nameFocus = false
+	p.updateFocus()
 	e.X -= p.listRect.X - p.lastRect.X
-	e.Y--
+	e.Y -= p.listRect.Y - p.lastRect.Y
 	return p.list.ConsumeMouse(e)
+}
+
+func (p *FilePicker) updateFocus() {
+	p.list.SetFocus(!p.nameFocus)
 }
 
 var _ Widget = (*FilePicker)(nil)
