@@ -735,7 +735,8 @@ func TestRichTextEditGalleryTypingPTY(t *testing.T) {
 	s.WaitFor("Try ", 5*time.Second)
 	s.Send("Q")
 	s.WaitFor("QWelcome to", 5*time.Second)
-	if screen := strings.Join(s.Screen(), "\n"); strings.Contains(screen, "[F7]") || !strings.Contains(screen, "F7 View") {
+	// Key caps render as " F7 " followed by " View", so the screen shows two spaces.
+	if screen := strings.Join(s.Screen(), "\n"); strings.Contains(screen, "[F7]") || !strings.Contains(screen, " F7  View") {
 		t.Fatalf("F7 must appear only in the lower hotkey row:\n%s", screen)
 	}
 	s.Send("\x1bf")
