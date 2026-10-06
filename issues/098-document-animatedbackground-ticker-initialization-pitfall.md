@@ -1,6 +1,6 @@
 # 098 — Document AnimatedBackground ticker initialization pitfall
 
-**Status**: Open
+**Status**: Closed — superseded by 233: ticker re-armed on runtime background change
 **Priority**: P2
 **Severity**: Moderate
 **Category**: Documentation
