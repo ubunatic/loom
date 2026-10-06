@@ -66,10 +66,11 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 		t.Helper()
 		edit.Draw(canvas, canvas.Bounds())
 		row := canvas.Row(3)
-		for _, want := range []string{status, "[F7] View"} {
-			if !strings.Contains(row, want) {
-				t.Fatalf("100-column file bar row omits %q: %q", want, row)
-			}
+		if !strings.Contains(row, status) {
+			t.Fatalf("100-column file bar row omits %q: %q", status, row)
+		}
+		if strings.Contains(row, "F7") {
+			t.Fatalf("100-column file bar row shows an F7 hint: %q", row)
 		}
 	}
 	assertBar("Untitled · Unsaved")
@@ -89,126 +90,67 @@ func TestRichTextEditFileBarHintsAtNarrowAndNormalWidths(t *testing.T) {
 	canvas = NewCanvas(40, 4)
 	edit.Draw(canvas, canvas.Bounds())
 	row := canvas.Row(3)
-	for _, want := range []string{"· Error", "[F7] View"} {
-		if !strings.Contains(row, want) {
-			t.Fatalf("40-column file bar row omits %q: %q", want, row)
-		}
+	if !strings.Contains(row, "· Error") || strings.Contains(row, "F7") {
+		t.Fatalf("40-column file bar row = %q, want status and no F7 hint", row)
 	}
 	if strings.Contains(row, "F10") {
 		t.Fatalf("narrow hints advertise F10 for the File menu: %q", row)
 	}
 }
 
-func TestRichTextEditFileBarF7HintIsAtomicAtStatusBoundaries(t *testing.T) {
-	tests := []struct {
-		name      string
-		threshold int
-		want      string
-		prepare   func(*testing.T, *RichTextEdit)
-	}{
-		{
-			name:      "unsaved",
-			threshold: 28,
-			want:      "· Unsaved",
-			prepare:   func(*testing.T, *RichTextEdit) {},
-		},
-		{
-			name:      "modified",
-			threshold: 29,
-			want:      "· Modified",
-			prepare: func(_ *testing.T, edit *RichTextEdit) {
-				edit.ConsumeKey(KeyEvent{Text: "!"})
-			},
-		},
-		{
-			name:      "saved",
-			threshold: 26,
-			want:      "· Saved",
-			prepare: func(t *testing.T, edit *RichTextEdit) {
-				if err := edit.SaveAs(filepath.Join(t.TempDir(), "notes.rtf")); err != nil {
-					t.Fatalf("SaveAs: %v", err)
-				}
-			},
-		},
-		{
-			name:      "error",
-			threshold: 26,
-			want:      "· Error",
-			prepare: func(t *testing.T, edit *RichTextEdit) {
-				if err := edit.SaveAs(filepath.Join(t.TempDir(), "notes.rtf")); err != nil {
-					t.Fatalf("initial SaveAs: %v", err)
-				}
-				if err := edit.SaveAs(filepath.Join(t.TempDir(), "missing", "notes.rtf")); err == nil {
-					t.Fatal("SaveAs to missing directory succeeded")
-				}
-			},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
-			edit.ShowFileBar = true
-			tt.prepare(t, edit)
-			for _, width := range []int{tt.threshold - 1, tt.threshold, tt.threshold + 1} {
-				canvas := NewCanvas(width, 2)
-				edit.Draw(canvas, canvas.Bounds())
-				row := canvas.Row(1)
-				if !strings.Contains(row, tt.want) {
-					t.Errorf("width %d status row omits %q: %q", width, tt.want, row)
-				}
-				hasWholeHint := strings.Contains(row, "[F7] View")
-				if strings.Contains(row, "[F7] Vie") && !hasWholeHint {
-					t.Errorf("width %d renders a partial F7 hint: %q", width, row)
-				}
-				if width < tt.threshold && hasWholeHint {
-					t.Errorf("width %d shows F7 hint before its fit boundary: %q", width, row)
-				}
-				if width >= tt.threshold && !hasWholeHint {
-					t.Errorf("width %d omits complete F7 hint at its fit boundary: %q", width, row)
-				}
-			}
-		})
-	}
-
-	t.Run("box guidance and F7 hint are atomic", func(t *testing.T) {
+// The file bar never shows an F7 hint: a right-aligned hint was clipped by
+// host layouts (issue 269 M7). F7 lives in HotkeyHint and the F1 help.
+func TestRichTextEditFileBarNeverShowsF7Hint(t *testing.T) {
+	for _, mode := range []string{"edit", "view", "box"} {
 		edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
 		edit.ShowFileBar = true
-		edit.ConsumeKey(KeyEvent{Text: "!"})
-		edit.BoxMode = true
-		for _, width := range []int{45, 46, 47} {
+		edit.ViewMode = mode == "view"
+		edit.BoxMode = mode == "box"
+		for width := 1; width <= 120; width++ {
 			canvas := NewCanvas(width, 2)
 			edit.Draw(canvas, canvas.Bounds())
-			row := canvas.Row(1)
-			hasWholeHint := strings.Contains(row, "[F7] View")
-			if strings.Contains(row, "[F7] Vie") && !hasWholeHint {
-				t.Errorf("width %d renders a partial Box-mode F7 hint: %q", width, row)
-			}
-			if width < 46 && hasWholeHint {
-				t.Errorf("width %d shows Box-mode F7 hint before its fit boundary: %q", width, row)
-			}
-			if width >= 46 && (!strings.Contains(row, "[Box] Esc exits") || !hasWholeHint) {
-				t.Errorf("width %d omits complete Box-mode guidance at its fit boundary: %q", width, row)
+			if row := canvas.Row(1); strings.Contains(row, "F7") {
+				t.Fatalf("%s mode, width %d: file bar shows F7: %q", mode, width, row)
 			}
 		}
-	})
+	}
 }
 
-func TestRichTextEditFileBarF7HintNamesDestinationMode(t *testing.T) {
+func TestRichTextEditFileBarBoxGuidanceIsAtomic(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
 	edit.ShowFileBar = true
-	canvas := NewCanvas(100, 2)
+	edit.ConsumeKey(KeyEvent{Text: "!"})
+	edit.BoxMode = true
+	whole := false
+	for width := 1; width <= 80; width++ {
+		canvas := NewCanvas(width, 2)
+		edit.Draw(canvas, canvas.Bounds())
+		row := canvas.Row(1)
+		has := strings.Contains(row, "[Box] Esc exits")
+		if !has && strings.Contains(row, "[Box") {
+			t.Fatalf("width %d renders partial Box guidance: %q", width, row)
+		}
+		if whole && !has {
+			t.Fatalf("width %d drops Box guidance shown at a narrower width: %q", width, row)
+		}
+		whole = whole || has
+	}
+	if !whole {
+		t.Fatal("Box guidance never shown up to 80 columns")
+	}
+}
 
-	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(1); !strings.Contains(row, "[F7] View") {
-		t.Fatalf("edit-mode F7 hint = %q, want destination View", row)
+func TestRichTextEditHotkeyHintNamesF7DestinationMode(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+	edit.ShowFileBar = true
+	if hint := edit.HotkeyHint(80); !strings.Contains(hint, "F7 View") {
+		t.Fatalf("edit-mode hotkey hint = %q, want F7 View", hint)
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "f7"}); !result.Consumed || !edit.ViewMode {
 		t.Fatalf("F7 view transition = %+v, view mode=%v", result, edit.ViewMode)
 	}
-	edit.Draw(canvas, canvas.Bounds())
-	if row := canvas.Row(1); !strings.Contains(row, "[F7] Edit") {
-		t.Fatalf("view-mode F7 hint = %q, want destination Edit", row)
+	if hint := edit.HotkeyHint(80); !strings.Contains(hint, "F7 Edit") {
+		t.Fatalf("view-mode hotkey hint = %q, want F7 Edit", hint)
 	}
 }
 

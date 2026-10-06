@@ -81,15 +81,11 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	if titleWidth == 0 {
 		titleWidth = StringWidth(" File ")
 	}
-	viewHint := "[F7] View"
-	if b.edit.ViewMode {
-		viewHint = "[F7] Edit"
-	}
 	available := max(0, bounds.W-titleWidth)
 	status := b.status()
-	hints := viewHint
+	hints := ""
 	if b.edit.BoxMode {
-		hints = "[Box] Esc exits  " + hints
+		hints = "[Box] Esc exits"
 	}
 	statusSeparator := strings.LastIndex(status, " · ")
 	minimumStatusWidth := StringWidth(status)

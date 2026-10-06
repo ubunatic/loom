@@ -699,8 +699,11 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	if viewCanvas.CursorX != -1 || viewCanvas.CursorY != -1 {
 		t.Fatalf("view-mode gallery placed cursor at (%d,%d)", viewCanvas.CursorX, viewCanvas.CursorY)
 	}
-	if !strings.Contains(viewCanvas.Row(11), "[F7] Edit") {
-		t.Fatalf("view mode hint missing: %q", viewCanvas.Row(11))
+	if row := viewCanvas.Row(11); strings.Contains(row, "F7") {
+		t.Fatalf("view-mode File bar shows an F7 hint: %q", row)
+	}
+	if hint := w.HotkeyHint(80); !strings.Contains(hint, "F7 Edit") {
+		t.Fatalf("view-mode hotkey hint omits F7 Edit: %q", hint)
 	}
 	before = w.edit.Document.ToPlainText()
 	if got := w.ConsumeKey(loom.KeyEvent{Text: "y"}); got.Consumed || w.edit.Document.ToPlainText() != before {
@@ -714,8 +717,11 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 	}
 	canvas := loom.NewCanvas(80, 12)
 	w.Draw(canvas, canvas.Bounds())
-	if !strings.Contains(canvas.Row(11), "[F7] View") {
-		t.Fatalf("toggle hint missing from File bar: %q", canvas.Row(11))
+	if row := canvas.Row(11); strings.Contains(row, "F7") {
+		t.Fatalf("File bar shows an F7 hint: %q", row)
+	}
+	if hint := w.HotkeyHint(80); !strings.Contains(hint, "F7 View") {
+		t.Fatalf("edit-mode hotkey hint omits F7 View: %q", hint)
 	}
 }
 
@@ -728,8 +734,8 @@ func TestRichTextEditGalleryTypingPTY(t *testing.T) {
 	s.WaitFor("Try ", 5*time.Second)
 	s.Send("Q")
 	s.WaitFor("QWelcome to", 5*time.Second)
-	if !strings.Contains(strings.Join(s.Screen(), "\n"), "[F7] View") {
-		t.Fatal("F7 mode toggle hint is not visible")
+	if screen := strings.Join(s.Screen(), "\n"); strings.Contains(screen, "[F7]") || !strings.Contains(screen, "F7 View") {
+		t.Fatalf("F7 must appear only in the lower hotkey row:\n%s", screen)
 	}
 	s.Send("\x1bf")
 	s.WaitFor("Save as…", 5*time.Second)

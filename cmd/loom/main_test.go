@@ -567,8 +567,11 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 	}
 	g.ConsumeKey(loom.KeyEvent{Key: "esc"})
 	g.Draw(canvas, canvas.Bounds())
-	if fileRow := canvas.Row(9); strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "[F7] View") {
-		t.Fatalf("box mode did not return to the editor hint: %q", fileRow)
+	if fileRow := canvas.Row(9); strings.Contains(fileRow, "[Box]") || strings.Contains(fileRow, "F7") {
+		t.Fatalf("file row after box mode shows a hint: %q", fileRow)
+	}
+	if hintRow := canvas.Row(10); !strings.Contains(hintRow, "F7 View") {
+		t.Fatalf("lower hotkey row omits F7 View: %q", hintRow)
 	}
 }
 

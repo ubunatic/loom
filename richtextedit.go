@@ -148,7 +148,11 @@ func (e *RichTextEdit) Focused() bool { return e.focused }
 
 // HotkeyHint returns the most useful file and help shortcuts for the available width.
 func (e *RichTextEdit) HotkeyHint(width int) string {
-	full := "F1 Help · Alt+F File · Ctrl+S Save · Ctrl+Shift+S Save as"
+	mode := "F7 View"
+	if e.ViewMode {
+		mode = "F7 Edit"
+	}
+	full := "F1 Help · Alt+F File · Ctrl+S Save · Ctrl+Shift+S Save as · " + mode
 	if StringWidth(full) <= width {
 		return full
 	}
