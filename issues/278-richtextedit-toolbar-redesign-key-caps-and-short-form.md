@@ -1,6 +1,6 @@
 # 278 — RichTextEdit toolbar redesign: key caps and ^ short form
 
-**Status**: Open
+**Status**: Closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
@@ -32,3 +32,12 @@ Target layout, from design 001 (80 columns; the 40-column version is in the same
 /goal The RTE bottom bar matches design 001 with `^` Ctrl short forms, coloured status and clickable key caps, built on a reusable library hint bar shared with the gallery; stop and report when blocked on a user decision or denied permission.
 
 Acceptance: render tests at 80 and 40 columns compared against the design (no clipped caps at any width 1–120); click tests for each key cap, including the gallery row; hover does nothing; menu and F1 help use the `^` form; installed-binary check of `loom widgets --show RichTextEdit` at normal and narrow widths; `make install`.
+
+---
+
+## Delivered
+
+- Library `HintBar` (`hintbar.go`): key/label/action entries, cap rendering, atomic fitting (details drop first, then whole pairs; Save as drops first), click-only actions on left press. Used by `RichTextEdit.HotkeyBar()` and the gallery F8/F9/F10 row. `HotkeyHint(width)` is unchanged, so no Upgrading.md row.
+- Cap and status colours from `spec/themes.yaml` (`key_cap_fg/bg`, `modified_fg`, `saved_fg`); `^S`/`^Shift+S` in hotkey row, File menu and F1 help.
+- Commits: `a32c42d` (dev278, codex:sol:med); host fixed the stale PTY assertion (`F7 View` → cap form ` F7  View`).
+- Host verification: `make test-q1` 0 FAIL; `make install`; installed `loom widgets --show RichTextEdit` matches design 001 at 80 and 40 columns; clicking the F7 cap toggles View mode.
