@@ -58,7 +58,7 @@ func (t ThemeColors) TabsStyle() TabsStyle {
 }
 
 // tabsRuleGlyph is the tab-bar separator glyph, sourced from spec/box.yaml's
-// BoxBorder.Horizontal (loaded once from frame.go's embedded frameSpecs)
+// BoxBorder.Horizontal (loaded once from box.go's embedded frameSpecs)
 // instead of a hardcoded box-drawing character.
 var tabsRuleGlyph = func() string {
 	data, err := frameSpecs.ReadFile("spec/box.yaml")
