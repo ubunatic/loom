@@ -231,6 +231,124 @@ func TestEditViewSearchNormalAndRegex(t *testing.T) {
 	}
 }
 
+func TestEditViewUnicodeSearchNoCrash(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "unicode.txt")
+	content := "1. Übersicht der Grüße\n2. こんにちは世界\n3. übersicht test"
+	_ = os.WriteFile(path, []byte(content), 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+
+	view.ConsumeKey(loom.KeyEvent{Key: "f3"})
+
+	// Search "übersicht" (case-insensitive Unicode match)
+	for _, ch := range "übersicht" {
+		view.ConsumeKey(loom.KeyEvent{Text: string(ch)})
+	}
+
+	if len(view.searchMatches) != 2 {
+		t.Fatalf("searchMatches count = %d, want 2", len(view.searchMatches))
+	}
+
+	// Search CJK characters "こんにちは"
+	view.searchBar.SetQuery("")
+	view.searchQuery = ""
+	for _, ch := range "こんにちは" {
+		view.ConsumeKey(loom.KeyEvent{Text: string(ch)})
+	}
+
+	if len(view.searchMatches) != 1 {
+		t.Fatalf("searchMatches count = %d, want 1", len(view.searchMatches))
+	}
+}
+
+func TestEditViewSearchCtrlQPromptsUnsavedChanges(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(path, []byte("Content\n"), 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+
+	// Modify document
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
+
+	// Open search panel
+	view.ConsumeKey(loom.KeyEvent{Key: "f3"})
+
+	// Press Ctrl-Q inside search mode
+	res := view.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"})
+	if res.Quit || view.shouldQuit {
+		t.Fatalf("ctrl-q in search mode on modified doc quit immediately, want unsaved dialog")
+	}
+	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
+		t.Fatal("ctrl-q in search mode should open unsavedDialog")
+	}
+}
+
+func TestEditViewSearchMouseClickFocus(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(path, []byte("Content Line 1\nContent Line 2\n"), 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+
+	// Open search
+	view.ConsumeKey(loom.KeyEvent{Key: "f3"})
+
+	// Draw view so rects (lastRect, editorRect, searchRect) are computed
+	canvas := loom.NewCanvas(100, 24)
+	view.Draw(canvas, canvas.Bounds())
+
+	if !view.searchRect.Contains(view.searchRect.X+5, view.searchRect.Y+1) {
+		t.Fatal("searchRect expected to contain click target")
+	}
+
+	// Click inside search panel
+	res := view.ConsumeMouse(loom.MouseEvent{
+		Action: loom.MousePress,
+		Button: loom.MouseLeft,
+		X:      view.searchRect.X + 5,
+		Y:      view.searchRect.Y + 1,
+	})
+
+	if !res.Consumed {
+		t.Fatalf("click in search panel result = %+v, want consumed", res)
+	}
+	if view.focused != focusSearch {
+		t.Fatalf("focus = %v, want focusSearch", view.focused)
+	}
+
+	// Verify typing goes to search panel, not editor
+	view.ConsumeKey(loom.KeyEvent{Text: "X"})
+	if view.searchQuery != "X" {
+		t.Fatalf("searchQuery = %q, want X", view.searchQuery)
+	}
+}
+
 func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "README.md")
@@ -273,9 +391,9 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 }
 
 func TestGenerateAnsiDesignScreenshots(t *testing.T) {
-	designDir := filepath.Join("..", "..", "docs", "design")
-	if _, err := os.Stat(designDir); err != nil {
-		t.Skip("docs/design directory not found")
+	designDir := t.TempDir()
+	if os.Getenv("UPDATE_GOLDEN") == "1" || os.Getenv("UPDATE_SNAPSHOTS") == "1" || os.Getenv("GENERATE_DESIGN_SCREENSHOTS") == "1" {
+		designDir = filepath.Join("..", "..", "docs", "design")
 	}
 
 	readmePath := filepath.Join(t.TempDir(), "README.md")

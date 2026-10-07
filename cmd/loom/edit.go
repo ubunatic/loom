@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"unicode"
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
@@ -294,26 +295,15 @@ func (v *editView) updateSearchMatches() {
 			}
 		}
 	} else {
-		queryLower := strings.ToLower(v.searchQuery)
+		queryRunes := len([]rune(v.searchQuery))
 		for lineIdx, line := range lines {
 			plainText := richLinePlainText(line)
-			textLower := strings.ToLower(plainText)
-			startIdx := 0
-			for {
-				idx := strings.Index(textLower[startIdx:], queryLower)
-				if idx < 0 {
-					break
-				}
-				matchByteStart := startIdx + idx
-				matchByteEnd := matchByteStart + len(queryLower)
-				startRune := len([]rune(plainText[:matchByteStart]))
-				matchRunes := len([]rune(plainText[matchByteStart:matchByteEnd]))
+			for _, startRune := range findRuneMatches(plainText, v.searchQuery) {
 				v.searchMatches = append(v.searchMatches, searchMatch{
 					line:   lineIdx,
 					start:  startRune,
-					length: matchRunes,
+					length: queryRunes,
 				})
-				startIdx = matchByteStart + max(1, len(queryLower))
 			}
 		}
 	}
@@ -553,6 +543,13 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			v.toggleSearch()
 			return loom.Handled()
 		}
+		if key.Is("ctrl-q", "ctrl-c", "ctrl-d", richDefs.HotkeyQuitBinding) {
+			res := v.handleQuit()
+			if v.shouldQuit {
+				return loom.QuitResult()
+			}
+			return res
+		}
 		if key.Is("enter") {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex + 1) % len(v.searchMatches)
@@ -579,6 +576,13 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			v.searchQuery = v.searchBar.Query
 			v.searchIndex = 0
 			v.updateSearchMatches()
+		}
+		if res.Quit {
+			res = v.handleQuit()
+			if v.shouldQuit {
+				return loom.QuitResult()
+			}
+			return res
 		}
 		return res
 	}
@@ -612,6 +616,30 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	return res
 }
 
+func findRuneMatches(line string, query string) []int {
+	lineRunes := []rune(line)
+	queryRunes := []rune(query)
+	if len(queryRunes) == 0 || len(lineRunes) < len(queryRunes) {
+		return nil
+	}
+	var matches []int
+	for i := 0; i <= len(lineRunes)-len(queryRunes); i++ {
+		match := true
+		for j := 0; j < len(queryRunes); j++ {
+			r1 := unicode.ToLower(lineRunes[i+j])
+			r2 := unicode.ToLower(queryRunes[j])
+			if r1 != r2 {
+				match = false
+				break
+			}
+		}
+		if match {
+			matches = append(matches, i)
+		}
+	}
+	return matches
+}
+
 func richLinePlainText(line loom.RichLine) string {
 	var sb strings.Builder
 	for _, span := range line.Spans {
@@ -640,6 +668,40 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 			return loom.QuitResult()
 		}
 		return res
+	}
+
+	// Click in search panel
+	if v.showSearch && v.searchRect.Contains(mouse.X, mouse.Y) {
+		v.focused = focusSearch
+		v.searchBar.SetFocused(true)
+		if mouse.Action == loom.MousePress && mouse.Button == loom.MouseLeft {
+			if mouse.Y == v.searchRect.Y+2 {
+				normW := len("[ Normal * ]")
+				normX := v.searchRect.X + 2
+				regX := normX + normW + 2
+				regW := len("[ Regex * ]")
+				if mouse.X >= normX && mouse.X < normX+normW {
+					if v.regexMode {
+						v.regexMode = false
+						v.searchIndex = 0
+						v.updateSearchMatches()
+					}
+					return loom.Handled()
+				}
+				if mouse.X >= regX && mouse.X < regX+regW {
+					if !v.regexMode {
+						v.regexMode = true
+						v.searchIndex = 0
+						v.updateSearchMatches()
+					}
+					return loom.Handled()
+				}
+			}
+		}
+		mouseLocal := mouse
+		mouseLocal.X -= v.searchRect.X + 2
+		mouseLocal.Y -= v.searchRect.Y + 1
+		return v.searchBar.ConsumeMouse(mouseLocal)
 	}
 
 	// Click in side panel
