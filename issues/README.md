@@ -293,3 +293,4 @@ upkeep.
 | 280 | [280-add-mouse-capture-flag-to-loom-edit.md](280-add-mouse-capture-flag-to-loom-edit.md) | Add mouse capture flag to loom edit | Open |
 | 281 | [281-add-schema-backed-loom-edit-settings-in-editor-yaml.md](281-add-schema-backed-loom-edit-settings-in-editor-yaml.md) | Add schema-backed loom edit settings in editor.yaml | Open |
 | 282 | [282-add-f2-side-panel-with-file-browser-to-loom-edit.md](282-add-f2-side-panel-with-file-browser-to-loom-edit.md) | Add F2 side panel with file browser to loom edit | Open |
+| 283 | [283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md](283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md) | Add F3 and Ctrl-F search panel to loom edit | Open |
