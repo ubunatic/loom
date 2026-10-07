@@ -297,3 +297,4 @@ upkeep.
 | 284 | [284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md](284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md) | Add Ctrl-P full-editor ANSI screenshots to loom edit | Open |
 | 285 | [285-fix-unicode-literal-search-panic-in-loom-edit.md](285-fix-unicode-literal-search-panic-in-loom-edit.md) | Fix Unicode literal search panic in loom edit | Open |
 | 286 | [286-prevent-search-panel-quit-keys-from-losing-unsaved-editor-changes.md](286-prevent-search-panel-quit-keys-from-losing-unsaved-editor-changes.md) | Prevent search panel quit keys from losing unsaved editor changes | Open |
+| 287 | [287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md](287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md) | Fix search overlay mouse routing and selection isolation in loom edit | Open |
