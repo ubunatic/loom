@@ -1,6 +1,7 @@
 # Loom edit design proposals
 
 Static ANSI mockups for review; the corresponding features are tracked in issues 280–283.
+See [Editor](../Editor.md) for durable implementation guidance and review lessons.
 The user approved these designs as visual guidance. The final app may look different depending on how standard Loom widgets render and compose. New UI elements must use standard Loom widgets; small tweaks are acceptable, heavy hacks are not. For larger observed gaps in Loom, developers must always file or link a library issue rather than add an app workaround or force the mockup's exact appearance.
 
 Each file is 100 columns by 24 rows. Open in a terminal at least 106 columns wide:

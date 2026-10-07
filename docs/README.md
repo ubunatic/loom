@@ -9,6 +9,7 @@
 - [Geometry gate](Geometry.md): supported text policy, independent checks and ANSI replay evidence.
 - [Hover testing](HoverTesting.md): black-box PTY mouse-hover probes, colour-cell diffing and offset reporting.
 - [Lean sprints](LeanSprints.md): loom field notes for lean sprints with cheap developer agents (escalation ladder, fake-test review, evidence convention).
+- [Editor](Editor.md): approved editor decisions, ANSI validation, widget composition, input safety, and PR review lessons.
 - [Terminal safety](TerminalSafety.md): the auto-wrap corruption trap, `loom.RawScreen`/`WriteRows`/`ClipRow`, and `x/term` coverage rules for any raw-ANSI terminal writer.
 - [Terminal repaint probe](TerminalRepaintProbe.md): standalone `loom-repaint-probe` benchmark modes, tuning, and timing semantics.
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
