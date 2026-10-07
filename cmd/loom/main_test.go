@@ -125,7 +125,7 @@ func TestCheckBox(t *testing.T) {
 }
 
 func TestCLIArityErrors(t *testing.T) {
-	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"edit"}, {"check-box"}, {"widgets", "a", "b"}} {
+	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"edit", "a", "b"}, {"check-box"}, {"widgets", "a", "b"}} {
 		var out bytes.Buffer
 		if err := execute(args, &out); err == nil {
 			t.Errorf("execute(%q) succeeded, want arity error", args)
@@ -907,9 +907,17 @@ func TestViewCommandPaneSettings(t *testing.T) {
 }
 
 func TestEditCommandArityAndFileErrors(t *testing.T) {
+	// Valid edit arguments launch a terminal UI. Check their validator directly;
+	// only PTY tests may execute an interactive edit command (including no args).
+	cmd := editCommand()
+	for _, args := range [][]string{nil, {"doc.ansi"}} {
+		if err := cmd.Args(cmd, args); err != nil {
+			t.Fatalf("edit args %q: %v", args, err)
+		}
+	}
 	var out bytes.Buffer
-	if err := execute([]string{"edit"}, &out); err == nil {
-		t.Fatal("execute(edit) without args succeeded, want arity error")
+	if err := execute([]string{"edit", "a", "b"}, &out); err == nil || !strings.Contains(err.Error(), "accepts at most 1 arg") {
+		t.Fatalf("execute(edit a b) error = %v, want arity error", err)
 	}
 	dir := t.TempDir()
 	if err := execute([]string{"edit", dir}, &out); err == nil {
