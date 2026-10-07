@@ -1,6 +1,6 @@
 # 297 — loom edit: Esc exits even with unsaved changes, only ^Q and F10 should quit
 
-**Status**: Open
+**Status**: Closed — implemented and verified in c09abb7
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
