@@ -31,3 +31,19 @@ func TestEditorStatusBarSpecAndNarrowWidths(t *testing.T) {
 		}
 	}
 }
+
+func TestEditorStatusBarActionsUseRenderedTargets(t *testing.T) {
+	bar := NewEditorStatusBar(EditorConfig{Theme: "plain"})
+	clicked := -1
+	for i := range bar.Entries {
+		bar.Entries[i].Action = func() EventResult { clicked = i; return Handled() }
+	}
+	c := NewCanvas(50, 3)
+	bar.Draw(c, Rect{X: 4, Y: 2, W: 40, H: 1})
+	for _, hit := range bar.hits {
+		clicked = -1
+		if got := bar.ConsumeMouse(MouseEvent{X: hit.rect.X + 1, Y: 0, Button: MouseLeft, Action: MousePress}); !got.Consumed || clicked != hit.index {
+			t.Fatalf("status %d click=%d result=%+v", hit.index, clicked, got)
+		}
+	}
+}

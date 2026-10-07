@@ -95,7 +95,7 @@ func TestRichTextEditHintBarMatchesDesign001(t *testing.T) {
 		width int
 		want  string
 	}{
-		{80, "F1  Help  ⌃S  Save  ⌃⌥S  Save as  F7  View"},
+		{80, "F1  Help  ⌃S  Save  F7  View"},
 		{40, "F1  Help  ⌃S  Save  F7  View"},
 	} {
 		c := NewCanvas(tc.width, 1)
@@ -105,11 +105,12 @@ func TestRichTextEditHintBarMatchesDesign001(t *testing.T) {
 		if got := strings.TrimSpace(hintBarRow(c, 0)); got != tc.want {
 			t.Fatalf("%d columns: %q, want %q", tc.width, got, tc.want)
 		}
+		// Design 001 predates removal of the Save as hint in issue 301.
 		fixtureRow := 5
 		if tc.width == 40 {
 			fixtureRow = 13
 		}
-		if got, want := strings.TrimSpace(hintBarRow(c, 0)), strings.TrimSpace(rows[fixtureRow]); got != want {
+		if got, want := strings.TrimSpace(hintBarRow(c, 0)), strings.TrimSpace(strings.ReplaceAll(rows[fixtureRow], "⌃⌥S  Save as  ", "")); got != want {
 			t.Fatalf("design 001 at %d: %q, want %q", tc.width, got, want)
 		}
 		if got := c.Get(2, 0).Style; !got.Bold || got.BG != Theme("julia256").KeyCapBG.Color() {
@@ -143,7 +144,7 @@ func TestRichTextEditHintBarAtomicAtEveryWidth(t *testing.T) {
 }
 
 func TestRichTextEditHintBarActions(t *testing.T) {
-	for _, binding := range []string{"f1", "ctrl-s", "ctrl-alt-s", "f7"} {
+	for _, binding := range []string{"f1", "ctrl-s", "f7"} {
 		for _, labelClick := range []bool{false, true} {
 			e := NewRichTextEdit(nil)
 			e.ShowFileBar = true

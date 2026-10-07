@@ -47,7 +47,7 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 || got.PopoverFocusBG != 24 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
-	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"}
+	want := []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
 	if len(got.PopoverLabels) != len(want) {
 		t.Fatalf("popover labels = %q, want %q", got.PopoverLabels, want)
 	}
@@ -106,5 +106,15 @@ func TestQuitDefaultsLoadFromSpec(t *testing.T) {
 	}
 	if SpeccedDefaults.EscapeQuits {
 		t.Fatal("EscapeQuits = true, want false")
+	}
+}
+
+func TestEditorRefinedBindings(t *testing.T) {
+	d := SpeccedDefaults.Editor
+	if d.HotkeyFilesKey != "^O" || d.HotkeyFilesBinding != "ctrl-o" || d.HotkeyFilesSecondaryBinding != "f2" || d.HotkeySearchKey != "^F" || d.HotkeySearchBinding != "ctrl-f" || d.HotkeySearchSecondaryBinding != "f3" || d.HotkeyBoxKey != "^D" || d.HotkeyBoxBinding != "ctrl-d" {
+		t.Fatalf("editor bindings: %+v", d)
+	}
+	if SpeccedDefaults.RichTextEdit.BoxDrawLabel != "Draw" {
+		t.Fatal("missing nested Draw label")
 	}
 }

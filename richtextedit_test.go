@@ -238,8 +238,8 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
 	canvas := NewCanvas(50, 6)
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
-	if len(edit.popoverButtons) != 9 {
-		t.Fatalf("popover buttons = %d, want 9", len(edit.popoverButtons))
+	if len(edit.popoverButtons) != 8 {
+		t.Fatalf("popover buttons = %d, want 8", len(edit.popoverButtons))
 	}
 	for i, button := range edit.popoverButtons {
 		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
@@ -291,13 +291,13 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 8})
 	canvas := NewCanvas(60, 4)
 	edit.Draw(canvas, Rect{W: 60, H: 4})
-	for i := 0; i < 8; i++ {
+	for i := 0; i < 7; i++ {
 		if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || result.Done || result.Quit {
 			t.Fatalf("Tab %d result = %+v", i, result)
 		}
 	}
-	if got := richPopoverActions[edit.popoverFocus]; got != "Draw" {
-		t.Fatalf("focus after cycling enabled items = %q, want Draw", got)
+	if got := richPopoverActions[edit.popoverFocus]; got != "Box" {
+		t.Fatalf("focus after cycling enabled items = %q, want Box", got)
 	}
 	edit.Draw(canvas, Rect{W: 60, H: 4})
 	button := edit.popoverButtons[edit.popoverFocus]
@@ -308,10 +308,10 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "B" {
 		t.Fatalf("forward wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Draw" {
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Box" {
 		t.Fatalf("reverse wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Box" {
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "#BG" {
 		t.Fatalf("Link must be skipped in reverse wrap; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
 }
@@ -445,8 +445,8 @@ func TestRichTextEditBoxActionAvailableInPopover(t *testing.T) {
 				t.Fatalf("Box action should open its style dropdown: text=%q submenu=%q", got, edit.popoverSubmenu)
 			}
 			edit.Draw(canvas, Rect{W: 60, H: 4})
-			if len(edit.popoverBoxChoices) != 2 {
-				t.Fatalf("Box style choices = %d, want Plain and Rounded", len(edit.popoverBoxChoices))
+			if len(edit.popoverBoxChoices) != 3 {
+				t.Fatalf("Box style choices = %d, want Plain, Rounded and Draw", len(edit.popoverBoxChoices))
 			}
 			choice := edit.popoverBoxChoices[0]
 			if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: choice.rect.X + 1, Y: choice.rect.Y}); !got.Consumed {
@@ -520,8 +520,8 @@ func TestRichTextEditBoxDropdownChoosesRoundedWrapStyle(t *testing.T) {
 	}
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: boxButton.X + 1, Y: boxButton.Y})
 	edit.Draw(canvas, Rect{W: 60, H: 5})
-	if len(edit.popoverBoxChoices) != 2 {
-		t.Fatalf("Box dropdown choices = %d, want two", len(edit.popoverBoxChoices))
+	if len(edit.popoverBoxChoices) != 3 {
+		t.Fatalf("Box dropdown choices = %d, want three", len(edit.popoverBoxChoices))
 	}
 	choice := edit.popoverBoxChoices[1]
 	if choice.label != "Rounded" {
@@ -574,9 +574,10 @@ func TestRichTextEditRestylesSelectedBoxInPlaceAndUndoes(t *testing.T) {
 func TestRichTextEditDrawButtonStartsBoxMode(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "word"}}}}})
 	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 4})
+	edit.applyPopoverAction("Box")
 	edit.Draw(NewCanvas(60, 5), Rect{W: 60, H: 5})
-	for _, button := range edit.popoverButtons {
-		if button.action != "Draw" {
+	for _, button := range edit.popoverBoxChoices {
+		if button.label != SpeccedDefaults.RichTextEdit.BoxDrawLabel {
 			continue
 		}
 		if got := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !got.Consumed {
@@ -590,12 +591,12 @@ func TestRichTextEditDrawButtonStartsBoxMode(t *testing.T) {
 	t.Fatal("Draw button missing from popover")
 }
 
-func TestRichTextEditF5WrapsSelectionInDefaultBoxStyle(t *testing.T) {
+func TestRichTextEditCtrlDWrapsSelectionInDefaultBoxStyle(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "picked"}}}}}
 	edit := NewRichTextEdit(doc)
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
-	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || got.Done || got.Quit {
-		t.Fatalf("F5 selection result = %+v, want consumed without Done/Quit", got)
+	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-d"}); !got.Consumed || got.Done || got.Quit {
+		t.Fatalf("CtrlD selection result = %+v, want consumed without Done/Quit", got)
 	}
 	borderStyle := BoxBorderStyleSharp
 	if SpeccedDefaults.RichTextEdit.BoxStyleDefault == "rounded" {
@@ -607,38 +608,38 @@ func TestRichTextEditF5WrapsSelectionInDefaultBoxStyle(t *testing.T) {
 	}
 	want := border.TopLeft + "──────" + border.TopRight + "\n" + border.Vertical + "picked" + border.Vertical + "\n" + border.BottomLeft + "──────" + border.BottomRight
 	if got := doc.ToPlainText(); got != want {
-		t.Fatalf("F5 boxed selection = %q, want %q", got, want)
+		t.Fatalf("CtrlD boxed selection = %q, want %q", got, want)
 	}
 	if edit.BoxMode {
-		t.Fatal("F5 with selection entered box drawing mode")
+		t.Fatal("CtrlD with selection entered box drawing mode")
 	}
 	if len(edit.undoStack) != 1 {
-		t.Fatalf("F5 selection undo steps = %d, want 1", len(edit.undoStack))
+		t.Fatalf("CtrlD selection undo steps = %d, want 1", len(edit.undoStack))
 	}
 	edit.undo()
 	if got := doc.ToPlainText(); got != "picked" {
-		t.Fatalf("undo F5 boxed selection = %q, want picked", got)
+		t.Fatalf("undo CtrlD boxed selection = %q, want picked", got)
 	}
 }
 
-func TestRichTextEditF5WithoutSelectionTogglesDrawMode(t *testing.T) {
+func TestRichTextEditCtrlDWithoutSelectionTogglesDrawMode(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "plain"}}}}}
 	edit := NewRichTextEdit(doc)
-	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || !edit.BoxMode {
-		t.Fatalf("F5 without selection result/mode = %+v/%v", got, edit.BoxMode)
+	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-d"}); !got.Consumed || !edit.BoxMode {
+		t.Fatalf("CtrlD without selection result/mode = %+v/%v", got, edit.BoxMode)
 	}
-	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || edit.BoxMode {
-		t.Fatalf("F5 in draw mode result/mode = %+v/%v", got, edit.BoxMode)
+	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-d"}); !got.Consumed || edit.BoxMode {
+		t.Fatalf("CtrlD in draw mode result/mode = %+v/%v", got, edit.BoxMode)
 	}
 	if got := doc.ToPlainText(); got != "plain" {
-		t.Fatalf("F5 mode toggles changed document to %q", got)
+		t.Fatalf("CtrlD mode toggles changed document to %q", got)
 	}
 }
 
 func TestRichTextEditBoxModeDrawsTurnsAndUndoesOneStroke(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{}}}
 	edit := NewRichTextEdit(doc)
-	if got := edit.ConsumeKey(KeyEvent{Key: "f5"}); !got.Consumed || !edit.BoxMode {
+	if got := edit.ConsumeKey(KeyEvent{Key: "ctrl-d"}); !got.Consumed || !edit.BoxMode {
 		t.Fatalf("box mode toggle result/mode = %+v/%v", got, edit.BoxMode)
 	}
 	for _, key := range []string{"right", "right", "down", "left"} {
@@ -662,7 +663,7 @@ func TestRichTextEditBoxModePadsPastLineEndAndBelowDocument(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "abc"}}}}}
 	edit := NewRichTextEdit(doc)
 	edit.Cursor.Offset = 3
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	edit.ConsumeKey(KeyEvent{Key: "right"})
 	edit.ConsumeKey(KeyEvent{Key: "down"})
 	if got, want := doc.ToPlainText(), "abc╶┐\n    ╵"; got != want {
@@ -671,9 +672,9 @@ func TestRichTextEditBoxModePadsPastLineEndAndBelowDocument(t *testing.T) {
 	if edit.Cursor != (RichPosition{Line: 1, Offset: 4}) {
 		t.Fatalf("cursor after downward stroke = %+v, want line 1 offset 4", edit.Cursor)
 	}
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	if edit.BoxMode {
-		t.Fatal("F5 did not exit box mode")
+		t.Fatal("CtrlD did not exit box mode")
 	}
 }
 
@@ -699,7 +700,7 @@ func TestRichTextEditBoxModeCopiesStartingGlyphForegroundAcrossStroke(t *testing
 		{Text: "┐", Style: Style{FG: ColorIndex(15)}},
 	}}}}
 	edit := NewRichTextEdit(doc)
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	edit.ConsumeKey(KeyEvent{Key: "right"})
 	edit.ConsumeKey(KeyEvent{Key: "right"})
 	for col := 0; col <= 2; col++ {
@@ -708,7 +709,7 @@ func TestRichTextEditBoxModeCopiesStartingGlyphForegroundAcrossStroke(t *testing
 			t.Errorf("stroke cell %d foreground = %v, want starting grey 8", col, style.FG)
 		}
 	}
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	edit.ConsumeKey(KeyEvent{Key: "ctrl-z"})
 	if got := richLinesText(doc.Lines); got != "┌──┐" {
 		t.Fatalf("one undo did not restore the source stroke: %q", got)
@@ -721,7 +722,7 @@ func TestRichTextEditBoxModeKeepsTextColorsWithoutBoxStart(t *testing.T) {
 		{Text: "b", Style: Style{FG: ColorIndex(15)}},
 	}}}}
 	edit := NewRichTextEdit(doc)
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	edit.ConsumeKey(KeyEvent{Key: "right"})
 	if style, _ := richLineStyleAtColumn(doc.Lines[0], 0); style.FG != ColorIndex(8) {
 		t.Fatalf("non-box start foreground = %v, want existing color 8", style.FG)
@@ -736,7 +737,7 @@ func TestRichTextEditBoxModeCompletesCrossingAndTJunction(t *testing.T) {
 		doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: " "}}}, {Spans: []RichSpan{{Text: "───"}}}, {}}}
 		edit := NewRichTextEdit(doc)
 		edit.Cursor.Offset = 1
-		edit.ConsumeKey(KeyEvent{Key: "f5"})
+		edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 		edit.ConsumeKey(KeyEvent{Key: "down"})
 		edit.ConsumeKey(KeyEvent{Key: "down"})
 		if got := richLineCell(doc.Lines[1], 1); got != "┼" {
@@ -747,7 +748,7 @@ func TestRichTextEditBoxModeCompletesCrossingAndTJunction(t *testing.T) {
 		doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: " "}}}, {Spans: []RichSpan{{Text: "───"}}}}}
 		edit := NewRichTextEdit(doc)
 		edit.Cursor.Offset = 1
-		edit.ConsumeKey(KeyEvent{Key: "f5"})
+		edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 		edit.ConsumeKey(KeyEvent{Key: "down"})
 		if got := richLineCell(doc.Lines[1], 1); got != "┴" {
 			t.Fatalf("T-junction glyph = %q, want ┴", got)
@@ -759,7 +760,7 @@ func TestRichTextEditBoxModeDoesNotModifyAdjacentBox(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "│ "}}}}}
 	edit := NewRichTextEdit(doc)
 	edit.Cursor.Offset = 1
-	edit.ConsumeKey(KeyEvent{Key: "f5"})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-d"})
 	edit.ConsumeKey(KeyEvent{Key: "right"})
 	if got := richLineCell(doc.Lines[0], 1); got != "╶" {
 		t.Fatalf("drawn cell = %q, want ╶", got)
@@ -873,7 +874,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 	}
 	for _, offset := range []int{1, 2, 5, 6, 7} {
 		if got := styleAt(offset).BG; got != ColorIndex(9) {
-			t.Errorf("selected offset %d BG = %v, want 9", offset, got)
+			t.Errorf("selected offset %d BG = %v, want 8", offset, got)
 		}
 	}
 	if got := styleAt(8).BG; got != ColorIndex(7) {
@@ -970,12 +971,10 @@ func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
 		t.Fatal("ctrl-space on whitespace must open a cursor-anchored popover")
 	}
 	canvas := NewCanvas(60, 5)
+	e.applyPopoverAction("Box")
 	e.Draw(canvas, canvas.Bounds())
-	for _, button := range e.popoverButtons {
-		if button.action == "Draw" {
-			if !button.enabled {
-				t.Fatal("Draw action is disabled without a selection")
-			}
+	for _, button := range e.popoverBoxChoices {
+		if button.label == SpeccedDefaults.RichTextEdit.BoxDrawLabel {
 			if got := e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !got.Consumed || !e.BoxMode {
 				t.Fatalf("Draw from blank-cell popover = %+v, BoxMode=%v", got, e.BoxMode)
 			}

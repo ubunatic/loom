@@ -11,7 +11,7 @@ import (
 )
 
 func TestGalleryHintBarsClickAndKeyPaths(t *testing.T) {
-	for _, key := range []string{"f1", "ctrl-s", "ctrl-alt-s", "f7", "f8", "f9", "f10"} {
+	for _, key := range []string{"f1", "ctrl-s", "f7", "f8", "f9", "f10"} {
 		for _, label := range []bool{false, true} {
 			t.Run(key, func(t *testing.T) {
 				e := loom.NewRichTextEdit(nil)

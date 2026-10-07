@@ -70,8 +70,8 @@ func TestNestedTabsCursorShapeReachesPaneOutput(t *testing.T) {
 
 	root.Draw(canvas, canvas.Bounds())
 	pane.applyCanvasCursorShape(&output, canvas)
-	if result := root.ConsumeKey(KeyEvent{Key: "f5"}); !result.Consumed || !edit.BoxMode {
-		t.Fatalf("F5 in nested editor = %+v, BoxMode=%v", result, edit.BoxMode)
+	if result := root.ConsumeKey(KeyEvent{Key: "ctrl-d"}); !result.Consumed || !edit.BoxMode {
+		t.Fatalf("^D in nested editor = %+v, BoxMode=%v", result, edit.BoxMode)
 	}
 	canvas.Clear()
 	root.Draw(canvas, canvas.Bounds())

@@ -131,7 +131,7 @@ type richPopoverBoxChoice struct {
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"}
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -177,12 +177,9 @@ func (e *RichTextEdit) HotkeyBar() *HintBar {
 	entry := func(binding, label string) HintEntry {
 		return HintEntry{Binding: binding, Label: label, Action: func() EventResult { return e.ConsumeKey(KeyEvent{Key: binding}) }}
 	}
-	saveAs := entry(defs.HotkeySaveAsBinding, defs.HotkeySaveAsLabel)
-	saveAs.DropPriority = 1
 	bar := NewHintBar(
 		entry(defs.HotkeyHelpBinding, defs.HotkeyHelpLabel),
 		entry(defs.HotkeySaveBinding, defs.HotkeySaveLabel),
-		saveAs,
 		entry(defs.HotkeyViewEditBinding, mode),
 	)
 	bar.ApplyTheme(e.toolbarTheme())
@@ -603,7 +600,7 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 			e.clearPopoverKeyboardState(e.HasSelection)
 			return Handled(), true
 		}
-		labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
+		labels := e.boxSubmenuLabels()
 		if e.popoverSubmenu == "Box" && e.popoverSubmenuFocus >= 0 && e.popoverSubmenuFocus < len(labels) {
 			e.applyBoxStyleChoice(labels[e.popoverSubmenuFocus])
 			return Handled(), true
@@ -618,12 +615,17 @@ func (e *RichTextEdit) popoverSubmenuChoiceCount() int {
 		return 16
 	}
 	if e.popoverSubmenu == "Box" {
-		return len(SpeccedDefaults.RichTextEdit.BoxStyleLabels)
+		return len(e.boxSubmenuLabels())
 	}
 	return 0
 }
 
-func (e *RichTextEdit) initialPopoverSubmenuFocus() int { return 0 }
+func (e *RichTextEdit) initialPopoverSubmenuFocus() int {
+	if e.popoverSubmenu == "Box" && !e.HasSelection {
+		return len(e.boxSubmenuLabels()) - 1
+	}
+	return 0
+}
 
 func (e *RichTextEdit) popoverSubmenuCanShow() bool {
 	if !e.popoverCanShow() {
@@ -634,8 +636,8 @@ func (e *RichTextEdit) popoverSubmenuCanShow() bool {
 		return false
 	}
 	if e.popoverSubmenu == "Box" {
-		width := 2 + len(SpeccedDefaults.RichTextEdit.BoxStyleLabels) - 1
-		for _, label := range SpeccedDefaults.RichTextEdit.BoxStyleLabels {
+		width := 2 + len(e.boxSubmenuLabels()) - 1
+		for _, label := range e.boxSubmenuLabels() {
 			width += len(label) + 2
 		}
 		if width > r.W {
@@ -659,12 +661,12 @@ func (e *RichTextEdit) popoverActionEnabled(index int) bool {
 	if index < 0 || index >= len(richPopoverActions) || richPopoverActions[index] == "Link" {
 		return false
 	}
-	return e.HasSelection || richPopoverActions[index] == "Draw"
+	return e.HasSelection || richPopoverActions[index] == "Box"
 }
 
 func (e *RichTextEdit) initialPopoverFocus() int {
 	if !e.HasSelection && e.popoverAtCursor {
-		return 8
+		return 7
 	}
 	if e.boxSelection != nil {
 		return 7
@@ -847,7 +849,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	if result, handled := e.consumePopoverKey(key); handled {
 		return result
 	}
-	if key.Is("f5") {
+	if key.Is(SpeccedDefaults.Editor.HotkeyBoxBinding) {
 		if e.HasSelection {
 			e.wrapSelectionInBox()
 		} else {
@@ -1236,7 +1238,7 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 		e.popoverSubmenu = ""
 		return
 	}
-	labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
+	labels := e.boxSubmenuLabels()
 	width := 2 + len(labels) - 1
 	for _, label := range labels {
 		width += len(label) + 2
@@ -1337,7 +1339,16 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	}
 }
 
+func (e *RichTextEdit) boxSubmenuLabels() []string {
+	d := SpeccedDefaults.RichTextEdit
+	return append(append([]string(nil), d.BoxStyleLabels...), d.BoxDrawLabel)
+}
+
 func (e *RichTextEdit) applyBoxStyleChoice(label string) {
+	if label == SpeccedDefaults.RichTextEdit.BoxDrawLabel {
+		e.applyPopoverAction("Draw")
+		return
+	}
 	labels := SpeccedDefaults.RichTextEdit.BoxStyleLabels
 	style := BoxBorderStyleSharp
 	for index, candidate := range labels {

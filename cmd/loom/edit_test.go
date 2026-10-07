@@ -446,8 +446,8 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 		"File README.md",
 		loom.SpeccedDefaults.Editor.StatusIcons.Theme,
 		"mc-dark",
-		"F2 Files",
-		"F3/⌃F Search",
+		"^O Files",
+		"^F Search",
 		"F10 Quit",
 		"└",
 	} {
@@ -917,7 +917,7 @@ func newCloseTestView(t *testing.T) *editView {
 	return view
 }
 
-func TestEditViewCtrlOShowsAndFocusesBrowserFromEveryFocus(t *testing.T) {
+func TestEditViewCtrlOTogglesBrowserFromEveryFocus(t *testing.T) {
 	for _, focus := range []editFocus{focusEditor, focusBrowser, focusSearch} {
 		view := newCloseTestView(t)
 		view.showSearch = focus == focusSearch
@@ -928,8 +928,12 @@ func TestEditViewCtrlOShowsAndFocusesBrowserFromEveryFocus(t *testing.T) {
 		if res := view.ConsumeKey(loom.KeyEvent{Key: "ctrl-o"}); !res.Consumed {
 			t.Fatalf("focus %v: ^O not consumed", focus)
 		}
-		if !view.showSidePanel || view.focused != focusBrowser {
-			t.Fatalf("focus %v: panel/focus = %v/%v", focus, view.showSidePanel, view.focused)
+		wantOpen, wantFocus := true, focusBrowser
+		if focus == focusBrowser {
+			wantOpen, wantFocus = false, focusEditor
+		}
+		if view.showSidePanel != wantOpen || view.focused != wantFocus {
+			t.Fatalf("focus %v: panel/focus = %v/%v, want %v/%v", focus, view.showSidePanel, view.focused, wantOpen, wantFocus)
 		}
 	}
 }

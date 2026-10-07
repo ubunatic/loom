@@ -48,21 +48,26 @@ type KeyCapModifier struct {
 
 // EditorDefaults defines specced defaults for the Loom editor.
 type EditorDefaults struct {
-	StatusIcons             EditorStatusIcons `yaml:"status_icons"`
-	Theme                   string            `yaml:"theme"`
-	MouseGrab               bool              `yaml:"mousegrab"`
-	AltScreen               bool              `yaml:"altscreen"`
-	HotkeyFilesBinding      string            `yaml:"hotkey_files_binding"`
-	HotkeyFilesLabel        string            `yaml:"hotkey_files_label"`
-	HotkeySearchKey         string            `yaml:"hotkey_search_key"`
-	HotkeySearchBinding     string            `yaml:"hotkey_search_binding"`
-	HotkeySearchLabel       string            `yaml:"hotkey_search_label"`
-	HotkeyBoxBinding        string            `yaml:"hotkey_box_binding"`
-	HotkeyBoxLabel          string            `yaml:"hotkey_box_label"`
-	SearchPrompt            string            `yaml:"search_prompt"`
-	SearchPlaceholder       string            `yaml:"search_placeholder"`
-	HotkeyScreenshotBinding string            `yaml:"hotkey_screenshot_binding"`
-	HotkeyScreenshotLabel   string            `yaml:"hotkey_screenshot_label"`
+	StatusIcons                  EditorStatusIcons `yaml:"status_icons"`
+	Theme                        string            `yaml:"theme"`
+	MouseGrab                    bool              `yaml:"mousegrab"`
+	AltScreen                    bool              `yaml:"altscreen"`
+	HotkeySaveKey                string            `yaml:"hotkey_save_key"`
+	HotkeyFilesKey               string            `yaml:"hotkey_files_key"`
+	HotkeyFilesSecondaryBinding  string            `yaml:"hotkey_files_secondary_binding"`
+	HotkeySearchSecondaryBinding string            `yaml:"hotkey_search_secondary_binding"`
+	HotkeyBoxKey                 string            `yaml:"hotkey_box_key"`
+	HotkeyFilesBinding           string            `yaml:"hotkey_files_binding"`
+	HotkeyFilesLabel             string            `yaml:"hotkey_files_label"`
+	HotkeySearchKey              string            `yaml:"hotkey_search_key"`
+	HotkeySearchBinding          string            `yaml:"hotkey_search_binding"`
+	HotkeySearchLabel            string            `yaml:"hotkey_search_label"`
+	HotkeyBoxBinding             string            `yaml:"hotkey_box_binding"`
+	HotkeyBoxLabel               string            `yaml:"hotkey_box_label"`
+	SearchPrompt                 string            `yaml:"search_prompt"`
+	SearchPlaceholder            string            `yaml:"search_placeholder"`
+	HotkeyScreenshotBinding      string            `yaml:"hotkey_screenshot_binding"`
+	HotkeyScreenshotLabel        string            `yaml:"hotkey_screenshot_label"`
 }
 
 // EditorStatusIcons defines compact editor status caps and their colors.
@@ -87,6 +92,7 @@ type RichTextEditDefaults struct {
 	PointerUpGlyph        string        `yaml:"pointer_up_glyph"`
 	PointerDownGlyph      string        `yaml:"pointer_down_glyph"`
 	PointerFG             int           `yaml:"pointer_fg"`
+	BoxDrawLabel          string        `yaml:"box_draw_label"`
 	PopoverLabels         []string      `yaml:"popover_labels"`
 	BoxStyleLabels        []string      `yaml:"box_style_labels"`
 	BoxStyleDefault       string        `yaml:"box_style_default"`
@@ -177,8 +183,11 @@ func (d RichTextEditDefaults) validate() error {
 	if d.SeparatorGlyph == "" || d.PointerUpGlyph == "" || d.PointerDownGlyph == "" {
 		return fmt.Errorf("rich_text_edit glyphs must not be empty")
 	}
-	if len(d.PopoverLabels) != 9 {
-		return fmt.Errorf("rich_text_edit.popover_labels must contain 9 labels")
+	if len(d.PopoverLabels) != 8 {
+		return fmt.Errorf("rich_text_edit.popover_labels must contain 8 labels")
+	}
+	if d.BoxDrawLabel == "" {
+		return fmt.Errorf("rich_text_edit.box_draw_label must not be empty")
 	}
 	if len(d.BoxStyleLabels) != 2 || d.BoxStyleLabels[0] == "" || d.BoxStyleLabels[1] == "" {
 		return fmt.Errorf("rich_text_edit.box_style_labels must contain two non-empty labels")

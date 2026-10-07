@@ -72,12 +72,17 @@ editor:
   theme: "plain"
   mousegrab: false
   altscreen: true
-  hotkey_files_binding: "f2"
+  hotkey_files_key: "^O"
+  hotkey_files_binding: "ctrl-o"
+  hotkey_files_secondary_binding: "f2"
   hotkey_files_label: "Files"
-  hotkey_search_key: "F3/⌃F" # explicit keycap override; other keycaps derive from *_binding
-  hotkey_search_binding: "f3"
+  hotkey_search_key: "^F"
+  hotkey_search_binding: "ctrl-f"
+  hotkey_search_secondary_binding: "f3"
   hotkey_search_label: "Search"
-  hotkey_box_binding: "f5"
+  hotkey_save_key: "^S"
+  hotkey_box_key: "^D"
+  hotkey_box_binding: "ctrl-d"
   hotkey_box_label: "Box"
   search_prompt: "Find: "
   search_placeholder: "type query..."
@@ -98,7 +103,8 @@ rich_text_edit:
   pointer_up_glyph: "▲"
   pointer_down_glyph: "▼"
   pointer_fg: 8
-  popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG", "Box", "Draw"]
+  popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG", "Box"]
+  box_draw_label: "Draw"
   box_style_labels: ["Plain", "Rounded"]
   box_style_default: "plain"
   ghost_cursor_enabled: false
@@ -165,7 +171,7 @@ rich_text_edit:
     - title: "Modes and boxes"
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}
-        - {keys: ["f5"], label: "Box selection, or toggle box drawing"}
+        - {keys: ["ctrl-d"], label: "Box selection, or toggle box drawing"}
         - {cap: "←↑↓→", label: "While drawing: draw connected lines; Esc ends a stroke"}
     - title: "Save as dialog"
       entries:

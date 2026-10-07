@@ -87,12 +87,13 @@ func TestRichTextEditKeyboardBoxSubmenuWrapAndApply(t *testing.T) {
 		t.Fatalf("Box submenu = %q", edit.popoverSubmenu)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "left"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "left"}))
 	if edit.popoverSubmenuFocus != 1 {
 		t.Fatalf("reverse arrow wrap focus = %d, want 1", edit.popoverSubmenuFocus)
 	}
 	edit.Draw(canvas, canvas.Bounds())
-	if len(edit.popoverBoxChoices) != 2 {
-		t.Fatalf("box choices = %d, want two", len(edit.popoverBoxChoices))
+	if len(edit.popoverBoxChoices) != 3 {
+		t.Fatalf("box choices = %d, want three", len(edit.popoverBoxChoices))
 	}
 	choice := edit.popoverBoxChoices[1]
 	if got := canvas.Get(choice.rect.X+1, choice.rect.Y).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG)) {
@@ -214,5 +215,36 @@ func TestRichTextEditKeyboardSubmenuDismissesWhenItCannotFit(t *testing.T) {
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if edit.popoverPalette != "" || edit.popoverFocusSet || !edit.popoverSuppressed {
 		t.Fatalf("unrenderable palette retained focus: palette=%q focusSet=%v suppressed=%v", edit.popoverPalette, edit.popoverFocusSet, edit.popoverSuppressed)
+	}
+}
+
+func TestRichTextEditDrawIsNestedAndKeyboardAccessible(t *testing.T) {
+	for _, selection := range []bool{false, true} {
+		edit := richTestEditor(RichSpan{Text: "abc "})
+		if selection {
+			edit.SetSelection(RichPosition{}, RichPosition{Offset: 3})
+		} else {
+			edit.Cursor.Offset = 3
+			edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		}
+		canvas := NewCanvas(60, 8)
+		edit.Draw(canvas, canvas.Bounds())
+		for _, button := range edit.popoverButtons {
+			if button.action == "Draw" {
+				t.Fatal("top-level Draw")
+			}
+		}
+		popoverFocusAction(t, edit, "Box")
+		assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))
+		if selection {
+			edit.ConsumeKey(KeyEvent{Key: "left"})
+		}
+		if edit.popoverSubmenuFocus != 2 {
+			t.Fatalf("Draw focus=%d", edit.popoverSubmenuFocus)
+		}
+		assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))
+		if !edit.BoxMode || edit.HasSelection {
+			t.Fatal("nested Draw failed")
+		}
 	}
 }

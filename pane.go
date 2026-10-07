@@ -530,7 +530,7 @@ func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
 }
 
 // EnableMouse turns on SGR mouse tracking (button press, release, hover, scroll).
-// Must be called before Run. Mouse events are delivered to the root Widget's
+// Call before Run or from an event handler. Mouse events reach the root Widget's
 // ConsumeMouse method.
 func (p *Pane) EnableMouse() {
 	p.setMouseMode(1003)
@@ -586,7 +586,7 @@ func (p *Pane) expireCursorEffects(now time.Time) {
 }
 
 // EnableMouseClicks tracks clicks and wheel events without any-motion reports.
-// Call it before Run; Close restores the terminal's normal mouse behavior.
+// Call before Run or from an event handler; Close restores normal mouse behavior.
 func (p *Pane) EnableMouseClicks() {
 	p.setMouseMode(1000)
 }

@@ -94,8 +94,11 @@ func editCommand() *cobra.Command {
 func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
 	pane.MaxCols = 0
 	pane.Resizeable = true
+	pane.ResizeConfig.FullAlt = cfg.AltScreen
 	if cfg.MouseGrab {
 		pane.EnableMouse()
+	} else {
+		pane.EnableMouseClicks()
 	}
 	if cfg.AltScreen {
 		pane.SetScreenMode(loom.ScreenAlt)
@@ -127,6 +130,10 @@ type editView struct {
 	searchRect    loom.Rect
 	searchModes   *loom.HintBar
 	statusMessage string
+	hints         *loom.HintBar
+	indicators    *loom.HintBar
+	indicatorRect loom.Rect
+	pane          *loom.Pane
 }
 
 func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*editView, error) {
@@ -240,7 +247,7 @@ func (v *editView) openFile(path string) error {
 func helpSection() loom.HelpSection {
 	d := loom.SpeccedDefaults.Editor
 	return loom.HelpSection{Title: "loom edit", Entries: []loom.HelpEntry{
-		{Keys: []string{d.HotkeyFilesBinding}, Label: d.HotkeyFilesLabel},
+		{Cap: d.HotkeyFilesKey, Label: d.HotkeyFilesLabel},
 		{Cap: d.HotkeySearchKey, Label: d.HotkeySearchLabel},
 		{Keys: []string{d.HotkeyBoxBinding}, Label: d.HotkeyBoxLabel},
 		{Keys: []string{d.HotkeyScreenshotBinding}, Label: d.HotkeyScreenshotLabel},
@@ -254,7 +261,7 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 	richDefs := loom.SpeccedDefaults.RichTextEdit
 
 	entries := []loom.HintEntry{
-		{Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeyFilesKey, Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
 			v.toggleSidePanel()
 			return loom.Handled()
 		}},
@@ -262,14 +269,14 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 			v.toggleSearch()
 			return loom.Handled()
 		}},
-		{Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeySaveKey, Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
 			v.reportError(v.edit.Save())
 			return loom.Handled()
 		}},
-		{Binding: richDefs.HotkeySaveAsBinding, Label: richDefs.HotkeySaveAsLabel, Action: func() loom.EventResult {
-			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeySaveAsBinding})
+		{Binding: richDefs.HotkeyHelpBinding, Label: richDefs.HotkeyHelpLabel, Action: func() loom.EventResult {
+			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeyHelpBinding})
 		}},
-		{Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, DropPriority: 1, Action: func() loom.EventResult {
 			return v.edit.ConsumeKey(loom.KeyEvent{Key: editorDefs.HotkeyBoxBinding})
 		}},
 		{Binding: editorDefs.HotkeyScreenshotBinding, Label: editorDefs.HotkeyScreenshotLabel, DropPriority: 2, Action: func() loom.EventResult {
@@ -280,6 +287,7 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 		{Key: loom.KeyCap(richDefs.HotkeyQuitBinding), Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
 			if v.closeRequest(loom.CloseReasonQuitKey) == loom.CloseAllow {
 				v.doQuit()
+				return loom.Quit()
 			}
 			return loom.Handled()
 		}},
@@ -292,6 +300,7 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 // attach hands close control to the pane: quit keys and signals ask the
 // view first, so unsaved changes always get the Save/Discard/Cancel dialog.
 func (v *editView) attach(pane *loom.Pane) {
+	v.pane = pane
 	v.quit = pane.Quit
 	pane.OnCloseRequest = v.closeRequest
 }
@@ -430,6 +439,7 @@ func (v *editView) highlightSearchMatch() {
 
 func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	v.lastRect = rect
+	v.hints, v.indicators = nil, nil
 	if rect.W <= 0 || rect.H <= 0 {
 		return
 	}
@@ -465,16 +475,22 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		curCol := v.edit.Cursor.Offset + 1
 		posStr := fmt.Sprintf("Ln %d, Col %d", curLine, curCol)
 		indicators := loom.NewEditorStatusBar(v.config)
+		v.indicators = indicators
+		indicators.Entries[0].Action = v.cycleTheme
+		indicators.Entries[1].Action = v.toggleMouseGrab
+		indicators.Entries[2].Action = v.toggleAltScreen
 		indicatorW := min(innerW, indicators.ContentWidth())
 		statusW := max(0, innerW-indicatorW-1)
 		leftW := max(0, statusW-loom.StringWidth(posStr)-2)
 		left := loom.TruncateText(absPath, leftW, "...")
 		statusLine := " " + left + strings.Repeat(" ", max(0, leftW-loom.StringWidth(left))) + " " + posStr
 		canvas.WriteDefault(innerX, rect.Y+rect.H-3, loom.TruncateText(statusLine, statusW, ""), normalStyle)
-		indicators.Draw(canvas, loom.Rect{X: innerX + innerW - indicatorW, Y: rect.Y + rect.H - 3, W: indicatorW, H: 1})
+		v.indicatorRect = loom.Rect{X: innerX + innerW - indicatorW, Y: rect.Y + rect.H - 3, W: indicatorW, H: 1}
+		indicators.Draw(canvas, v.indicatorRect)
 
 		// Y=H-1
-		v.hotkeyBar().Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
+		v.hints = v.hotkeyBar()
+		v.hints.Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
 	}
 
 	contentY := rect.Y + 1
@@ -580,22 +596,18 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return loom.Handled()
 	}
 
-	// Open and Close work whichever panel has focus; the editor owns the actions.
-	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeyOpenBinding) {
-		v.edit.RequestOpen()
-		return loom.Handled()
-	}
+	// Close works whichever panel has focus; the editor owns the action.
 	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeyCloseBinding) {
 		v.edit.RequestClose()
 		return loom.Handled()
 	}
 
-	if key.Is(editorDefs.HotkeyFilesBinding) {
+	if key.Is(editorDefs.HotkeyFilesBinding, editorDefs.HotkeyFilesSecondaryBinding) {
 		v.toggleSidePanel()
 		return loom.Handled()
 	}
 
-	if key.Is(editorDefs.HotkeySearchBinding, "ctrl-f") {
+	if key.Is(editorDefs.HotkeySearchBinding, editorDefs.HotkeySearchSecondaryBinding) {
 		v.toggleSearch()
 		return loom.Handled()
 	}
@@ -619,6 +631,10 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			}
 		}
 		return loom.Handled()
+	}
+
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeyHelpBinding, editorDefs.HotkeyBoxBinding) {
+		return v.edit.ConsumeKey(key)
 	}
 
 	if v.showSearch && v.focused == focusSearch {
@@ -813,11 +829,17 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		return loom.Handled()
 	}
 
-	if v.lastRect.H > 2 && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {
+	if v.hints != nil && v.lastRect.H >= 6 && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {
 		mouseLocal := mouse
 		mouseLocal.Y = 0
 		mouseLocal.X -= v.lastRect.X + 1
-		return v.hotkeyBar().ConsumeMouse(mouseLocal)
+		return v.hints.ConsumeMouse(mouseLocal)
+	}
+
+	if v.indicators != nil && v.indicatorRect.Contains(mouse.X, mouse.Y) {
+		mouse.X -= v.indicatorRect.X
+		mouse.Y -= v.indicatorRect.Y
+		return v.indicators.ConsumeMouse(mouse)
 	}
 
 	// Click in search panel
@@ -867,4 +889,43 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 	}
 
 	return loom.Ignored()
+}
+
+func (v *editView) cycleTheme() loom.EventResult {
+	names := loom.ThemeNames()
+	for i, name := range names {
+		if name == v.config.Theme {
+			v.config.Theme = names[(i+1)%len(names)]
+			break
+		}
+	}
+	theme := loom.Theme(v.config.Theme)
+	v.edit.ApplyTheme(theme)
+	v.filePicker.ApplyTheme(theme)
+	return loom.Handled()
+}
+
+func (v *editView) toggleMouseGrab() loom.EventResult {
+	v.config.MouseGrab = !v.config.MouseGrab
+	if v.pane != nil {
+		if v.config.MouseGrab {
+			v.pane.EnableMouse()
+		} else {
+			v.pane.EnableMouseClicks()
+		}
+	}
+	return loom.Handled()
+}
+
+func (v *editView) toggleAltScreen() loom.EventResult {
+	v.config.AltScreen = !v.config.AltScreen
+	if v.pane != nil {
+		v.pane.ResizeConfig.FullAlt = v.config.AltScreen
+		if v.config.AltScreen {
+			v.pane.SetScreenMode(loom.ScreenAlt)
+		} else {
+			v.pane.SetScreenMode(loom.ScreenInline)
+		}
+	}
+	return loom.Handled()
 }

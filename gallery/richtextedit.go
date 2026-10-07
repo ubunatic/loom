@@ -20,7 +20,7 @@ func newRichTextEditDemo() *richTextEditDemo {
 		{},
 		{Spans: []loom.RichSpan{{Text: "Try ", Style: loom.Style{}}, {Text: "bold", Style: loom.Style{Bold: true}}, {Text: ", ", Style: loom.Style{}}, {Text: "italic", Style: loom.Style{Italic: true}}, {Text: ", and ", Style: loom.Style{}}, {Text: "underline", Style: loom.Style{Underline: true}}, {Text: " formatting.", Style: loom.Style{}}}},
 		{Spans: []loom.RichSpan{{Text: "Mention ", Style: loom.Style{}}, {Text: "@ada", Style: loom.Style{FG: blue, Bold: true}, PillData: &loom.RichPill{Kind: "mention", ID: "ada"}}, {Text: " or open ", Style: loom.Style{}}, {Text: "loom.dev", Link: "https://loom.dev"}, {Text: ".", Style: loom.Style{}}}},
-		{Spans: []loom.RichSpan{{Text: "Drag to select; click B/I/U/S, #FG, #BG or Box. Choose a color swatch.", Style: loom.Style{Dim: true}}}},
+		{Spans: []loom.RichSpan{{Text: "Drag to select; click B/I/U/S, #FG, #BG or Box. Box offers Plain, Rounded and Draw (^D).", Style: loom.Style{Dim: true}}}},
 	}}
 	return newRichTextEditDemoWithDoc(doc)
 }

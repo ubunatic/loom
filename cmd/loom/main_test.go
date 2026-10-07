@@ -527,7 +527,7 @@ func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 			if !strings.Contains(hintRow, "F1 Help") || !strings.Contains(hintRow, "⌃S Save") {
 				t.Fatalf("lower hint row = %q", hintRow)
 			}
-			if width == 80 && (!strings.Contains(hintRow, "F7 View") || !strings.Contains(hintRow, "⌃⌥S Save as")) {
+			if width == 80 && (!strings.Contains(hintRow, "F7 View") || strings.Contains(hintRow, "Save as")) {
 				t.Fatalf("normal-width hint row hides full shortcuts: %q", hintRow)
 			}
 			if strings.Contains(canvasPlainRow(canvas, 9), "⌃S") || strings.Contains(canvasPlainRow(canvas, 9), "⌃⌥S") {
@@ -555,14 +555,14 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 	}
 	g := newThemedGallery(widget, "plain")
 	canvas := loom.NewCanvas(80, 12)
-	if result := g.ConsumeKey(loom.KeyEvent{Key: "f5"}); !result.Consumed {
-		t.Fatalf("F5 box toggle result = %+v", result)
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-d"}); !result.Consumed {
+		t.Fatalf("CtrlD box toggle result = %+v", result)
 	}
 	g.Draw(canvas, canvas.Bounds())
 	if fileRow := canvasPlainRow(canvas, 9); !strings.Contains(fileRow, "[Box]") || !strings.Contains(fileRow, "Esc") {
 		t.Fatalf("box mode file-row hint = %q", fileRow)
 	}
-	if hintRow := canvasPlainRow(canvas, 10); !strings.Contains(hintRow, "⌃S") || !strings.Contains(hintRow, "⌃⌥S") {
+	if hintRow := canvasPlainRow(canvas, 10); !strings.Contains(hintRow, "⌃S") || strings.Contains(hintRow, "Save as") {
 		t.Fatalf("lower hotkey row omits save shortcuts: %q", hintRow)
 	}
 	g.ConsumeKey(loom.KeyEvent{Key: "esc"})
