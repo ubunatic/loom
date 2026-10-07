@@ -16,6 +16,8 @@ Capture the full rendered editor viewport, including chrome, hints, visible side
 
 Store the binding and applicable defaults in the spec. Use supported Loom canvas/ANSI serialization; standard widgets for any feedback, small tweaks only, and file or link issues for larger observed library gaps. Start key-routing work on `codex:sol:med`. Report the saved path or write error without changing document content, dirty state or focus.
 
+Review (2026-10-07, PR #16 head 9f41045, unmerged): ^P now creates a full 100×24 ANSI render; a PTY capture passed loom eval/measure/check-box. Allocation uses len(directory entries)+1 and os.WriteFile: capturing twice, deleting the first file, opening search and capturing again overwrote the second screenshot. Use collision-safe exclusive creation. The binding is hardcoded outside the spec, filename details are unsanitized, and capture errors are discarded without feedback. The unsaved-dialog input branch precedes ^P, so that overlay cannot be captured. The new test checks only that a directory entry exists. Keep open for collision, failure, overlay and editing-state acceptance coverage.
+
 ## 3. Implementation & Verification Plan
 /goal ^P saves a faithful ANSI screenshot of the full `loom edit` viewport as `~/Pictures/Screenshots/<num>-loom-edit-<details>.ansi`; verify capture, filenames and failure handling, or stop and report when blocked on a user decision or denied permission.
 

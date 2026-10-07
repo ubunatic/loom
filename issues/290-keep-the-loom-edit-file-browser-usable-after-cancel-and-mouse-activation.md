@@ -19,6 +19,8 @@ Observed at PR head b8a59ca; this branch has not been merged locally. Before imp
 Updated review (2026-10-07, PR head a9f1a7d): newEditView still constructs FilePicker without OnSelect/OnCancel, and browser key/mouse handling is unchanged. FilePicker's done state still suppresses keyboard events after Esc or mouse activation. The new tests cover search only, not these picker lifecycle paths. Keep open; the browser finding remains unresolved.
 
 ## 3. Implementation & Verification Plan
+Updated review (2026-10-07, PR head 9f41045): OnSelect/OnCancel callbacks and FilePicker.Reset now connect activation/cancellation; the separate keyboard Enter interception is removed. A PTY probe verified Esc, F2 reopen, filtering and keyboard activation of another file. Both input routes now use the callback and modified documents reach handleQuit. Open/save errors are still discarded, and no new tests cover picker activation or Save/Discard/Cancel. Keep open pending full acceptance verification and integration.
+
 /goal The editor file browser opens files consistently with keyboard and mouse and remains usable after cancel or repeated activation; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Cover actual FilePicker activation, cancel/reopen and repeated navigation, with modified documents and Save/Discard/Cancel. Verify focus and real captured mouse behavior, make test-q1 and make install.

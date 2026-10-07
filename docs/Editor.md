@@ -30,13 +30,15 @@ Keep approved mockups distinct from generated implementation evidence. Ordinary 
 
 ## Review evidence and status
 
-Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `a9f1a7d`, is draft/unmerged and proposes issues 280–283. Recheck live code, PR state and recent history before beginning ticket work.
+Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `9f41045`, is draft/unmerged and proposes issues 280–284. Recheck live code, PR state and recent history before beginning ticket work.
 
 The initial review at `b8a59ca` passed the full `make test-q1` suite in a disposable worktree. Its five rendered designs passed `loom check-box`. Independent PTY probes still reproduced a Unicode search panic, search-field clicks modifying the underlying document, and ^Q exiting with unsaved changes without a prompt. Findings are recorded in issues 285–290.
 
 The updated review at `a9f1a7d` again passed the full suite. PTY probes confirmed fixes for the panic, search-field click-through, and ^Q/^C/^D unsaved-change prompts. Ordinary tests now leave tracked designs unchanged; all five assets pass `loom eval`, `loom measure`, and `loom check-box`. Remaining findings include search selection/focus isolation, standard-widget/responsive composition, browser lifecycle, and deterministic explicit evidence generation. The PR remains unmerged; tickets record partial fixes without claiming integrated completion. No application architecture change from that PR was accepted.
 
 These results establish that green unit tests and aligned ANSI files are insufficient merge evidence. Review the actual root composition, key/mouse results, saved document bytes, and post-test working-tree status.
+
+The review at `9f41045` passed the full suite with tracked assets unchanged. Browser callbacks now share activation and cancellation paths; a PTY probe verified cancel/reopen and opening another file. Search text clipping improved, but its minimum dimensions still exceed very small editor bounds, and manual frames/controls and search editing-selection behavior remain. New ^P screenshots produce valid 100×24 ANSI output, but a PTY probe reproduced overwriting an existing capture after deleting an earlier one. Screenshot errors, overlay capture, filename sanitization and spec binding remain unfinished in issue 284. The PR remains unmerged.
 
 ## Agent workflow lessons
 

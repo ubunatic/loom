@@ -19,6 +19,8 @@ Observed at PR head b8a59ca; this branch has not been merged locally. Before imp
 Updated review (2026-10-07, PR head a9f1a7d): the manual frame/control rendering and minimum 24-column search panel remain unchanged. All five saved 100×24 assets pass loom eval/measure/check-box, which does not verify narrow responsive layouts or standard-widget composition. This requirement remains unresolved.
 
 ## 3. Implementation & Verification Plan
+Updated review (2026-10-07, PR head 9f41045): text rows now use TruncateText and the search origin is clamped, but manual frames/controls remain. The new minimum width of 10 can still exceed editorRect.W; minimum height 3 can exceed contentH. The layout test exercises only 20×10 and checks against the canvas width rather than the available editor rectangle. Standard-widget composition and complete bounds checks remain required.
+
 /goal Editor chrome and search/browser panels use standard Loom widgets with usable, correctly clipped layouts across supported terminal sizes; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Exercise wide/narrow and short terminals, including sidebar plus search, verify cell bounds and visible controls. Validate ANSI renders with loom eval/measure/check-box; verify make test-q1 and make install.

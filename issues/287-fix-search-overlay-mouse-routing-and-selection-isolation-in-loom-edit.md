@@ -19,6 +19,8 @@ Observed at PR head b8a59ca; this branch has not been merged locally. Before imp
 Updated review (2026-10-07, PR head a9f1a7d): searchRect is now routed before editorRect. Repeating the query-field click/type/save PTY probe leaves the document unchanged. Remaining gaps: highlightSearchMatch still calls SetSelection; no widget focus synchronization for the editor, stale-match refresh after document edits, or restriction of focus changes to mouse presses. Mode hit regions are still manually calculated. Keep open; this is a partial fix.
 
 ## 3. Implementation & Verification Plan
+Updated review (2026-10-07, PR head 9f41045): selection highlighting, editor focus synchronization, hover/scroll focus changes, stale matches and manual mode hit regions remain unchanged. The full make test-q1 suite passes but does not resolve these findings. Keep open.
+
 /goal Search UI receives its own input and highlights matches without changing editing selection or accidentally editing the document; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Cover query/mode/control clicks, overlay occlusion, focus changes, stale matches after edits, and saved document integrity. Verify real PTY interaction, make test-q1 and make install.
