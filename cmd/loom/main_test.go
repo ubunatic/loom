@@ -125,7 +125,7 @@ func TestCheckBox(t *testing.T) {
 }
 
 func TestCLIArityErrors(t *testing.T) {
-	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"check-box"}, {"widgets", "a", "b"}} {
+	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"edit"}, {"check-box"}, {"widgets", "a", "b"}} {
 		var out bytes.Buffer
 		if err := execute(args, &out); err == nil {
 			t.Errorf("execute(%q) succeeded, want arity error", args)
@@ -903,5 +903,125 @@ func TestViewCommandPaneSettings(t *testing.T) {
 	}
 	if !pane.Resizeable {
 		t.Error("view pane Resizeable = false, want true")
+	}
+}
+
+func TestEditCommandArityAndFileErrors(t *testing.T) {
+	var out bytes.Buffer
+	if err := execute([]string{"edit"}, &out); err == nil {
+		t.Fatal("execute(edit) without args succeeded, want arity error")
+	}
+	dir := t.TempDir()
+	if err := execute([]string{"edit", dir}, &out); err == nil {
+		t.Fatal("execute(edit) on directory succeeded, want error")
+	}
+}
+
+func TestEditViewUnsavedChangesDialog(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.ansi")
+	if err := os.WriteFile(path, []byte("Initial content\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view := &editView{edit: edit}
+	canvas := loom.NewCanvas(80, 10)
+
+	// 1. Draw and verify bottom bar includes F10 Quit
+	view.Draw(canvas, canvas.Bounds())
+	screenText := canvasScreenText(canvas)
+	if !strings.Contains(screenText, "Initial content") {
+		t.Fatalf("editor did not render initial content: %q", screenText)
+	}
+	if !strings.Contains(screenText, "F10 Quit") {
+		t.Fatalf("editor bottom bar omits F10 Quit: %q", screenText)
+	}
+
+	// 2. Unmodified quit via F10
+	res := view.ConsumeKey(loom.KeyEvent{Key: "f10"})
+	if !res.Quit || !view.shouldQuit {
+		t.Fatalf("F10 on unmodified view = %+v, want quit", res)
+	}
+
+	// Reset quit state
+	view.shouldQuit = false
+
+	// 3. Modify document and press F10 -> opens Save changes? dialog
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
+	if !view.edit.IsModified() {
+		t.Fatal("document expected to be modified after typing")
+	}
+	res = view.ConsumeKey(loom.KeyEvent{Key: "f10"})
+	if res.Quit || !res.Consumed {
+		t.Fatalf("F10 on modified document = %+v, want handled (dialog opened)", res)
+	}
+	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
+		t.Fatal("F10 on modified view did not open unsaved changes dialog")
+	}
+
+	// Draw and verify dialog is shown
+	canvas.Clear()
+	view.Draw(canvas, canvas.Bounds())
+	screenText = canvasScreenText(canvas)
+	if !strings.Contains(screenText, "Save changes?") {
+		t.Fatalf("dialog title missing in screen text: %q", screenText)
+	}
+
+	// 4. Cancel dialog with Esc
+	view.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if view.unsavedDialog != nil {
+		t.Fatal("esc did not dismiss unsaved changes dialog")
+	}
+	if view.shouldQuit {
+		t.Fatal("cancelling dialog should not set shouldQuit")
+	}
+
+	// 5. Open dialog again and select Discard
+	view.ConsumeKey(loom.KeyEvent{Key: "f10"})
+	if view.unsavedDialog == nil {
+		t.Fatal("dialog failed to reopen on F10")
+	}
+	// Select "Discard" (press right arrow, then enter)
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
+	res = view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !res.Quit || !view.shouldQuit {
+		t.Fatalf("Discard on dialog = %+v, shouldQuit=%v, want quit", res, view.shouldQuit)
+	}
+
+	// Reset state and test Save
+	view.shouldQuit = false
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "Y"})
+	view.ConsumeKey(loom.KeyEvent{Key: "f10"}) // open dialog
+	res = view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // default button is "Save"
+	if !res.Quit || !view.shouldQuit {
+		t.Fatalf("Save on dialog = %+v, shouldQuit=%v, want quit", res, view.shouldQuit)
+	}
+
+	// Verify saved content on disk
+	savedData, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(savedData), "Initial content") || !strings.Contains(string(savedData), "XY") {
+		t.Fatalf("saved disk content = %q, want modified content", string(savedData))
+	}
+}
+
+func TestEditCommandPaneSettings(t *testing.T) {
+	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
+	configureEditPane(pane)
+	if pane.MaxCols != 0 {
+		t.Errorf("edit pane MaxCols = %d, want 0", pane.MaxCols)
+	}
+	if !pane.Resizeable {
+		t.Error("edit pane Resizeable = false, want true")
+	}
+	if !pane.DisableGlobalF10Quit {
+		t.Error("edit pane DisableGlobalF10Quit = false, want true")
 	}
 }

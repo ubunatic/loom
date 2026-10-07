@@ -52,6 +52,20 @@ type RichTextEditDefaults struct {
 	LinkUnderline      bool     `yaml:"link_underline"`
 	SavePopupMaxWidth  int      `yaml:"save_popup_max_width"`
 	SavePopupMaxHeight int      `yaml:"save_popup_max_height"`
+	HotkeyHelpKey      string   `yaml:"hotkey_help_key"`
+	HotkeyHelpBinding  string   `yaml:"hotkey_help_binding"`
+	HotkeyHelpLabel    string   `yaml:"hotkey_help_label"`
+	HotkeySaveKey      string   `yaml:"hotkey_save_key"`
+	HotkeySaveBinding  string   `yaml:"hotkey_save_binding"`
+	HotkeySaveLabel    string   `yaml:"hotkey_save_label"`
+	HotkeySaveAsKey    string   `yaml:"hotkey_save_as_key"`
+	HotkeySaveAsBinding string  `yaml:"hotkey_save_as_binding"`
+	HotkeySaveAsLabel  string   `yaml:"hotkey_save_as_label"`
+	HotkeyViewEditKey  string   `yaml:"hotkey_view_edit_key"`
+	HotkeyViewEditBinding string `yaml:"hotkey_view_edit_binding"`
+	HotkeyQuitKey      string   `yaml:"hotkey_quit_key"`
+	HotkeyQuitBinding  string   `yaml:"hotkey_quit_binding"`
+	HotkeyQuitLabel    string   `yaml:"hotkey_quit_label"`
 }
 
 func (d RichTextEditDefaults) validate() error {

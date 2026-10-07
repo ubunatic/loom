@@ -7,7 +7,36 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 )
+
+// IsModified reports whether the document has unsaved changes compared to its last saved state.
+func (e *RichTextEdit) IsModified() bool {
+	if e == nil {
+		return false
+	}
+	e.ensureDocument()
+	return !reflect.DeepEqual(e.savedDocument, e.Document.Lines)
+}
+
+// NewRichTextEditFromFile creates a RichTextEdit populated with content from path.
+// If path does not exist, it initializes an empty document bound to path.
+// It sets FilePath = path and ShowFileBar = true.
+func NewRichTextEditFromFile(path string) (*RichTextEdit, error) {
+	doc := &RichDocument{}
+	data, err := os.ReadFile(path)
+	if err == nil {
+		doc.FromANSI(string(data))
+	} else if os.IsNotExist(err) {
+		doc.Lines = []RichLine{{}}
+	} else {
+		return nil, fmt.Errorf("read RichTextEdit file %q: %w", path, err)
+	}
+	edit := NewRichTextEdit(doc)
+	edit.FilePath = path
+	edit.ShowFileBar = true
+	return edit, nil
+}
 
 // Save writes the document to its associated path. If no path is associated,
 // it opens a FilePicker in save mode and returns while the user chooses one.
