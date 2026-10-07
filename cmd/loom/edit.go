@@ -448,11 +448,6 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	innerW := max(0, rect.W-2)
 	innerX := rect.X + 1
 
-	// Keep the divider above the file bar; app status now lives at the bottom.
-	if rect.H > 2 {
-		canvas.WriteDefault(innerX, rect.Y+1, strings.Repeat("─", innerW), boxStyle.Border)
-	}
-
 	// 3. Line Y=H-3: Divider, Line Y=H-2: Status, Line Y=H-1: Hotkeys
 	if rect.H >= 6 {
 		// Y=H-3
@@ -482,9 +477,11 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		v.hotkeyBar().Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
 	}
 
-	// Removing the header recovers one row for the editor and side panel.
-	contentY := rect.Y + 2
-	contentH := max(0, rect.H-5)
+	contentY := rect.Y + 1
+	contentH := max(0, rect.H-4)
+	if rect.H < 6 {
+		contentH = max(0, rect.H-2)
+	}
 
 	if contentH > 0 && innerW > 0 {
 		if v.showSidePanel {

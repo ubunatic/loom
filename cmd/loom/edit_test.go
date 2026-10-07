@@ -455,8 +455,8 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 			t.Errorf("rendered canvas missing %q: %q", want, screenText)
 		}
 	}
-	if view.editorRect.Y != 2 || view.editorRect.H != 19 {
-		t.Fatalf("editor rectangle = %+v, want Y=2 H=19", view.editorRect)
+	if view.editorRect.Y != 1 || view.editorRect.H != 20 {
+		t.Fatalf("editor rectangle = %+v, want Y=1 H=20", view.editorRect)
 	}
 	status := strings.Split(screenText, "\n")[21]
 	for _, icon := range []string{loom.SpeccedDefaults.Editor.StatusIcons.Theme, loom.SpeccedDefaults.Editor.StatusIcons.MouseOn, loom.SpeccedDefaults.Editor.StatusIcons.AltOn} {
@@ -812,7 +812,7 @@ func TestEditViewAttachWiresPane(t *testing.T) {
 func editHeaderRow(view *editView) string {
 	canvas := loom.NewCanvas(100, 24)
 	view.Draw(canvas, loom.Rect{W: 100, H: 24})
-	return strings.Split(canvasScreenText(canvas), "\n")[1]
+	return strings.Split(canvasScreenText(canvas), "\n")[0]
 }
 
 // editScreenCount counts the screen rows of a 100x24 render containing text.
@@ -842,7 +842,7 @@ func TestEditViewFileBarOwnsDocNameAndState(t *testing.T) {
 	check := func(state string) {
 		t.Helper()
 		if row := editHeaderRow(view); strings.Contains(row, "theme:") || strings.Contains(row, "File") || !strings.Contains(row, "─") {
-			t.Fatalf("row above file bar = %q, want divider without header", row)
+			t.Fatalf("top row = %q, want top box border without header info", row)
 		}
 		if n := editScreenCount(view, "doc.txt · "+state); n != 1 {
 			t.Fatalf("file bar status %q shown on %d rows, want 1", "doc.txt · "+state, n)
