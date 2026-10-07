@@ -68,7 +68,7 @@ applications; see `KeyDefaults.md` for the library's default key actions.
 ### Modified navigation keys and CSI-u
 
 - Home/End, Insert/Delete keep their xterm modifier parameter (`ESC[1;2H`, `ESC[1;5F`, `ESC[2;5~`, `ESC[3;2~`): they decode to `shift-home`, `ctrl-end`, `ctrl-insert`, `shift-delete` and so on. Plain forms (`ESC[H`, `ESC[1~`, `ESC[7~`, `ESC OH`, ...) stay `home`/`end`. Callers matching only the plain name no longer see modified presses (issues 257, 263; see `Upgrading.md`).
-- `0x00` decodes to `ctrl-space`. In RichTextEdit, Ctrl+Space selects the smallest closed sharp or rounded box perimeter under the cursor, falls back to word selection, or opens a cursor-anchored popover on whitespace. F5 wraps a selection in the default box style; without a selection it toggles box drawing mode. The popover Draw button still enters box mode. Up/Down may place the caret past line ends or below the last line; typing or drawing there materializes padding, while navigation alone leaves the document unchanged. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`); RichTextEdit does not bind Ctrl+Shift+B.
+- `0x00` decodes to `ctrl-space`. In RichTextEdit, Ctrl+Space selects the smallest closed sharp or rounded box perimeter under the cursor, falls back to word selection, or opens a cursor-anchored popover on whitespace. `^D` (Ctrl+D) or F5 toggles box drawing mode; `Enter` or `Esc` exits box drawing mode without inserting text. Within the popover, "Draw" is nested under the "Box" submenu. Up/Down may place the caret past line ends or below the last line; typing or drawing there materializes padding, while navigation alone leaves the document unchanged. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`); RichTextEdit does not bind Ctrl+Shift+B.
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Left/Right move along the bar, and Enter or Space activates the focused action.
@@ -81,6 +81,12 @@ Space applies the focused choice. Esc closes the submenu first and returns focus
 to the popover bar; another Esc closes the bar. Physical Space is decoded as
 printable text and activates the menu just like Enter. These keys remain
 consumed when the editor is nested in Frame, Split, or Tabs.
+
+### Mouse Modes and Modal Capture
+
+- **Mouse-off mode (`"m"`)**: Terminal mouse tracking sequences are fully disabled (`\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l`). Native terminal text selection and copying operate without app interference.
+- **Temporary modal grab**: Opening a modal overlay (`Popup`, `Dialog`, context menu, F1 Help, `RichTextEdit` format popover) temporarily engages mouse tracking (`\x1b[?1000h\x1b[?1006h` / `1003h`). When the overlay closes or the backdrop is clicked, mouse-off mode is automatically restored.
+- **Persistent mouse grab (`"M"`)**: Explicit global mouse grab maintains persistent mouse tracking across all screens and overlays.
 
 RichTextEdit uses a bar terminal cursor for normal typing and a block cursor
 while box drawing mode is active. Pane sends DECSCUSR only when the requested

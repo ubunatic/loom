@@ -631,3 +631,30 @@ type Focusable interface {
 - **Focused Placement**: Widgets set `Canvas.CursorX` and `Canvas.CursorY` during `Draw` only when active/focused. Unfocused widgets and static views never touch canvas cursor coordinates.
 - **Compositor Propagation (`SubCanvas` & `Blit`)**: `SubCanvas` and `Blit` preserve and translate cursor positions relative to their destination bounds, ensuring cursor coordinates accurately reach the terminal when rendering through `Viewport`, `Split`, `Frame` (`paintClipped`), or nested layers.
 - **Hardware Cursor Flush**: `Canvas.FlushWithConfig` emits `\x1b[?25h` with terminal row/col addressing only when `CursorX >= 0 && CursorY >= 0`, and emits `\x1b[?25l` (hidden cursor) otherwise.
+
+---
+
+## 17. Modal Overlay Architecture, Temporary Mouse Grab & Backdrop Isolation
+
+Loom provides a library-level modal contract for overlays (`Popup`, `Dialog`, `Menu`, `RichTextEdit` format popovers):
+
+### The `ModalTarget` and `ModalMouseTarget` Contract
+Widgets hosting an active modal overlay implement `ModalTarget`:
+```go
+type ModalTarget interface {
+	ActiveModal() (Widget, Rect, bool)
+}
+```
+- **Exclusive Mouse Routing**: When `ActiveModal()` returns `ok == true`, `Pane` and standard composite containers (`Frame`, `Split`, `Stack`, `Grid`, `Tabs`, `Viewport`, `Form`) automatically forward mouse events to the modal target before performing standard hit-testing, focus updates, or background click handling.
+- **Backdrop Click Isolation**:
+  - Clicking outside the bounding box of a `Popup` dismisses the popup and returns `loom.Handled()`.
+  - Clicking outside a `Dialog` invokes its `Cancel` button action and returns `loom.Handled()`.
+  - In `RichTextEdit`, clicking outside an open popover dismisses the popover without leaking the mouse press, drag, or release into document text, selection logic, or cursor movement.
+- **Retained Gesture Handling**: Gestures (press-drag-release) started on an overlay or backdrop are retained until release, guaranteeing trailing release/drag events never bleed into underlying widgets.
+- **Modeless Popups/Dialogs**: Embedded or static previews in demo galleries can opt out using `Modeless: true` to prevent unintended modal capture.
+
+### Temporary Mouse Grab in Mouse-Off Mode (`"m"`)
+- **Base Mode**: In `"m"` mode, terminal mouse tracking is fully disabled (`\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l`), allowing unobstructed native terminal drag-to-select and copy.
+- **Temporary Engagement**: When any interactive modal overlay opens, `Pane` automatically engages temporary mouse tracking (`\x1b[?1000h\x1b[?1006h` / `\x1b[?1003h\x1b[?1006h`) so users can click buttons, select menu options, or scroll.
+- **Automatic Restoration**: When all overlays close (or the backdrop is clicked), `Pane` automatically restores base mouse-off mode. If persistent global grab (`"M"`) was already active, mouse tracking remains permanently enabled.
+

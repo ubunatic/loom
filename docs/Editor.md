@@ -1,16 +1,19 @@
 # Loom Editor
 
-`loom edit <file>` hosts RichTextEdit for rich text and ANSI documents. This guide records editor design decisions and verification lessons; issue files own implementation status and reproductions.
+`loom edit [file]` hosts RichTextEdit for rich text and ANSI documents. When invoked without arguments, it opens an empty, Untitled buffer. This guide records editor design decisions and verification lessons; issue files own implementation status and reproductions.
 
 ## Design decisions
 
 The [approved ANSI mockups](design/loom-edit-design-notes.md) are visual guidance. Final appearance may vary with standard Loom widgets. New UI must compose standard widgets; small tweaks are acceptable, heavy hacks are not. Always file or link issues for larger observed library gaps rather than force the mockup through app workarounds. See [Widgets](Widgets.md), [Root overlays](RootOverlays.md), and [Geometry](Geometry.md).
 
-- **Mouse capture**: an explicit boolean `--mousegrab` flag, including `--mousegrab=false` ([280](../issues/280-add-mouse-capture-flag-to-loom-edit.md)).
-- **Settings**: `~/.config/loom/editor.yaml`, following XDG conventions, with a schema and initial `theme`, `mousegrab`, and `altscreen` preferences. YAML booleans represent on/off; explicit CLI settings override the file ([281](../issues/281-add-schema-backed-loom-edit-settings-in-editor-yaml.md)). Defaults belong in the spec; the mockups do not choose them.
-- **Side panel**: F2 toggles a file browser; opening another file must preserve Save/Discard/Cancel protection ([282](../issues/282-add-f2-side-panel-with-file-browser-to-loom-edit.md)).
-- **Search**: F3 or ^F opens a small top-right panel with Normal/Regex and next/previous navigation. Enter/Shift-Enter are proposed navigation keys. Containers own Tab focus; displayed controls must have working input routes ([283](../issues/283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md)).
-- **Screenshot**: ^P captures the complete visible editor, including chrome and open panels/overlays, to `~/Pictures/Screenshots/<num>-loom-edit-<details>.ansi`. Numeric padding and filename details remain choices to document ([284](../issues/284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md)).
+- **No-Argument Startup**: Running `loom edit` opens an empty Untitled buffer without requiring an existing file path ([302](../issues/302-loom-edit-ux-refinements-theme-default-mouse-disable-backdrop-clicks-and-untitled-buffer.md)).
+- **Default Theme**: Default theme is `julia256` across all Loom CLI apps and the editor ([302](../issues/302-loom-edit-ux-refinements-theme-default-mouse-disable-backdrop-clicks-and-untitled-buffer.md)).
+- **Mouse Capture & Temporary Grab**: In mouse-off mode (`"m"`), mouse reporting is fully disabled to allow unobstructed native terminal text selection. Interactive modal overlays (F1 Help, Popovers, Dialogs) temporarily engage mouse tracking, restoring `"m"` mode when closed ([303](../issues/303-temporary-mouse-grab-for-popups-menus-and-dialogs-in-mouse-off-mode.md)). Persistent global grab (`"M"`) is toggled via `--mousegrab` or clicking the status icon.
+- **Modal Event Isolation**: Backdrop clicks on modal overlays dismiss the overlay as `loom.Handled()` without leaking mouse events into underlying text buffers or moving the cursor ([304](../issues/304-modal-overlay-mouse-event-isolation-backdrop-clicks-must-not-leak-into-underlying-editor.md)).
+- **Bottom Chrome**: Compact three-line bottom chrome: Divider (`─`), Status line (`Ln X, Col Y`, compact indicators `◐`, `m`/`M`, `a`/`A`), and Hotkey bar (`^O Files`, `^F Search`, `^S Save`, `F1 Help`, `^D Box`, `⌃P Screenshot`, `F10 Quit`). All buttons and indicators are mouse-clickable ([300](../issues/300-loom-edit-replace-top-title-bar-with-compact-bottom-status-icons.md), [301](../issues/301-loom-edit-refine-hotkeys-nest-draw-under-box-and-make-bottom-bar-items-clickable.md)).
+- **Side panel**: `^O` (and `F2`) toggles the file browser side panel open and closed ([301](../issues/301-loom-edit-refine-hotkeys-nest-draw-under-box-and-make-bottom-bar-items-clickable.md)).
+- **Search**: `^F` (and `F3`) opens the search overlay ([301](../issues/301-loom-edit-refine-hotkeys-nest-draw-under-box-and-make-bottom-bar-items-clickable.md)).
+- **Screenshot**: `^P` captures the complete visible editor to `~/Pictures/Screenshots/<num>-loom-edit-<details>.ansi` ([284](../issues/284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md)).
 
 ## ANSI assets and evidence
 
