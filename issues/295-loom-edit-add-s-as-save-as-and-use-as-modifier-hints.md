@@ -1,6 +1,6 @@
 # 295 — loom edit: Add ⌃⌥S as Save as and use ⇧⌃⌥ as modifier hints
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 2d40ec2
 **Priority**: P2 (Medium)
 **Severity**: Feature
 **Category**: Keybindings
