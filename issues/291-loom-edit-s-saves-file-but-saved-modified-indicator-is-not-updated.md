@@ -1,6 +1,6 @@
 # 291 — loom edit: ^S saves file but Saved/Modified indicator is not updated
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 29c6bf1
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
