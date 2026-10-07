@@ -292,3 +292,4 @@ upkeep.
 | 279 | [279-add-loom-edit-command-to-open-a-file-in-richtextedit.md](279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) | Add loom edit command to open a file in RichTextEdit | Open |
 | 280 | [280-add-mouse-capture-flag-to-loom-edit.md](280-add-mouse-capture-flag-to-loom-edit.md) | Add mouse capture flag to loom edit | Open |
 | 281 | [281-add-schema-backed-loom-edit-settings-in-editor-yaml.md](281-add-schema-backed-loom-edit-settings-in-editor-yaml.md) | Add schema-backed loom edit settings in editor.yaml | Open |
+| 282 | [282-add-f2-side-panel-with-file-browser-to-loom-edit.md](282-add-f2-side-panel-with-file-browser-to-loom-edit.md) | Add F2 side panel with file browser to loom edit | Open |
