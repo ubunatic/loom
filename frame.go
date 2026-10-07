@@ -847,6 +847,7 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 	}
 	local := NewCanvas(w, h)
 	paint(local)
+	c.overlayMouseGrab = c.overlayMouseGrab || local.overlayMouseGrab
 	for row := 0; row < h; row++ {
 		for col := 0; col < w; col++ {
 			c.Set(x+col, y+row, local.Get(col, row))

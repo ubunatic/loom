@@ -161,10 +161,16 @@ func NewRichTextView(doc *RichDocument) *RichTextEdit {
 // Focused reports whether the editor currently has keyboard focus.
 func (e *RichTextEdit) Focused() bool { return e.focused }
 
-// ModalOpen reports whether a help or save popup captures input. Hosts should
+// ModalOpen reports whether a popup, menu or format popover captures input. Hosts should
 // route input to the editor first, including mouse events outside its bounds.
 func (e *RichTextEdit) ModalOpen() bool {
-	return (e.helpPopup != nil && e.helpPopup.Open) || (e.savePopup != nil && e.savePopup.Open)
+	return (e.helpPopup != nil && e.helpPopup.Open) || (e.savePopup != nil && e.savePopup.Open) ||
+		(e.ShowFileBar && e.fileBar != nil && e.fileBar.menu.Open) || e.popoverOpen()
+}
+
+func (e *RichTextEdit) popoverOpen() bool {
+	return !e.ViewMode && e.ShowPopover && !e.popoverSuppressed &&
+		(e.HasSelection || e.popoverAtCursor) && len(e.popoverButtons) > 0
 }
 
 // HotkeyHint returns the most useful file and help shortcuts for the available width.
@@ -1065,6 +1071,10 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 		return Handled()
 	}
 	if mouse.Action == MousePress {
+		if mouse.Button == MouseLeft && e.popoverOpen() {
+			e.clearPopoverKeyboardState(true)
+			return Handled()
+		}
 		e.popoverPalette = ""
 		e.popoverSwatches = nil
 		e.popoverSubmenu = ""
@@ -1157,6 +1167,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	if barX < 0 { // Keep the complete action row visible in very narrow widgets.
 		return
 	}
+	c.overlayMouseGrab = true
 	toolbarStyle := Style{FG: ColorIndex(uint8(defs.ToolbarFG)), BG: ColorIndex(uint8(defs.ToolbarBG)), Bold: true}
 	for x := 0; x < width; x++ {
 		c.Set(r.X+barX+x, r.Y+barY, Cell{Text: " ", Style: toolbarStyle})

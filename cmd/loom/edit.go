@@ -841,6 +841,7 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		}
 		return loom.Handled()
 	}
+	// Editor overlays capture backdrop clicks across the whole application.
 	if v.edit.ModalOpen() {
 		mouse.X -= v.editorRect.X
 		mouse.Y -= v.editorRect.Y

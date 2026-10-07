@@ -42,6 +42,7 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	if !p.Open || p.Inner == nil {
 		return
 	}
+	c.overlayMouseGrab = true
 	pw, ph := p.dims(r)
 	x := r.X + (r.W-pw)/2
 	y := r.Y + (r.H-ph)/2

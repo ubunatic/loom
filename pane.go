@@ -71,6 +71,8 @@ type Pane struct {
 	// mouse tracking is enabled with EnableMouse.
 	mouse            bool
 	mouseMode        int
+	baseMouseMode    int
+	overlayMouseGrab bool
 	cursorProximity  bool
 	cursorStarTrail  bool
 	cursorPressPulse bool
@@ -533,7 +535,8 @@ func reserveRegion(cy, rows, want int) (startRow, toScroll int) {
 // Call before Run or from an event handler. Mouse events reach the root Widget's
 // ConsumeMouse method.
 func (p *Pane) EnableMouse() {
-	p.setMouseMode(1003)
+	p.baseMouseMode = 1003
+	p.reconcileMouseMode()
 }
 
 // EnableCursorProximity enables spec-driven cursor hints and background
@@ -588,10 +591,14 @@ func (p *Pane) expireCursorEffects(now time.Time) {
 // EnableMouseClicks tracks clicks and wheel events without any-motion reports.
 // Call before Run or from an event handler; Close restores normal mouse behavior.
 func (p *Pane) EnableMouseClicks() {
-	p.setMouseMode(1000)
+	p.baseMouseMode = 1000
+	p.reconcileMouseMode()
 }
 
 func (p *Pane) setMouseMode(mode int) {
+	if p.mouseMode == mode {
+		return
+	}
 	if p.mouseMode != 0 {
 		p.tty.WriteString(fmt.Sprintf("\x1b[?%dl", p.mouseMode)) //nolint:errcheck
 	}
@@ -607,14 +614,41 @@ func (p *Pane) disableMouse() {
 	p.mouse, p.mouseMode = false, 0
 }
 
-// DisableMouse releases terminal mouse reporting so native text selection works.
+// DisableMouse sets the base mode to native terminal text selection. Interactive
+// overlays temporarily retain click tracking until the last overlay closes.
 // Call before Run or from an event handler. EnableMouse re-enables tracking.
 func (p *Pane) DisableMouse() {
+	p.baseMouseMode = 0
+	if p.overlayMouseGrab {
+		p.reconcileMouseMode()
+		return
+	}
+	p.releaseMouse()
+}
+
+func (p *Pane) releaseMouse() {
 	if p.tty != nil {
 		p.tty.WriteString("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l") //nolint:errcheck
 	}
 	p.mouse, p.mouseMode = false, 0
 	p.mouseKnown = false
+}
+
+// reconcileMouseMode keeps temporary overlay capture independent of the user's
+// base mode. Click tracking is sufficient for overlay buttons and scrolling.
+func (p *Pane) reconcileMouseMode() {
+	mode := p.baseMouseMode
+	if mode == 0 && p.overlayMouseGrab {
+		mode = 1000
+	}
+	if mode == p.mouseMode {
+		return
+	}
+	if mode == 0 {
+		p.releaseMouse()
+	} else {
+		p.setMouseMode(mode)
+	}
 }
 
 func (p *Pane) setBracketedPaste(on bool) {
@@ -938,6 +972,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	if requester, ok := UnwrapWidget(root).(PaneRequester); ok {
 		request := requester.PaneRequest()
 		if !p.mouse && request.Mouse > 0 {
+			p.baseMouseMode = request.Mouse
 			p.setMouseMode(request.Mouse)
 		}
 		if !p.Resizeable {
@@ -1130,6 +1165,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if p.help != nil {
 			p.help.Draw(canvas, canvas.Bounds())
 		}
+		p.overlayMouseGrab = canvas.overlayMouseGrab
+		p.reconcileMouseMode()
 		drawn := time.Now()
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), drawn)
 		if p.cursorProximity {
@@ -1435,7 +1472,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 							p.triggerCursorPulse(time.Now())
 						}
 					}
-					if p.handleHelpMouse(me) || p.dispatchMouse(root, me).Quit {
+					if p.mouse && !p.handleHelpMouse(me) && p.dispatchMouse(root, me).Quit {
 						quit = true
 						break
 					}

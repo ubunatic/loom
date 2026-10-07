@@ -230,6 +230,7 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		m.menuRect = Rect{}
 		return
 	}
+	c.overlayMouseGrab = true
 	x = r.X
 	if m.ActiveMenu < len(m.titleRects) && m.titleRects[m.ActiveMenu].W > 0 {
 		x = m.titleRects[m.ActiveMenu].X
@@ -725,6 +726,7 @@ func (m *Menu) Draw(c *Canvas, r Rect) {
 		return
 	}
 	m.Open = true
+	c.overlayMouseGrab = true
 	w := 4
 	for _, item := range m.Items {
 		if n := StringWidth(menuItemLine(item)); n > w {
