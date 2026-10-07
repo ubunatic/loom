@@ -182,6 +182,7 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 // bindEdit subscribes the host status line to the editor's document state,
 // which is the single source of the Saved/Modified indicator.
 func (v *editView) bindEdit() {
+	v.edit.AddHelpSection(helpSection())
 	v.edit.OnStateChange = func(state loom.DocState) {
 		switch state {
 		case loom.DocStateSaved:
@@ -233,6 +234,17 @@ func (v *editView) openFile(path string) error {
 	}
 	v.updateSearchMatches()
 	return nil
+}
+
+// helpSection describes the loom edit keys for the RichTextEdit F1 help.
+func helpSection() loom.HelpSection {
+	d := loom.SpeccedDefaults.Editor
+	return loom.HelpSection{Title: "loom edit", Entries: []loom.HelpEntry{
+		{Keys: []string{d.HotkeyFilesBinding}, Label: d.HotkeyFilesLabel},
+		{Cap: d.HotkeySearchKey, Label: d.HotkeySearchLabel},
+		{Keys: []string{d.HotkeyBoxBinding}, Label: d.HotkeyBoxLabel},
+		{Keys: []string{d.HotkeyScreenshotBinding}, Label: d.HotkeyScreenshotLabel},
+	}}
 }
 
 func (v *editView) hotkeyBar() *loom.HintBar {

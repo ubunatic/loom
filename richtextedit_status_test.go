@@ -50,7 +50,7 @@ func TestRichTextEditStatusColorsFollowTheme(t *testing.T) {
 			t.Fatalf("shortcut: %q, want %q", got, want)
 		}
 	}
-	if help := strings.Join(richTextEditHelpLines(), "\n"); !strings.Contains(help, "⌃S Save; ⌃⌥S Save as") {
+	if help := strings.Join(newRichTextEditHelp(nil).plainLines(72), "\n"); !strings.Contains(help, "⌃S ") || !strings.Contains(help, "⌃⌥S") || !strings.Contains(help, "Save as") {
 		t.Fatal(help)
 	}
 }

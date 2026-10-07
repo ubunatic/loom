@@ -119,3 +119,52 @@ rich_text_edit:
   hotkey_view_edit_binding: "f7"
   hotkey_quit_binding: "f10"
   hotkey_quit_label: "Quit"
+  help_sections:
+    - title: "File"
+      entries:
+        - {ref: "HotkeyOpen"}
+        - {ref: "HotkeyClose"}
+        - {ref: "HotkeySave"}
+        - {ref: "HotkeySaveAs"}
+        - {keys: ["alt-f"], label: "File menu (arrows choose, Enter runs, Esc closes)"}
+    - title: "Navigation"
+      entries:
+        - {cap: "←↑↓→", label: "Move cursor"}
+        - {keys: ["ctrl-left", "ctrl-right"], label: "Move by word"}
+        - {keys: ["home", "ctrl-a"], label: "Line start"}
+        - {keys: ["end", "ctrl-e"], label: "Line end"}
+    - title: "Selection"
+      entries:
+        - {cap: "⇧←↑↓→", label: "Extend selection"}
+        - {keys: ["shift-home", "shift-end"], label: "Select to line start/end"}
+        - {keys: ["ctrl-shift-a", "ctrl-shift-e"], label: "Extend to line start/end"}
+        - {cap: "Drag", label: "Select with the mouse; double-click word, triple-click line"}
+    - title: "Editing"
+      entries:
+        - {keys: ["enter"], label: "New line"}
+        - {keys: ["backspace", "delete"], label: "Erase"}
+        - {keys: ["ctrl-c", "ctrl-insert"], label: "Copy"}
+        - {keys: ["ctrl-x", "shift-delete"], label: "Cut"}
+        - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
+        - {keys: ["ctrl-z"], label: "Undo"}
+        - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
+    - title: "Formatting"
+      entries:
+        - {keys: ["ctrl-b"], label: "Bold"}
+        - {keys: ["ctrl-i"], label: "Italic"}
+        - {keys: ["ctrl-u"], label: "Underline"}
+        - {keys: ["ctrl-space"], label: "Formatting popover (Tab or arrows choose, Enter applies, Esc closes)"}
+    - title: "Modes and boxes"
+      entries:
+        - {keys: ["f7"], label: "Toggle View/Edit"}
+        - {keys: ["f5"], label: "Box selection, or toggle box drawing"}
+        - {cap: "←↑↓→", label: "While drawing: draw connected lines; Esc ends a stroke"}
+    - title: "Save as dialog"
+      entries:
+        - {keys: ["tab", "shift-tab"], label: "Switch between search and filename"}
+        - {keys: ["enter"], label: "Open folder or save"}
+        - {keys: ["backspace"], label: "Edit search, or go to parent folder"}
+        - {keys: ["esc"], label: "Cancel"}
+    - title: "Help"
+      entries:
+        - {ref: "HotkeyHelp"}

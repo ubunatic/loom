@@ -70,6 +70,7 @@ type RichTextEdit struct {
 	savePicker             *FilePicker
 	savePopup              *Popup
 	helpPopup              *Popup
+	helpSections           []HelpSection
 	fileBar                *richTextEditFileBar
 	chromeTheme            *ThemeColors
 	savedDocument          []RichLine
@@ -814,7 +815,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		e.ensureFileBar()
 		e.fileBar.menu.Open = false
 		e.fileBar.menu.SetFocus(false)
-		e.helpPopup = NewPopup("RichTextEdit Help", newRichTextEditHelp())
+		e.helpPopup = NewPopup("RichTextEdit Help", newRichTextEditHelp(e.helpSections))
 		return Handled()
 	}
 	if key.Is("f10") {
@@ -2504,4 +2505,10 @@ func appendRichCellSpan(spans []RichSpan, source RichSpan, text string) []RichSp
 	span.Text = text
 	span.PillData = nil
 	return append(spans, span)
+}
+
+// AddHelpSection appends a host-specific section to the F1 help, after the
+// built-in sections.
+func (e *RichTextEdit) AddHelpSection(section HelpSection) {
+	e.helpSections = append(e.helpSections, section)
 }

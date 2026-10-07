@@ -58,7 +58,7 @@
     "rich_text_edit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height", "state_untitled_label", "state_saved_label", "state_modified_label", "state_error_label", "file_menu_title", "file_menu_mnemonic", "hotkey_help_binding", "hotkey_help_label", "hotkey_save_binding", "hotkey_save_label", "hotkey_save_as_binding", "hotkey_save_as_label", "hotkey_open_binding", "hotkey_open_label", "hotkey_close_binding", "hotkey_close_label", "hotkey_view_edit_binding", "hotkey_quit_binding", "hotkey_quit_label"],
+      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height", "state_untitled_label", "state_saved_label", "state_modified_label", "state_error_label", "file_menu_title", "file_menu_mnemonic", "hotkey_help_binding", "hotkey_help_label", "hotkey_save_binding", "hotkey_save_label", "hotkey_save_as_binding", "hotkey_save_as_label", "hotkey_open_binding", "hotkey_open_label", "hotkey_close_binding", "hotkey_close_label", "hotkey_view_edit_binding", "hotkey_quit_binding", "hotkey_quit_label", "help_sections"],
       "properties": {
         "selection_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "toolbar_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -97,7 +97,33 @@
         "hotkey_close_label": { "type": "string", "minLength": 1 },
         "hotkey_view_edit_binding": { "type": "string", "minLength": 1 },
         "hotkey_quit_binding": { "type": "string", "minLength": 1 },
-        "hotkey_quit_label": { "type": "string", "minLength": 1 }
+        "hotkey_quit_label": { "type": "string", "minLength": 1 },
+        "help_sections": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["title", "entries"],
+            "properties": {
+              "title": { "type": "string", "minLength": 1 },
+              "entries": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "keys": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+                    "cap": { "type": "string" },
+                    "ref": { "type": "string" },
+                    "label": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "paint_canvas": {

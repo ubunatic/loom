@@ -17,8 +17,8 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 	if !ok {
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
-	content := strings.Join(view.lines, "\n")
-	for _, binding := range []string{"⌥F", "⌃S", "⌃⌥S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Y", "⇧⌃Z", "⌃Left", "⌃Right", "⇧Home", "⇧End", "F5", "F7", "F1", "Tab", "⇧Tab", "Escape"} {
+	content := strings.Join(view.plainLines(72), "\n")
+	for _, binding := range []string{"⌥F", "⌃S", "⌃⌥S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧Home", "⇧End", "F5", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
 		if !strings.Contains(content, binding) {
 			t.Errorf("help omits binding %q", binding)
 		}
@@ -51,16 +51,77 @@ func TestRichTextEditF1HelpFitsSmallBoundsAndScrolls(t *testing.T) {
 	}
 }
 
-func TestRichTextEditHelpWrappingPreservesBindingsWithinWidth(t *testing.T) {
-	text := "Ctrl+Alt+S Save as · 界面 filename"
-	rows := wrapRichTextHelpLine(text, 12)
-	if got, want := strings.Join(strings.Fields(strings.Join(rows, " ")), " "), strings.Join(strings.Fields(text), " "); got != want {
-		t.Fatalf("wrapped help words = %q, want %q", got, want)
+func TestKeyHelpSectionsAlignsKeysAndFitsWidth(t *testing.T) {
+	sections := []HelpSection{
+		{Title: "One", Entries: []HelpEntry{{Keys: []string{"ctrl-alt-s"}, Label: "Save as"}, {Keys: []string{"f1"}, Label: "界面 a long description that must wrap"}}},
+		{Title: "Two", Entries: []HelpEntry{{Cap: "Drag", Label: "Select"}}},
 	}
-	for i, row := range rows {
-		if got := StringWidth(row); got > 12 {
-			t.Errorf("wrapped row %d width = %d, exceeds 12: %q", i, got, row)
+	for _, width := range []int{12, 30, 60} {
+		rows := KeyHelpSections(sections, width)
+		keyCol := -1
+		for i, row := range rows {
+			if got := StringWidth(row.Key) + 2 + StringWidth(row.Text); !row.Header && got > width {
+				t.Errorf("width %d row %d is %d wide: %+v", width, i, got, row)
+			}
+			if got := StringWidth(row.Text); row.Header && got > width {
+				t.Errorf("width %d header %d is %d wide", width, i, got)
+			}
+			if !row.Header && row.Text != "" {
+				if keyCol >= 0 && StringWidth(row.Key) != keyCol {
+					t.Errorf("width %d: key column not aligned at row %d", width, i)
+				}
+				keyCol = StringWidth(row.Key)
+			}
 		}
+	}
+	rows := KeyHelpSections(sections, 60)
+	want := []KeyHelpRow{
+		{Header: true, Text: "One"},
+		{Key: "⌃⌥S ", Text: "Save as"},
+		{Key: "F1  ", Text: "界面 a long description that must wrap"},
+		{},
+		{Header: true, Text: "Two"},
+		{Key: "Drag", Text: "Select"},
+	}
+	if len(rows) != len(want) {
+		t.Fatalf("rows = %+v", rows)
+	}
+	for i := range want {
+		if rows[i] != want[i] {
+			t.Errorf("row %d = %+v, want %+v", i, rows[i], want[i])
+		}
+	}
+}
+
+func TestRichTextEditHelpIsSectionedAndTakesHostSections(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	edit.AddHelpSection(HelpSection{Title: "Host", Entries: []HelpEntry{{Cap: "F3/⌃F", Label: "Search"}}})
+	edit.ConsumeKey(KeyEvent{Key: "f1"})
+	view := edit.helpPopup.Inner.(*richTextEditHelp)
+	text := strings.Join(view.plainLines(68), "\n")
+	for _, want := range []string{"File\n", "Navigation\n", "Selection\n", "Editing\n", "Formatting\n", "Host\n", "⌃S  ", "Save as", "F3/⌃F"} {
+		if !strings.Contains(text, want) {
+			t.Errorf("help omits %q:\n%s", want, text)
+		}
+	}
+	if strings.Index(text, "Host") < strings.Index(text, "Help") {
+		t.Error("host section must follow built-in sections")
+	}
+	canvas := NewCanvas(80, 24)
+	edit.Draw(canvas, canvas.Bounds())
+	for row := 0; row < canvas.Rows(); row++ {
+		if StringWidth(canvas.Row(row)) > canvas.Cols() {
+			t.Errorf("row %d overflows: %q", row, canvas.Row(row))
+		}
+	}
+}
+
+func TestSpeccedHelpRefsResolve(t *testing.T) {
+	if b, l, ok := SpeccedDefaults.RichTextEdit.helpRef("HotkeySave"); !ok || b != "ctrl-s" || l != "Save" {
+		t.Fatalf("HotkeySave ref = %q %q %v", b, l, ok)
+	}
+	if _, _, ok := SpeccedDefaults.RichTextEdit.helpRef("Nope"); ok {
+		t.Fatal("unknown ref resolved")
 	}
 }
 

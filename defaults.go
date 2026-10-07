@@ -6,6 +6,7 @@ package loom
 import (
 	_ "embed"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -65,47 +66,91 @@ type EditorDefaults struct {
 
 // RichTextEditDefaults defines selection and popover presentation defaults.
 type RichTextEditDefaults struct {
-	SelectionBG           int      `yaml:"selection_bg"`
-	ToolbarFG             int      `yaml:"toolbar_fg"`
-	ToolbarBG             int      `yaml:"toolbar_bg"`
-	SeparatorGlyph        string   `yaml:"separator_glyph"`
-	SeparatorFG           int      `yaml:"separator_fg"`
-	SeparatorBG           int      `yaml:"separator_bg"`
-	PointerUpGlyph        string   `yaml:"pointer_up_glyph"`
-	PointerDownGlyph      string   `yaml:"pointer_down_glyph"`
-	PointerFG             int      `yaml:"pointer_fg"`
-	PopoverLabels         []string `yaml:"popover_labels"`
-	BoxStyleLabels        []string `yaml:"box_style_labels"`
-	BoxStyleDefault       string   `yaml:"box_style_default"`
-	GhostCursorEnabled    bool     `yaml:"ghost_cursor_enabled"`
-	PopoverFocusFG        int      `yaml:"popover_focus_fg"`
-	PopoverFocusBG        int      `yaml:"popover_focus_bg"`
-	LinkFG                int      `yaml:"link_fg"`
-	LinkUnderline         bool     `yaml:"link_underline"`
-	SavePopupMaxWidth     int      `yaml:"save_popup_max_width"`
-	SavePopupMaxHeight    int      `yaml:"save_popup_max_height"`
-	StateUntitledLabel    string   `yaml:"state_untitled_label"`
-	StateSavedLabel       string   `yaml:"state_saved_label"`
-	StateModifiedLabel    string   `yaml:"state_modified_label"`
-	StateErrorLabel       string   `yaml:"state_error_label"`
-	FileMenuTitle         string   `yaml:"file_menu_title"`
-	FileMenuMnemonic      string   `yaml:"file_menu_mnemonic"`
-	HotkeyHelpBinding     string   `yaml:"hotkey_help_binding"`
-	HotkeyHelpLabel       string   `yaml:"hotkey_help_label"`
-	HotkeySaveBinding     string   `yaml:"hotkey_save_binding"`
-	HotkeySaveLabel       string   `yaml:"hotkey_save_label"`
-	HotkeySaveAsBinding   string   `yaml:"hotkey_save_as_binding"`
-	HotkeySaveAsLabel     string   `yaml:"hotkey_save_as_label"`
-	HotkeyOpenBinding     string   `yaml:"hotkey_open_binding"`
-	HotkeyOpenLabel       string   `yaml:"hotkey_open_label"`
-	HotkeyCloseBinding    string   `yaml:"hotkey_close_binding"`
-	HotkeyCloseLabel      string   `yaml:"hotkey_close_label"`
-	HotkeyViewEditBinding string   `yaml:"hotkey_view_edit_binding"`
-	HotkeyQuitBinding     string   `yaml:"hotkey_quit_binding"`
-	HotkeyQuitLabel       string   `yaml:"hotkey_quit_label"`
+	SelectionBG           int           `yaml:"selection_bg"`
+	ToolbarFG             int           `yaml:"toolbar_fg"`
+	ToolbarBG             int           `yaml:"toolbar_bg"`
+	SeparatorGlyph        string        `yaml:"separator_glyph"`
+	SeparatorFG           int           `yaml:"separator_fg"`
+	SeparatorBG           int           `yaml:"separator_bg"`
+	PointerUpGlyph        string        `yaml:"pointer_up_glyph"`
+	PointerDownGlyph      string        `yaml:"pointer_down_glyph"`
+	PointerFG             int           `yaml:"pointer_fg"`
+	PopoverLabels         []string      `yaml:"popover_labels"`
+	BoxStyleLabels        []string      `yaml:"box_style_labels"`
+	BoxStyleDefault       string        `yaml:"box_style_default"`
+	GhostCursorEnabled    bool          `yaml:"ghost_cursor_enabled"`
+	PopoverFocusFG        int           `yaml:"popover_focus_fg"`
+	PopoverFocusBG        int           `yaml:"popover_focus_bg"`
+	LinkFG                int           `yaml:"link_fg"`
+	LinkUnderline         bool          `yaml:"link_underline"`
+	SavePopupMaxWidth     int           `yaml:"save_popup_max_width"`
+	SavePopupMaxHeight    int           `yaml:"save_popup_max_height"`
+	StateUntitledLabel    string        `yaml:"state_untitled_label"`
+	StateSavedLabel       string        `yaml:"state_saved_label"`
+	StateModifiedLabel    string        `yaml:"state_modified_label"`
+	StateErrorLabel       string        `yaml:"state_error_label"`
+	FileMenuTitle         string        `yaml:"file_menu_title"`
+	FileMenuMnemonic      string        `yaml:"file_menu_mnemonic"`
+	HotkeyHelpBinding     string        `yaml:"hotkey_help_binding"`
+	HotkeyHelpLabel       string        `yaml:"hotkey_help_label"`
+	HotkeySaveBinding     string        `yaml:"hotkey_save_binding"`
+	HotkeySaveLabel       string        `yaml:"hotkey_save_label"`
+	HotkeySaveAsBinding   string        `yaml:"hotkey_save_as_binding"`
+	HotkeySaveAsLabel     string        `yaml:"hotkey_save_as_label"`
+	HotkeyOpenBinding     string        `yaml:"hotkey_open_binding"`
+	HotkeyOpenLabel       string        `yaml:"hotkey_open_label"`
+	HotkeyCloseBinding    string        `yaml:"hotkey_close_binding"`
+	HotkeyCloseLabel      string        `yaml:"hotkey_close_label"`
+	HotkeyViewEditBinding string        `yaml:"hotkey_view_edit_binding"`
+	HotkeyQuitBinding     string        `yaml:"hotkey_quit_binding"`
+	HotkeyQuitLabel       string        `yaml:"hotkey_quit_label"`
+	HelpSections          []HelpSection `yaml:"help_sections"`
+}
+
+// HelpEntry is one row of a help section. Keys are bindings rendered with
+// KeyCap; Cap overrides the rendered keycap text; Ref names a
+// RichTextEditDefaults hotkey (e.g. "HotkeySave") whose binding and label fill
+// the row.
+type HelpEntry struct {
+	Keys  []string `yaml:"keys"`
+	Cap   string   `yaml:"cap"`
+	Ref   string   `yaml:"ref"`
+	Label string   `yaml:"label"`
+}
+
+// HelpSection is a titled group of help entries.
+type HelpSection struct {
+	Title   string      `yaml:"title"`
+	Entries []HelpEntry `yaml:"entries"`
+}
+
+// helpRef resolves a HelpEntry.Ref such as "HotkeySave" to its binding and label.
+func (d RichTextEditDefaults) helpRef(ref string) (binding, label string, ok bool) {
+	v := reflect.ValueOf(d)
+	b, l := v.FieldByName(ref+"Binding"), v.FieldByName(ref+"Label")
+	if !b.IsValid() || !l.IsValid() || b.Kind() != reflect.String || l.Kind() != reflect.String {
+		return "", "", false
+	}
+	return b.String(), l.String(), true
 }
 
 func (d RichTextEditDefaults) validate() error {
+	if len(d.HelpSections) == 0 {
+		return fmt.Errorf("rich_text_edit.help_sections must not be empty")
+	}
+	for _, section := range d.HelpSections {
+		if section.Title == "" || len(section.Entries) == 0 {
+			return fmt.Errorf("rich_text_edit.help_sections need a title and entries")
+		}
+		for _, entry := range section.Entries {
+			if _, _, ok := d.helpRef(entry.Ref); entry.Ref != "" && !ok {
+				return fmt.Errorf("rich_text_edit.help_sections: unknown ref %q", entry.Ref)
+			}
+			if entry.Ref == "" && (entry.Label == "" || (len(entry.Keys) == 0 && entry.Cap == "")) {
+				return fmt.Errorf("rich_text_edit.help_sections %q: entry needs label and keys or cap", section.Title)
+			}
+		}
+	}
 	for _, color := range []struct {
 		name  string
 		value int
