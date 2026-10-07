@@ -1,6 +1,6 @@
 # 303 — Temporary mouse grab for popups, menus, and dialogs in mouse-off mode
 
-**Status**: Open
+**Status**: Closed — Implemented in 180cf4a; make test-q1 and make install passed
 **Priority**: P1 (High)
 **Severity**: Feature
 **Category**: UX
