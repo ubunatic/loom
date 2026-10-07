@@ -22,6 +22,20 @@ func startEditPTY(t *testing.T, content string) (*ptytest.Session, string) {
 	return s, path
 }
 
+func TestEditPTYHeaderHasNoDuplicateFileLabel(t *testing.T) {
+	s, _ := startEditPTY(t, "base\n")
+	s.WaitFor("doc.txt · Saved", 3*time.Second)
+	screen := s.Screen()
+	files, names := 0, 0
+	for _, row := range screen {
+		files += strings.Count(row, " File ")
+		names += strings.Count(row, "doc.txt ·")
+	}
+	if files != 1 || names != 1 || !strings.Contains(screen[1], "theme:") || strings.Contains(screen[1], "File") {
+		t.Fatalf("File label x%d, file name x%d, want 1 each and an app-only header:\n%s", files, names, strings.Join(screen, "\n"))
+	}
+}
+
 func TestEditPTYEscKeepsRunningAndQuitKeysAskFirst(t *testing.T) {
 	s, path := startEditPTY(t, "base\n")
 	s.Send("hello")
@@ -83,22 +97,22 @@ func TestEditPTYCleanQuitKeysExit(t *testing.T) {
 
 func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
 	s, path := startEditPTY(t, "base\n")
-	s.WaitFor("[Saved]", 3*time.Second)
+	s.WaitFor("· Saved", 3*time.Second)
 	s.Send("hello")
-	s.WaitFor("[Modified]", 3*time.Second)
+	s.WaitFor("· Modified", 3*time.Second)
 	s.Send("\x13") // ^S
-	s.WaitFor("[Saved]", 3*time.Second)
+	s.WaitFor("· Saved", 3*time.Second)
 	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "hello") {
 		t.Fatalf("^S did not write: %q", data)
 	}
 
 	// Modify again, then save with the file browser focused.
 	s.Send("!")
-	s.WaitFor("[Modified]", 3*time.Second)
+	s.WaitFor("· Modified", 3*time.Second)
 	s.Send("\x1bOQ") // F2 opens the browser and focuses it
 	time.Sleep(300 * time.Millisecond)
 	s.Send("\x13")
-	s.WaitFor("[Saved]", 3*time.Second)
+	s.WaitFor("· Saved", 3*time.Second)
 	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "!") {
 		t.Fatalf("^S with browser focused did not write: %q", data)
 	}
@@ -158,17 +172,17 @@ func TestEditPTYCtrlOFocusesBrowserAndCtrlWDiscardsToUntitled(t *testing.T) {
 	s.WaitFor("│", 3*time.Second)
 
 	s.Send("\x17") // ^W with the browser focused, clean buffer: resets at once
-	s.WaitFor("[Unsaved]", 3*time.Second)
+	s.WaitFor("· Unsaved", 3*time.Second)
 
 	s.Send("\x1b") // leave the browser (cancel hides it)
 	time.Sleep(300 * time.Millisecond)
 	s.Send("hi")
-	s.WaitFor("[Modified]", 3*time.Second)
+	s.WaitFor("· Modified", 3*time.Second)
 	s.Send("\x17")
 	s.WaitFor("Save changes?", 3*time.Second)
 	s.Send("\x1b[C") // Discard
 	s.Send("\r")
-	s.WaitFor("[Unsaved]", 3*time.Second)
+	s.WaitFor("· Unsaved", 3*time.Second)
 	if data, _ := os.ReadFile(path); string(data) != "base\n" {
 		t.Fatalf("Discard changed the file: %q", data)
 	}

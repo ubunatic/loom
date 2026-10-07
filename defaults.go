@@ -88,6 +88,8 @@ type RichTextEditDefaults struct {
 	StateSavedLabel       string   `yaml:"state_saved_label"`
 	StateModifiedLabel    string   `yaml:"state_modified_label"`
 	StateErrorLabel       string   `yaml:"state_error_label"`
+	FileMenuTitle         string   `yaml:"file_menu_title"`
+	FileMenuMnemonic      string   `yaml:"file_menu_mnemonic"`
 	HotkeyHelpBinding     string   `yaml:"hotkey_help_binding"`
 	HotkeyHelpLabel       string   `yaml:"hotkey_help_label"`
 	HotkeySaveBinding     string   `yaml:"hotkey_save_binding"`

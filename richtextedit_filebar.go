@@ -6,6 +6,7 @@ package loom
 import (
 	"path/filepath"
 	"strings"
+	"unicode/utf8"
 )
 
 type richTextEditFileBar struct {
@@ -18,14 +19,16 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 		return e.fileBar
 	}
 	bar := &richTextEditFileBar{edit: e}
+	defs := SpeccedDefaults.RichTextEdit
+	mnemonic, _ := utf8.DecodeRuneInString(defs.FileMenuMnemonic)
 	bar.menu = NewMenuBar(Menu{
-		Title:    "File",
-		Mnemonic: 'F',
+		Title:    defs.FileMenuTitle,
+		Mnemonic: mnemonic,
 		Items: []MenuItem{
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyOpenLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyOpenBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestOpen() }},
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyCloseLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyCloseBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestClose() }},
-			{Label: "Save", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
-			{Label: "Save as…", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveAsBinding), Action: func() { bar.saveAs() }},
+			{Label: defs.HotkeySaveLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
+			{Label: defs.HotkeySaveAsLabel + "…", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveAsBinding), Action: func() { bar.saveAs() }},
 		},
 	})
 	bar.menu.Bottom = true
@@ -85,7 +88,7 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 		titleWidth = b.menu.titleRects[0].W
 	}
 	if titleWidth == 0 {
-		titleWidth = StringWidth(" File ")
+		titleWidth = StringWidth(" " + SpeccedDefaults.RichTextEdit.FileMenuTitle + " ")
 	}
 	available := max(0, bounds.W-titleWidth)
 	status := b.status()

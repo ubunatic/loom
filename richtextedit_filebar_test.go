@@ -395,6 +395,26 @@ func TestRichTextEditFileBarHasNoFormattingActions(t *testing.T) {
 	}
 }
 
+func TestRichTextEditFileMenuIsSpecDriven(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "text"}}}}})
+	edit.ShowFileBar = true
+	edit.ensureFileBar()
+	defs := SpeccedDefaults.RichTextEdit
+	menu := edit.fileBar.menu.Menus[0]
+	if menu.Title != defs.FileMenuTitle || string(menu.Mnemonic) != defs.FileMenuMnemonic {
+		t.Fatalf("menu title/mnemonic = %q/%q, want spec %q/%q", menu.Title, string(menu.Mnemonic), defs.FileMenuTitle, defs.FileMenuMnemonic)
+	}
+	want := []struct{ label, binding string }{
+		{defs.HotkeyOpenLabel, defs.HotkeyOpenBinding}, {defs.HotkeyCloseLabel, defs.HotkeyCloseBinding},
+		{defs.HotkeySaveLabel, defs.HotkeySaveBinding}, {defs.HotkeySaveAsLabel, defs.HotkeySaveAsBinding},
+	}
+	for i, w := range want {
+		if !strings.HasPrefix(menu.Items[i].Label, w.label) || menu.Items[i].Shortcut != KeyCap(w.binding) {
+			t.Fatalf("item %d = %q/%q, want spec %q/%q", i, menu.Items[i].Label, menu.Items[i].Shortcut, w.label, KeyCap(w.binding))
+		}
+	}
+}
+
 func TestRichTextEditOpenCloseActionsAndMenuItems(t *testing.T) {
 	for _, fileBar := range []bool{true, false} {
 		edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "text"}}}}})

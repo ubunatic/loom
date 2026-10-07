@@ -764,7 +764,20 @@ func editHeaderRow(view *editView) string {
 	return strings.Split(canvasScreenText(canvas), "\n")[1]
 }
 
-func TestEditViewHeaderShowsDocStateAfterSave(t *testing.T) {
+// editScreenCount counts the screen rows of a 100x24 render containing text.
+func editScreenCount(view *editView, text string) int {
+	canvas := loom.NewCanvas(100, 24)
+	view.Draw(canvas, loom.Rect{W: 100, H: 24})
+	n := 0
+	for _, row := range strings.Split(canvasScreenText(canvas), "\n") {
+		if strings.Contains(row, text) {
+			n++
+		}
+	}
+	return n
+}
+
+func TestEditViewFileBarOwnsDocNameAndState(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "doc.txt")
 	_ = os.WriteFile(path, []byte("base\n"), 0600)
 	edit, err := loom.NewRichTextEditFromFile(path)
@@ -775,22 +788,28 @@ func TestEditViewHeaderShowsDocStateAfterSave(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if row := editHeaderRow(view); !strings.Contains(row, "[Saved]") {
-		t.Fatalf("clean header = %q, want [Saved]", row)
+	check := func(state string) {
+		t.Helper()
+		if row := editHeaderRow(view); strings.Contains(row, "File") || strings.Contains(row, "doc.txt") || strings.Contains(row, "["+state+"]") || !strings.Contains(row, "theme:") {
+			t.Fatalf("header = %q, want app-level info only (no File, name or state)", row)
+		}
+		if n := editScreenCount(view, "doc.txt · "+state); n != 1 {
+			t.Fatalf("file bar status %q shown on %d rows, want 1", "doc.txt · "+state, n)
+		}
+		if n := editScreenCount(view, " File "); n != 1 {
+			t.Fatalf("File menu title shown on %d rows, want 1", n)
+		}
 	}
+	check("Saved")
 	view.ConsumeKey(loom.KeyEvent{Text: "z"})
-	if row := editHeaderRow(view); !strings.Contains(row, "[Modified]") {
-		t.Fatalf("edited header = %q, want [Modified]", row)
-	}
+	check("Modified")
 	// Save must work with the file browser focused too.
 	view.ConsumeKey(loom.KeyEvent{Key: "f2"})
 	if view.focused != focusBrowser {
 		t.Fatal("browser not focused")
 	}
 	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-s"})
-	if row := editHeaderRow(view); !strings.Contains(row, "[Saved]") {
-		t.Fatalf("saved header = %q, want [Saved]", row)
-	}
+	check("Saved")
 	if !strings.Contains(view.statusMessage, "Saved") {
 		t.Fatalf("status message = %q, want save confirmation", view.statusMessage)
 	}

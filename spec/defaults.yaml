@@ -104,6 +104,8 @@ rich_text_edit:
   state_saved_label: "Saved"
   state_modified_label: "Modified"
   state_error_label: "Error"
+  file_menu_title: "File"
+  file_menu_mnemonic: "F"
   hotkey_help_binding: "f1"
   hotkey_help_label: "Help"
   hotkey_save_binding: "ctrl-s"

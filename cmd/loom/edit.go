@@ -435,38 +435,15 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	innerW := max(0, rect.W-2)
 	innerX := rect.X + 1
 
-	// 2. Line Y=1: Header filebar
-	fileName := "Untitled"
-	if v.edit.FilePath != "" {
-		fileName = filepath.Base(v.edit.FilePath)
-	}
-	docState := v.edit.DocState()
+	// 2. Line Y=1: App-level header (theme, mouse). The document name, state
+	// and File menu belong to the RichTextEdit file bar.
 	mouseStr := "off"
 	if v.config.MouseGrab {
 		mouseStr = "on"
 	}
-	rightStatus := fmt.Sprintf("theme: %-8s   mouse: %s", v.config.Theme, mouseStr)
-	headerPrefix := " File    "
-	stateText := "[" + docState.Label() + "]"
-	headerText := headerPrefix + fileName + " " + stateText
-	headerText += strings.Repeat(" ", max(1, 48-loom.StringWidth(fileName+" "+stateText)+1)) + rightStatus
 	if rect.H > 2 {
+		headerText := fmt.Sprintf(" theme: %-8s   mouse: %s", v.config.Theme, mouseStr)
 		canvas.WriteDefault(innerX, rect.Y+1, loom.TruncateText(headerText, innerW, ""), normalStyle)
-		stateX := loom.StringWidth(headerPrefix + fileName + " ")
-		if stateX+loom.StringWidth(stateText) <= innerW {
-			stateStyle := normalStyle
-			switch docState {
-			case loom.DocStateModified:
-				stateStyle.FG = theme.ModifiedFG.Color()
-			case loom.DocStateSaved:
-				stateStyle.FG = theme.SavedFG.Color()
-			case loom.DocStateError:
-				stateStyle.FG = theme.MediaErrorFG.Color()
-			default:
-				stateStyle.Dim = true
-			}
-			canvas.WriteDefault(innerX+stateX, rect.Y+1, stateText, stateStyle)
-		}
 	}
 
 	// Line Y=2: Divider
