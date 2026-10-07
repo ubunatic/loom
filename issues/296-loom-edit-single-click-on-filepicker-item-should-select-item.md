@@ -1,6 +1,6 @@
 # 296 — loom edit: Single click on FilePicker item should select item
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 0bff53b
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
