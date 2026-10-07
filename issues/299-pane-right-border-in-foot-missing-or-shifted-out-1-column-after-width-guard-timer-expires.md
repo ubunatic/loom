@@ -1,6 +1,6 @@
 # 299 — pane: right border in foot missing or shifted out 1 column after width guard timer expires
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 8f2fc88
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
