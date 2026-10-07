@@ -1,6 +1,6 @@
 # 286 — Prevent search panel quit keys from losing unsaved editor changes
 
-**Status**: Open
+**Status**: Closed — Integrated unsaved quit guards; full suite and PTY search quit/dialog capture pass.
 **Priority**: P0 (Critical)
 **Severity**: Critical
 **Category**: Bug
