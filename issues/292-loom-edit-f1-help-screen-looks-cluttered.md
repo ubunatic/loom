@@ -1,6 +1,6 @@
 # 292 — loom edit: F1 help screen looks cluttered
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 6f07ca5
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
