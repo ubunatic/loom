@@ -298,3 +298,4 @@ upkeep.
 | 285 | [285-fix-unicode-literal-search-panic-in-loom-edit.md](285-fix-unicode-literal-search-panic-in-loom-edit.md) | Fix Unicode literal search panic in loom edit | Open |
 | 286 | [286-prevent-search-panel-quit-keys-from-losing-unsaved-editor-changes.md](286-prevent-search-panel-quit-keys-from-losing-unsaved-editor-changes.md) | Prevent search panel quit keys from losing unsaved editor changes | Open |
 | 287 | [287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md](287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md) | Fix search overlay mouse routing and selection isolation in loom edit | Open |
+| 288 | [288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md](288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md) | Compose loom edit panels with standard widgets and clipped responsive layout | Open |
