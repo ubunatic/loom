@@ -17,7 +17,7 @@
     "rich_text_edit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height"],
+      "required": ["selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height", "hotkey_help_key", "hotkey_help_binding", "hotkey_help_label", "hotkey_save_key", "hotkey_save_binding", "hotkey_save_label", "hotkey_save_as_key", "hotkey_save_as_binding", "hotkey_save_as_label", "hotkey_view_edit_key", "hotkey_view_edit_binding", "hotkey_quit_key", "hotkey_quit_binding", "hotkey_quit_label"],
       "properties": {
         "selection_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "toolbar_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
@@ -37,7 +37,21 @@
         "link_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "link_underline": { "type": "boolean" },
         "save_popup_max_width": { "type": "integer", "minimum": 8 },
-        "save_popup_max_height": { "type": "integer", "minimum": 7 }
+        "save_popup_max_height": { "type": "integer", "minimum": 7 },
+        "hotkey_help_key": { "type": "string", "minLength": 1 },
+        "hotkey_help_binding": { "type": "string", "minLength": 1 },
+        "hotkey_help_label": { "type": "string", "minLength": 1 },
+        "hotkey_save_key": { "type": "string", "minLength": 1 },
+        "hotkey_save_binding": { "type": "string", "minLength": 1 },
+        "hotkey_save_label": { "type": "string", "minLength": 1 },
+        "hotkey_save_as_key": { "type": "string", "minLength": 1 },
+        "hotkey_save_as_binding": { "type": "string", "minLength": 1 },
+        "hotkey_save_as_label": { "type": "string", "minLength": 1 },
+        "hotkey_view_edit_key": { "type": "string", "minLength": 1 },
+        "hotkey_view_edit_binding": { "type": "string", "minLength": 1 },
+        "hotkey_quit_key": { "type": "string", "minLength": 1 },
+        "hotkey_quit_binding": { "type": "string", "minLength": 1 },
+        "hotkey_quit_label": { "type": "string", "minLength": 1 }
       }
     },
     "paint_canvas": {

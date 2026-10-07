@@ -397,10 +397,11 @@ type editView struct {
 
 func (v *editView) hotkeyBar() *loom.HintBar {
 	bar := v.edit.HotkeyBar()
+	defs := loom.SpeccedDefaults.RichTextEdit
 	quitEntry := loom.HintEntry{
-		Key:     "F10",
-		Binding: "f10",
-		Label:   "Quit",
+		Key:     defs.HotkeyQuitKey,
+		Binding: defs.HotkeyQuitBinding,
+		Label:   defs.HotkeyQuitLabel,
 		Action: func() loom.EventResult {
 			return v.handleQuit()
 		},

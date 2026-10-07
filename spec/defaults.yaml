@@ -77,3 +77,17 @@ rich_text_edit:
   link_underline: true
   save_popup_max_width: 72
   save_popup_max_height: 18
+  hotkey_help_key: "F1"
+  hotkey_help_binding: "f1"
+  hotkey_help_label: "Help"
+  hotkey_save_key: "^S"
+  hotkey_save_binding: "ctrl-s"
+  hotkey_save_label: "Save"
+  hotkey_save_as_key: "^Shift+S"
+  hotkey_save_as_binding: "ctrl-shift-s"
+  hotkey_save_as_label: "Save as"
+  hotkey_view_edit_key: "F7"
+  hotkey_view_edit_binding: "f7"
+  hotkey_quit_key: "F10"
+  hotkey_quit_binding: "f10"
+  hotkey_quit_label: "Quit"
