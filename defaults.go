@@ -27,45 +27,67 @@ type LibDefaults struct {
 	Media            MediaDefaults        `yaml:"media"`
 	Clock            ClockDefaults        `yaml:"clock"`
 	PaintCanvas      PaintCanvasDefaults  `yaml:"paint_canvas"`
+	Editor           EditorDefaults       `yaml:"editor"`
 	SearchBar        SearchBarDefaults    `yaml:"search_bar"`
 	RichTextEdit     RichTextEditDefaults `yaml:"rich_text_edit"`
 }
 
+// EditorDefaults defines specced defaults for the Loom editor.
+type EditorDefaults struct {
+	Theme                   string `yaml:"theme"`
+	MouseGrab               bool   `yaml:"mousegrab"`
+	AltScreen               bool   `yaml:"altscreen"`
+	HotkeyFilesKey          string `yaml:"hotkey_files_key"`
+	HotkeyFilesBinding      string `yaml:"hotkey_files_binding"`
+	HotkeyFilesLabel        string `yaml:"hotkey_files_label"`
+	HotkeySearchKey         string `yaml:"hotkey_search_key"`
+	HotkeySearchBinding     string `yaml:"hotkey_search_binding"`
+	HotkeySearchLabel       string `yaml:"hotkey_search_label"`
+	HotkeyBoxKey            string `yaml:"hotkey_box_key"`
+	HotkeyBoxBinding        string `yaml:"hotkey_box_binding"`
+	HotkeyBoxLabel          string `yaml:"hotkey_box_label"`
+	SearchPrompt            string `yaml:"search_prompt"`
+	SearchPlaceholder       string `yaml:"search_placeholder"`
+	HotkeyScreenshotKey     string `yaml:"hotkey_screenshot_key"`
+	HotkeyScreenshotBinding string `yaml:"hotkey_screenshot_binding"`
+	HotkeyScreenshotLabel   string `yaml:"hotkey_screenshot_label"`
+}
+
 // RichTextEditDefaults defines selection and popover presentation defaults.
 type RichTextEditDefaults struct {
-	SelectionBG        int      `yaml:"selection_bg"`
-	ToolbarFG          int      `yaml:"toolbar_fg"`
-	ToolbarBG          int      `yaml:"toolbar_bg"`
-	SeparatorGlyph     string   `yaml:"separator_glyph"`
-	SeparatorFG        int      `yaml:"separator_fg"`
-	SeparatorBG        int      `yaml:"separator_bg"`
-	PointerUpGlyph     string   `yaml:"pointer_up_glyph"`
-	PointerDownGlyph   string   `yaml:"pointer_down_glyph"`
-	PointerFG          int      `yaml:"pointer_fg"`
-	PopoverLabels      []string `yaml:"popover_labels"`
-	BoxStyleLabels     []string `yaml:"box_style_labels"`
-	BoxStyleDefault    string   `yaml:"box_style_default"`
-	GhostCursorEnabled bool     `yaml:"ghost_cursor_enabled"`
-	PopoverFocusFG     int      `yaml:"popover_focus_fg"`
-	PopoverFocusBG     int      `yaml:"popover_focus_bg"`
-	LinkFG             int      `yaml:"link_fg"`
-	LinkUnderline      bool     `yaml:"link_underline"`
-	SavePopupMaxWidth  int      `yaml:"save_popup_max_width"`
-	SavePopupMaxHeight int      `yaml:"save_popup_max_height"`
-	HotkeyHelpKey      string   `yaml:"hotkey_help_key"`
-	HotkeyHelpBinding  string   `yaml:"hotkey_help_binding"`
-	HotkeyHelpLabel    string   `yaml:"hotkey_help_label"`
-	HotkeySaveKey      string   `yaml:"hotkey_save_key"`
-	HotkeySaveBinding  string   `yaml:"hotkey_save_binding"`
-	HotkeySaveLabel    string   `yaml:"hotkey_save_label"`
-	HotkeySaveAsKey    string   `yaml:"hotkey_save_as_key"`
-	HotkeySaveAsBinding string  `yaml:"hotkey_save_as_binding"`
-	HotkeySaveAsLabel  string   `yaml:"hotkey_save_as_label"`
-	HotkeyViewEditKey  string   `yaml:"hotkey_view_edit_key"`
-	HotkeyViewEditBinding string `yaml:"hotkey_view_edit_binding"`
-	HotkeyQuitKey      string   `yaml:"hotkey_quit_key"`
-	HotkeyQuitBinding  string   `yaml:"hotkey_quit_binding"`
-	HotkeyQuitLabel    string   `yaml:"hotkey_quit_label"`
+	SelectionBG           int      `yaml:"selection_bg"`
+	ToolbarFG             int      `yaml:"toolbar_fg"`
+	ToolbarBG             int      `yaml:"toolbar_bg"`
+	SeparatorGlyph        string   `yaml:"separator_glyph"`
+	SeparatorFG           int      `yaml:"separator_fg"`
+	SeparatorBG           int      `yaml:"separator_bg"`
+	PointerUpGlyph        string   `yaml:"pointer_up_glyph"`
+	PointerDownGlyph      string   `yaml:"pointer_down_glyph"`
+	PointerFG             int      `yaml:"pointer_fg"`
+	PopoverLabels         []string `yaml:"popover_labels"`
+	BoxStyleLabels        []string `yaml:"box_style_labels"`
+	BoxStyleDefault       string   `yaml:"box_style_default"`
+	GhostCursorEnabled    bool     `yaml:"ghost_cursor_enabled"`
+	PopoverFocusFG        int      `yaml:"popover_focus_fg"`
+	PopoverFocusBG        int      `yaml:"popover_focus_bg"`
+	LinkFG                int      `yaml:"link_fg"`
+	LinkUnderline         bool     `yaml:"link_underline"`
+	SavePopupMaxWidth     int      `yaml:"save_popup_max_width"`
+	SavePopupMaxHeight    int      `yaml:"save_popup_max_height"`
+	HotkeyHelpKey         string   `yaml:"hotkey_help_key"`
+	HotkeyHelpBinding     string   `yaml:"hotkey_help_binding"`
+	HotkeyHelpLabel       string   `yaml:"hotkey_help_label"`
+	HotkeySaveKey         string   `yaml:"hotkey_save_key"`
+	HotkeySaveBinding     string   `yaml:"hotkey_save_binding"`
+	HotkeySaveLabel       string   `yaml:"hotkey_save_label"`
+	HotkeySaveAsKey       string   `yaml:"hotkey_save_as_key"`
+	HotkeySaveAsBinding   string   `yaml:"hotkey_save_as_binding"`
+	HotkeySaveAsLabel     string   `yaml:"hotkey_save_as_label"`
+	HotkeyViewEditKey     string   `yaml:"hotkey_view_edit_key"`
+	HotkeyViewEditBinding string   `yaml:"hotkey_view_edit_binding"`
+	HotkeyQuitKey         string   `yaml:"hotkey_quit_key"`
+	HotkeyQuitBinding     string   `yaml:"hotkey_quit_binding"`
+	HotkeyQuitLabel       string   `yaml:"hotkey_quit_label"`
 }
 
 func (d RichTextEditDefaults) validate() error {

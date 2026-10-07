@@ -929,7 +929,10 @@ func TestEditViewUnsavedChangesDialog(t *testing.T) {
 		t.Fatalf("NewRichTextEditFromFile: %v", err)
 	}
 
-	view := &editView{edit: edit}
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain", AltScreen: true})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
 	canvas := loom.NewCanvas(80, 10)
 
 	// 1. Draw and verify bottom bar includes F10 Quit
@@ -1014,7 +1017,8 @@ func TestEditViewUnsavedChangesDialog(t *testing.T) {
 
 func TestEditCommandPaneSettings(t *testing.T) {
 	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
-	configureEditPane(pane)
+	cfg := loom.EditorConfig{MouseGrab: true, AltScreen: true}
+	configureEditPane(pane, cfg)
 	if pane.MaxCols != 0 {
 		t.Errorf("edit pane MaxCols = %d, want 0", pane.MaxCols)
 	}
@@ -1023,5 +1027,49 @@ func TestEditCommandPaneSettings(t *testing.T) {
 	}
 	if !pane.DisableGlobalF10Quit {
 		t.Error("edit pane DisableGlobalF10Quit = false, want true")
+	}
+	if !pane.ResizeConfig.AltScreen {
+		t.Errorf("pane AltScreen = false, want true")
+	}
+}
+
+func TestEditCLIFlagsAndConfigPrecedence(t *testing.T) {
+	dir := t.TempDir()
+	filePath := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(filePath, []byte("hello\n"), 0600)
+
+	cfgPath := filepath.Join(dir, "editor.yaml")
+	cfgContent := "theme: mc-dark\nmousegrab: true\naltscreen: false\n"
+	_ = os.WriteFile(cfgPath, []byte(cfgContent), 0600)
+
+	cmd := editCommand()
+	cmd.SetArgs([]string{"--config", cfgPath, "--mousegrab=false", "--altscreen", filePath})
+
+	// Parse flags
+	if err := cmd.ParseFlags([]string{"--config", cfgPath, "--mousegrab=false", "--altscreen", filePath}); err != nil {
+		t.Fatalf("ParseFlags: %v", err)
+	}
+
+	cfg, err := loom.LoadEditorConfig(cfgPath)
+	if err != nil {
+		t.Fatalf("LoadEditorConfig: %v", err)
+	}
+	if cmd.Flags().Changed("mousegrab") {
+		m, _ := cmd.Flags().GetBool("mousegrab")
+		cfg.MouseGrab = m
+	}
+	if cmd.Flags().Changed("altscreen") {
+		a, _ := cmd.Flags().GetBool("altscreen")
+		cfg.AltScreen = a
+	}
+
+	if cfg.Theme != "mc-dark" {
+		t.Errorf("Theme = %q, want mc-dark", cfg.Theme)
+	}
+	if cfg.MouseGrab {
+		t.Errorf("MouseGrab = %v, want false (overridden by CLI flag)", cfg.MouseGrab)
+	}
+	if !cfg.AltScreen {
+		t.Errorf("AltScreen = %v, want true (overridden by CLI flag)", cfg.AltScreen)
 	}
 }

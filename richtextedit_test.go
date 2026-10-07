@@ -1633,3 +1633,30 @@ func TestRichTextViewLineStartEndKeys(t *testing.T) {
 		t.Fatalf("view ctrl-shift-a sel=%v", view.HasSelection)
 	}
 }
+
+func TestRichTextEditDisplayHighlightPreservesDocumentAndSelection(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "a界bc", Style: Style{Italic: true, FG: ColorIndex(2)}}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.ShowPopover = false
+	before := doc.ToANSI()
+	edit.SetSelection(RichPosition{Offset: 3}, RichPosition{Offset: 4})
+	edit.Highlights = []RichTextHighlight{{From: RichPosition{Offset: 1}, To: RichPosition{Offset: 2}, Style: Style{BG: ColorIndex(4)}}}
+	c := NewCanvas(8, 2)
+	edit.Draw(c, c.Bounds())
+	cell := c.Get(1, 0)
+	if cell.Text != "界" || cell.Style.BG != ColorIndex(4) || !cell.Style.Italic || cell.Style.FG != ColorIndex(2) {
+		t.Fatalf("highlight style lost text or span attributes: %#v", cell)
+	}
+	if !edit.HasSelection || edit.SelectionFrom.Offset != 3 || edit.SelectionTo.Offset != 4 {
+		t.Fatal("highlight changed editing selection")
+	}
+	if doc.ToANSI() != before || edit.IsModified() {
+		t.Fatal("highlight modified document")
+	}
+	edit.Highlights = nil
+	c = NewCanvas(8, 2)
+	edit.Draw(c, c.Bounds())
+	if c.Get(1, 0).Style.BG == ColorIndex(4) {
+		t.Fatal("cleared highlight persisted")
+	}
+}

@@ -27,11 +27,13 @@ type RichTextEdit struct {
 	SelectionTo    RichPosition
 	HasSelection   bool
 	SelectionStyle Style
-	ActiveStyle    Style
-	ScrollX        int
-	ScrollY        int
-	ShowCursor     bool
-	ShowPopover    bool
+	// Highlights are display-only ranges, independent of editing selection.
+	Highlights  []RichTextHighlight
+	ActiveStyle Style
+	ScrollX     int
+	ScrollY     int
+	ShowCursor  bool
+	ShowPopover bool
 	// ViewMode makes the editor read-only: navigation, selection and copy work;
 	// every edit, style key and the format popover are disabled and edit keys
 	// return Ignored so the app can use them.
@@ -366,6 +368,13 @@ func richLineColumn(line RichLine, offset int) int {
 	return col
 }
 
+// RichTextHighlight marks a half-open range in document rune coordinates.
+// Style controls highlighted cells without changing saved content or selection.
+type RichTextHighlight struct {
+	From, To RichPosition
+	Style    Style
+}
+
 func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex int) {
 	start, end := e.selectionLineBounds(lineIndex)
 	col, offset := 0, 0
@@ -377,6 +386,13 @@ func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex i
 			x := rect.X + col - e.ScrollX
 			if w > 0 && x >= rect.X && x+w <= rect.X+rect.W {
 				style := e.spanStyle(span)
+				for _, highlight := range e.Highlights {
+					from, to := highlight.From, highlight.To
+					if (lineIndex > from.Line || lineIndex == from.Line && offset+runeCount > from.Offset) &&
+						(lineIndex < to.Line || lineIndex == to.Line && offset < to.Offset) {
+						style = richOverlayStyle(style, highlight.Style)
+					}
+				}
 				if selected {
 					style = e.selectionStyle(style)
 				}
@@ -719,7 +735,10 @@ func richPositionBefore(a, b RichPosition) bool {
 }
 
 func (e *RichTextEdit) selectionStyle(base Style) Style {
-	selection := e.SelectionStyle
+	return richOverlayStyle(base, e.SelectionStyle)
+}
+
+func richOverlayStyle(base, selection Style) Style {
 	if selection == (Style{}) {
 		base.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG))
 		return base

@@ -1,0 +1,20 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom editor preferences specification",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "theme": {
+      "type": "string",
+      "description": "Theme name for editor rendering"
+    },
+    "mousegrab": {
+      "type": "boolean",
+      "description": "Enable mouse tracking/capture in editor"
+    },
+    "altscreen": {
+      "type": "boolean",
+      "description": "Use alternate screen buffer for full editor view"
+    }
+  }
+}

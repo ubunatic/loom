@@ -3,8 +3,32 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit"],
+  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor"],
   "properties": {
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme", "mousegrab", "altscreen", "hotkey_files_key", "hotkey_files_binding", "hotkey_files_label", "hotkey_search_key", "hotkey_search_binding", "hotkey_search_label", "hotkey_box_key", "hotkey_box_binding", "hotkey_box_label", "search_prompt", "search_placeholder", "hotkey_screenshot_key", "hotkey_screenshot_binding", "hotkey_screenshot_label"],
+      "properties": {
+        "theme": { "type": "string", "minLength": 1 },
+        "mousegrab": { "type": "boolean" },
+        "altscreen": { "type": "boolean" },
+        "hotkey_files_key": { "type": "string", "minLength": 1 },
+        "hotkey_files_binding": { "type": "string", "minLength": 1 },
+        "hotkey_files_label": { "type": "string", "minLength": 1 },
+        "hotkey_search_key": { "type": "string", "minLength": 1 },
+        "hotkey_search_binding": { "type": "string", "minLength": 1 },
+        "hotkey_search_label": { "type": "string", "minLength": 1 },
+        "hotkey_box_key": { "type": "string", "minLength": 1 },
+        "hotkey_box_binding": { "type": "string", "minLength": 1 },
+        "hotkey_box_label": { "type": "string", "minLength": 1 },
+        "search_prompt": { "type": "string", "minLength": 1 },
+        "search_placeholder": { "type": "string", "minLength": 1 },
+        "hotkey_screenshot_key": { "type": "string", "minLength": 1 },
+        "hotkey_screenshot_binding": { "type": "string", "minLength": 1 },
+        "hotkey_screenshot_label": { "type": "string", "minLength": 1 }
+      }
+    },
     "search_bar": {
       "type": "object",
       "additionalProperties": false,
