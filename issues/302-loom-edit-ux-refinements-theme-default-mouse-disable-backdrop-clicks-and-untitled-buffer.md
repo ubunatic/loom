@@ -1,6 +1,6 @@
 # 302 — loom edit: UX refinements, theme default, mouse disable, backdrop clicks, and untitled buffer
 
-**Status**: Open
+**Status**: Closed — Implemented all eight refinements; make test-q1 and make install passed
 **Priority**: P1 (High)
 **Severity**: Feature
 **Category**: UX
