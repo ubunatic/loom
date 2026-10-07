@@ -15,12 +15,13 @@ type Viewport struct {
 	Scrollbar     ScrollbarStyle
 	Style         Style // base text and background colors
 
-	focused  bool
-	lastRect Rect
-	content  Rect
-	childW   int
-	childH   int
-	dragging bool
+	focused    bool
+	lastRect   Rect
+	content    Rect
+	childW     int
+	childH     int
+	dragging   bool
+	modalMouse ModalMouseCapture
 }
 
 // NewViewport wraps child in a scrollable viewport.
@@ -159,6 +160,10 @@ func (v *Viewport) ConsumeKey(e KeyEvent) EventResult {
 // ConsumeMouse scrolls with the wheel and translates pointer coordinates into
 // the child's full content coordinate space.
 func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := v.modalMouse.Dispatch(v, e); captured {
+		v.dragging = false
+		return result
+	}
 	maxY := max(0, v.childH-v.lastRect.H)
 	if e.Action == MousePress && e.Button == MouseLeft && e.X == v.lastRect.W-1 && maxY > 0 {
 		v.dragging = true

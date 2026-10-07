@@ -32,6 +32,7 @@ type Stack struct {
 	focus       int // index of focused child
 	childRects  []Rect
 	lastRect    Rect
+	modalMouse  ModalMouseCapture
 }
 
 // NewStack creates a Stack with the given children and direction.
@@ -158,6 +159,9 @@ func (s *Stack) ConsumePaste(e PasteEvent) EventResult {
 
 // ConsumeMouse forwards to the child whose rect contains the event.
 func (s *Stack) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := s.modalMouse.Dispatch(s, e); captured {
+		return result
+	}
 	if len(s.Children) == 0 {
 		return Ignored()
 	}

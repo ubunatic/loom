@@ -75,6 +75,7 @@ type Grid struct {
 	focus      int // flat index of the focused child
 	childRects []Rect
 	lastRect   Rect
+	modalMouse ModalMouseCapture
 }
 
 // NewGrid creates a Grid with cols columns.
@@ -465,6 +466,9 @@ func (g *Grid) ConsumePaste(e PasteEvent) EventResult {
 
 // ConsumeMouse routes to the child whose drawn cell contains the event.
 func (g *Grid) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := g.modalMouse.Dispatch(g, e); captured {
+		return result
+	}
 	if len(g.Children) == 0 {
 		return Ignored()
 	}

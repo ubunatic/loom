@@ -157,6 +157,7 @@ type Box struct {
 	Footer     string    `yaml:"footer"`
 	Rows       *Rows     `yaml:"rows"`
 	childRect  Rect
+	modalMouse ModalMouseCapture
 }
 
 // Measure returns the preferred outer size of the box, including border,
@@ -253,10 +254,26 @@ func (b *Box) ConsumeKey(k KeyEvent) EventResult {
 
 // ConsumeMouse forwards events inside the last drawn child bounds.
 func (b *Box) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := b.modalMouse.Dispatch(b, e); captured {
+		return result
+	}
 	if b.Child == nil || !b.childRect.Contains(e.X, e.Y) {
 		return Ignored()
 	}
 	e.X -= b.childRect.X
 	e.Y -= b.childRect.Y
 	return b.Child.ConsumeMouse(e)
+}
+
+// ModalMouseTarget exposes a visible child modal before border hit-testing.
+func (b *Box) ModalMouseTarget() (Widget, Rect) {
+	if b.Hidden || b.childRect.W <= 0 || b.childRect.H <= 0 {
+		return nil, Rect{}
+	}
+	target, origin := ActiveModalMouse(b.Child)
+	if target != nil {
+		origin.X += b.childRect.X
+		origin.Y += b.childRect.Y
+	}
+	return target, origin
 }

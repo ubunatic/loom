@@ -215,7 +215,7 @@ func (cb *cmdBar) handleHelpMouse(e MouseEvent) bool {
 	if cb.help == nil {
 		return false
 	}
-	if cb.help.ConsumeMouse(e).Quit {
+	if cb.help.ConsumeMouse(e).Quit || !cb.help.Open {
 		cb.help = nil
 	}
 	return true

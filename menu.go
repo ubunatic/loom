@@ -21,12 +21,15 @@ type MenuItem struct {
 
 // Menu is a titled set of commands shown in a MenuBar dropdown.
 type Menu struct {
-	Title     string
-	Mnemonic  rune
-	Items     []MenuItem
-	Open      bool
-	Selected  int
+	Title    string
+	Mnemonic rune
+	Items    []MenuItem
+	Open     bool
+	Selected int
+	// Modeless embeds the dropdown without exclusive capture outside its widget.
+	Modeless  bool
 	lastRect  Rect
+	drawRect  Rect
 	itemRects []Rect
 }
 
@@ -43,6 +46,8 @@ type MenuBar struct {
 	Menus      []Menu
 	ActiveMenu int
 	Open       bool
+	// Modeless keeps an embedded dropdown local to its widget allocation.
+	Modeless bool
 	// Bottom places the bar on the final row of the draw bounds and opens its
 	// dropdown upward. It is useful for editor status bars.
 	Bottom bool
@@ -230,7 +235,6 @@ func (m *MenuBar) Draw(c *Canvas, r Rect) {
 		m.menuRect = Rect{}
 		return
 	}
-	c.overlayMouseGrab = true
 	x = r.X
 	if m.ActiveMenu < len(m.titleRects) && m.titleRects[m.ActiveMenu].W > 0 {
 		x = m.titleRects[m.ActiveMenu].X
@@ -717,6 +721,9 @@ func (m *MenuBar) ConsumeMouse(e MouseEvent) EventResult {
 		m.submenus = nil
 		return Consumed()
 	}
+	if m.Open {
+		return Handled()
+	}
 	return Ignored()
 }
 
@@ -726,7 +733,7 @@ func (m *Menu) Draw(c *Canvas, r Rect) {
 		return
 	}
 	m.Open = true
-	c.overlayMouseGrab = true
+	m.drawRect = r
 	w := 4
 	for _, item := range m.Items {
 		if n := StringWidth(menuItemLine(item)); n > w {
@@ -786,16 +793,35 @@ func (m *Menu) ConsumeKey(e KeyEvent) EventResult {
 	}
 	return Consumed()
 }
+
+// ModalMouseTarget captures mouse input exclusively while the menu is open.
+func (m *Menu) ModalMouseTarget() (Widget, Rect) {
+	if m != nil && m.Open && !m.Modeless {
+		return m, Rect{}
+	}
+	return nil, Rect{}
+}
+
+// ModalMouseTarget captures mouse input exclusively while a dropdown is open.
+func (m *MenuBar) ModalMouseTarget() (Widget, Rect) {
+	if m != nil && m.Open && !m.Modeless {
+		return m, Rect{}
+	}
+	return nil, Rect{}
+}
+
 func (m *Menu) ConsumeMouse(e MouseEvent) EventResult {
 	if m == nil || !m.Open {
 		return Ignored()
 	}
+	e.X += m.drawRect.X
+	e.Y += m.drawRect.Y
 	if !m.lastRect.Contains(e.X, e.Y) {
 		if e.Action == MousePress && e.Button == MouseLeft {
 			m.Open = false
 			return Consumed()
 		}
-		return Ignored()
+		return Handled()
 	}
 	for i, r := range m.itemRects {
 		if r.Contains(e.X, e.Y) {

@@ -130,7 +130,7 @@ func Test302PaneHelpWheelAndBackdrop(t *testing.T) {
 	p.help.Height = 4
 	p.help.Draw(NewCanvas(40, 20), Rect{W: 40, H: 20})
 	r := p.help.innerRect
-	p.handleHelpMouse(MouseEvent{X: r.X, Y: r.Y, Action: MouseScrollDown})
+	p.dispatchMouse(nil, MouseEvent{X: r.X, Y: r.Y, Action: MouseScrollDown})
 	if h.scroll != 1 || p.help == nil {
 		t.Fatal("pane help wheel failed")
 	}
@@ -138,7 +138,7 @@ func Test302PaneHelpWheelAndBackdrop(t *testing.T) {
 	if h.scroll != 0 || p.help == nil {
 		t.Fatal("pane help navigation closed popup")
 	}
-	p.handleHelpMouse(MouseEvent{Action: MousePress, Button: MouseLeft})
+	p.dispatchMouse(nil, MouseEvent{Action: MousePress, Button: MouseLeft})
 	if p.help != nil {
 		t.Fatal("pane retained dismissed help")
 	}

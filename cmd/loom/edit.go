@@ -141,6 +141,7 @@ type editView struct {
 	indicators    *loom.HintBar
 	indicatorRect loom.Rect
 	pane          *loom.Pane
+	modalMouse    loom.ModalMouseCapture
 }
 
 func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*editView, error) {
@@ -833,19 +834,25 @@ func richLinePlainText(line loom.RichLine) string {
 	return sb.String()
 }
 
-func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+// ModalMouseTarget exposes overlays in visual order to the library dispatcher.
+func (v *editView) ModalMouseTarget() (loom.Widget, loom.Rect) {
 	if v.unsavedDialog != nil && v.unsavedDialog.Open {
-		_ = v.unsavedDialog.ConsumeMouse(mouse)
-		if !v.unsavedDialog.Open {
+		return v.unsavedDialog, loom.Rect{}
+	}
+	target, origin := loom.ActiveModalMouse(v.edit)
+	if target != nil {
+		origin.X += v.editorRect.X - v.lastRect.X
+		origin.Y += v.editorRect.Y - v.lastRect.Y
+	}
+	return target, origin
+}
+
+func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+	if result, captured := v.modalMouse.Dispatch(v, mouse); captured {
+		if v.unsavedDialog != nil && !v.unsavedDialog.Open {
 			v.unsavedDialog = nil
 		}
-		return loom.Handled()
-	}
-	// Editor overlays capture backdrop clicks across the whole application.
-	if v.edit.ModalOpen() {
-		mouse.X -= v.editorRect.X
-		mouse.Y -= v.editorRect.Y
-		return v.edit.ConsumeMouse(mouse)
+		return result
 	}
 
 	if v.hints != nil && v.lastRect.H >= 6 && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {

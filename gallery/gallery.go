@@ -508,6 +508,7 @@ func newAllDemo() *loom.Grid {
 		loom.Menu{Title: "Edit", Mnemonic: 'E', Items: []loom.MenuItem{{Label: "Undo"}}},
 	)
 	menuBar.Open = true
+	menuBar.Modeless = true
 	chart := &loom.Chart{Series: []loom.ChartSeries{{Name: "Requests", Values: []float64{2, 5, 3, 7, 4}}}}
 	table := newTableDemo()
 	tree := loom.NewTree([]*loom.TreeNode{
@@ -517,8 +518,10 @@ func newAllDemo() *loom.Grid {
 
 	dialog := loom.NewDialog("Save?", "Keep edits?", "No", "Yes")
 	dialog.Width, dialog.Height = 30, 4
+	dialog.Modeless = true
 	popup := loom.NewPopup("Gallery", loom.NewView([]string{"A compact popup demo."}))
 	popup.Width, popup.Height = 30, 4
+	popup.Modeless = true
 	textArea := &textAreaWidget{area: loom.NewTextArea("A short text area\nwith two lines.")}
 	viewport := loom.NewViewport(loom.NewView([]string{"Viewport row 1", "Viewport row 2", "Viewport row 3", "Viewport row 4"}))
 	grid := loom.NewGrid(3,
@@ -622,6 +625,8 @@ func (w *textAreaWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return
 // The gallery wrappers reopen their sample after it has been dismissed.
 // All active input is forwarded as the original EventResult value.
 type popupDemo struct{ popup *loom.Popup }
+
+func (w *popupDemo) Unwrap() loom.Widget { return w.popup }
 
 func (w *popupDemo) ApplyTheme(theme loom.ThemeColors) { w.popup.ApplyTheme(theme) }
 

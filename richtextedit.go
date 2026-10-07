@@ -161,16 +161,25 @@ func NewRichTextView(doc *RichDocument) *RichTextEdit {
 // Focused reports whether the editor currently has keyboard focus.
 func (e *RichTextEdit) Focused() bool { return e.focused }
 
-// ModalOpen reports whether a popup, menu or format popover captures input. Hosts should
-// route input to the editor first, including mouse events outside its bounds.
+// ModalOpen reports whether a popup, menu or visible format popover captures
+// input. ModalMouseTarget exposes that state to hosts and containers. A toolbar
+// appearing during document drag selection acquires capture after the release.
 func (e *RichTextEdit) ModalOpen() bool {
 	return (e.helpPopup != nil && e.helpPopup.Open) || (e.savePopup != nil && e.savePopup.Open) ||
-		(e.ShowFileBar && e.fileBar != nil && e.fileBar.menu.Open) || e.popoverOpen()
+		(e.ShowFileBar && e.fileBar != nil && e.fileBar.menu.Open) || (e.popoverOpen() && !e.dragSelecting)
+}
+
+// ModalMouseTarget captures mouse input while an editor overlay is active.
+func (e *RichTextEdit) ModalMouseTarget() (Widget, Rect) {
+	if e != nil && e.ModalOpen() {
+		return e, Rect{}
+	}
+	return nil, Rect{}
 }
 
 func (e *RichTextEdit) popoverOpen() bool {
-	return !e.ViewMode && e.ShowPopover && !e.popoverSuppressed &&
-		(e.HasSelection || e.popoverAtCursor) && len(e.popoverButtons) > 0
+	_, _, _, _, open := e.popoverGeometry(e.lastRect, e.documentLines())
+	return open
 }
 
 // HotkeyHint returns the most useful file and help shortcuts for the available width.
@@ -900,6 +909,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	case key.Is("ctrl-u"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case key.Is("ctrl-space"):
+		e.dragSelecting = false
 		e.clearPopoverKeyboardState(false)
 		e.popoverSuppressed = false
 		e.popoverAtCursor = false
@@ -1004,6 +1014,9 @@ func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
 }
 
 func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
+	if e.ModalOpen() {
+		e.dragSelecting = false
+	}
 	if e.helpPopup != nil {
 		result := e.helpPopup.ConsumeMouse(mouse)
 		if !e.helpPopup.Open {
@@ -1039,11 +1052,26 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 		}
 	}
 	e.ensureDocument()
-	if e.popoverRelease && mouse.Action == MouseRelease {
-		e.popoverRelease = false
-		return Handled()
+	if e.popoverRelease {
+		switch mouse.Action {
+		case MouseRelease:
+			e.popoverRelease = false
+			return Handled()
+		case MouseDrag:
+			return Handled()
+		case MousePress:
+			e.popoverRelease = false
+		}
 	}
-	if e.popoverHit(mouse.X, mouse.Y) {
+	if e.popoverOpen() && !e.dragSelecting {
+		if !e.popoverHit(mouse.X, mouse.Y) {
+			if mouse.Action == MousePress && mouse.Button == MouseLeft {
+				e.clearPopoverKeyboardState(true)
+				e.dragSelecting = false
+				e.popoverRelease = true
+			}
+			return Handled()
+		}
 		if mouse.Action == MousePress && mouse.Button == MouseLeft {
 			for _, choice := range e.popoverBoxChoices {
 				if choice.rect.Contains(mouse.X, mouse.Y) {
@@ -1071,10 +1099,6 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 		return Handled()
 	}
 	if mouse.Action == MousePress {
-		if mouse.Button == MouseLeft && e.popoverOpen() {
-			e.clearPopoverKeyboardState(true)
-			return Handled()
-		}
 		e.popoverPalette = ""
 		e.popoverSwatches = nil
 		e.popoverSubmenu = ""
@@ -1125,13 +1149,9 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 	}
 }
 
-func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
-	e.popoverButtons = nil
-	e.popoverSwatches = nil
-	e.popoverBoxChoices = nil
-	if (e.popoverPalette != "" || e.popoverSubmenu != "") && !e.popoverSubmenuCanShow() {
-		e.clearPopoverKeyboardState(true)
-	}
+// popoverGeometry is shared by drawing and modal capture so an invisible toolbar
+// never blocks document input, and keyboard opening acquires capture immediately.
+func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anchorX, pointerY int, pointer string, open bool) {
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < 18 || r.H < 3 {
 		return
 	}
@@ -1141,7 +1161,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		e.clampPosition(&from, lines)
 		anchorLine, anchorCol = from.Line, richLineColumn(lines[from.Line], from.Offset)
 	}
-	anchorX := anchorCol - e.ScrollX
+	anchorX = anchorCol - e.ScrollX
 	anchorY := anchorLine - e.ScrollY
 	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
 		return
@@ -1155,7 +1175,8 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		}
 	}
 	defs := SpeccedDefaults.RichTextEdit
-	barY, pointerY, pointer := 0, 0, defs.PointerUpGlyph
+	barY := 0
+	pointer = defs.PointerUpGlyph
 	if anchorY >= 2 {
 		barY, pointerY, pointer = anchorY-2, anchorY-1, defs.PointerDownGlyph
 	} else if anchorY+2 < r.H {
@@ -1167,7 +1188,23 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	if barX < 0 { // Keep the complete action row visible in very narrow widgets.
 		return
 	}
-	c.overlayMouseGrab = true
+	return Rect{X: barX, Y: barY, W: width, H: 1}, anchorX, pointerY, pointer, true
+}
+
+func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
+	e.popoverButtons = nil
+	e.popoverSwatches = nil
+	e.popoverBoxChoices = nil
+	if (e.popoverPalette != "" || e.popoverSubmenu != "") && !e.popoverSubmenuCanShow() {
+		e.clearPopoverKeyboardState(true)
+	}
+	bar, anchorX, pointerY, pointer, open := e.popoverGeometry(r, lines)
+	if !open {
+		return
+	}
+	barX, barY, width := bar.X, bar.Y, bar.W
+	defs := SpeccedDefaults.RichTextEdit
+	labels := defs.PopoverLabels
 	toolbarStyle := Style{FG: ColorIndex(uint8(defs.ToolbarFG)), BG: ColorIndex(uint8(defs.ToolbarBG)), Bold: true}
 	for x := 0; x < width; x++ {
 		c.Set(r.X+barX+x, r.Y+barY, Cell{Text: " ", Style: toolbarStyle})

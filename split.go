@@ -36,6 +36,7 @@ type Split struct {
 	dragging     bool
 	mouseCapture Widget
 	captureRect  Rect
+	modalMouse   ModalMouseCapture
 }
 
 // NewSplit returns an evenly divided horizontal split with a one-cell divider.
@@ -168,6 +169,10 @@ func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 // ConsumeMouse forwards an event to the child under the pointer, translating
 // split-local coordinates to that child's local 0-based coordinates.
 func (s *Split) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := s.modalMouse.Dispatch(s, e); captured {
+		s.dragging, s.mouseCapture = false, nil
+		return result
+	}
 	x, y := e.X+s.lastRect.X, e.Y+s.lastRect.Y
 	if e.Action == MousePress && e.Button == MouseLeft && s.dividerContains(x, y) {
 		s.dragging = true

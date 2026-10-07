@@ -34,6 +34,7 @@ type Frame struct {
 	mouseCapture     int
 	mouseCaptureRect Rect
 	mouseCaptured    bool
+	modalMouse       ModalMouseCapture
 }
 
 func (f *Frame) TickInterval() (shortest time.Duration) {
@@ -670,6 +671,10 @@ func (f *Frame) focusLast() {
 
 // ConsumeMouse focuses clicked boxes and forwards events inside a child's bounds.
 func (f *Frame) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := f.modalMouse.Dispatch(f, e); captured {
+		f.mouseCaptured = false
+		return result
+	}
 	x, y := e.X, e.Y
 	if f.mouseCaptured && (e.Action == MouseDrag || e.Action == MouseRelease) {
 		index := f.mouseCapture
@@ -847,7 +852,6 @@ func paintClipped(c *Canvas, r Rect, paint func(*Canvas)) {
 	}
 	local := NewCanvas(w, h)
 	paint(local)
-	c.overlayMouseGrab = c.overlayMouseGrab || local.overlayMouseGrab
 	for row := 0; row < h; row++ {
 		for col := 0; col < w; col++ {
 			c.Set(x+col, y+row, local.Get(col, row))

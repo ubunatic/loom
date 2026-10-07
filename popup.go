@@ -13,12 +13,16 @@ type Popup struct {
 	Width  int // 0 = half the canvas width
 	Height int // 0 = half the canvas height
 	Style  Style
+	// Modeless embeds popup chrome as ordinary content without capturing input
+	// outside its allocation. Nested modal overlays still acquire capture.
+	Modeless bool
 	// DismissOnOutsideClick closes the popup after a left click outside its border.
 	// NewPopup enables this by default.
 	DismissOnOutsideClick bool
 	lastRect              Rect
 	popupRect             Rect
 	innerRect             Rect
+	innerMouse            ModalMouseCapture
 }
 
 // ApplyTheme updates popup chrome and forwards the theme to its inner widget.
@@ -42,7 +46,6 @@ func (p *Popup) Draw(c *Canvas, r Rect) {
 	if !p.Open || p.Inner == nil {
 		return
 	}
-	c.overlayMouseGrab = true
 	pw, ph := p.dims(r)
 	x := r.X + (r.W-pw)/2
 	y := r.Y + (r.H-ph)/2
@@ -91,12 +94,30 @@ func (p *Popup) ConsumePaste(e PasteEvent) EventResult {
 	return DispatchPasteEvent(p.Inner, e)
 }
 
-// ConsumeMouse forwards to Inner while Open.
+// ModalMouseTarget captures mouse input exclusively while the popup is open.
+func (p *Popup) ModalMouseTarget() (Widget, Rect) {
+	if p != nil && p.Open && p.Inner != nil {
+		if p.Modeless {
+			return childModalMouse(p.Inner, p.innerRect, p.lastRect)
+		}
+		return p, Rect{}
+	}
+	return nil, Rect{}
+}
+
+// ConsumeMouse forwards to Inner while Open and consumes all backdrop events.
 func (p *Popup) ConsumeMouse(e MouseEvent) (quit EventResult) {
 	if !p.Open || p.Inner == nil {
 		return Ignored()
 	}
 	x, y := e.X+p.lastRect.X, e.Y+p.lastRect.Y
+	// A modal inside the popup is above its own backdrop and border. Offer it
+	// every event first, including the release of a press that dismissed it.
+	inner := e
+	inner.X, inner.Y = x-p.innerRect.X, y-p.innerRect.Y
+	if result, captured := p.innerMouse.Dispatch(p.Inner, inner); captured {
+		return result
+	}
 	if !p.innerRect.Contains(x, y) {
 		if p.DismissOnOutsideClick && !p.popupRect.Contains(x, y) && e.Action == MousePress && e.Button == MouseLeft {
 			p.Open = false

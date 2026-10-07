@@ -106,6 +106,7 @@ type Tabs struct {
 	tabCols          []Rect // per-tab clickable rect on the bar, refreshed each Draw
 	mouseCapture     Widget
 	mouseCaptureRect Rect // child origin in Tabs-local coordinates at press time
+	modalMouse       ModalMouseCapture
 }
 
 // NewTabs creates a Tabs widget hosting the given tabs, analogous to NewStack.
@@ -420,6 +421,10 @@ func matchesTabKey(event KeyEvent, binding string) bool {
 // ConsumeMouse selects a tab on a bar click and dispatches panel events to the
 // active child in child-local coordinates.
 func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := t.modalMouse.Dispatch(t, e); captured {
+		t.mouseCapture = nil
+		return result
+	}
 	if child := t.mouseCapture; child != nil && (e.Action == MouseDrag || e.Action == MouseRelease) {
 		e.X -= t.mouseCaptureRect.X
 		e.Y -= t.mouseCaptureRect.Y

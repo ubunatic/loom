@@ -19,7 +19,7 @@ func TestOverlayMouseModeLifecycle(t *testing.T) {
 			defer out.Close()
 			p := &Pane{tty: out, baseMouseMode: base}
 			p.reconcileMouseMode()
-			p.overlayMouseGrab = true
+			p.modalMouseGrab = true
 			p.reconcileMouseMode()
 			want := base
 			if want == 0 {
@@ -30,7 +30,7 @@ func TestOverlayMouseModeLifecycle(t *testing.T) {
 			}
 			// Repeated frames must not toggle tracking while the overlay stays open.
 			p.reconcileMouseMode()
-			p.overlayMouseGrab = false
+			p.modalMouseGrab = false
 			p.reconcileMouseMode()
 			if p.mouseMode != base || p.mouse != (base != 0) {
 				t.Fatalf("closing overlay restored mode %d, want %d", p.mouseMode, base)
@@ -59,14 +59,14 @@ func TestOverlayMouseModeBaseToggle(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer out.Close()
-	p := &Pane{tty: out, overlayMouseGrab: true}
+	p := &Pane{tty: out, modalMouseGrab: true}
 	p.EnableMouse()
 	p.DisableMouse()
 	if !p.mouse || p.mouseMode != 1000 || p.baseMouseMode != 0 {
 		t.Fatal("disabling global mouse interrupted overlay capture")
 	}
 	p.EnableMouse()
-	p.overlayMouseGrab = false
+	p.modalMouseGrab = false
 	p.reconcileMouseMode()
 	if p.mouseMode != 1003 {
 		t.Fatal("closing overlay lost newly enabled global grab")
@@ -103,7 +103,7 @@ func TestOverlayMouseRequests(t *testing.T) {
 			}
 			c.Clear()
 			w.Draw(c, c.Bounds())
-			if !c.overlayMouseGrab {
+			if target, _ := ActiveModalMouse(w); target == nil {
 				t.Fatal("visible overlay did not request mouse tracking")
 			}
 			if kind == "menu" {
@@ -116,7 +116,7 @@ func TestOverlayMouseRequests(t *testing.T) {
 			if kind != "menu" {
 				w.Draw(c, c.Bounds())
 			}
-			if c.overlayMouseGrab {
+			if target, _ := ActiveModalMouse(w); target != nil {
 				t.Fatal("dismissed overlay retained mouse capture")
 			}
 		})
@@ -127,35 +127,35 @@ func TestOverlayMouseStackAndClipping(t *testing.T) {
 	c := NewCanvas(80, 24)
 	a := NewPopup("First", NewRichTextEdit(nil))
 	b := NewDialog("Second", "Body", "OK")
+	stack := NewStack(Horizontal, a, b)
 	draw := func() {
 		c.Clear()
 		paintClipped(c, c.Bounds(), func(local *Canvas) {
-			a.Draw(local, local.Bounds())
-			b.Draw(local, local.Bounds())
+			stack.Draw(local, local.Bounds())
 		})
 	}
 	draw()
 	a.ConsumeKey(KeyEvent{Key: "esc"})
 	draw()
-	if !c.overlayMouseGrab {
+	if target, _ := ActiveModalMouse(stack); target != b {
 		t.Fatal("closing one overlay released another overlay's grab")
 	}
 	b.ConsumeKey(KeyEvent{Key: "enter"})
 	draw()
-	if c.overlayMouseGrab {
+	if target, _ := ActiveModalMouse(stack); target != nil {
 		t.Fatal("last closed overlay retained grab")
 	}
 	b.Open = true
-	sub := NewCanvas(40, 12)
-	b.Draw(sub, sub.Bounds())
-	c.Blit(sub.SubCanvas(sub.Bounds()), 0, 0)
-	if !c.overlayMouseGrab {
-		t.Fatal("blitted overlay lost its grab request")
+	viewport := NewViewport(b)
+	viewport.Draw(c, c.Bounds())
+	if target, _ := ActiveModalMouse(viewport); target != b {
+		t.Fatal("viewport's offscreen drawing lost its modal")
 	}
-	c.Clear()
-	c.Blit(sub, 100, 100)
-	if c.overlayMouseGrab {
-		t.Fatal("fully clipped overlay requested grab")
+	grid := NewGrid(1, NewView(nil), b)
+	grid.FitRows = true
+	grid.Draw(c, Rect{W: 80, H: 1})
+	if target, _ := ActiveModalMouse(grid); target != nil {
+		t.Fatal("fully clipped child retained modal capture")
 	}
 }
 
@@ -172,7 +172,7 @@ func TestPopoverBackdropPreservesDocumentAndCursor(t *testing.T) {
 	e.ConsumeMouse(MouseEvent{X: 79, Y: 23, Action: MousePress, Button: MouseLeft})
 	c.Clear()
 	e.Draw(c, c.Bounds())
-	if e.ModalOpen() || c.overlayMouseGrab || e.Cursor != before || e.IsModified() {
+	if e.ModalOpen() || e.Cursor != before || e.IsModified() {
 		t.Fatal("backdrop click did not dismiss without editing the background")
 	}
 }

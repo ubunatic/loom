@@ -38,6 +38,9 @@ type Form struct {
 	Validation     map[int]string
 	focused        int
 	focusedSelf    bool
+	lastRect       Rect
+	fieldRects     []Rect
+	modalMouse     ModalMouseCapture
 }
 
 // NewForm constructs a form with the first field focused.
@@ -87,6 +90,8 @@ func (f *Form) FocusPrevious() bool {
 
 // Draw renders an error summary followed by aligned field labels, editors, help, and actions.
 func (f *Form) Draw(c *Canvas, r Rect) {
+	f.lastRect = r
+	f.fieldRects = make([]Rect, len(f.Fields))
 	for y := 0; y < r.H; y++ {
 		c.PaintSurface(Rect{r.X, r.Y + y, r.W, 1}, Style{})
 	}
@@ -125,6 +130,7 @@ func (f *Form) Draw(c *Canvas, r Rect) {
 			}
 		}
 		fieldRect := Rect{x, y, max(0, r.X+r.W-x), min(h, r.Y+r.H-y)}
+		f.fieldRects[i] = fieldRect
 		switch w := field.Widget.(type) {
 		case *TextInput:
 			w.Draw(c, fieldRect, i == f.focused)
@@ -307,6 +313,9 @@ func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 func (f *Form) ConsumeMouse(e MouseEvent) EventResult {
 	if f == nil {
 		return Ignored()
+	}
+	if result, captured := f.modalMouse.Dispatch(f, e); captured {
+		return result
 	}
 	if e.Action != MousePress || e.Button != MouseLeft {
 		return Ignored()

@@ -14,14 +14,17 @@ import (
 // without buttons it does nothing. Escape closes without calling OnSelect.
 // Closing consumes the event without quitting or completing the hosting pane.
 type Dialog struct {
-	Title    string
-	Body     string
-	Buttons  []string
-	Rect     Rect // explicit top-left and optional size; zero W/H are content-sized
-	Width    int  // used when Rect is unset; zero sizes from content
-	Height   int
-	Style    Style
-	Open     bool
+	Title   string
+	Body    string
+	Buttons []string
+	Rect    Rect // explicit top-left and optional size; zero W/H are content-sized
+	Width   int  // used when Rect is unset; zero sizes from content
+	Height  int
+	Style   Style
+	Open    bool
+	// Modeless embeds the prompt as ordinary content without capturing input
+	// outside its allocation. NewDialog remains modal by default.
+	Modeless bool
 	OnSelect func(string)
 	selected int
 	popup    *Popup
@@ -154,9 +157,20 @@ func (d *Dialog) ConsumeKey(e KeyEvent) EventResult {
 	return Ignored()
 }
 
+// ModalMouseTarget captures mouse input exclusively while the dialog is open.
+func (d *Dialog) ModalMouseTarget() (Widget, Rect) {
+	if d != nil && d.Open && !d.Modeless {
+		return d, Rect{}
+	}
+	return nil, Rect{}
+}
+
 func (d *Dialog) ConsumeMouse(e MouseEvent) EventResult {
-	if d.popup == nil || !d.Open {
+	if !d.Open {
 		return Ignored()
+	}
+	if d.popup == nil {
+		return Handled()
 	}
 	if e.Action == MousePress && e.Button == MouseLeft && !d.popup.popupRect.Contains(e.X+d.drawRect.X, e.Y+d.drawRect.Y) {
 		d.Open = false

@@ -72,7 +72,8 @@ type Pane struct {
 	mouse            bool
 	mouseMode        int
 	baseMouseMode    int
-	overlayMouseGrab bool
+	modalMouseGrab   bool
+	modalMouse       ModalMouseCapture
 	cursorProximity  bool
 	cursorStarTrail  bool
 	cursorPressPulse bool
@@ -619,7 +620,7 @@ func (p *Pane) disableMouse() {
 // Call before Run or from an event handler. EnableMouse re-enables tracking.
 func (p *Pane) DisableMouse() {
 	p.baseMouseMode = 0
-	if p.overlayMouseGrab {
+	if p.modalMouseGrab {
 		p.reconcileMouseMode()
 		return
 	}
@@ -638,7 +639,7 @@ func (p *Pane) releaseMouse() {
 // base mode. Click tracking is sufficient for overlay buttons and scrolling.
 func (p *Pane) reconcileMouseMode() {
 	mode := p.baseMouseMode
-	if mode == 0 && p.overlayMouseGrab {
+	if mode == 0 && p.modalMouseGrab {
 		mode = 1000
 	}
 	if mode == p.mouseMode {
@@ -1165,7 +1166,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		if p.help != nil {
 			p.help.Draw(canvas, canvas.Bounds())
 		}
-		p.overlayMouseGrab = canvas.overlayMouseGrab
+		modal, _ := ActiveModalMouse(root)
+		p.modalMouseGrab = modal != nil || (p.help != nil && p.help.Open)
 		p.reconcileMouseMode()
 		drawn := time.Now()
 		canvas.ComposeBackground(p.Background, canvas.Bounds(), drawn)
@@ -1472,7 +1474,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 							p.triggerCursorPulse(time.Now())
 						}
 					}
-					if p.mouse && !p.handleHelpMouse(me) && p.dispatchMouse(root, me).Quit {
+					if p.mouse && p.dispatchMouse(root, me).Quit {
 						quit = true
 						break
 					}
@@ -1573,6 +1575,15 @@ func (p *Pane) globalF10Quit(ke KeyEvent) bool {
 }
 
 func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
+	if p.help != nil && p.help.Open {
+		root = p.help
+	}
+	if result, captured := p.modalMouse.Dispatch(root, me); captured {
+		if p.help != nil && !p.help.Open {
+			p.help = nil
+		}
+		return result
+	}
 	return DispatchMouseEvent(root, me)
 }
 
@@ -1592,17 +1603,6 @@ func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
 		p.help = nil
 	}
 	return false, true
-}
-
-func (p *Pane) handleHelpMouse(e MouseEvent) bool {
-	if p.help == nil {
-		return false
-	}
-	p.help.ConsumeMouse(e)
-	if !p.help.Open {
-		p.help = nil
-	}
-	return true
 }
 
 var defaultQuitKeyMap = func() map[string]bool {

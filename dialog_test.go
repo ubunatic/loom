@@ -85,7 +85,9 @@ func TestGridDialogButtonClickConsumesAndCloses(t *testing.T) {
 		for x := 0; x < 78; x++ {
 			if c.Get(x, y).Text == "Y" && c.Get(x+1, y).Text == "e" && c.Get(x+2, y).Text == "s" {
 				res := g.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: x - allocation.X, Y: y - allocation.Y})
-				if !res.Consumed || res.Quit || d.Open || selected != "Yes" || g.Focus() != 1 {
+				// Modal capture precedes hit-testing and preserves the background
+				// container's focus even when its modal lives in another cell.
+				if !res.Consumed || res.Quit || d.Open || selected != "Yes" || g.Focus() != 0 {
 					t.Fatalf("click: %+v open=%v selected=%q focus=%d", res, d.Open, selected, g.Focus())
 				}
 				return

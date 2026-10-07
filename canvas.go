@@ -58,8 +58,6 @@ type Canvas struct {
 	CursorY        int // 0-based row index, -1 if hidden
 	CursorShape    CursorShape
 	CursorShapeSet bool
-	// overlayMouseGrab is rebuilt each frame by visible interactive overlays.
-	overlayMouseGrab bool
 }
 
 // NewCanvas allocates a cols×rows canvas filled with blank cells.
@@ -91,7 +89,6 @@ func (c *Canvas) SubCanvas(r Rect) *Canvas {
 		return sub
 	}
 	sub.ColorProfile = c.ColorProfile
-	sub.overlayMouseGrab = c.overlayMouseGrab
 	for sy := 0; sy < r.H && sy < sub.rows; sy++ {
 		py := r.Y + sy
 		if py < 0 || py >= c.rows {
@@ -130,9 +127,6 @@ func (c *Canvas) SubCanvas(r Rect) *Canvas {
 func (c *Canvas) Blit(src *Canvas, dstX, dstY int) {
 	if c == nil || src == nil {
 		return
-	}
-	if dstX < c.cols && dstY < c.rows && dstX+src.cols > 0 && dstY+src.rows > 0 {
-		c.overlayMouseGrab = c.overlayMouseGrab || src.overlayMouseGrab
 	}
 	for sy := 0; sy < src.rows; sy++ {
 		for sx := 0; sx < src.cols; sx++ {
@@ -630,7 +624,6 @@ func (c *Canvas) Clear() {
 	c.CursorX = -1
 	c.CursorY = -1
 	c.CursorShapeSet = false
-	c.overlayMouseGrab = false
 }
 
 // ── Border Drawing Primitives ────────────────────────────────────────────
