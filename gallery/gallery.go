@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -288,19 +287,11 @@ func newRichTextEditDemoWithArgs(args []string) (loom.Widget, error) {
 	if len(args) > 1 {
 		return nil, fmt.Errorf("RichTextEdit demo accepts at most one file path argument")
 	}
-	path := args[0]
-	doc := &loom.RichDocument{}
-	data, err := os.ReadFile(path)
-	if err == nil {
-		doc.FromANSI(string(data))
-	} else if os.IsNotExist(err) {
-		doc.Lines = []loom.RichLine{{}}
-	} else {
-		return nil, fmt.Errorf("read RichTextEdit demo file %q: %w", path, err)
+	edit, err := loom.NewRichTextEditFromFile(args[0])
+	if err != nil {
+		return nil, fmt.Errorf("read RichTextEdit demo file %q: %w", args[0], err)
 	}
-	demo := newRichTextEditDemoWithDoc(doc)
-	demo.edit.FilePath = path
-	return demo, nil
+	return &richTextEditDemo{edit: edit}, nil
 }
 
 // RequiresAltScreen reports whether the named demo or demos need terminal keys
