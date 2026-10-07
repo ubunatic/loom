@@ -1,0 +1,779 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"unicode"
+
+	"github.com/spf13/cobra"
+	"ubunatic.com/loom"
+)
+
+type editFocus int
+
+const (
+	focusEditor editFocus = iota
+	focusBrowser
+	focusSearch
+)
+
+type searchMatch struct {
+	line   int
+	start  int
+	length int
+}
+
+func editCommand() *cobra.Command {
+	var configPath string
+	var themeName string
+	var mouseGrab bool
+	var altScreen bool
+
+	cmd := &cobra.Command{
+		Use:   "edit <file>",
+		Short: "Interactively edit a rich text or ANSI file",
+		Args:  cobra.ExactArgs(1),
+		SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+
+			cfg, err := loom.LoadEditorConfig(configPath)
+			if err != nil {
+				return err
+			}
+
+			if cmd.Flags().Changed("theme") {
+				if !loom.ThemeExists(themeName) {
+					return fmt.Errorf("unknown theme %q", themeName)
+				}
+				cfg.Theme = themeName
+			}
+			if cmd.Flags().Changed("mousegrab") {
+				cfg.MouseGrab = mouseGrab
+			}
+			if cmd.Flags().Changed("altscreen") {
+				cfg.AltScreen = altScreen
+			}
+
+			edit, err := loom.NewRichTextEditFromFile(path)
+			if err != nil {
+				return err
+			}
+
+			pane, err := loom.New(24)
+			if err != nil {
+				return err
+			}
+			defer pane.Close()
+
+			configureEditPane(pane, cfg)
+			view, err := newEditView(edit, path, cfg)
+			if err != nil {
+				return err
+			}
+			return pane.Run(view)
+		},
+	}
+
+	cmd.Flags().StringVarP(&configPath, "config", "c", "", "path to editor settings YAML file")
+	cmd.Flags().StringVarP(&themeName, "theme", "t", "", "color theme name")
+	cmd.Flags().BoolVarP(&mouseGrab, "mousegrab", "m", false, "enable mouse tracking/capture")
+	cmd.Flags().BoolVarP(&altScreen, "altscreen", "a", true, "use alternate screen buffer")
+
+	return cmd
+}
+
+func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
+	pane.MaxCols = 0
+	pane.Resizeable = true
+	pane.DisableGlobalF10Quit = true
+	if cfg.MouseGrab {
+		pane.EnableMouse()
+	}
+	if cfg.AltScreen {
+		pane.SetScreenMode(loom.ScreenAlt)
+	} else {
+		pane.SetScreenMode(loom.ScreenInline)
+	}
+}
+
+type editView struct {
+	edit            *loom.RichTextEdit
+	filePath        string
+	config          loom.EditorConfig
+	focused         editFocus
+	showSidePanel   bool
+	filePicker      *loom.FilePicker
+	showSearch      bool
+	searchBar       *loom.SearchBar
+	searchQuery     string
+	regexMode       bool
+	searchMatches   []searchMatch
+	searchIndex     int
+	searchErr       string
+	unsavedDialog   *loom.Dialog
+	pendingOpenPath string
+	shouldQuit      bool
+	lastRect        loom.Rect
+	editorRect      loom.Rect
+	browserRect     loom.Rect
+	searchRect      loom.Rect
+}
+
+func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*editView, error) {
+	dir := filepath.Dir(path)
+	if dir == "" || dir == "." {
+		dir, _ = filepath.Abs(".")
+	}
+
+	v := &editView{
+		edit:          edit,
+		filePath:      path,
+		config:        cfg,
+		focused:       focusEditor,
+		showSidePanel: false, // initial toggle state
+	}
+
+	picker, err := loom.NewFilePicker(dir, loom.FilePickerOptions{
+		Mode: loom.FilePickerFiles,
+		OnSelect: func(selectedPath string) {
+			if v.filePicker != nil {
+				v.filePicker.Reset()
+			}
+			if v.edit.IsModified() {
+				v.pendingOpenPath = selectedPath
+				_ = v.handleQuit()
+			} else {
+				_ = v.openFile(selectedPath)
+			}
+		},
+		OnCancel: func() {
+			if v.filePicker != nil {
+				v.filePicker.Reset()
+			}
+			v.showSidePanel = false
+			v.focused = focusEditor
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	v.filePicker = picker
+
+	sb := loom.NewSearchBar()
+	sb.Prompt = loom.SpeccedDefaults.Editor.SearchPrompt
+	sb.Placeholder = loom.SpeccedDefaults.Editor.SearchPlaceholder
+	v.searchBar = sb
+
+	if theme := loom.Theme(cfg.Theme); cfg.Theme != "" {
+		v.edit.ApplyTheme(theme)
+		v.filePicker.ApplyTheme(theme)
+	}
+
+	return v, nil
+}
+
+func (v *editView) openFile(path string) error {
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		return err
+	}
+	v.edit = edit
+	v.filePath = path
+	if theme := loom.Theme(v.config.Theme); v.config.Theme != "" {
+		v.edit.ApplyTheme(theme)
+	}
+	v.updateSearchMatches()
+	return nil
+}
+
+func (v *editView) hotkeyBar() *loom.HintBar {
+	theme := loom.Theme(v.config.Theme)
+	style := theme.HintBarStyle()
+	editorDefs := loom.SpeccedDefaults.Editor
+	richDefs := loom.SpeccedDefaults.RichTextEdit
+
+	entries := []loom.HintEntry{
+		{Key: editorDefs.HotkeyFilesKey, Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
+			v.toggleSidePanel()
+			return loom.Handled()
+		}},
+		{Key: editorDefs.HotkeySearchKey, Binding: editorDefs.HotkeySearchBinding, Label: editorDefs.HotkeySearchLabel, Action: func() loom.EventResult {
+			v.toggleSearch()
+			return loom.Handled()
+		}},
+		{Key: richDefs.HotkeySaveKey, Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
+			_ = v.edit.Save()
+			return loom.Handled()
+		}},
+		{Key: richDefs.HotkeySaveAsKey, Binding: richDefs.HotkeySaveAsBinding, Label: richDefs.HotkeySaveAsLabel, Action: func() loom.EventResult {
+			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeySaveAsBinding})
+		}},
+		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, Action: func() loom.EventResult {
+			return v.edit.ConsumeKey(loom.KeyEvent{Key: editorDefs.HotkeyBoxBinding})
+		}},
+		{Key: richDefs.HotkeyQuitKey, Binding: richDefs.HotkeyQuitBinding, Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
+			return v.handleQuit()
+		}},
+	}
+
+	bar := &loom.HintBar{Entries: entries, Style: style}
+	return bar
+}
+
+func (v *editView) handleQuit() loom.EventResult {
+	if !v.edit.IsModified() {
+		v.shouldQuit = true
+		return loom.QuitResult()
+	}
+	name := "Untitled"
+	if v.filePath != "" {
+		name = filepath.Base(v.filePath)
+	}
+	dialog := loom.NewDialog("Save changes?", fmt.Sprintf("Save changes to %s before closing?", name), "Save", "Discard", "Cancel")
+	dialog.OnSelect = func(button string) {
+		switch button {
+		case "Save":
+			if err := v.edit.Save(); err == nil {
+				if v.pendingOpenPath != "" {
+					_ = v.openFile(v.pendingOpenPath)
+					v.pendingOpenPath = ""
+				} else {
+					v.shouldQuit = true
+				}
+			}
+		case "Discard":
+			if v.pendingOpenPath != "" {
+				_ = v.openFile(v.pendingOpenPath)
+				v.pendingOpenPath = ""
+			} else {
+				v.shouldQuit = true
+			}
+		case "Cancel":
+			v.pendingOpenPath = ""
+		}
+	}
+	v.unsavedDialog = dialog
+	return loom.Handled()
+}
+
+func (v *editView) toggleSidePanel() {
+	v.showSidePanel = !v.showSidePanel
+	if v.showSidePanel {
+		v.focused = focusBrowser
+	} else if v.focused == focusBrowser {
+		v.focused = focusEditor
+	}
+}
+
+func (v *editView) toggleSearch() {
+	v.showSearch = !v.showSearch
+	if v.showSearch {
+		v.focused = focusSearch
+		v.searchBar.SetFocused(true)
+	} else {
+		if v.focused == focusSearch {
+			v.focused = focusEditor
+		}
+		v.edit.ClearSelection()
+	}
+}
+
+func (v *editView) updateSearchMatches() {
+	v.searchMatches = nil
+	v.searchErr = ""
+	if v.searchQuery == "" {
+		v.edit.ClearSelection()
+		return
+	}
+
+	lines := v.edit.Document.Lines
+	if v.regexMode {
+		re, err := regexp.Compile("(?i)" + v.searchQuery)
+		if err != nil {
+			v.searchErr = "Invalid regex"
+			v.edit.ClearSelection()
+			return
+		}
+		for lineIdx, line := range lines {
+			plainText := richLinePlainText(line)
+			locs := re.FindAllStringIndex(plainText, -1)
+			for _, loc := range locs {
+				startRune := len([]rune(plainText[:loc[0]]))
+				matchRunes := len([]rune(plainText[loc[0]:loc[1]]))
+				v.searchMatches = append(v.searchMatches, searchMatch{
+					line:   lineIdx,
+					start:  startRune,
+					length: matchRunes,
+				})
+			}
+		}
+	} else {
+		queryRunes := len([]rune(v.searchQuery))
+		for lineIdx, line := range lines {
+			plainText := richLinePlainText(line)
+			for _, startRune := range findRuneMatches(plainText, v.searchQuery) {
+				v.searchMatches = append(v.searchMatches, searchMatch{
+					line:   lineIdx,
+					start:  startRune,
+					length: queryRunes,
+				})
+			}
+		}
+	}
+
+	if len(v.searchMatches) > 0 {
+		if v.searchIndex >= len(v.searchMatches) {
+			v.searchIndex = 0
+		}
+		v.highlightSearchMatch()
+	} else {
+		v.edit.ClearSelection()
+	}
+}
+
+func (v *editView) highlightSearchMatch() {
+	if len(v.searchMatches) == 0 {
+		return
+	}
+	m := v.searchMatches[v.searchIndex]
+	from := loom.RichPosition{Line: m.line, Offset: m.start}
+	to := loom.RichPosition{Line: m.line, Offset: m.start + m.length}
+	v.edit.SetSelection(from, to)
+	v.edit.Cursor = to
+}
+
+func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
+	v.lastRect = rect
+	if rect.W <= 0 || rect.H <= 0 {
+		return
+	}
+
+	theme := loom.Theme(v.config.Theme)
+	boxStyle := theme.BoxStyle()
+	normalStyle := theme.ChoiceStyle().Normal
+	dimStyle := loom.Style{Dim: true, FG: normalStyle.FG, BG: normalStyle.BG}
+
+	// 1. Render Outer Box Frame with title "loom edit"
+	canvas.PaintDefaultSurface(rect, normalStyle)
+	boxBorder := "┌─ loom edit " + strings.Repeat("─", max(0, rect.W-14)) + "┐"
+	if rect.H > 0 {
+		canvas.WriteDefault(rect.X, rect.Y, loom.TruncateText(boxBorder, rect.W, ""), boxStyle.Border)
+	}
+	if rect.H > 1 {
+		canvas.WriteDefault(rect.X, rect.Y+rect.H-1, "└"+strings.Repeat("─", max(0, rect.W-2))+"┘", boxStyle.Border)
+	}
+	for y := rect.Y + 1; y < rect.Y+rect.H-1; y++ {
+		canvas.Set(rect.X, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+		canvas.Set(rect.X+rect.W-1, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+	}
+
+	innerW := max(0, rect.W-2)
+	innerX := rect.X + 1
+
+	// 2. Line Y=1: Header filebar
+	fileName := "Untitled"
+	if v.filePath != "" {
+		fileName = filepath.Base(v.filePath)
+	}
+	mouseStr := "off"
+	if v.config.MouseGrab {
+		mouseStr = "on"
+	}
+	rightStatus := fmt.Sprintf("theme: %-8s   mouse: %s", v.config.Theme, mouseStr)
+	headerText := fmt.Sprintf(" File    %-48s %s", fileName, rightStatus)
+	if rect.H > 2 {
+		canvas.WriteDefault(innerX, rect.Y+1, loom.TruncateText(headerText, innerW, ""), normalStyle)
+	}
+
+	// Line Y=2: Divider
+	if rect.H > 3 {
+		canvas.WriteDefault(innerX, rect.Y+2, strings.Repeat("─", innerW), boxStyle.Border)
+	}
+
+	// 3. Line Y=H-3: Divider, Line Y=H-2: Status, Line Y=H-1: Hotkeys
+	if rect.H >= 6 {
+		// Y=H-3
+		canvas.WriteDefault(innerX, rect.Y+rect.H-4, strings.Repeat("─", innerW), boxStyle.Border)
+
+		// Y=H-2
+		altStr := "off"
+		if v.config.AltScreen {
+			altStr = "on"
+		}
+		absPath := v.filePath
+		if abs, err := filepath.Abs(v.filePath); err == nil {
+			absPath = abs
+		}
+		curLine := v.edit.Cursor.Line + 1
+		curCol := v.edit.Cursor.Offset + 1
+		posStr := fmt.Sprintf("Ln %d, Col %d", curLine, curCol)
+		statusRight := fmt.Sprintf("%s  |  altscreen: %s", posStr, altStr)
+		rightW := len(statusRight)
+		leftW := max(0, innerW-rightW-2)
+		statusLine := fmt.Sprintf(" %-*s %s", leftW, loom.TruncateText(absPath, leftW, "..."), statusRight)
+		canvas.WriteDefault(innerX, rect.Y+rect.H-3, loom.TruncateText(statusLine, innerW, ""), normalStyle)
+
+		// Y=H-1
+		v.hotkeyBar().Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
+	}
+
+	// 4. Middle Content Area: Y = rect.Y + 3 to rect.Y + rect.H - 5
+	contentY := rect.Y + 3
+	contentH := max(0, rect.H-6)
+
+	if contentH > 0 && innerW > 0 {
+		if v.showSidePanel {
+			browserW := min(24, innerW/3)
+			if browserW < 10 {
+				browserW = innerW / 2
+			}
+			v.browserRect = loom.Rect{X: innerX, Y: contentY, W: browserW, H: contentH}
+
+			// Render Browser Panel
+			v.filePicker.Draw(canvas, v.browserRect)
+
+			// Vertical separator line
+			sepX := innerX + browserW
+			if sepX < innerX+innerW {
+				for y := contentY; y < contentY+contentH; y++ {
+					canvas.Set(sepX, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+				}
+			}
+
+			editorX := sepX + 1
+			editorW := max(0, innerX+innerW-editorX)
+			v.editorRect = loom.Rect{X: editorX, Y: contentY, W: editorW, H: contentH}
+		} else {
+			v.browserRect = loom.Rect{}
+			v.editorRect = loom.Rect{X: innerX, Y: contentY, W: innerW, H: contentH}
+		}
+
+		v.edit.Draw(canvas, v.editorRect)
+
+		// Search Panel Overlay
+		if v.showSearch {
+			sWidth := min(48, max(10, v.editorRect.W))
+			sHeight := min(7, max(3, contentH))
+			sX := max(v.editorRect.X, v.editorRect.X+v.editorRect.W-sWidth)
+			sY := v.editorRect.Y
+			v.searchRect = loom.Rect{X: sX, Y: sY, W: sWidth, H: sHeight}
+
+			if sWidth > 4 && sHeight > 2 {
+				// Search box background and border
+				canvas.PaintDefaultSurface(v.searchRect, normalStyle)
+				boxTitle := "┌─ Search  F3 / ^F " + strings.Repeat("─", max(0, sWidth-20)) + "┐"
+				canvas.WriteDefault(sX, sY, loom.TruncateText(boxTitle, sWidth, ""), boxStyle.Border)
+				canvas.WriteDefault(sX, sY+sHeight-1, loom.TruncateText("└"+strings.Repeat("─", max(0, sWidth-2))+"┘", sWidth, ""), boxStyle.Border)
+				for y := sY + 1; y < sY+sHeight-1; y++ {
+					canvas.Set(sX, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+					canvas.Set(sX+sWidth-1, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+				}
+
+				// Find input line
+				v.searchBar.MaxWidth = max(1, sWidth-4)
+				v.searchBar.Draw(canvas, loom.Rect{X: sX + 2, Y: sY + 1, W: max(1, sWidth-4), H: 1})
+
+				// Mode toggle line: [ Normal * ]  [ Regex ]
+				normStr := "[ Normal * ]"
+				regStr := "[ Regex ]"
+				if v.regexMode {
+					normStr = "[ Normal ]"
+					regStr = "[ Regex * ]"
+				}
+				if sHeight > 3 {
+					canvas.WriteDefault(sX+2, sY+2, loom.TruncateText(normStr+"  "+regStr, sWidth-4, ""), normalStyle)
+				}
+
+				// Match counter line
+				if sHeight > 4 {
+					matchStr := "No matches"
+					if v.searchErr != "" {
+						matchStr = v.searchErr
+					} else if len(v.searchMatches) > 0 {
+						matchStr = fmt.Sprintf("%d / %d matches", v.searchIndex+1, len(v.searchMatches))
+					}
+					canvas.WriteDefault(sX+2, sY+3, loom.TruncateText(matchStr, sWidth-4, ""), dimStyle)
+				}
+
+				// Nav hints
+				if sHeight > 5 {
+					canvas.WriteDefault(sX+2, sY+4, loom.TruncateText("Enter: next   S-Enter: prev", sWidth-4, ""), dimStyle)
+				}
+			}
+		}
+	}
+
+	// Unsaved Changes Dialog Overlay
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		v.unsavedDialog.Draw(canvas, rect)
+	}
+}
+
+func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		_ = v.unsavedDialog.ConsumeKey(key)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		if !v.unsavedDialog.Open {
+			v.unsavedDialog = nil
+		}
+		return loom.Handled()
+	}
+
+	editorDefs := loom.SpeccedDefaults.Editor
+	richDefs := loom.SpeccedDefaults.RichTextEdit
+
+	if key.Is(richDefs.HotkeyQuitBinding) {
+		res := v.handleQuit()
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+
+	if key.Is(editorDefs.HotkeyFilesBinding) {
+		v.toggleSidePanel()
+		return loom.Handled()
+	}
+
+	if key.Is(editorDefs.HotkeySearchBinding, "ctrl-f") {
+		v.toggleSearch()
+		return loom.Handled()
+	}
+
+	if key.Is("ctrl-p") {
+		_ = v.captureScreenshot()
+		return loom.Handled()
+	}
+
+	// Tab focus switching
+	if key.Is("tab") && !v.showSearch && (v.showSidePanel || v.focused == focusBrowser) {
+		if v.focused == focusBrowser {
+			v.focused = focusEditor
+		} else {
+			v.focused = focusBrowser
+		}
+		return loom.Handled()
+	}
+
+	if v.showSearch && v.focused == focusSearch {
+		if key.Is("esc") {
+			v.toggleSearch()
+			return loom.Handled()
+		}
+		if key.Is("ctrl-q", "ctrl-c", "ctrl-d", richDefs.HotkeyQuitBinding) {
+			res := v.handleQuit()
+			if v.shouldQuit {
+				return loom.QuitResult()
+			}
+			return res
+		}
+		if key.Is("enter") {
+			if len(v.searchMatches) > 0 {
+				v.searchIndex = (v.searchIndex + 1) % len(v.searchMatches)
+				v.highlightSearchMatch()
+			}
+			return loom.Handled()
+		}
+		if key.Is("shift-enter") {
+			if len(v.searchMatches) > 0 {
+				v.searchIndex = (v.searchIndex - 1 + len(v.searchMatches)) % len(v.searchMatches)
+				v.highlightSearchMatch()
+			}
+			return loom.Handled()
+		}
+		if key.Is("tab", "ctrl-r") {
+			v.regexMode = !v.regexMode
+			v.searchIndex = 0
+			v.updateSearchMatches()
+			return loom.Handled()
+		}
+		// Search mode toggle or input
+		res := v.searchBar.ConsumeKey(key)
+		if v.searchBar.Query != v.searchQuery {
+			v.searchQuery = v.searchBar.Query
+			v.searchIndex = 0
+			v.updateSearchMatches()
+		}
+		if res.Quit {
+			res = v.handleQuit()
+			if v.shouldQuit {
+				return loom.QuitResult()
+			}
+			return res
+		}
+		return res
+	}
+
+	if v.showSidePanel && v.focused == focusBrowser {
+		return v.filePicker.ConsumeKey(key)
+	}
+
+	if res := v.hotkeyBar().ConsumeKey(key); res.Consumed {
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+
+	res := v.edit.ConsumeKey(key)
+	if v.shouldQuit {
+		return loom.QuitResult()
+	}
+	if v.showSearch && res.Consumed {
+		v.updateSearchMatches()
+	}
+	return res
+}
+
+func (v *editView) captureScreenshot() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "."
+	}
+	dir := filepath.Join(home, "Pictures", "Screenshots")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	entries, _ := os.ReadDir(dir)
+	num := len(entries) + 1
+
+	fileName := "document"
+	if v.filePath != "" {
+		fileName = filepath.Base(v.filePath)
+	}
+
+	shotName := fmt.Sprintf("%02d-loom-edit-%s.ansi", num, fileName)
+	outPath := filepath.Join(dir, shotName)
+
+	w, h := v.lastRect.W, v.lastRect.H
+	if w <= 0 || h <= 0 {
+		w, h = 100, 24
+	}
+
+	rows := loom.Render(v, w, h)
+	content := strings.Join(rows, "\n") + "\n"
+	return os.WriteFile(outPath, []byte(content), 0644)
+}
+
+func findRuneMatches(line string, query string) []int {
+	lineRunes := []rune(line)
+	queryRunes := []rune(query)
+	if len(queryRunes) == 0 || len(lineRunes) < len(queryRunes) {
+		return nil
+	}
+	var matches []int
+	for i := 0; i <= len(lineRunes)-len(queryRunes); i++ {
+		match := true
+		for j := 0; j < len(queryRunes); j++ {
+			r1 := unicode.ToLower(lineRunes[i+j])
+			r2 := unicode.ToLower(queryRunes[j])
+			if r1 != r2 {
+				match = false
+				break
+			}
+		}
+		if match {
+			matches = append(matches, i)
+		}
+	}
+	return matches
+}
+
+func richLinePlainText(line loom.RichLine) string {
+	var sb strings.Builder
+	for _, span := range line.Spans {
+		sb.WriteString(span.Text)
+	}
+	return sb.String()
+}
+
+func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		_ = v.unsavedDialog.ConsumeMouse(mouse)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		if !v.unsavedDialog.Open {
+			v.unsavedDialog = nil
+		}
+		return loom.Handled()
+	}
+
+	if v.lastRect.H > 2 && mouse.Y == v.lastRect.H-2 {
+		mouseLocal := mouse
+		mouseLocal.Y = 0
+		res := v.hotkeyBar().ConsumeMouse(mouseLocal)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+
+	// Click in search panel
+	if v.showSearch && v.searchRect.Contains(mouse.X, mouse.Y) {
+		if mouse.Action == loom.MousePress {
+			v.focused = focusSearch
+			v.searchBar.SetFocused(true)
+			if mouse.Button == loom.MouseLeft && mouse.Y == v.searchRect.Y+2 {
+				normW := len("[ Normal * ]")
+				normX := v.searchRect.X + 2
+				regX := normX + normW + 2
+				regW := len("[ Regex * ]")
+				if mouse.X >= normX && mouse.X < normX+normW {
+					if v.regexMode {
+						v.regexMode = false
+						v.searchIndex = 0
+						v.updateSearchMatches()
+					}
+					return loom.Handled()
+				}
+				if mouse.X >= regX && mouse.X < regX+regW {
+					if !v.regexMode {
+						v.regexMode = true
+						v.searchIndex = 0
+						v.updateSearchMatches()
+					}
+					return loom.Handled()
+				}
+			}
+		}
+		mouseLocal := mouse
+		mouseLocal.X -= v.searchRect.X + 2
+		mouseLocal.Y -= v.searchRect.Y + 1
+		return v.searchBar.ConsumeMouse(mouseLocal)
+	}
+
+	// Click in side panel
+	if v.showSidePanel && v.browserRect.Contains(mouse.X, mouse.Y) {
+		if mouse.Action == loom.MousePress {
+			v.focused = focusBrowser
+		}
+		mouseLocal := mouse
+		mouseLocal.X -= v.browserRect.X
+		mouseLocal.Y -= v.browserRect.Y
+		return v.filePicker.ConsumeMouse(mouseLocal)
+	}
+
+	// Click in editor area
+	if v.editorRect.Contains(mouse.X, mouse.Y) {
+		if mouse.Action == loom.MousePress {
+			v.focused = focusEditor
+		}
+		mouseLocal := mouse
+		mouseLocal.X -= v.editorRect.X
+		mouseLocal.Y -= v.editorRect.Y
+		return v.edit.ConsumeMouse(mouseLocal)
+	}
+
+	return loom.Ignored()
+}

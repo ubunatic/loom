@@ -53,6 +53,22 @@ media:
   render_error_label: "render error"
   loading_threshold: 50ms
 
+editor:
+  theme: "plain"
+  mousegrab: false
+  altscreen: true
+  hotkey_files_key: "F2"
+  hotkey_files_binding: "f2"
+  hotkey_files_label: "Files"
+  hotkey_search_key: "F3/^F"
+  hotkey_search_binding: "f3"
+  hotkey_search_label: "Search"
+  hotkey_box_key: "F5"
+  hotkey_box_binding: "f5"
+  hotkey_box_label: "Box"
+  search_prompt: "Find: "
+  search_placeholder: "type query..."
+
 search_bar:
   prompt: "> "
   placeholder: "type to filter"
