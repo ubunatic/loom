@@ -1,6 +1,6 @@
 # 304 — Modal overlay mouse event isolation: backdrop clicks must not leak into underlying editor
 
-**Status**: Open
+**Status**: Closed — implemented in 896b1b0 and verified with make test-q1
 **Priority**: P1 (High)
 **Severity**: Bug
 **Category**: Events
