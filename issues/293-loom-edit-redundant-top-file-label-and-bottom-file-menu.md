@@ -1,6 +1,6 @@
 # 293 — loom edit: Redundant top File label and bottom File menu
 
-**Status**: Open
+**Status**: Closed — implemented and verified in e0d7442
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
