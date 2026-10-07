@@ -290,3 +290,4 @@ upkeep.
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
 | 278 | [278-richtextedit-toolbar-redesign-key-caps-and-short-form.md](278-richtextedit-toolbar-redesign-key-caps-and-short-form.md) | RichTextEdit toolbar redesign: key caps and ^ short form | Closed |
 | 279 | [279-add-loom-edit-command-to-open-a-file-in-richtextedit.md](279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) | Add loom edit command to open a file in RichTextEdit | Open |
+| 280 | [280-add-mouse-capture-flag-to-loom-edit.md](280-add-mouse-capture-flag-to-loom-edit.md) | Add mouse capture flag to loom edit | Open |
