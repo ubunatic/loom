@@ -8,7 +8,30 @@ import (
 	"testing"
 
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/ptytest"
 )
+
+func TestCanvasFlushPreservesRightBorderWithAutoWrapDisabled(t *testing.T) {
+	for _, width := range []int{1, 2, 40, 80} {
+		c := loom.NewCanvas(width, 3)
+		for y := range 3 {
+			c.Set(width-1, y, loom.Cell{Text: "│"})
+		}
+		vt := ptytest.NewVT(width, 3)
+		vt.Write([]byte("\x1b[?7l"))
+		var out strings.Builder
+		c.Flush(&out, 1)
+		vt.Write([]byte(out.String()))
+		for y := range 3 {
+			if got := vt.Cells()[y][width-1].Rune; got != '│' {
+				t.Fatalf("width %d row %d border = %q", width, y, got)
+			}
+		}
+		if !strings.Contains(out.String(), "\x1b[1;1H\x1b[K") {
+			t.Fatal("row clear must precede drawing, while cursor is at column 1")
+		}
+	}
+}
 
 // ── A4: Canvas.Flush — absolute row positioning + cursor placement ────────────
 

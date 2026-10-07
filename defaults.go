@@ -48,20 +48,32 @@ type KeyCapModifier struct {
 
 // EditorDefaults defines specced defaults for the Loom editor.
 type EditorDefaults struct {
-	Theme                   string `yaml:"theme"`
-	MouseGrab               bool   `yaml:"mousegrab"`
-	AltScreen               bool   `yaml:"altscreen"`
-	HotkeyFilesBinding      string `yaml:"hotkey_files_binding"`
-	HotkeyFilesLabel        string `yaml:"hotkey_files_label"`
-	HotkeySearchKey         string `yaml:"hotkey_search_key"`
-	HotkeySearchBinding     string `yaml:"hotkey_search_binding"`
-	HotkeySearchLabel       string `yaml:"hotkey_search_label"`
-	HotkeyBoxBinding        string `yaml:"hotkey_box_binding"`
-	HotkeyBoxLabel          string `yaml:"hotkey_box_label"`
-	SearchPrompt            string `yaml:"search_prompt"`
-	SearchPlaceholder       string `yaml:"search_placeholder"`
-	HotkeyScreenshotBinding string `yaml:"hotkey_screenshot_binding"`
-	HotkeyScreenshotLabel   string `yaml:"hotkey_screenshot_label"`
+	StatusIcons             EditorStatusIcons `yaml:"status_icons"`
+	Theme                   string            `yaml:"theme"`
+	MouseGrab               bool              `yaml:"mousegrab"`
+	AltScreen               bool              `yaml:"altscreen"`
+	HotkeyFilesBinding      string            `yaml:"hotkey_files_binding"`
+	HotkeyFilesLabel        string            `yaml:"hotkey_files_label"`
+	HotkeySearchKey         string            `yaml:"hotkey_search_key"`
+	HotkeySearchBinding     string            `yaml:"hotkey_search_binding"`
+	HotkeySearchLabel       string            `yaml:"hotkey_search_label"`
+	HotkeyBoxBinding        string            `yaml:"hotkey_box_binding"`
+	HotkeyBoxLabel          string            `yaml:"hotkey_box_label"`
+	SearchPrompt            string            `yaml:"search_prompt"`
+	SearchPlaceholder       string            `yaml:"search_placeholder"`
+	HotkeyScreenshotBinding string            `yaml:"hotkey_screenshot_binding"`
+	HotkeyScreenshotLabel   string            `yaml:"hotkey_screenshot_label"`
+}
+
+// EditorStatusIcons defines compact editor status caps and their colors.
+type EditorStatusIcons struct {
+	Theme    string `yaml:"theme"`
+	MouseOn  string `yaml:"mouse_on"`
+	MouseOff string `yaml:"mouse_off"`
+	AltOn    string `yaml:"alt_on"`
+	AltOff   string `yaml:"alt_off"`
+	FG       int    `yaml:"fg"`
+	BG       int    `yaml:"bg"`
 }
 
 // RichTextEditDefaults defines selection and popover presentation defaults.

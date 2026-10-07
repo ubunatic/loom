@@ -325,8 +325,9 @@ func (v *editView) showUnsavedDialog() loom.EventResult {
 		case "Save":
 			if err := v.edit.Save(); err != nil {
 				v.reportError(err)
-			} else if action != nil && !v.edit.IsModified() {
-				// An untitled buffer opens the save picker and stays modified; keep it.
+			} else if action != nil && v.edit.FilePath != "" {
+				// Save to an associated file completed synchronously. A pathless
+				// buffer only opens the picker, so it must remain open.
 				action()
 			}
 		case "Discard":
@@ -447,20 +448,9 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	innerW := max(0, rect.W-2)
 	innerX := rect.X + 1
 
-	// 2. Line Y=1: App-level header (theme, mouse). The document name, state
-	// and File menu belong to the RichTextEdit file bar.
-	mouseStr := "off"
-	if v.config.MouseGrab {
-		mouseStr = "on"
-	}
+	// Keep the divider above the file bar; app status now lives at the bottom.
 	if rect.H > 2 {
-		headerText := fmt.Sprintf(" theme: %-8s   mouse: %s", v.config.Theme, mouseStr)
-		canvas.WriteDefault(innerX, rect.Y+1, loom.TruncateText(headerText, innerW, ""), normalStyle)
-	}
-
-	// Line Y=2: Divider
-	if rect.H > 3 {
-		canvas.WriteDefault(innerX, rect.Y+2, strings.Repeat("─", innerW), boxStyle.Border)
+		canvas.WriteDefault(innerX, rect.Y+1, strings.Repeat("─", innerW), boxStyle.Border)
 	}
 
 	// 3. Line Y=H-3: Divider, Line Y=H-2: Status, Line Y=H-1: Hotkeys
@@ -469,10 +459,6 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		canvas.WriteDefault(innerX, rect.Y+rect.H-4, strings.Repeat("─", innerW), boxStyle.Border)
 
 		// Y=H-2
-		altStr := "off"
-		if v.config.AltScreen {
-			altStr = "on"
-		}
 		absPath := v.filePath
 		if abs, err := filepath.Abs(v.filePath); err == nil {
 			absPath = abs
@@ -483,19 +469,22 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		curLine := v.edit.Cursor.Line + 1
 		curCol := v.edit.Cursor.Offset + 1
 		posStr := fmt.Sprintf("Ln %d, Col %d", curLine, curCol)
-		statusRight := fmt.Sprintf("%s  |  altscreen: %s", posStr, altStr)
-		rightW := len(statusRight)
-		leftW := max(0, innerW-rightW-2)
-		statusLine := fmt.Sprintf(" %-*s %s", leftW, loom.TruncateText(absPath, leftW, "..."), statusRight)
-		canvas.WriteDefault(innerX, rect.Y+rect.H-3, loom.TruncateText(statusLine, innerW, ""), normalStyle)
+		indicators := loom.NewEditorStatusBar(v.config)
+		indicatorW := min(innerW, indicators.ContentWidth())
+		statusW := max(0, innerW-indicatorW-1)
+		leftW := max(0, statusW-loom.StringWidth(posStr)-2)
+		left := loom.TruncateText(absPath, leftW, "...")
+		statusLine := " " + left + strings.Repeat(" ", max(0, leftW-loom.StringWidth(left))) + " " + posStr
+		canvas.WriteDefault(innerX, rect.Y+rect.H-3, loom.TruncateText(statusLine, statusW, ""), normalStyle)
+		indicators.Draw(canvas, loom.Rect{X: innerX + innerW - indicatorW, Y: rect.Y + rect.H - 3, W: indicatorW, H: 1})
 
 		// Y=H-1
 		v.hotkeyBar().Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
 	}
 
-	// 4. Middle Content Area: Y = rect.Y + 3 to rect.Y + rect.H - 5
-	contentY := rect.Y + 3
-	contentH := max(0, rect.H-6)
+	// Removing the header recovers one row for the editor and side panel.
+	contentY := rect.Y + 2
+	contentH := max(0, rect.H-5)
 
 	if contentH > 0 && innerW > 0 {
 		if v.showSidePanel {

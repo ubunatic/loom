@@ -42,6 +42,18 @@ func NewHintBar(entries ...HintEntry) *HintBar {
 // ApplyTheme updates the cap and label colors from the theme.
 func (b *HintBar) ApplyTheme(theme ThemeColors) { b.Style = theme.HintBarStyle() }
 
+// ContentWidth returns the display width needed to show every cap and detail.
+func (b *HintBar) ContentWidth() int {
+	width := 0
+	for _, entry := range b.Entries {
+		width += StringWidth(entry.capKey()) + 4 + StringWidth(entry.Label)
+		if entry.Detail != "" {
+			width += 1 + StringWidth(entry.Detail)
+		}
+	}
+	return width
+}
+
 func (b *HintBar) fit(width int) ([]hintBarHit, bool) {
 	visible := make([]bool, len(b.Entries))
 	for i := range visible {

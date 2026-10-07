@@ -36,6 +36,17 @@ type RichPill struct {
 	Metadata map[string]string
 }
 
+// normalize preserves logical lines and semantic boundaries while removing
+// empty spans and joining adjacent text with the same style and metadata.
+func (d *RichDocument) normalize() {
+	if len(d.Lines) == 0 {
+		d.Lines = []RichLine{{}}
+	}
+	for i := range d.Lines {
+		d.Lines[i].Spans = mergeRichSpans(d.Lines[i].Spans)
+	}
+}
+
 // FromANSI replaces d with the styled text represented by an ANSI SGR stream.
 // Non-SGR escape sequences are consumed and never interpreted as terminal
 // commands. CRLF and bare CR line endings are normalized to LF.

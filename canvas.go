@@ -583,10 +583,12 @@ func (c *Canvas) FlushWithConfig(out interface{ WriteString(string) (int, error)
 	}
 	for y := 0; y < c.rows; y++ {
 		sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
-		sink.WriteString(c.Row(y))                              //nolint:errcheck
 		if cfg.RowClear {
+			// With DECAWM disabled, writing the rightmost cell leaves the
+			// cursor on that cell. EL after drawing would erase the border.
 			sink.WriteString("\x1b[K") //nolint:errcheck
 		}
+		sink.WriteString(c.Row(y)) //nolint:errcheck
 	}
 	for y := 0; y < clearRows; y++ {
 		sink.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", startRow+c.rows+y)) //nolint:errcheck

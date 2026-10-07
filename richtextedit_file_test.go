@@ -7,9 +7,88 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestRichTextEditCanonicalSaveState(t *testing.T) {
+	for _, erase := range []string{"backspace", "delete"} {
+		t.Run(erase, func(t *testing.T) {
+			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+			path := filepath.Join(t.TempDir(), "doc.ansi")
+			if err := e.SaveAs(path); err != nil {
+				t.Fatal(err)
+			}
+			e.ConsumeKey(KeyEvent{Text: "x"})
+			if !e.IsModified() {
+				t.Fatal("typing did not dirty document")
+			}
+			if erase == "delete" {
+				e.ConsumeKey(KeyEvent{Key: "home"})
+			}
+			e.ConsumeKey(KeyEvent{Key: erase})
+			if e.IsModified() || e.DocState() != DocStateSaved || e.Document.Lines[0].Spans != nil {
+				t.Fatalf("erase to saved empty line: modified=%v state=%v spans=%#v", e.IsModified(), e.DocState(), e.Document.Lines[0].Spans)
+			}
+			// Saving after deletion used to clone [] into nil, then compare
+			// it against the live non-nil empty slice and stay modified.
+			e.ConsumeKey(KeyEvent{Text: "y"})
+			e.ConsumeKey(KeyEvent{Key: "enter"})
+			e.ConsumeKey(KeyEvent{Text: "z"})
+			e.ConsumeKey(KeyEvent{Key: "backspace"})
+			if err := e.Save(); err != nil {
+				t.Fatal(err)
+			}
+			if e.IsModified() || e.DocState() != DocStateSaved {
+				t.Fatal("save after span deletion did not clear dirty state")
+			}
+			e.ConsumeKey(KeyEvent{Key: "ctrl-z"})
+			if !e.IsModified() {
+				t.Fatal("undo after save should dirty document")
+			}
+			e.ConsumeKey(KeyEvent{Key: "ctrl-y"})
+			if e.IsModified() {
+				t.Fatal("redo to saved content should clear dirty state")
+			}
+		})
+	}
+}
+
+func TestRichTextEditEquivalentSpanStructures(t *testing.T) {
+	style := Style{Bold: true}
+	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "ab", Style: style}}}, {}}})
+	e.Document.Lines[0].Spans = []RichSpan{{Text: "a", Style: style}, {}, {Text: "b", Style: style}}
+	e.Document.Lines[1].Spans = []RichSpan{}
+	if e.IsModified() {
+		t.Fatal("equivalent fragmentation/empty slices count as edits")
+	}
+	if err := e.SaveAs(filepath.Join(t.TempDir(), "doc.ansi")); err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(e.Document.Lines, e.savedDocument) {
+		t.Fatal("save did not normalize live spans")
+	}
+	e.Document.Lines[0].Spans[0].Style.Bold = false
+	if !e.IsModified() {
+		t.Fatal("style change was ignored")
+	}
+}
+
+func TestRichDocumentNormalizationPreservesSemanticBoundaries(t *testing.T) {
+	pill := &RichPill{ID: "token"}
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "a"}, {Text: "b"}, {}, {Text: "c", Link: "url"},
+		{Text: "d", Code: true}, {Text: "e", PillData: pill}, {Text: "f", PillData: pill},
+	}}, {Spans: []RichSpan{{}}}}}
+	doc.normalize()
+	if got := doc.Lines[0].Spans; len(got) != 5 || got[0].Text != "ab" || got[1].Link != "url" || !got[2].Code || got[3].PillData != pill || got[4].PillData != pill {
+		t.Fatalf("semantic boundaries lost: %#v", got)
+	}
+	if doc.Lines[1].Spans != nil {
+		t.Fatal("empty line is not canonical")
+	}
+}
 
 func TestRichTextEditSaveWithoutPathOpensSavePicker(t *testing.T) {
 	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})

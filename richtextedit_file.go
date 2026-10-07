@@ -74,7 +74,7 @@ func (e *RichTextEdit) IsModified() bool {
 		return false
 	}
 	e.ensureDocument()
-	return !reflect.DeepEqual(e.savedDocument, e.Document.Lines)
+	return !reflect.DeepEqual(e.savedDocument, cloneRichDocumentLines(e.Document))
 }
 
 // NewRichTextEditFromFile creates a RichTextEdit populated with content from path.
@@ -147,6 +147,7 @@ func (e *RichTextEdit) SaveAs(path string) error {
 		return e.LastSaveError
 	}
 	e.ensureDocument()
+	e.Document.normalize()
 	var data []byte
 	var err error
 	if e.SerializeDocument == nil {
@@ -174,7 +175,7 @@ func cloneRichDocumentLines(doc *RichDocument) []RichLine {
 	}
 	lines := make([]RichLine, len(doc.Lines))
 	for i, line := range doc.Lines {
-		lines[i].Spans = append([]RichSpan(nil), line.Spans...)
+		lines[i].Spans = mergeRichSpans(line.Spans)
 		for j := range lines[i].Spans {
 			pill := lines[i].Spans[j].PillData
 			if pill == nil {

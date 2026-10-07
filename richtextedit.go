@@ -1879,7 +1879,7 @@ func splitRichLine(line RichLine, offset int) (left, right []RichSpan) {
 }
 
 func mergeRichSpans(spans []RichSpan) []RichSpan {
-	merged := make([]RichSpan, 0, len(spans))
+	var merged []RichSpan
 	for _, span := range spans {
 		if span.Text == "" {
 			continue
@@ -2260,8 +2260,10 @@ func (e *RichTextEdit) restore(snap richSnapshot) {
 // mutate runs an edit and records one undo step when it changed the document.
 // Typing edits join the open typing run until a boundary character ends it.
 func (e *RichTextEdit) mutate(typing, boundary bool, edit func()) {
+	e.Document.normalize()
 	before := e.snapshot()
 	edit()
+	e.Document.normalize()
 	if reflect.DeepEqual(before.lines, e.Document.Lines) {
 		return
 	}

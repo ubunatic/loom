@@ -8,6 +8,18 @@ import (
 	"testing"
 )
 
+func TestVTNoWrapKeepsCursorOnRightmostCell(t *testing.T) {
+	v := NewVT(3, 1)
+	v.Write([]byte("\x1b[?7lab│"))
+	if x, _ := v.Cursor(); x != 2 {
+		t.Fatalf("no-wrap cursor = %d, want last column 2", x)
+	}
+	v.Write([]byte("\x1b[K"))
+	if got := v.Screen()[0]; got != "ab" {
+		t.Fatalf("EL at right edge = %q, want border erased", got)
+	}
+}
+
 func TestVTPositioningAndErase(t *testing.T) {
 	v := NewVT(12, 3)
 	v.Write([]byte("\x1b[1;1Hhello world\x1b[2;3Hab\x1b[1;6H\x1b[K")) //nolint:errcheck

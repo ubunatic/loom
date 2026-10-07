@@ -21,5 +21,8 @@ func newHintBarDemo() loom.Widget {
 			return loom.Handled()
 		}},
 	}
+	// The same atomic cap layout presents compact, spec-backed status badges.
+	status := loom.NewEditorStatusBar(loom.EditorConfig{Theme: "plain", MouseGrab: true, AltScreen: true})
+	bar.Entries = append(bar.Entries, status.Entries...)
 	return bar
 }

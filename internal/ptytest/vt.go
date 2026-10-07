@@ -244,6 +244,9 @@ func (v *VT) putCluster(r rune, text string, w int) {
 		v.cells[v.y][v.x+k] = Cell{Rune: 0, Style: v.pen}
 	}
 	v.x += w
+	if !v.autoWrap {
+		v.x = min(v.x, v.Cols-1)
+	}
 }
 
 // escape consumes one escape sequence from data. ok is false when data ends

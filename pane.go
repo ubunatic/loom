@@ -1300,8 +1300,13 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			guardTimerC = nil
 			p.widthGuardActive = false
 			p.adaptiveN = 0
-			if full := p.guardedCols(p.cols); full != cols {
-				cols = full
+			// Settle against the current kernel size, not a stale WINCH
+			// sample: an emulator may finish resizing before delivery.
+			oldCols, oldRows, oldStart := cols, p.rows, p.startRow
+			p.applyWinch(&cols)
+			dirty = true
+			clearRows = max(clearRows, oldStart+oldRows-p.startRow-p.rows)
+			if cols != oldCols || p.rows != oldRows || p.startRow != oldStart {
 				canvas = NewCanvas(cols, p.rows)
 				dirty = true
 			}

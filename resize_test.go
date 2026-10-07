@@ -232,6 +232,24 @@ func TestGuardedColsUsesEffectiveN(t *testing.T) {
 	}
 }
 
+func TestGuardedColsSettlesWithinTerminalAndCap(t *testing.T) {
+	for _, tc := range []struct{ terminal, cap, guard, during, settled int }{
+		{80, 0, 1, 79, 80}, {60, 50, 2, 48, 50},
+		{40, 50, 3, 37, 40}, {1, 0, 3, 1, 1},
+	} {
+		p := &Pane{MaxCols: tc.cap, ResizeConfig: DefaultResizeConfig(), widthGuardActive: true, adaptiveN: tc.guard}
+		p.ResizeConfig.WidthGuard = true
+		p.ResizeConfig.AdaptiveGuard = true
+		if got := p.guardedCols(tc.terminal); got != tc.during {
+			t.Fatalf("guarded %+v: got %d", tc, got)
+		}
+		p.widthGuardActive, p.adaptiveN = false, 0
+		if got := p.guardedCols(tc.terminal); got != tc.settled || got > tc.terminal {
+			t.Fatalf("settled %+v: got %d", tc, got)
+		}
+	}
+}
+
 func TestAltScreenModeIsSpecced(t *testing.T) {
 	cfg := DefaultResizeConfig()
 	if cfg.AltScreen != SpeccedResizeModes.Modes["alt_screen"].Default {

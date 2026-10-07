@@ -28,8 +28,22 @@
     "editor": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["theme", "mousegrab", "altscreen", "hotkey_files_binding", "hotkey_files_label", "hotkey_search_key", "hotkey_search_binding", "hotkey_search_label", "hotkey_box_binding", "hotkey_box_label", "search_prompt", "search_placeholder", "hotkey_screenshot_binding", "hotkey_screenshot_label"],
+      "required": ["status_icons", "theme", "mousegrab", "altscreen", "hotkey_files_binding", "hotkey_files_label", "hotkey_search_key", "hotkey_search_binding", "hotkey_search_label", "hotkey_box_binding", "hotkey_box_label", "search_prompt", "search_placeholder", "hotkey_screenshot_binding", "hotkey_screenshot_label"],
       "properties": {
+        "status_icons": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["theme", "mouse_on", "mouse_off", "alt_on", "alt_off", "fg", "bg"],
+          "properties": {
+            "theme": { "type": "string", "minLength": 1 },
+            "mouse_on": { "type": "string", "minLength": 1 },
+            "mouse_off": { "type": "string", "minLength": 1 },
+            "alt_on": { "type": "string", "minLength": 1 },
+            "alt_off": { "type": "string", "minLength": 1 },
+            "fg": { "type": "integer", "minimum": 0, "maximum": 255 },
+            "bg": { "type": "integer", "minimum": 0, "maximum": 255 }
+          }
+        },
         "theme": { "type": "string", "minLength": 1 },
         "mousegrab": { "type": "boolean" },
         "altscreen": { "type": "boolean" },

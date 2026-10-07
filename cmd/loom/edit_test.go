@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -443,9 +444,8 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 	for _, want := range []string{
 		"┌─ loom edit",
 		"File README.md",
-		"theme: mc-dark",
-		"mouse: on",
-		"altscreen: on",
+		loom.SpeccedDefaults.Editor.StatusIcons.Theme,
+		"mc-dark",
 		"F2 Files",
 		"F3/⌃F Search",
 		"F10 Quit",
@@ -453,6 +453,15 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 	} {
 		if !strings.Contains(screenText, want) {
 			t.Errorf("rendered canvas missing %q: %q", want, screenText)
+		}
+	}
+	if view.editorRect.Y != 2 || view.editorRect.H != 19 {
+		t.Fatalf("editor rectangle = %+v, want Y=2 H=19", view.editorRect)
+	}
+	status := strings.Split(screenText, "\n")[21]
+	for _, icon := range []string{loom.SpeccedDefaults.Editor.StatusIcons.Theme, loom.SpeccedDefaults.Editor.StatusIcons.MouseOn, loom.SpeccedDefaults.Editor.StatusIcons.AltOn} {
+		if !strings.Contains(status, " "+icon+" ") {
+			t.Errorf("bottom status %q missing %q", status, icon)
 		}
 	}
 }
@@ -745,6 +754,48 @@ func TestEditViewCloseDialogButtons(t *testing.T) {
 	}
 }
 
+func TestEditViewSaveAfterSpanDeletionCompletesClose(t *testing.T) {
+	for _, mouse := range []bool{false, true} {
+		t.Run(fmt.Sprintf("mouse=%v", mouse), func(t *testing.T) {
+			view, path := newDirtyEditView(t)
+			quits := countQuits(view)
+			view.ConsumeKey(loom.KeyEvent{Key: "end"})
+			view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+			view.ConsumeKey(loom.KeyEvent{Text: "x"})
+			view.ConsumeKey(loom.KeyEvent{Key: "backspace"})
+			if view.closeRequest(loom.CloseReasonQuitKey) != loom.CloseVeto {
+				t.Fatal("new empty logical line should need saving")
+			}
+			canvas := loom.NewCanvas(100, 24)
+			view.Draw(canvas, canvas.Bounds())
+			if mouse {
+				clicked := false
+				for y := 0; y < canvas.Rows() && !clicked; y++ {
+					for x := 0; x < canvas.Cols(); x++ {
+						if canvas.Get(x, y).Text == "▶" {
+							view.ConsumeMouse(loom.MouseEvent{X: x + 2, Y: y, Button: loom.MouseLeft, Action: loom.MousePress})
+							clicked = true
+							break
+						}
+					}
+				}
+				if !clicked {
+					t.Fatal("Save button not found")
+				}
+			} else {
+				view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+			}
+			if *quits != 1 || view.edit.IsModified() || view.edit.DocState() != loom.DocStateSaved {
+				t.Fatalf("Save did not finish close: quits=%d state=%v", *quits, view.edit.DocState())
+			}
+			data, err := os.ReadFile(path)
+			if err != nil || !strings.Contains(string(data), "Initial\n") {
+				t.Fatalf("saved content = %q, error=%v", data, err)
+			}
+		})
+	}
+}
+
 func TestEditViewAttachWiresPane(t *testing.T) {
 	view, _ := newDirtyEditView(t)
 	pane := &loom.Pane{}
@@ -790,8 +841,8 @@ func TestEditViewFileBarOwnsDocNameAndState(t *testing.T) {
 	}
 	check := func(state string) {
 		t.Helper()
-		if row := editHeaderRow(view); strings.Contains(row, "File") || strings.Contains(row, "doc.txt") || strings.Contains(row, "["+state+"]") || !strings.Contains(row, "theme:") {
-			t.Fatalf("header = %q, want app-level info only (no File, name or state)", row)
+		if row := editHeaderRow(view); strings.Contains(row, "theme:") || strings.Contains(row, "File") || !strings.Contains(row, "─") {
+			t.Fatalf("row above file bar = %q, want divider without header", row)
 		}
 		if n := editScreenCount(view, "doc.txt · "+state); n != 1 {
 			t.Fatalf("file bar status %q shown on %d rows, want 1", "doc.txt · "+state, n)

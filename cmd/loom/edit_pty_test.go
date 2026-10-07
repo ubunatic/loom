@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"ubunatic.com/loom"
 	"ubunatic.com/loom/internal/ptytest"
 )
 
@@ -31,8 +32,14 @@ func TestEditPTYHeaderHasNoDuplicateFileLabel(t *testing.T) {
 		files += strings.Count(row, " File ")
 		names += strings.Count(row, "doc.txt ·")
 	}
-	if files != 1 || names != 1 || !strings.Contains(screen[1], "theme:") || strings.Contains(screen[1], "File") {
-		t.Fatalf("File label x%d, file name x%d, want 1 each and an app-only header:\n%s", files, names, strings.Join(screen, "\n"))
+	if files != 1 || names != 1 || strings.Contains(screen[1], "theme:") || strings.Contains(screen[1], "File") || !strings.Contains(screen[20], "File") {
+		t.Fatalf("File label x%d, file name x%d, want 1 each and file bar above bottom status:\n%s", files, names, strings.Join(screen, "\n"))
+	}
+	icons := loom.SpeccedDefaults.Editor.StatusIcons
+	for _, icon := range []string{icons.Theme, icons.MouseOff, icons.AltOn} {
+		if !strings.Contains(screen[21], " "+icon+" ") {
+			t.Fatalf("bottom status missing %q: %q", icon, screen[21])
+		}
 	}
 }
 
@@ -82,6 +89,61 @@ func TestEditPTYSaveThenQuit(t *testing.T) {
 	}
 	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "hello") {
 		t.Fatalf("Save did not write: %q", data)
+	}
+}
+
+func TestEditPTYSpanDeletionSaveAndQuit(t *testing.T) {
+	for _, dialog := range []bool{false, true} {
+		t.Run(strconv.FormatBool(dialog), func(t *testing.T) {
+			s, path := startEditPTY(t, "base\n")
+			s.Send("\x1b[F\r") // End, then a new logical line.
+			s.WaitFor("Ln 2, Col 1", 3*time.Second)
+			s.Send("xy\x7f\x1b[H\x1b[3~") // type, Backspace, Home, Delete to empty spans.
+			s.WaitFor("Ln 2, Col 1", 3*time.Second)
+			s.WaitFor("· Modified", 3*time.Second)
+			if dialog {
+				s.Send("\x11")
+				s.WaitFor("Save changes?", 3*time.Second)
+				s.Send("\r")
+			} else {
+				s.Send("\x13")
+				s.WaitFor("· Saved", 3*time.Second)
+				s.Send("\x11")
+			}
+			if err := s.Wait(3 * time.Second); err != nil {
+				t.Fatalf("Save did not allow quit: %v", err)
+			}
+			doc := &loom.RichDocument{}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			doc.FromANSI(string(data))
+			if got := doc.ToPlainText(); got != "base\n" {
+				t.Fatalf("saved text = %q, want trailing empty logical line", got)
+			}
+		})
+	}
+}
+
+func TestEditPTYRightBorderSurvivesResizeSettling(t *testing.T) {
+	s, _ := startEditPTY(t, "base\n")
+	for _, size := range [][2]int{{60, 18}, {80, 24}, {40, 16}} {
+		s.Resize(size[0], size[1])
+		// Beyond the spec guard duration, the canvas uses the full width.
+		time.Sleep(loom.SpeccedDefaults.Pane.GuardDuration + 300*time.Millisecond)
+		screen := s.Screen()
+		for y := 0; y < size[1]; y++ {
+			want := '│'
+			if y == 0 {
+				want = '┐'
+			} else if y == size[1]-1 {
+				want = '┘'
+			}
+			if got := s.Cell(size[0]-1, y).Rune; got != want {
+				t.Fatalf("settled %dx%d row %d right border = %q, want %q:\n%s", size[0], size[1], y, got, want, strings.Join(screen, "\n"))
+			}
+		}
 	}
 }
 

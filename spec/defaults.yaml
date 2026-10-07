@@ -61,6 +61,14 @@ media:
   loading_threshold: 50ms
 
 editor:
+  status_icons:
+    theme: "◐"
+    mouse_on: "M"
+    mouse_off: "m"
+    alt_on: "A"
+    alt_off: "a"
+    fg: 15
+    bg: 239
   theme: "plain"
   mousegrab: false
   altscreen: true
