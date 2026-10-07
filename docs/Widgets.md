@@ -361,9 +361,9 @@ to the widest display width and the selection's inline styles and metadata
 remain on the enclosed text. On a selected box, the same dropdown restyles its
 corners in place while retaining dimensions and interior content. Unselected
 prefix and suffix text stays on its own line so partial-line boxes keep their
-columns aligned. F5 wraps a selection using the default box style; without a
+columns aligned. Ctrl+D wraps a selection using the default box style; without a
 selection it toggles box drawing mode. The popover's Draw button still enters
-box mode. Arrow keys draw a connected path and Esc ends the current stroke.
+box mode. Arrow keys draw a connected path; Enter or Esc finishes drawing.
 When a stroke starts on an existing box glyph, its foreground color is carried
 to each glyph changed by that stroke. With a selection, Tab and Shift+Tab move through enabled popover
 actions, Left/Right move along the bar, and Enter or Space activates the focused
@@ -382,9 +382,12 @@ is one undo step.
 Set `ShowFileBar` to reserve the final editor row for a File menu and document
 name/save status; it is off by default. The `loom widgets` gallery shows `F1 Help`
 and responsive file shortcut hints below the editor, with F8/F9/F10 gallery
-controls on the last row. F1 opens a scrollable list of editor, formatting, file,
+controls on the last row. F1 opens a list of editor, formatting, file,
 selection, and picker bindings. Alt+F or clicking File opens the menu, `^S`
-saves to `FilePath`, and `^Shift+S` opens Save as. F10 and Ctrl+Q quit the gallery.
+saves to `FilePath`, and Save as is available only in the File menu. Help scrolls
+with arrow keys or the mouse wheel; clicking its backdrop closes it. F10 and
+Ctrl+Q quit the gallery. Hosts check `ModalOpen()` and route input to the editor
+first while a popup is open, including mouse events outside the editor bounds.
 The save picker opens as a bounded, bordered popup with directory search active;
 clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
@@ -427,7 +430,7 @@ support CSI-u, so `Ctrl+Shift+A/E` cannot replace Shift+Home/End there. The
 use the alternate screen; standalone non-editor demos remain inline.
 
 `RichTextEdit.HotkeyBar()` returns a reusable `HintBar` with `F1 Help`, `^S Save`,
-`^Shift+S Save as`, and `F7 View/Edit`. `HotkeyHint(width)` remains available as
+and `F7 View/Edit`. `HotkeyHint(width)` remains available as
 plain text. The gallery draws the structured editor hints and its own
 `F8 BG`, `F9 Theme`, and `F10 Quit` controls using the same cap styles.
 
@@ -436,7 +439,7 @@ plain text. The gallery draws the structured editor hints and its own
 press on either cap or label run that action; hover and release are inert.
 Route mouse events relative to the bar's draw rectangle. It drops optional
 `Detail` names before removing whole pairs from the end; `DropPriority` lets
-an entry drop first (the editor's Save as). Colors come from
+an entry drop first. Colors come from
 `ThemeColors.HintBarStyle()`; `ApplyTheme` updates the bar's styles.
 
 ```go
