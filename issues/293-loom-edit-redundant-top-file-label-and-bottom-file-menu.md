@@ -9,19 +9,19 @@
 ---
 
 ## 1. Problem & Motivation
-`loom edit` currently displays a "File" label on the top header/status bar and a "File" menu item in the bottom menu bar simultaneously. Having both creates visual redundancy and ambiguous affordances for file actions.
-
-Solve this problem on the library level: define clear roles and compositional patterns for top-level headers, title pills, and menu bars in compound container widgets. Leverage `spec/widgets.yaml` and layout specs to establish standardized, non-redundant header/menu layouts across all loom tools and widgets.
+`loom edit` shows "File" twice: a static `File` word at the start of the top header, and the interactive `File` menu in the bottom file bar. The top label does nothing and suggests a second menu.
 
 ## 2. Technical Specification / Findings
-- Inspect the top title/header bar and bottom menu bar in `loom edit` and `RichTextEdit`.
-- Determine the correct division of responsibility: top bar typically conveys file path/name and state (clean/modified), while the menu bar or action bar provides interactive commands (File menu, Search, etc.).
-- Update library container templates so standard layout specs avoid repeating static menu names in header title positions.
-- Align layout definitions with `spec/widgets.yaml` and `spec/defaults.yaml`.
+- `cmd/loom/edit.go:394`: `headerText := fmt.Sprintf(" File    %-48s %s", fileName, rightStatus)`. The static label is a caller-side literal.
+- `richtextedit_filebar.go:17-30`: `ensureFileBar` builds `NewMenuBar(Menu{Title: "File", ...})` with `Bottom = true`. This is the real menu. `:71-87` draws it next to `status()` ("name · Saved"), so the file name also appears twice (header and file bar).
+- Root cause: `RichTextEdit` already owns a file bar (name, state, menu), and the app paints a second hand-made header beside it. The menu title and items (`"Save"`, `"^S"`, `"^Shift+S"`) are hardcoded rather than taken from `spec/defaults.yaml` `pane.hotkey_save_*`.
+- Fix in the library: the file bar is the only place that shows document identity and state plus the File menu. Its title, items and shortcuts come from the spec. Hosts that want a header put app-level info in it (theme, mouse, alt screen), never "File" or the file name.
 
 ## 3. Implementation & Verification Plan
-- Refactor the top header in `loom edit` and `RichTextEdit` to display the active document path/title without redundant "File" labeling.
-- Ensure the bottom menu bar remains the sole interactive "File" menu trigger.
-- Add/update visual layout tests and verify with `make test-q1`.
+- Move the menu title and items to the spec (`rich_text_edit.file_menu`) and build the menu from it, sharing the shortcut formatter from 295.
+- Remove `File` and the file name from the `loom edit` header. Keep app status there or drop the header row if it ends up empty.
+- Coordinate with 291 (state display) and 294 (Open/Close items in the same menu).
+- Validate with `loom eval`/`loom measure`; update the file bar golden tests and add a PTY capture of `loom edit`.
+- `make test-q1`, `make install`.
 
-/goal Eliminate the redundant "File" label/menu duplication in `loom edit` and library editor containers with spec-aligned header and menu composition, or stop and report when blocked on a user decision or denied permission.
+/goal Make the RichTextEdit file bar the single spec-driven owner of the File menu and document name/state, remove the duplicate File label and name from loom edit's header, and verify with layout tests, or stop and report when blocked on a user decision or denied permission.

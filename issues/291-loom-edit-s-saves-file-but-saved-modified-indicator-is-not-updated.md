@@ -9,19 +9,20 @@
 ---
 
 ## 1. Problem & Motivation
-In `loom edit`, pressing `^S` saves the file contents to disk, but the "Saved/Modified" status indicator on the top status pill or footer does not update to reflect the clean/saved state. This leaves the user unsure whether the save operation succeeded and causes the UI to persistently display a stale "Modified" indicator.
-
-Fix the issue on the library level: ensure that document state tracking, dirty flag transitions, and status bar notification/repaint events are cleanly handled by the underlying `RichTextEdit` / status bar components rather than ad-hoc caller-side patches. Align state indicator styling and defaults with `spec/` YAML definitions.
+After `^S` in `loom edit` the file is written, but the user sees no reliable Saved state. The editor has two competing status surfaces and neither is driven by a library-level document-state contract.
 
 ## 2. Technical Specification / Findings
-- Investigate `RichTextEdit` and `loom edit` save event dispatching (`handleSave` / `OnSave`).
-- When a document is saved cleanly, the dirty/modified flag in `RichTextEdit` must reset to clean, triggering an event/repaint callback that updates the status pill / header.
-- Ensure status indicator labels, colors, and dirty-state indicators leverage spec definitions in `spec/widgets.yaml` and `spec/defaults.yaml`.
-- Fix the library, not the caller: ensure any compound widget or app hosting `RichTextEdit` receives accurate dirty/clean lifecycle notifications.
+- `richtextedit_file.go:53` `SaveAs` already resets `savedDocument`, and `IsModified()` (`:14`) compares it by `reflect.DeepEqual`. The library state flips correctly.
+- `richtextedit_filebar.go:133` `status()` duplicates that comparison instead of calling `IsModified()`. Two sources of truth.
+- `cmd/loom/edit.go:383-395` draws its own header (`" File    <name> theme: ... mouse: ..."`) with no Saved/Modified field at all. `:418` status line shows only `statusMessage` (errors, screenshot path) and never a save confirmation.
+- `^S` reaches `v.edit.Save()` only through the app's hint bar (`edit.go:214`). With the browser or search focused, the key goes to `filePicker`/`searchBar` first (`edit.go:576-625`), so save is focus-dependent.
+- Fix in the library: `RichTextEdit` exposes one document state (`DocState()` → Untitled/Saved/Modified/Error) plus an `OnStateChange` callback. It owns `^S`/Save-as as editor actions so every host gets them, whatever has focus. The file bar and any host header read that state. State labels and colors come from `spec/defaults.yaml` `rich_text_edit` (labels) and the theme `ModifiedFG`/`SavedFG`.
 
 ## 3. Implementation & Verification Plan
-- Connect `RichTextEdit` save action to clear the dirty buffer state and notify parent/status indicators.
-- Add unit and PTY regression tests asserting that modifying text sets dirty state to "Modified" and pressing `^S` immediately clears the state and updates the status indicator to "Saved".
-- Verify with `make test-q1` and `make install`.
+- Reproduce first with a PTY probe: type, `^S`, capture the screen. Record which surface stays stale.
+- Add `DocState()`/`OnStateChange`; make `status()` use it; move the state labels into the spec.
+- Make `loom edit` show the library state in its header and drop its private status logic.
+- Tests: unit (edit → Modified, Save → Saved, failed write → Error, callback fires once per transition); PTY (type, `^S`, header shows Saved, also with the browser focused).
+- `make test-q1`, `make install`.
 
-/goal Ensure `loom edit` and `RichTextEdit` immediately update the Saved/Modified state indicator upon saving via `^S` with clean library-level lifecycle handling and spec integration, or stop and report when blocked on a user decision or denied permission.
+/goal Make RichTextEdit the single source of Saved/Modified state with a change callback and spec-defined labels, have loom edit display it so `^S` visibly flips to Saved, and verify with unit and PTY tests, or stop and report when blocked on a user decision or denied permission.

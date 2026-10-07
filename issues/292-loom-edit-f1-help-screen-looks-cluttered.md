@@ -9,19 +9,19 @@
 ---
 
 ## 1. Problem & Motivation
-The F1 help screen in `loom edit` looks cluttered, dense, and difficult to scan. Key combinations, descriptions, and operational modes lack clean visual hierarchy, proper whitespace, and structured categorization.
-
-This needs to be solved at the library level: provide a clean, reusable help overlay/modal component or layout engine in the library that formats keymaps into clear logical groups (e.g. Navigation, Editing, File Operations) rather than hardcoded monolithic text blocks in the command. Make good use of the spec YAML files (`spec/widgets.yaml` / keymap and theme specs) as the single source of truth for key bindings, descriptions, and styling.
+F1 help in `loom edit` is a flat wall of 18 long lines. It is hard to scan, and it repeats shortcuts that are hand-written rather than taken from the bindings, so it drifts (e.g. `^Shift+S` vs. the planned `⌃⌥S` in 295).
 
 ## 2. Technical Specification / Findings
-- Audit the current F1 help overlay in `loom edit` and `RichTextEdit`.
-- Restructure the help layout to use categorized two-column or grid sections with clear headers, aligned keycaps, and consistent padding.
-- Derive shortcut entries and descriptions from the spec (`spec/widgets.yaml` / defaults), ensuring the help screen dynamically reflects defined bindings without code duplication.
-- Validate ANSI rendering, box geometry, and responsive sizing using `loom eval` and `loom check-box`.
+- `richtextedit_help.go:14` `richTextEditHelpLines()` hardcodes every line as `"Topic: key desc; key desc"`; `:96` only word-wraps them. There are no groups, no aligned key column and no link to the bindings.
+- `keyhelp.go` `KeyHelp` already renders a `KeyMap` (`keymap.go`) as a one-line joined string. It has no sectioned layout.
+- `loom edit` adds its own keys (F2 Files, F3/^F Search, F5 Box, ^P Screenshot from `spec/defaults.yaml` `editor.hotkey_*`) that never appear in the help.
+- Fix in the library: extend `KeyHelp` (or add `KeyHelpSections`) to render grouped `KeyMap` entries as a two-column table: an aligned key column using the shared modifier formatter from 295, a description column, and section headers. Group names, order and descriptions live in `spec/defaults.yaml` (e.g. `rich_text_edit.help_sections`). `RichTextEdit` builds its help from that. Hosts append their own `KeyMap` section instead of replacing text.
 
 ## 3. Implementation & Verification Plan
-- Refactor the library help modal/view to render structured, uncluttered keymap sections.
-- Update `loom edit` to use the spec-backed, uncluttered help view.
-- Verify with visual evaluation tests and `make test-q1`.
+- Add the spec schema and data for help sections; generate the Go accessors via the existing `SpeccedDefaults` path.
+- Implement the sectioned renderer (rune and display-width aware, scrollable inside the existing help overlay).
+- Replace `richTextEditHelpLines`; register the `loom edit` app keys as an extra section.
+- Validate the rendered help with `loom eval`, `loom measure` and `loom check-box`. Update `richtextedit_help_test.go` and add a golden test.
+- `make test-q1`, `make install`.
 
-/goal Declutter the F1 help screen in `loom edit` and library help components using structured categorization and spec-backed key definitions, or stop and report when blocked on a user decision or denied permission.
+/goal Replace the hardcoded RichTextEdit help text with a sectioned, aligned KeyHelp renderer fed from spec-defined bindings (including host-added sections like loom edit's), validated with loom eval/measure/check-box and tests, or stop and report when blocked on a user decision or denied permission.
