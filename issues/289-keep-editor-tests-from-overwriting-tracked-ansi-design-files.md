@@ -16,6 +16,8 @@ Separate explicit screenshot generation from normal tests. Tests should render t
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): normal screenshot tests now write to t.TempDir; after the full make test-q1 run, git diff in the review worktree is empty. Explicit UPDATE_GOLDEN/UPDATE_SNAPSHOTS/GENERATE_DESIGN_SCREENSHOTS modes still embed random paths/live directory contents and do not assert geometry. Keep open for deterministic explicit generation and documentation; ordinary tracked-file rewrites are fixed.
+
 ## 3. Implementation & Verification Plan
 /goal Ordinary editor tests leave tracked designs unchanged and screenshot generation produces reproducible review artifacts; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 

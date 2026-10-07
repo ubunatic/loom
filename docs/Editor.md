@@ -30,9 +30,11 @@ Keep approved mockups distinct from generated implementation evidence. Ordinary 
 
 ## Review evidence and status
 
-Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), head `b8a59ca`, is draft/unmerged and proposes issues 280–283. Recheck live code, PR state and recent history before beginning ticket work.
+Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `a9f1a7d`, is draft/unmerged and proposes issues 280–283. Recheck live code, PR state and recent history before beginning ticket work.
 
-PR #16 passed the full `make test-q1` suite in a disposable worktree. Its five rendered designs passed `loom check-box`. Independent PTY probes still reproduced a Unicode search panic, search-field clicks modifying the underlying document, and ^Q exiting with unsaved changes without a prompt. Findings are recorded in issues 285–290; the PR was not merged. No application architecture change from that PR was accepted.
+The initial review at `b8a59ca` passed the full `make test-q1` suite in a disposable worktree. Its five rendered designs passed `loom check-box`. Independent PTY probes still reproduced a Unicode search panic, search-field clicks modifying the underlying document, and ^Q exiting with unsaved changes without a prompt. Findings are recorded in issues 285–290.
+
+The updated review at `a9f1a7d` again passed the full suite. PTY probes confirmed fixes for the panic, search-field click-through, and ^Q/^C/^D unsaved-change prompts. Ordinary tests now leave tracked designs unchanged; all five assets pass `loom eval`, `loom measure`, and `loom check-box`. Remaining findings include search selection/focus isolation, standard-widget/responsive composition, browser lifecycle, and deterministic explicit evidence generation. The PR remains unmerged; tickets record partial fixes without claiming integrated completion. No application architecture change from that PR was accepted.
 
 These results establish that green unit tests and aligned ANSI files are insufficient merge evidence. Review the actual root composition, key/mouse results, saved document bytes, and post-test working-tree status.
 

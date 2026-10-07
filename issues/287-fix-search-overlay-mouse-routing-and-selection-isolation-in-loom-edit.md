@@ -16,6 +16,8 @@ cmd/loom/edit.go:623–660 does not route searchRect before editorRect. Synchron
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): searchRect is now routed before editorRect. Repeating the query-field click/type/save PTY probe leaves the document unchanged. Remaining gaps: highlightSearchMatch still calls SetSelection; no widget focus synchronization for the editor, stale-match refresh after document edits, or restriction of focus changes to mouse presses. Mode hit regions are still manually calculated. Keep open; this is a partial fix.
+
 ## 3. Implementation & Verification Plan
 /goal Search UI receives its own input and highlights matches without changing editing selection or accidentally editing the document; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 

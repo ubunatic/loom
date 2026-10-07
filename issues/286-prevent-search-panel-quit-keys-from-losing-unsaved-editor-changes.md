@@ -16,6 +16,8 @@ cmd/loom/edit.go:577–583 returns SearchBar.ConsumeKey results directly. Search
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): ^Q/^C/^D now route through handleQuit while search is focused. Independent PTY probes with unsaved edits show the Save changes prompt, keep the app alive and preserve the saved file. The full make test-q1 suite passes. Keep open pending integration and complete Save/Discard/Cancel/failed-save coverage; the original loss path is fixed on the PR branch.
+
 ## 3. Implementation & Verification Plan
 /goal Search-panel close/quit keys cannot discard unsaved document changes without an explicit user decision; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 

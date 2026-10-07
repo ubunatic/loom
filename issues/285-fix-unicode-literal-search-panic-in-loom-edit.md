@@ -16,6 +16,8 @@ Lowercasing changes UTF-8 byte lengths. The code computes offsets in lowercased 
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): rune-based matching fixes the reproduced panic. PTY probes for length-growing `Ⱥ` → `ⱥ` and length-shrinking `K` before a match stay alive without modifying the document. The full make test-q1 suite passes. New unit tests cover accented/CJK text but not these length-changing mappings or exact span positions. Keep open pending integration and remaining acceptance verification.
+
 ## 3. Implementation & Verification Plan
 /goal Literal search handles Unicode case mappings without crashes or incorrect match positions; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 

@@ -16,6 +16,8 @@ Connect file activation and cancellation through the supported widget lifecycle.
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): newEditView still constructs FilePicker without OnSelect/OnCancel, and browser key/mouse handling is unchanged. FilePicker's done state still suppresses keyboard events after Esc or mouse activation. The new tests cover search only, not these picker lifecycle paths. Keep open; the browser finding remains unresolved.
+
 ## 3. Implementation & Verification Plan
 /goal The editor file browser opens files consistently with keyboard and mouse and remains usable after cancel or repeated activation; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 

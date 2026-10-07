@@ -16,6 +16,8 @@ Use standard Loom frame/layout/control widgets with only modest tweaks. Keep sea
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
+Updated review (2026-10-07, PR head a9f1a7d): the manual frame/control rendering and minimum 24-column search panel remain unchanged. All five saved 100×24 assets pass loom eval/measure/check-box, which does not verify narrow responsive layouts or standard-widget composition. This requirement remains unresolved.
+
 ## 3. Implementation & Verification Plan
 /goal Editor chrome and search/browser panels use standard Loom widgets with usable, correctly clipped layouts across supported terminal sizes; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
