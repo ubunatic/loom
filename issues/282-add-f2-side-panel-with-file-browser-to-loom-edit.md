@@ -12,6 +12,8 @@
 `loom edit` needs a toggleable side panel, with F2 as its default keybinding. The first panel content is a file browser for navigating and opening documents.
 
 ## 2. Technical Specification / Findings
+Implementation constraint: the [approved design guidance](../docs/design/loom-edit-design-notes.md) allows the final app to differ with standard Loom widget behavior. New UI elements must use standard Loom widgets; small tweaks are acceptable, heavy hacks are not. Always file or link a library issue for larger observed Loom gaps instead of adding app workarounds.
+
 Reuse the library's file-browser/navigation primitives. F2 shows/hides the panel and resizes the editor; hiding returns focus to editing. Support keyboard navigation, Enter to open and mouse interaction when capture is enabled. Preserve the existing Save/Discard/Cancel protection when switching away from a modified document. Put the default binding in the spec. Containers own Tab focus moves and child-local event translation; fix library flaws in the library. Start event-routing work on `codex:sol:med`.
 
 ## 3. Implementation & Verification Plan

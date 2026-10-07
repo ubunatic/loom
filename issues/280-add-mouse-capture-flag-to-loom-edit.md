@@ -12,6 +12,8 @@
 `loom edit` does not capture mouse input, and its CLI has no flag to enable capture. Users need mouse selection, clicks and scrolling in the editor.
 
 ## 2. Technical Specification / Findings
+Implementation constraint: the [approved design guidance](../docs/design/loom-edit-design-notes.md) allows the final app to differ with standard Loom widget behavior. New UI elements must use standard Loom widgets; small tweaks are acceptable, heavy hacks are not. Always file or link a library issue for larger observed Loom gaps instead of adding app workarounds.
+
 Add a boolean `--mousegrab` flag to enable mouse capture; allow explicit `--mousegrab=false`. Connect it through the library's supported capture lifecycle, restoring terminal mouse state on exit. Coordinate precedence with the editor settings ticket: explicit CLI values override config. Put defaults in the spec; fix library flaws in the library, without widget workarounds. Event-routing work starts on `codex:sol:med`.
 
 ## 3. Implementation & Verification Plan

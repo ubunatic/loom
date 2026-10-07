@@ -12,6 +12,8 @@
 `loom edit` needs persistent preferences in `~/.config/loom/editor.yaml`. The first settings are `theme`, `mousegrab` on/off, and `altscreen` on/off, with a schema for the YAML.
 
 ## 2. Technical Specification / Findings
+Implementation constraint: the [approved design guidance](../docs/design/loom-edit-design-notes.md) allows the final app to differ with standard Loom widget behavior. New UI elements must use standard Loom widgets; small tweaks are acceptable, heavy hacks are not. Always file or link a library issue for larger observed Loom gaps instead of adding app workarounds.
+
 Load editor preferences from the requested path (honor XDG config location conventions). Provide a shipped JSON Schema and a YAML schema association/example. Use existing theme names and YAML booleans for the toggles. Explicit CLI flags override file settings; a missing file uses documented spec defaults. Validate malformed YAML, unknown settings, wrong types and invalid themes with actionable diagnostics. Keep defaults in the spec. The design's adjacent `editor.schema.json` association is illustrative; document the actual installed schema location.
 
 ## 3. Implementation & Verification Plan
