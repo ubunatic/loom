@@ -22,3 +22,7 @@ Review (2026-10-07, PR #16 head 9f41045, unmerged): ^P now creates a full 100×2
 /goal ^P saves a faithful ANSI screenshot of the full `loom edit` viewport as `~/Pictures/Screenshots/<num>-loom-edit-<details>.ansi`; verify capture, filenames and failure handling, or stop and report when blocked on a user decision or denied permission.
 
 Before implementation, check live code and recent commits. Acceptance: repeated captures get distinct numeric names; a missing directory is created; permission/write errors are visible; Unicode and styles survive; panels and overlays appear when open; capture preserves editing state. Verify captured files with `loom eval`, `loom measure`, and `loom check-box` for box borders, and inspect with `loom view`. Add focused tests using a temporary home and a PTY keybinding check; run `make test-q1` and `make install` before closure.
+
+## Integration verification (2026-10-07)
+
+Host integration fixes numeric allocation with exclusive creation, sanitizes basename details, moves the binding into the spec, reports status/errors and captures the unsaved dialog. Collision and overlay regression tests and a real PTY probe pass; captures pass Loom ANSI validation. Keep open for broader styled/Unicode and editing-state coverage.

@@ -30,6 +30,26 @@ Keep approved mockups distinct from generated implementation evidence. Ordinary 
 
 ## Review evidence and status
 
+Integration, 2026-10-07: PR #16 is merged on GitHub at `3d050e8`. Local main integrates it with host fixes in `6a33c29`: display-only RichTextEdit highlights, standard Box frames and HintBar mode controls, bounded search dimensions, container-owned Tab/Shift-Tab, error feedback, and collision-safe screenshots. These host fixes are committed locally and have not been pushed. The v0.3.2 release commit remains in history.
+
+The final full `make test-q1` run passes. PTY checks passed for screenshot numbering after deleted captures, search, unsaved ^Q protection, dialog capture, browser cancellation/reopening and Discard/open. Search and dialog captures pass `loom eval`, `loom measure`, and `loom check-box` at 100×24. Approved designs are preserved; tests always write generated screenshots to temporary directories.
+
+Search uses ^R to switch Normal/Regex; Tab/Shift-Tab moves among editor, browser and search. ^P works over the unsaved dialog. Screenshot numbers start at 01 and advance beyond existing numeric prefixes, using exclusive creation to avoid collisions. Details use the file basename with unsafe characters replaced by hyphens. The status row reports the saved path or error.
+
+Remaining acceptance work stays in issues 280–284 and 287–290, particularly standard clipped layout containers, persistent hint-bar mouse hit regions, deterministic standalone evidence generation, and browser mouse/Save/Cancel coverage. Integration does not imply every feature ticket is closed.
+
+A settings example:
+
+```yaml
+# yaml-language-server: $schema=/path/to/loom/spec/schemas/editor.schema.json
+theme: plain
+mousegrab: true
+altscreen: true
+```
+
+The schema ships in the repository and is embedded for runtime validation; no external schema installation is performed. `--config`, `--theme`, `--mousegrab=false` and `--altscreen=false` override file preferences. Defaults are plain theme, mouse capture off, alternate screen on.
+
+
 Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `9f41045`, is draft/unmerged and proposes issues 280–284. Recheck live code, PR state and recent history before beginning ticket work.
 
 The initial review at `b8a59ca` passed the full `make test-q1` suite in a disposable worktree. Its five rendered designs passed `loom check-box`. Independent PTY probes still reproduced a Unicode search panic, search-field clicks modifying the underlying document, and ^Q exiting with unsaved changes without a prompt. Findings are recorded in issues 285–290.

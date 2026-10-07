@@ -24,3 +24,7 @@ Updated review (2026-10-07, PR head 9f41045): selection highlighting, editor foc
 /goal Search UI receives its own input and highlights matches without changing editing selection or accidentally editing the document; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Cover query/mode/control clicks, overlay occlusion, focus changes, stale matches after edits, and saved document integrity. Verify real PTY interaction, make test-q1 and make install.
+
+## Integration verification (2026-10-07)
+
+Host integration adds display-only RichTextEdit.Highlights in the library, replaces search SetSelection/ClearSelection, synchronizes editor/search focus on draw, retains press-only mouse focus and edit-driven match refresh, and uses standard HintBar mode hit testing. Tab/Shift-Tab moves container focus and ^R switches mode. Selection isolation, editing cursor and bounds regression tests pass. Keep open for complete mouse/control/focus coverage.

@@ -22,3 +22,7 @@ Updated review (2026-10-07, PR head a9f1a7d): rune-based matching fixes the repr
 /goal Literal search handles Unicode case mappings without crashes or incorrect match positions; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Cover characters whose case mapping grows or shrinks UTF-8 byte lengths, multibyte prefixes, next/previous navigation, and exact highlighted spans. Verify a real PTY search, make test-q1 and make install.
+
+## Integration verification (2026-10-07)
+
+Integrated PR #16 Unicode rune-based matching; final host make test-q1 passes. Earlier independent PTY length-changing case-fold probes passed. The integration contains the fix.

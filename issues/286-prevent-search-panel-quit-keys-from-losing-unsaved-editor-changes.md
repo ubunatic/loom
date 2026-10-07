@@ -22,3 +22,7 @@ Updated review (2026-10-07, PR head a9f1a7d): ^Q/^C/^D now route through handleQ
 /goal Search-panel close/quit keys cannot discard unsaved document changes without an explicit user decision; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: PTY and integration coverage for ^Q/^C/^D/Esc with modified and clean documents, including Save/Discard/Cancel and failed save. Verify make test-q1 and make install.
+
+## Integration verification (2026-10-07)
+
+Integrated PR #16 unsaved quit protection, plus a host guard for QuitResult from editor/browser children. Final full suite passes and PTY unsaved ^Q over search opens the dialog without exiting; ^P captures that dialog. Earlier ^C/^D probes also passed.

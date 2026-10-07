@@ -24,3 +24,7 @@ Updated review (2026-10-07, PR head 9f41045): OnSelect/OnCancel callbacks and Fi
 /goal The editor file browser opens files consistently with keyboard and mouse and remains usable after cancel or repeated activation; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Cover actual FilePicker activation, cancel/reopen and repeated navigation, with modified documents and Save/Discard/Cancel. Verify focus and real captured mouse behavior, make test-q1 and make install.
+
+## Integration verification (2026-10-07)
+
+Host integration surfaces open/save failures and cancels stale pending-open state after a failed Save. A real picker activation regression verifies a file changing into a directory fails without replacing the current document. PTY cancel/reopen, filtering and Discard/open pass. Keep open for mouse activation and complete Save/Discard/Cancel coverage.

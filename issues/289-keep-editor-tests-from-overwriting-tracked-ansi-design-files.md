@@ -22,3 +22,7 @@ Updated review (2026-10-07, PR head a9f1a7d): normal screenshot tests now write 
 /goal Ordinary editor tests leave tracked designs unchanged and screenshot generation produces reproducible review artifacts; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: A clean make test-q1 leaves git diff empty; deliberate generation is documented and deterministic; produced assets pass loom eval, loom measure and loom check-box. Run make install before reporting.
+
+## Integration verification (2026-10-07)
+
+Host integration restores all approved designs and removes environment-triggered writes to tracked assets. Screenshot tests always use temporary directories; final suite leaves designs unchanged. Keep open for a documented deterministic standalone evidence generator, separate from approved mockups.

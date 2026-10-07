@@ -17,6 +17,8 @@ typing and a block cursor in box drawing mode. Its optional
 enabled, navigation can move into empty columns and rows without changing the
 document until typing or drawing materializes that space.
 
+`RichTextEdit.Highlights` accepts display-only `RichTextHighlight` ranges in document rune coordinates. Highlight styles overlay styled spans without changing editing selection, formatting popovers, dirty state or serialized document content. Assign an empty/nil slice to clear highlights; callers keep ranges current after edits.
+
 ### Wrapping widgets
 
 A wrapper can implement `Unwrap() loom.Widget` to expose the widget it decorates to

@@ -24,3 +24,7 @@ Updated review (2026-10-07, PR head 9f41045): text rows now use TruncateText and
 /goal Editor chrome and search/browser panels use standard Loom widgets with usable, correctly clipped layouts across supported terminal sizes; verify the behavior, or stop and report when blocked on a user decision or denied permission.
 
 Acceptance: Exercise wide/narrow and short terminals, including sidebar plus search, verify cell bounds and visible controls. Validate ANSI renders with loom eval/measure/check-box; verify make test-q1 and make install.
+
+## Integration verification (2026-10-07)
+
+Host integration replaces outer/search hand-drawn borders with standard Box and mode controls with HintBar, removes minimum panel dimensions that exceeded available bounds, and preserves approved designs. Bounds tests include sidebar plus search down to 1×1; ANSI search/dialog renders pass Loom validation. Keep open for standard clipped layout composition and persistent editor hint-bar hit regions (the app currently constructs a new bar when routing mouse clicks).
