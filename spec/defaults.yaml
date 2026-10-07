@@ -53,6 +53,11 @@ media:
   render_error_label: "render error"
   loading_threshold: 50ms
 
+editor:
+  theme: "plain"
+  mousegrab: false
+  altscreen: true
+
 search_bar:
   prompt: "> "
   placeholder: "type to filter"

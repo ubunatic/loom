@@ -27,8 +27,16 @@ type LibDefaults struct {
 	Media            MediaDefaults        `yaml:"media"`
 	Clock            ClockDefaults        `yaml:"clock"`
 	PaintCanvas      PaintCanvasDefaults  `yaml:"paint_canvas"`
+	Editor           EditorDefaults       `yaml:"editor"`
 	SearchBar        SearchBarDefaults    `yaml:"search_bar"`
 	RichTextEdit     RichTextEditDefaults `yaml:"rich_text_edit"`
+}
+
+// EditorDefaults defines specced defaults for the Loom editor.
+type EditorDefaults struct {
+	Theme     string `yaml:"theme"`
+	MouseGrab bool   `yaml:"mousegrab"`
+	AltScreen bool   `yaml:"altscreen"`
 }
 
 // RichTextEditDefaults defines selection and popover presentation defaults.

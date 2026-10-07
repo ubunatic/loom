@@ -3,8 +3,18 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit"],
+  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor"],
   "properties": {
+    "editor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["theme", "mousegrab", "altscreen"],
+      "properties": {
+        "theme": { "type": "string", "minLength": 1 },
+        "mousegrab": { "type": "boolean" },
+        "altscreen": { "type": "boolean" }
+      }
+    },
     "search_bar": {
       "type": "object",
       "additionalProperties": false,
