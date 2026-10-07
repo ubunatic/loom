@@ -148,3 +148,28 @@ func TestEditPTYCtrlAltSOpensSaveAs(t *testing.T) {
 		})
 	}
 }
+
+func TestEditPTYCtrlOFocusesBrowserAndCtrlWDiscardsToUntitled(t *testing.T) {
+	s, path := startEditPTY(t, "base\n")
+	s.Send("\x0f") // ^O
+	s.WaitFor("doc.txt", 3*time.Second)
+	s.Send("\x0f") // again: stays open, does not toggle off
+	time.Sleep(300 * time.Millisecond)
+	s.WaitFor("│", 3*time.Second)
+
+	s.Send("\x17") // ^W with the browser focused, clean buffer: resets at once
+	s.WaitFor("[Unsaved]", 3*time.Second)
+
+	s.Send("\x1b") // leave the browser (cancel hides it)
+	time.Sleep(300 * time.Millisecond)
+	s.Send("hi")
+	s.WaitFor("[Modified]", 3*time.Second)
+	s.Send("\x17")
+	s.WaitFor("Save changes?", 3*time.Second)
+	s.Send("\x1b[C") // Discard
+	s.Send("\r")
+	s.WaitFor("[Unsaved]", 3*time.Second)
+	if data, _ := os.ReadFile(path); string(data) != "base\n" {
+		t.Fatalf("Discard changed the file: %q", data)
+	}
+}

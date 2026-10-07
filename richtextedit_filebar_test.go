@@ -373,7 +373,7 @@ func TestRichTextEditFileBarMouseMenuActionKeepsSelection(t *testing.T) {
 	fileTitle := edit.fileBar.menu.titleRects[0]
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: fileTitle.X + 1, Y: fileTitle.Y})
 	edit.Draw(canvas, canvas.Bounds())
-	item := edit.fileBar.menu.itemRects[0]
+	item := edit.fileBar.menu.itemRects[2] // Open and Close precede Save
 	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: item.X, Y: item.Y}); !result.Consumed {
 		t.Fatalf("clicking Save menu item was not consumed: %+v", result)
 	}
@@ -390,7 +390,50 @@ func TestRichTextEditFileBarHasNoFormattingActions(t *testing.T) {
 	edit.ShowFileBar = true
 	edit.ensureFileBar()
 	items := edit.fileBar.menu.Menus[0].Items
-	if len(items) != 2 || items[0].Label != "Save" || !strings.HasPrefix(items[1].Label, "Save as") {
-		t.Fatalf("File menu items = %+v, want only Save and Save as", items)
+	if len(items) != 4 || items[0].Label != "Open" || items[1].Label != "Close" || items[2].Label != "Save" || !strings.HasPrefix(items[3].Label, "Save as") {
+		t.Fatalf("File menu items = %+v, want only Open, Close, Save and Save as", items)
+	}
+}
+
+func TestRichTextEditOpenCloseActionsAndMenuItems(t *testing.T) {
+	for _, fileBar := range []bool{true, false} {
+		edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "text"}}}}})
+		edit.ShowFileBar = fileBar
+		edit.FilePath = "x.ansi"
+		opens, closes := 0, 0
+		edit.OnOpenRequest = func() { opens++ }
+		edit.OnCloseRequest = func() { closes++ }
+		if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-o"}); !result.Consumed || opens != 1 {
+			t.Fatalf("fileBar=%v ^O consumed/opens = %v/%d", fileBar, result.Consumed, opens)
+		}
+		if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-w"}); !result.Consumed || closes != 1 {
+			t.Fatalf("fileBar=%v ^W consumed/closes = %v/%d", fileBar, result.Consumed, closes)
+		}
+		if edit.FilePath == "" || len(edit.Document.Lines[0].Spans) == 0 {
+			t.Fatal("OnCloseRequest must leave closing to the host")
+		}
+	}
+
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "text"}}}}})
+	edit.ShowFileBar = true
+	var labels []string
+	for _, item := range edit.ensureFileBar().menu.Menus[0].Items {
+		labels = append(labels, item.Label+" "+item.Shortcut)
+	}
+	got := strings.Join(labels, "|")
+	for _, want := range []string{"Open ⌃O", "Close ⌃W"} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("File menu %q missing %q", got, want)
+		}
+	}
+}
+
+func TestRichTextEditCloseWithoutHostResetsToUntitled(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "text"}}}}})
+	edit.ShowFileBar = true
+	edit.FilePath = "x.ansi"
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-w"})
+	if edit.FilePath != "" || edit.IsModified() || edit.DocState() != DocStateUntitled || len(edit.Document.Lines) != 1 || len(edit.Document.Lines[0].Spans) != 0 {
+		t.Fatalf("closed state = %q/%v/%v", edit.FilePath, edit.IsModified(), edit.DocState())
 	}
 }

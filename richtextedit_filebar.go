@@ -22,6 +22,8 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 		Title:    "File",
 		Mnemonic: 'F',
 		Items: []MenuItem{
+			{Label: SpeccedDefaults.RichTextEdit.HotkeyOpenLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyOpenBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestOpen() }},
+			{Label: SpeccedDefaults.RichTextEdit.HotkeyCloseLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyCloseBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestClose() }},
 			{Label: "Save", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
 			{Label: "Save as…", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveAsBinding), Action: func() { bar.saveAs() }},
 		},

@@ -54,6 +54,13 @@ type RichTextEdit struct {
 	// OnStateChange, when set, is called once per DocState transition, after
 	// the key, mouse event or save that caused it.
 	OnStateChange func(state DocState)
+	// OnOpenRequest, when set, is called when the user asks to open a file
+	// (Open menu item or its hotkey). The host decides how to present files.
+	OnOpenRequest func()
+	// OnCloseRequest, when set, is called when the user asks to close the
+	// document (Close menu item or its hotkey). The host runs its unsaved-changes
+	// guard and then calls Close. Without it, RequestClose calls Close directly.
+	OnCloseRequest func()
 	// SerializeDocument optionally serializes the document for saving. A nil
 	// callback uses RichDocument.ToANSI.
 	SerializeDocument func(*RichDocument) ([]byte, error)
@@ -788,6 +795,14 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 			e.savePopup = nil
 		}
 		return result
+	}
+	if !e.ShowFileBar && key.Is(SpeccedDefaults.RichTextEdit.HotkeyOpenBinding) {
+		e.RequestOpen()
+		return Handled()
+	}
+	if !e.ShowFileBar && key.Is(SpeccedDefaults.RichTextEdit.HotkeyCloseBinding) {
+		e.RequestClose()
+		return Handled()
 	}
 	if !e.ShowFileBar && key.Is(SpeccedDefaults.RichTextEdit.HotkeySaveBinding) {
 		if err := e.Save(); err != nil {

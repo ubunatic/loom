@@ -105,28 +105,28 @@ func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
 }
 
 type editView struct {
-	edit            *loom.RichTextEdit
-	filePath        string
-	config          loom.EditorConfig
-	focused         editFocus
-	showSidePanel   bool
-	filePicker      *loom.FilePicker
-	showSearch      bool
-	searchBar       *loom.SearchBar
-	searchQuery     string
-	regexMode       bool
-	searchMatches   []searchMatch
-	searchIndex     int
-	searchErr       string
-	unsavedDialog   *loom.Dialog
-	pendingOpenPath string
-	quit            func()
-	lastRect        loom.Rect
-	editorRect      loom.Rect
-	browserRect     loom.Rect
-	searchRect      loom.Rect
-	searchModes     *loom.HintBar
-	statusMessage   string
+	edit          *loom.RichTextEdit
+	filePath      string
+	config        loom.EditorConfig
+	focused       editFocus
+	showSidePanel bool
+	filePicker    *loom.FilePicker
+	showSearch    bool
+	searchBar     *loom.SearchBar
+	searchQuery   string
+	regexMode     bool
+	searchMatches []searchMatch
+	searchIndex   int
+	searchErr     string
+	unsavedDialog *loom.Dialog
+	pendingAction func()
+	quit          func()
+	lastRect      loom.Rect
+	editorRect    loom.Rect
+	browserRect   loom.Rect
+	searchRect    loom.Rect
+	searchModes   *loom.HintBar
+	statusMessage string
 }
 
 func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*editView, error) {
@@ -151,12 +151,7 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 			if v.filePicker != nil {
 				v.filePicker.Reset()
 			}
-			if v.edit.IsModified() {
-				v.pendingOpenPath = selectedPath
-				_ = v.showUnsavedDialog()
-			} else {
-				v.reportError(v.openFile(selectedPath))
-			}
+			v.guardUnsaved(func() { v.reportError(v.openFile(selectedPath)) })
 		},
 		OnCancel: func() {
 			if v.filePicker != nil {
@@ -196,6 +191,33 @@ func (v *editView) bindEdit() {
 			v.statusMessage = ""
 		}
 	}
+	v.edit.OnOpenRequest = v.showFileBrowser
+	v.edit.OnCloseRequest = func() { v.guardUnsaved(v.closeDocument) }
+}
+
+// showFileBrowser opens the side panel and focuses it; unlike F2 it never hides it.
+func (v *editView) showFileBrowser() {
+	v.showSidePanel = true
+	v.focused = focusBrowser
+}
+
+// closeDocument resets to an empty Untitled document. Callers guard unsaved changes first.
+func (v *editView) closeDocument() {
+	v.edit.Close()
+	v.filePath = ""
+	v.statusMessage = ""
+	v.updateSearchMatches()
+}
+
+// guardUnsaved runs action now when the buffer is clean, otherwise after the
+// user chose Save or Discard in the unsaved-changes dialog.
+func (v *editView) guardUnsaved(action func()) {
+	if !v.edit.IsModified() {
+		action()
+		return
+	}
+	v.pendingAction = action
+	_ = v.showUnsavedDialog()
 }
 
 func (v *editView) openFile(path string) error {
@@ -274,8 +296,7 @@ func (v *editView) closeRequest(loom.CloseReason) loom.CloseDecision {
 	if !v.edit.IsModified() {
 		return loom.CloseAllow
 	}
-	v.pendingOpenPath = ""
-	_ = v.showUnsavedDialog()
+	v.guardUnsaved(v.doQuit)
 	return loom.CloseVeto
 }
 
@@ -286,28 +307,20 @@ func (v *editView) showUnsavedDialog() loom.EventResult {
 	}
 	dialog := loom.NewDialog("Save changes?", fmt.Sprintf("Save changes to %s before closing?", name), "Save", "Discard", "Cancel")
 	dialog.OnSelect = func(button string) {
+		action := v.pendingAction
+		v.pendingAction = nil
 		switch button {
 		case "Save":
-			if err := v.edit.Save(); err == nil {
-				if v.pendingOpenPath != "" {
-					v.reportError(v.openFile(v.pendingOpenPath))
-					v.pendingOpenPath = ""
-				} else {
-					v.doQuit()
-				}
-			} else {
+			if err := v.edit.Save(); err != nil {
 				v.reportError(err)
-				v.pendingOpenPath = ""
+			} else if action != nil && !v.edit.IsModified() {
+				// An untitled buffer opens the save picker and stays modified; keep it.
+				action()
 			}
 		case "Discard":
-			if v.pendingOpenPath != "" {
-				v.reportError(v.openFile(v.pendingOpenPath))
-				v.pendingOpenPath = ""
-			} else {
-				v.doQuit()
+			if action != nil {
+				action()
 			}
-		case "Cancel":
-			v.pendingOpenPath = ""
 		}
 	}
 	v.unsavedDialog = dialog
@@ -589,6 +602,16 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	// Save works whichever panel has focus; the editor reports the new state.
 	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeySaveBinding) {
 		v.reportError(v.edit.Save())
+		return loom.Handled()
+	}
+
+	// Open and Close work whichever panel has focus; the editor owns the actions.
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeyOpenBinding) {
+		v.edit.RequestOpen()
+		return loom.Handled()
+	}
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeyCloseBinding) {
+		v.edit.RequestClose()
 		return loom.Handled()
 	}
 

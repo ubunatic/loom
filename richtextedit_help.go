@@ -23,7 +23,7 @@ func richTextEditHelpLines() []string {
 	lines := []string{
 		"F1: open this help",
 		"File menu: Alt+F open; Left/Right choose menu; Up/Down choose action; Enter/Space run; Escape close",
-		"File actions: " + KeyCap(defs.HotkeySaveBinding) + " Save; " + KeyCap(defs.HotkeySaveAsBinding) + " Save as",
+		"File actions: " + KeyCap(defs.HotkeyOpenBinding) + " Open; " + KeyCap(defs.HotkeyCloseBinding) + " Close; " + KeyCap(defs.HotkeySaveBinding) + " Save; " + KeyCap(defs.HotkeySaveAsBinding) + " Save as",
 		"Mode: F7 toggle View/Edit; F5 box selection or toggle box drawing",
 		"Move: Left/Right/Up/Down; Ctrl+Left and Ctrl+Right move by word; Home/Ctrl+A start; End/Ctrl+E end",
 		"Select: Shift+arrows; Shift+Home and Shift+End; Ctrl+Shift+A/E extend to line start/end",

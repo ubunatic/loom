@@ -97,6 +97,37 @@ func NewRichTextEditFromFile(path string) (*RichTextEdit, error) {
 	return edit, nil
 }
 
+// RequestOpen asks the host to open a file by calling OnOpenRequest.
+func (e *RichTextEdit) RequestOpen() {
+	if e.OnOpenRequest != nil {
+		e.OnOpenRequest()
+	}
+}
+
+// RequestClose asks to close the document. The host's OnCloseRequest owns the
+// unsaved-changes guard; without one the document closes immediately.
+func (e *RichTextEdit) RequestClose() {
+	if e.OnCloseRequest != nil {
+		e.OnCloseRequest()
+		return
+	}
+	e.Close()
+}
+
+// Close discards the document and its file association and leaves an empty,
+// untitled buffer. It does not ask about unsaved changes; hosts do that first.
+func (e *RichTextEdit) Close() {
+	e.Document = &RichDocument{Lines: []RichLine{{}}}
+	e.FilePath = ""
+	e.LastSaveError = nil
+	e.Cursor = RichPosition{}
+	e.ClearSelection()
+	e.undoStack, e.redoStack = nil, nil
+	e.savedDocument = cloneRichDocumentLines(e.Document)
+	e.Highlights = nil
+	e.notifyStateChange()
+}
+
 // Save writes the document to its associated path. If no path is associated,
 // it opens a FilePicker in save mode and returns while the user chooses one.
 func (e *RichTextEdit) Save() error {

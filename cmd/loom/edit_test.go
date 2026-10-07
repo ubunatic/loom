@@ -124,8 +124,9 @@ func TestEditViewSidePanelUnsavedChangesProtection(t *testing.T) {
 		t.Fatal("document expected to be modified")
 	}
 
-	// Set pending open path and trigger quit prompt
-	view.pendingOpenPath = path2
+	// Set the pending action (pendingOpenPath became the generic pendingAction
+	// when Close shared the guard) and trigger the prompt.
+	view.pendingAction = func() { _ = view.openFile(path2) }
 	quits := countQuits(view)
 	res := view.showUnsavedDialog()
 	if res.Quit {
@@ -826,5 +827,89 @@ func TestEditViewBrowserSingleClickSelectsRow(t *testing.T) {
 		if got, ok := view.filePicker.Selected(); !ok || got.Name != want {
 			t.Fatalf("click row %d selected %q, want %q", i, got.Name, want)
 		}
+	}
+}
+
+func newCloseTestView(t *testing.T) *editView {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "doc.txt")
+	if err := os.WriteFile(path, []byte("base\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return view
+}
+
+func TestEditViewCtrlOShowsAndFocusesBrowserFromEveryFocus(t *testing.T) {
+	for _, focus := range []editFocus{focusEditor, focusBrowser, focusSearch} {
+		view := newCloseTestView(t)
+		view.showSearch = focus == focusSearch
+		view.focused = focus
+		if focus == focusBrowser {
+			view.showSidePanel = true
+		}
+		if res := view.ConsumeKey(loom.KeyEvent{Key: "ctrl-o"}); !res.Consumed {
+			t.Fatalf("focus %v: ^O not consumed", focus)
+		}
+		if !view.showSidePanel || view.focused != focusBrowser {
+			t.Fatalf("focus %v: panel/focus = %v/%v", focus, view.showSidePanel, view.focused)
+		}
+	}
+}
+
+func TestEditViewCtrlWCleanBufferResetsToUntitled(t *testing.T) {
+	view := newCloseTestView(t)
+	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-w"})
+	if view.unsavedDialog != nil {
+		t.Fatal("clean close must not ask")
+	}
+	if view.edit.FilePath != "" || view.filePath != "" || view.edit.DocState() != loom.DocStateUntitled {
+		t.Fatalf("after close path/state = %q/%v", view.edit.FilePath, view.edit.DocState())
+	}
+}
+
+func TestEditViewCtrlWDirtyGuardsDiscardSaveCancel(t *testing.T) {
+	// Cancel keeps the buffer.
+	view := newCloseTestView(t)
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "x"})
+	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-w"})
+	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
+		t.Fatal("dirty close must show the dialog")
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if view.edit.FilePath == "" || !view.edit.IsModified() {
+		t.Fatal("Cancel must keep the buffer")
+	}
+
+	// Discard resets to Untitled without writing.
+	path := view.edit.FilePath
+	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-w"})
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if view.edit.FilePath != "" || view.edit.DocState() != loom.DocStateUntitled {
+		t.Fatalf("Discard path/state = %q/%v", view.edit.FilePath, view.edit.DocState())
+	}
+	if data, _ := os.ReadFile(path); string(data) != "base\n" {
+		t.Fatalf("Discard wrote the file: %q", data)
+	}
+
+	// Save writes, then resets.
+	view = newCloseTestView(t)
+	path = view.edit.FilePath
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "x"})
+	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-w"})
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // Save is the default
+	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "x") {
+		t.Fatalf("Save did not write: %q", data)
+	}
+	if view.edit.FilePath != "" {
+		t.Fatal("Save must then close the document")
 	}
 }
