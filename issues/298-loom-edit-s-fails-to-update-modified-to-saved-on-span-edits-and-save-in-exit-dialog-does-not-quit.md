@@ -1,6 +1,6 @@
 # 298 — loom edit: ^S fails to update Modified to Saved on span edits, and Save in exit dialog does not quit
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 8f2fc88
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
