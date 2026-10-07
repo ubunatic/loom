@@ -1,6 +1,6 @@
 # 301 — loom edit: Refine hotkeys, nest Draw under Box, and make bottom bar items clickable
 
-**Status**: Open
+**Status**: Closed — implemented and verified in c239dc9
 **Priority**: P1 (High)
 **Severity**: Feature
 **Category**: UX
