@@ -155,6 +155,14 @@ func DecodeKey(b []byte) KeyEvent {
 		if key, ok := decodeCSIu(b); ok {
 			return key
 		}
+		if key, ok := decodeModifyOtherKeys(b); ok {
+			return key
+		}
+		// ESC + control byte is Ctrl+Alt+letter on legacy terminals; Backspace,
+		// Tab, LF and CR keep their historical alt- names.
+		if len(b) == 2 && b[1] >= 1 && b[1] <= 26 && b[1] != 8 && b[1] != 9 && b[1] != 10 && b[1] != 13 {
+			return KeyEvent{Key: "ctrl-alt-" + string(rune('a'+b[1]-1))}
+		}
 		// CSI 1;<mod><A|B|C|D> (xterm modified cursor keys)
 		// mod: 2=Shift, 3=Alt, 4=Shift+Alt, 5=Ctrl, 6=Ctrl+Shift
 		if len(b) >= 6 && b[1] == '[' && b[2] == '1' && b[3] == ';' {
@@ -354,6 +362,24 @@ func decodeCSIu(b []byte) (KeyEvent, bool) {
 	return KeyEvent{}, false
 }
 
+// decodeModifyOtherKeys decodes the xterm modifyOtherKeys form
+// \x1b[27;<mod>;<code>~ for modified letters.
+func decodeModifyOtherKeys(b []byte) (KeyEvent, bool) {
+	if len(b) < 8 || b[1] != '[' || b[len(b)-1] != '~' {
+		return KeyEvent{}, false
+	}
+	fields := strings.Split(string(b[2:len(b)-1]), ";")
+	if len(fields) != 3 || fields[0] != "27" {
+		return KeyEvent{}, false
+	}
+	code, err := strconv.Atoi(fields[2])
+	prefix := csiModifierPrefix(fields[1])
+	if err != nil || prefix == "" || code < 'a' || code > 'z' {
+		return KeyEvent{}, false
+	}
+	return KeyEvent{Key: prefix + string(rune(code))}, true
+}
+
 // DecodeMouse parses an SGR (\x1b[<…M or \x1b[<…m) mouse report.
 // Returns (event, true) on success, (zero, false) if b is not an SGR mouse report.
 func DecodeMouse(b []byte) (MouseEvent, bool) {
@@ -497,13 +523,13 @@ func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
 	}
 	if b[2] >= '0' && b[2] <= '9' {
 		i := 2
-		for i < len(b) && b[i] >= '0' && b[i] <= '9' {
+		for i < len(b) && (b[i] >= '0' && b[i] <= '9' || b[i] == ';' || b[i] == ':') {
 			i++
 		}
 		if i == len(b) {
-			return KeyEvent{}, 0, false // digits ran out; a '~' may still follow
+			return KeyEvent{}, 0, false // parameters ran out; a final '~' or 'u' may still follow
 		}
-		if b[i] == '~' {
+		if b[i] == '~' || b[i] == 'u' {
 			return DecodeKey(b[:i+1]), i + 1, true
 		}
 		// Not a tilde sequence after all; consume what was scanned so an

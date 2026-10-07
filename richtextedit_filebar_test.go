@@ -33,7 +33,7 @@ func TestRichTextEditFileBarShowsTitleStatusAndHints(t *testing.T) {
 	canvas := NewCanvas(100, 5)
 	edit.Draw(canvas, canvas.Bounds())
 	row := hintBarRow(canvas, 4)
-	if !strings.Contains(row, "Untitled") || !strings.Contains(row, "Unsaved") || strings.Contains(row, "Alt+F") || strings.Contains(row, "Ctrl+S") || strings.Contains(row, "Ctrl+Shift+S") {
+	if !strings.Contains(row, "Untitled") || !strings.Contains(row, "Unsaved") || strings.Contains(row, "Alt+F") || strings.Contains(row, "Ctrl+S") || strings.Contains(row, "Ctrl+Alt+S") {
 		t.Fatalf("untitled file bar row = %q", row)
 	}
 	edit.ConsumeKey(KeyEvent{Text: "!"})
@@ -197,8 +197,8 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if edit.FilePath != "" || edit.savePicker != nil {
 		t.Fatalf("cancelled pathless Save changed path/picker = %q/%v", edit.FilePath, edit.savePicker)
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-shift-s"}); !result.Consumed || edit.savePicker == nil {
-		t.Fatalf("Ctrl+Shift+S result/picker = %+v/%v", result, edit.savePicker)
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-alt-s"}); !result.Consumed || edit.savePicker == nil {
+		t.Fatalf("Ctrl+Alt+S result/picker = %+v/%v", result, edit.savePicker)
 	}
 	if edit.savePicker.nameFocus {
 		t.Fatal("untitled Save as picker stole focus from directory search")

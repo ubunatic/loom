@@ -1,4 +1,11 @@
 # yaml-language-server: $schema=schemas/defaults.schema.json
+# keycaps.modifiers: glyphs in display order; KeyCap(binding) renders ctrl-alt-s as ⌃⌥S.
+keycaps:
+  modifiers:
+    - {name: shift, glyph: "⇧"}
+    - {name: ctrl, glyph: "⌃"}
+    - {name: alt, glyph: "⌥"}
+
 # Keys that close the app unless the widget consumes them or the pane opts out.
 quit_keys:
   - ctrl-q
@@ -57,18 +64,15 @@ editor:
   theme: "plain"
   mousegrab: false
   altscreen: true
-  hotkey_files_key: "F2"
   hotkey_files_binding: "f2"
   hotkey_files_label: "Files"
-  hotkey_search_key: "F3/^F"
+  hotkey_search_key: "F3/⌃F" # explicit keycap override; other keycaps derive from *_binding
   hotkey_search_binding: "f3"
   hotkey_search_label: "Search"
-  hotkey_box_key: "F5"
   hotkey_box_binding: "f5"
   hotkey_box_label: "Box"
   search_prompt: "Find: "
   search_placeholder: "type query..."
-  hotkey_screenshot_key: "^P"
   hotkey_screenshot_binding: "ctrl-p"
   hotkey_screenshot_label: "Screenshot"
 
@@ -100,17 +104,12 @@ rich_text_edit:
   state_saved_label: "Saved"
   state_modified_label: "Modified"
   state_error_label: "Error"
-  hotkey_help_key: "F1"
   hotkey_help_binding: "f1"
   hotkey_help_label: "Help"
-  hotkey_save_key: "^S"
   hotkey_save_binding: "ctrl-s"
   hotkey_save_label: "Save"
-  hotkey_save_as_key: "^Shift+S"
-  hotkey_save_as_binding: "ctrl-shift-s"
+  hotkey_save_as_binding: "ctrl-alt-s"
   hotkey_save_as_label: "Save as"
-  hotkey_view_edit_key: "F7"
   hotkey_view_edit_binding: "f7"
-  hotkey_quit_key: "F10"
   hotkey_quit_binding: "f10"
   hotkey_quit_label: "Quit"

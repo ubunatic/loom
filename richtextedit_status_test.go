@@ -45,12 +45,12 @@ func TestRichTextEditStatusColorsFollowTheme(t *testing.T) {
 	e.LastSaveError = errors.New("failed")
 	check("Error", theme.MediaErrorFG.Color(), false)
 	menu := e.ensureFileBar().menu
-	for i, want := range []string{"^S", "^Shift+S"} {
+	for i, want := range []string{"⌃S", "⌃⌥S"} {
 		if got := menu.Menus[0].Items[i].Shortcut; got != want {
 			t.Fatalf("shortcut: %q, want %q", got, want)
 		}
 	}
-	if help := strings.Join(richTextEditHelpLines(), "\n"); !strings.Contains(help, "^S Save; ^Shift+S Save as") {
+	if help := strings.Join(richTextEditHelpLines(), "\n"); !strings.Contains(help, "⌃S Save; ⌃⌥S Save as") {
 		t.Fatal(help)
 	}
 }

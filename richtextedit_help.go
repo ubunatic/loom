@@ -3,7 +3,10 @@
 
 package loom
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 type richTextEditHelp struct {
 	lines     []string
@@ -11,11 +14,16 @@ type richTextEditHelp struct {
 	maxScroll int
 }
 
+var helpModifierCombo = regexp.MustCompile(`\b((?:Ctrl\+|Shift\+|Alt\+)+)(\w+)`)
+
+// richTextEditHelpLines returns the help text; written modifier combos such as
+// Ctrl+Shift+Z are rendered through KeyCap so help matches the hint bars.
 func richTextEditHelpLines() []string {
-	return []string{
+	defs := SpeccedDefaults.RichTextEdit
+	lines := []string{
 		"F1: open this help",
 		"File menu: Alt+F open; Left/Right choose menu; Up/Down choose action; Enter/Space run; Escape close",
-		"File actions: ^S Save; ^Shift+S Save as",
+		"File actions: " + KeyCap(defs.HotkeySaveBinding) + " Save; " + KeyCap(defs.HotkeySaveAsBinding) + " Save as",
 		"Mode: F7 toggle View/Edit; F5 box selection or toggle box drawing",
 		"Move: Left/Right/Up/Down; Ctrl+Left and Ctrl+Right move by word; Home/Ctrl+A start; End/Ctrl+E end",
 		"Select: Shift+arrows; Shift+Home and Shift+End; Ctrl+Shift+A/E extend to line start/end",
@@ -32,6 +40,12 @@ func richTextEditHelpLines() []string {
 		"Save as: type to search or name; arrows navigate; Enter opens folder or saves",
 		"Save as: Backspace edits search or moves to parent; Escape cancels",
 	}
+	for i, line := range lines {
+		lines[i] = helpModifierCombo.ReplaceAllStringFunc(line, func(combo string) string {
+			return KeyCap(strings.ToLower(strings.ReplaceAll(combo, "+", "-")))
+		})
+	}
+	return lines
 }
 
 func newRichTextEditHelp() *richTextEditHelp {

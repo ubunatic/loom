@@ -17,6 +17,7 @@ var defaultsYAML []byte
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
+	KeyCaps      KeyCapDefaults       `yaml:"keycaps"`
 	QuitKeys     []string             `yaml:"quit_keys"`
 	EscapeQuits  bool                 `yaml:"escape_quits"`
 	Pane         PaneDefaults         `yaml:"pane"`
@@ -33,23 +34,31 @@ type LibDefaults struct {
 	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
 }
 
+// KeyCapDefaults defines the modifier glyphs KeyCap renders, in display order.
+type KeyCapDefaults struct {
+	Modifiers []KeyCapModifier `yaml:"modifiers"`
+}
+
+// KeyCapModifier maps a binding modifier name (shift, ctrl, alt) to its glyph.
+type KeyCapModifier struct {
+	Name  string `yaml:"name"`
+	Glyph string `yaml:"glyph"`
+}
+
 // EditorDefaults defines specced defaults for the Loom editor.
 type EditorDefaults struct {
 	Theme                   string `yaml:"theme"`
 	MouseGrab               bool   `yaml:"mousegrab"`
 	AltScreen               bool   `yaml:"altscreen"`
-	HotkeyFilesKey          string `yaml:"hotkey_files_key"`
 	HotkeyFilesBinding      string `yaml:"hotkey_files_binding"`
 	HotkeyFilesLabel        string `yaml:"hotkey_files_label"`
 	HotkeySearchKey         string `yaml:"hotkey_search_key"`
 	HotkeySearchBinding     string `yaml:"hotkey_search_binding"`
 	HotkeySearchLabel       string `yaml:"hotkey_search_label"`
-	HotkeyBoxKey            string `yaml:"hotkey_box_key"`
 	HotkeyBoxBinding        string `yaml:"hotkey_box_binding"`
 	HotkeyBoxLabel          string `yaml:"hotkey_box_label"`
 	SearchPrompt            string `yaml:"search_prompt"`
 	SearchPlaceholder       string `yaml:"search_placeholder"`
-	HotkeyScreenshotKey     string `yaml:"hotkey_screenshot_key"`
 	HotkeyScreenshotBinding string `yaml:"hotkey_screenshot_binding"`
 	HotkeyScreenshotLabel   string `yaml:"hotkey_screenshot_label"`
 }
@@ -79,18 +88,13 @@ type RichTextEditDefaults struct {
 	StateSavedLabel       string   `yaml:"state_saved_label"`
 	StateModifiedLabel    string   `yaml:"state_modified_label"`
 	StateErrorLabel       string   `yaml:"state_error_label"`
-	HotkeyHelpKey         string   `yaml:"hotkey_help_key"`
 	HotkeyHelpBinding     string   `yaml:"hotkey_help_binding"`
 	HotkeyHelpLabel       string   `yaml:"hotkey_help_label"`
-	HotkeySaveKey         string   `yaml:"hotkey_save_key"`
 	HotkeySaveBinding     string   `yaml:"hotkey_save_binding"`
 	HotkeySaveLabel       string   `yaml:"hotkey_save_label"`
-	HotkeySaveAsKey       string   `yaml:"hotkey_save_as_key"`
 	HotkeySaveAsBinding   string   `yaml:"hotkey_save_as_binding"`
 	HotkeySaveAsLabel     string   `yaml:"hotkey_save_as_label"`
-	HotkeyViewEditKey     string   `yaml:"hotkey_view_edit_key"`
 	HotkeyViewEditBinding string   `yaml:"hotkey_view_edit_binding"`
-	HotkeyQuitKey         string   `yaml:"hotkey_quit_key"`
 	HotkeyQuitBinding     string   `yaml:"hotkey_quit_binding"`
 	HotkeyQuitLabel       string   `yaml:"hotkey_quit_label"`
 }

@@ -11,7 +11,7 @@ import (
 )
 
 func TestGalleryHintBarsClickAndKeyPaths(t *testing.T) {
-	for _, key := range []string{"f1", "ctrl-s", "ctrl-shift-s", "f7", "f8", "f9", "f10"} {
+	for _, key := range []string{"f1", "ctrl-s", "ctrl-alt-s", "f7", "f8", "f9", "f10"} {
 		for _, label := range []bool{false, true} {
 			t.Run(key, func(t *testing.T) {
 				e := loom.NewRichTextEdit(nil)
@@ -27,13 +27,13 @@ func TestGalleryHintBarsClickAndKeyPaths(t *testing.T) {
 				for _, entry := range bar.Entries {
 					if entry.Binding == key {
 						if label {
-							x += loom.StringWidth(entry.Key) + 3
+							x += loom.StringWidth(loom.KeyCap(entry.Binding)) + 3
 						} else {
 							x++
 						}
 						break
 					}
-					x += loom.StringWidth(entry.Key) + 3 + loom.StringWidth(entry.Label) + 1
+					x += loom.StringWidth(loom.KeyCap(entry.Binding)) + 3 + loom.StringWidth(entry.Label) + 1
 					if entry.Detail != "" {
 						x += 1 + loom.StringWidth(entry.Detail)
 					}
@@ -53,7 +53,7 @@ func TestGalleryHintBarsClickAndKeyPaths(t *testing.T) {
 					if !strings.Contains(canvasScreenText(c), "RichTextEdit Help") {
 						t.Fatal("click did not open help")
 					}
-				case "ctrl-s", "ctrl-shift-s":
+				case "ctrl-s", "ctrl-alt-s":
 					g.Draw(c, loom.Rect{W: 80, H: 12})
 					if !strings.Contains(canvasScreenText(c), "Save as") {
 						t.Fatal("click did not open save picker")

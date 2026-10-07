@@ -446,7 +446,7 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 		"mouse: on",
 		"altscreen: on",
 		"F2 Files",
-		"F3/^F Search",
+		"F3/⌃F Search",
 		"F10 Quit",
 		"└",
 	} {
@@ -460,7 +460,7 @@ func TestGenerateAnsiDesignScreenshots(t *testing.T) {
 	designDir := t.TempDir()
 
 	readmePath := filepath.Join(t.TempDir(), "README.md")
-	readmeContent := "# Loom\n\nTerminal widgets for Go.\n\n## Getting started\n\ngo get ubunatic.com/loom\n\nBuild terminal interfaces with Loom.\nCompose widgets, panes and layouts.\n\n## Editing\n\nloom edit README.md\n\nSave changes with ^S.\n"
+	readmeContent := "# Loom\n\nTerminal widgets for Go.\n\n## Getting started\n\ngo get ubunatic.com/loom\n\nBuild terminal interfaces with Loom.\nCompose widgets, panes and layouts.\n\n## Editing\n\nloom edit README.md\n\nSave changes with ⌃S.\n"
 	_ = os.WriteFile(readmePath, []byte(readmeContent), 0600)
 
 	editorYamlPath := filepath.Join(t.TempDir(), "editor.yaml")

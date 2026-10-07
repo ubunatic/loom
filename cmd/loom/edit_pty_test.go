@@ -134,3 +134,17 @@ func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
 	s.Send("\r")
 	s.WaitFor("second file", 3*time.Second)
 }
+
+func TestEditPTYCtrlAltSOpensSaveAs(t *testing.T) {
+	for name, seq := range map[string]string{
+		"legacy ESC ^S": "\x1b\x13",
+		"CSI-u":         "\x1b[115;7u",
+	} {
+		t.Run(name, func(t *testing.T) {
+			s, _ := startEditPTY(t, "base\n")
+			s.Send(seq) // ⌃⌥S
+			s.WaitFor("Name:", 3*time.Second)
+			s.Send("\x1b")
+		})
+	}
+}

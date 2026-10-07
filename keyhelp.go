@@ -41,7 +41,7 @@ func (h *KeyHelp) Text() string {
 	sort.Strings(actions)
 	parts := make([]string, 0, len(actions))
 	for _, action := range actions {
-		parts = append(parts, h.KeyMap.actions[action][0]+" "+h.KeyMap.labels[action])
+		parts = append(parts, KeyCap(h.KeyMap.actions[action][0])+" "+h.KeyMap.labels[action])
 	}
 	return joinKeyHelp(parts, separator)
 }

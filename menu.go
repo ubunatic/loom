@@ -117,6 +117,16 @@ func (m *MenuBar) rebuildKeys() {
 }
 
 func menuKeyName(shortcut string) string {
+	// Keycap glyph shortcuts (⌃⌥S) map back to binding names in decoder order.
+	if mods, rest := menuGlyphPrefix(shortcut); len(mods) != 0 {
+		prefix := ""
+		for _, name := range []string{"ctrl", "shift", "alt"} {
+			if mods[name] {
+				prefix += name + "-"
+			}
+		}
+		return prefix + strings.ToLower(strings.ReplaceAll(rest, " ", ""))
+	}
 	if strings.HasPrefix(shortcut, "^") {
 		shortcut = "Ctrl+" + strings.TrimPrefix(shortcut, "^")
 	}
@@ -138,6 +148,24 @@ func menuKeyName(shortcut string) string {
 		return ""
 	}
 	return key
+}
+
+// menuGlyphPrefix splits leading spec modifier glyphs off a shortcut.
+func menuGlyphPrefix(shortcut string) (map[string]bool, string) {
+	mods := map[string]bool{}
+	for {
+		matched := false
+		for _, m := range SpeccedDefaults.KeyCaps.Modifiers {
+			if strings.HasPrefix(shortcut, m.Glyph) {
+				mods[m.Name] = true
+				shortcut = strings.TrimPrefix(shortcut, m.Glyph)
+				matched = true
+			}
+		}
+		if !matched {
+			return mods, shortcut
+		}
+	}
 }
 
 // Draw renders menu titles and, when open, the active dropdown.

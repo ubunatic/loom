@@ -20,7 +20,7 @@ func TestKeyHelpRendersLabeledBindingsInStableOrder(t *testing.T) {
 	canvas := loom.NewCanvas(40, 1)
 	loom.NewKeyHelp(km).Draw(canvas, canvas.Bounds())
 	got := strings.TrimRight(visibleKeyHelpRow(canvas.Row(0)), " ")
-	if want := "q Quit · ctrl-s Save"; got != want {
+	if want := "Q Quit · ⌃S Save"; got != want {
 		t.Fatalf("key help = %q, want %q", got, want)
 	}
 }
@@ -34,7 +34,7 @@ func TestKeyHelpTruncatesAtDisplayWidth(t *testing.T) {
 	if got := loom.StringWidth(row); got != 8 {
 		t.Fatalf("rendered width = %d, want 8: %q", got, row)
 	}
-	if want := "s 保存 …"; row != want {
+	if want := "S 保存 …"; row != want {
 		t.Fatalf("truncated help = %q, want %q", row, want)
 	}
 }

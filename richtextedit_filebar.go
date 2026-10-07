@@ -22,8 +22,8 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 		Title:    "File",
 		Mnemonic: 'F',
 		Items: []MenuItem{
-			{Label: "Save", Shortcut: "^S", Action: func() { bar.save() }},
-			{Label: "Save as…", Shortcut: "^Shift+S", Action: func() { bar.saveAs() }},
+			{Label: "Save", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
+			{Label: "Save as…", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveAsBinding), Action: func() { bar.saveAs() }},
 		},
 	})
 	bar.menu.Bottom = true

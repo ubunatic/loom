@@ -6,6 +6,7 @@ package loom
 import "strings"
 
 // HintEntry pairs a display key and label with the action used by its binding.
+// An empty Key is derived from Binding with KeyCap.
 type HintEntry struct {
 	Key, Label string
 	// Binding is the decoded KeyEvent name, such as ctrl-s or f7.
@@ -58,7 +59,7 @@ func (b *HintBar) fit(width int) ([]hintBarHit, bool) {
 			if details && entry.Detail != "" {
 				label += " " + entry.Detail
 			}
-			w := StringWidth(entry.Key) + 2 + 1 + StringWidth(label)
+			w := StringWidth(entry.capKey()) + 2 + 1 + StringWidth(label)
 			hits = append(hits, hintBarHit{index: i, rect: Rect{X: x, W: w, H: 1}})
 			x += w + 1
 		}
@@ -89,7 +90,7 @@ func (b *HintBar) Text(width int) string {
 	parts := make([]string, 0, len(hits))
 	for _, hit := range hits {
 		entry := b.Entries[hit.index]
-		text := entry.Key + " " + entry.Label
+		text := entry.capKey() + " " + entry.Label
 		if details && entry.Detail != "" {
 			text += " " + entry.Detail
 		}
@@ -110,12 +111,12 @@ func (b *HintBar) Draw(c *Canvas, r Rect) {
 	for _, hit := range hits {
 		entry := b.Entries[hit.index]
 		x := r.X + hit.rect.X
-		c.Write(x, r.Y, " "+entry.Key+" ", b.Style.Cap)
+		c.Write(x, r.Y, " "+entry.capKey()+" ", b.Style.Cap)
 		label := " " + entry.Label
 		if details && entry.Detail != "" {
 			label += " " + entry.Detail
 		}
-		c.Write(x+StringWidth(entry.Key)+2, r.Y, label, b.Style.Label)
+		c.Write(x+StringWidth(entry.capKey())+2, r.Y, label, b.Style.Label)
 	}
 }
 

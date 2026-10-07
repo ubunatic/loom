@@ -53,7 +53,7 @@ func TestHintBarFitsWholePairsAndNames(t *testing.T) {
 }
 
 func TestHintBarKeyAndMouseRunSameAction(t *testing.T) {
-	for _, key := range []string{"F1", "^S", "^Shift+S", "F7", "F8", "F9", "F10"} {
+	for _, key := range []string{"F1", "⌃S", "⌃⌥S", "F7", "F8", "F9", "F10"} {
 		t.Run(key, func(t *testing.T) {
 			calls := 0
 			bar := NewHintBar(HintEntry{Key: key, Binding: menuKeyName(key), Label: "界面", Action: func() EventResult { calls++; return Handled() }})
@@ -95,8 +95,8 @@ func TestRichTextEditHintBarMatchesDesign001(t *testing.T) {
 		width int
 		want  string
 	}{
-		{80, "F1  Help  ^S  Save  ^Shift+S  Save as  F7  View"},
-		{40, "F1  Help  ^S  Save  F7  View"},
+		{80, "F1  Help  ⌃S  Save  ⌃⌥S  Save as  F7  View"},
+		{40, "F1  Help  ⌃S  Save  F7  View"},
 	} {
 		c := NewCanvas(tc.width, 1)
 		bar := e.HotkeyBar()
@@ -135,7 +135,7 @@ func TestRichTextEditHintBarAtomicAtEveryWidth(t *testing.T) {
 			for x := hit.rect.X; x < hit.rect.X+hit.rect.W; x++ {
 				text.WriteString(c.Get(x, 0).Text)
 			}
-			if got, want := text.String(), " "+entry.Key+"  "+entry.Label; got != want {
+			if got, want := text.String(), " "+entry.capKey()+"  "+entry.Label; got != want {
 				t.Fatalf("width %d: partial pair %q, want %q", width, got, want)
 			}
 		}
@@ -143,7 +143,7 @@ func TestRichTextEditHintBarAtomicAtEveryWidth(t *testing.T) {
 }
 
 func TestRichTextEditHintBarActions(t *testing.T) {
-	for _, binding := range []string{"f1", "ctrl-s", "ctrl-shift-s", "f7"} {
+	for _, binding := range []string{"f1", "ctrl-s", "ctrl-alt-s", "f7"} {
 		for _, labelClick := range []bool{false, true} {
 			e := NewRichTextEdit(nil)
 			e.ShowFileBar = true
@@ -170,7 +170,7 @@ func TestRichTextEditHintBarActions(t *testing.T) {
 				if e.helpPopup == nil {
 					t.Fatal("help did not open")
 				}
-			case "ctrl-s", "ctrl-shift-s":
+			case "ctrl-s", "ctrl-alt-s":
 				if e.savePopup == nil {
 					t.Fatal("save picker did not open")
 				}

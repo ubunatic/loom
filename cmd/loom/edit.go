@@ -220,7 +220,7 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 	richDefs := loom.SpeccedDefaults.RichTextEdit
 
 	entries := []loom.HintEntry{
-		{Key: editorDefs.HotkeyFilesKey, Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
+		{Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
 			v.toggleSidePanel()
 			return loom.Handled()
 		}},
@@ -228,22 +228,22 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 			v.toggleSearch()
 			return loom.Handled()
 		}},
-		{Key: richDefs.HotkeySaveKey, Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
+		{Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
 			v.reportError(v.edit.Save())
 			return loom.Handled()
 		}},
-		{Key: richDefs.HotkeySaveAsKey, Binding: richDefs.HotkeySaveAsBinding, Label: richDefs.HotkeySaveAsLabel, Action: func() loom.EventResult {
+		{Binding: richDefs.HotkeySaveAsBinding, Label: richDefs.HotkeySaveAsLabel, Action: func() loom.EventResult {
 			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeySaveAsBinding})
 		}},
-		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, Action: func() loom.EventResult {
+		{Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, Action: func() loom.EventResult {
 			return v.edit.ConsumeKey(loom.KeyEvent{Key: editorDefs.HotkeyBoxBinding})
 		}},
-		{Key: editorDefs.HotkeyScreenshotKey, Binding: editorDefs.HotkeyScreenshotBinding, Label: editorDefs.HotkeyScreenshotLabel, DropPriority: 2, Action: func() loom.EventResult {
+		{Binding: editorDefs.HotkeyScreenshotBinding, Label: editorDefs.HotkeyScreenshotLabel, DropPriority: 2, Action: func() loom.EventResult {
 			v.reportError(v.captureScreenshot())
 			return loom.Handled()
 		}},
 		// No Binding: the Pane owns the quit keys; this entry only serves the mouse.
-		{Key: richDefs.HotkeyQuitKey, Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
+		{Key: loom.KeyCap(richDefs.HotkeyQuitBinding), Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
 			if v.closeRequest(loom.CloseReasonQuitKey) == loom.CloseAllow {
 				v.doQuit()
 			}

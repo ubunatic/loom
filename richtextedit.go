@@ -166,16 +166,16 @@ func (e *RichTextEdit) HotkeyBar() *HintBar {
 		mode = "Edit"
 	}
 	defs := SpeccedDefaults.RichTextEdit
-	entry := func(key, binding, label string) HintEntry {
-		return HintEntry{Key: key, Binding: binding, Label: label, Action: func() EventResult { return e.ConsumeKey(KeyEvent{Key: binding}) }}
+	entry := func(binding, label string) HintEntry {
+		return HintEntry{Binding: binding, Label: label, Action: func() EventResult { return e.ConsumeKey(KeyEvent{Key: binding}) }}
 	}
-	saveAs := entry(defs.HotkeySaveAsKey, defs.HotkeySaveAsBinding, defs.HotkeySaveAsLabel)
+	saveAs := entry(defs.HotkeySaveAsBinding, defs.HotkeySaveAsLabel)
 	saveAs.DropPriority = 1
 	bar := NewHintBar(
-		entry(defs.HotkeyHelpKey, defs.HotkeyHelpBinding, defs.HotkeyHelpLabel),
-		entry(defs.HotkeySaveKey, defs.HotkeySaveBinding, defs.HotkeySaveLabel),
+		entry(defs.HotkeyHelpBinding, defs.HotkeyHelpLabel),
+		entry(defs.HotkeySaveBinding, defs.HotkeySaveLabel),
 		saveAs,
-		entry(defs.HotkeyViewEditKey, defs.HotkeyViewEditBinding, mode),
+		entry(defs.HotkeyViewEditBinding, mode),
 	)
 	bar.ApplyTheme(e.toolbarTheme())
 	return bar
