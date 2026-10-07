@@ -287,3 +287,52 @@ func TestRichTextEditSavePickerReopensAfterSave(t *testing.T) {
 		t.Fatal("Save as picker failed to reopen after Escape")
 	}
 }
+
+func TestNewRichTextEditFromFileAndIsModified(t *testing.T) {
+	dir := t.TempDir()
+	existingPath := filepath.Join(dir, "existing.ansi")
+	if err := os.WriteFile(existingPath, []byte("Hello Loom\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. Existing file
+	edit1, err := NewRichTextEditFromFile(existingPath)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile existing: %v", err)
+	}
+	if edit1.FilePath != existingPath {
+		t.Fatalf("edit1.FilePath = %q, want %q", edit1.FilePath, existingPath)
+	}
+	if !edit1.ShowFileBar {
+		t.Fatal("edit1.ShowFileBar = false, want true")
+	}
+	if edit1.IsModified() {
+		t.Fatal("newly loaded document reports IsModified() = true")
+	}
+	edit1.ConsumeKey(KeyEvent{Text: "!"})
+	if !edit1.IsModified() {
+		t.Fatal("modified document reports IsModified() = false")
+	}
+
+	// 2. Missing file
+	missingPath := filepath.Join(dir, "missing.ansi")
+	edit2, err := NewRichTextEditFromFile(missingPath)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile missing: %v", err)
+	}
+	if edit2.FilePath != missingPath {
+		t.Fatalf("edit2.FilePath = %q, want %q", edit2.FilePath, missingPath)
+	}
+	if !edit2.ShowFileBar {
+		t.Fatal("edit2.ShowFileBar = false, want true")
+	}
+	if edit2.IsModified() {
+		t.Fatal("new empty document for missing path reports IsModified() = true")
+	}
+
+	// 3. Read error (e.g. reading a directory)
+	_, err = NewRichTextEditFromFile(dir)
+	if err == nil {
+		t.Fatal("expected error when reading a directory")
+	}
+}

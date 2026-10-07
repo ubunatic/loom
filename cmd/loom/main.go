@@ -30,7 +30,7 @@ func execute(args []string, out io.Writer) error {
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), formatCommand(), frameCommand(), widgetsCommand())
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), frameCommand(), widgetsCommand())
 	root.SetArgs(args)
 	return root.Execute()
 }
@@ -359,6 +359,154 @@ func viewCommand() *cobra.Command {
 func configureViewPane(pane *loom.Pane) {
 	pane.MaxCols = 0
 	pane.Resizeable = true
+}
+
+func editCommand() *cobra.Command {
+	return &cobra.Command{
+		Use: "edit <file>", Short: "Interactively edit a rich text or ANSI file",
+		Args: cobra.ExactArgs(1), SilenceUsage: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+			edit, err := loom.NewRichTextEditFromFile(path)
+			if err != nil {
+				return err
+			}
+			pane, err := loom.New(24)
+			if err != nil {
+				return err
+			}
+			defer pane.Close()
+			configureEditPane(pane)
+			return pane.Run(&editView{edit: edit})
+		},
+	}
+}
+
+func configureEditPane(pane *loom.Pane) {
+	pane.MaxCols = 0
+	pane.Resizeable = true
+	pane.DisableGlobalF10Quit = true
+}
+
+type editView struct {
+	edit          *loom.RichTextEdit
+	unsavedDialog *loom.Dialog
+	shouldQuit    bool
+	lastRect      loom.Rect
+}
+
+func (v *editView) hotkeyBar() *loom.HintBar {
+	bar := v.edit.HotkeyBar()
+	defs := loom.SpeccedDefaults.RichTextEdit
+	quitEntry := loom.HintEntry{
+		Key:     defs.HotkeyQuitKey,
+		Binding: defs.HotkeyQuitBinding,
+		Label:   defs.HotkeyQuitLabel,
+		Action: func() loom.EventResult {
+			return v.handleQuit()
+		},
+	}
+	bar.Entries = append(bar.Entries, quitEntry)
+	return bar
+}
+
+func (v *editView) handleQuit() loom.EventResult {
+	if !v.edit.IsModified() {
+		v.shouldQuit = true
+		return loom.QuitResult()
+	}
+	name := "Untitled"
+	if v.edit.FilePath != "" {
+		name = filepath.Base(v.edit.FilePath)
+	}
+	dialog := loom.NewDialog("Save changes?", fmt.Sprintf("Save changes to %s before closing?", name), "Save", "Discard", "Cancel")
+	dialog.OnSelect = func(button string) {
+		switch button {
+		case "Save":
+			if err := v.edit.Save(); err == nil {
+				v.shouldQuit = true
+			}
+		case "Discard":
+			v.shouldQuit = true
+		}
+	}
+	v.unsavedDialog = dialog
+	return loom.Handled()
+}
+
+func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
+	v.lastRect = rect
+	if rect.W <= 0 || rect.H <= 0 {
+		return
+	}
+	editorRect := rect
+	if rect.H > 1 {
+		editorRect.H = rect.H - 1
+		barRect := loom.Rect{X: rect.X, Y: rect.Y + rect.H - 1, W: rect.W, H: 1}
+		v.hotkeyBar().Draw(canvas, barRect)
+	}
+	v.edit.Draw(canvas, editorRect)
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		v.unsavedDialog.Draw(canvas, rect)
+	}
+}
+
+func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		_ = v.unsavedDialog.ConsumeKey(key)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		if !v.unsavedDialog.Open {
+			v.unsavedDialog = nil
+		}
+		return loom.Handled()
+	}
+	if key.Is("f10") {
+		res := v.handleQuit()
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+	if res := v.hotkeyBar().ConsumeKey(key); res.Consumed {
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+	res := v.edit.ConsumeKey(key)
+	if v.shouldQuit {
+		return loom.QuitResult()
+	}
+	return res
+}
+
+func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+	if v.unsavedDialog != nil && v.unsavedDialog.Open {
+		_ = v.unsavedDialog.ConsumeMouse(mouse)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		if !v.unsavedDialog.Open {
+			v.unsavedDialog = nil
+		}
+		return loom.Handled()
+	}
+	if v.lastRect.H > 1 && mouse.Y == v.lastRect.H-1 {
+		mouseLocal := mouse
+		mouseLocal.Y = 0
+		res := v.hotkeyBar().ConsumeMouse(mouseLocal)
+		if v.shouldQuit {
+			return loom.QuitResult()
+		}
+		return res
+	}
+	res := v.edit.ConsumeMouse(mouse)
+	if v.shouldQuit {
+		return loom.QuitResult()
+	}
+	return res
 }
 
 type ansiView struct {
