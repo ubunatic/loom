@@ -77,6 +77,11 @@ func NewFilePicker(dir string, options FilePickerOptions) (*FilePicker, error) {
 	return p, nil
 }
 
+// Reset resets the done state so the file picker can be reused.
+func (p *FilePicker) Reset() {
+	p.done = false
+}
+
 // Directory returns the directory currently being browsed.
 func (p *FilePicker) Directory() Directory { return p.directory }
 

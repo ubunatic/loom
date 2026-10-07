@@ -349,6 +349,66 @@ func TestEditViewSearchMouseClickFocus(t *testing.T) {
 	}
 }
 
+func TestEditViewCtrlPScreenshot(t *testing.T) {
+	tempHome := t.TempDir()
+	t.Setenv("HOME", tempHome)
+
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(path, []byte("Content\n"), 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+
+	// Press Ctrl-P
+	res := view.ConsumeKey(loom.KeyEvent{Key: "ctrl-p"})
+	if !res.Consumed {
+		t.Fatalf("ctrl-p result = %+v, want consumed", res)
+	}
+
+	shotDir := filepath.Join(tempHome, "Pictures", "Screenshots")
+	entries, err := os.ReadDir(shotDir)
+	if err != nil || len(entries) == 0 {
+		t.Fatalf("ReadDir(%s) err=%v, entries=%d", shotDir, err, len(entries))
+	}
+}
+
+func TestEditViewNarrowSearchLayout(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(path, []byte("Content\n"), 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+
+	view.ConsumeKey(loom.KeyEvent{Key: "f3"})
+
+	// Draw on narrow canvas (width 20)
+	canvas := loom.NewCanvas(20, 10)
+	view.Draw(canvas, canvas.Bounds())
+
+	if view.searchRect.X < 0 {
+		t.Fatalf("searchRect.X = %d, want >= 0", view.searchRect.X)
+	}
+	if view.searchRect.W > 20 {
+		t.Fatalf("searchRect.W = %d, want <= 20", view.searchRect.W)
+	}
+}
+
 func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "README.md")

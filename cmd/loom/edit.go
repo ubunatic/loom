@@ -5,6 +5,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -130,16 +131,6 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 	if dir == "" || dir == "." {
 		dir, _ = filepath.Abs(".")
 	}
-	picker, err := loom.NewFilePicker(dir, loom.FilePickerOptions{
-		Mode: loom.FilePickerFiles,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	sb := loom.NewSearchBar()
-	sb.Prompt = loom.SpeccedDefaults.Editor.SearchPrompt
-	sb.Placeholder = loom.SpeccedDefaults.Editor.SearchPlaceholder
 
 	v := &editView{
 		edit:          edit,
@@ -147,9 +138,38 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 		config:        cfg,
 		focused:       focusEditor,
 		showSidePanel: false, // initial toggle state
-		filePicker:    picker,
-		searchBar:     sb,
 	}
+
+	picker, err := loom.NewFilePicker(dir, loom.FilePickerOptions{
+		Mode: loom.FilePickerFiles,
+		OnSelect: func(selectedPath string) {
+			if v.filePicker != nil {
+				v.filePicker.Reset()
+			}
+			if v.edit.IsModified() {
+				v.pendingOpenPath = selectedPath
+				_ = v.handleQuit()
+			} else {
+				_ = v.openFile(selectedPath)
+			}
+		},
+		OnCancel: func() {
+			if v.filePicker != nil {
+				v.filePicker.Reset()
+			}
+			v.showSidePanel = false
+			v.focused = focusEditor
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	v.filePicker = picker
+
+	sb := loom.NewSearchBar()
+	sb.Prompt = loom.SpeccedDefaults.Editor.SearchPrompt
+	sb.Placeholder = loom.SpeccedDefaults.Editor.SearchPlaceholder
+	v.searchBar = sb
 
 	if theme := loom.Theme(cfg.Theme); cfg.Theme != "" {
 		v.edit.ApplyTheme(theme)
@@ -439,25 +459,26 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 
 		// Search Panel Overlay
 		if v.showSearch {
-			sWidth := min(48, max(24, v.editorRect.W-2))
-			sHeight := min(7, contentH)
-			sX := v.editorRect.X + v.editorRect.W - sWidth
+			sWidth := min(48, max(10, v.editorRect.W))
+			sHeight := min(7, max(3, contentH))
+			sX := max(v.editorRect.X, v.editorRect.X+v.editorRect.W-sWidth)
 			sY := v.editorRect.Y
 			v.searchRect = loom.Rect{X: sX, Y: sY, W: sWidth, H: sHeight}
 
 			if sWidth > 4 && sHeight > 2 {
 				// Search box background and border
 				canvas.PaintDefaultSurface(v.searchRect, normalStyle)
-				canvas.WriteDefault(sX, sY, "┌─ Search  F3 / ^F "+strings.Repeat("─", max(0, sWidth-20))+"┐", boxStyle.Border)
-				canvas.WriteDefault(sX, sY+sHeight-1, "└"+strings.Repeat("─", max(0, sWidth-2))+"┘", boxStyle.Border)
+				boxTitle := "┌─ Search  F3 / ^F " + strings.Repeat("─", max(0, sWidth-20)) + "┐"
+				canvas.WriteDefault(sX, sY, loom.TruncateText(boxTitle, sWidth, ""), boxStyle.Border)
+				canvas.WriteDefault(sX, sY+sHeight-1, loom.TruncateText("└"+strings.Repeat("─", max(0, sWidth-2))+"┘", sWidth, ""), boxStyle.Border)
 				for y := sY + 1; y < sY+sHeight-1; y++ {
 					canvas.Set(sX, y, loom.Cell{Text: "│", Style: boxStyle.Border})
 					canvas.Set(sX+sWidth-1, y, loom.Cell{Text: "│", Style: boxStyle.Border})
 				}
 
 				// Find input line
-				v.searchBar.MaxWidth = sWidth - 4
-				v.searchBar.Draw(canvas, loom.Rect{X: sX + 2, Y: sY + 1, W: sWidth - 4, H: 1})
+				v.searchBar.MaxWidth = max(1, sWidth-4)
+				v.searchBar.Draw(canvas, loom.Rect{X: sX + 2, Y: sY + 1, W: max(1, sWidth-4), H: 1})
 
 				// Mode toggle line: [ Normal * ]  [ Regex ]
 				normStr := "[ Normal * ]"
@@ -467,7 +488,7 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 					regStr = "[ Regex * ]"
 				}
 				if sHeight > 3 {
-					canvas.WriteDefault(sX+2, sY+2, normStr+"  "+regStr, normalStyle)
+					canvas.WriteDefault(sX+2, sY+2, loom.TruncateText(normStr+"  "+regStr, sWidth-4, ""), normalStyle)
 				}
 
 				// Match counter line
@@ -478,12 +499,12 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 					} else if len(v.searchMatches) > 0 {
 						matchStr = fmt.Sprintf("%d / %d matches", v.searchIndex+1, len(v.searchMatches))
 					}
-					canvas.WriteDefault(sX+2, sY+3, matchStr, dimStyle)
+					canvas.WriteDefault(sX+2, sY+3, loom.TruncateText(matchStr, sWidth-4, ""), dimStyle)
 				}
 
 				// Nav hints
 				if sHeight > 5 {
-					canvas.WriteDefault(sX+2, sY+4, "Enter: next   S-Enter: prev", dimStyle)
+					canvas.WriteDefault(sX+2, sY+4, loom.TruncateText("Enter: next   S-Enter: prev", sWidth-4, ""), dimStyle)
 				}
 			}
 		}
@@ -525,6 +546,11 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 
 	if key.Is(editorDefs.HotkeySearchBinding, "ctrl-f") {
 		v.toggleSearch()
+		return loom.Handled()
+	}
+
+	if key.Is("ctrl-p") {
+		_ = v.captureScreenshot()
 		return loom.Handled()
 	}
 
@@ -588,17 +614,6 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	}
 
 	if v.showSidePanel && v.focused == focusBrowser {
-		if key.Is("enter") {
-			if entry, ok := v.filePicker.Selected(); ok && entry.Kind == loom.FileKindRegular {
-				if v.edit.IsModified() {
-					v.pendingOpenPath = entry.Path
-					_ = v.handleQuit()
-				} else {
-					_ = v.openFile(entry.Path)
-				}
-				return loom.Handled()
-			}
-		}
 		return v.filePicker.ConsumeKey(key)
 	}
 
@@ -614,6 +629,37 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return loom.QuitResult()
 	}
 	return res
+}
+
+func (v *editView) captureScreenshot() error {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "."
+	}
+	dir := filepath.Join(home, "Pictures", "Screenshots")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	entries, _ := os.ReadDir(dir)
+	num := len(entries) + 1
+
+	fileName := "document"
+	if v.filePath != "" {
+		fileName = filepath.Base(v.filePath)
+	}
+
+	shotName := fmt.Sprintf("%02d-loom-edit-%s.ansi", num, fileName)
+	outPath := filepath.Join(dir, shotName)
+
+	w, h := v.lastRect.W, v.lastRect.H
+	if w <= 0 || h <= 0 {
+		w, h = 100, 24
+	}
+
+	rows := loom.Render(v, w, h)
+	content := strings.Join(rows, "\n") + "\n"
+	return os.WriteFile(outPath, []byte(content), 0644)
 }
 
 func findRuneMatches(line string, query string) []int {

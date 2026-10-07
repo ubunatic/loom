@@ -75,8 +75,18 @@ Source: host `claude:opus` as reviewer, developers `claude:sonnet` (257, 258, 26
 - **Live PTY checks are the host's job**: developers could not inject arrows into the gallery. A tmux session (`tmux new-session -d ... ; tmux send-keys ...; tmux capture-pane -p -e`) let the host verify typing, selection and box drawing. The 258 review skipped checking the effect of a key and missed the caret bug filed as 260.
 - **tmux is not the user's terminal**: S-Home worked in tmux but VTE (Tilix) eats it on the primary screen. Ask the user for a 10-second probe (`printf '\e[?1049h'; cat -v`) before claiming key support.
 - **Decoder gaps hide behind widget code**: twice (257, 263) the widget already handled a key the decoder never produced. Check `DecodeKey` first when a binding "does nothing".
-- **Host rerun uses plain `make test`**: quota-1 blocks a rerun when no source changed since the developer's run, and `.harnez/rules/Quota.md` forbids `QUOTA_BYPASS`; plain `make test` is the host rerun (harnez issue 704).
+- **Historical host rerun workaround (superseded)**: this round used plain `make test` when quota-1 blocked a rerun (harnez issue 704). Current `.harnez/rules/Quota.md` requires `make test-q1` or quota-managed execution and prohibits bypasses; follow that rule rather than repeat the workaround.
 - **Search before filing**: a flaky test was filed as 262 before reading the search result that showed 247; closed as duplicate.
 - **Advisor refinement in parallel with a developer** worked when the advisor was limited to committing one ticket file.
 - **Capture escape output, not the screen** (264): a green test suite hid that the cursor shape never reached the terminal, because the pane asked only the root widget and the gallery wraps the editor. `script -q -c '<cmd>' out.raw` under tmux plus `grep -aoE $'\x1b\\[[0-9]* q' out.raw` showed zero sequences; the nested-container test followed.
 - **User live checks drive pre-work**: each 264 milestone's live check produced 2-6 user refinements; folding them into the next milestone's "Pre-Work" section kept one ticket and one developer session for the whole sprint (one `codex:sol:med` session, seven turns).
+
+## Editor design and PR review (2026-10-07)
+
+Details and issue links: [Editor](Editor.md). This session performed a bounded design delegation and PR review, not a lean implementation sprint.
+
+- **Repository rules reached a leaf worker**: `luna:med` validated its ANSI alternative without a validation reminder in the task prompt, then identified AGENTS.md as the reason. The host independently checked the artifact; one successful task does not establish universal compliance.
+- **Probe interaction despite a green suite**: PR #16 passed `make test-q1`, but PTY probes found a Unicode panic, search clicks editing the document, and child quit keys discarding unsaved edits. Do not merge crash/data-loss findings as minor future fixups.
+- **Check test side effects**: the suite overwrote five tracked designs with random temporary paths. Keep evidence generation explicit and deterministic, and inspect git status after testing.
+- **Keep review isolated**: a disposable detached worktree allowed verification without changing main or the installed app to unapproved PR code. Remove only the review's own generated artifacts when cleaning it up.
+- **Improve discovery**: inspect live PR state early and establish actual file paths before querying them. A finder backend error with exit status zero still warrants a precise fallback; avoid repeating broad searches.

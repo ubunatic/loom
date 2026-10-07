@@ -12,6 +12,8 @@
 `loom edit` needs search on F3 and ^F. Search opens a small panel at the top right, with next/previous keys and a Normal/Regex switch.
 
 ## 2. Technical Specification / Findings
+PR #16 review found a Unicode crash ([285](285-fix-unicode-literal-search-panic-in-loom-edit.md)), unsaved-change loss ([286](286-prevent-search-panel-quit-keys-from-losing-unsaved-editor-changes.md)), and overlay/selection defects ([287](287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md)). See [Editor](../docs/Editor.md); reverify findings against the current branch before implementation.
+
 Implementation constraint: the [approved design guidance](../docs/design/loom-edit-design-notes.md) allows the final app to differ with standard Loom widget behavior. New UI elements must use standard Loom widgets; small tweaks are acceptable, heavy hacks are not. Always file or link a library issue for larger observed Loom gaps instead of adding app workarounds.
 
 Both shortcuts open/focus the same compact panel. Show query, mode and match position; highlight matches and move the viewport to the selected result. The mockup proposes Enter for next, Shift-Enter for previous, Tab to reach controls and Esc to close/restore editor focus. Store bindings in the spec. Handle empty queries, no matches and invalid regex without losing editor state. Use library-level search/overlay support where needed rather than per-app routing workarounds. Containers own Tab and coordinate translation; start event-routing work on `codex:sol:med`.
