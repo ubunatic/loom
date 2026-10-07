@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -101,4 +102,35 @@ func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
 	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "!") {
 		t.Fatalf("^S with browser focused did not write: %q", data)
 	}
+}
+
+func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	for name, body := range map[string]string{"doc.txt": "base\n", "b.txt": "second file\n"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab", path)
+	s.WaitFor("Ln 1, Col 1", 3*time.Second)
+	s.Send("\x1bOQ") // F2 opens the browser
+	s.WaitFor("b.txt", 3*time.Second)
+
+	row, col := -1, -1
+	for y, line := range s.Screen() {
+		if i := strings.Index(line, "b.txt"); i >= 0 {
+			row, col = y, len([]rune(line[:i]))+len("b.txt")+3
+			break
+		}
+	}
+	if row < 0 {
+		t.Fatalf("b.txt not on screen:\n%s", strings.Join(s.Screen(), "\n"))
+	}
+	// SGR mouse press and release, 1-based, a few cells right of the name.
+	s.Send("\x1b[<0;" + strconv.Itoa(col+1) + ";" + strconv.Itoa(row+1) + "M")
+	s.Send("\x1b[<0;" + strconv.Itoa(col+1) + ";" + strconv.Itoa(row+1) + "m")
+	time.Sleep(300 * time.Millisecond)
+	s.Send("\r")
+	s.WaitFor("second file", 3*time.Second)
 }

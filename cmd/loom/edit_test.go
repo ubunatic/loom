@@ -794,3 +794,37 @@ func TestEditViewHeaderShowsDocStateAfterSave(t *testing.T) {
 		t.Fatalf("status message = %q, want save confirmation", view.statusMessage)
 	}
 }
+
+func TestEditViewBrowserSingleClickSelectsRow(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	_ = os.WriteFile(path, []byte("x\n"), 0600)
+	_ = os.WriteFile(filepath.Join(dir, "a.txt"), nil, 0600)
+	_ = os.WriteFile(filepath.Join(dir, "b.txt"), nil, 0600)
+
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "f2"})
+	canvas := loom.NewCanvas(100, 24)
+	view.Draw(canvas, canvas.Bounds())
+
+	// Entries: "..", a.txt, b.txt, doc.txt; list starts one row below the header.
+	for i, want := range []string{"..", "a.txt", "b.txt", "doc.txt"} {
+		view.filePicker.List().SelectIndex(3 - i)
+		view.ConsumeMouse(loom.MouseEvent{
+			Action: loom.MousePress,
+			Button: loom.MouseLeft,
+			X:      view.browserRect.X + view.browserRect.W - 2,
+			Y:      view.browserRect.Y + 1 + i,
+		})
+		if got, ok := view.filePicker.Selected(); !ok || got.Name != want {
+			t.Fatalf("click row %d selected %q, want %q", i, got.Name, want)
+		}
+	}
+}

@@ -36,11 +36,13 @@ func TestFilebrowser093PTYClick(t *testing.T) {
 	if !strings.Contains(strings.Join(s.Screen(), "\n"), "Name: alpha.txt") {
 		t.Fatal("text click did not select alpha.txt")
 	}
-	row, _ = findPTYText(t, s.Screen(), "alpha.txt")
+	// Since 296 a press beyond the name selects its row instead of being
+	// swallowed; the old lookup re-found "alpha.txt" in the metadata panel,
+	// which put the click on the ".." row. Click the whitespace of alpha's row.
 	s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM", col+25, row+1)))
 	time.Sleep(100 * time.Millisecond)
 	if !strings.Contains(strings.Join(s.Screen(), "\n"), "Name: alpha.txt") {
-		t.Fatal("whitespace click changed selection")
+		t.Fatal("whitespace click on the selected row changed selection")
 	}
 	if os.Getenv("LOOM_EVIDENCE") == "1" {
 		root := findFilebrowserRepoRoot(t)

@@ -592,6 +592,11 @@ func (c *Choice) ConsumeMouse(e MouseEvent) EventResult {
 		}
 		_, end, ok := choiceMouseHitRegion(c.choiceRowText(fi, contentW), contentW)
 		if !ok || e.X < 0 || e.X >= end {
+			// MouseTextOnly limits hover/drag tracking to the text run. A left
+			// press on the row still selects it, but never activates.
+			if e.Action == MousePress && e.Button == MouseLeft {
+				c.sel = fi
+			}
 			c.observeDoubleClick(e, "")
 			return Handled()
 		}

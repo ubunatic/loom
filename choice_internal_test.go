@@ -630,3 +630,38 @@ func TestChoiceIgnoresDeprecatedBorderStyle(t *testing.T) {
 		}
 	}
 }
+
+func TestChoiceMouseTextOnlyPressBeyondTextSelectsWithoutActivating(t *testing.T) {
+	activated := ""
+	c := NewChoice([]Item{{Name: "a"}, {Name: "b"}, {Name: "c"}})
+	c.MouseTextOnly = true
+	c.DoubleClickToActivate = true
+	c.OnSelect = func(it Item) { activated = it.Name }
+	c.Draw(NewCanvas(30, 5), Rect{W: 30, H: 5})
+
+	press := MouseEvent{Action: MousePress, Button: MouseLeft, X: 25, Y: 1}
+	if res := c.ConsumeMouse(press); !res.Consumed {
+		t.Fatalf("press beyond text = %+v, want consumed", res)
+	}
+	if got, _ := c.Selected(); got.Name != "b" {
+		t.Fatalf("selected after press beyond text = %q, want b", got.Name)
+	}
+	if activated != "" {
+		t.Fatalf("single press activated %q", activated)
+	}
+
+	// Hover beyond the text must not move the selection.
+	c.ConsumeMouse(MouseEvent{Action: MouseHover, X: 25, Y: 2})
+	if got, _ := c.Selected(); got.Name != "b" {
+		t.Fatalf("hover beyond text moved selection to %q", got.Name)
+	}
+
+	// Two quick presses on the same row beyond the text do not activate:
+	// double click activation is limited to the text run.
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
+	c.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 2, Y: 2})
+	c.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 2})
+	if activated != "c" {
+		t.Fatalf("double click on text activated %q, want c", activated)
+	}
+}

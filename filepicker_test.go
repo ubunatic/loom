@@ -333,3 +333,33 @@ func TestFilePickerSaveModeKeepsOpenWhenSaveCallbackFails(t *testing.T) {
 		t.Fatal("picker closed after save callback failed")
 	}
 }
+
+func TestFilePickerSingleClickSelectsRowsBeyondText(t *testing.T) {
+	root := t.TempDir()
+	for _, name := range []string{"a.go", "b.go", "c.go"} {
+		if err := os.WriteFile(filepath.Join(root, name), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, save := range []bool{false, true} {
+		opts := FilePickerOptions{Mode: FilePickerFiles}
+		if save {
+			opts = FilePickerOptions{Mode: FilePickerSave, FileName: "x.go"}
+		}
+		picker, err := NewFilePicker(root, opts)
+		if err != nil {
+			t.Fatal(err)
+		}
+		picker.Draw(NewCanvas(40, 10), Rect{W: 40, H: 10})
+		// Row 0 is the header; list rows start at Y=1: "..", a.go, b.go, c.go.
+		for y, want := range map[int]string{1: "..", 2: "a.go", 3: "b.go", 4: "c.go"} {
+			for _, x := range []int{1, 35} {
+				picker.List().SelectIndex(0)
+				picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: x, Y: y})
+				if got, ok := picker.Selected(); !ok || got.Name != want {
+					t.Fatalf("save=%v click x=%d y=%d selected %q, want %q", save, x, y, got.Name, want)
+				}
+			}
+		}
+	}
+}
