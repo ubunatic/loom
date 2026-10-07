@@ -1,6 +1,6 @@
 # 294 — loom edit: Add ^O to open file pane and ^W to close file
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 92cb313
 **Priority**: P2 (Medium)
 **Severity**: Feature
 **Category**: Keybindings
