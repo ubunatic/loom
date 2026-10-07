@@ -1,6 +1,6 @@
 # 285 — Fix Unicode literal search panic in loom edit
 
-**Status**: Open
+**Status**: Closed — Integrated rune-safe literal search; full suite and PTY regression probes pass.
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
