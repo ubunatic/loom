@@ -628,6 +628,9 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if v.shouldQuit {
 		return loom.QuitResult()
 	}
+	if v.showSearch && res.Consumed {
+		v.updateSearchMatches()
+	}
 	return res
 }
 
@@ -718,10 +721,10 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 
 	// Click in search panel
 	if v.showSearch && v.searchRect.Contains(mouse.X, mouse.Y) {
-		v.focused = focusSearch
-		v.searchBar.SetFocused(true)
-		if mouse.Action == loom.MousePress && mouse.Button == loom.MouseLeft {
-			if mouse.Y == v.searchRect.Y+2 {
+		if mouse.Action == loom.MousePress {
+			v.focused = focusSearch
+			v.searchBar.SetFocused(true)
+			if mouse.Button == loom.MouseLeft && mouse.Y == v.searchRect.Y+2 {
 				normW := len("[ Normal * ]")
 				normX := v.searchRect.X + 2
 				regX := normX + normW + 2
@@ -752,7 +755,9 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 
 	// Click in side panel
 	if v.showSidePanel && v.browserRect.Contains(mouse.X, mouse.Y) {
-		v.focused = focusBrowser
+		if mouse.Action == loom.MousePress {
+			v.focused = focusBrowser
+		}
 		mouseLocal := mouse
 		mouseLocal.X -= v.browserRect.X
 		mouseLocal.Y -= v.browserRect.Y
@@ -761,7 +766,9 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 
 	// Click in editor area
 	if v.editorRect.Contains(mouse.X, mouse.Y) {
-		v.focused = focusEditor
+		if mouse.Action == loom.MousePress {
+			v.focused = focusEditor
+		}
 		mouseLocal := mouse
 		mouseLocal.X -= v.editorRect.X
 		mouseLocal.Y -= v.editorRect.Y
