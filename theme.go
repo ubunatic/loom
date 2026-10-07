@@ -232,10 +232,16 @@ func ThemeExists(name string) bool {
 }
 
 // Theme returns the named theme from SpeccedThemes.
-// If name is not found, it falls back to the "plain" theme.
+// An empty name uses DefaultTheme. Unknown names fall back to the "plain" theme.
 func Theme(name string) ThemeColors {
+	if name == "" {
+		return DefaultTheme()
+	}
 	if t, ok := SpeccedThemes[name]; ok {
 		return t
 	}
 	return SpeccedThemes["plain"]
 }
+
+// DefaultTheme returns the default theme defined in spec/defaults.yaml.
+func DefaultTheme() ThemeColors { return SpeccedThemes[SpeccedDefaults.Editor.Theme] }

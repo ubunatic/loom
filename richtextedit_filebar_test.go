@@ -126,7 +126,7 @@ func TestRichTextEditFileBarBoxGuidanceIsAtomic(t *testing.T) {
 		canvas := NewCanvas(width, 2)
 		edit.Draw(canvas, canvas.Bounds())
 		row := hintBarRow(canvas, 1)
-		has := strings.Contains(row, "[Box] Esc exits")
+		has := strings.Contains(row, "[Box] Enter/Esc exits")
 		if !has && strings.Contains(row, "[Box") {
 			t.Fatalf("width %d renders partial Box guidance: %q", width, row)
 		}
@@ -197,9 +197,10 @@ func TestRichTextEditFileBarKeyboardSaveAndPathlessSaveAs(t *testing.T) {
 	if edit.FilePath != "" || edit.savePicker != nil {
 		t.Fatalf("cancelled pathless Save changed path/picker = %q/%v", edit.FilePath, edit.savePicker)
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-alt-s"}); !result.Consumed || edit.savePicker == nil {
-		t.Fatalf("Ctrl+Alt+S result/picker = %+v/%v", result, edit.savePicker)
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-alt-s"}); result.Consumed || edit.savePicker != nil {
+		t.Fatalf("removed Ctrl+Alt+S result/picker = %+v/%v", result, edit.savePicker)
 	}
+	edit.ensureFileBar().menu.Menus[0].Items[3].Action()
 	if edit.savePicker.nameFocus {
 		t.Fatal("untitled Save as picker stole focus from directory search")
 	}
@@ -406,7 +407,7 @@ func TestRichTextEditFileMenuIsSpecDriven(t *testing.T) {
 	}
 	want := []struct{ label, binding string }{
 		{defs.HotkeyOpenLabel, defs.HotkeyOpenBinding}, {defs.HotkeyCloseLabel, defs.HotkeyCloseBinding},
-		{defs.HotkeySaveLabel, defs.HotkeySaveBinding}, {defs.HotkeySaveAsLabel, defs.HotkeySaveAsBinding},
+		{defs.HotkeySaveLabel, defs.HotkeySaveBinding}, {defs.HotkeySaveAsLabel, ""},
 	}
 	for i, w := range want {
 		if !strings.HasPrefix(menu.Items[i].Label, w.label) || menu.Items[i].Shortcut != KeyCap(w.binding) {

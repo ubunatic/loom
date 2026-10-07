@@ -396,8 +396,8 @@ func New(height int) (*Pane, error) {
 		cols = 80
 	}
 	wantRows := height
-	if height > termRows-1 {
-		height = termRows - 1
+	if height > termRows {
+		height = termRows
 	}
 
 	if Debug {
@@ -607,6 +607,16 @@ func (p *Pane) disableMouse() {
 	p.mouse, p.mouseMode = false, 0
 }
 
+// DisableMouse releases terminal mouse reporting so native text selection works.
+// Call before Run or from an event handler. EnableMouse re-enables tracking.
+func (p *Pane) DisableMouse() {
+	if p.tty != nil {
+		p.tty.WriteString("\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l") //nolint:errcheck
+	}
+	p.mouse, p.mouseMode = false, 0
+	p.mouseKnown = false
+}
+
 func (p *Pane) setBracketedPaste(on bool) {
 	if p.tty == nil || p.pasteMode == on {
 		return
@@ -634,8 +644,8 @@ func (p *Pane) Resize(newHeight int) {
 	if p.fullActive || p.altActive {
 		return // the layout owns the rows; wantRows applies when inline again
 	}
-	if newHeight > termRows-1 {
-		newHeight = termRows - 1
+	if newHeight > termRows {
+		newHeight = termRows
 	}
 
 	if newHeight == p.rows {
@@ -676,12 +686,12 @@ func (p *Pane) applyRequestedMaxCols(maxCols int) {
 
 // winchBounds recomputes pane placement after a terminal window resize. Given
 // the current top row and height and the new terminal row count, it clamps the
-// height to fit (leaving the shell prompt line) and lifts the top row if the
+// height to fit the terminal and lifts the top row if the
 // pane would overflow the new bottom. It is pure so the math can be unit-tested.
 func winchBounds(startRow, rows, termRows int) (newStartRow, newRows int) {
 	newRows = rows
-	if newRows > termRows-1 {
-		newRows = termRows - 1
+	if newRows > termRows {
+		newRows = termRows
 	}
 	if newRows < 1 {
 		newRows = 1
@@ -711,7 +721,7 @@ func (p *Pane) applyWinch(cols *int) {
 	newStartRow, newRows := winchBounds(p.startRow, p.wantRows, termRows)
 	if p.fullActive {
 		newStartRow = 1
-		newRows = max(1, termRows-1)
+		newRows = max(1, termRows)
 	}
 	if p.altActive {
 		newStartRow, newRows = 1, max(1, termRows)
@@ -746,7 +756,7 @@ func (p *Pane) refreshStartupSize() {
 	}
 	p.startRow, p.rows = winchBounds(p.startRow, wantRows, rows)
 	if p.fullActive {
-		p.startRow, p.rows = 1, max(1, rows-1)
+		p.startRow, p.rows = 1, max(1, rows)
 	}
 	if p.altActive {
 		p.startRow, p.rows = 1, max(1, rows)
@@ -1541,7 +1551,7 @@ func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
 		return false, true
 	}
 	result := p.help.ConsumeKey(e)
-	if result.Consumed || !p.help.Open {
+	if result.Quit || !p.help.Open {
 		p.help = nil
 	}
 	return false, true
@@ -1552,6 +1562,9 @@ func (p *Pane) handleHelpMouse(e MouseEvent) bool {
 		return false
 	}
 	p.help.ConsumeMouse(e)
+	if !p.help.Open {
+		p.help = nil
+	}
 	return true
 }
 

@@ -215,7 +215,7 @@ func (cb *cmdBar) handleHelpMouse(e MouseEvent) bool {
 	if cb.help == nil {
 		return false
 	}
-	if cb.help.ConsumeMouse(e).Consumed {
+	if cb.help.ConsumeMouse(e).Quit {
 		cb.help = nil
 	}
 	return true
@@ -223,8 +223,9 @@ func (cb *cmdBar) handleHelpMouse(e MouseEvent) bool {
 
 // helpWidget is a read-only command list that closes on any key except up/down.
 type helpWidget struct {
-	lines  []string
-	scroll int
+	lines     []string
+	scroll    int
+	maxScroll int
 }
 
 func newHelpWidget(cmds []Cmd) *helpWidget {
@@ -236,7 +237,7 @@ func newHelpWidget(cmds []Cmd) *helpWidget {
 		}
 		lines[i] = fmt.Sprintf("  :%-10s  %s%s", c.Name, c.Title, keys)
 	}
-	return &helpWidget{lines: lines}
+	return &helpWidget{lines: lines, maxScroll: max(0, len(lines)-1)}
 }
 
 func (hw *helpWidget) ContentHeight() int {
@@ -248,6 +249,8 @@ func (hw *helpWidget) ContentHeight() int {
 }
 
 func (hw *helpWidget) Draw(cv *Canvas, r Rect) {
+	hw.maxScroll = max(0, len(hw.lines)-max(0, r.H-1))
+	hw.scroll = min(max(0, hw.scroll), hw.maxScroll)
 	for row := 0; row < r.H-1; row++ {
 		y := r.Y + row
 		cv.PaintSurface(Rect{r.X, y, r.W, 1}, Reset)
@@ -269,7 +272,7 @@ func (hw *helpWidget) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return Ignored()
 	case "down":
-		if hw.scroll < len(hw.lines)-1 {
+		if hw.scroll < hw.maxScroll {
 			hw.scroll++
 		}
 		return Ignored()
@@ -277,4 +280,14 @@ func (hw *helpWidget) ConsumeKey(e KeyEvent) EventResult {
 	return QuitResult() // any other key closes
 }
 
-func (hw *helpWidget) ConsumeMouse(_ MouseEvent) EventResult { return Ignored() }
+func (hw *helpWidget) ConsumeMouse(e MouseEvent) EventResult {
+	switch e.Action {
+	case MouseScrollUp:
+		hw.ConsumeKey(KeyEvent{Key: "up"})
+	case MouseScrollDown:
+		hw.ConsumeKey(KeyEvent{Key: "down"})
+	default:
+		return Ignored()
+	}
+	return Handled()
+}

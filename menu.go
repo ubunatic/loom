@@ -67,7 +67,7 @@ type MenuStyle struct {
 
 // DefaultMenuStyle uses the plain theme's normal and border colors.
 func DefaultMenuStyle() MenuStyle {
-	t := Theme("plain")
+	t := DefaultTheme()
 	normal := Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()}
 	active := Style{FG: t.SelectedFG.Color(), BG: t.SelectedBG.Color(), Bold: t.SelectedBold}
 	border := Style{FG: t.BorderFG.Color(), BG: t.BorderBG.Color()}

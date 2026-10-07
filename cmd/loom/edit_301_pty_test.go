@@ -52,7 +52,7 @@ func waitEditPTY(t *testing.T, s *ptytest.Session, predicate func() bool) {
 
 func TestEditPTYBottomBarActionsAndToggles(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	s, path := startEditPTY(t, "base\n")
+	s, path := startMouseEditPTY(t, "base\n")
 	s.WaitFor("^O", 3*time.Second)
 	// Browser's separator at column 25 proves both bindings toggle both ways.
 	for _, key := range []string{"\x0f", "\x1bOQ"} {
@@ -98,12 +98,11 @@ func TestEditPTYBottomBarActionsAndToggles(t *testing.T) {
 
 func TestEditPTYMouseStatusToggle(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	s, _ := startEditPTY(t, "base\n")
+	s, _ := startMouseEditPTY(t, "base\n")
 	icons := loom.SpeccedDefaults.Editor.StatusIcons
-	clickEditPTY(t, s, len(s.Screen())-3, " "+icons.MouseOff+" ")
-	waitEditPTY(t, s, func() bool { return strings.Contains(strings.Join(s.Screen(), "\n"), " "+icons.MouseOn+" ") })
 	clickEditPTY(t, s, len(s.Screen())-3, " "+icons.MouseOn+" ")
 	waitEditPTY(t, s, func() bool { return strings.Contains(strings.Join(s.Screen(), "\n"), " "+icons.MouseOff+" ") })
+	waitEditPTY(t, s, func() bool { return strings.Contains(string(s.Raw()), "\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l") })
 	s.Send("\x11")
 	if err := s.Wait(3 * time.Second); err != nil {
 		t.Fatal(err)
@@ -111,7 +110,7 @@ func TestEditPTYMouseStatusToggle(t *testing.T) {
 }
 
 func TestEditPTYDrawKeyAndBoxSubmenu(t *testing.T) {
-	s, _ := startEditPTY(t, "base\n")
+	s, _ := startMouseEditPTY(t, "base\n")
 	s.Send("\x04\x1b[C\x1b[B\x04")
 	s.WaitFor("─┐", 3*time.Second)
 	s.Send("\x1a")

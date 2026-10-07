@@ -113,7 +113,6 @@ type RichTextEditDefaults struct {
 	HotkeyHelpLabel       string        `yaml:"hotkey_help_label"`
 	HotkeySaveBinding     string        `yaml:"hotkey_save_binding"`
 	HotkeySaveLabel       string        `yaml:"hotkey_save_label"`
-	HotkeySaveAsBinding   string        `yaml:"hotkey_save_as_binding"`
 	HotkeySaveAsLabel     string        `yaml:"hotkey_save_as_label"`
 	HotkeyOpenBinding     string        `yaml:"hotkey_open_binding"`
 	HotkeyOpenLabel       string        `yaml:"hotkey_open_label"`

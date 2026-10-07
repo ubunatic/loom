@@ -161,6 +161,12 @@ func NewRichTextView(doc *RichDocument) *RichTextEdit {
 // Focused reports whether the editor currently has keyboard focus.
 func (e *RichTextEdit) Focused() bool { return e.focused }
 
+// ModalOpen reports whether a help or save popup captures input. Hosts should
+// route input to the editor first, including mouse events outside its bounds.
+func (e *RichTextEdit) ModalOpen() bool {
+	return (e.helpPopup != nil && e.helpPopup.Open) || (e.savePopup != nil && e.savePopup.Open)
+}
+
 // HotkeyHint returns the most useful file and help shortcuts for the available width.
 func (e *RichTextEdit) HotkeyHint(width int) string {
 	return e.HotkeyBar().Text(width)
@@ -193,7 +199,7 @@ func (e *RichTextEdit) toolbarTheme() ThemeColors {
 	if e.chromeTheme != nil {
 		return *e.chromeTheme
 	}
-	return Theme("plain")
+	return DefaultTheme()
 }
 
 // SetFocus sets the editor focus state.
@@ -859,7 +865,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	}
 	if e.BoxMode {
 		switch {
-		case key.Is("esc"):
+		case key.Is("esc", "enter", "return"):
 			e.toggleBoxMode()
 			return Handled()
 		case key.Is("up"):

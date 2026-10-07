@@ -82,7 +82,7 @@ func NewGrid(cols int, children ...Widget) *Grid {
 	if cols < 1 {
 		cols = 1
 	}
-	return &Grid{Cols: cols, Children: children, FocusBG: Theme("plain").FocusBGColor()}
+	return &Grid{Cols: cols, Children: children, FocusBG: DefaultTheme().FocusBGColor()}
 }
 
 func (g *Grid) TickInterval() (shortest time.Duration) {
@@ -244,7 +244,7 @@ func (g *Grid) Draw(c *Canvas, r Rect) {
 	if bordered {
 		style := g.BorderStyle
 		if style == (Style{}) {
-			style = Theme("plain").BoxStyle().Border
+			style = DefaultTheme().BoxStyle().Border
 		}
 		drawGridBorder(c, r, cellWidths, cellHeights, insetX, insetY, full, speccedGrid.Glyphs, style)
 	}

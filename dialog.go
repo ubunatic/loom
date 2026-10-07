@@ -158,6 +158,20 @@ func (d *Dialog) ConsumeMouse(e MouseEvent) EventResult {
 	if d.popup == nil || !d.Open {
 		return Ignored()
 	}
+	if e.Action == MousePress && e.Button == MouseLeft && !d.popup.popupRect.Contains(e.X+d.drawRect.X, e.Y+d.drawRect.Y) {
+		d.Open = false
+		d.popup.Open = false
+		for i, label := range d.Buttons {
+			if strings.EqualFold(label, "Cancel") {
+				d.selected = i
+				if d.OnSelect != nil {
+					d.OnSelect(label)
+				}
+				break
+			}
+		}
+		return Handled()
+	}
 	// Popup receives coordinates local to the area it was drawn in. A placed
 	// dialog uses a different area from the allocation receiving this event.
 	e.X += d.drawRect.X - d.popup.lastRect.X

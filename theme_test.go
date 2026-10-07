@@ -15,23 +15,23 @@ import (
 	"ubunatic.com/loom"
 )
 
-// TestThemePlainChoiceStyleMatchesDefault asserts that the plain theme produces
-// exactly the same ChoiceStyle as the hard-coded DefaultChoiceStyle().
-func TestThemePlainChoiceStyleMatchesDefault(t *testing.T) {
-	got := loom.Theme("plain").ChoiceStyle()
+// TestThemeDefaultChoiceStyleMatchesDefault asserts that julia256 produces
+// exactly the same ChoiceStyle as the specced DefaultChoiceStyle().
+func TestThemeDefaultChoiceStyleMatchesDefault(t *testing.T) {
+	got := loom.Theme("julia256").ChoiceStyle()
 	want := loom.DefaultChoiceStyle()
 	if got != want {
-		t.Errorf("Theme(\"plain\").ChoiceStyle() = %+v, want %+v", got, want)
+		t.Errorf("Theme(\"julia256\").ChoiceStyle() = %+v, want %+v", got, want)
 	}
 }
 
-// TestThemePlainTableStyleMatchesDefault asserts that the plain theme produces
-// exactly the same TableStyle as the hard-coded DefaultTableStyle().
-func TestThemePlainTableStyleMatchesDefault(t *testing.T) {
-	got := loom.Theme("plain").TableStyle()
+// TestThemeDefaultTableStyleMatchesDefault asserts that julia256 produces
+// exactly the same TableStyle as the specced DefaultTableStyle().
+func TestThemeDefaultTableStyleMatchesDefault(t *testing.T) {
+	got := loom.Theme("julia256").TableStyle()
 	want := loom.DefaultTableStyle()
 	if got != want {
-		t.Errorf("Theme(\"plain\").TableStyle() = %+v, want %+v", got, want)
+		t.Errorf("Theme(\"julia256\").TableStyle() = %+v, want %+v", got, want)
 	}
 }
 

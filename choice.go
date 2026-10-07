@@ -26,9 +26,9 @@ type ChoiceStyle struct {
 	SearchBar SearchBarStyle
 }
 
-// DefaultChoiceStyle returns a minimal monochrome style, derived from the plain theme.
+// DefaultChoiceStyle returns styles derived from the specced default theme.
 func DefaultChoiceStyle() ChoiceStyle {
-	return Theme("plain").ChoiceStyle()
+	return DefaultTheme().ChoiceStyle()
 }
 
 // DefaultPlaceholder is the search-bar hint of Choice and Table.
@@ -114,6 +114,9 @@ func (c *Choice) SearchBar() *SearchBar {
 func (c *Choice) searchBarStyle() SearchBarStyle {
 	style := c.Style.SearchBar
 	if c.Style.Prompt != (Style{}) {
+		if c.Style.Prompt != style.Prompt && c.Style.Prompt.BG != ColorReset() {
+			style.Container = c.Style.Prompt
+		}
 		style.Prompt = c.Style.Prompt
 	}
 	if c.Style.Placeholder != (Style{}) {
@@ -336,6 +339,15 @@ func (c *Choice) Draw(cv *Canvas, r Rect) {
 	c.drawn = true
 	c.lastRect = r
 
+	// Paint an explicit prompt override before the normal surface, so the
+	// widget's own background does not hide it. A parent surface still wins.
+	if c.Style.Prompt.BG != ColorReset() && c.Style.Prompt != c.Style.SearchBar.Prompt {
+		promptY := r.Y + r.H - 1
+		if c.PromptTop {
+			promptY = r.Y
+		}
+		cv.PaintDefaultSurface(Rect{X: r.X, Y: promptY, W: r.W, H: 1}, c.Style.Prompt)
+	}
 	// Paint the whole rect with the default (normal) surface first; later rows
 	// that need a different colour use PaintDefaultSurface too, which is a
 	// no-op here since the normal BG is already set. On a blank canvas this

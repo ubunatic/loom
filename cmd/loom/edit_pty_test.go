@@ -211,16 +211,19 @@ func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
 	s.WaitFor("second file", 3*time.Second)
 }
 
-func TestEditPTYCtrlAltSOpensSaveAs(t *testing.T) {
+func TestEditPTYCtrlAltSDoesNotOpenSaveAs(t *testing.T) {
 	for name, seq := range map[string]string{
 		"legacy ESC ^S": "\x1b\x13",
 		"CSI-u":         "\x1b[115;7u",
 	} {
 		t.Run(name, func(t *testing.T) {
 			s, _ := startEditPTY(t, "base\n")
-			s.Send(seq) // ⌃⌥S
-			s.WaitFor("Name:", 3*time.Second)
-			s.Send("\x1b")
+			s.Send(seq)
+			s.Send("\x1bOP") // F1 proves the removed shortcut left the editor active.
+			s.WaitFor("RichTextEdit Help", 3*time.Second)
+			if strings.Contains(strings.Join(s.Screen(), "\n"), "Name:") {
+				t.Fatal("removed shortcut opened Save as")
+			}
 		})
 	}
 }

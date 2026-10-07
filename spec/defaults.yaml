@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=schemas/defaults.schema.json
-# keycaps.modifiers: glyphs in display order; KeyCap(binding) renders ctrl-alt-s as ⌃⌥S.
+# keycaps.modifiers: glyphs in display order.
 keycaps:
   modifiers:
     - {name: shift, glyph: "⇧"}
@@ -69,7 +69,7 @@ editor:
     alt_off: "a"
     fg: 15
     bg: 239
-  theme: "plain"
+  theme: "julia256"
   mousegrab: false
   altscreen: true
   hotkey_files_key: "^O"
@@ -124,7 +124,6 @@ rich_text_edit:
   hotkey_help_label: "Help"
   hotkey_save_binding: "ctrl-s"
   hotkey_save_label: "Save"
-  hotkey_save_as_binding: "ctrl-alt-s"
   hotkey_save_as_label: "Save as"
   hotkey_open_binding: "ctrl-o"
   hotkey_open_label: "Open"
@@ -139,7 +138,6 @@ rich_text_edit:
         - {ref: "HotkeyOpen"}
         - {ref: "HotkeyClose"}
         - {ref: "HotkeySave"}
-        - {ref: "HotkeySaveAs"}
         - {keys: ["alt-f"], label: "File menu (arrows choose, Enter runs, Esc closes)"}
     - title: "Navigation"
       entries:
@@ -172,7 +170,7 @@ rich_text_edit:
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}
         - {keys: ["ctrl-d"], label: "Box selection, or toggle box drawing"}
-        - {cap: "←↑↓→", label: "While drawing: draw connected lines; Esc ends a stroke"}
+        - {cap: "←↑↓→", label: "While drawing: draw connected lines; Enter or Esc finishes"}
     - title: "Save as dialog"
       entries:
         - {keys: ["tab", "shift-tab"], label: "Switch between search and filename"}

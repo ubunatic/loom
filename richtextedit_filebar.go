@@ -28,7 +28,7 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyOpenLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyOpenBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestOpen() }},
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyCloseLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyCloseBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestClose() }},
 			{Label: defs.HotkeySaveLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
-			{Label: defs.HotkeySaveAsLabel + "…", Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveAsBinding), Action: func() { bar.saveAs() }},
+			{Label: defs.HotkeySaveAsLabel + "…", Action: func() { bar.saveAs() }},
 		},
 	})
 	bar.menu.Bottom = true
@@ -94,7 +94,7 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	status := b.status()
 	hints := ""
 	if b.edit.BoxMode {
-		hints = "[Box] Esc exits"
+		hints = "[Box] Enter/Esc exits"
 	}
 	statusSeparator := strings.LastIndex(status, " · ")
 	minimumStatusWidth := StringWidth(status)

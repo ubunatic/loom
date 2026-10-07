@@ -130,7 +130,7 @@ func TestPaneOwnershipCanBeReclaimedAfterRelease(t *testing.T) {
 }
 
 // TestWinchBounds covers the pane-placement math used when the terminal window
-// is resized: height is clamped to leave the prompt line, and the top row is
+// is resized: height is clamped to the terminal, and the top row is
 // lifted (never below 1) when the pane would overflow the new bottom.
 func TestWinchBounds(t *testing.T) {
 	cases := []struct {
@@ -139,11 +139,11 @@ func TestWinchBounds(t *testing.T) {
 		wantStartRow, wantRows   int
 	}{
 		{"fits unchanged", 5, 8, 24, 5, 8},
-		{"height clamped then lifted to fit", 5, 30, 10, 2, 9},
+		{"height clamped then lifted to fit", 5, 30, 10, 1, 10},
 		{"overflow lifts top row", 20, 6, 22, 17, 6},
-		{"shrink clamps and lifts", 5, 8, 6, 2, 5},
-		{"overflow with clamp lifts to fit", 3, 10, 5, 2, 4},
-		{"single-row floor", 1, 2, 2, 1, 1},
+		{"shrink clamps and lifts", 5, 8, 6, 1, 6},
+		{"overflow with clamp lifts to fit", 3, 10, 5, 1, 5},
+		{"single-row floor", 1, 2, 2, 1, 2},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {

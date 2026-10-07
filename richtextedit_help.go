@@ -96,7 +96,17 @@ func (h *richTextEditHelp) ConsumeKey(e KeyEvent) EventResult {
 	}
 }
 
-func (h *richTextEditHelp) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+func (h *richTextEditHelp) ConsumeMouse(e MouseEvent) EventResult {
+	switch e.Action {
+	case MouseScrollUp:
+		h.scroll = max(0, h.scroll-1)
+	case MouseScrollDown:
+		h.scroll = min(h.maxScroll, h.scroll+1)
+	default:
+		return Ignored()
+	}
+	return Handled()
+}
 
 func wrapRichTextHelpLine(line string, width int) []string {
 	if width <= 0 {

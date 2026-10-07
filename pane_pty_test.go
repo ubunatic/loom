@@ -82,7 +82,7 @@ func TestPaneStartupResizeHelper(t *testing.T) {
 	switch mode {
 	case "full":
 		p.SetScreenMode(ScreenFull)
-		wantStart, wantHeight = 1, 29
+		wantStart, wantHeight = 1, 30
 	case "alt":
 		p.SetScreenMode(ScreenAlt)
 		wantStart, wantHeight = 1, 30
@@ -140,7 +140,7 @@ func TestPaneFirstDrawUsesScreenBounds(t *testing.T) {
 		wantHeight int
 	}{
 		{"inline", ScreenInline, false, 7, 24},
-		{"full", ScreenFull, false, 1, 29},
+		{"full", ScreenFull, false, 1, 30},
 		{"alt", ScreenAlt, false, 1, 30},
 		{"wrapped-request-auto-alt", ScreenInline, true, 1, 30},
 	} {

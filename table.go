@@ -45,9 +45,9 @@ type TableStyle struct {
 	SearchBar   SearchBarStyle
 }
 
-// DefaultTableStyle returns a minimal monochrome style, derived from the plain theme.
+// DefaultTableStyle returns styles derived from the specced default theme.
 func DefaultTableStyle() TableStyle {
-	return Theme("plain").TableStyle()
+	return DefaultTheme().TableStyle()
 }
 
 // Table is a filterable, sortable, keyboard-navigable table widget.

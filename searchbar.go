@@ -12,9 +12,9 @@ type SearchBarStyle struct {
 	Controls    Style // right-aligned controls/hints
 }
 
-// DefaultSearchBarStyle returns a minimal monochrome style, derived from the plain theme.
+// DefaultSearchBarStyle returns styles derived from the specced default theme.
 func DefaultSearchBarStyle() SearchBarStyle {
-	return Theme("plain").SearchBarStyle()
+	return DefaultTheme().SearchBarStyle()
 }
 
 // SearchBar is a reusable search and filter input widget.
@@ -34,11 +34,11 @@ type SearchBar struct {
 	OnSubmit func(query string) // called on Enter
 	OnAbort  func()             // called on Esc / quit keys
 
-	cmd     *cmdBar
-	cmdNav  Nav
-	aborted bool
-	done    bool
-	drawn   bool
+	cmd      *cmdBar
+	cmdNav   Nav
+	aborted  bool
+	done     bool
+	drawn    bool
 	lastRect Rect
 }
 

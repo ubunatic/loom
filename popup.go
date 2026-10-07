@@ -13,7 +13,8 @@ type Popup struct {
 	Width  int // 0 = half the canvas width
 	Height int // 0 = half the canvas height
 	Style  Style
-	// DismissOnOutsideClick closes the popup after a left click outside its inner widget.
+	// DismissOnOutsideClick closes the popup after a left click outside its border.
+	// NewPopup enables this by default.
 	DismissOnOutsideClick bool
 	lastRect              Rect
 	popupRect             Rect
@@ -30,7 +31,7 @@ func (p *Popup) ApplyTheme(theme ThemeColors) {
 
 // NewPopup creates a Popup wrapping inner with the given title.
 func NewPopup(title string, inner Widget) *Popup {
-	return &Popup{Title: title, Inner: inner, Open: true}
+	return &Popup{Title: title, Inner: inner, Open: true, DismissOnOutsideClick: true}
 }
 
 // Draw renders the popup centered in r, with a simple box border.

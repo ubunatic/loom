@@ -110,7 +110,7 @@ func widgetsCommand() *cobra.Command {
 	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
 	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
 	command.Flags().BoolVar(&debug, "debug", false, "show debug cell outlines in live widget demos")
-	command.Flags().StringVar(&themeName, "theme", "julia256", "gallery color theme")
+	command.Flags().StringVar(&themeName, "theme", loom.SpeccedDefaults.Editor.Theme, "gallery color theme")
 	command.Flags().IntVarP(&width, "width", "W", 0, "maximum gallery width in columns")
 	command.Flags().IntVarP(&height, "height", "H", 0, "gallery height in rows")
 	_ = command.RegisterFlagCompletionFunc("show", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {

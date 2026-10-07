@@ -32,7 +32,7 @@ func TestSearchBarDrawingAndPlaceholder(t *testing.T) {
 	cv = loom.NewCanvas(30, 1)
 	sb.Draw(cv, loom.Rect{X: 0, Y: 0, W: 30, H: 1})
 
-	row = cv.Row(0)
+	row = searchBarPlainRow(cv)
 	if !strings.Contains(row, "> foo") || strings.Contains(row, "type to filter") {
 		t.Fatalf("queried search bar output = %q, want query without placeholder", row)
 	}
@@ -50,10 +50,18 @@ func TestSearchBarControls(t *testing.T) {
 	cv := loom.NewCanvas(30, 1)
 	sb.Draw(cv, loom.Rect{X: 0, Y: 0, W: 30, H: 1})
 
-	row := cv.Row(0)
+	row := searchBarPlainRow(cv)
 	if !strings.Contains(row, "> test") || !strings.Contains(row, "4/12") {
 		t.Fatalf("search bar with controls = %q, want query and controls", row)
 	}
+}
+
+func searchBarPlainRow(cv *loom.Canvas) string {
+	var row strings.Builder
+	for x := 0; x < cv.Cols(); x++ {
+		row.WriteString(cv.Get(x, 0).Text)
+	}
+	return row.String()
 }
 
 func TestSearchBarKeyInputAndCallbacks(t *testing.T) {

@@ -34,9 +34,9 @@ type hintBarHit struct {
 	rect  Rect
 }
 
-// NewHintBar creates a hint bar with the plain theme's styles.
+// NewHintBar creates a hint bar with the default theme's styles.
 func NewHintBar(entries ...HintEntry) *HintBar {
-	return &HintBar{Entries: append([]HintEntry(nil), entries...), Style: Theme("plain").HintBarStyle()}
+	return &HintBar{Entries: append([]HintEntry(nil), entries...), Style: DefaultTheme().HintBarStyle()}
 }
 
 // ApplyTheme updates the cap and label colors from the theme.

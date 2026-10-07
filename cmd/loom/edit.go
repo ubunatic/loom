@@ -37,12 +37,15 @@ func editCommand() *cobra.Command {
 	var altScreen bool
 
 	cmd := &cobra.Command{
-		Use:          "edit <file>",
+		Use:          "edit [file]",
 		Short:        "Interactively edit a rich text or ANSI file",
-		Args:         cobra.ExactArgs(1),
+		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			path := args[0]
+			path := ""
+			if len(args) > 0 {
+				path = args[0]
+			}
 
 			cfg, err := loom.LoadEditorConfig(configPath)
 			if err != nil {
@@ -62,9 +65,13 @@ func editCommand() *cobra.Command {
 				cfg.AltScreen = altScreen
 			}
 
-			edit, err := loom.NewRichTextEditFromFile(path)
-			if err != nil {
-				return err
+			edit := loom.NewRichTextEdit(nil)
+			edit.ShowFileBar = true
+			if path != "" {
+				edit, err = loom.NewRichTextEditFromFile(path)
+				if err != nil {
+					return err
+				}
 			}
 
 			pane, err := loom.New(24)
@@ -98,7 +105,7 @@ func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
 	if cfg.MouseGrab {
 		pane.EnableMouse()
 	} else {
-		pane.EnableMouseClicks()
+		pane.DisableMouse()
 	}
 	if cfg.AltScreen {
 		pane.SetScreenMode(loom.ScreenAlt)
@@ -464,9 +471,12 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		canvas.WriteDefault(innerX, rect.Y+rect.H-4, strings.Repeat("─", innerW), boxStyle.Border)
 
 		// Y=H-2
-		absPath := v.filePath
-		if abs, err := filepath.Abs(v.filePath); err == nil {
-			absPath = abs
+		absPath := "Untitled"
+		if v.filePath != "" {
+			absPath = v.filePath
+			if abs, err := filepath.Abs(v.filePath); err == nil {
+				absPath = abs
+			}
 		}
 		if v.statusMessage != "" {
 			absPath = v.statusMessage
@@ -586,6 +596,9 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			v.unsavedDialog = nil
 		}
 		return loom.Handled()
+	}
+	if v.edit.ModalOpen() {
+		return v.edit.ConsumeKey(key)
 	}
 
 	editorDefs := loom.SpeccedDefaults.Editor
@@ -828,6 +841,11 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		}
 		return loom.Handled()
 	}
+	if v.edit.ModalOpen() {
+		mouse.X -= v.editorRect.X
+		mouse.Y -= v.editorRect.Y
+		return v.edit.ConsumeMouse(mouse)
+	}
 
 	if v.hints != nil && v.lastRect.H >= 6 && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {
 		mouseLocal := mouse
@@ -911,7 +929,7 @@ func (v *editView) toggleMouseGrab() loom.EventResult {
 		if v.config.MouseGrab {
 			v.pane.EnableMouse()
 		} else {
-			v.pane.EnableMouseClicks()
+			v.pane.DisableMouse()
 		}
 	}
 	return loom.Handled()

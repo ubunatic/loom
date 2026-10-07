@@ -35,9 +35,10 @@ func TestMenuShortcutGlyphsMapBackToBindings(t *testing.T) {
 	}
 }
 
-func TestSaveAsBindingIsCtrlAltS(t *testing.T) {
-	defs := SpeccedDefaults.RichTextEdit
-	if defs.HotkeySaveAsBinding != "ctrl-alt-s" || KeyCap(defs.HotkeySaveAsBinding) != "⌃⌥S" {
-		t.Fatalf("save as binding/cap = %q/%q", defs.HotkeySaveAsBinding, KeyCap(defs.HotkeySaveAsBinding))
+func TestSaveAsMenuHasNoShortcut(t *testing.T) {
+	edit := NewRichTextEdit(nil)
+	item := edit.ensureFileBar().menu.Menus[0].Items[3]
+	if item.Shortcut != "" || item.Label != SpeccedDefaults.RichTextEdit.HotkeySaveAsLabel+"…" {
+		t.Fatalf("Save as menu item = %+v", item)
 	}
 }

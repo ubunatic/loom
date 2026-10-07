@@ -41,11 +41,9 @@ func DefaultTabsKeys() TabsKeys {
 	return TabsKeys{Previous: "left", Next: "right"}
 }
 
-// DefaultTabsStyle returns a minimal monochrome style, mirroring
-// DefaultChoiceStyle/DefaultTableStyle which are pinned to the "plain"
-// theme by theme_test.go rather than hardcoding ad hoc colors here.
+// DefaultTabsStyle returns styles derived from the specced default theme.
 func DefaultTabsStyle() TabsStyle {
-	return Theme("plain").TabsStyle()
+	return DefaultTheme().TabsStyle()
 }
 
 // TabsStyle returns a TabsStyle derived from the theme's color roles.

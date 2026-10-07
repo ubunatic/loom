@@ -114,7 +114,7 @@ func NewImage(src image.Image, mode Mode) (*Widget, error) {
 	bar := loom.NewProgressBar()
 	bar.Options.Width = 8
 	bar.Indeterminate = true
-	return &Widget{image: src, mode: mode, theme: loom.Theme("plain"), zoom: 1, keys: keys, progress: bar, help: loom.NewKeyHelp(keys)}, nil
+	return &Widget{image: src, mode: mode, theme: loom.DefaultTheme(), zoom: 1, keys: keys, progress: bar, help: loom.NewKeyHelp(keys)}, nil
 }
 
 // NewImageWithTheme creates a still-image widget using the supplied theme.
@@ -274,11 +274,7 @@ func (w *Widget) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	slackX, slackY := viewSlack(w.mode, img, imageRect.W, imageRect.H, zoom)
 	img = w.cachedScaleForView(img, imageRect.W, imageRect.H, zoom, panX, panY)
-	for y := 0; y < imageRect.H; y++ {
-		for x := 0; x < imageRect.W; x++ {
-			c.Set(r.X+x, r.Y+y, loom.Cell{Text: " ", Style: loom.Reset})
-		}
-	}
+	c.PaintSurface(imageRect, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
 	grid, err, loading := w.renderWithThreshold(img, 0, 0)
 	if loading {
 		label := loom.SpeccedDefaults.Media.LoadingLabel
