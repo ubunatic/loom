@@ -1,6 +1,6 @@
 # 300 — loom edit: replace top title bar with compact bottom status icons
 
-**Status**: Open
+**Status**: Closed — implemented and verified in 8f2fc88
 **Priority**: P2 (Medium)
 **Severity**: Enhancement
 **Category**: UX
