@@ -1404,3 +1404,69 @@ func TestPTYResizeWidthGuardDisabled(t *testing.T) {
 		t.Fatalf("Pane.Run: %v", err)
 	}
 }
+
+type ignoreKeysWidget struct{}
+
+func (ignoreKeysWidget) Draw(*Canvas, Rect)                  {}
+func (ignoreKeysWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (ignoreKeysWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
+
+func TestPanePTYCloseRequestVetoThenQuit(t *testing.T) {
+	master, slave := openPTY(t)
+	setPTYSize(t, master, 24, 4)
+	asked := make(chan CloseReason, 4)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 4, cols: 24, startRow: 1}
+	vetoes := 1
+	p.OnCloseRequest = func(r CloseReason) CloseDecision {
+		asked <- r
+		if vetoes > 0 {
+			vetoes--
+			return CloseVeto
+		}
+		return CloseAllow
+	}
+	done := make(chan error, 1)
+	go func() { done <- p.Run(ignoreKeysWidget{}) }()
+	t.Cleanup(func() {
+		p.Quit()
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+		}
+	})
+
+	// Esc is ignored and never asks.
+	_, _ = master.WriteString("\x1b")
+	time.Sleep(300 * time.Millisecond)
+	select {
+	case r := <-asked:
+		t.Fatalf("Esc asked OnCloseRequest: %v", r)
+	case err := <-done:
+		t.Fatalf("Esc ended Run: %v", err)
+	default:
+	}
+
+	// First ^Q is vetoed, Run keeps going.
+	_, _ = master.WriteString("\x11")
+	select {
+	case <-asked:
+	case <-time.After(3 * time.Second):
+		t.Fatal("^Q did not ask OnCloseRequest")
+	}
+	select {
+	case err := <-done:
+		t.Fatalf("vetoed ^Q ended Run: %v", err)
+	case <-time.After(300 * time.Millisecond):
+	}
+
+	// An app-driven Quit ends Run without asking again.
+	p.Quit()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Quit did not end Run")
+	}
+}

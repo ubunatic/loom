@@ -169,42 +169,86 @@ func TestWinchBounds(t *testing.T) {
 func TestPaneConsumeKeyFallback(t *testing.T) {
 	p := &Pane{}
 
-	// Default fallback exits on Esc, Ctrl-C, Ctrl-Q, Ctrl-D, and 'q'
-	exitKeys := []KeyEvent{
-		{Key: "esc"},
-		{Key: "ctrl-c"},
-		{Key: "ctrl-q"},
-		{Key: "ctrl-d"},
-		{Text: "q"},
-	}
-
-	for _, ke := range exitKeys {
+	// Default fallback exits on Ctrl-Q, F10 and Ctrl-C only. Old expectation also
+	// listed Esc, Ctrl-D and 'q'; they no longer quit by default (issue 297).
+	for _, ke := range []KeyEvent{{Key: "ctrl-q"}, {Key: "f10"}, {Key: "ctrl-c"}} {
 		if !p.handleKeyFallback(ke) {
 			t.Errorf("expected handleKeyFallback(%+v) = true", ke)
 		}
 	}
-
-	// Non-exit keys do not quit
-	nonExitKeys := []KeyEvent{
-		{Key: "enter"},
-		{Key: "up"},
-		{Key: "down"},
-		{Text: "a"},
-		{Text: "x"},
-	}
-
-	for _, ke := range nonExitKeys {
+	for _, ke := range []KeyEvent{
+		{Key: "esc"}, {Key: "ctrl-d"}, {Text: "q"}, {Key: "enter"}, {Key: "up"}, {Text: "a"},
+	} {
 		if p.handleKeyFallback(ke) {
 			t.Errorf("expected handleKeyFallback(%+v) = false", ke)
 		}
 	}
 
+	// Opt-in Esc.
+	p.EscapeQuits = true
+	if !p.handleKeyFallback(KeyEvent{Key: "esc"}) {
+		t.Error("Esc with EscapeQuits = false, want true")
+	}
+
 	// When DisableDefaultQuit is set, no fallback exit occurs
 	p.DisableDefaultQuit = true
-	for _, ke := range exitKeys {
+	for _, ke := range []KeyEvent{{Key: "ctrl-q"}, {Key: "ctrl-c"}, {Key: "esc"}} {
 		if p.handleKeyFallback(ke) {
 			t.Errorf("expected handleKeyFallback(%+v) = false when DisableDefaultQuit is true", ke)
 		}
+	}
+}
+
+func TestPaneOnCloseRequest(t *testing.T) {
+	probe := ignoreKeysWidget{}
+	var reasons []CloseReason
+	decision := CloseVeto
+	p := &Pane{OnCloseRequest: func(r CloseReason) CloseDecision {
+		reasons = append(reasons, r)
+		return decision
+	}}
+
+	for _, tc := range []struct {
+		key    KeyEvent
+		reason CloseReason
+	}{
+		{KeyEvent{Key: "ctrl-q"}, CloseReasonQuitKey},
+		{KeyEvent{Text: "F10"}, CloseReasonQuitKey},
+		{KeyEvent{Key: "ctrl-c"}, CloseReasonInterrupt},
+	} {
+		reasons = nil
+		decision = CloseVeto
+		if p.dispatchKey(probe, tc.key) {
+			t.Errorf("%+v quit despite veto", tc.key)
+		}
+		if len(reasons) != 1 || reasons[0] != tc.reason {
+			t.Errorf("%+v reasons = %v, want [%v]", tc.key, reasons, tc.reason)
+		}
+		decision = CloseAllow
+		if !p.dispatchKey(probe, tc.key) {
+			t.Errorf("%+v did not quit when allowed", tc.key)
+		}
+	}
+
+	// Esc is a no-op and never asks.
+	reasons = nil
+	if p.dispatchKey(probe, KeyEvent{Key: "esc"}) || len(reasons) != 0 {
+		t.Errorf("unhandled Esc quit or asked: %v", reasons)
+	}
+	// Esc opt-in asks like a quit key.
+	p.EscapeQuits = true
+	decision = CloseVeto
+	if p.dispatchKey(probe, KeyEvent{Key: "esc"}) || len(reasons) != 1 {
+		t.Errorf("opt-in Esc: reasons = %v", reasons)
+	}
+}
+
+func TestPaneQuitSkipsCloseRequest(t *testing.T) {
+	asked := false
+	p := &Pane{OnCloseRequest: func(CloseReason) CloseDecision { asked = true; return CloseVeto }}
+	p.Quit()
+	if !p.quitting.Load() || asked {
+		t.Fatalf("Quit: quitting=%v asked=%v", p.quitting.Load(), asked)
 	}
 }
 

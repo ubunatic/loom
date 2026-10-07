@@ -13,13 +13,16 @@ import (
 )
 
 // This raw-terminal adapter keeps the live demo responsive to Loom's quit
-// keys without adding input mechanics to the graph rendering example.
+// keys without adding input mechanics to the graph rendering example. The
+// example is stateless, so it also opts in to Esc, Ctrl-C and q.
 var quitKeys = func() map[string]bool {
-	m := make(map[string]bool, len(loom.SpeccedDefaults.FallbackQuitKeys))
-	for _, k := range loom.SpeccedDefaults.FallbackQuitKeys {
+	m := make(map[string]bool, len(loom.SpeccedDefaults.QuitKeys)+3)
+	for _, k := range loom.SpeccedDefaults.QuitKeys {
 		m[k] = true
 	}
-	m["f10"] = true
+	m["esc"] = true
+	m["ctrl-c"] = true
+	m["q"] = true
 	return m
 }()
 

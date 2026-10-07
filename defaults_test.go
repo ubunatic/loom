@@ -98,3 +98,13 @@ func TestBackgroundDefaultsLoadFromSpec(t *testing.T) {
 		t.Fatalf("background.PeakMargin = %d, want 130", got.PeakMargin)
 	}
 }
+
+func TestQuitDefaultsLoadFromSpec(t *testing.T) {
+	got := SpeccedDefaults.QuitKeys
+	if len(got) != 2 || got[0] != "ctrl-q" || got[1] != "f10" {
+		t.Fatalf("QuitKeys = %v, want [ctrl-q f10]", got)
+	}
+	if SpeccedDefaults.EscapeQuits {
+		t.Fatal("EscapeQuits = true, want false")
+	}
+}

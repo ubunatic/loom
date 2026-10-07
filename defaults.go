@@ -17,19 +17,20 @@ var defaultsYAML []byte
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
-	FallbackQuitKeys []string             `yaml:"fallback_quit_keys"`
-	Pane             PaneDefaults         `yaml:"pane"`
-	Scrollbar        ScrollbarDefaults    `yaml:"scrollbar"`
-	Mouse            MouseDefaults        `yaml:"mouse"`
-	Splash           SplashDefaults       `yaml:"splash"`
-	Spinner          SpinnerDefaults      `yaml:"spinner"`
-	ProgressBar      ProgressBarDefaults  `yaml:"progress_bar"`
-	Media            MediaDefaults        `yaml:"media"`
-	Clock            ClockDefaults        `yaml:"clock"`
-	PaintCanvas      PaintCanvasDefaults  `yaml:"paint_canvas"`
-	Editor           EditorDefaults       `yaml:"editor"`
-	SearchBar        SearchBarDefaults    `yaml:"search_bar"`
-	RichTextEdit     RichTextEditDefaults `yaml:"rich_text_edit"`
+	QuitKeys     []string             `yaml:"quit_keys"`
+	EscapeQuits  bool                 `yaml:"escape_quits"`
+	Pane         PaneDefaults         `yaml:"pane"`
+	Scrollbar    ScrollbarDefaults    `yaml:"scrollbar"`
+	Mouse        MouseDefaults        `yaml:"mouse"`
+	Splash       SplashDefaults       `yaml:"splash"`
+	Spinner      SpinnerDefaults      `yaml:"spinner"`
+	ProgressBar  ProgressBarDefaults  `yaml:"progress_bar"`
+	Media        MediaDefaults        `yaml:"media"`
+	Clock        ClockDefaults        `yaml:"clock"`
+	PaintCanvas  PaintCanvasDefaults  `yaml:"paint_canvas"`
+	Editor       EditorDefaults       `yaml:"editor"`
+	SearchBar    SearchBarDefaults    `yaml:"search_bar"`
+	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
 }
 
 // EditorDefaults defines specced defaults for the Loom editor.

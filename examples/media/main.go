@@ -46,6 +46,8 @@ func (d *demo) Draw(c *loom.Canvas, r loom.Rect) {
 
 func (d *demo) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch e.Rune() {
+	case 'q', 'Q':
+		return loom.QuitResult()
 	case 'r', 'R':
 		if !d.video {
 			return loom.Ignored()

@@ -945,26 +945,22 @@ func TestEditViewUnsavedChangesDialog(t *testing.T) {
 		t.Fatalf("editor bottom bar omits F10 Quit: %q", screenText)
 	}
 
-	// 2. Unmodified quit via F10
-	res := view.ConsumeKey(loom.KeyEvent{Key: "f10"})
-	if !res.Quit || !view.shouldQuit {
-		t.Fatalf("F10 on unmodified view = %+v, want quit", res)
+	// 2. The Pane owns F10: a clean view allows the close request.
+	quits := countQuits(view)
+	if got := view.closeRequest(loom.CloseReasonQuitKey); got != loom.CloseAllow {
+		t.Fatalf("close request on unmodified view = %v, want allow", got)
 	}
 
-	// Reset quit state
-	view.shouldQuit = false
-
-	// 3. Modify document and press F10 -> opens Save changes? dialog
+	// 3. Modify document: the close request is vetoed behind the Save changes? dialog
 	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
 	if !view.edit.IsModified() {
 		t.Fatal("document expected to be modified after typing")
 	}
-	res = view.ConsumeKey(loom.KeyEvent{Key: "f10"})
-	if res.Quit || !res.Consumed {
-		t.Fatalf("F10 on modified document = %+v, want handled (dialog opened)", res)
+	if got := view.closeRequest(loom.CloseReasonQuitKey); got != loom.CloseVeto {
+		t.Fatalf("close request on modified document = %v, want veto", got)
 	}
 	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
-		t.Fatal("F10 on modified view did not open unsaved changes dialog")
+		t.Fatal("close request on modified view did not open unsaved changes dialog")
 	}
 
 	// Draw and verify dialog is shown
@@ -980,29 +976,27 @@ func TestEditViewUnsavedChangesDialog(t *testing.T) {
 	if view.unsavedDialog != nil {
 		t.Fatal("esc did not dismiss unsaved changes dialog")
 	}
-	if view.shouldQuit {
-		t.Fatal("cancelling dialog should not set shouldQuit")
+	if *quits != 0 {
+		t.Fatal("cancelling dialog must not quit")
 	}
 
 	// 5. Open dialog again and select Discard
-	view.ConsumeKey(loom.KeyEvent{Key: "f10"})
+	view.closeRequest(loom.CloseReasonQuitKey)
 	if view.unsavedDialog == nil {
-		t.Fatal("dialog failed to reopen on F10")
+		t.Fatal("dialog failed to reopen")
 	}
-	// Select "Discard" (press right arrow, then enter)
 	view.ConsumeKey(loom.KeyEvent{Key: "right"})
-	res = view.ConsumeKey(loom.KeyEvent{Key: "enter"})
-	if !res.Quit || !view.shouldQuit {
-		t.Fatalf("Discard on dialog = %+v, shouldQuit=%v, want quit", res, view.shouldQuit)
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if *quits != 1 {
+		t.Fatalf("Discard quits = %d, want 1", *quits)
 	}
 
-	// Reset state and test Save
-	view.shouldQuit = false
+	// Test Save
 	view.edit.ConsumeKey(loom.KeyEvent{Text: "Y"})
-	view.ConsumeKey(loom.KeyEvent{Key: "f10"}) // open dialog
-	res = view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // default button is "Save"
-	if !res.Quit || !view.shouldQuit {
-		t.Fatalf("Save on dialog = %+v, shouldQuit=%v, want quit", res, view.shouldQuit)
+	view.closeRequest(loom.CloseReasonQuitKey)
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // default button is "Save"
+	if *quits != 2 {
+		t.Fatalf("Save quits = %d, want 2", *quits)
 	}
 
 	// Verify saved content on disk
@@ -1025,8 +1019,8 @@ func TestEditCommandPaneSettings(t *testing.T) {
 	if !pane.Resizeable {
 		t.Error("edit pane Resizeable = false, want true")
 	}
-	if !pane.DisableGlobalF10Quit {
-		t.Error("edit pane DisableGlobalF10Quit = false, want true")
+	if pane.DisableGlobalF10Quit {
+		t.Error("edit pane DisableGlobalF10Quit = true, want false: the Pane owns F10")
 	}
 	if !pane.ResizeConfig.AltScreen {
 		t.Errorf("pane AltScreen = false, want true")

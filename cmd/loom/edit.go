@@ -78,6 +78,7 @@ func editCommand() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			view.attach(pane)
 			return pane.Run(view)
 		},
 	}
@@ -93,7 +94,6 @@ func editCommand() *cobra.Command {
 func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
 	pane.MaxCols = 0
 	pane.Resizeable = true
-	pane.DisableGlobalF10Quit = true
 	if cfg.MouseGrab {
 		pane.EnableMouse()
 	}
@@ -120,7 +120,7 @@ type editView struct {
 	searchErr       string
 	unsavedDialog   *loom.Dialog
 	pendingOpenPath string
-	shouldQuit      bool
+	quit            func()
 	lastRect        loom.Rect
 	editorRect      loom.Rect
 	browserRect     loom.Rect
@@ -151,7 +151,7 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 			}
 			if v.edit.IsModified() {
 				v.pendingOpenPath = selectedPath
-				_ = v.handleQuit()
+				_ = v.showUnsavedDialog()
 			} else {
 				v.reportError(v.openFile(selectedPath))
 			}
@@ -225,8 +225,12 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 			v.reportError(v.captureScreenshot())
 			return loom.Handled()
 		}},
-		{Key: richDefs.HotkeyQuitKey, Binding: richDefs.HotkeyQuitBinding, Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
-			return v.handleQuit()
+		// No Binding: the Pane owns the quit keys; this entry only serves the mouse.
+		{Key: richDefs.HotkeyQuitKey, Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
+			if v.closeRequest(loom.CloseReasonQuitKey) == loom.CloseAllow {
+				v.doQuit()
+			}
+			return loom.Handled()
 		}},
 	}
 
@@ -234,11 +238,31 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 	return bar
 }
 
-func (v *editView) handleQuit() loom.EventResult {
-	if !v.edit.IsModified() {
-		v.shouldQuit = true
-		return loom.QuitResult()
+// attach hands close control to the pane: quit keys and signals ask the
+// view first, so unsaved changes always get the Save/Discard/Cancel dialog.
+func (v *editView) attach(pane *loom.Pane) {
+	v.quit = pane.Quit
+	pane.OnCloseRequest = v.closeRequest
+}
+
+func (v *editView) doQuit() {
+	if v.quit != nil {
+		v.quit()
 	}
+}
+
+// closeRequest allows closing a clean buffer and vetoes it behind the unsaved
+// changes dialog otherwise.
+func (v *editView) closeRequest(loom.CloseReason) loom.CloseDecision {
+	if !v.edit.IsModified() {
+		return loom.CloseAllow
+	}
+	v.pendingOpenPath = ""
+	_ = v.showUnsavedDialog()
+	return loom.CloseVeto
+}
+
+func (v *editView) showUnsavedDialog() loom.EventResult {
 	name := "Untitled"
 	if v.filePath != "" {
 		name = filepath.Base(v.filePath)
@@ -252,7 +276,7 @@ func (v *editView) handleQuit() loom.EventResult {
 					v.reportError(v.openFile(v.pendingOpenPath))
 					v.pendingOpenPath = ""
 				} else {
-					v.shouldQuit = true
+					v.doQuit()
 				}
 			} else {
 				v.reportError(err)
@@ -263,7 +287,7 @@ func (v *editView) handleQuit() loom.EventResult {
 				v.reportError(v.openFile(v.pendingOpenPath))
 				v.pendingOpenPath = ""
 			} else {
-				v.shouldQuit = true
+				v.doQuit()
 			}
 		case "Cancel":
 			v.pendingOpenPath = ""
@@ -518,9 +542,6 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 
 	if v.unsavedDialog != nil && v.unsavedDialog.Open {
 		_ = v.unsavedDialog.ConsumeKey(key)
-		if v.shouldQuit {
-			return loom.QuitResult()
-		}
 		if !v.unsavedDialog.Open {
 			v.unsavedDialog = nil
 		}
@@ -528,15 +549,6 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	}
 
 	editorDefs := loom.SpeccedDefaults.Editor
-	richDefs := loom.SpeccedDefaults.RichTextEdit
-
-	if key.Is(richDefs.HotkeyQuitBinding) {
-		res := v.handleQuit()
-		if v.shouldQuit {
-			return loom.QuitResult()
-		}
-		return res
-	}
 
 	if key.Is(editorDefs.HotkeyFilesBinding) {
 		v.toggleSidePanel()
@@ -574,13 +586,6 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			v.toggleSearch()
 			return loom.Handled()
 		}
-		if key.Is("ctrl-q", "ctrl-c", "ctrl-d", richDefs.HotkeyQuitBinding) {
-			res := v.handleQuit()
-			if v.shouldQuit {
-				return loom.QuitResult()
-			}
-			return res
-		}
 		if key.Is("enter") {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex + 1) % len(v.searchMatches)
@@ -609,11 +614,8 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 			v.updateSearchMatches()
 		}
 		if res.Quit {
-			res = v.handleQuit()
-			if v.shouldQuit {
-				return loom.QuitResult()
-			}
-			return res
+			// The search bar aborts on quit keys; leave them to the Pane.
+			return loom.Ignored()
 		}
 		return res
 	}
@@ -621,24 +623,18 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if v.showSidePanel && v.focused == focusBrowser {
 		res := v.filePicker.ConsumeKey(key)
 		if res.Quit {
-			return v.handleQuit()
+			return loom.Ignored()
 		}
 		return res
 	}
 
 	if res := v.hotkeyBar().ConsumeKey(key); res.Consumed {
-		if v.shouldQuit {
-			return loom.QuitResult()
-		}
 		return res
 	}
 
 	res := v.edit.ConsumeKey(key)
 	if res.Quit {
-		return v.handleQuit()
-	}
-	if v.shouldQuit {
-		return loom.QuitResult()
+		return loom.Ignored()
 	}
 	if v.showSearch && res.Consumed {
 		v.updateSearchMatches()
@@ -771,9 +767,6 @@ func richLinePlainText(line loom.RichLine) string {
 func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 	if v.unsavedDialog != nil && v.unsavedDialog.Open {
 		_ = v.unsavedDialog.ConsumeMouse(mouse)
-		if v.shouldQuit {
-			return loom.QuitResult()
-		}
 		if !v.unsavedDialog.Open {
 			v.unsavedDialog = nil
 		}
@@ -784,11 +777,7 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		mouseLocal := mouse
 		mouseLocal.Y = 0
 		mouseLocal.X -= v.lastRect.X + 1
-		res := v.hotkeyBar().ConsumeMouse(mouseLocal)
-		if v.shouldQuit {
-			return loom.QuitResult()
-		}
-		return res
+		return v.hotkeyBar().ConsumeMouse(mouseLocal)
 	}
 
 	// Click in search panel

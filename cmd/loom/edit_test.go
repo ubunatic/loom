@@ -126,9 +126,10 @@ func TestEditViewSidePanelUnsavedChangesProtection(t *testing.T) {
 
 	// Set pending open path and trigger quit prompt
 	view.pendingOpenPath = path2
-	res := view.handleQuit()
+	quits := countQuits(view)
+	res := view.showUnsavedDialog()
 	if res.Quit {
-		t.Fatal("handleQuit on modified document should open dialog, not quit immediately")
+		t.Fatal("showUnsavedDialog should open dialog, not quit immediately")
 	}
 	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
 		t.Fatal("unsavedDialog should be open")
@@ -141,7 +142,7 @@ func TestEditViewSidePanelUnsavedChangesProtection(t *testing.T) {
 	if view.filePath != path2 {
 		t.Fatalf("after Discard filePath = %q, want %q", view.filePath, path2)
 	}
-	if view.shouldQuit {
+	if *quits != 0 {
 		t.Fatal("opening new file after Discard should not quit editor")
 	}
 }
@@ -291,13 +292,18 @@ func TestEditViewSearchCtrlQPromptsUnsavedChanges(t *testing.T) {
 	// Open search panel
 	view.ConsumeKey(loom.KeyEvent{Key: "f3"})
 
-	// Press Ctrl-Q inside search mode
+	// Ctrl-Q inside search mode is left to the Pane (old expectation: the view
+	// consumed it itself, which bypassed the Pane's close-request contract).
+	quits := countQuits(view)
 	res := view.ConsumeKey(loom.KeyEvent{Key: "ctrl-q"})
-	if res.Quit || view.shouldQuit {
-		t.Fatalf("ctrl-q in search mode on modified doc quit immediately, want unsaved dialog")
+	if res.Consumed || res.Quit || *quits != 0 {
+		t.Fatalf("ctrl-q in search mode = %+v, want ignored so the Pane handles it", res)
+	}
+	if view.closeRequest(loom.CloseReasonQuitKey) != loom.CloseVeto {
+		t.Fatal("close request on modified doc must be vetoed")
 	}
 	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
-		t.Fatal("ctrl-q in search mode should open unsavedDialog")
+		t.Fatal("close request should open unsavedDialog")
 	}
 }
 
@@ -561,7 +567,8 @@ func TestScreenshotPreservesExistingCapturesAndIncludesDialog(t *testing.T) {
 		t.Fatal(err)
 	}
 	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
-	view.handleQuit()
+	quits := countQuits(view)
+	view.showUnsavedDialog()
 	loom.Render(view, 100, 24)
 	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-p"})
 	old, err := os.ReadFile(oldPath)
@@ -575,7 +582,7 @@ func TestScreenshotPreservesExistingCapturesAndIncludesDialog(t *testing.T) {
 	if !strings.Contains(string(shot), "Save changes?") {
 		t.Fatal("screenshot omitted open dialog")
 	}
-	if !view.unsavedDialog.Open || view.shouldQuit {
+	if !view.unsavedDialog.Open || *quits != 0 {
 		t.Fatal("capture changed dialog lifecycle")
 	}
 	if !strings.Contains(view.statusMessage, "Saved screenshot:") {
@@ -647,5 +654,105 @@ func TestEditorReportsScreenshotAndFileOpenFailures(t *testing.T) {
 	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
 	if view.filePath != original || view.statusMessage == "" {
 		t.Fatal("failed file open lost the document or hid the error")
+	}
+}
+
+// countQuits replaces the pane's Quit with a counter.
+func countQuits(v *editView) *int {
+	n := new(int)
+	v.quit = func() { *n++ }
+	return n
+}
+
+func newDirtyEditView(t *testing.T) (*editView, string) {
+	t.Helper()
+	path := filepath.Join(t.TempDir(), "doc.txt")
+	if err := os.WriteFile(path, []byte("Initial\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return view, path
+}
+
+func TestEditViewCloseRequestCleanAllows(t *testing.T) {
+	view, _ := newDirtyEditView(t)
+	if got := view.closeRequest(loom.CloseReasonInterrupt); got != loom.CloseAllow {
+		t.Fatalf("clean close request = %v, want allow", got)
+	}
+	if view.unsavedDialog != nil {
+		t.Fatal("clean close request opened a dialog")
+	}
+}
+
+func TestEditViewEscNeverQuits(t *testing.T) {
+	view, _ := newDirtyEditView(t)
+	quits := countQuits(view)
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
+	for _, ke := range []loom.KeyEvent{{Key: "esc"}, {Text: "q"}} {
+		if res := view.ConsumeKey(ke); res.Quit {
+			t.Fatalf("%+v returned quit", ke)
+		}
+	}
+	if *quits != 0 || view.unsavedDialog != nil {
+		t.Fatal("Esc/q must not quit or open the dialog")
+	}
+	if !view.edit.IsModified() {
+		t.Fatal("text lost")
+	}
+}
+
+func TestEditViewCloseDialogButtons(t *testing.T) {
+	// Dirty buffer: veto, then Cancel keeps running, Discard quits, Save writes then quits.
+	view, path := newDirtyEditView(t)
+	quits := countQuits(view)
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
+
+	if view.closeRequest(loom.CloseReasonQuitKey) != loom.CloseVeto {
+		t.Fatal("dirty close request not vetoed")
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "right"})
+	view.ConsumeKey(loom.KeyEvent{Key: "right"}) // Cancel
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if *quits != 0 || view.unsavedDialog != nil {
+		t.Fatalf("Cancel: quits=%d dialog=%v", *quits, view.unsavedDialog)
+	}
+
+	view.closeRequest(loom.CloseReasonQuitKey)
+	view.ConsumeKey(loom.KeyEvent{Key: "right"}) // Discard
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if *quits != 1 {
+		t.Fatalf("Discard quits = %d, want 1", *quits)
+	}
+	if data, _ := os.ReadFile(path); strings.Contains(string(data), "X") {
+		t.Fatal("Discard wrote the file")
+	}
+
+	view.closeRequest(loom.CloseReasonInterrupt)
+	view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // Save
+	if *quits != 2 {
+		t.Fatalf("Save quits = %d, want 2", *quits)
+	}
+	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "X") {
+		t.Fatal("Save did not write the file")
+	}
+}
+
+func TestEditViewAttachWiresPane(t *testing.T) {
+	view, _ := newDirtyEditView(t)
+	pane := &loom.Pane{}
+	view.attach(pane)
+	if pane.OnCloseRequest == nil || view.quit == nil {
+		t.Fatal("attach did not wire OnCloseRequest and quit")
+	}
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
+	if pane.OnCloseRequest(loom.CloseReasonQuitKey) != loom.CloseVeto {
+		t.Fatal("pane close request on dirty view not vetoed")
 	}
 }

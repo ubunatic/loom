@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["fallback_quit_keys", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor"],
+  "required": ["quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor"],
   "properties": {
     "editor": {
       "type": "object",
@@ -98,14 +98,15 @@
         "reset": { "type": "string", "minLength": 1 }
       }
     },
-    "fallback_quit_keys": {
+    "quit_keys": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "string",
-        "enum": ["esc", "ctrl-c", "ctrl-q", "ctrl-d", "q"]
+        "enum": ["ctrl-q", "f10"]
       }
     },
+    "escape_quits": { "type": "boolean" },
     "pane": {
       "type": "object",
       "additionalProperties": false,

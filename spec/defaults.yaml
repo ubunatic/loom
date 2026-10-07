@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=schemas/defaults.schema.json
-fallback_quit_keys:
-  - esc
-  - ctrl-c
+# Keys that close the app unless the widget consumes them or the pane opts out.
+quit_keys:
   - ctrl-q
-  - ctrl-d
-  - q
+  - f10
+# Opt-in: an unhandled Esc closes the app.
+escape_quits: false
 
 pane:
   max_cols: 50

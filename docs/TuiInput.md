@@ -108,3 +108,9 @@ Applications that need F10 within their widget tree can set
 `OwnsQuit: true` from its `PaneRequest`, which disables both the default quit
 keys and the global F10 quit. This global behavior is separate from the
 key decoder, which simply reports F10 as `f10`.
+
+Close defaults (spec `quit_keys`, `escape_quits`): an unconsumed `^Q` or `F10` closes
+the pane, an unconsumed `Esc` never does unless `Pane.EscapeQuits` is set, and `^C`
+or SIGINT/SIGTERM/SIGHUP count as an interrupt. Every one of these first calls
+`Pane.OnCloseRequest(reason)`; returning `CloseVeto` keeps the pane running, and the
+app calls `Pane.Quit()` later (for example from a Save/Discard/Cancel dialog).

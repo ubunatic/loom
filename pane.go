@@ -30,6 +30,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -85,11 +86,20 @@ type Pane struct {
 	InlineOnly bool
 
 	// DisableDefaultQuit suppresses the fallback exit behavior for unhandled
-	// Esc, Ctrl-C, Ctrl-Q, and q keys when the active widget returns false from ConsumeKey.
+	// quit keys (spec quit_keys), Ctrl-C and, when enabled, Esc.
 	DisableDefaultQuit bool
 	// DisableGlobalF10Quit lets a pane keep F10 within its widget tree.
 	// The default is to quit before dispatching F10 to any widget.
 	DisableGlobalF10Quit bool
+	// EscapeQuits makes an unhandled Esc close the app. Esc never quits by
+	// default (spec escape_quits); overlays and widgets consume it first.
+	EscapeQuits bool
+	// OnCloseRequest, when non-nil, is asked before the pane closes because of
+	// a quit key or an interrupt/termination signal. Returning CloseVeto keeps
+	// the loop running; the app may call Quit later (e.g. after a dialog).
+	OnCloseRequest func(reason CloseReason) CloseDecision
+	// quitting is set by Quit and makes Run return at the next loop turn.
+	quitting atomic.Bool
 
 	// Background is composited after the root widget on every frame.
 	Background Background
@@ -135,6 +145,42 @@ type Pane struct {
 	invalidateOnce sync.Once
 	tickerReset    chan struct{}
 	help           *Popup
+}
+
+// CloseReason tells OnCloseRequest why the pane wants to close.
+type CloseReason int
+
+const (
+	// CloseReasonQuitKey is a quit key from the spec (Ctrl-Q, F10) or Esc when
+	// EscapeQuits is enabled.
+	CloseReasonQuitKey CloseReason = iota
+	// CloseReasonInterrupt is Ctrl-C or an interrupt, hangup or termination signal.
+	CloseReasonInterrupt
+)
+
+// CloseDecision is the answer of OnCloseRequest.
+type CloseDecision int
+
+const (
+	// CloseAllow lets the pane close. It is the zero value.
+	CloseAllow CloseDecision = iota
+	// CloseVeto keeps the pane running.
+	CloseVeto
+)
+
+// Quit asks Run to return at the next loop turn. It is safe to call from
+// widget callbacks and from other goroutines, and bypasses OnCloseRequest.
+func (p *Pane) Quit() {
+	p.quitting.Store(true)
+	p.Invalidate()
+}
+
+// requestClose consults OnCloseRequest and reports whether the pane should close.
+func (p *Pane) requestClose(reason CloseReason) bool {
+	if p.OnCloseRequest == nil {
+		return true
+	}
+	return p.OnCloseRequest(reason) != CloseVeto
 }
 
 const maxPendingPasteSize = 1 << 20
@@ -1212,6 +1258,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			}
 		}
 
+		if p.quitting.Load() {
+			return nil
+		}
 		if dirty {
 			redraw(animationDirty)
 		}
@@ -1222,7 +1271,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-p.interrupts:
-			return nil
+			if p.requestClose(CloseReasonInterrupt) {
+				return nil
+			}
+			dirty = true
 		case now := <-samples:
 			if err := collect(now); err != nil {
 				return err
@@ -1452,13 +1504,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 
 func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
 	if p.globalF10Quit(ke) {
-		return true
+		return p.requestClose(CloseReasonQuitKey)
 	}
 	res := DispatchKeyEvent(root, ke)
 	if res.Consumed {
 		return res.Quit
 	}
-	return p.handleKeyFallback(ke)
+	if reason, ok := p.fallbackClose(ke); ok {
+		return p.requestClose(reason)
+	}
+	return false
 }
 
 func (p *Pane) globalF10Quit(ke KeyEvent) bool {
@@ -1471,7 +1526,7 @@ func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
 
 func (p *Pane) handleHelpKey(e KeyEvent) (quit, handled bool) {
 	if p.globalF10Quit(e) {
-		return true, true
+		return p.requestClose(CloseReasonQuitKey), true
 	}
 	if p.help == nil {
 		return false, false
@@ -1496,38 +1551,42 @@ func (p *Pane) handleHelpMouse(e MouseEvent) bool {
 }
 
 var defaultQuitKeyMap = func() map[string]bool {
-	m := make(map[string]bool, len(SpeccedDefaults.FallbackQuitKeys))
-	for _, k := range SpeccedDefaults.FallbackQuitKeys {
-		m[k] = true
+	m := make(map[string]bool, len(SpeccedDefaults.QuitKeys))
+	for _, k := range SpeccedDefaults.QuitKeys {
+		m[strings.ToLower(k)] = true
 	}
 	return m
 }()
 
-// handleKeyFallback reports whether an unhandled key should trigger a default
-// safeguard exit based on embedded spec/defaults.yaml.
+// fallbackClose reports whether an unhandled key asks the pane to close and
+// why: the spec quit_keys, Esc when escape_quits or EscapeQuits is set, and
+// Ctrl-C as an interrupt. It does not call OnCloseRequest.
+func (p *Pane) fallbackClose(ke KeyEvent) (CloseReason, bool) {
+	if p.DisableDefaultQuit {
+		return 0, false
+	}
+	name := strings.ToLower(ke.Name())
+	switch {
+	case name == "ctrl-c":
+		return CloseReasonInterrupt, true
+	case defaultQuitKeyMap[name]:
+		return CloseReasonQuitKey, true
+	case name == "esc" && (p.EscapeQuits || SpeccedDefaults.EscapeQuits):
+		return CloseReasonQuitKey, true
+	}
+	return 0, false
+}
+
+// handleKeyFallback reports whether an unhandled key should close the pane
+// after OnCloseRequest has been consulted.
 func (p *Pane) handleKeyFallback(ke KeyEvent, roots ...Widget) bool {
 	if len(roots) > 0 {
 		if res := DispatchKeyEvent(roots[0], ke); res.Consumed {
 			return false
 		}
 	}
-	if p.DisableDefaultQuit {
-		return false
-	}
-	// Safeguard: navigation and editing keys never trigger fallback quit.
-	switch ke.Key {
-	case "up", "down", "left", "right", "home", "end", "pgup", "pgdn", "pageup", "pagedown",
-		"shift-up", "shift-down", "shift-left", "shift-right",
-		"ctrl-up", "ctrl-down", "ctrl-left", "ctrl-right",
-		"alt-up", "alt-down", "alt-left", "alt-right",
-		"delete", "insert", "backspace", "tab", "shift-tab":
-		return false
-	}
-	key := ke.Key
-	if key == "" {
-		key = ke.Text
-	}
-	return defaultQuitKeyMap[key]
+	reason, ok := p.fallbackClose(ke)
+	return ok && p.requestClose(reason)
 }
 
 // Close tears down the pane: clears the reserved region, restores terminal
@@ -1599,7 +1658,7 @@ func (p *Pane) drainInput() {
 
 func (p *Pane) installSignalHandler() {
 	p.interrupts = make(chan os.Signal, 1)
-	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.
 	// Cap 1 coalesces a burst of resizes (e.g. an interactive drag) into one.

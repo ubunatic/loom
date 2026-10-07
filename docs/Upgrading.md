@@ -8,6 +8,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| Unreleased | Default quit keys: spec `fallback_quit_keys` is replaced by `quit_keys: [ctrl-q, f10]` and `escape_quits: false`; an unhandled `Esc`, `q` or `ctrl-d` no longer quits a pane, and `LibDefaults.FallbackQuitKeys` became `QuitKeys` (issue 297) | Quit via `^Q`/`F10`, handle `q`/`Esc` in your widget (`QuitResult()`), or set `Pane.EscapeQuits`; use `Pane.OnCloseRequest` to veto or confirm a close and `Pane.Quit()` to close later |
 | Unreleased | Key decoding: `shift-insert`, `ctrl-insert`, `shift-delete` and `ctrl-delete` are no longer reported as plain `insert`/`delete` (issue 257, 40c153a) | Match the modified key names (`ctrl-insert`, `shift-insert`, `shift-delete`, `ctrl-delete`) where you handled `insert`/`delete` for them |
 | Unreleased | Key decoding: modified Home/End (`ESC[1;2H`, `ESC[1;5F`, `ESC[1;2~`, `ESC[4;2~`, ...) are no longer reported as plain `home`/`end` (or dropped); they decode as `shift-home`, `ctrl-end`, `alt-home`, `ctrl-shift-end` and so on (issue 263) | Match the modified key names where you handled `home`/`end` for them |
 | Unreleased | `RichTextEdit`: `ctrl-shift-b` no longer toggles box mode; F5 wraps an active selection in a box and toggles draw mode only without a selection; an open popover consumes arrows, Space and Esc (issue 264) | Bind box drawing to F5 or the popover Draw button; send arrows after closing the popover |
