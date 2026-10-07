@@ -307,3 +307,4 @@ upkeep.
 | 294 | [294-loom-edit-add-o-to-open-file-pane-and-w-to-close-file.md](294-loom-edit-add-o-to-open-file-pane-and-w-to-close-file.md) | loom edit: Add ^O to open file pane and ^W to close file | Open |
 | 295 | [295-loom-edit-add-s-as-save-as-and-use-as-modifier-hints.md](295-loom-edit-add-s-as-save-as-and-use-as-modifier-hints.md) | loom edit: Add ⌃⌥S as Save as and use ⇧⌃⌥ as modifier hints | Open |
 | 296 | [296-loom-edit-single-click-on-filepicker-item-should-select-item.md](296-loom-edit-single-click-on-filepicker-item-should-select-item.md) | loom edit: Single click on FilePicker item should select item | Open |
+| 297 | [297-loom-edit-esc-exits-even-with-unsaved-changes-only-q-and-f10-should-quit.md](297-loom-edit-esc-exits-even-with-unsaved-changes-only-q-and-f10-should-quit.md) | loom edit: Esc exits even with unsaved changes, only ^Q and F10 should quit | Open |
