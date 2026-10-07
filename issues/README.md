@@ -295,3 +295,4 @@ upkeep.
 | 282 | [282-add-f2-side-panel-with-file-browser-to-loom-edit.md](282-add-f2-side-panel-with-file-browser-to-loom-edit.md) | Add F2 side panel with file browser to loom edit | Open |
 | 283 | [283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md](283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md) | Add F3 and Ctrl-F search panel to loom edit | Open |
 | 284 | [284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md](284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md) | Add Ctrl-P full-editor ANSI screenshots to loom edit | Open |
+| 285 | [285-fix-unicode-literal-search-panic-in-loom-edit.md](285-fix-unicode-literal-search-panic-in-loom-edit.md) | Fix Unicode literal search panic in loom edit | Open |
