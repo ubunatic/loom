@@ -137,8 +137,8 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 	}
 
 	sb := loom.NewSearchBar()
-	sb.Prompt = "Find: "
-	sb.Placeholder = "type query..."
+	sb.Prompt = loom.SpeccedDefaults.Editor.SearchPrompt
+	sb.Placeholder = loom.SpeccedDefaults.Editor.SearchPlaceholder
 
 	v := &editView{
 		edit:          edit,
@@ -175,27 +175,29 @@ func (v *editView) openFile(path string) error {
 func (v *editView) hotkeyBar() *loom.HintBar {
 	theme := loom.Theme(v.config.Theme)
 	style := theme.HintBarStyle()
+	editorDefs := loom.SpeccedDefaults.Editor
+	richDefs := loom.SpeccedDefaults.RichTextEdit
 
 	entries := []loom.HintEntry{
-		{Key: "F2", Binding: "f2", Label: "Files", Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeyFilesKey, Binding: editorDefs.HotkeyFilesBinding, Label: editorDefs.HotkeyFilesLabel, Action: func() loom.EventResult {
 			v.toggleSidePanel()
 			return loom.Handled()
 		}},
-		{Key: "F3/^F", Binding: "f3", Label: "Search", Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeySearchKey, Binding: editorDefs.HotkeySearchBinding, Label: editorDefs.HotkeySearchLabel, Action: func() loom.EventResult {
 			v.toggleSearch()
 			return loom.Handled()
 		}},
-		{Key: "^S", Binding: "ctrl-s", Label: "Save", Action: func() loom.EventResult {
+		{Key: richDefs.HotkeySaveKey, Binding: richDefs.HotkeySaveBinding, Label: richDefs.HotkeySaveLabel, Action: func() loom.EventResult {
 			_ = v.edit.Save()
 			return loom.Handled()
 		}},
-		{Key: "^Shift+S", Binding: "ctrl-shift-s", Label: "Save as", Action: func() loom.EventResult {
-			return v.edit.ConsumeKey(loom.KeyEvent{Key: "ctrl-shift-s"})
+		{Key: richDefs.HotkeySaveAsKey, Binding: richDefs.HotkeySaveAsBinding, Label: richDefs.HotkeySaveAsLabel, Action: func() loom.EventResult {
+			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeySaveAsBinding})
 		}},
-		{Key: "F5", Binding: "f5", Label: "Box", Action: func() loom.EventResult {
-			return v.edit.ConsumeKey(loom.KeyEvent{Key: "f5"})
+		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, Action: func() loom.EventResult {
+			return v.edit.ConsumeKey(loom.KeyEvent{Key: editorDefs.HotkeyBoxBinding})
 		}},
-		{Key: "F10", Binding: "f10", Label: "Quit", Action: func() loom.EventResult {
+		{Key: richDefs.HotkeyQuitKey, Binding: richDefs.HotkeyQuitBinding, Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
 			return v.handleQuit()
 		}},
 	}
@@ -515,7 +517,10 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return loom.Handled()
 	}
 
-	if key.Is("f10") {
+	editorDefs := loom.SpeccedDefaults.Editor
+	richDefs := loom.SpeccedDefaults.RichTextEdit
+
+	if key.Is(richDefs.HotkeyQuitBinding) {
 		res := v.handleQuit()
 		if v.shouldQuit {
 			return loom.QuitResult()
@@ -523,12 +528,12 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return res
 	}
 
-	if key.Is("f2") {
+	if key.Is(editorDefs.HotkeyFilesBinding) {
 		v.toggleSidePanel()
 		return loom.Handled()
 	}
 
-	if key.Is("f3", "ctrl-f") {
+	if key.Is(editorDefs.HotkeySearchBinding, "ctrl-f") {
 		v.toggleSearch()
 		return loom.Handled()
 	}

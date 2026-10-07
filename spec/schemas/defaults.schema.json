@@ -8,11 +8,22 @@
     "editor": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["theme", "mousegrab", "altscreen"],
+      "required": ["theme", "mousegrab", "altscreen", "hotkey_files_key", "hotkey_files_binding", "hotkey_files_label", "hotkey_search_key", "hotkey_search_binding", "hotkey_search_label", "hotkey_box_key", "hotkey_box_binding", "hotkey_box_label", "search_prompt", "search_placeholder"],
       "properties": {
         "theme": { "type": "string", "minLength": 1 },
         "mousegrab": { "type": "boolean" },
-        "altscreen": { "type": "boolean" }
+        "altscreen": { "type": "boolean" },
+        "hotkey_files_key": { "type": "string", "minLength": 1 },
+        "hotkey_files_binding": { "type": "string", "minLength": 1 },
+        "hotkey_files_label": { "type": "string", "minLength": 1 },
+        "hotkey_search_key": { "type": "string", "minLength": 1 },
+        "hotkey_search_binding": { "type": "string", "minLength": 1 },
+        "hotkey_search_label": { "type": "string", "minLength": 1 },
+        "hotkey_box_key": { "type": "string", "minLength": 1 },
+        "hotkey_box_binding": { "type": "string", "minLength": 1 },
+        "hotkey_box_label": { "type": "string", "minLength": 1 },
+        "search_prompt": { "type": "string", "minLength": 1 },
+        "search_placeholder": { "type": "string", "minLength": 1 }
       }
     },
     "search_bar": {
