@@ -10,6 +10,64 @@ import (
 	"reflect"
 )
 
+// DocState is the save state of a RichTextEdit document.
+type DocState int
+
+const (
+	// DocStateUntitled means the document has no file path and no changes.
+	DocStateUntitled DocState = iota
+	// DocStateSaved means the document matches its file.
+	DocStateSaved
+	// DocStateModified means the document has unsaved changes.
+	DocStateModified
+	// DocStateError means the last save failed.
+	DocStateError
+)
+
+// Label returns the spec-defined display label for the state.
+func (s DocState) Label() string {
+	defs := SpeccedDefaults.RichTextEdit
+	switch s {
+	case DocStateSaved:
+		return defs.StateSavedLabel
+	case DocStateModified:
+		return defs.StateModifiedLabel
+	case DocStateError:
+		return defs.StateErrorLabel
+	}
+	return defs.StateUntitledLabel
+}
+
+// DocState reports the single source of truth for the document's save state.
+// A failed save wins over modified; unchanged documents without a path are untitled.
+func (e *RichTextEdit) DocState() DocState {
+	if e == nil {
+		return DocStateUntitled
+	}
+	switch {
+	case e.LastSaveError != nil:
+		return DocStateError
+	case e.IsModified():
+		return DocStateModified
+	case e.FilePath == "":
+		return DocStateUntitled
+	}
+	return DocStateSaved
+}
+
+// notifyStateChange calls OnStateChange when the state differs from the last
+// state reported; the baseline is Untitled until a state was reported.
+func (e *RichTextEdit) notifyStateChange() {
+	state := e.DocState()
+	if state == e.notifiedState {
+		return
+	}
+	e.notifiedState = state
+	if e.OnStateChange != nil {
+		e.OnStateChange(state)
+	}
+}
+
 // IsModified reports whether the document has unsaved changes compared to its last saved state.
 func (e *RichTextEdit) IsModified() bool {
 	if e == nil {
@@ -35,6 +93,7 @@ func NewRichTextEditFromFile(path string) (*RichTextEdit, error) {
 	edit := NewRichTextEdit(doc)
 	edit.FilePath = path
 	edit.ShowFileBar = true
+	edit.notifiedState = edit.DocState()
 	return edit, nil
 }
 
@@ -51,6 +110,7 @@ func (e *RichTextEdit) Save() error {
 // SaveAs serializes the document, writes it to path, and associates path only
 // after both serialization and writing succeed.
 func (e *RichTextEdit) SaveAs(path string) error {
+	defer e.notifyStateChange()
 	if path == "" {
 		e.LastSaveError = fmt.Errorf("loom: save document: destination path is empty")
 		return e.LastSaveError

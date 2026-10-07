@@ -5,7 +5,6 @@ package loom
 
 import (
 	"path/filepath"
-	"reflect"
 	"strings"
 )
 
@@ -113,13 +112,13 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 			state := text[separator+len(" · "):]
 			stateStyle := normal
 			switch state {
-			case "Unsaved":
+			case DocStateUntitled.Label():
 				stateStyle.FG, stateStyle.Dim = theme.PlaceholderFG.Color(), true
-			case "Modified":
+			case DocStateModified.Label():
 				stateStyle.FG = theme.ModifiedFG.Color()
-			case "Saved":
+			case DocStateSaved.Label():
 				stateStyle.FG = theme.SavedFG.Color()
-			case "Error":
+			case DocStateError.Label():
 				stateStyle.FG = theme.MediaErrorFG.Color()
 			}
 			c.Write(statusStart+StringWidth(text[:separator+len(" · ")]), row, state, stateStyle)
@@ -137,14 +136,7 @@ func (b *richTextEditFileBar) status() string {
 	if e.FilePath != "" {
 		name = filepath.Base(e.FilePath)
 	}
-	status := "Saved"
-	if e.LastSaveError != nil {
-		status = "Error"
-	} else if !reflect.DeepEqual(e.savedDocument, e.Document.Lines) {
-		status = "Modified"
-	} else if e.FilePath == "" {
-		status = "Unsaved"
-	}
+	status := e.DocState().Label()
 	return name + " · " + status
 }
 

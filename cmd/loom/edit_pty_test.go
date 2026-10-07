@@ -79,3 +79,26 @@ func TestEditPTYCleanQuitKeysExit(t *testing.T) {
 		}
 	}
 }
+
+func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
+	s, path := startEditPTY(t, "base\n")
+	s.WaitFor("[Saved]", 3*time.Second)
+	s.Send("hello")
+	s.WaitFor("[Modified]", 3*time.Second)
+	s.Send("\x13") // ^S
+	s.WaitFor("[Saved]", 3*time.Second)
+	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "hello") {
+		t.Fatalf("^S did not write: %q", data)
+	}
+
+	// Modify again, then save with the file browser focused.
+	s.Send("!")
+	s.WaitFor("[Modified]", 3*time.Second)
+	s.Send("\x1bOQ") // F2 opens the browser and focuses it
+	time.Sleep(300 * time.Millisecond)
+	s.Send("\x13")
+	s.WaitFor("[Saved]", 3*time.Second)
+	if data, _ := os.ReadFile(path); !strings.Contains(string(data), "!") {
+		t.Fatalf("^S with browser focused did not write: %q", data)
+	}
+}

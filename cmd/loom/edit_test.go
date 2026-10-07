@@ -756,3 +756,41 @@ func TestEditViewAttachWiresPane(t *testing.T) {
 		t.Fatal("pane close request on dirty view not vetoed")
 	}
 }
+
+func editHeaderRow(view *editView) string {
+	canvas := loom.NewCanvas(100, 24)
+	view.Draw(canvas, loom.Rect{W: 100, H: 24})
+	return strings.Split(canvasScreenText(canvas), "\n")[1]
+}
+
+func TestEditViewHeaderShowsDocStateAfterSave(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "doc.txt")
+	_ = os.WriteFile(path, []byte("base\n"), 0600)
+	edit, err := loom.NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row := editHeaderRow(view); !strings.Contains(row, "[Saved]") {
+		t.Fatalf("clean header = %q, want [Saved]", row)
+	}
+	view.ConsumeKey(loom.KeyEvent{Text: "z"})
+	if row := editHeaderRow(view); !strings.Contains(row, "[Modified]") {
+		t.Fatalf("edited header = %q, want [Modified]", row)
+	}
+	// Save must work with the file browser focused too.
+	view.ConsumeKey(loom.KeyEvent{Key: "f2"})
+	if view.focused != focusBrowser {
+		t.Fatal("browser not focused")
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-s"})
+	if row := editHeaderRow(view); !strings.Contains(row, "[Saved]") {
+		t.Fatalf("saved header = %q, want [Saved]", row)
+	}
+	if !strings.Contains(view.statusMessage, "Saved") {
+		t.Fatalf("status message = %q, want save confirmation", view.statusMessage)
+	}
+}

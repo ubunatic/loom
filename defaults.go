@@ -75,6 +75,10 @@ type RichTextEditDefaults struct {
 	LinkUnderline         bool     `yaml:"link_underline"`
 	SavePopupMaxWidth     int      `yaml:"save_popup_max_width"`
 	SavePopupMaxHeight    int      `yaml:"save_popup_max_height"`
+	StateUntitledLabel    string   `yaml:"state_untitled_label"`
+	StateSavedLabel       string   `yaml:"state_saved_label"`
+	StateModifiedLabel    string   `yaml:"state_modified_label"`
+	StateErrorLabel       string   `yaml:"state_error_label"`
 	HotkeyHelpKey         string   `yaml:"hotkey_help_key"`
 	HotkeyHelpBinding     string   `yaml:"hotkey_help_binding"`
 	HotkeyHelpLabel       string   `yaml:"hotkey_help_label"`
@@ -114,6 +118,9 @@ func (d RichTextEditDefaults) validate() error {
 	}
 	if d.BoxStyleDefault != "plain" && d.BoxStyleDefault != "rounded" {
 		return fmt.Errorf("rich_text_edit.box_style_default must be plain or rounded")
+	}
+	if d.StateUntitledLabel == "" || d.StateSavedLabel == "" || d.StateModifiedLabel == "" || d.StateErrorLabel == "" {
+		return fmt.Errorf("rich_text_edit state labels must be non-empty")
 	}
 	if d.SavePopupMaxWidth < 8 || d.SavePopupMaxHeight < 7 {
 		return fmt.Errorf("rich_text_edit save popup dimensions must fit a bordered picker")

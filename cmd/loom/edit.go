@@ -143,6 +143,8 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 		showSidePanel: false, // initial toggle state
 	}
 
+	v.bindEdit()
+
 	picker, err := loom.NewFilePicker(dir, loom.FilePickerOptions{
 		Mode: loom.FilePickerFiles,
 		OnSelect: func(selectedPath string) {
@@ -182,6 +184,20 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 	return v, nil
 }
 
+// bindEdit subscribes the host status line to the editor's document state,
+// which is the single source of the Saved/Modified indicator.
+func (v *editView) bindEdit() {
+	v.edit.OnStateChange = func(state loom.DocState) {
+		switch state {
+		case loom.DocStateSaved:
+			v.statusMessage = "Saved: " + v.edit.FilePath
+			v.filePath = v.edit.FilePath
+		case loom.DocStateModified:
+			v.statusMessage = ""
+		}
+	}
+}
+
 func (v *editView) openFile(path string) error {
 	edit, err := loom.NewRichTextEditFromFile(path)
 	if err != nil {
@@ -189,6 +205,7 @@ func (v *editView) openFile(path string) error {
 	}
 	v.edit = edit
 	v.filePath = path
+	v.bindEdit()
 	if theme := loom.Theme(v.config.Theme); v.config.Theme != "" {
 		v.edit.ApplyTheme(theme)
 	}
@@ -407,17 +424,36 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 
 	// 2. Line Y=1: Header filebar
 	fileName := "Untitled"
-	if v.filePath != "" {
-		fileName = filepath.Base(v.filePath)
+	if v.edit.FilePath != "" {
+		fileName = filepath.Base(v.edit.FilePath)
 	}
+	docState := v.edit.DocState()
 	mouseStr := "off"
 	if v.config.MouseGrab {
 		mouseStr = "on"
 	}
 	rightStatus := fmt.Sprintf("theme: %-8s   mouse: %s", v.config.Theme, mouseStr)
-	headerText := fmt.Sprintf(" File    %-48s %s", fileName, rightStatus)
+	headerPrefix := " File    "
+	stateText := "[" + docState.Label() + "]"
+	headerText := headerPrefix + fileName + " " + stateText
+	headerText += strings.Repeat(" ", max(1, 48-loom.StringWidth(fileName+" "+stateText)+1)) + rightStatus
 	if rect.H > 2 {
 		canvas.WriteDefault(innerX, rect.Y+1, loom.TruncateText(headerText, innerW, ""), normalStyle)
+		stateX := loom.StringWidth(headerPrefix + fileName + " ")
+		if stateX+loom.StringWidth(stateText) <= innerW {
+			stateStyle := normalStyle
+			switch docState {
+			case loom.DocStateModified:
+				stateStyle.FG = theme.ModifiedFG.Color()
+			case loom.DocStateSaved:
+				stateStyle.FG = theme.SavedFG.Color()
+			case loom.DocStateError:
+				stateStyle.FG = theme.MediaErrorFG.Color()
+			default:
+				stateStyle.Dim = true
+			}
+			canvas.WriteDefault(innerX+stateX, rect.Y+1, stateText, stateStyle)
+		}
 	}
 
 	// Line Y=2: Divider
@@ -549,6 +585,12 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	}
 
 	editorDefs := loom.SpeccedDefaults.Editor
+
+	// Save works whichever panel has focus; the editor reports the new state.
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.HotkeySaveBinding) {
+		v.reportError(v.edit.Save())
+		return loom.Handled()
+	}
 
 	if key.Is(editorDefs.HotkeyFilesBinding) {
 		v.toggleSidePanel()

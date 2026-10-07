@@ -336,3 +336,58 @@ func TestNewRichTextEditFromFileAndIsModified(t *testing.T) {
 		t.Fatal("expected error when reading a directory")
 	}
 }
+
+func TestRichTextEditDocStateTransitionsFireCallbackOnce(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "doc.ansi")
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	var seen []DocState
+	edit.OnStateChange = func(state DocState) { seen = append(seen, state) }
+	if got := edit.DocState(); got != DocStateUntitled {
+		t.Fatalf("fresh state = %v, want Untitled", got)
+	}
+	edit.FilePath = path
+	edit.ConsumeKey(KeyEvent{Text: "a"})
+	edit.ConsumeKey(KeyEvent{Text: "b"})
+	if got := edit.DocState(); got != DocStateModified || len(seen) != 1 || seen[0] != DocStateModified {
+		t.Fatalf("after typing state = %v seen = %v, want one Modified", got, seen)
+	}
+	if err := edit.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if got := edit.DocState(); got != DocStateSaved || len(seen) != 2 || seen[1] != DocStateSaved {
+		t.Fatalf("after save state = %v seen = %v, want Modified, Saved", got, seen)
+	}
+	edit.ConsumeKey(KeyEvent{Text: "c"})
+	edit.FilePath = filepath.Join(t.TempDir(), "missing", "doc.ansi")
+	if err := edit.Save(); err == nil {
+		t.Fatal("Save into missing directory succeeded")
+	}
+	if got := edit.DocState(); got != DocStateError || seen[len(seen)-1] != DocStateError {
+		t.Fatalf("after failed save state = %v seen = %v, want Error last", got, seen)
+	}
+}
+
+func TestRichTextEditCtrlSSavesWithoutFileBar(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "doc.ansi")
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{}}})
+	edit.FilePath = path
+	edit.ConsumeKey(KeyEvent{Text: "x"})
+	if res := edit.ConsumeKey(KeyEvent{Key: "ctrl-s"}); !res.Consumed {
+		t.Fatalf("ctrl-s result = %+v, want consumed", res)
+	}
+	if edit.DocState() != DocStateSaved {
+		t.Fatalf("state = %v, want Saved", edit.DocState())
+	}
+	if data, err := os.ReadFile(path); err != nil || !strings.Contains(string(data), "x") {
+		t.Fatalf("file = %q, %v", data, err)
+	}
+}
+
+func TestDocStateLabelsComeFromSpec(t *testing.T) {
+	defs := SpeccedDefaults.RichTextEdit
+	for state, want := range map[DocState]string{DocStateUntitled: defs.StateUntitledLabel, DocStateSaved: defs.StateSavedLabel, DocStateModified: defs.StateModifiedLabel, DocStateError: defs.StateErrorLabel} {
+		if state.Label() != want || want == "" {
+			t.Fatalf("label of %d = %q, want %q", state, state.Label(), want)
+		}
+	}
+}

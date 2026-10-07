@@ -51,6 +51,9 @@ type RichTextEdit struct {
 	// LastSaveError holds the most recent save failure, including an error
 	// returned after choosing a destination in the asynchronous save picker.
 	LastSaveError error
+	// OnStateChange, when set, is called once per DocState transition, after
+	// the key, mouse event or save that caused it.
+	OnStateChange func(state DocState)
 	// SerializeDocument optionally serializes the document for saving. A nil
 	// callback uses RichDocument.ToANSI.
 	SerializeDocument func(*RichDocument) ([]byte, error)
@@ -63,6 +66,7 @@ type RichTextEdit struct {
 	fileBar                *richTextEditFileBar
 	chromeTheme            *ThemeColors
 	savedDocument          []RichLine
+	notifiedState          DocState
 	selectionAnchor        RichPosition
 	selectionExtending     bool
 	dragSelecting          bool
@@ -759,7 +763,13 @@ func richOverlayStyle(base, selection Style) Style {
 }
 
 // ConsumeKey applies navigation, text editing, selection, and inline formatting.
+// It fires OnStateChange when the key changed the document state.
 func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
+	defer e.notifyStateChange()
+	return e.consumeKey(key)
+}
+
+func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	if e.helpPopup != nil {
 		result := e.helpPopup.ConsumeKey(key)
 		if !e.helpPopup.Open {
@@ -778,6 +788,12 @@ func (e *RichTextEdit) ConsumeKey(key KeyEvent) EventResult {
 			e.savePopup = nil
 		}
 		return result
+	}
+	if !e.ShowFileBar && key.Is(SpeccedDefaults.RichTextEdit.HotkeySaveBinding) {
+		if err := e.Save(); err != nil {
+			e.LastSaveError = err
+		}
+		return Handled()
 	}
 	if key.Is("f1") {
 		e.ensureFileBar()
@@ -951,7 +967,13 @@ func richViewModeKey(key KeyEvent) bool {
 }
 
 // ConsumeMouse positions the cursor and supports click-drag selection.
+// It fires OnStateChange when the event changed the document state.
 func (e *RichTextEdit) ConsumeMouse(mouse MouseEvent) EventResult {
+	defer e.notifyStateChange()
+	return e.consumeMouse(mouse)
+}
+
+func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 	if e.helpPopup != nil {
 		result := e.helpPopup.ConsumeMouse(mouse)
 		if !e.helpPopup.Open {
