@@ -1,6 +1,6 @@
 # 308 — Add .tui editable ANSI markup file format and integrate with loom
 
-**Status**: Draft
+**Status**: Open — In progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
