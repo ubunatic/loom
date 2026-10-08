@@ -470,3 +470,72 @@ func TestDocStateLabelsComeFromSpec(t *testing.T) {
 		}
 	}
 }
+
+func TestRichTextEditMarkupFileLoadEditSave(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "doc.tui")
+	src := "[bold red]hello[/] world\n\n[on #102030]\\[x\\][/]\n"
+	if err := os.WriteFile(path, []byte(src), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	edit, err := NewRichTextEditFromFile(path)
+	if err != nil {
+		t.Fatalf("NewRichTextEditFromFile: %v", err)
+	}
+	if got := edit.Document.ToPlainText(); got != "hello world\n\n[x]" {
+		t.Fatalf("plain text = %q", got)
+	}
+	if err := edit.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if data, _ := os.ReadFile(path); string(data) != src {
+		t.Fatalf("unchanged save = %q, want %q", data, src)
+	}
+	edit.SetSelection(RichPosition{Line: 0, Offset: 6}, RichPosition{Line: 0, Offset: 11})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-b"})
+	if err := edit.Save(); err != nil {
+		t.Fatalf("Save edited: %v", err)
+	}
+	want := "[bold red]hello[/] [bold]world[/]\n\n[on #102030]\\[x\\][/]\n"
+	if data, _ := os.ReadFile(path); string(data) != want {
+		t.Fatalf("edited save = %q, want %q", data, want)
+	}
+}
+
+func TestRichTextEditSaveAsConvertsBetweenMarkupAndANSI(t *testing.T) {
+	dir := t.TempDir()
+	tui := filepath.Join(dir, "a.tui")
+	if err := os.WriteFile(tui, []byte("[italic]x[/]\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	edit, err := NewRichTextEditFromFile(tui)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ansi := filepath.Join(dir, "a.ansi")
+	if err := edit.SaveAs(ansi); err != nil {
+		t.Fatal(err)
+	}
+	want := (Style{Italic: true}).ANSI() + "x\x1b[0m\n"
+	if data, _ := os.ReadFile(ansi); string(data) != want {
+		t.Fatalf("ansi = %q, want %q", data, want)
+	}
+	back := filepath.Join(dir, "b.TUI")
+	if err := edit.SaveAs(back); err != nil {
+		t.Fatal(err)
+	}
+	if data, _ := os.ReadFile(back); string(data) != "[italic]x[/]\n" {
+		t.Fatalf("tui = %q", data)
+	}
+}
+
+func TestRichTextEditMarkupFileSyntaxError(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "bad.tui")
+	if err := os.WriteFile(path, []byte("ok\n[bold]open\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := NewRichTextEditFromFile(path)
+	var me *MarkupError
+	if !errors.As(err, &me) || me.Line != 2 || me.Col != 11 || !strings.Contains(err.Error(), path) {
+		t.Fatalf("err = %v, want MarkupError 2:11 naming %s", err, path)
+	}
+}

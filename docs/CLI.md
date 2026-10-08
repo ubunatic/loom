@@ -22,3 +22,7 @@ SGR report coordinates. A `+` marks the resolved cell in the view. Press `q` or
 
 The command reuses `loom.DetectColorProfile` and `measure.DetectRenderPath` so
 reported capabilities follow the same detection rules as Loom rendering.
+
+`loom markup <file>` converts a `.tui` markup file to ANSI, or any other file
+(read as ANSI) to `.tui` markup, and prints the result. See
+[.tui markup](TuiMarkup.md).
