@@ -1,0 +1,6 @@
+-> plain text start
+-> [0m[1m[39m[49mbold line 1
+[0m[39m[49m->[0m[1m[39m[49m [0m[3m[39m[49mitalic line 2
+[0m[3m[39m[49m-> [0m[4m[39m[49munderscore line 2
+[0m[39m[49m-> [0m[4m[39m[49mplain text end
+[0m
