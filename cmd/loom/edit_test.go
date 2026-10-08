@@ -1034,3 +1034,65 @@ func TestEditViewCtrlWDirtyGuardsDiscardSaveCancel(t *testing.T) {
 		t.Fatal("Save must then close the document")
 	}
 }
+
+func TestEditViewOpensAndSavesMarkupFile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "art.tui")
+	src := "[bold #ff0000]hot[/] cold\n"
+	if err := os.WriteFile(path, []byte(src), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	edit := loom.NewRichTextEdit(nil)
+	view, err := newEditView(edit, "", loom.EditorConfig{Theme: "plain"})
+	if err != nil {
+		t.Fatalf("newEditView: %v", err)
+	}
+	if err := view.openFile(path); err != nil {
+		t.Fatalf("openFile: %v", err)
+	}
+	if got := view.edit.Document.ToPlainText(); got != "hot cold" {
+		t.Fatalf("text = %q", got)
+	}
+	view.edit.ConsumeKey(loom.KeyEvent{Key: "end"})
+	view.edit.ConsumeKey(loom.KeyEvent{Text: "!"})
+	if err := view.edit.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+	if data, _ := os.ReadFile(path); string(data) != "[bold #ff0000]hot[/] cold!\n" {
+		t.Fatalf("saved = %q", data)
+	}
+
+	bad := filepath.Join(dir, "bad.tui")
+	if err := os.WriteFile(bad, []byte("[nope]x[/]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := view.openFile(bad); err == nil || !strings.Contains(err.Error(), "bad.tui: markup 1:2:") {
+		t.Fatalf("openFile(bad) err = %v", err)
+	}
+}
+
+func TestMarkupCommandConvertsBothWays(t *testing.T) {
+	dir := t.TempDir()
+	tui := filepath.Join(dir, "a.tui")
+	if err := os.WriteFile(tui, []byte("[bold]b[/]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var ansi strings.Builder
+	if err := execute([]string{"markup", tui}, &ansi); err != nil {
+		t.Fatal(err)
+	}
+	if want := (loom.Style{Bold: true}).ANSI() + "b\x1b[0m\n"; ansi.String() != want {
+		t.Fatalf("ansi = %q, want %q", ansi.String(), want)
+	}
+	ansiPath := filepath.Join(dir, "a.ansi")
+	if err := os.WriteFile(ansiPath, []byte(ansi.String()), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var markup strings.Builder
+	if err := execute([]string{"markup", ansiPath}, &markup); err != nil {
+		t.Fatal(err)
+	}
+	if markup.String() != "[bold]b[/]\n" {
+		t.Fatalf("markup = %q", markup.String())
+	}
+}

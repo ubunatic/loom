@@ -30,7 +30,7 @@ func execute(args []string, out io.Writer) error {
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), frameCommand(), widgetsCommand())
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand())
 	root.SetArgs(args)
 	return root.Execute()
 }
