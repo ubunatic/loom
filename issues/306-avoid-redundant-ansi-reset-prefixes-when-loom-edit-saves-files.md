@@ -1,6 +1,6 @@
 # 306 — Avoid redundant ANSI reset prefixes when loom edit saves files
 
-**Status**: Open — In progress
+**Status**: Closed — Omit redundant initial ANSI resets and default color codes in ansibuffer serializer while preserving styled transitions
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
