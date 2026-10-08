@@ -26,6 +26,12 @@ type BoxBorder struct {
 	Vertical    string `yaml:"vertical"`
 	TitlePrefix string `yaml:"title_prefix"`
 	TitleSuffix string `yaml:"title_suffix"`
+	// Joints for dividers, used by .tui tables: ┬ ┴ ├ ┤ ┼.
+	TeeTop    string `yaml:"tee_top"`
+	TeeBottom string `yaml:"tee_bottom"`
+	TeeLeft   string `yaml:"tee_left"`
+	TeeRight  string `yaml:"tee_right"`
+	Cross     string `yaml:"cross"`
 }
 
 // BoxStyle controls a box's background, border, title, and footer.
@@ -121,6 +127,11 @@ func getBoxBorderGlyphs(style BoxBorderStyle) (BoxBorder, error) {
 		BottomRight: getStringField(styleMap, "bottom_right", ""),
 		Horizontal:  getStringField(styleMap, "horizontal", ""),
 		Vertical:    getStringField(styleMap, "vertical", ""),
+		TeeTop:      getStringField(styleMap, "tee_top", ""),
+		TeeBottom:   getStringField(styleMap, "tee_bottom", ""),
+		TeeLeft:     getStringField(styleMap, "tee_left", ""),
+		TeeRight:    getStringField(styleMap, "tee_right", ""),
+		Cross:       getStringField(styleMap, "cross", ""),
 	}
 	return border, nil
 }
