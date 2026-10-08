@@ -55,6 +55,46 @@ Attributes, separated by spaces and case-insensitive:
 
 A lone `]` and a backslash before any other character are kept literally.
 
+## Boxes
+
+A box block wraps lines in a border. The opening and closing tags each stand
+alone on their own line (surrounding spaces are allowed):
+
+```
+[box style=rounded title="Status" border="bold cyan" pad=1]
+[bold]Disk:[/] 93% full
+[/box]
+```
+
+```
+╭─ Status ───────╮
+│ Disk: 93% full │
+╰────────────────╯
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `style` | `sharp` (alias `normal`), `rounded`, `double`, `ascii` | `sharp` |
+| `title` | inline markup shown in the top border | none |
+| `border` | attributes and colors for the border, as in a tag | default style |
+| `pad` | spaces between border and text on the left and right | `1` |
+
+Options are `key=value`; quote values that contain spaces. A quoted value
+cannot contain `"`. Lines inside a box may use inline tags and nested boxes.
+
+The inner width is the widest line plus padding on both sides, measured in
+terminal columns, so wide characters align. A title widens the box to fit it
+with one space and one border glyph on each side. Glyphs come from
+`spec/box.yaml`.
+
+`ParseMarkup` draws the box into plain lines, so a `RichDocument` holds no box
+structure. `ToMarkup` writes the drawn border characters, not the `[box]`
+tag; the result parses to the same lines.
+
+Box errors: an unclosed `[box]` at the end of the file, `[/box]` without an
+open box, unknown options or styles, a bad `pad`, and text after the tag on
+the same line.
+
 ## Rules
 
 - Parsing is strict. Unknown attributes or colors, empty or unterminated tags,
