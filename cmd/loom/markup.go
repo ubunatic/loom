@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/media"
 )
 
 func markupCommand() *cobra.Command {
@@ -35,7 +36,7 @@ func convertMarkup(out io.Writer, path string) error {
 		_, err = io.WriteString(out, doc.ToMarkup())
 		return err
 	}
-	doc, err := loom.ParseMarkup(string(data))
+	doc, err := loom.ParseMarkupWith(string(data), media.MarkupOptions(path))
 	if err != nil {
 		return fmt.Errorf("%s: %w", path, err)
 	}

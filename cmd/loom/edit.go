@@ -14,6 +14,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/media"
 )
 
 type editFocus int
@@ -68,7 +69,7 @@ func editCommand() *cobra.Command {
 			edit := loom.NewRichTextEdit(nil)
 			edit.ShowFileBar = true
 			if path != "" {
-				edit, err = loom.NewRichTextEditFromFile(path)
+				edit, err = loom.NewRichTextEditFromFileWith(path, media.MarkupOptions(path))
 				if err != nil {
 					return err
 				}
@@ -237,7 +238,7 @@ func (v *editView) guardUnsaved(action func()) {
 }
 
 func (v *editView) openFile(path string) error {
-	edit, err := loom.NewRichTextEditFromFile(path)
+	edit, err := loom.NewRichTextEditFromFileWith(path, media.MarkupOptions(path))
 	if err != nil {
 		return err
 	}

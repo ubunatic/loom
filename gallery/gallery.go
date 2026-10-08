@@ -279,7 +279,7 @@ func newRichTextEditDemoWithArgs(args []string) (loom.Widget, error) {
 	if len(args) > 1 {
 		return nil, fmt.Errorf("RichTextEdit demo accepts at most one file path argument")
 	}
-	edit, err := loom.NewRichTextEditFromFile(args[0])
+	edit, err := loom.NewRichTextEditFromFileWith(args[0], media.MarkupOptions(args[0]))
 	if err != nil {
 		return nil, fmt.Errorf("read RichTextEdit demo file %q: %w", args[0], err)
 	}

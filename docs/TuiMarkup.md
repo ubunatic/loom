@@ -150,6 +150,52 @@ block tag inside a table, a row that does not start with `|`, a separator row
 anywhere but second, unclosed or unknown tags in a cell, and the option errors
 of boxes. See `examples/markup/table.tui`.
 
+## Images
+
+An image tag stands alone on its line and has no closing tag. It draws a PNG,
+JPEG or SVG file with the Unicode-block renderers of cati, at its own line or
+inside a box:
+
+```
+[box style=rounded title="Build"]
+[image src="logo.png" width=24 mode=half alt="cati logo"]
+[green]passed[/] 312 tests
+[/box]
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `src` | file path, relative to the `.tui` file's directory; required | — |
+| `width` | columns, 1 to `max_width` | native size in cells, capped by `max_width` |
+| `height` | rows, 1 to `max_height`; with `width`, fits inside both | from the aspect ratio |
+| `mode` | `half` (halfblock), `quad` (quadblock), `six` (sextant) | `half` |
+| `alt` | text shown when images are not rendered | `[image: <src>]` |
+
+Modes, `max_width` and `max_height` (200 cells each) are in
+`spec/markup.yaml`. The image keeps its aspect ratio; quad and sextant cells
+hold more pixels, so the same picture needs fewer columns and rows than with
+half. Transparent pixels show the terminal background. Every image row is
+equally wide, so an enclosing box keeps straight edges.
+
+- `src` is a local path; absolute paths and `..` are allowed. There are no
+  URLs. SVG files are rasterized with `rsvg-convert`, which must be on `PATH`;
+  PNG and JPEG need no external tool.
+- Images render at parse time into styled cells, like boxes. `ToMarkup`, and
+  therefore saving in `loom edit`, writes those cells as
+  `[#rrggbb on #rrggbb]▀[/]` runs, not the `[image]` tag. The ANSI output uses
+  true color; lower color profiles downsample it.
+- The root package does not decode images. `loom.ParseMarkup` and
+  `loom.NewRichTextEditFromFile` show the alt text as one dim line. To render
+  images, pass `media.MarkupOptions(path)` from `ubunatic.com/loom/media` to
+  `loom.ParseMarkupWith` or `loom.NewRichTextEditFromFileWith`, or set your
+  own `MarkupOptions.Image` hook. `loom markup` and `loom edit` render images.
+- Errors: a missing or empty `src`, unknown options or modes, `width` or
+  `height` out of range, text after the tag, an `[image ...]` tag inside a
+  text line, `[/image]`, an image inside a table, and a file that cannot be
+  loaded (reported at the tag's line, column 1).
+
+See `examples/markup/image.tui`.
+
 ## Rules
 
 - Parsing is strict. Unknown attributes or colors, empty or unterminated tags,
