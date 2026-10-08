@@ -87,12 +87,20 @@ func IsMarkupPath(path string) bool {
 // A .tui path is parsed as bracket markup and saved with ToMarkup; a markup
 // syntax error is returned with the path, line and column. Other paths use ANSI.
 // If path does not exist, it initializes an empty document bound to path.
-// It sets FilePath = path and ShowFileBar = true.
+// It sets FilePath = path and ShowFileBar = true. Markup [image] tags show
+// their alt text; use NewRichTextEditFromFileWith to render images.
 func NewRichTextEditFromFile(path string) (*RichTextEdit, error) {
+	return NewRichTextEditFromFileWith(path, MarkupOptions{})
+}
+
+// NewRichTextEditFromFileWith is NewRichTextEditFromFile with options for
+// parsing a .tui file, such as media.MarkupOptions(path) to render images.
+// Saving writes rendered images as styled cells, not as [image] tags.
+func NewRichTextEditFromFileWith(path string, opts MarkupOptions) (*RichTextEdit, error) {
 	doc := &RichDocument{}
 	data, err := os.ReadFile(path)
 	if err == nil && IsMarkupPath(path) {
-		doc, err = ParseMarkup(string(data))
+		doc, err = ParseMarkupWith(string(data), opts)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", path, err)
 		}
