@@ -197,6 +197,14 @@ func DecodeKey(b []byte) KeyEvent {
 					return KeyEvent{Key: prefix + "home"}
 				case 'F':
 					return KeyEvent{Key: prefix + "end"}
+				case 'P':
+					return KeyEvent{Key: prefix + "f1"}
+				case 'Q':
+					return KeyEvent{Key: prefix + "f2"}
+				case 'R':
+					return KeyEvent{Key: prefix + "f3"}
+				case 'S':
+					return KeyEvent{Key: prefix + "f4"}
 				}
 			}
 		}
@@ -246,10 +254,7 @@ func DecodeKey(b []byte) KeyEvent {
 				if strings.Contains(seq, ";") {
 					parts := strings.SplitN(seq, ";", 2)
 					seq = parts[0]
-					// Only insert/delete/home/end keep their modifier; other tilde keys stay plain.
-					if seq == "1" || seq == "2" || seq == "3" || seq == "4" || seq == "7" || seq == "8" {
-						prefix = csiModifierPrefix(parts[1])
-					}
+					prefix = csiModifierPrefix(parts[1])
 				}
 				switch seq {
 				case "1", "7":
@@ -261,33 +266,33 @@ func DecodeKey(b []byte) KeyEvent {
 				case "4", "8":
 					return KeyEvent{Key: prefix + "end"}
 				case "5":
-					return KeyEvent{Key: "pgup"}
+					return KeyEvent{Key: prefix + "pgup"}
 				case "6":
-					return KeyEvent{Key: "pgdown"}
+					return KeyEvent{Key: prefix + "pgdown"}
 				case "11":
-					return KeyEvent{Key: "f1"}
+					return KeyEvent{Key: prefix + "f1"}
 				case "12":
-					return KeyEvent{Key: "f2"}
+					return KeyEvent{Key: prefix + "f2"}
 				case "13":
-					return KeyEvent{Key: "f3"}
+					return KeyEvent{Key: prefix + "f3"}
 				case "14":
-					return KeyEvent{Key: "f4"}
+					return KeyEvent{Key: prefix + "f4"}
 				case "15":
-					return KeyEvent{Key: "f5"}
+					return KeyEvent{Key: prefix + "f5"}
 				case "17":
-					return KeyEvent{Key: "f6"}
+					return KeyEvent{Key: prefix + "f6"}
 				case "18":
-					return KeyEvent{Key: "f7"}
+					return KeyEvent{Key: prefix + "f7"}
 				case "19":
-					return KeyEvent{Key: "f8"}
+					return KeyEvent{Key: prefix + "f8"}
 				case "20":
-					return KeyEvent{Key: "f9"}
+					return KeyEvent{Key: prefix + "f9"}
 				case "21":
-					return KeyEvent{Key: "f10"}
+					return KeyEvent{Key: prefix + "f10"}
 				case "23":
-					return KeyEvent{Key: "f11"}
+					return KeyEvent{Key: prefix + "f11"}
 				case "24":
-					return KeyEvent{Key: "f12"}
+					return KeyEvent{Key: prefix + "f12"}
 				}
 			}
 		}

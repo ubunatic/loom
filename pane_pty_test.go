@@ -1411,6 +1411,69 @@ func (ignoreKeysWidget) Draw(*Canvas, Rect)                  {}
 func (ignoreKeysWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
 func (ignoreKeysWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 
+type debugModePTYWidget struct {
+	lastMouse MouseEvent
+}
+
+func (w *debugModePTYWidget) Draw(c *Canvas, r Rect) {
+	c.Set(0, 0, Cell{Text: "X"})
+	c.Set(1, 1, Cell{Text: "Y"})
+}
+
+func (w *debugModePTYWidget) ConsumeKey(e KeyEvent) EventResult {
+	if e.Is("q") {
+		return QuitResult()
+	}
+	return Ignored()
+}
+
+func (w *debugModePTYWidget) ConsumeMouse(e MouseEvent) EventResult {
+	if e.Action == MousePress {
+		w.lastMouse = e
+		return Handled()
+	}
+	return Ignored()
+}
+
+func TestPaneDebugModePTY(t *testing.T) {
+	if os.Getenv("LOOM_DEBUG_PTY_HELPER") == "1" {
+		w := &debugModePTYWidget{}
+		p, err := New(10)
+		if err != nil {
+			t.Fatalf("New: %v", err)
+		}
+		defer p.Close()
+		p.EnableMouse()
+		if err := p.Run(w); err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+		if w.lastMouse.X != 5 || w.lastMouse.Y != 3 {
+			t.Fatalf("expected mouse (5, 3) after debug shift, got (%d, %d)", w.lastMouse.X, w.lastMouse.Y)
+		}
+		return
+	}
+
+	t.Setenv("LOOM_DEBUG_PTY_HELPER", "1")
+	s := ptytest.Start(t, 80, 24, os.Args[0], "-test.run=^TestPaneDebugModePTY$")
+
+	s.WaitFor("X", 2*time.Second)
+
+	// Shift-F12 is CSI 24;2~ in VT sequence
+	s.SendRaw([]byte("\x1b[24;2~"))
+	time.Sleep(50 * time.Millisecond)
+
+	// Click terminal coordinate (7, 5) -> relative to 0-based pane startRow (assume startRow=1):
+	// Standard X=6, Y=4. Under debug mode offset (-1, -1), widget receives X=5, Y=3.
+	s.SendRaw([]byte("\x1b[<0;7;5M"))
+	s.SendRaw([]byte("\x1b[<0;7;5m"))
+	time.Sleep(50 * time.Millisecond)
+
+	s.Send("q")
+	if err := s.Wait(3 * time.Second); err != nil {
+		t.Fatalf("pty wait: %v", err)
+	}
+}
+
 func TestPanePTYCloseRequestVetoThenQuit(t *testing.T) {
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 24, 4)
