@@ -1,0 +1,10 @@
+[bold]Images[/] in .tui (issue 311)
+[image src=logo.png alt="loom logo"]
+
+[box style=rounded title="[bold]Build[/]" border=cyan]
+[image src=logo.png width=12 mode=quad alt="loom logo"]
+[green]passed[/] 312 tests
+[/box]
+[box title="Sextant"]
+[image src=logo.png height=4 mode=six]
+[/box]

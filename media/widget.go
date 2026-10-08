@@ -535,7 +535,13 @@ func (w *Widget) render(img image.Image, cols, rows int) (*core.Grid, error) {
 	if w.renderer != nil {
 		return w.renderer(img, w.mode, cols, rows)
 	}
-	switch w.mode {
+	return renderGrid(img, w.mode, cols, rows)
+}
+
+// renderGrid renders img with the cati renderer for mode, fitting it into
+// cols x rows cells; 0 leaves a dimension unconstrained.
+func renderGrid(img image.Image, mode Mode, cols, rows int) (*core.Grid, error) {
+	switch mode {
 	case ModeQuadblock:
 		return quadblock.RenderToGrid(img, cols, quadblock.Options{Rows: rows})
 	case ModeSextant:
