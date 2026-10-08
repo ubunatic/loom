@@ -9,7 +9,8 @@ vertical: "│"
 title_prefix: " "
 title_suffix: " "
 
-# BoxBorderStyle glyph sets (issue 037)
+# BoxBorderStyle glyph sets (issue 037); tee and cross joints draw table
+# dividers (issue 310)
 styles:
   sharp:
     top_left: "┌"
@@ -18,6 +19,11 @@ styles:
     bottom_right: "┘"
     horizontal: "─"
     vertical: "│"
+    tee_top: "┬"
+    tee_bottom: "┴"
+    tee_left: "├"
+    tee_right: "┤"
+    cross: "┼"
   rounded:
     top_left: "╭"
     top_right: "╮"
@@ -25,6 +31,11 @@ styles:
     bottom_right: "╯"
     horizontal: "─"
     vertical: "│"
+    tee_top: "┬"
+    tee_bottom: "┴"
+    tee_left: "├"
+    tee_right: "┤"
+    cross: "┼"
   double:
     top_left: "╔"
     top_right: "╗"
@@ -32,6 +43,11 @@ styles:
     bottom_right: "╝"
     horizontal: "═"
     vertical: "║"
+    tee_top: "╦"
+    tee_bottom: "╩"
+    tee_left: "╠"
+    tee_right: "╣"
+    cross: "╬"
   ascii:
     top_left: "+"
     top_right: "+"
@@ -39,3 +55,8 @@ styles:
     bottom_right: "+"
     horizontal: "-"
     vertical: "|"
+    tee_top: "+"
+    tee_bottom: "+"
+    tee_left: "+"
+    tee_right: "+"
+    cross: "+"
