@@ -1,0 +1,10 @@
+[box style=rounded title="[bold]Status[/]" border=cyan]
+[bold]Disk:[/] [red]93%[/] full
+日本語 wide text
+[box style=double border=yellow pad=2]
+nested
+[/box]
+[/box]
+[box style=ascii]
+plain ascii
+[/box]

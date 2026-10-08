@@ -23,7 +23,8 @@ import (
 // "not <attr>" to clear an inherited flag, a color for the foreground and
 // "on <color>" for the background. Colors: default, a name from
 // spec/markup.yaml, color(0-255), #rgb or #rrggbb. Tags must close on the line
-// where they start, so every line parses on its own.
+// where they start, so every line parses on its own. Box blocks are in
+// markup_box.go.
 
 //go:embed spec/markup.yaml
 var markupSpecYAML []byte
@@ -75,11 +76,41 @@ func ParseMarkup(src string) (*RichDocument, error) {
 	src = strings.ReplaceAll(src, "\r", "\n")
 	src = strings.TrimSuffix(src, "\n")
 	doc := &RichDocument{}
+	var boxes []*markupBox
+	target := func() *RichDocument {
+		if len(boxes) == 0 {
+			return doc
+		}
+		return boxes[len(boxes)-1].doc
+	}
 	for lineIndex, line := range strings.Split(src, "\n") {
-		doc.Lines = append(doc.Lines, RichLine{})
-		if err := parseMarkupLine(doc, line, lineIndex+1); err != nil {
+		lineNo := lineIndex + 1
+		switch markupBoxTag(line) {
+		case "open":
+			box, err := parseMarkupBoxTag(line, lineNo)
+			if err != nil {
+				return nil, err
+			}
+			boxes = append(boxes, box)
+			continue
+		case "close":
+			if len(boxes) == 0 {
+				return nil, &MarkupError{lineNo, 1, "[/box] without open [box]"}
+			}
+			box := boxes[len(boxes)-1]
+			boxes = boxes[:len(boxes)-1]
+			parent := target()
+			parent.Lines = append(parent.Lines, box.render()...)
+			continue
+		}
+		into := target()
+		into.Lines = append(into.Lines, RichLine{})
+		if err := parseMarkupLine(into, line, lineNo); err != nil {
 			return nil, err
 		}
+	}
+	if len(boxes) > 0 {
+		return nil, &MarkupError{boxes[len(boxes)-1].lineNo, 1, "unclosed [box] block"}
 	}
 	doc.normalize()
 	return doc, nil

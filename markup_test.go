@@ -217,3 +217,125 @@ func FuzzMarkupParse(f *testing.F) {
 		}
 	})
 }
+
+func markupBoxLines(t *testing.T, src string) []string {
+	t.Helper()
+	doc, err := ParseMarkup(src)
+	if err != nil {
+		t.Fatalf("ParseMarkup(%q): %v", src, err)
+	}
+	var lines []string
+	for _, line := range doc.Lines {
+		var text strings.Builder
+		for _, span := range line.Spans {
+			text.WriteString(span.Text)
+		}
+		lines = append(lines, text.String())
+	}
+	return lines
+}
+
+func TestMarkupBoxStyles(t *testing.T) {
+	tests := []struct {
+		style string
+		want  []string
+	}{
+		{"", []string{"┌────┐", "│ ab │", "│ c  │", "└────┘"}},
+		{" style=normal", []string{"┌────┐", "│ ab │", "│ c  │", "└────┘"}},
+		{" style=sharp", []string{"┌────┐", "│ ab │", "│ c  │", "└────┘"}},
+		{" style=rounded", []string{"╭────╮", "│ ab │", "│ c  │", "╰────╯"}},
+		{" style=double", []string{"╔════╗", "║ ab ║", "║ c  ║", "╚════╝"}},
+		{" style=ascii", []string{"+----+", "| ab |", "| c  |", "+----+"}},
+	}
+	for _, tt := range tests {
+		got := markupBoxLines(t, "[box"+tt.style+"]\nab\nc\n[/box]")
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("style %q = %q, want %q", tt.style, got, tt.want)
+		}
+	}
+}
+
+func TestMarkupBoxLayout(t *testing.T) {
+	tests := []struct {
+		name, src string
+		want      []string
+	}{
+		{"surrounding text", "top\n[box]\nx\n[/box]\nend", []string{"top", "┌───┐", "│ x │", "└───┘", "end"}},
+		{"pad", "[box pad=0]\nab\n[/box]", []string{"┌──┐", "│ab│", "└──┘"}},
+		{"pad 2", "[box pad=2]\nab\n\n[/box]", []string{"┌──────┐", "│  ab  │", "│      │", "└──────┘"}},
+		{"title", "[box title=\"Hi\"]\nabcdef\n[/box]", []string{"┌─ Hi ───┐", "│ abcdef │", "└────────┘"}},
+		{"wide title", "[box style=rounded title=\"Status\"]\nx\n[/box]", []string{"╭─ Status ─╮", "│ x        │", "╰──────────╯"}},
+		{"wide chars", "[box]\n日本\nab\n[/box]", []string{"┌──────┐", "│ 日本 │", "│ ab   │", "└──────┘"}},
+		{"empty", "[box]\n[/box]", []string{"┌──┐", "└──┘"}},
+		{"indented tags", "  [box]\nx\n  [/box]", []string{"┌───┐", "│ x │", "└───┘"}},
+		{"nested", "[box]\n[box style=rounded]\nx\n[/box]\ny\n[/box]", []string{
+			"┌───────┐",
+			"│ ╭───╮ │",
+			"│ │ x │ │",
+			"│ ╰───╯ │",
+			"│ y     │",
+			"└───────┘",
+		}},
+	}
+	for _, tt := range tests {
+		if got := markupBoxLines(t, tt.src); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s = %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestMarkupBoxStyling(t *testing.T) {
+	doc, err := ParseMarkup("[box border=\"bold cyan\" title=\"[red]T[/]\"]\n[italic]a[/]\n[/box]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	border := Style{Bold: true, FG: ColorIndex(6)}
+	want := []RichLine{
+		{Spans: []RichSpan{{Text: "┌─ ", Style: border}, {Text: "T", Style: Style{FG: ColorIndex(1)}}, {Text: " ─┐", Style: border}}},
+		{Spans: []RichSpan{{Text: "│", Style: border}, {Text: " "}, {Text: "a", Style: Style{Italic: true}}, {Text: "   "}, {Text: "│", Style: border}}},
+		{Spans: []RichSpan{{Text: "└─────┘", Style: border}}},
+	}
+	if !reflect.DeepEqual(doc.Lines, want) {
+		t.Fatalf("lines = %+v, want %+v", doc.Lines, want)
+	}
+	again, err := ParseMarkup(doc.ToMarkup())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(again.Lines, doc.Lines) {
+		t.Fatalf("round trip = %+v, want %+v", again.Lines, doc.Lines)
+	}
+}
+
+func TestMarkupBoxErrors(t *testing.T) {
+	tests := []struct {
+		src       string
+		line, col int
+		msg       string
+	}{
+		{"[box]\nx", 1, 1, "unclosed [box] block"},
+		{"x\n[box]\n[box]\n[/box]", 2, 1, "unclosed [box] block"},
+		{"x\n[/box]", 2, 1, "[/box] without open [box]"},
+		{"[box style=fancy]\n[/box]", 1, 6, `unknown box style "fancy"`},
+		{"[box color=red]\n[/box]", 1, 6, `unknown box option "color"`},
+		{"[box rounded]\n[/box]", 1, 6, "needs key=value"},
+		{"[box pad=-1]\n[/box]", 1, 6, "pad must be"},
+		{"[box border=blink]\n[/box]", 1, 6, `unknown attribute "blink"`},
+		{"[box title=\"[bold]x\"]\n[/box]", 1, 6, "title: unclosed tag"},
+		{"[box title=\"x]\n[/box]", 1, 12, "unterminated quoted value"},
+		{"[box pad=1\n[/box]", 1, 11, "unterminated box tag"},
+		{"[box] text\n[/box]", 1, 6, "must stand alone"},
+		{"a [box]x[/box]", 1, 4, `unknown attribute "box"`},
+	}
+	for _, tt := range tests {
+		_, err := ParseMarkup(tt.src)
+		var me *MarkupError
+		if !errors.As(err, &me) {
+			t.Errorf("ParseMarkup(%q) err = %v, want *MarkupError", tt.src, err)
+			continue
+		}
+		if me.Line != tt.line || me.Col != tt.col || !strings.Contains(me.Msg, tt.msg) {
+			t.Errorf("ParseMarkup(%q) = %v, want %d:%d %q", tt.src, err, tt.line, tt.col, tt.msg)
+		}
+	}
+}
