@@ -200,7 +200,7 @@ func TestMarkupMatchesANSIRoundTrip(t *testing.T) {
 }
 
 func FuzzMarkupParse(f *testing.F) {
-	for _, seed := range []string{"", "[bold]x[/]", `\[[[`, "[on #fff]a\nb", "[/]", "[not]"} {
+	for _, seed := range []string{"", "[bold]x[/]", `\[[[`, "[on #fff]a\nb", "[/]", "[not]", "[table]\n| a | b |\n|:-|-:|\n| [red]x[/] |\n[/table]"} {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, src string) {
@@ -326,6 +326,134 @@ func TestMarkupBoxErrors(t *testing.T) {
 		{"[box pad=1\n[/box]", 1, 11, "unterminated box tag"},
 		{"[box] text\n[/box]", 1, 6, "must stand alone"},
 		{"a [box]x[/box]", 1, 4, `unknown attribute "box"`},
+	}
+	for _, tt := range tests {
+		_, err := ParseMarkup(tt.src)
+		var me *MarkupError
+		if !errors.As(err, &me) {
+			t.Errorf("ParseMarkup(%q) err = %v, want *MarkupError", tt.src, err)
+			continue
+		}
+		if me.Line != tt.line || me.Col != tt.col || !strings.Contains(me.Msg, tt.msg) {
+			t.Errorf("ParseMarkup(%q) = %v, want %d:%d %q", tt.src, err, tt.line, tt.col, tt.msg)
+		}
+	}
+}
+
+func TestMarkupTableStyles(t *testing.T) {
+	src := "| a | bb |\n|---|---|\n| ccc | d |\n[/table]"
+	tests := []struct {
+		style string
+		want  []string
+	}{
+		{"", []string{"┌─────┬────┐", "│ a   │ bb │", "├─────┼────┤", "│ ccc │ d  │", "└─────┴────┘"}},
+		{" style=normal", []string{"┌─────┬────┐", "│ a   │ bb │", "├─────┼────┤", "│ ccc │ d  │", "└─────┴────┘"}},
+		{" style=rounded", []string{"╭─────┬────╮", "│ a   │ bb │", "├─────┼────┤", "│ ccc │ d  │", "╰─────┴────╯"}},
+		{" style=double", []string{"╔═════╦════╗", "║ a   ║ bb ║", "╠═════╬════╣", "║ ccc ║ d  ║", "╚═════╩════╝"}},
+		{" style=ascii", []string{"+-----+----+", "| a   | bb |", "+-----+----+", "| ccc | d  |", "+-----+----+"}},
+	}
+	for _, tt := range tests {
+		got := markupBoxLines(t, "[table"+tt.style+"]\n"+src)
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("style %q = %q, want %q", tt.style, got, tt.want)
+		}
+	}
+}
+
+func TestMarkupTableLayout(t *testing.T) {
+	tests := []struct {
+		name, src string
+		want      []string
+	}{
+		{"align", "[table]\n| L | C | R |\n|:--|:-:|--:|\n| abcd | abcd | abcd |\n| x | x | x |\n[/table]", []string{
+			"┌──────┬──────┬──────┐",
+			"│ L    │  C   │    R │",
+			"├──────┼──────┼──────┤",
+			"│ abcd │ abcd │ abcd │",
+			"│ x    │  x   │    x │",
+			"└──────┴──────┴──────┘",
+		}},
+		{"no header", "[table]\n| a | b |\n| cc | d |\n[/table]", []string{"┌────┬───┐", "│ a  │ b │", "│ cc │ d │", "└────┴───┘"}},
+		{"pad 0", "[table pad=0]\n|a|b|\n[/table]", []string{"┌─┬─┐", "│a│b│", "└─┴─┘"}},
+		{"wide chars and markup", "[table]\n| [bold red]日本[/] | x |\n| ab | [i]yz[/] |\n[/table]", []string{"┌──────┬────┐", "│ 日本 │ x  │", "│ ab   │ yz │", "└──────┴────┘"}},
+		{"short rows and no trailing pipe", "[table]\n| a | b | c\n| d\n[/table]", []string{"┌───┬───┬───┐", "│ a │ b │ c │", "│ d │   │   │", "└───┴───┴───┘"}},
+		{"escapes and blank lines", "[table]\n| a\\|b | \\[x\\] |\n\n| \\\\ | y |\n[/table]", []string{"┌─────┬─────┐", "│ a|b │ [x] │", "│ \\   │ y   │", "└─────┴─────┘"}},
+		{"header only", "[table]\n| h |\n|---|\n[/table]", []string{"┌───┐", "│ h │", "├───┤", "└───┘"}},
+		{"empty", "[table]\n[/table]", []string{"┌┐", "└┘"}},
+		{"indented", "  [table]\n  | a |\n  [/table]", []string{"┌───┐", "│ a │", "└───┘"}},
+		{"in box", "[box]\n[table]\n| a |\n[/table]\nz\n[/box]", []string{"┌───────┐", "│ ┌───┐ │", "│ │ a │ │", "│ └───┘ │", "│ z     │", "└───────┘"}},
+	}
+	for _, tt := range tests {
+		if got := markupBoxLines(t, tt.src); !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("%s = %q, want %q", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestMarkupTableStyling(t *testing.T) {
+	doc, err := ParseMarkup("[table border=cyan pad=0]\n|[red]H[/]|\n|-|\n|[i]v[/]|\n[/table]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	border := Style{FG: ColorIndex(6)}
+	want := []RichLine{
+		{Spans: []RichSpan{{Text: "┌─┐", Style: border}}},
+		{Spans: []RichSpan{{Text: "│", Style: border}, {Text: "H", Style: Style{Bold: true, FG: ColorIndex(1)}}, {Text: "│", Style: border}}},
+		{Spans: []RichSpan{{Text: "├─┤", Style: border}}},
+		{Spans: []RichSpan{{Text: "│", Style: border}, {Text: "v", Style: Style{Italic: true}}, {Text: "│", Style: border}}},
+		{Spans: []RichSpan{{Text: "└─┘", Style: border}}},
+	}
+	if !reflect.DeepEqual(doc.Lines, want) {
+		t.Fatalf("lines = %+v, want %+v", doc.Lines, want)
+	}
+	again, err := ParseMarkup(doc.ToMarkup())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(again.Lines, doc.Lines) {
+		t.Fatalf("round trip = %+v, want %+v", again.Lines, doc.Lines)
+	}
+	for _, header := range []string{"header=none", `header=""`} {
+		doc, err := ParseMarkup("[table pad=0 " + header + "]\n|H|\n|-|\n[/table]")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got, want := doc.Lines[1].Spans, []RichSpan{{Text: "│H│"}}; !reflect.DeepEqual(got, want) {
+			t.Errorf("%s: header spans = %+v, want %+v", header, got, want)
+		}
+	}
+	doc, err = ParseMarkup("[table pad=0 header=\"underline yellow\"]\n|H|\n|-|\n[/table]")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := doc.Lines[1].Spans[1].Style; got != (Style{Underline: true, FG: ColorIndex(3)}) {
+		t.Errorf("header style = %+v", got)
+	}
+}
+
+func TestMarkupTableErrors(t *testing.T) {
+	tests := []struct {
+		src       string
+		line, col int
+		msg       string
+	}{
+		{"[table]\n| a |", 1, 1, "unclosed [table] block"},
+		{"[/table]", 1, 1, "[/table] without open [table]"},
+		{"[box]\n[/table]", 2, 1, "[/table] without open [table]"},
+		{"[table]\n[/box]", 2, 1, "[/box] inside [table]"},
+		{"[table]\n[box]\n[/box]\n[/table]", 2, 1, "[box] inside [table] is not supported"},
+		{"[table]\n[table]\n[/table]", 2, 1, "[table] inside [table] is not supported"},
+		{"[table]\n  a | b\n[/table]", 2, 3, "must start with |"},
+		{"[table]\n|---|\n[/table]", 2, 1, "separator row must follow the first row"},
+		{"[table]\n| a |\n| b |\n|---|\n[/table]", 4, 1, "separator row must follow the first row"},
+		{"[table]\n| a |\n|---|\n|---|\n[/table]", 4, 1, "separator row must follow the first row"},
+		{"[table]\n| a | [bold]b |\n[/table]", 2, 14, "unclosed tag [bold]"},
+		{"[table]\n| [blink]a[/] |\n[/table]", 2, 4, `unknown attribute "blink"`},
+		{"[table style=fancy]\n[/table]", 1, 8, `unknown table style "fancy"`},
+		{"[table align=left]\n[/table]", 1, 8, `unknown table option "align"`},
+		{"[table pad=x]\n[/table]", 1, 8, "pad must be"},
+		{"[table header=blink]\n[/table]", 1, 8, `header: unknown attribute "blink"`},
+		{"[table] x\n[/table]", 1, 8, "table tag must stand alone"},
 	}
 	for _, tt := range tests {
 		_, err := ParseMarkup(tt.src)
