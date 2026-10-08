@@ -322,3 +322,4 @@ upkeep.
 | 309 | [309-add-box-markup-to-the-tui-format.md](309-add-box-markup-to-the-tui-format.md) | Add box markup to the .tui format | Closed — Delivered [box] block markup in .tui format with rounded/sharp/double/ascii borders, padding, titles, and tests |
 | 310 | [310-add-table-support-to-the-tui-format.md](310-add-table-support-to-the-tui-format.md) | Add table support to the .tui format | Closed — Delivered [table] block markup in .tui format with pipe rows, column alignments, junction glyphs in spec/box.yaml, and tests |
 | 311 | [311-support-embedded-cati-images-in-the-tui-format.md](311-support-embedded-cati-images-in-the-tui-format.md) | Support embedded Cati images in the .tui format | Open — In progress |
+| 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
