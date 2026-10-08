@@ -14,6 +14,8 @@ Add a `.tui` ANSI Markup Language file format so ANSI styling can be authored an
 ## 2. Technical Specification / Findings
 The syntax is intentionally undecided. First check whether an existing clean format or library can meet the need. Then discuss markup designs with the user before selecting a format; record findings and decisions as the work progresses.
 
+**Phase 1 findings (2026-10-08):** Established formats: Rich/Spectre.Console bracket tags (`[bold red on #ff0000]text[/]`, escape `[[` or `\[`), gookit/color angle tags (`<red>text</>`), chalk template braces (`{red text}`), tview tags (`[red:blue:b]text[-:-:-]`). No library covers Loom's model completely; Lipgloss is a style API, not a markup. Loom's `Style` already has FG/BG, Bold, Underline, Dim, Italic, Strike, Invert; `Color` is reset, 256-index or RGB. `RichDocument.FromANSI`/`ToANSI` and the `RichTextEdit.SerializeDocument` hook give a ready render and save path. Open design question: flow text (`RichDocument`) versus positioned cells (`AnsiBuffer`).
+
 ## 3. Implementation & Verification Plan
 **Phase 1:** Research related formats and implementations, identifying whether one can be reused cleanly.
 
