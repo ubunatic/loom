@@ -68,6 +68,9 @@ type Pane struct {
 	restored        bool
 	ownsTTY         bool
 
+	// DebugMode overlays a 1-cell ruler around the pane and insets widget bounds by 1 cell.
+	DebugMode bool
+
 	// mouse tracking is enabled with EnableMouse.
 	mouse            bool
 	mouseMode        int
@@ -455,6 +458,9 @@ func New(height int) (*Pane, error) {
 		MaxCols:         DefaultMaxCols,
 		ResizeConfig:    DefaultResizeConfig(),
 		ownsTTY:         true,
+	}
+	if env := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_DEBUG"))); env == "1" || env == "true" {
+		p.DebugMode = true
 	}
 	if paneBeforeSignalHandler != nil {
 		paneBeforeSignalHandler(p)
@@ -1162,7 +1168,17 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		} else {
 			canvas.ClearCursorPosition()
 		}
-		root.Draw(canvas, canvas.Bounds())
+		drawBounds := canvas.Bounds()
+		if p.DebugMode && drawBounds.W > 2 && drawBounds.H > 2 {
+			DrawRuler(canvas, drawBounds)
+			drawBounds = Rect{
+				X: drawBounds.X + 1,
+				Y: drawBounds.Y + 1,
+				W: drawBounds.W - 2,
+				H: drawBounds.H - 2,
+			}
+		}
+		root.Draw(canvas, drawBounds)
 		if p.help != nil {
 			p.help.Draw(canvas, canvas.Bounds())
 		}
@@ -1461,6 +1477,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					// 0-based coordinates.
 					me.X--
 					me.Y -= p.startRow
+					if p.DebugMode {
+						me.X--
+						me.Y--
+					}
 					if p.cursorProximity {
 						if p.cursorStarTrail && p.mouseKnown && (me.X != p.mouseX || me.Y != p.mouseY) {
 							p.cursorTrail = append(p.cursorTrail, CursorTrailPoint{X: p.mouseX, Y: p.mouseY, At: time.Now()})
@@ -1559,6 +1579,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
 	if p.globalF10Quit(ke) {
 		return p.requestClose(CloseReasonQuitKey)
+	}
+	if ke.Is("shift-f12") {
+		p.DebugMode = !p.DebugMode
+		return false
 	}
 	res := DispatchKeyEvent(root, ke)
 	if res.Consumed {
