@@ -1,6 +1,6 @@
 # 308 — Add .tui editable ANSI markup file format and integrate with loom
 
-**Status**: Open — In progress
+**Status**: Closed — Delivered .tui bracket markup parser, serializer, RichTextEdit/loom edit integration, loom markup CLI, and docs
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
