@@ -1,6 +1,6 @@
 # 309 — Add box markup to the .tui format
 
-**Status**: Open — In progress
+**Status**: Closed — Delivered [box] block markup in .tui format with rounded/sharp/double/ascii borders, padding, titles, and tests
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
