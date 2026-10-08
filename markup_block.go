@@ -13,7 +13,7 @@ import (
 // key=value options. The option syntax is shared by all block kinds.
 
 // markupBlockNames lists the block tags that ParseMarkup recognizes.
-var markupBlockNames = []string{"box"}
+var markupBlockNames = []string{"box", "table"}
 
 // markupOption is one key=value option of a block tag. Col is the 1-based
 // column of the key.

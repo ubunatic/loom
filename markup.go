@@ -24,7 +24,7 @@ import (
 // "on <color>" for the background. Colors: default, a name from
 // spec/markup.yaml, color(0-255), #rgb or #rrggbb. Tags must close on the line
 // where they start, so every line parses on its own. Box blocks are in
-// markup_box.go.
+// markup_box.go, table blocks in markup_table.go.
 
 //go:embed spec/markup.yaml
 var markupSpecYAML []byte
@@ -76,31 +76,62 @@ func ParseMarkup(src string) (*RichDocument, error) {
 	src = strings.ReplaceAll(src, "\r", "\n")
 	src = strings.TrimSuffix(src, "\n")
 	doc := &RichDocument{}
-	var boxes []*markupBox
+	// Open blocks, innermost last. Only boxes hold nested blocks; a table
+	// holds rows only.
+	type openBlock struct {
+		name   string
+		lineNo int
+		box    *markupBox
+		table  *markupTable
+	}
+	var blocks []openBlock
 	target := func() *RichDocument {
-		if len(boxes) == 0 {
+		if len(blocks) == 0 {
 			return doc
 		}
-		return boxes[len(boxes)-1].doc
+		return blocks[len(blocks)-1].box.doc
 	}
 	for lineIndex, line := range strings.Split(src, "\n") {
 		lineNo := lineIndex + 1
-		switch _, kind := markupBlockTag(line); kind {
+		name, kind := markupBlockTag(line)
+		if len(blocks) > 0 && blocks[len(blocks)-1].table != nil && (name != "table" || kind != "close") {
+			if kind == "open" {
+				return nil, &MarkupError{lineNo, 1, fmt.Sprintf("[%s] inside [table] is not supported", name)}
+			}
+			if kind == "close" {
+				return nil, &MarkupError{lineNo, 1, fmt.Sprintf("[/%s] inside [table]", name)}
+			}
+			if err := blocks[len(blocks)-1].table.addLine(line, lineNo); err != nil {
+				return nil, err
+			}
+			continue
+		}
+		switch kind {
 		case "open":
-			box, err := parseMarkupBoxTag(line, lineNo)
+			block := openBlock{name: name, lineNo: lineNo}
+			var err error
+			if name == "table" {
+				block.table, err = parseMarkupTableTag(line, lineNo)
+			} else {
+				block.box, err = parseMarkupBoxTag(line, lineNo)
+			}
 			if err != nil {
 				return nil, err
 			}
-			boxes = append(boxes, box)
+			blocks = append(blocks, block)
 			continue
 		case "close":
-			if len(boxes) == 0 {
-				return nil, &MarkupError{lineNo, 1, "[/box] without open [box]"}
+			if len(blocks) == 0 || blocks[len(blocks)-1].name != name {
+				return nil, &MarkupError{lineNo, 1, fmt.Sprintf("[/%s] without open [%s]", name, name)}
 			}
-			box := boxes[len(boxes)-1]
-			boxes = boxes[:len(boxes)-1]
+			block := blocks[len(blocks)-1]
+			blocks = blocks[:len(blocks)-1]
 			parent := target()
-			parent.Lines = append(parent.Lines, box.render()...)
+			if block.table != nil {
+				parent.Lines = append(parent.Lines, block.table.render()...)
+			} else {
+				parent.Lines = append(parent.Lines, block.box.render()...)
+			}
 			continue
 		}
 		into := target()
@@ -109,19 +140,26 @@ func ParseMarkup(src string) (*RichDocument, error) {
 			return nil, err
 		}
 	}
-	if len(boxes) > 0 {
-		return nil, &MarkupError{boxes[len(boxes)-1].lineNo, 1, "unclosed [box] block"}
+	if len(blocks) > 0 {
+		block := blocks[len(blocks)-1]
+		return nil, &MarkupError{block.lineNo, 1, fmt.Sprintf("unclosed [%s] block", block.name)}
 	}
 	doc.normalize()
 	return doc, nil
 }
 
 func parseMarkupLine(doc *RichDocument, line string, lineNo int) error {
+	return parseMarkupLineStyled(doc, line, lineNo, Style{})
+}
+
+// parseMarkupLineStyled is parseMarkupLine with base as the style outside
+// all tags.
+func parseMarkupLineStyled(doc *RichDocument, line string, lineNo int, base Style) error {
 	var stack []markupFrame
 	var text strings.Builder
 	style := func() Style {
 		if len(stack) == 0 {
-			return Style{}
+			return base
 		}
 		return stack[len(stack)-1].style
 	}
