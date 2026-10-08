@@ -51,8 +51,8 @@ func TestParseAnsiBufferKeepsRegionalIndicatorPairInTwoColumns(t *testing.T) {
 	if got := buf.Get(2, 0).Rune; got != 'X' {
 		t.Fatalf("cell 2 = %q, want text immediately after two-column flag", got)
 	}
-	if got := buf.Serialize(); got != "🇩🇪X\x1b[0m" {
-		t.Fatalf("Serialize() = %q, want original flag and X followed by the serializer reset", got)
+	if got := buf.Serialize(); got != "🇩🇪X" {
+		t.Fatalf("Serialize() = %q, want original flag and X without a redundant reset", got)
 	}
 }
 
@@ -313,6 +313,72 @@ func TestAnsiBufferSerializeAndParse(t *testing.T) {
 	c01 := parsed.Get(0, 1)
 	if c01.Rune != 'C' || c01.FG != ColorRGB(100, 150, 200) || !c01.Dim {
 		t.Fatalf("unexpected parsed (0,1): %+v", c01)
+	}
+}
+
+func TestAnsiBufferSerializeDefaultStyleAndTransitions(t *testing.T) {
+	tests := []struct {
+		name string
+		fill func(*AnsiBuffer)
+		want string
+	}{
+		{
+			name: "unstyled lines",
+			fill: func(buf *AnsiBuffer) {
+				buf.Put(0, 0, 'a', ColorReset(), ColorReset(), false, false, false, false)
+				buf.Put(1, 0, 'b', ColorReset(), ColorReset(), false, false, false, false)
+				buf.Put(0, 1, 'c', ColorReset(), ColorReset(), false, false, false, false)
+			},
+			want: "ab\nc",
+		},
+		{
+			name: "styled line followed by unstyled line",
+			fill: func(buf *AnsiBuffer) {
+				buf.Put(0, 0, 'x', ColorIndex(1), ColorReset(), true, false, false, false)
+				buf.Put(0, 1, 'y', ColorReset(), ColorReset(), false, false, false, false)
+			},
+			want: "\x1b[0m\x1b[1m\x1b[38;5;1mx\x1b[0m\ny",
+		},
+		{
+			name: "unstyled prefix before styled cell",
+			fill: func(buf *AnsiBuffer) {
+				buf.Put(2, 0, 'z', ColorIndex(2), ColorReset(), false, false, false, false)
+			},
+			want: "  \x1b[0m\x1b[38;5;2mz\x1b[0m\n",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			buf := NewAnsiBuffer(4, 2)
+			tt.fill(buf)
+			if got := buf.Serialize(); got != tt.want {
+				t.Fatalf("Serialize() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAnsiBufferSerializeRoundTripPreservesStyles(t *testing.T) {
+	buf := NewAnsiBuffer(5, 3)
+	buf.Put(0, 0, 'a', ColorIndex(1), ColorReset(), true, false, false, false)
+	buf.Put(1, 0, 'b', ColorIndex(1), ColorReset(), true, false, false, false)
+	buf.Put(0, 1, 'c', ColorReset(), ColorReset(), false, false, false, false)
+	buf.Put(1, 1, 'd', ColorIndex(2), ColorReset(), false, false, false, false)
+	buf.Put(0, 2, 'e', ColorReset(), ColorReset(), false, false, false, false)
+
+	serialized := buf.Serialize()
+	parsed, err := ParseAnsiBuffer(serialized, buf.Cols(), buf.Rows())
+	if err != nil {
+		t.Fatalf("ParseAnsiBuffer() error = %v", err)
+	}
+	for y := 0; y < buf.Rows(); y++ {
+		for x := 0; x < buf.Cols(); x++ {
+			got, want := parsed.Get(x, y), buf.Get(x, y)
+			if got != want {
+				t.Errorf("cell (%d,%d) = %+v, want %+v", x, y, got, want)
+			}
+		}
 	}
 }
 

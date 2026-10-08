@@ -418,7 +418,7 @@ func (b *AnsiBuffer) PrevObjectRow(y int) int {
 // Serialize converts the buffer contents to an ANSI formatted string.
 func (b *AnsiBuffer) Serialize() string {
 	var buf strings.Builder
-	var lastStyle AnsiCell
+	lastStyle := BlankAnsiCell()
 
 	writeStyleTransition := func(target AnsiCell) {
 		if target.FG == lastStyle.FG &&
@@ -436,7 +436,12 @@ func (b *AnsiBuffer) Serialize() string {
 			return
 		}
 
-		buf.WriteString(target.Style().ANSI())
+	styleANSI := target.Style().ANSI()
+	if lastStyle == BlankAnsiCell() {
+		styleANSI = strings.TrimSuffix(styleANSI, "\x1b[49m")
+		styleANSI = strings.TrimSuffix(styleANSI, "\x1b[39m")
+	}
+	buf.WriteString(styleANSI)
 		lastStyle = target
 	}
 
