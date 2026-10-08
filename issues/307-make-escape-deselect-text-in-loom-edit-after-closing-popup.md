@@ -1,6 +1,6 @@
 # 307 — Make Escape deselect text in loom edit after closing popup
 
-**Status**: Draft
+**Status**: Open — In progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
