@@ -646,6 +646,35 @@ func TestSearchHighlightDoesNotAlterSelectionOrEditingCursor(t *testing.T) {
 	}
 }
 
+func TestEditEscapeClearsSelectionAfterOverlayCloses(t *testing.T) {
+	for _, overlay := range []string{"f1", "f2", "f3"} {
+		t.Run(overlay, func(t *testing.T) {
+			view := integrationEditView(t)
+			from, to := loom.RichPosition{Offset: 1}, loom.RichPosition{Offset: 4}
+			view.edit.SetSelection(from, to)
+			view.ConsumeKey(loom.KeyEvent{Key: overlay})
+			if !view.edit.ModalOpen() && !view.showSearch && !view.showSidePanel {
+				t.Fatal("overlay did not open")
+			}
+
+			view.ConsumeKey(loom.KeyEvent{Key: "esc"})
+			if !view.edit.HasSelection || view.edit.SelectionFrom != from || view.edit.SelectionTo != to {
+				t.Fatal("closing overlay changed the selection")
+			}
+			if view.focused != focusEditor || view.edit.ModalOpen() || view.showSearch || view.showSidePanel {
+				t.Fatal("first Escape did not return to the editor")
+			}
+
+			if result := view.ConsumeKey(loom.KeyEvent{Key: "esc"}); result != loom.Handled() {
+				t.Fatalf("second Escape result = %+v, want handled", result)
+			}
+			if view.edit.HasSelection {
+				t.Fatal("second Escape did not clear the selection")
+			}
+		})
+	}
+}
+
 func TestSearchBoundsOnSmallTerminals(t *testing.T) {
 	view := integrationEditView(t)
 	view.showSearch, view.showSidePanel = true, true
