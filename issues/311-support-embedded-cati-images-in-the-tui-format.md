@@ -1,6 +1,6 @@
 # 311 — Support embedded Cati images in the .tui format
 
-**Status**: Open — In progress
+**Status**: Closed — Delivered [image] tag in .tui with decoupled loom/media cati renderer, tests, and CLI/edit integration
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
