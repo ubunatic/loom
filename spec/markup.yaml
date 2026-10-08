@@ -20,3 +20,12 @@ colors:
   bright_white: 15
   grey: 8
   gray: 8
+# [image] block tags. modes maps each mode name to its cati renderer; the
+# first mode is the default. max_width and max_height cap the size in cells.
+image:
+  modes:
+    half: halfblock
+    quad: quadblock
+    six: sextant
+  max_width: 200
+  max_height: 200
