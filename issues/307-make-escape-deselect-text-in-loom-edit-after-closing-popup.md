@@ -1,6 +1,6 @@
 # 307 — Make Escape deselect text in loom edit after closing popup
 
-**Status**: Open — In progress
+**Status**: Closed — Clear active editor selection on second Escape after popup dismissal in loom edit
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
