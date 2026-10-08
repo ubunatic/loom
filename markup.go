@@ -85,7 +85,7 @@ func ParseMarkup(src string) (*RichDocument, error) {
 	}
 	for lineIndex, line := range strings.Split(src, "\n") {
 		lineNo := lineIndex + 1
-		switch markupBoxTag(line) {
+		switch _, kind := markupBlockTag(line); kind {
 		case "open":
 			box, err := parseMarkupBoxTag(line, lineNo)
 			if err != nil {

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 )
 
 // .tui box blocks (issue 309):
@@ -29,96 +28,46 @@ type markupBox struct {
 	doc         *RichDocument
 }
 
-// markupBoxTag reports whether line is a box block tag: "open", "close" or "".
-func markupBoxTag(line string) string {
-	trimmed := strings.TrimSpace(line)
-	if trimmed == "[/box]" {
-		return "close"
-	}
-	if rest, ok := strings.CutPrefix(trimmed, "[box"); ok && rest != "" && (rest[0] == ' ' || rest[0] == ']') {
-		return "open"
-	}
-	return ""
-}
-
 // parseMarkupBoxTag parses an opening box tag line into a box with an empty
 // content document.
 func parseMarkupBoxTag(line string, lineNo int) (*markupBox, error) {
 	box := &markupBox{pad: 1, lineNo: lineNo, doc: &RichDocument{}}
 	style := BoxBorderStyleSharp
-	start := strings.Index(line, "[box") + len("[box")
-	col := func(offset int) int { return utf8.RuneCountInString(line[:offset]) + 1 }
-	fail := func(offset int, format string, args ...any) error {
-		return &MarkupError{lineNo, col(offset), fmt.Sprintf(format, args...)}
+	options, err := parseMarkupBlockOptions(line, "box", lineNo)
+	if err != nil {
+		return nil, err
 	}
-	i := start
-	for {
-		for i < len(line) && line[i] == ' ' {
-			i++
+	for _, opt := range options {
+		fail := func(format string, args ...any) error {
+			return &MarkupError{lineNo, opt.col, fmt.Sprintf(format, args...)}
 		}
-		if i >= len(line) {
-			return nil, fail(len(line), "unterminated box tag")
-		}
-		if line[i] == ']' {
-			if strings.TrimSpace(line[i+1:]) != "" {
-				return nil, fail(i+1, "box tag must stand alone on its line")
-			}
-			break
-		}
-		keyStart := i
-		eq := strings.IndexByte(line[i:], '=')
-		if eq < 0 {
-			return nil, fail(keyStart, "box option needs key=value")
-		}
-		key := strings.ToLower(line[i : i+eq])
-		i += eq + 1
-		var value string
-		if i < len(line) && line[i] == '"' {
-			end := strings.IndexByte(line[i+1:], '"')
-			if end < 0 {
-				return nil, fail(i, "unterminated quoted value")
-			}
-			value = line[i+1 : i+1+end]
-			i += end + 2
-		} else {
-			end := strings.IndexAny(line[i:], " ]")
-			if end < 0 {
-				end = len(line) - i
-			}
-			value = line[i : i+end]
-			i += end
-		}
-		switch key {
+		switch opt.key {
 		case "style":
-			name := strings.ToLower(value)
-			if name == "normal" {
-				name = "sharp"
-			}
-			parsed, err := ParseBoxBorderStyle(name)
+			parsed, err := parseMarkupBorderStyle(opt.value)
 			if err != nil {
-				return nil, fail(keyStart, "unknown box style %q", value)
+				return nil, fail("unknown box style %q", opt.value)
 			}
 			style = parsed
 		case "title":
 			title := &RichDocument{Lines: []RichLine{{}}}
-			if err := parseMarkupLine(title, value, lineNo); err != nil {
-				return nil, fail(keyStart, "title: %v", err.(*MarkupError).Msg)
+			if err := parseMarkupLine(title, opt.value, lineNo); err != nil {
+				return nil, fail("title: %v", err.(*MarkupError).Msg)
 			}
 			box.title = title.Lines[0].Spans
 		case "border":
-			_, parsed, err := applyMarkupTag(Style{}, value)
+			_, parsed, err := applyMarkupTag(Style{}, opt.value)
 			if err != nil {
-				return nil, fail(keyStart, "border: %v", err)
+				return nil, fail("border: %v", err)
 			}
 			box.borderStyle = parsed
 		case "pad":
-			n, err := strconv.Atoi(value)
+			n, err := strconv.Atoi(opt.value)
 			if err != nil || n < 0 {
-				return nil, fail(keyStart, "pad must be a number >= 0, got %q", value)
+				return nil, fail("pad must be a number >= 0, got %q", opt.value)
 			}
 			box.pad = n
 		default:
-			return nil, fail(keyStart, "unknown box option %q", key)
+			return nil, fail("unknown box option %q", opt.key)
 		}
 	}
 	border, err := getBoxBorderGlyphs(style)
