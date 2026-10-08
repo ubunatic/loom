@@ -1,6 +1,6 @@
 # 306 — Avoid redundant ANSI reset prefixes when loom edit saves files
 
-**Status**: Draft
+**Status**: Open — In progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
