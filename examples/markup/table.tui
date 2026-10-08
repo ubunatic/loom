@@ -1,0 +1,15 @@
+[table style=rounded border=cyan]
+| Mount       | Size   | Used                 |
+|:------------|:------:|---------------------:|
+| /           | 50 GiB | [red]93%[/]          |
+| /home       | 2 TiB  | [green]12%[/]        |
+| 日本語 wide | 1 GiB  | 0%                   |
+| a\|b        |        | [i]n/a[/]            |
+[/table]
+[box style=double title="[bold]Nested[/]" border=yellow]
+[table style=ascii header="underline"]
+| key | value |
+|-----|-------|
+| pad | 1     |
+[/table]
+[/box]

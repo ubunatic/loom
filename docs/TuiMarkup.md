@@ -95,6 +95,61 @@ Box errors: an unclosed `[box]` at the end of the file, `[/box]` without an
 open box, unknown options or styles, a bad `pad`, and text after the tag on
 the same line.
 
+## Tables
+
+A table block holds pipe-delimited rows. Like box tags, the `[table]` and
+`[/table]` tags each stand alone on their line:
+
+```
+[table style=rounded border=cyan]
+| Mount | Size   |   Used |
+|:------|:------:|-------:|
+| /     | 50 GiB | [red]93%[/] |
+| /home | 2 TiB  |    12% |
+[/table]
+```
+
+```
+╭───────┬────────┬──────╮
+│ Mount │  Size  │ Used │
+├───────┼────────┼──────┤
+│ /     │ 50 GiB │  93% │
+│ /home │ 2 TiB  │  12% │
+╰───────┴────────┴──────╯
+```
+
+| Option | Values | Default |
+|---|---|---|
+| `style` | `sharp` (alias `normal`), `rounded`, `double`, `ascii` | `sharp` |
+| `border` | attributes and colors for the lines, as in a tag | default style |
+| `header` | attributes for the header row; `none` or `""` for no extra style | `bold` |
+| `pad` | spaces on each side of every cell | `1` |
+
+Rows:
+
+- Every row starts with `|`; the trailing `|` is optional. Spaces around a
+  cell are trimmed. Blank lines inside the table are skipped.
+- Each cell is inline markup on its own, so a tag must close inside its cell.
+  The header style is the base style of header cells; cell tags apply on top.
+- `\|` writes a literal pipe; the other escapes work as in any line.
+- A separator row such as `|---|---|` directly after the first row makes that
+  row the header and draws a line under it. Without it the table has no
+  header. Its cells set the column alignment: `:--` or `---` left, `:-:`
+  center, `--:` right.
+- A row with fewer cells than the widest row gets empty cells.
+
+Each column is as wide as its widest cell plus `pad` on both sides, measured
+in terminal columns without the markup, so wide characters align. Tables never
+shrink or wrap to fit the terminal. Junction glyphs (`┬ ┴ ├ ┤ ┼` and their
+double and ascii forms) come from `spec/box.yaml`. A table may sit inside a
+box; boxes and tables inside a table are errors. As with boxes, `ParseMarkup`
+draws plain lines and `ToMarkup` writes the drawn characters.
+
+Table errors: an unclosed `[table]`, `[/table]` without an open table, a
+block tag inside a table, a row that does not start with `|`, a separator row
+anywhere but second, unclosed or unknown tags in a cell, and the option errors
+of boxes. See `examples/markup/table.tui`.
+
 ## Rules
 
 - Parsing is strict. Unknown attributes or colors, empty or unterminated tags,
