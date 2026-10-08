@@ -57,6 +57,6 @@
 | [studies/2026-09-treesitter-syntax-engine.md](studies/2026-09-treesitter-syntax-engine.md) | Pure-Go / Wasm (wazero) Tree-Sitter Syntax Engine for Loom |
 | [studies/2026-10-01-loom-module-migration.md](studies/2026-10-01-loom-module-migration.md) | Loom module migration reports (issue 235 M3) |
 | [studies/2026-10-04-inline-tui-library-agentic-build-story.md](studies/2026-10-04-inline-tui-library-agentic-build-story.md) | Loom: building a terminal UI library in fast, testable slices |
-| [studies/2026-10-09-tui-markup-format-lean-sprint-story.md](studies/2026-10-09-tui-markup-format-lean-sprint-story.md) | Case Study: Rapid Evolution of the .tui Markup Format via Harnez Lean Sprints |
+| [studies/2026-10-09-tui-markup-format-lean-sprint-story.md](studies/2026-10-09-tui-markup-format-lean-sprint-story.md) | Rapid Evolution of the .tui Markup Format via Harnez Lean Sprints |
 
 Study files are the source of truth for this table.
