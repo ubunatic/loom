@@ -93,9 +93,17 @@ Before writing code for issue 308, an explicit alignment turn presented syntax c
 
 ## 7. Key Learnings & Evergreen Upstream
 
-1. **Decoupled Render Hooks Over Direct Engine Dependencies**: When integrating heavy third-party renderers (like image decoders or syntax highlighters), standardizing on a functional option/hook in the root parser prevents dependency bloat.
-2. **Spec Expansion Over Code Additions**: When new layout primitives (like table junction tees) are needed, adding them to YAML specs and JSON schemas keeps UI rendering declarative and language-neutral.
-3. **Fuzz Testing for Parsers on Turn 1**: Fuzz tests added during M1 caught edge cases in empty-line roundtripping before integration into the visual editor.
+1. **Decoupled Render Hooks Over Direct Engine Dependencies**: When integrating heavy third-party renderers (like image decoders or syntax highlighters), standardizing on a functional option/hook in the root parser prevents dependency bloat and eliminates circular package imports. Root `loom` defines `MarkupOptions.Image`, while `loom/media` provides the concrete `cati` adapter.
+2. **Spec Expansion Over Code Additions**: When new layout primitives (like table junction tees) are needed, adding them to YAML specs (`spec/box.yaml`) and JSON schemas keeps UI rendering declarative, validates them automatically via `validate-spec`, and avoids hardcoded constants in Go code.
+3. **Fuzz Testing for Parsers on Turn 1**: Fuzz tests added during M1 (`FuzzMarkupParse`) caught an insidious edge case in trailing empty-line loss during serialization before `.tui` was wired to `loom edit`.
+4. **Interactive Alignment Gates**: Halting between research (Phase 1) and implementation (Phase 3) to align on bracket syntax and flow text saved multiple refactoring cycles.
+5. **Shared Block Lexer Pattern**: Factoring out `parseMarkupBlockOptions` into `markup_block.go` ensured boxes, tables, and images share the same `key=value` and quoted string syntax rules across the ecosystem.
+6. **Harness & Logging Disciplines**:
+   - Developer workers under Quota-1 must avoid piping test runs through `tail`, which obscures exit status and fail lines. Developer prompts should mandate direct file output capture and targeted `grep` inspection.
+   - PTY and Geometry gates (`loom check-box`, `loom measure`) provide fast, objective verification of visual alignment before host commits.
+7. **Evergreen Artifact Creation**:
+   - Authored [`docs/TuiMarkup.md`](../TuiMarkup.md) as the authoritative evergreen reference for bracket tags, box/table/image blocks, strict parsing invariants, and CLI tooling.
+   - Preserved follow-up work (retaining raw block source on save) as an independent tracked ticket ([Issue 312](../../issues/312-preserve-tui-block-markup-source-on-save.md)).
 
 ---
 
