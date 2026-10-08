@@ -1,6 +1,6 @@
 # 309 — Add box markup to the .tui format
 
-**Status**: Draft
+**Status**: Open — In progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
