@@ -1,6 +1,6 @@
 # 310 — Add table support to the .tui format
 
-**Status**: Open — In progress
+**Status**: Closed — Delivered [table] block markup in .tui format with pipe rows, column alignments, junction glyphs in spec/box.yaml, and tests
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
