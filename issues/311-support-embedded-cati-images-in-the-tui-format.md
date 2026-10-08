@@ -1,6 +1,6 @@
 # 311 — Support embedded Cati images in the .tui format
 
-**Status**: Draft
+**Status**: Open — In progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
