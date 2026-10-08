@@ -24,7 +24,8 @@ import (
 // "on <color>" for the background. Colors: default, a name from
 // spec/markup.yaml, color(0-255), #rgb or #rrggbb. Tags must close on the line
 // where they start, so every line parses on its own. Box blocks are in
-// markup_box.go, table blocks in markup_table.go.
+// markup_box.go, table blocks in markup_table.go, image tags in
+// markup_image.go.
 
 //go:embed spec/markup.yaml
 var markupSpecYAML []byte
@@ -70,8 +71,14 @@ type markupFrame struct {
 // ParseMarkup parses .tui bracket markup into a RichDocument. Parsing is
 // strict: unknown attributes, malformed or mismatched tags and tags left open
 // at the end of a line return a *MarkupError. CRLF and CR become LF, and one
-// trailing newline is dropped, as in FromANSI.
+// trailing newline is dropped, as in FromANSI. Image tags render their alt
+// text; use ParseMarkupWith to render images.
 func ParseMarkup(src string) (*RichDocument, error) {
+	return ParseMarkupWith(src, MarkupOptions{})
+}
+
+// ParseMarkupWith is ParseMarkup with options for [image] tags.
+func ParseMarkupWith(src string, opts MarkupOptions) (*RichDocument, error) {
 	src = strings.ReplaceAll(src, "\r\n", "\n")
 	src = strings.ReplaceAll(src, "\r", "\n")
 	src = strings.TrimSuffix(src, "\n")
@@ -106,8 +113,22 @@ func ParseMarkup(src string) (*RichDocument, error) {
 			}
 			continue
 		}
-		switch kind {
-		case "open":
+		switch {
+		case name == "image" && kind == "close":
+			return nil, &MarkupError{lineNo, 1, "[image] has no closing tag"}
+		case name == "image":
+			img, err := parseMarkupImageTag(line, lineNo)
+			if err != nil {
+				return nil, err
+			}
+			lines, err := renderMarkupImage(img, opts)
+			if err != nil {
+				return nil, err
+			}
+			into := target()
+			into.Lines = append(into.Lines, lines...)
+			continue
+		case kind == "open":
 			block := openBlock{name: name, lineNo: lineNo}
 			var err error
 			if name == "table" {
@@ -120,7 +141,7 @@ func ParseMarkup(src string) (*RichDocument, error) {
 			}
 			blocks = append(blocks, block)
 			continue
-		case "close":
+		case kind == "close":
 			if len(blocks) == 0 || blocks[len(blocks)-1].name != name {
 				return nil, &MarkupError{lineNo, 1, fmt.Sprintf("[/%s] without open [%s]", name, name)}
 			}
@@ -201,6 +222,9 @@ func parseMarkupLineStyled(doc *RichDocument, line string, lineNo int, base Styl
 				}
 				stack = stack[:len(stack)-1]
 			} else {
+				if fields := strings.Fields(body); len(fields) > 0 && strings.EqualFold(fields[0], "image") {
+					return &MarkupError{lineNo, col(i), "image tag must stand alone on its line"}
+				}
 				tag, next, err := applyMarkupTag(style(), body)
 				if err != nil {
 					return &MarkupError{lineNo, col(i + 1), err.Error()}

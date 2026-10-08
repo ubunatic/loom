@@ -6,6 +6,7 @@ package loom
 import (
 	"errors"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -465,5 +466,120 @@ func TestMarkupTableErrors(t *testing.T) {
 		if me.Line != tt.line || me.Col != tt.col || !strings.Contains(me.Msg, tt.msg) {
 			t.Errorf("ParseMarkup(%q) = %v, want %d:%d %q", tt.src, err, tt.line, tt.col, tt.msg)
 		}
+	}
+}
+
+func TestMarkupImageOptions(t *testing.T) {
+	var got []MarkupImage
+	var gotDir string
+	opts := MarkupOptions{BaseDir: "/docs", Image: func(img MarkupImage, baseDir string) ([]RichLine, error) {
+		got, gotDir = append(got, img), baseDir
+		return nil, nil
+	}}
+	src := "x\n[image src=a.png]\n  [image src=\"my logo.png\" width=24 height=8 mode=quad alt=\"the logo\"]\n[image SRC=b.png mode=Six]"
+	if _, err := ParseMarkupWith(src, opts); err != nil {
+		t.Fatal(err)
+	}
+	want := []MarkupImage{
+		{Src: "a.png", Mode: "halfblock", Line: 2},
+		{Src: "my logo.png", Alt: "the logo", Width: 24, Height: 8, Mode: "quadblock", Line: 3},
+		{Src: "b.png", Mode: "sextant", Line: 4},
+	}
+	if !reflect.DeepEqual(got, want) || gotDir != "/docs" {
+		t.Errorf("images = %+v dir %q, want %+v dir /docs", got, gotDir, want)
+	}
+}
+
+func TestMarkupImageAltFallback(t *testing.T) {
+	tests := []struct{ src, want string }{
+		{"[image src=a.png]", "[image: a.png]"},
+		{"[image src=a.png alt=\"Logo\"]", "Logo"},
+	}
+	for _, tt := range tests {
+		doc, err := ParseMarkup(tt.src)
+		if err != nil {
+			t.Fatal(err)
+		}
+		want := []RichSpan{{Text: tt.want, Style: Style{Dim: true}}}
+		if len(doc.Lines) != 1 || !reflect.DeepEqual(doc.Lines[0].Spans, want) {
+			t.Errorf("%q = %+v, want %+v", tt.src, doc.Lines, want)
+		}
+	}
+}
+
+func TestMarkupImageErrors(t *testing.T) {
+	maxW, _ := MarkupImageMaxSize()
+	tests := []struct {
+		src       string
+		line, col int
+		msg       string
+	}{
+		{"x\n[image]", 2, 1, "image tag needs src"},
+		{"[image src=\"\"]", 1, 8, "src must not be empty"},
+		{"[image src=a.png size=3]", 1, 18, `unknown image option "size"`},
+		{"[image src=a.png width=0]", 1, 18, "width must be a number from 1"},
+		{"[image src=a.png width=x]", 1, 18, "width must be a number from 1"},
+		{"[image src=a.png width=" + strconv.Itoa(maxW+1) + "]", 1, 18, "width must be a number from 1"},
+		{"[image src=a.png height=-2]", 1, 18, "height must be a number from 1"},
+		{"[image src=a.png mode=ascii]", 1, 18, `unknown image mode "ascii"`},
+		{"[image src=a.png] trailing", 1, 18, "must stand alone"},
+		{"[image src=a.png\n", 1, 17, "unterminated image tag"},
+		{"text [image src=a.png]", 1, 6, "image tag must stand alone on its line"},
+		{"[image src=a.png]\n[/image]", 2, 1, "[image] has no closing tag"},
+		{"[table]\n[image src=a.png]\n[/table]", 2, 1, "[image] inside [table] is not supported"},
+	}
+	for _, tt := range tests {
+		_, err := ParseMarkup(tt.src)
+		var me *MarkupError
+		if !errors.As(err, &me) {
+			t.Errorf("ParseMarkup(%q) err = %v, want *MarkupError", tt.src, err)
+			continue
+		}
+		if me.Line != tt.line || me.Col != tt.col || !strings.Contains(me.Msg, tt.msg) {
+			t.Errorf("ParseMarkup(%q) = %v, want %d:%d %q", tt.src, err, tt.line, tt.col, tt.msg)
+		}
+	}
+}
+
+func TestMarkupImageHookError(t *testing.T) {
+	opts := MarkupOptions{Image: func(MarkupImage, string) ([]RichLine, error) {
+		return nil, errors.New("no such file")
+	}}
+	_, err := ParseMarkupWith("a\nb\n[image src=gone.png]", opts)
+	var me *MarkupError
+	if !errors.As(err, &me) || me.Line != 3 || me.Col != 1 || !strings.Contains(me.Msg, `image "gone.png": no such file`) {
+		t.Errorf("err = %v, want 3:1 image error", err)
+	}
+}
+
+func TestMarkupImageInBox(t *testing.T) {
+	red := Style{FG: ColorRGB(255, 0, 0), BG: ColorRGB(0, 0, 255)}
+	opts := MarkupOptions{Image: func(img MarkupImage, _ string) ([]RichLine, error) {
+		row := RichLine{Spans: []RichSpan{{Text: "▀▀▀", Style: red}}}
+		return []RichLine{row, row}, nil
+	}}
+	doc, err := ParseMarkupWith("[box title=\"Img\"]\n[image src=a.png]\nab\n[/box]", opts)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got []string
+	for _, line := range doc.Lines {
+		var text strings.Builder
+		for _, span := range line.Spans {
+			text.WriteString(span.Text)
+		}
+		got = append(got, text.String())
+	}
+	want := []string{"┌─ Img ─┐", "│ ▀▀▀   │", "│ ▀▀▀   │", "│ ab    │", "└───────┘"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("lines = %q, want %q", got, want)
+	}
+	for _, line := range got {
+		if StringWidth(line) != StringWidth(want[0]) {
+			t.Errorf("line %q width %d, want %d", line, StringWidth(line), StringWidth(want[0]))
+		}
+	}
+	if span := doc.Lines[1].Spans[1]; span.Text != "▀▀▀" || span.Style != red {
+		t.Errorf("image span = %+v, want red ▀▀▀", span)
 	}
 }

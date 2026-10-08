@@ -9,11 +9,11 @@ import (
 	"unicode/utf8"
 )
 
-// .tui block tags ([box], [table]) stand alone on their line and carry
+// .tui block tags ([box], [table], [image]) stand alone on their line and carry
 // key=value options. The option syntax is shared by all block kinds.
 
 // markupBlockNames lists the block tags that ParseMarkup recognizes.
-var markupBlockNames = []string{"box", "table"}
+var markupBlockNames = []string{"box", "table", "image"}
 
 // markupOption is one key=value option of a block tag. Col is the 1-based
 // column of the key.
