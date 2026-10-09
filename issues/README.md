@@ -323,3 +323,5 @@ upkeep.
 | 310 | [310-add-table-support-to-the-tui-format.md](310-add-table-support-to-the-tui-format.md) | Add table support to the .tui format | Closed — Delivered [table] block markup in .tui format with pipe rows, column alignments, junction glyphs in spec/box.yaml, and tests |
 | 311 | [311-support-embedded-cati-images-in-the-tui-format.md](311-support-embedded-cati-images-in-the-tui-format.md) | Support embedded Cati images in the .tui format | Closed — Delivered [image] tag in .tui with decoupled loom/media cati renderer, tests, and CLI/edit integration |
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
+| 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
+| 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
