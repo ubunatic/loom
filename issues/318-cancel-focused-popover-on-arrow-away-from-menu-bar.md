@@ -1,6 +1,6 @@
 # 318 — Cancel focused popover on arrow away from menu bar
 
-**Status**: Open
+**Status**: Closed — cancel focused popover on arrow away from main menu bar
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
