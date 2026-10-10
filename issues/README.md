@@ -325,3 +325,4 @@ upkeep.
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
+| 315 | [315-support-windows-builds-in-terminal-measurement.md](315-support-windows-builds-in-terminal-measurement.md) | Support Windows builds in terminal measurement | Open |
