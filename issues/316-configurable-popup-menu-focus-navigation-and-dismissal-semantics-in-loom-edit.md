@@ -55,4 +55,14 @@ Gate these behaviors in `spec/` (e.g. `spec/defaults.yaml` under a popover/edito
   5. Extended spec gates (`auto_popup_on_selection`, `cycle_navigation`, `dismiss_on_scroll`, `position_preference`) take effect as specced.
 - Validate with `make test-q1`.
 
+### Pre-Work for Milestone 2 (Test & Isolation Fixes):
+1. **Fix Escape Selection Clearing in `editView.ConsumeKey` (`cmd/loom/edit.go`)**:
+   - `TestEditEscapeClearsSelectionAfterOverlayCloses` failed because `res.Consumed` check blocked clearing selection on the second Escape. Restore `!wasBoxMode && key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection` so second Escape clears the selection after any overlay closes.
+2. **Fix Mouse Backdrop & Isolation in `RichTextEdit.consumeMouse` (`modal_mouse_test.go` & `edit_304_test.go`)**:
+   - `Test304PopoverMouseIsolation` tests backdrop clicks and asserts `wantOpen := action != MousePress || button != MouseLeft`.
+   - `dismiss_on_scroll: true` dismissed on `MouseScrollUp`/`MouseScrollDown` inside backdrop handling, breaking `Test304PopoverMouseIsolation` scroll assertion. Ensure backdrop mouse events outside popover hit bounds follow the established backdrop contract: only left press dismisses the popover. Scrolling inside the editor text area should dismiss on scroll when configured.
+3. **Fix PTY Popover Backdrop Test Timing / Gestures (`edit_304_test.go`)**:
+   - Ensure `s.Send("\x13\x1bOP")` in `Test304EditPTYPopoverBackdropIsolation` does not hang or race with menu focus/reopen.
+4. **Run `make test-q1` and verify 100% green suite.**
+
 /goal Implement configurable popup menu focus, navigation, and dismissal semantics gated by spec in RichTextEdit and verify with unit tests, or stop and report if blocked on a user decision or denied permission.
