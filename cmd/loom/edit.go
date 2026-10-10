@@ -713,7 +713,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if res.Quit {
 		return loom.Ignored()
 	}
-	if !res.Consumed && key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
+	if key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
 		v.edit.ClearSelection()
 		return loom.Handled()
 	}
