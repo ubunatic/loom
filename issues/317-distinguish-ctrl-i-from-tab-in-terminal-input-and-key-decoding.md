@@ -1,6 +1,6 @@
 # 317 — Directional popover focus (arrow towards popover) and decoupling Tab from popover focus
 
-**Status**: Open
+**Status**: Closed — implemented directional arrow popover focus and decoupled Tab to italic toggle on selection
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
