@@ -1,6 +1,6 @@
 # 316 — Configurable popup menu focus, navigation, and dismissal semantics in loom edit
 
-**Status**: Open
+**Status**: Closed — implemented configurable popover focus, navigation, and dismissal semantics
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
