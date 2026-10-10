@@ -365,9 +365,13 @@ columns aligned. Ctrl+D wraps a selection using the default box style; without a
 selection it toggles box drawing mode. The popover's Draw button still enters
 box mode. Arrow keys draw a connected path; Enter or Esc finishes drawing.
 When a stroke starts on an existing box glyph, its foreground color is carried
-to each glyph changed by that stroke. With a selection, Tab and Shift+Tab move through enabled popover
+to each glyph changed by that stroke. With a selection and an unfocused toolbar,
+Tab/Ctrl+I toggles italics. The arrow towards the toolbar (Up above the selection,
+Down below it) focuses it; other arrows dismiss it and move the editor cursor.
+Ctrl+Space reopens a dismissed toolbar while preserving the selection.
+Once focused, Tab and Shift+Tab move through enabled popover
 actions, Left/Right move along the bar, and Enter or Space activates the focused
-action; arrows are consumed while the popover is open. In a submenu, Tab/Shift+Tab
+action; arrows are consumed while the popover is focused. In a submenu, Tab/Shift+Tab
 and arrows move through choices, and Enter or Space applies one. Esc closes the
 submenu before the bar. The
 focused action is highlighted; the initial focus follows uniformly active
