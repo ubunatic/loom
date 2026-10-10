@@ -115,11 +115,11 @@ func (t *Tree) Draw(c *Canvas, r Rect) {
 		}
 		c.PaintDefaultSurface(Rect{X: r.X, Y: r.Y + row, W: r.W, H: 1}, style)
 		depth, _ := t.nodeInfo(node)
-		marker := "  "
+		marker := SpeccedDefaults.Tree.LeafMarker
 		if len(node.Children) > 0 {
-			marker = "▶ "
+			marker = SpeccedDefaults.Tree.CollapsedMarker
 			if node.Expanded {
-				marker = "▼ "
+				marker = SpeccedDefaults.Tree.ExpandedMarker
 			}
 		}
 		label := node.Icon

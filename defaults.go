@@ -33,6 +33,12 @@ type LibDefaults struct {
 	Editor       EditorDefaults       `yaml:"editor"`
 	SearchBar    SearchBarDefaults    `yaml:"search_bar"`
 	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
+	NumberInput  NumberInputDefaults  `yaml:"number_input"`
+	Toggle       ToggleDefaults       `yaml:"toggle"`
+	Paginator    PaginatorDefaults    `yaml:"paginator"`
+	Tree         TreeDefaults         `yaml:"tree"`
+	Split        SplitDefaults        `yaml:"split"`
+	Choice       ChoiceDefaults       `yaml:"choice"`
 }
 
 // KeyCapDefaults defines the modifier glyphs KeyCap renders, in display order.
@@ -208,6 +214,106 @@ func (d RichTextEditDefaults) validate() error {
 	return nil
 }
 
+// NumberInputDefaults defines specced defaults for NumberInput.
+type NumberInputDefaults struct {
+	Step         float64 `yaml:"step"`
+	LeftGlyph    string  `yaml:"left_glyph"`
+	RightGlyph   string  `yaml:"right_glyph"`
+	InvalidError string  `yaml:"invalid_error"`
+	BelowMinFmt  string  `yaml:"below_min_fmt"`
+	AboveMaxFmt  string  `yaml:"above_max_fmt"`
+}
+
+func (d NumberInputDefaults) validate() error {
+	if d.Step <= 0 {
+		return fmt.Errorf("number_input.step must be positive")
+	}
+	if d.LeftGlyph == "" || d.RightGlyph == "" {
+		return fmt.Errorf("number_input glyphs must not be empty")
+	}
+	if d.InvalidError == "" || d.BelowMinFmt == "" || d.AboveMaxFmt == "" {
+		return fmt.Errorf("number_input error formats must not be empty")
+	}
+	return nil
+}
+
+// ToggleDefaults defines specced defaults for Toggle.
+type ToggleDefaults struct {
+	OnMark  string `yaml:"on_mark"`
+	OffMark string `yaml:"off_mark"`
+}
+
+func (d ToggleDefaults) validate() error {
+	if d.OnMark == "" || d.OffMark == "" {
+		return fmt.Errorf("toggle marks must not be empty")
+	}
+	return nil
+}
+
+// PaginatorDefaults defines specced defaults for Paginator.
+type PaginatorDefaults struct {
+	ActiveDot     string `yaml:"active_dot"`
+	InactiveDot   string `yaml:"inactive_dot"`
+	NumericFormat string `yaml:"numeric_format"`
+}
+
+func (d PaginatorDefaults) validate() error {
+	if d.ActiveDot == "" || d.InactiveDot == "" || d.NumericFormat == "" {
+		return fmt.Errorf("paginator defaults must not be empty")
+	}
+	return nil
+}
+
+// TreeDefaults defines specced defaults for Tree.
+type TreeDefaults struct {
+	CollapsedMarker string `yaml:"collapsed_marker"`
+	ExpandedMarker  string `yaml:"expanded_marker"`
+	LeafMarker      string `yaml:"leaf_marker"`
+}
+
+func (d TreeDefaults) validate() error {
+	if d.CollapsedMarker == "" || d.ExpandedMarker == "" {
+		return fmt.Errorf("tree markers must not be empty")
+	}
+	return nil
+}
+
+// SplitDefaults defines specced defaults for Split.
+type SplitDefaults struct {
+	VerticalDivider   string  `yaml:"vertical_divider"`
+	HorizontalDivider string  `yaml:"horizontal_divider"`
+	DefaultRatio      float64 `yaml:"default_ratio"`
+	DefaultGap        int     `yaml:"default_gap"`
+}
+
+func (d SplitDefaults) validate() error {
+	if d.VerticalDivider == "" || d.HorizontalDivider == "" {
+		return fmt.Errorf("split dividers must not be empty")
+	}
+	if d.DefaultRatio < 0 || d.DefaultRatio > 1 {
+		return fmt.Errorf("split.default_ratio must be between 0 and 1")
+	}
+	if d.DefaultGap < 0 {
+		return fmt.Errorf("split.default_gap must not be negative")
+	}
+	return nil
+}
+
+// ChoiceDefaults defines specced defaults for Choice.
+type ChoiceDefaults struct {
+	SelectionMarker  string `yaml:"selection_marker"`
+	UnselectedMarker string `yaml:"unselected_marker"`
+	CheckedMarker    string `yaml:"checked_marker"`
+	UncheckedMarker  string `yaml:"unchecked_marker"`
+}
+
+func (d ChoiceDefaults) validate() error {
+	if d.SelectionMarker == "" || d.CheckedMarker == "" || d.UncheckedMarker == "" {
+		return fmt.Errorf("choice markers must not be empty")
+	}
+	return nil
+}
+
 // SearchBarDefaults defines specced defaults for the SearchBar widget.
 type SearchBarDefaults struct {
 	Prompt      string `yaml:"prompt"`
@@ -317,6 +423,24 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.RichTextEdit.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.NumberInput.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Toggle.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Paginator.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Tree.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Split.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Choice.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	return defs

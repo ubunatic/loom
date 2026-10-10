@@ -93,6 +93,40 @@ search_bar:
   prompt: "> "
   placeholder: "type to filter"
 
+number_input:
+  step: 1.0
+  left_glyph: "◂"
+  right_glyph: "▸"
+  invalid_error: "invalid number"
+  below_min_fmt: "%s is below the minimum %s"
+  above_max_fmt: "%s is above the maximum %s"
+
+toggle:
+  on_mark: "[✓]"
+  off_mark: "[ ]"
+
+paginator:
+  active_dot: "●"
+  inactive_dot: "○"
+  numeric_format: "%d/%d"
+
+tree:
+  collapsed_marker: "▶ "
+  expanded_marker: "▼ "
+  leaf_marker: "  "
+
+split:
+  vertical_divider: "─"
+  horizontal_divider: "│"
+  default_ratio: 0.5
+  default_gap: 1
+
+choice:
+  selection_marker: "▶ "
+  unselected_marker: "  "
+  checked_marker: "[✓] "
+  unchecked_marker: "[ ] "
+
 rich_text_edit:
   selection_bg: 24
   toolbar_fg: 15

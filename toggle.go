@@ -15,9 +15,9 @@ func NewToggle(value *bool) *Toggle { return &Toggle{Value: value} }
 // String returns the current on/off mark.
 func (t *Toggle) String() string {
 	if t != nil && t.Value != nil && *t.Value {
-		return "[✓]"
+		return SpeccedDefaults.Toggle.OnMark
 	}
-	return "[ ]"
+	return SpeccedDefaults.Toggle.OffMark
 }
 
 // Draw renders the current on/off mark.
@@ -47,7 +47,8 @@ func (t *Toggle) ConsumeKey(e KeyEvent) (quit EventResult) {
 
 // ConsumeMouse toggles the value when clicked within its rendered mark.
 func (t *Toggle) ConsumeMouse(e MouseEvent) EventResult {
-	if t == nil || t.Value == nil || e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.X >= 3 || e.Y != 0 {
+	markLen := StringWidth(SpeccedDefaults.Toggle.OnMark)
+	if t == nil || t.Value == nil || e.Action != MousePress || e.Button != MouseLeft || e.X < 0 || e.X >= markLen || e.Y != 0 {
 		return Ignored()
 	}
 	*t.Value = !*t.Value
