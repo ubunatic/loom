@@ -598,6 +598,10 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
 	case key.Is("up", "down"):
+		_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
+		if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("down"))) {
+			e.cancelPopover()
+		}
 		return Handled(), true
 	case key.Is("enter", "return", "space", " "):
 		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
