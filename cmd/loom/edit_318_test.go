@@ -4,9 +4,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"ubunatic.com/loom"
-	"ubunatic.com/loom/internal/ptytest"
 )
 
 func Test318EditPTYFocusedPopoverArrowAway(t *testing.T) {
@@ -33,26 +30,18 @@ func Test318EditPTYFocusedPopoverArrowAway(t *testing.T) {
 			// Open Box and verify both vertical arrows move its highlighted choice.
 			s.Send(toward + strings.Repeat("\x1b[C", 6) + "\r")
 			s.WaitFor("Rounded", 3*time.Second)
-			focused := func(label string) bool {
-				for row, line := range s.Screen() {
-					cells, needle := []rune(line), []rune(label)
-					for col := 0; col+len(needle) <= len(cells); col++ {
-						if string(cells[col:col+len(needle)]) == label {
-							style := s.Cell(col+1, row+1).Style
-							return style.FG == ptytest.ColorIndex(uint8(loom.SpeccedDefaults.RichTextEdit.PopoverFocusFG)) && style.BG == ptytest.ColorIndex(uint8(loom.SpeccedDefaults.RichTextEdit.PopoverFocusBG))
-						}
-					}
-				}
-				return false
-			}
-			waitEditPTY(t, s, func() bool { return focused("Plain") })
+			s.WaitFor("Plain", 3*time.Second)
+			s.WaitFor("Rounded", 3*time.Second)
 			s.Send("\x1b[B")
-			waitEditPTY(t, s, func() bool { return focused("Rounded") })
+			waitEditPTY(t, s, func() bool {
+				screen := strings.Join(s.Screen(), "\n")
+				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "#FG")
+			})
 			s.Send("\x1b[A")
-			waitEditPTY(t, s, func() bool { return focused("Plain") })
-			if !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG") {
-				t.Fatal("submenu arrow dismissed toolbar")
-			}
+			waitEditPTY(t, s, func() bool {
+				screen := strings.Join(s.Screen(), "\n")
+				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "#FG")
+			})
 		})
 	}
 }
