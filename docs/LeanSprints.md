@@ -90,3 +90,11 @@ Details and issue links: [Editor](Editor.md). This session performed a bounded d
 - **Check test side effects**: the suite overwrote five tracked designs with random temporary paths. Keep evidence generation explicit and deterministic, and inspect git status after testing.
 - **Keep review isolated**: a disposable detached worktree allowed verification without changing main or the installed app to unapproved PR code. Remove only the review's own generated artifacts when cleaning it up.
 - **Improve discovery**: inspect live PR state early and establish actual file paths before querying them. A finder backend error with exit status zero still warrants a precise fallback; avoid repeating broad searches.
+
+## Windows Cross-Build Portability Sprint (2026-10-10, ticket 315)
+
+Source: host `agy:flash38` as orchestrator, developer `codex:luna:high`. Details: [study](studies/2026-10-10-two-agent-lean-sprint-issue-315-windows-measure.md).
+- **Proactive Scope in Leaf Developer**: The task prompt scoped `measure` and probe CLI commands. The developer inspected the full repo build (`GOOS=windows GOARCH=amd64 go build ./...`), discovered compile errors in `pane.go` (`poll`, `ioctl`), `internal/ptytest`, and examples (`record.go`, `input.go`), and implemented clean platform abstractions (`pane_wait_unix.go` vs `pane_wait_windows.go`) without requiring extra orchestrator turns.
+- **Untracked Prompt & Study Files Gate Quota-1**: The developer noticed untracked files (`.harnez/prompts/dev-315.md` and `docs/studies/...`) and correctly followed Quota-1 rules to avoid running `make test-q1` on an unclean tree. The host verified the diff, committed the milestone, ran `make test-q1` (100% green), ran `make install`, and closed the ticket.
+- **Immediate Cross-Platform Verification**: `GOOS=windows GOARCH=amd64 go build ./...` confirmed zero compilation errors across all packages and examples in seconds.
+

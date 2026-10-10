@@ -38,6 +38,12 @@ terminal's cursor-position response; its poll also retries `EINTR` and observes
 a deadline. This startup query avoids a temporary reader goroutine that could
 steal ordinary keys after timing out.
 
+On Windows (`GOOS=windows`), Unix `poll(2)` and `ioctl(TCFLSH)` are abstracted via
+`waitTTY`, `drainTerminalInput`, and `notifyPaneSignals` in `pane_wait_windows.go`.
+Because Windows console handles differ from Unix file descriptors, `waitTTY`
+checks context/channel readiness or provides non-blocking polling, gracefully
+falling back to safe defaults without leaking goroutines or panicking.
+
 Pitfall: a reader goroutine must close a channel captured in a local before
 `go func()`, never the struct field (`p.readerDone`). A later run replaces the
 field, and the old goroutine then closes the new channel twice (panic
