@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice"],
   "properties": {
     "keycaps": {
       "type": "object",
@@ -72,6 +72,70 @@
       "properties": {
         "prompt": { "type": "string", "minLength": 1 },
         "placeholder": { "type": "string", "minLength": 1 }
+      }
+    },
+    "number_input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "left_glyph", "right_glyph", "invalid_error", "below_min_fmt", "above_max_fmt"],
+      "properties": {
+        "step": { "type": "number", "exclusiveMinimum": 0 },
+        "left_glyph": { "type": "string", "minLength": 1 },
+        "right_glyph": { "type": "string", "minLength": 1 },
+        "invalid_error": { "type": "string", "minLength": 1 },
+        "below_min_fmt": { "type": "string", "minLength": 1 },
+        "above_max_fmt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "toggle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["on_mark", "off_mark"],
+      "properties": {
+        "on_mark": { "type": "string", "minLength": 1 },
+        "off_mark": { "type": "string", "minLength": 1 }
+      }
+    },
+    "paginator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["active_dot", "inactive_dot", "numeric_format"],
+      "properties": {
+        "active_dot": { "type": "string", "minLength": 1 },
+        "inactive_dot": { "type": "string", "minLength": 1 },
+        "numeric_format": { "type": "string", "minLength": 1 }
+      }
+    },
+    "tree": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collapsed_marker", "expanded_marker", "leaf_marker"],
+      "properties": {
+        "collapsed_marker": { "type": "string", "minLength": 1 },
+        "expanded_marker": { "type": "string", "minLength": 1 },
+        "leaf_marker": { "type": "string" }
+      }
+    },
+    "split": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vertical_divider", "horizontal_divider", "default_ratio", "default_gap"],
+      "properties": {
+        "vertical_divider": { "type": "string", "minLength": 1 },
+        "horizontal_divider": { "type": "string", "minLength": 1 },
+        "default_ratio": { "type": "number", "minimum": 0, "maximum": 1 },
+        "default_gap": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "choice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["selection_marker", "unselected_marker", "checked_marker", "unchecked_marker"],
+      "properties": {
+        "selection_marker": { "type": "string", "minLength": 1 },
+        "unselected_marker": { "type": "string" },
+        "checked_marker": { "type": "string", "minLength": 1 },
+        "unchecked_marker": { "type": "string", "minLength": 1 }
       }
     },
     "rich_text_edit": {

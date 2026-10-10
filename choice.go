@@ -676,15 +676,15 @@ func (c *Choice) choiceRowText(fi, width int) string {
 }
 
 func (c *Choice) choiceMarker(fi int, item Item) string {
-	marker := "  "
+	marker := SpeccedDefaults.Choice.UnselectedMarker
 	if fi == c.sel {
-		marker = "▶ "
+		marker = SpeccedDefaults.Choice.SelectionMarker
 	}
 	if c.MultiSelect {
 		if c.checked[item.Name] {
-			marker += "[✓] "
+			marker += SpeccedDefaults.Choice.CheckedMarker
 		} else {
-			marker += "[ ] "
+			marker += SpeccedDefaults.Choice.UncheckedMarker
 		}
 	}
 	return marker

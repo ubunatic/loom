@@ -118,3 +118,53 @@ func TestEditorRefinedBindings(t *testing.T) {
 		t.Fatal("missing nested Draw label")
 	}
 }
+
+func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
+	ni := SpeccedDefaults.NumberInput
+	if ni.Step != 1.0 || ni.LeftGlyph != "◂" || ni.RightGlyph != "▸" || ni.InvalidError != "invalid number" {
+		t.Fatalf("unexpected NumberInput defaults: %+v", ni)
+	}
+	if err := ni.validate(); err != nil {
+		t.Fatalf("NumberInput validation failed: %v", err)
+	}
+
+	tog := SpeccedDefaults.Toggle
+	if tog.OnMark != "[✓]" || tog.OffMark != "[ ]" {
+		t.Fatalf("unexpected Toggle defaults: %+v", tog)
+	}
+	if err := tog.validate(); err != nil {
+		t.Fatalf("Toggle validation failed: %v", err)
+	}
+
+	pag := SpeccedDefaults.Paginator
+	if pag.ActiveDot != "●" || pag.InactiveDot != "○" || pag.NumericFormat != "%d/%d" {
+		t.Fatalf("unexpected Paginator defaults: %+v", pag)
+	}
+	if err := pag.validate(); err != nil {
+		t.Fatalf("Paginator validation failed: %v", err)
+	}
+
+	tr := SpeccedDefaults.Tree
+	if tr.CollapsedMarker != "▶ " || tr.ExpandedMarker != "▼ " || tr.LeafMarker != "  " {
+		t.Fatalf("unexpected Tree defaults: %+v", tr)
+	}
+	if err := tr.validate(); err != nil {
+		t.Fatalf("Tree validation failed: %v", err)
+	}
+
+	sp := SpeccedDefaults.Split
+	if sp.VerticalDivider != "─" || sp.HorizontalDivider != "│" || sp.DefaultRatio != 0.5 || sp.DefaultGap != 1 {
+		t.Fatalf("unexpected Split defaults: %+v", sp)
+	}
+	if err := sp.validate(); err != nil {
+		t.Fatalf("Split validation failed: %v", err)
+	}
+
+	ch := SpeccedDefaults.Choice
+	if ch.SelectionMarker != "▶ " || ch.UnselectedMarker != "  " || ch.CheckedMarker != "[✓] " || ch.UncheckedMarker != "[ ] " {
+		t.Fatalf("unexpected Choice defaults: %+v", ch)
+	}
+	if err := ch.validate(); err != nil {
+		t.Fatalf("Choice validation failed: %v", err)
+	}
+}
