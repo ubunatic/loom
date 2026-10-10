@@ -31,10 +31,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
-	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 	"ubunatic.com/loom/measure"
 )
@@ -491,25 +489,27 @@ func queryCursor(tty *os.File) (row, col int, err error) {
 	}
 	// Poll synchronously: a timed-out reader goroutine would steal later keys.
 	deadline := time.Now().Add(100 * time.Millisecond)
-	poll := []unix.PollFd{{Fd: int32(tty.Fd()), Events: unix.POLLIN}}
 	var buf [32]byte
 	for n := 0; n < len(buf); {
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
 			return 0, 0, fmt.Errorf("cursor query timed out")
 		}
-		ready, err := unix.Poll(poll, max(1, int(remaining.Milliseconds())))
-		if err == unix.EINTR {
-			continue
-		}
+		ready, err := waitTTY(int(tty.Fd()), remaining)
 		if err != nil {
+			if isInterrupted(err) {
+				continue
+			}
 			return 0, 0, err
 		}
-		if ready == 0 {
+		if !ready {
 			continue
 		}
 		m, err := tty.Read(buf[n : n+1])
 		if err != nil {
+			if isInterrupted(err) {
+				continue
+			}
 			return 0, 0, err
 		}
 		if m == 0 {
@@ -1080,16 +1080,15 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		// mode, so Close cannot interrupt a bare Read — the goroutine would leak and
 		// race the next terminal reader for input. Polling lets us observe done and
 		// exit on teardown. EINTR (e.g. from a delivered SIGWINCH) just re-polls.
-		pfd := []unix.PollFd{{Fd: int32(p.fd), Events: unix.POLLIN}}
 		for {
 			select {
 			case <-done:
 				return
 			default:
 			}
-			n, perr := unix.Poll(pfd, 50)
+			ready, perr := waitTTY(p.fd, 50*time.Millisecond)
 			if perr != nil {
-				if perr == unix.EINTR {
+				if isInterrupted(perr) {
 					continue
 				}
 				select {
@@ -1098,7 +1097,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				}
 				return
 			}
-			if n == 0 {
+			if !ready {
 				continue // timeout — loop back to re-check done
 			}
 			buf := make([]byte, 64)
@@ -1731,18 +1730,15 @@ func (p *Pane) close() {
 // drainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
 // don't bleed into whatever reads the terminal next.
 func (p *Pane) drainInput() {
-	const tcflsh = 0x540B // Linux TCFLSH; argument 0 selects TCIFLUSH (input queue)
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL, uintptr(p.fd), tcflsh, 0)
+	drainTerminalInput(p.fd)
 }
 
 func (p *Pane) installSignalHandler() {
 	p.interrupts = make(chan os.Signal, 1)
-	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.
 	// Cap 1 coalesces a burst of resizes (e.g. an interactive drag) into one.
 	p.winch = make(chan os.Signal, 1)
-	signal.Notify(p.winch, syscall.SIGWINCH)
+	notifyPaneSignals(p.interrupts, p.winch)
 }
 
 // TerminalSize returns the dimensions of the controlling terminal.

@@ -13,7 +13,6 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"golang.org/x/term"
@@ -87,10 +86,10 @@ func run() error {
 	keys := make(chan int, 16)
 	go readKeys(keys)
 	resizes := make(chan os.Signal, 1)
-	signal.Notify(resizes, syscall.SIGWINCH)
+	notifyResizeSignals(resizes)
 	defer signal.Stop(resizes)
 	interrupts := make(chan os.Signal, 1)
-	signal.Notify(interrupts, os.Interrupt, syscall.SIGTERM)
+	notifyInterruptSignals(interrupts)
 	defer signal.Stop(interrupts)
 
 	if options.tune.enabled {
