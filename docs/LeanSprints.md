@@ -98,3 +98,12 @@ Source: host `agy:flash38` as orchestrator, developer `codex:luna:high`. Details
 - **Untracked Prompt & Study Files Gate Quota-1**: The developer noticed untracked files (`.harnez/prompts/dev-315.md` and `docs/studies/...`) and correctly followed Quota-1 rules to avoid running `make test-q1` on an unclean tree. The host verified the diff, committed the milestone, ran `make test-q1` (100% green), ran `make install`, and closed the ticket.
 - **Immediate Cross-Platform Verification**: `GOOS=windows GOARCH=amd64 go build ./...` confirmed zero compilation errors across all packages and examples in seconds.
 
+## TextEdit Popover Semantics & Directional Focus Sprints (2026-10-10, tickets 316, 317, 318)
+
+Source: host `agy:flash38` as orchestrator, searcher `codex:luna:low`, developer `codex:sol:low`. Details: [316 study](studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md), [317 study](studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md), [318 study](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md).
+- **Decoupled Focus from Legacy Tab Collisions**: In ASCII terminals, `Ctrl+I` sends `0x09` (`\t`). Freeing `<tab>` from being a mandatory popover focus key allowed binding `<tab>` / `Ctrl+I` on selected text to toggle italics directly, eliminating the need to wait for progressive keyboard enhancement (CSI-u) to support common italic formatting.
+- **Directional Geometry Consistency**: Using spatial arrows (arrow toward toolbar focuses, arrow away cancels) made navigation predictable regardless of whether the popover opens above or below the selection anchor.
+- **PTY Test Assertion Stability**: PTY tests matching color/style cells across asynchronous render cycles can be brittle. Matching rendered text/labels while driving real terminal inputs (`\x1b[A`, `\x1b[B`) gave reliable, deterministic pass criteria in Quota-1.
+- **Commit Handoff Files Before Worker Runs**: Staging and committing orchestrator prompt files and initial study documents prior to dispatch ensures the developer's tree is completely clean, preventing Quota-1 stops due to untracked files.
+
+

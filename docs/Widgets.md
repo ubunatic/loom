@@ -368,12 +368,12 @@ When a stroke starts on an existing box glyph, its foreground color is carried
 to each glyph changed by that stroke. With a selection and an unfocused toolbar,
 Tab/Ctrl+I toggles italics. The arrow towards the toolbar (Up above the selection,
 Down below it) focuses it; other arrows dismiss it and move the editor cursor.
-Ctrl+Space reopens a dismissed toolbar while preserving the selection.
-Once focused, Tab and Shift+Tab move through enabled popover
-actions, Left/Right move along the bar, and Enter or Space activates the focused
-action; arrows are consumed while the popover is focused. In a submenu, Tab/Shift+Tab
-and arrows move through choices, and Enter or Space applies one. Esc closes the
-submenu before the bar. The
+Once focused on the main menu bar, pressing the arrow away from the toolbar back
+towards the text (Up when below, Down when above) cancels the popover; Left/Right
+navigate actions, and Enter or Space activates the focused action. In a submenu,
+Tab/Shift+Tab and arrows move through choices, and Enter or Space applies one.
+Esc closes the submenu before the bar. Ctrl+Space reopens a dismissed toolbar
+while preserving the selection. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them
