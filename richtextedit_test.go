@@ -1751,13 +1751,15 @@ func TestRichTextEditPopoverExtendedFlags(t *testing.T) {
 		t.Fatal("submenu Esc dismissed toolbar")
 	}
 	e.PopoverDefaults.DismissOnScroll = false
-	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown})
+	e.Draw(NewCanvas(60, 7), Rect{W: 60, H: 7})
+	bar := e.popoverButtons[0].rect
+	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown, X: bar.X, Y: bar.Y})
 	if e.popoverSuppressed {
 		t.Fatal("scroll dismissed retained menu")
 	}
 	e.ScrollY = 0
 	e.PopoverDefaults.DismissOnScroll = true
-	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown})
+	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown, X: bar.X, Y: bar.Y})
 	if !e.popoverSuppressed {
 		t.Fatal("scroll did not dismiss")
 	}

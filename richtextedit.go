@@ -1118,18 +1118,6 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 			e.popoverRelease = false
 		}
 	}
-	if mouse.Action == MouseScrollUp || mouse.Action == MouseScrollDown {
-		if e.popoverOpen() && e.PopoverDefaults.DismissOnScroll {
-			e.cancelPopover()
-			return Handled()
-		}
-		if mouse.Action == MouseScrollUp {
-			e.ScrollY = max(0, e.ScrollY-1)
-		} else {
-			e.ScrollY++
-		}
-		return Handled()
-	}
 	if e.popoverOpen() && !e.dragSelecting {
 		if !e.popoverHit(mouse.X, mouse.Y) {
 			if mouse.Action == MousePress && mouse.Button == MouseLeft {
@@ -1138,6 +1126,12 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 				e.popoverRelease = true
 			}
 			return Handled()
+		}
+		if mouse.Action == MouseScrollUp || mouse.Action == MouseScrollDown {
+			if e.PopoverDefaults.DismissOnScroll {
+				e.cancelPopover()
+				return Handled()
+			}
 		}
 		if e.PopoverDefaults.MouseHoverFocus && mouse.Action == MouseHover {
 			for i, button := range e.popoverButtons {
@@ -1179,6 +1173,14 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 					break
 				}
 			}
+		}
+		return Handled()
+	}
+	if mouse.Action == MouseScrollUp || mouse.Action == MouseScrollDown {
+		if mouse.Action == MouseScrollUp {
+			e.ScrollY = max(0, e.ScrollY-1)
+		} else {
+			e.ScrollY++
 		}
 		return Handled()
 	}
