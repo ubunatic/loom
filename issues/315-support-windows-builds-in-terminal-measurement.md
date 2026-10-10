@@ -1,6 +1,6 @@
 # 315 — Support Windows builds in terminal measurement
 
-**Status**: Open
+**Status**: Closed — supported Windows cross-builds in measure and probe commands
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
