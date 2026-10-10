@@ -41,7 +41,7 @@ func Test316EditPTYFocusDismissAndReopen(t *testing.T) {
 	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG") })
 	s.Send("\x00")
 	s.WaitFor("#FG", 3*time.Second)
-	s.Send("\t\x1b[C\r")
+	s.Send("\x1b[B\x1b[C\r")
 	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG") })
 	s.Send("\x00")
 	s.WaitFor("#FG", 3*time.Second)

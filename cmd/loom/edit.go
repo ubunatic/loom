@@ -603,7 +603,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return v.edit.ConsumeKey(key)
 	}
 
-	if v.focused == focusEditor && key.Is(v.edit.PopoverDefaults.MenuFocusKey, v.edit.PopoverDefaults.PopupOpenKey) {
+	if v.focused == focusEditor && (key.Is(v.edit.PopoverDefaults.MenuFocusKey, v.edit.PopoverDefaults.PopupOpenKey) || (v.edit.HasSelection && key.Is("tab", "ctrl-i"))) {
 		if result := v.edit.ConsumeKey(key); result.Consumed {
 			return result
 		}

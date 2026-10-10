@@ -528,6 +528,12 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	popoverArrow := key.Is("up", "down", "left", "right")
 	if !e.popoverFocusSet && !submenuOpen {
 		if popoverArrow {
+			_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
+			if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("down"))) {
+				e.popoverFocus = e.initialPopoverFocus()
+				e.popoverFocusSet = true
+				return Handled(), true
+			}
 			if e.PopoverDefaults.ArrowsCancelUnfocusedMenu {
 				e.cancelPopover()
 			}
@@ -537,7 +543,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			e.cancelPopover()
 			return Handled(), true
 		}
-		if !key.Is(e.PopoverDefaults.MenuFocusKey) {
+		if e.PopoverDefaults.MenuFocusKey == "" || !key.Is(e.PopoverDefaults.MenuFocusKey) {
 			return Ignored(), false
 		}
 	}
@@ -555,12 +561,12 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.clearPopoverKeyboardState(true)
 		return Handled(), true
 	}
-	firstTab := !e.popoverFocusSet && key.Is(e.PopoverDefaults.MenuFocusKey)
+	firstFocus := !e.popoverFocusSet && e.PopoverDefaults.MenuFocusKey != "" && key.Is(e.PopoverDefaults.MenuFocusKey)
 	if !e.popoverFocusSet {
 		e.popoverFocus = e.initialPopoverFocus()
 		e.popoverFocusSet = true
 	}
-	if firstTab {
+	if firstFocus {
 		return Handled(), true
 	}
 	if submenuOpen {
@@ -578,9 +584,6 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		}
 		return Handled(), true
 	case key.Is("tab", "shift-tab", "backtab"):
-		if firstTab {
-			return Handled(), true
-		}
 		direction := 1
 		if key.Is("shift-tab", "backtab") {
 			direction = -1
@@ -912,15 +915,16 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	if e.ViewMode && e.BoxMode {
 		e.toggleBoxMode()
 	}
-	if !e.popoverFocusSet && e.popoverOpen() && key.Is("left", "right", "up", "down") && !e.PopoverDefaults.UnselectOnCancel {
+	preserveSelection := !e.popoverFocusSet && e.popoverOpen() && key.Is("left", "right", "up", "down") && !e.PopoverDefaults.UnselectOnCancel
+	if result, handled := e.consumePopoverKey(key); handled {
+		return result
+	}
+	if preserveSelection {
 		from, to := e.SelectionFrom, e.SelectionTo
 		defer func() {
 			e.SelectionFrom, e.SelectionTo, e.HasSelection = from, to, true
 			e.popoverSuppressed = e.PopoverDefaults.ArrowsCancelUnfocusedMenu
 		}()
-	}
-	if result, handled := e.consumePopoverKey(key); handled {
-		return result
 	}
 	if key.Is(SpeccedDefaults.Editor.HotkeyBoxBinding) {
 		if e.HasSelection {
@@ -956,7 +960,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	switch {
 	case key.Is("ctrl-b"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
-	case key.Is("ctrl-i"):
+	case key.Is("ctrl-i") || (key.Is("tab") && e.HasSelection):
 		e.toggleAttribute(func(s *Style, on bool) { s.Italic = on }, func(s Style) bool { return s.Italic })
 	case key.Is("ctrl-u"):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
