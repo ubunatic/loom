@@ -603,6 +603,11 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return v.edit.ConsumeKey(key)
 	}
 
+	if v.focused == focusEditor && key.Is(v.edit.PopoverDefaults.MenuFocusKey, v.edit.PopoverDefaults.PopupOpenKey) {
+		if result := v.edit.ConsumeKey(key); result.Consumed {
+			return result
+		}
+	}
 	editorDefs := loom.SpeccedDefaults.Editor
 
 	// Save works whichever panel has focus; the editor reports the new state.
@@ -708,7 +713,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if res.Quit {
 		return loom.Ignored()
 	}
-	if key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
+	if !res.Consumed && key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
 		v.edit.ClearSelection()
 		return loom.Handled()
 	}

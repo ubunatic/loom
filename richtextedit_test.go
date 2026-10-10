@@ -274,6 +274,8 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 		t.Fatal("popover button release was not consumed")
 	}
 	for _, label := range []string{"I", "U", "S"} {
+		edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+		edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
 		for _, button := range edit.popoverButtons {
 			if button.label == label {
 				edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
@@ -322,6 +324,7 @@ func TestRichTextEditPopoverInitialFocusAndEnter(t *testing.T) {
 	edit := NewRichTextEdit(doc)
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
 	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
+	edit.ConsumeKey(KeyEvent{Key: "tab"})
 	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || result.Done || result.Quit {
 		t.Fatalf("Enter result = %+v", result)
 	}
@@ -865,6 +868,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 		t.Fatal("FG palette erased existing attributes")
 	}
 
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 	edit.Draw(canvas, Rect{W: 40, H: 5})
 	clickButton("#BG")
 	edit.Draw(canvas, Rect{W: 40, H: 5})
@@ -1657,5 +1661,129 @@ func TestRichTextEditDisplayHighlightPreservesDocumentAndSelection(t *testing.T)
 	edit.Draw(c, c.Bounds())
 	if c.Get(1, 0).Style.BG == ColorIndex(4) {
 		t.Fatal("cleared highlight persisted")
+	}
+}
+
+func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
+	for _, cancel := range []bool{false, true} {
+		for _, unselect := range []bool{false, true} {
+			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello world"}}}}})
+			e.PopoverDefaults.ArrowsCancelUnfocusedMenu = cancel
+			e.PopoverDefaults.UnselectOnCancel = unselect
+			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+			e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
+			if e.popoverFocusSet {
+				t.Fatal("automatic menu focused")
+			}
+			e.ConsumeKey(KeyEvent{Key: "right"})
+			wantCursor := 5
+			if cancel && unselect {
+				wantCursor = 1
+			}
+			if e.Cursor.Offset != wantCursor || e.popoverFocusSet || e.HasSelection == unselect {
+				t.Fatalf("arrow state: cursor=%v selected=%v", e.Cursor, e.HasSelection)
+			}
+			if !unselect && e.popoverSuppressed != cancel {
+				t.Fatal("arrow cancellation flag ignored")
+			}
+			e.Cursor.Offset = 5
+			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+			e.cancelPopover()
+			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+			e.popoverSuppressed = true
+			e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+			if e.popoverSuppressed || e.SelectionTo.Offset != 5 {
+				t.Fatal("reopen lost selection")
+			}
+			e.ConsumeKey(KeyEvent{Key: "tab"})
+			e.ConsumeKey(KeyEvent{Key: "right"})
+			if !e.popoverFocusSet || e.popoverFocus != 1 || e.Cursor.Offset != 5 {
+				t.Fatal("focused arrow did not navigate menu")
+			}
+		}
+	}
+}
+
+func TestRichTextEditPopoverActionFlags(t *testing.T) {
+	for _, closeMenu := range []bool{false, true} {
+		for _, unselect := range []bool{false, true} {
+			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+			e.PopoverDefaults.ActionClosesMenu, e.PopoverDefaults.UnselectAfterAction = closeMenu, unselect
+			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+			e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
+			e.ConsumeKey(KeyEvent{Key: "tab"})
+			e.ConsumeKey(KeyEvent{Key: "enter"})
+			if !e.Document.Lines[0].Spans[0].Style.Bold || e.HasSelection == unselect || e.popoverSuppressed != closeMenu {
+				t.Fatal("action flags ignored")
+			}
+		}
+	}
+}
+
+func TestRichTextEditPopoverExtendedFlags(t *testing.T) {
+	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}, {}, {}, {}, {}, {}, {}}})
+	e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	e.PopoverDefaults.AutoPopupOnSelection = false
+	e.Draw(NewCanvas(60, 7), Rect{W: 60, H: 7})
+	if e.popoverOpen() {
+		t.Fatal("manual popup opened automatically")
+	}
+	e.PopoverDefaults.PopupOpenKey = "f2"
+	e.PopoverDefaults.MenuFocusKey = "f3"
+	e.ConsumeKey(KeyEvent{Key: "f2"})
+	e.ConsumeKey(KeyEvent{Key: "f3"})
+	if !e.popoverFocusSet {
+		t.Fatal("custom focus key ignored")
+	}
+	e.PopoverDefaults.CycleNavigation = false
+	e.ConsumeKey(KeyEvent{Key: "left"})
+	if e.popoverFocus != 0 {
+		t.Fatal("navigation wrapped")
+	}
+	e.popoverPalette = "#FG"
+	e.popoverSubmenuFocusSet = true
+	e.ConsumeKey(KeyEvent{Key: "left"})
+	if e.popoverSubmenuFocus != 0 {
+		t.Fatal("palette wrapped")
+	}
+	e.ConsumeKey(KeyEvent{Key: "esc"})
+	if !e.popoverOpen() || e.popoverPalette != "" {
+		t.Fatal("submenu Esc dismissed toolbar")
+	}
+	e.PopoverDefaults.DismissOnScroll = false
+	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown})
+	if e.popoverSuppressed {
+		t.Fatal("scroll dismissed retained menu")
+	}
+	e.ScrollY = 0
+	e.PopoverDefaults.DismissOnScroll = true
+	e.ConsumeMouse(MouseEvent{Action: MouseScrollDown})
+	if !e.popoverSuppressed {
+		t.Fatal("scroll did not dismiss")
+	}
+	e.SetSelection(RichPosition{Line: 2}, RichPosition{Line: 2, Offset: 1})
+	e.PopoverDefaults.AutoPopupOnSelection = true
+	e.PopoverDefaults.PositionPreference = "below"
+	bar, _, _, _, open := e.popoverGeometry(Rect{W: 60, H: 7}, e.documentLines())
+	if !open || bar.Y != 4 {
+		t.Fatalf("below geometry: %+v", bar)
+	}
+	e.PopoverDefaults.PopupOpenDelayMS = 100
+	at := time.Now()
+	e.now = func() time.Time { return at }
+	e.popoverSelectionAt = time.Time{}
+	if e.popoverOpen() {
+		t.Fatal("delay ignored")
+	}
+	at = at.Add(100 * time.Millisecond)
+	if !e.popoverOpen() {
+		t.Fatal("delayed popup never opened")
+	}
+	e.PopoverDefaults.MouseHoverFocus = true
+	e.Draw(NewCanvas(60, 7), Rect{W: 60, H: 7})
+	b := e.popoverButtons[1].rect
+	e.ConsumeMouse(MouseEvent{Action: MouseHover, X: b.X, Y: b.Y})
+	if !e.popoverFocusSet || e.popoverFocus != 1 {
+		t.Fatal("hover did not focus")
 	}
 }

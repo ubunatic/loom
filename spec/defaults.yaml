@@ -128,6 +128,18 @@ choice:
   unchecked_marker: "[ ] "
 
 rich_text_edit:
+  action_closes_menu: true
+  menu_focus_key: "tab"
+  arrows_cancel_unfocused_menu: true
+  unselect_after_action: false
+  unselect_on_cancel: false
+  popup_open_key: "ctrl-space"
+  auto_popup_on_selection: true
+  popup_open_delay_ms: 0
+  cycle_navigation: true
+  position_preference: "smart"
+  dismiss_on_scroll: true
+  mouse_hover_focus: false
   selection_bg: 24
   toolbar_fg: 15
   toolbar_bg: 239
