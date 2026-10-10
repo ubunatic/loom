@@ -37,4 +37,13 @@ In `richtextedit.go` (`consumePopoverKey`):
   - Submenu open + Up/Down -> navigates submenu items normally without cancelling.
 - Verify with `make test-q1`.
 
+### Pre-Work for Milestone 2:
+In `cmd/loom/edit_318_test.go`:
+`Test318EditPTYFocusedPopoverArrowAway` timed out waiting for `focused("Plain")` because:
+- Moving through enabled buttons to "Box": with text selected, enabled buttons are `B (0)`, `I (1)`, `U (2)`, `S (3)`, `#FG (5)`, `#BG (6)`, `Box (7)`.
+- Index 4 ("Link") is disabled. From initial focus `0` (or `B`), moving right 6 times reaches `Box`.
+- When pressing `Enter` on `Box` (`richPopoverActions[7]`), it opens the Box submenu.
+- In `focused(label string)`, check how the Box choices are rendered in PTY cells (e.g. style or formatting), or check `s.WaitFor("Plain", 3*time.Second)` and assert that `\x1b[B` / `\x1b[A` navigate between choices without dismissing the toolbar.
+- Ensure `make test-q1` passes 100% green.
+
 /goal Implement cancel on arrow away from focused main menu bar (Up when menu is below, Down when menu is above) in RichTextEdit and verify with tests, or stop and report if blocked on a user decision or denied permission.
