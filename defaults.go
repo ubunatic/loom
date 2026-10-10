@@ -165,8 +165,8 @@ func (d RichTextEditDefaults) helpRef(ref string) (binding, label string, ok boo
 }
 
 func (d RichTextEditDefaults) validate() error {
-	if d.MenuFocusKey == "" || d.PopupOpenKey == "" {
-		return fmt.Errorf("rich_text_edit popup keys must not be empty")
+	if d.PopupOpenKey == "" {
+		return fmt.Errorf("rich_text_edit popup_open_key must not be empty")
 	}
 	if d.PopupOpenDelayMS < 0 {
 		return fmt.Errorf("rich_text_edit.popup_open_delay_ms must be nonnegative")

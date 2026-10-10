@@ -95,7 +95,7 @@ search_bar:
 
 rich_text_edit:
   action_closes_menu: true
-  menu_focus_key: "tab"
+  menu_focus_key: ""
   arrows_cancel_unfocused_menu: true
   unselect_after_action: false
   unselect_on_cancel: false
@@ -175,9 +175,9 @@ rich_text_edit:
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}
-        - {keys: ["ctrl-i"], label: "Italic"}
+        - {keys: ["tab", "ctrl-i"], label: "Italic (selected text)"}
         - {keys: ["ctrl-u"], label: "Underline"}
-        - {keys: ["ctrl-space"], label: "Formatting popover (Tab or arrows choose, Enter applies, Esc closes)"}
+        - {keys: ["ctrl-space"], label: "Formatting popover (arrow towards toolbar focuses, Tab or arrows choose, Enter applies, Esc closes)"}
     - title: "Modes and boxes"
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}
