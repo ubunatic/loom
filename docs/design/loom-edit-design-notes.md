@@ -22,3 +22,13 @@ loom view docs/design/loom-edit-05-settings.ansi
 Mouse capture and alternate-screen status show the enabled state as a proposal, not a decision about defaults. Colors are illustrative. The mockups preserve existing Save/Save as/Box/Quit hints.
 
 Validation: `loom check-box` passes for all five assets; `loom eval` reports 24 rows, 100 columns and zero ragged rows for each; `loom measure` confirms every row occupies 100 terminal cells.
+
+Regeneration:
+By default, editor screenshot tests run against isolated temporary outputs and do not modify tracked design files.
+To regenerate or update the design screenshots in `docs/design/`, set the environment variable:
+
+```bash
+GENERATE_DESIGN_SCREENSHOTS=1 go test -v ./cmd/loom -run TestGenerateAnsiDesignScreenshots
+```
+(or `UPDATE_GOLDEN=1`).
+The test enforces reproducible relative display paths, 100x24 geometry, and box validation.

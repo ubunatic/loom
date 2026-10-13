@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 func TestEditViewSidePanelF2ToggleAndTabFocus(t *testing.T) {
@@ -468,12 +469,16 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 
 func TestGenerateAnsiDesignScreenshots(t *testing.T) {
 	designDir := t.TempDir()
+	if os.Getenv("GENERATE_DESIGN_SCREENSHOTS") == "1" || os.Getenv("UPDATE_GOLDEN") == "1" {
+		designDir = filepath.Join("..", "..", "docs", "design")
+	}
 
-	readmePath := filepath.Join(t.TempDir(), "README.md")
+	tmpDir := t.TempDir()
+	readmePath := filepath.Join(tmpDir, "README.md")
 	readmeContent := "# Loom\n\nTerminal widgets for Go.\n\n## Getting started\n\ngo get ubunatic.com/loom\n\nBuild terminal interfaces with Loom.\nCompose widgets, panes and layouts.\n\n## Editing\n\nloom edit README.md\n\nSave changes with ⌃S.\n"
 	_ = os.WriteFile(readmePath, []byte(readmeContent), 0600)
 
-	editorYamlPath := filepath.Join(t.TempDir(), "editor.yaml")
+	editorYamlPath := filepath.Join(tmpDir, "editor.yaml")
 	editorYamlContent := "# ~/.config/loom/editor.yaml\n# yaml-language-server: $schema=./editor.schema.json\n\ntheme: mc-dark\nmousegrab: true\naltscreen: true\n\n# Boolean values: true / false\n# CLI flags override these preferences.\n\n# Example: loom edit --mousegrab README.md\n"
 	_ = os.WriteFile(editorYamlPath, []byte(editorYamlContent), 0600)
 
@@ -484,17 +489,18 @@ func TestGenerateAnsiDesignScreenshots(t *testing.T) {
 	}
 
 	saveShot := func(fileName string, setup func(v *editView)) {
-		edit, err := loom.NewRichTextEditFromFile(readmePath)
+		srcPath := readmePath
+		displayPath := "README.md"
 		if fileName == "loom-edit-05-settings.ansi" {
-			edit, err = loom.NewRichTextEditFromFile(editorYamlPath)
+			srcPath = editorYamlPath
+			displayPath = "editor.yaml"
 		}
+
+		edit, err := loom.NewRichTextEditFromFile(srcPath)
 		if err != nil {
 			t.Fatalf("NewRichTextEditFromFile: %v", err)
 		}
-		view, err := newEditView(edit, readmePath, cfg)
-		if fileName == "loom-edit-05-settings.ansi" {
-			view, err = newEditView(edit, "editor.yaml", cfg)
-		}
+		view, err := newEditView(edit, displayPath, cfg)
 		if err != nil {
 			t.Fatalf("newEditView: %v", err)
 		}
@@ -503,7 +509,19 @@ func TestGenerateAnsiDesignScreenshots(t *testing.T) {
 
 		outPath := filepath.Join(designDir, fileName)
 		rows := loom.Render(view, 100, 24)
+		if len(rows) != 24 {
+			t.Fatalf("%s: rendered %d rows, want 24", fileName, len(rows))
+		}
+		for i, row := range rows {
+			if w := measure.StringWidth(row); w != 100 {
+				t.Fatalf("%s row %d: display width = %d, want 100", fileName, i, w)
+			}
+		}
+
 		content := strings.Join(rows, "\n") + "\n"
+		if err := loom.ValidateAnsiBox(content); err != nil {
+			t.Fatalf("%s box validation failed: %v", fileName, err)
+		}
 		if err := os.WriteFile(outPath, []byte(content), 0644); err != nil {
 			t.Fatalf("failed to write %s: %v", outPath, err)
 		}
