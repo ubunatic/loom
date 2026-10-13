@@ -126,7 +126,7 @@ func (p *Paginator) indicator() string {
 		p.Page = p.Pages - 1
 	}
 	if p.Style == PaginatorNumeric {
-		return fmt.Sprintf("%d/%d", p.Page+1, p.Pages)
+		return fmt.Sprintf(SpeccedDefaults.Paginator.NumericFormat, p.Page+1, p.Pages)
 	}
 	text := ""
 	for i := 0; i < p.Pages; i++ {
@@ -134,9 +134,9 @@ func (p *Paginator) indicator() string {
 			text += " "
 		}
 		if i == p.Page {
-			text += "●"
+			text += SpeccedDefaults.Paginator.ActiveDot
 		} else {
-			text += "○"
+			text += SpeccedDefaults.Paginator.InactiveDot
 		}
 	}
 	return text

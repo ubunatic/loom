@@ -41,13 +41,13 @@ type Split struct {
 
 // NewSplit returns an evenly divided horizontal split with a one-cell divider.
 func NewSplit(first, second Widget) *Split {
-	return &Split{First: first, Second: second, Orientation: Horizontal, Ratio: 0.5, Gap: 1}
+	return &Split{First: first, Second: second, Orientation: Horizontal, Ratio: SpeccedDefaults.Split.DefaultRatio, Gap: SpeccedDefaults.Split.DefaultGap}
 }
 
 // SetRatio clamps and stores the preferred first-child ratio.
 func (s *Split) SetRatio(ratio float64) {
 	if math.IsNaN(ratio) {
-		ratio = 0.5
+		ratio = SpeccedDefaults.Split.DefaultRatio
 	}
 	s.Ratio = clampRatio(ratio)
 }
@@ -65,7 +65,7 @@ func (s *Split) Layout(r Rect) (Rect, Rect) {
 	available := max(0, axis-gap)
 	ratio := s.Ratio
 	if math.IsNaN(ratio) {
-		ratio = 0.5
+		ratio = SpeccedDefaults.Split.DefaultRatio
 	}
 	ratio = clampRatio(ratio)
 	first := int(math.Round(float64(available) * ratio))
@@ -110,9 +110,9 @@ func (s *Split) drawDivider(c *Canvas) {
 	glyph := s.Divider.Glyph
 	if glyph == "" {
 		if s.Orientation == Vertical {
-			glyph = "─"
+			glyph = SpeccedDefaults.Split.VerticalDivider
 		} else {
-			glyph = "│"
+			glyph = SpeccedDefaults.Split.HorizontalDivider
 		}
 	}
 	if s.Orientation == Vertical {

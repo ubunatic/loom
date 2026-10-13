@@ -68,9 +68,9 @@ func (n *NumberInput) renderedText() string {
 		value := n.format(*n.Value)
 		padding := strings.Repeat(" ", max(0, n.FixedWidth-StringWidth(value)-4))
 		if n.Align == AlignRight {
-			text = "◂ " + padding + value + " ▸"
+			text = SpeccedDefaults.NumberInput.LeftGlyph + " " + padding + value + " " + SpeccedDefaults.NumberInput.RightGlyph
 		} else {
-			text = "◂ " + value + padding + " ▸"
+			text = SpeccedDefaults.NumberInput.LeftGlyph + " " + value + padding + " " + SpeccedDefaults.NumberInput.RightGlyph
 		}
 	}
 	return text
@@ -81,7 +81,7 @@ func (n *NumberInput) String() string {
 	if n == nil || n.Value == nil {
 		return ""
 	}
-	return "◂ " + n.format(*n.Value) + " ▸"
+	return SpeccedDefaults.NumberInput.LeftGlyph + " " + n.format(*n.Value) + " " + SpeccedDefaults.NumberInput.RightGlyph
 }
 
 // Error returns validation feedback from the most recent failed commit.
@@ -214,7 +214,7 @@ func (n *NumberInput) StepBy(direction float64) {
 	}
 	step := n.Step
 	if step == 0 {
-		step = 1
+		step = SpeccedDefaults.NumberInput.Step
 	}
 	value := *n.Value + direction*step
 	if value < n.Min {
@@ -246,21 +246,21 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 	switch e.Key {
 	case "enter":
 		if n.editor == nil {
-			n.err = "invalid number"
+			n.err = SpeccedDefaults.NumberInput.InvalidError
 			return false
 		}
 		value, err := strconv.ParseFloat(n.editor.Value(), 64)
 		if err != nil {
-			n.err = "invalid number"
+			n.err = SpeccedDefaults.NumberInput.InvalidError
 			return true
 		}
 		if n.Min > n.Max {
 			value = n.Min
 		} else if value < n.Min {
-			n.err = fmt.Sprintf("%s is below the minimum %s", n.editor.Value(), n.format(n.Min))
+			n.err = fmt.Sprintf(SpeccedDefaults.NumberInput.BelowMinFmt, n.editor.Value(), n.format(n.Min))
 			return true
 		} else if value > n.Max {
-			n.err = fmt.Sprintf("%s is above the maximum %s", n.editor.Value(), n.format(n.Max))
+			n.err = fmt.Sprintf(SpeccedDefaults.NumberInput.AboveMaxFmt, n.editor.Value(), n.format(n.Max))
 			return true
 		}
 		if n.Value != nil {
@@ -304,7 +304,7 @@ func (n *NumberInput) handleEditKey(e KeyEvent) bool {
 				n.editor.ConsumeKey(e)
 				n.err = ""
 			} else if invalidDot || strings.Contains(e.Text, ".") {
-				n.err = "invalid number"
+				n.err = SpeccedDefaults.NumberInput.InvalidError
 			}
 			return true
 		}
