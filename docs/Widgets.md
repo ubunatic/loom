@@ -257,6 +257,7 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `Frame` `FillHeight` (stacked fill) | 051 | A frame box expands to the available content height. |
 | `Canvas.DrawBorder`, `Canvas.DrawBox`, `spec/box.yaml` | 037 | Spec-driven box glyphs; do not duplicate glyphs in Go. |
 | `Ticker` (`TickInterval`, `Tick`), `Pane.Invalidate()` | 060 | Periodic redraw without pane ownership; invalidate is goroutine safe. The pane must not reset its tick timer on every event. |
+| `Pane.Post(fn)` | 306 | Run `fn` on the event loop from any goroutine, then repaint. Use `Post` to change widget state from a producer (streams, job logs); `Invalidate` only requests a repaint and must not be paired with off-loop mutation. Never blocks or drops; FIFO; a burst draws once; no-op after `Close`. |
 | `Choice.MouseTextOnly` | 093 | Hover and drag track only rendered item text; a left press anywhere on a row selects it (296), activation follows `DoubleClickToActivate`/`SelectOnlyOnClick`. |
 | Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |

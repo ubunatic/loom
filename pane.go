@@ -149,8 +149,12 @@ type Pane struct {
 	interrupts     chan os.Signal
 	invalidate     chan struct{}
 	invalidateOnce sync.Once
-	tickerReset    chan struct{}
-	help           *Popup
+	// postMu guards posted and postClosed; Post appends, the run loop drains.
+	postMu      sync.Mutex
+	posted      []func()
+	postClosed  bool
+	tickerReset chan struct{}
+	help        *Popup
 }
 
 // CloseReason tells OnCloseRequest why the pane wants to close.
@@ -943,6 +947,38 @@ func (p *Pane) Invalidate() {
 	}
 }
 
+// Post queues fn to run on the event-loop goroutine before the next frame,
+// then requests a repaint. It is safe to call from any goroutine, never blocks
+// on the loop and never drops callbacks; queued callbacks run in FIFO order and
+// a burst is drawn once. Callbacks posted before Run start on its first loop
+// turn. Post after Close is a no-op.
+func (p *Pane) Post(fn func()) {
+	if fn == nil {
+		return
+	}
+	p.postMu.Lock()
+	if p.postClosed {
+		p.postMu.Unlock()
+		return
+	}
+	p.posted = append(p.posted, fn)
+	p.postMu.Unlock()
+	p.Invalidate()
+}
+
+// runPosted runs the callbacks queued by Post and reports whether any ran.
+// Callbacks posted while it runs wait for the next loop turn.
+func (p *Pane) runPosted() bool {
+	p.postMu.Lock()
+	fns := p.posted
+	p.posted = nil
+	p.postMu.Unlock()
+	for _, fn := range fns {
+		fn()
+	}
+	return len(fns) > 0
+}
+
 // RunWatch runs collection and redraw on independent timers. Collection and
 // widget callbacks share the event-loop goroutine; Draw must not collect data.
 // The caller owns Close, as with Run. Collection callbacks must not block.
@@ -1250,6 +1286,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		// Check before doing another frame so a canceled Draw stays final.
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if p.runPosted() {
+			dirty = true
 		}
 		if backgroundClock.reconcile(p.Background, p.ReduceMotion, p.BackgroundOnRedraw) && p.Metrics != nil {
 			p.Metrics.AstraTargetFPS = 0
@@ -1677,6 +1716,10 @@ func (p *Pane) close() {
 		return
 	}
 	p.restored = true
+	p.postMu.Lock()
+	p.postClosed = true
+	p.posted = nil
+	p.postMu.Unlock()
 	if p.ownsTTY {
 		releasePaneOwnership()
 		p.ownsTTY = false
