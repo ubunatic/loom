@@ -89,6 +89,19 @@ type EditorStatusIcons struct {
 
 // RichTextEditDefaults defines selection and popover presentation defaults.
 type RichTextEditDefaults struct {
+	ActionClosesMenu          bool   `yaml:"action_closes_menu"`
+	MenuFocusKey              string `yaml:"menu_focus_key"`
+	ArrowsCancelUnfocusedMenu bool   `yaml:"arrows_cancel_unfocused_menu"`
+	UnselectAfterAction       bool   `yaml:"unselect_after_action"`
+	UnselectOnCancel          bool   `yaml:"unselect_on_cancel"`
+	PopupOpenKey              string `yaml:"popup_open_key"`
+	AutoPopupOnSelection      bool   `yaml:"auto_popup_on_selection"`
+	PopupOpenDelayMS          int    `yaml:"popup_open_delay_ms"`
+	CycleNavigation           bool   `yaml:"cycle_navigation"`
+	PositionPreference        string `yaml:"position_preference"`
+	DismissOnScroll           bool   `yaml:"dismiss_on_scroll"`
+	MouseHoverFocus           bool   `yaml:"mouse_hover_focus"`
+
 	SelectionBG           int           `yaml:"selection_bg"`
 	ToolbarFG             int           `yaml:"toolbar_fg"`
 	ToolbarBG             int           `yaml:"toolbar_bg"`
@@ -158,6 +171,17 @@ func (d RichTextEditDefaults) helpRef(ref string) (binding, label string, ok boo
 }
 
 func (d RichTextEditDefaults) validate() error {
+	if d.PopupOpenKey == "" {
+		return fmt.Errorf("rich_text_edit popup_open_key must not be empty")
+	}
+	if d.PopupOpenDelayMS < 0 {
+		return fmt.Errorf("rich_text_edit.popup_open_delay_ms must be nonnegative")
+	}
+	switch d.PositionPreference {
+	case "above", "below", "smart":
+	default:
+		return fmt.Errorf("rich_text_edit.position_preference must be above, below or smart")
+	}
 	if len(d.HelpSections) == 0 {
 		return fmt.Errorf("rich_text_edit.help_sections must not be empty")
 	}

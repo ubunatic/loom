@@ -1,0 +1,6 @@
+-> plain text start
+-> [bold]bold line 1[/] 
+->[bold] [/][italic]italic line 2[/]
+[italic]-> [/][underline]underscore line 2[/]
+-> [underline]plain text end[/]
+

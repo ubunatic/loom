@@ -20,8 +20,16 @@ func newSubmenuTestEditor() (*RichTextEdit, *Canvas) {
 
 func popoverFocusAction(t *testing.T, edit *RichTextEdit, action string) {
 	t.Helper()
-	if got := edit.ConsumeKey(KeyEvent{Key: "tab"}); !got.Consumed {
-		t.Fatalf("initial popover Tab = %+v", got)
+	_, _, _, pointer, open := edit.popoverGeometry(edit.lastRect, edit.documentLines())
+	if !open {
+		t.Fatal("popover unavailable")
+	}
+	key := "down"
+	if pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph {
+		key = "up"
+	}
+	if got := edit.ConsumeKey(KeyEvent{Key: key}); !got.Consumed || !edit.popoverFocusSet {
+		t.Fatalf("initial popover focus = %+v", got)
 	}
 	for range len(richPopoverActions) {
 		if edit.popoverFocus >= 0 && edit.popoverFocus < len(richPopoverActions) && richPopoverActions[edit.popoverFocus] == action {
@@ -185,8 +193,8 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	if edit.popoverPalette != "" || !edit.popoverFocusSet {
 		t.Fatal("Escape did not return from submenu to the focused bar")
 	}
-	// Horizontal arrows move the visible bar focus, while vertical arrows are
-	// consumed without moving the document or Tabs focus.
+	// Horizontal arrows move bar focus. The below-anchor toolbar consumes Up
+	// as dismissal without moving the document or Tabs focus.
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "right"}))
 	barFocus := edit.popoverFocus
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "left"}))
@@ -194,10 +202,13 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 		t.Fatal("left arrow did not move focus along the bar")
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "up"}))
-	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "down"}))
+	if !edit.popoverSuppressed || edit.popoverFocusSet {
+		t.Fatal("arrow away did not dismiss the focused toolbar")
+	}
 	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
 		t.Fatalf("bar arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
 	popoverFocusAction(t, edit, "#FG")
 	assertMenuHandled(t, tabs.ConsumeKey(space))
 	assertMenuHandled(t, tabs.ConsumeKey(space))

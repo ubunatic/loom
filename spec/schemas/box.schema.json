@@ -17,58 +17,30 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "sharp": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
-          "properties": {
-            "top_left": {"type": "string"},
-            "top_right": {"type": "string"},
-            "bottom_left": {"type": "string"},
-            "bottom_right": {"type": "string"},
-            "horizontal": {"type": "string"},
-            "vertical": {"type": "string"}
-          }
-        },
-        "rounded": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
-          "properties": {
-            "top_left": {"type": "string"},
-            "top_right": {"type": "string"},
-            "bottom_left": {"type": "string"},
-            "bottom_right": {"type": "string"},
-            "horizontal": {"type": "string"},
-            "vertical": {"type": "string"}
-          }
-        },
-        "double": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
-          "properties": {
-            "top_left": {"type": "string"},
-            "top_right": {"type": "string"},
-            "bottom_left": {"type": "string"},
-            "bottom_right": {"type": "string"},
-            "horizontal": {"type": "string"},
-            "vertical": {"type": "string"}
-          }
-        },
-        "ascii": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical"],
-          "properties": {
-            "top_left": {"type": "string"},
-            "top_right": {"type": "string"},
-            "bottom_left": {"type": "string"},
-            "bottom_right": {"type": "string"},
-            "horizontal": {"type": "string"},
-            "vertical": {"type": "string"}
-          }
-        }
+        "sharp": {"$ref": "#/definitions/style"},
+        "rounded": {"$ref": "#/definitions/style"},
+        "double": {"$ref": "#/definitions/style"},
+        "ascii": {"$ref": "#/definitions/style"}
+      }
+    }
+  },
+  "definitions": {
+    "style": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["top_left", "top_right", "bottom_left", "bottom_right", "horizontal", "vertical", "tee_top", "tee_bottom", "tee_left", "tee_right", "cross"],
+      "properties": {
+        "top_left": {"type": "string"},
+        "top_right": {"type": "string"},
+        "bottom_left": {"type": "string"},
+        "bottom_right": {"type": "string"},
+        "horizontal": {"type": "string"},
+        "vertical": {"type": "string"},
+        "tee_top": {"type": "string", "description": "joint of a vertical divider with the top edge"},
+        "tee_bottom": {"type": "string", "description": "joint of a vertical divider with the bottom edge"},
+        "tee_left": {"type": "string", "description": "joint of a horizontal divider with the left edge"},
+        "tee_right": {"type": "string", "description": "joint of a horizontal divider with the right edge"},
+        "cross": {"type": "string", "description": "crossing of a horizontal and a vertical divider"}
       }
     }
   }

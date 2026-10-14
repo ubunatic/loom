@@ -1,10 +1,10 @@
-# 307 — Opt-in kitty keyboard protocol so Shift+Enter and Ctrl+J differ from Enter
+# 321 — Opt-in kitty keyboard protocol so Shift+Enter and Ctrl+J differ from Enter
 
 **Status**: Open
 **Priority**: P2 (Medium)
 **Severity**: Feature
 **Category**: Input / Key Decoding
-**Related**: harnez #738
+**Related**: [317](317-distinguish-ctrl-i-from-tab-in-terminal-input-and-key-decoding.md) (Ctrl+I vs Tab: CSI-u would let Ctrl+I differ from Tab), harnez #738
 
 ---
 
@@ -17,7 +17,7 @@ Alt+Enter and a trailing `\` (harnez #738).
 - `decodeCSIu` (`event.go`) handles letters, space and tab, not Enter (13).
 - Loom never asks the terminal for the kitty protocol, so CSI-u is not sent.
 - Add an opt-in Pane setting that pushes progressive enhancement flag 1
-  (`CSI > 1 u`) on start and pops it (`CSI < u`) on close and on Suspend (305).
+  (`CSI > 1 u`) on start and pops it (`CSI < u`) on close and on Suspend (319).
 - Decode `CSI 13;<mod> u` as `shift-enter` / `ctrl-enter`; extend CSI-u to
   other keys the flag changes (Escape, Backspace), keeping legacy names for
   unmodified keys.

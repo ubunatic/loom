@@ -22,7 +22,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit")
 	s.WaitFor("Ln 1, Col 1", 3*time.Second)
-	for _, closeWith := range []string{"\x1b", "\x1b[<0;1;24M\x1b[<0;1;24m"} {
+	for _, closeWith := range []string{"\x1b", "\x1b[<0;1;24M"} {
 		from := len(s.Raw())
 		s.Send("\x1bOP")
 		s.WaitFor("RichTextEdit Help", 3*time.Second)
@@ -43,7 +43,11 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	waitEditPTY(t, s, func() bool { return s.Cell(1, 1).Style.Bold })
 	s.WaitFor("Untitled · Modified", 3*time.Second)
 	from = len(s.Raw())
-	s.Send("\x1b[<0;1;24M\x1b[<0;1;24m")
+	s.Send("\x00") // Reopen the popover before checking its backdrop.
+	s.WaitFor("#FG", 3*time.Second)
+	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
+	from = len(s.Raw())
+	s.Send("\x1b[<0;1;24M")
 	waitMouseMode303(t, s, from, mouseRelease303)
 	// The same backdrop click must not activate the bottom bar or insert a report.
 	from = len(s.Raw())

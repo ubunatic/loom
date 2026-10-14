@@ -1,4 +1,4 @@
-# 306 — Pane Post to run widget mutations on the event loop from any goroutine
+# 320 — Pane Post to run widget mutations on the event loop from any goroutine
 
 **Status**: Closed
 **Resolution**: Added `Pane.Post` (mutex-guarded unbounded FIFO drained at each loop turn, woken via the invalidate channel; no-op after Close).

@@ -12,7 +12,6 @@ import (
 	"sync"
 	"time"
 
-	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 )
 
@@ -52,11 +51,8 @@ const readerFallbackPoll = 50
 // delivered first (bytes a previous reader read but could not deliver).
 func (p *Pane) startReader(initial []byte) {
 	r := &inputReader{stop: make(chan struct{}), done: make(chan struct{}), wakeR: -1, wakeW: -1}
-	var fds [2]int
-	if unix.Pipe(fds[:]) == nil {
-		unix.CloseOnExec(fds[0])
-		unix.CloseOnExec(fds[1])
-		r.wakeR, r.wakeW = fds[0], fds[1]
+	if wr, ww, ok := newWakePipe(); ok {
+		r.wakeR, r.wakeW = wr, ww
 	}
 	p.reader = r
 	p.readerDone = r.done
@@ -89,14 +85,12 @@ func (p *Pane) haltReader() (held []byte, ok bool) {
 	return r.held, true
 }
 
-// signal stops the reader. A write after loop closed the read end fails with
-// EPIPE, which is harmless (Go ignores SIGPIPE for fds other than 1 and 2).
+// signal stops the reader and wakes it through the self-pipe.
 func (r *inputReader) signal() {
 	r.stopOnce.Do(func() {
 		close(r.stop)
 		if r.wakeW >= 0 {
-			_, _ = unix.Write(r.wakeW, []byte{0})
-			_ = unix.Close(r.wakeW)
+			wakeAndClose(r.wakeW)
 		}
 	})
 }
@@ -104,7 +98,7 @@ func (r *inputReader) signal() {
 func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial []byte) {
 	defer close(r.done) // let close() and Suspend join us so no read is left racing
 	if r.wakeR >= 0 {
-		defer unix.Close(r.wakeR)
+		defer closeWakeEnd(r.wakeR)
 	}
 	send := func(res paneRead) bool {
 		select {
@@ -118,11 +112,9 @@ func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial 
 	if len(initial) > 0 && !send(paneRead{data: initial}) {
 		return
 	}
-	pfd := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
-	timeout := readerFallbackPoll
+	timeout := time.Duration(readerFallbackPoll) * time.Millisecond
 	if r.wakeR >= 0 {
-		pfd = append(pfd, unix.PollFd{Fd: int32(r.wakeR), Events: unix.POLLIN})
-		timeout = -1
+		timeout = -1 // block until input or a stop wakeup: no idle wakeups
 	}
 	for {
 		select {
@@ -130,15 +122,15 @@ func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial 
 			return
 		default:
 		}
-		n, perr := unix.Poll(pfd, timeout)
+		ready, perr := waitInput(fd, r.wakeR, timeout)
 		if perr != nil {
-			if perr == unix.EINTR {
+			if isInterrupted(perr) {
 				continue // e.g. a delivered SIGWINCH
 			}
 			send(paneRead{err: perr})
 			return
 		}
-		if n == 0 || pfd[0].Revents == 0 {
+		if !ready {
 			continue // fallback timeout or a stop wakeup: re-check stop
 		}
 		buf := make([]byte, 64)
@@ -342,7 +334,7 @@ func queryCursorKeep(tty *os.File) (row, col int, extra []byte, err error) {
 		return 0, 0, nil, err
 	}
 	deadline := time.Now().Add(100 * time.Millisecond)
-	poll := []unix.PollFd{{Fd: int32(tty.Fd()), Events: unix.POLLIN}}
+	fd := int(tty.Fd())
 	var buf []byte
 	chunk := make([]byte, 64)
 	for len(buf) < 4096 {
@@ -350,14 +342,14 @@ func queryCursorKeep(tty *os.File) (row, col int, extra []byte, err error) {
 		if remaining <= 0 {
 			return 0, 0, buf, fmt.Errorf("cursor query timed out")
 		}
-		ready, perr := unix.Poll(poll, max(1, int(remaining.Milliseconds())))
-		if perr == unix.EINTR {
+		ready, perr := waitTTY(fd, remaining)
+		if perr != nil && isInterrupted(perr) {
 			continue
 		}
 		if perr != nil {
 			return 0, 0, buf, perr
 		}
-		if ready == 0 {
+		if !ready {
 			continue
 		}
 		m, rerr := tty.Read(chunk)

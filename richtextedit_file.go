@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 )
 
 // DocState is the save state of a RichTextEdit document.
@@ -77,13 +78,33 @@ func (e *RichTextEdit) IsModified() bool {
 	return !reflect.DeepEqual(e.savedDocument, cloneRichDocumentLines(e.Document))
 }
 
+// IsMarkupPath reports whether path names a .tui markup file.
+func IsMarkupPath(path string) bool {
+	return strings.EqualFold(filepath.Ext(path), ".tui")
+}
+
 // NewRichTextEditFromFile creates a RichTextEdit populated with content from path.
+// A .tui path is parsed as bracket markup and saved with ToMarkup; a markup
+// syntax error is returned with the path, line and column. Other paths use ANSI.
 // If path does not exist, it initializes an empty document bound to path.
-// It sets FilePath = path and ShowFileBar = true.
+// It sets FilePath = path and ShowFileBar = true. Markup [image] tags show
+// their alt text; use NewRichTextEditFromFileWith to render images.
 func NewRichTextEditFromFile(path string) (*RichTextEdit, error) {
+	return NewRichTextEditFromFileWith(path, MarkupOptions{})
+}
+
+// NewRichTextEditFromFileWith is NewRichTextEditFromFile with options for
+// parsing a .tui file, such as media.MarkupOptions(path) to render images.
+// Saving writes rendered images as styled cells, not as [image] tags.
+func NewRichTextEditFromFileWith(path string, opts MarkupOptions) (*RichTextEdit, error) {
 	doc := &RichDocument{}
 	data, err := os.ReadFile(path)
-	if err == nil {
+	if err == nil && IsMarkupPath(path) {
+		doc, err = ParseMarkupWith(string(data), opts)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", path, err)
+		}
+	} else if err == nil {
 		doc.FromANSI(string(data))
 	} else if os.IsNotExist(err) {
 		doc.Lines = []RichLine{{}}
@@ -139,7 +160,9 @@ func (e *RichTextEdit) Save() error {
 }
 
 // SaveAs serializes the document, writes it to path, and associates path only
-// after both serialization and writing succeed.
+// after both serialization and writing succeed. Without SerializeDocument the
+// format follows path: .tui writes markup, anything else ANSI, so Save As
+// to another extension converts the document.
 func (e *RichTextEdit) SaveAs(path string) error {
 	defer e.notifyStateChange()
 	if path == "" {
@@ -150,7 +173,9 @@ func (e *RichTextEdit) SaveAs(path string) error {
 	e.Document.normalize()
 	var data []byte
 	var err error
-	if e.SerializeDocument == nil {
+	if e.SerializeDocument == nil && IsMarkupPath(path) {
+		data = []byte(e.Document.ToMarkup())
+	} else if e.SerializeDocument == nil {
 		data = []byte(e.Document.ToANSI() + "\n")
 	} else {
 		data, err = e.SerializeDocument(e.Document)

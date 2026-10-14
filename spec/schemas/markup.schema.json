@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loom .tui bracket markup specification",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["colors", "image"],
+  "properties": {
+    "colors": {
+      "type": "object",
+      "description": "Named colors mapped to 256-color palette indexes",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "type": "integer", "minimum": 0, "maximum": 255 }
+    },
+    "image": {
+      "type": "object",
+      "description": "Settings for [image] block tags",
+      "additionalProperties": false,
+      "required": ["modes", "max_width", "max_height"],
+      "properties": {
+        "modes": {
+          "type": "object",
+          "description": "Mode names mapped to cati renderers; the first mode is the default",
+          "minProperties": 1,
+          "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+          "additionalProperties": { "enum": ["halfblock", "quadblock", "sextant"] }
+        },
+        "max_width": { "type": "integer", "minimum": 1, "description": "Largest image width in cells" },
+        "max_height": { "type": "integer", "minimum": 1, "description": "Largest image height in cells" }
+      }
+    }
+  }
+}

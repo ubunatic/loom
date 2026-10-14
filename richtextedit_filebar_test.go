@@ -338,9 +338,7 @@ func TestRichTextEditFileBarMenuPreservesSelectionAndPopoverRouting(t *testing.T
 	if !edit.popoverSuppressed && len(edit.popoverButtons) == 0 {
 		t.Fatal("dismissing File menu lost the selection popover")
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || !edit.popoverFocusSet {
-		t.Fatalf("popover did not receive Tab after menu dismissal: result=%+v focus=%v", result, edit.popoverFocusSet)
-	}
+	popoverFocusAction(t, edit, "B")
 	if doc.ToPlainText() != text || !edit.HasSelection {
 		t.Fatal("popover navigation formatted text or cleared selection")
 	}

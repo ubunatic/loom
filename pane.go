@@ -31,10 +31,8 @@ import (
 	"strings"
 	"sync"
 	"sync/atomic"
-	"syscall"
 	"time"
 
-	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 	"ubunatic.com/loom/measure"
 )
@@ -503,25 +501,27 @@ func queryCursor(tty *os.File) (row, col int, err error) {
 	}
 	// Poll synchronously: a timed-out reader goroutine would steal later keys.
 	deadline := time.Now().Add(100 * time.Millisecond)
-	poll := []unix.PollFd{{Fd: int32(tty.Fd()), Events: unix.POLLIN}}
 	var buf [32]byte
 	for n := 0; n < len(buf); {
 		remaining := time.Until(deadline)
 		if remaining <= 0 {
 			return 0, 0, fmt.Errorf("cursor query timed out")
 		}
-		ready, err := unix.Poll(poll, max(1, int(remaining.Milliseconds())))
-		if err == unix.EINTR {
-			continue
-		}
+		ready, err := waitTTY(int(tty.Fd()), remaining)
 		if err != nil {
+			if isInterrupted(err) {
+				continue
+			}
 			return 0, 0, err
 		}
-		if ready == 0 {
+		if !ready {
 			continue
 		}
 		m, err := tty.Read(buf[n : n+1])
 		if err != nil {
+			if isInterrupted(err) {
+				continue
+			}
 			return 0, 0, err
 		}
 		if m == 0 {
@@ -1748,20 +1748,17 @@ func (p *Pane) close() {
 // drainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
 // don't bleed into whatever reads the terminal next.
 func (p *Pane) drainInput() {
-	const tcflsh = 0x540B // Linux TCFLSH; argument 0 selects TCIFLUSH (input queue)
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL, uintptr(p.fd), tcflsh, 0)
+	drainTerminalInput(p.fd)
 }
 
 func (p *Pane) installSignalHandler() {
 	// Room for each of the three signals, so dropping a SIGINT on resume
 	// (Suspend) cannot cost a SIGTERM or SIGHUP that arrived alongside.
 	p.interrupts = make(chan os.Signal, 3)
-	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
-
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.
 	// Cap 1 coalesces a burst of resizes (e.g. an interactive drag) into one.
 	p.winch = make(chan os.Signal, 1)
-	signal.Notify(p.winch, syscall.SIGWINCH)
+	notifyPaneSignals(p.interrupts, p.winch)
 }
 
 // TerminalSize returns the dimensions of the controlling terminal.

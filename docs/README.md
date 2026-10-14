@@ -10,6 +10,7 @@
 - [Hover testing](HoverTesting.md): black-box PTY mouse-hover probes, colour-cell diffing and offset reporting.
 - [Lean sprints](LeanSprints.md): loom field notes for lean sprints with cheap developer agents (escalation ladder, fake-test review, evidence convention).
 - [Editor](Editor.md): approved editor decisions, ANSI validation, widget composition, input safety, and PR review lessons.
+- [.tui markup](TuiMarkup.md): bracket markup grammar, colors, escapes, strict errors, `loom edit`/`loom markup` support.
 - [Terminal safety](TerminalSafety.md): the auto-wrap corruption trap, `loom.RawScreen`/`WriteRows`/`ClipRow`, and `x/term` coverage rules for any raw-ANSI terminal writer.
 - [Terminal repaint probe](TerminalRepaintProbe.md): standalone `loom-repaint-probe` benchmark modes, tuning, and timing semantics.
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
@@ -56,5 +57,10 @@
 | [studies/2026-09-treesitter-syntax-engine.md](studies/2026-09-treesitter-syntax-engine.md) | Pure-Go / Wasm (wazero) Tree-Sitter Syntax Engine for Loom |
 | [studies/2026-10-01-loom-module-migration.md](studies/2026-10-01-loom-module-migration.md) | Loom module migration reports (issue 235 M3) |
 | [studies/2026-10-04-inline-tui-library-agentic-build-story.md](studies/2026-10-04-inline-tui-library-agentic-build-story.md) | Loom: building a terminal UI library in fast, testable slices |
+| [studies/2026-10-09-tui-markup-format-lean-sprint-story.md](studies/2026-10-09-tui-markup-format-lean-sprint-story.md) | Rapid Evolution of the .tui Markup Format via Harnez Lean Sprints |
+| [studies/2026-10-10-two-agent-lean-sprint-issue-315-windows-measure.md](studies/2026-10-10-two-agent-lean-sprint-issue-315-windows-measure.md) | 2026-10-10 Lean Sprint Study: Windows Builds in Terminal Measurement (Issue 315) |
+| [studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md](studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md) | 2026-10-10 Lean Sprint Study: Configurable Popover Menu Semantics in loom edit (Issue 316) |
+| [studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md](studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md) | 2026-10-10 Lean Sprint Study: Directional Popover Focus and Tab/Ctrl+I Decoupling (Issue 317) |
+| [studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md) | 2026-10-10 Lean Sprint Study: Cancel Focused Popover on Arrow Away from Menu Bar (Issue 318) |
 
 Study files are the source of truth for this table.

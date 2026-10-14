@@ -257,8 +257,8 @@ Details live in the closed tickets and their `docs/progress/<ticket>/` frames.
 | `Frame` `FillHeight` (stacked fill) | 051 | A frame box expands to the available content height. |
 | `Canvas.DrawBorder`, `Canvas.DrawBox`, `spec/box.yaml` | 037 | Spec-driven box glyphs; do not duplicate glyphs in Go. |
 | `Ticker` (`TickInterval`, `Tick`), `Pane.Invalidate()` | 060 | Periodic redraw without pane ownership; invalidate is goroutine safe. The pane must not reset its tick timer on every event. |
-| `Pane.Post(fn)` | 306 | Run `fn` on the event loop from any goroutine, then repaint. Use `Post` to change widget state from a producer (streams, job logs); `Invalidate` only requests a repaint and must not be paired with off-loop mutation. Never blocks or drops; FIFO; a burst draws once; no-op after `Close`. |
-| `Pane.Suspend(fn)` | 305 | Hand the terminal to `fn` (e.g. run `$EDITOR` on `/dev/tty`) from the event loop: the input reader stops without losing bytes, alt screen/mouse/paste/raw mode are left, then restored with a fresh size and full repaint; restores on error or panic; if `fn` calls `Close`, Suspend does not resume and `Run` returns. `fn` must not open a nested Pane: the single-pane guard still holds. See `examples/suspend`. |
+| `Pane.Post(fn)` | 320 | Run `fn` on the event loop from any goroutine, then repaint. Use `Post` to change widget state from a producer (streams, job logs); `Invalidate` only requests a repaint and must not be paired with off-loop mutation. Never blocks or drops; FIFO; a burst draws once; no-op after `Close`. |
+| `Pane.Suspend(fn)` | 319 | Hand the terminal to `fn` (e.g. run `$EDITOR` on `/dev/tty`) from the event loop: the input reader stops without losing bytes, alt screen/mouse/paste/raw mode are left, then restored with a fresh size and full repaint; restores on error or panic; if `fn` calls `Close`, Suspend does not resume and `Run` returns. `fn` must not open a nested Pane: the single-pane guard still holds. See `examples/suspend`. |
 | `Choice.MouseTextOnly` | 093 | Hover and drag track only rendered item text; a left press anywhere on a row selects it (296), activation follows `DoubleClickToActivate`/`SelectOnlyOnClick`. |
 | Scrollbar drag in `View` and `Split` | 092 | Drags stay with the widget that started them. |
 | [Key defaults](KeyDefaults.md) and the decoder audit | 088 | Which keys are decoded and which are terminal limitations (Ctrl-I, Ctrl-J, Ctrl-M). |
@@ -367,11 +367,15 @@ columns aligned. Ctrl+D wraps a selection using the default box style; without a
 selection it toggles box drawing mode. The popover's Draw button still enters
 box mode. Arrow keys draw a connected path; Enter or Esc finishes drawing.
 When a stroke starts on an existing box glyph, its foreground color is carried
-to each glyph changed by that stroke. With a selection, Tab and Shift+Tab move through enabled popover
-actions, Left/Right move along the bar, and Enter or Space activates the focused
-action; arrows are consumed while the popover is open. In a submenu, Tab/Shift+Tab
-and arrows move through choices, and Enter or Space applies one. Esc closes the
-submenu before the bar. The
+to each glyph changed by that stroke. With a selection and an unfocused toolbar,
+Tab/Ctrl+I toggles italics. The arrow towards the toolbar (Up above the selection,
+Down below it) focuses it; other arrows dismiss it and move the editor cursor.
+Once focused on the main menu bar, pressing the arrow away from the toolbar back
+towards the text (Up when below, Down when above) cancels the popover; Left/Right
+navigate actions, and Enter or Space activates the focused action. In a submenu,
+Tab/Shift+Tab and arrows move through choices, and Enter or Space applies one.
+Esc closes the submenu before the bar. Ctrl+Space reopens a dismissed toolbar
+while preserving the selection. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them
