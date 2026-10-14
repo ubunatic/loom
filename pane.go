@@ -974,6 +974,12 @@ func (p *Pane) runPosted() bool {
 	p.posted = nil
 	p.postMu.Unlock()
 	for _, fn := range fns {
+		p.postMu.Lock()
+		closed := p.postClosed
+		p.postMu.Unlock()
+		if closed {
+			break // a callback closed the pane; drop the rest of the batch
+		}
 		fn()
 	}
 	return len(fns) > 0
