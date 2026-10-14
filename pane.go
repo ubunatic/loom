@@ -145,7 +145,15 @@ type Pane struct {
 	// readerDone is closed by Run's input-reader goroutine when it exits. close()
 	// waits on it so a lingering blocked Read cannot steal input meant for
 	// whatever reads the terminal after the pane (e.g. the calling shell).
-	readerDone     chan struct{}
+	readerDone chan struct{}
+	// reader is the running input reader; reads is the Run loop's input
+	// channel, kept so Suspend can restart the reader on it.
+	reader *inputReader
+	reads  chan paneRead
+	// suspended is set while Suspend runs its callback; resumeRepaint makes
+	// the next frame re-read the terminal size and repaint every row.
+	suspended      bool
+	resumeRepaint  bool
 	interrupts     chan os.Signal
 	invalidate     chan struct{}
 	invalidateOnce sync.Once
@@ -1102,65 +1110,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// Read input in a goroutine and forward it on a channel so the main loop can
 	// select between input and SIGWINCH. os.File.Read retries EINTR via Go's poll
 	// layer (docs/TuiInput.md §2), so a signal alone cannot wake a blocking read —
-	// hence the separate reader. The goroutine exits when the tty is closed (on
-	// Close) or when done is signalled.
-	type readResult struct {
-		data []byte
-		err  error
-	}
-	reads := make(chan readResult)
-	done := make(chan struct{})
-	defer close(done)
-	// Capture the channel before the goroutine starts: a quick return and a new
-	// run() would otherwise reassign the field and both readers close the new one.
-	readerDone := make(chan struct{})
-	p.readerDone = readerDone
-	go func() {
-		defer close(readerDone) // let close() join us so no read is left racing
-		// Poll with a short timeout instead of blocking in Read: os.File.Fd (called
-		// in New) detaches the tty from the runtime poller and puts it in blocking
-		// mode, so Close cannot interrupt a bare Read — the goroutine would leak and
-		// race the next terminal reader for input. Polling lets us observe done and
-		// exit on teardown. EINTR (e.g. from a delivered SIGWINCH) just re-polls.
-		pfd := []unix.PollFd{{Fd: int32(p.fd), Events: unix.POLLIN}}
-		for {
-			select {
-			case <-done:
-				return
-			default:
-			}
-			n, perr := unix.Poll(pfd, 50)
-			if perr != nil {
-				if perr == unix.EINTR {
-					continue
-				}
-				select {
-				case reads <- readResult{err: perr}:
-				case <-done:
-				}
-				return
-			}
-			if n == 0 {
-				continue // timeout — loop back to re-check done
-			}
-			buf := make([]byte, 64)
-			m, rerr := p.tty.Read(buf)
-			if m > 0 {
-				select {
-				case reads <- readResult{data: buf[:m]}:
-				case <-done:
-					return
-				}
-			}
-			if rerr != nil || m == 0 {
-				select {
-				case reads <- readResult{err: rerr}:
-				case <-done:
-				}
-				return
-			}
-		}
-	}()
+	// hence the separate reader (see inputReader). Suspend stops and restarts it.
+	reads := make(chan paneRead)
+	p.reads = reads
+	p.startReader(nil)
+	defer p.stopReader()
 
 	// redraw paints one frame. It is a closure so the mouse loop can repaint
 	// after each event in a burst, letting the highlight follow the pointer
@@ -1177,6 +1131,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			if p.MaxCols > 0 && cols > p.MaxCols {
 				cols = p.MaxCols
 			}
+		}
+		if p.resumeRepaint {
+			// Back from Suspend: the terminal may have been resized and the
+			// child changed the screen and the auto-wrap flag; take the
+			// current size and paint every row from scratch.
+			p.resumeRepaint = false
+			autoWrapDisabled = false
+			p.applyWinch(&cols)
+			canvas = NewCanvas(cols, p.rows)
+			clearRows = 0
 		}
 		if p.ResizeConfig.AutoWrap && !autoWrapDisabled && p.tty != nil {
 			p.tty.WriteString("\x1b[?7l") //nolint:errcheck

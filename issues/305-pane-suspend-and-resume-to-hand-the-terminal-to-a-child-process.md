@@ -1,6 +1,6 @@
 # 305 — Pane Suspend and Resume to hand the terminal to a child process
 
-**Status**: Open
+**Status**: Closed — Pane.Suspend stops the poll-based reader (replaying held bytes), leaves and restores terminal modes around fn, repaints at the new size; PTY tests plus examples/suspend (Ctrl+G $EDITOR)
 **Priority**: P1 (High)
 **Severity**: Feature
 **Category**: Pane / Terminal Control
