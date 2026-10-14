@@ -30,24 +30,34 @@ type paneRead struct {
 // Close, a child process during Suspend; see issue 066). os.File.Fd (called in
 // New) puts the tty in blocking mode and detaches it from the runtime poller,
 // so read deadlines do not work and closing the file cannot wake a blocked
-// Read. The reader therefore polls with a short timeout and only reads after
-// POLLIN, so Read never blocks and the goroutine sees stop within one poll
-// cycle. Bytes it has read but not yet handed to the loop are kept in held and
-// replayed by the next reader, so stopping loses no input.
+// Read. The reader therefore blocks in poll(2) on the tty and a self-pipe and
+// only reads after POLLIN, so Read never blocks; stop writes a byte to the
+// pipe, which wakes poll at once without idle wakeups. Bytes it has read but
+// not yet handed to the loop are kept in held and replayed by the next reader,
+// so stopping loses no input.
 type inputReader struct {
 	stop     chan struct{}
 	stopOnce sync.Once
+	wakeR    int // self-pipe read end, owned and closed by loop; -1 without a pipe
+	wakeW    int // self-pipe write end, closed by signal
 	done     chan struct{}
 	held     []byte // undelivered bytes; valid once done is closed
 }
 
-// readerPollInterval bounds how long stopping the reader can take.
-const readerPollInterval = 50 // milliseconds
+// readerFallbackPoll is the poll timeout (ms) used only if no self-pipe could
+// be created; it bounds how long stopping the reader can take then.
+const readerFallbackPoll = 50
 
 // startReader starts an input reader on p.reads. initial, if not empty, is
 // delivered first (bytes a previous reader read but could not deliver).
 func (p *Pane) startReader(initial []byte) {
-	r := &inputReader{stop: make(chan struct{}), done: make(chan struct{})}
+	r := &inputReader{stop: make(chan struct{}), done: make(chan struct{}), wakeR: -1, wakeW: -1}
+	var fds [2]int
+	if unix.Pipe(fds[:]) == nil {
+		unix.CloseOnExec(fds[0])
+		unix.CloseOnExec(fds[1])
+		r.wakeR, r.wakeW = fds[0], fds[1]
+	}
 	p.reader = r
 	p.readerDone = r.done
 	go r.loop(p.tty, p.fd, p.reads, initial)
@@ -70,6 +80,7 @@ func (p *Pane) haltReader() (held []byte, ok bool) {
 	}
 	select {
 	case <-r.done:
+		r.signal()           // release its self-pipe write end
 		return r.held, false // already gone (input error or Run returned)
 	default:
 	}
@@ -78,10 +89,23 @@ func (p *Pane) haltReader() (held []byte, ok bool) {
 	return r.held, true
 }
 
-func (r *inputReader) signal() { r.stopOnce.Do(func() { close(r.stop) }) }
+// signal stops the reader. A write after loop closed the read end fails with
+// EPIPE, which is harmless (Go ignores SIGPIPE for fds other than 1 and 2).
+func (r *inputReader) signal() {
+	r.stopOnce.Do(func() {
+		close(r.stop)
+		if r.wakeW >= 0 {
+			_, _ = unix.Write(r.wakeW, []byte{0})
+			_ = unix.Close(r.wakeW)
+		}
+	})
+}
 
 func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial []byte) {
 	defer close(r.done) // let close() and Suspend join us so no read is left racing
+	if r.wakeR >= 0 {
+		defer unix.Close(r.wakeR)
+	}
 	send := func(res paneRead) bool {
 		select {
 		case reads <- res:
@@ -95,13 +119,18 @@ func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial 
 		return
 	}
 	pfd := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
+	timeout := readerFallbackPoll
+	if r.wakeR >= 0 {
+		pfd = append(pfd, unix.PollFd{Fd: int32(r.wakeR), Events: unix.POLLIN})
+		timeout = -1
+	}
 	for {
 		select {
 		case <-r.stop:
 			return
 		default:
 		}
-		n, perr := unix.Poll(pfd, readerPollInterval)
+		n, perr := unix.Poll(pfd, timeout)
 		if perr != nil {
 			if perr == unix.EINTR {
 				continue // e.g. a delivered SIGWINCH
@@ -109,8 +138,8 @@ func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial 
 			send(paneRead{err: perr})
 			return
 		}
-		if n == 0 {
-			continue // timeout — loop back to re-check stop
+		if n == 0 || pfd[0].Revents == 0 {
+			continue // fallback timeout or a stop wakeup: re-check stop
 		}
 		buf := make([]byte, 64)
 		m, rerr := tty.Read(buf)
@@ -162,6 +191,16 @@ func (p *Pane) Suspend(fn func() error) (err error) {
 
 	defer func() {
 		r := recover()
+		if p.restored {
+			// fn closed the pane: the tty is gone, so do not resume onto it;
+			// Run returns at its next loop turn.
+			p.suspended = false
+			p.Quit()
+			if r != nil {
+				panic(r)
+			}
+			return
+		}
 		if rerr := p.resumeTerminal(rawState, wasAlt, mouseMode, paste, held, readerRan); rerr != nil && err == nil {
 			err = rerr
 		}
@@ -273,15 +312,22 @@ func (p *Pane) dropSuspendSignals() {
 		}
 	}
 	if p.interrupts != nil {
-		select {
-		case sig := <-p.interrupts:
-			if sig != os.Interrupt {
-				select {
-				case p.interrupts <- sig:
-				default:
+		var keep []os.Signal
+		for drained := false; !drained; {
+			select {
+			case sig := <-p.interrupts:
+				if sig != os.Interrupt {
+					keep = append(keep, sig)
 				}
+			default:
+				drained = true
 			}
-		default:
+		}
+		for _, sig := range keep {
+			select {
+			case p.interrupts <- sig:
+			default: // a new signal took the slot; it is handled as well
+			}
 		}
 	}
 }

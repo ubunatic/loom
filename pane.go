@@ -1702,6 +1702,20 @@ func (p *Pane) close() {
 		signal.Stop(p.interrupts)
 	}
 
+	// Stop the reader and wait for it before the tty is drained and closed, so
+	// it cannot consume a keystroke meant for the next terminal reader or poll
+	// a closed (possibly reused) fd. Its self-pipe wakes it at once; the wait is
+	// bounded so teardown can never hang. A Run still in progress (Close from a
+	// handler) returns at its next loop turn.
+	p.stopReader()
+	if p.readerDone != nil {
+		select {
+		case <-p.readerDone:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	p.Quit()
+
 	p.disableMouse()
 	p.setBracketedPaste(false)
 
@@ -1729,16 +1743,6 @@ func (p *Pane) close() {
 
 	_ = term.Restore(p.fd, p.oldState)
 	_ = p.tty.Close()
-
-	// Wait for the reader goroutine to notice done (it polls on a 50ms cycle) and
-	// exit, so it cannot consume a keystroke meant for the next terminal reader.
-	// Bounded so teardown can never hang.
-	if p.readerDone != nil {
-		select {
-		case <-p.readerDone:
-		case <-time.After(300 * time.Millisecond):
-		}
-	}
 }
 
 // drainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
@@ -1749,7 +1753,9 @@ func (p *Pane) drainInput() {
 }
 
 func (p *Pane) installSignalHandler() {
-	p.interrupts = make(chan os.Signal, 1)
+	// Room for each of the three signals, so dropping a SIGINT on resume
+	// (Suspend) cannot cost a SIGTERM or SIGHUP that arrived alongside.
+	p.interrupts = make(chan os.Signal, 3)
 	signal.Notify(p.interrupts, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.

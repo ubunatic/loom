@@ -215,7 +215,8 @@ func TestPaneSuspendHandsTTYToChild(t *testing.T) {
 			t.Fatalf("Run: %v", err)
 		}
 	case <-time.After(3 * time.Second):
-		t.Fatal("Run did not return after q")
+		_, aft := capture.split(t)
+		t.Fatalf("Run did not return after q; keys=%v after=%q", w.keyNames(), aft)
 	}
 	p.Close()
 	before, after := capture.split(t)
@@ -261,6 +262,9 @@ func TestPaneSuspendResizeAppliesOnResume(t *testing.T) {
 
 	p := &Pane{tty: slave, fd: int(slave.Fd()), oldState: cooked, rows: 3, wantRows: 3,
 		startRow: 2, cols: 40, ResizeConfig: DefaultResizeConfig()}
+	// A late SIGWINCH from setPTYSize under load would narrow frames by the
+	// width guard; this test is about the size, not the guard.
+	p.ResizeConfig.WidthGuard = false
 	p.SetScreenMode(ScreenAlt)
 	w := newSuspendWidget()
 	var mu sync.Mutex
@@ -355,5 +359,53 @@ func TestPaneSuspendRestoresAfterPanicAndError(t *testing.T) {
 	}
 	if p.suspended {
 		t.Fatal("pane still marked suspended")
+	}
+}
+
+// TestPaneSuspendCloseInsideFn closes the pane from fn: Suspend must not
+// resume onto the closed tty, and Run must return cleanly.
+func TestPaneSuspendCloseInsideFn(t *testing.T) {
+	t.Setenv("LOOM_ZWJ", "join")
+	master, slave, cooked := openPTYWithCookedState(t)
+	setPTYSize(t, master, 40, 10)
+	capture := capturePTY(master, "")
+
+	p := &Pane{tty: slave, fd: int(slave.Fd()), oldState: cooked, rows: 3, wantRows: 3,
+		startRow: 2, cols: 40, InlineOnly: true}
+	p.EnableMouseClicks()
+	w := newSuspendWidget()
+	suspendErr := errors.New("Suspend not called")
+	w.onSuspend = func() {
+		suspendErr = p.Suspend(func() error {
+			_, _ = slave.WriteString(suspendMarker)
+			p.Close()
+			return nil
+		})
+	}
+
+	errc := make(chan error, 1)
+	go func() { errc <- p.Run(w) }()
+	w.waitDraw(t, 0)
+	_, _ = master.Write([]byte{0x07})
+	select {
+	case err := <-errc:
+		if err != nil {
+			t.Fatalf("Run: %v", err)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("Run did not return after Close inside Suspend")
+	}
+	time.Sleep(50 * time.Millisecond) // let the capture see the last writes
+	_, after := capture.split(t)
+	if suspendErr != nil {
+		t.Fatalf("Suspend: %v", suspendErr)
+	}
+	for _, seq := range []string{"\x1b[?1000h", "\x1b[?2004h", "\x1b[6n"} {
+		if strings.Contains(after, seq) {
+			t.Errorf("Suspend resumed onto the closed tty: output after fn has %q", seq)
+		}
+	}
+	if p.suspended {
+		t.Error("pane still marked suspended")
 	}
 }
