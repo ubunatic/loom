@@ -19,18 +19,22 @@ ownership. `Close` is safe to call more than once.
 
 ## 2. Poll before reading; handle interruption and close
 
-The input goroutine polls the tty descriptor with a short timeout before each
+The input goroutine (`inputReader` in `pane_suspend.go`) polls before each
 read. Calling `os.File.Fd` during setup detaches the descriptor from Go's
 runtime poller and puts it in blocking mode. A bare blocking `Read` on that
 descriptor may not be interrupted by closing the file, which could leave a
 goroutine alive and competing with the shell for later input.
 
-Polling lets the reader periodically check its completion channel. When
-`Close` shuts down the run loop, the reader notices completion on the next
-poll timeout and exits; the pane waits for that reader to finish before
-returning terminal ownership. When `unix.Poll` returns `EINTR` (for example,
-because `SIGWINCH` was delivered), the reader polls again. An interrupted poll
-is not treated as an input event or a fatal read error.
+On Unix the reader blocks in `poll(2)` on the tty and a self-pipe with no
+timeout (`waitInput` in `pane_wait_unix.go`), so an idle pane causes no
+wakeups. Stopping it (`Close`, or `Suspend` before running a child) writes to
+the pipe, which wakes it at once; bytes it read but could not deliver are kept
+and replayed by the next reader. `Close` joins the reader (bounded wait)
+before draining and closing the tty. Without a self-pipe (Windows, or if
+`pipe(2)` fails) it falls back to a 50 ms poll timeout. When the poll returns
+`EINTR` (for example, because `SIGWINCH` was delivered; see `isInterrupted`),
+the reader polls again. An interrupted poll is not treated as an input event
+or a fatal read error.
 
 The tty's Go `Read` is reached only after poll reports input ready. In contrast,
 `queryCursor` performs a bounded synchronous poll/read while `New` waits for the

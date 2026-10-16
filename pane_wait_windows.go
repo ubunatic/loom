@@ -34,3 +34,20 @@ func drainTerminalInput(int) {}
 func notifyPaneSignals(interrupts, _ chan<- os.Signal) {
 	signal.Notify(interrupts, os.Interrupt)
 }
+
+// newWakePipe reports no self-pipe on Windows; the input reader polls with a
+// timeout instead.
+func newWakePipe() (r, w int, ok bool) { return -1, -1, false }
+
+func wakeAndClose(int) {}
+
+func closeWakeEnd(int) {}
+
+// waitInput waits for fd; wake is unused. A negative timeout falls back to a
+// short poll so the caller can re-check its stop signal.
+func waitInput(fd, _ int, timeout time.Duration) (bool, error) {
+	if timeout < 0 {
+		timeout = readerFallbackPoll * time.Millisecond
+	}
+	return waitTTY(fd, timeout)
+}

@@ -256,6 +256,14 @@ func openPTY(t *testing.T) (master, slave *os.File) {
 
 func openPTYForProbe(t *testing.T) (master, slave *os.File) {
 	t.Helper()
+	master, slave, _ = openPTYWithCookedState(t)
+	return master, slave
+}
+
+// openPTYWithCookedState is openPTYForProbe that also returns the slave's
+// initial (cooked) mode, for tests that hand the terminal to a child.
+func openPTYWithCookedState(t *testing.T) (master, slave *os.File, cooked *term.State) {
+	t.Helper()
 	m, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {
 		t.Skipf("open /dev/ptmx: %v", err)
@@ -281,7 +289,8 @@ func openPTYForProbe(t *testing.T) (master, slave *os.File) {
 	// until one arrived — exactly what Pane.New's term.MakeRaw normally
 	// avoids on the real /dev/tty. Put the slave in raw mode here so these
 	// tests see bytes as soon as they are written, like the real pane does.
-	if _, err := term.MakeRaw(int(s.Fd())); err != nil {
+	cooked, err = term.MakeRaw(int(s.Fd()))
+	if err != nil {
 		s.Close()
 		m.Close()
 		t.Skipf("raw mode: %v", err)
@@ -290,7 +299,7 @@ func openPTYForProbe(t *testing.T) (master, slave *os.File) {
 		s.Close()
 		m.Close()
 	})
-	return m, s
+	return m, s, cooked
 }
 
 func drainPTY(master *os.File, done <-chan struct{}) {

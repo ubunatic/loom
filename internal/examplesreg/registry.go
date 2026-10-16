@@ -18,6 +18,7 @@ import (
 	"ubunatic.com/loom/examples/screens/screens"
 	"ubunatic.com/loom/examples/splash/splash"
 	"ubunatic.com/loom/examples/split/split"
+	"ubunatic.com/loom/examples/suspend/suspend"
 	"ubunatic.com/loom/examples/tabs/tabs"
 	"ubunatic.com/loom/examples/textedit/textedit"
 	"ubunatic.com/loom/examples/textrender/textrender"
@@ -113,6 +114,13 @@ var Registry = []Example{
 		Run:          split.Run,
 		SupportsHelp: true,
 		NewWidget:    func(args []string) (interface{}, error) { return split.NewWidget(args) },
+	},
+	{
+		Name:         "suspend",
+		Description:  "Ctrl+G suspends the pane and edits a note in $EDITOR",
+		Package:      "ubunatic.com/loom/examples/suspend",
+		Run:          suspend.Run,
+		SupportsHelp: true,
 	},
 	{
 		Name:         "tabs",

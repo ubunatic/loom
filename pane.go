@@ -143,12 +143,24 @@ type Pane struct {
 	// readerDone is closed by Run's input-reader goroutine when it exits. close()
 	// waits on it so a lingering blocked Read cannot steal input meant for
 	// whatever reads the terminal after the pane (e.g. the calling shell).
-	readerDone     chan struct{}
+	readerDone chan struct{}
+	// reader is the running input reader; reads is the Run loop's input
+	// channel, kept so Suspend can restart the reader on it.
+	reader *inputReader
+	reads  chan paneRead
+	// suspended is set while Suspend runs its callback; resumeRepaint makes
+	// the next frame re-read the terminal size and repaint every row.
+	suspended      bool
+	resumeRepaint  bool
 	interrupts     chan os.Signal
 	invalidate     chan struct{}
 	invalidateOnce sync.Once
-	tickerReset    chan struct{}
-	help           *Popup
+	// postMu guards posted and postClosed; Post appends, the run loop drains.
+	postMu      sync.Mutex
+	posted      []func()
+	postClosed  bool
+	tickerReset chan struct{}
+	help        *Popup
 }
 
 // CloseReason tells OnCloseRequest why the pane wants to close.
@@ -943,6 +955,44 @@ func (p *Pane) Invalidate() {
 	}
 }
 
+// Post queues fn to run on the event-loop goroutine before the next frame,
+// then requests a repaint. It is safe to call from any goroutine, never blocks
+// on the loop and never drops callbacks; queued callbacks run in FIFO order and
+// a burst is drawn once. Callbacks posted before Run start on its first loop
+// turn. Post after Close is a no-op.
+func (p *Pane) Post(fn func()) {
+	if fn == nil {
+		return
+	}
+	p.postMu.Lock()
+	if p.postClosed {
+		p.postMu.Unlock()
+		return
+	}
+	p.posted = append(p.posted, fn)
+	p.postMu.Unlock()
+	p.Invalidate()
+}
+
+// runPosted runs the callbacks queued by Post and reports whether any ran.
+// Callbacks posted while it runs wait for the next loop turn.
+func (p *Pane) runPosted() bool {
+	p.postMu.Lock()
+	fns := p.posted
+	p.posted = nil
+	p.postMu.Unlock()
+	for _, fn := range fns {
+		p.postMu.Lock()
+		closed := p.postClosed
+		p.postMu.Unlock()
+		if closed {
+			break // a callback closed the pane; drop the rest of the batch
+		}
+		fn()
+	}
+	return len(fns) > 0
+}
+
 // RunWatch runs collection and redraw on independent timers. Collection and
 // widget callbacks share the event-loop goroutine; Draw must not collect data.
 // The caller owns Close, as with Run. Collection callbacks must not block.
@@ -1060,64 +1110,11 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	// Read input in a goroutine and forward it on a channel so the main loop can
 	// select between input and SIGWINCH. os.File.Read retries EINTR via Go's poll
 	// layer (docs/TuiInput.md §2), so a signal alone cannot wake a blocking read —
-	// hence the separate reader. The goroutine exits when the tty is closed (on
-	// Close) or when done is signalled.
-	type readResult struct {
-		data []byte
-		err  error
-	}
-	reads := make(chan readResult)
-	done := make(chan struct{})
-	defer close(done)
-	// Capture the channel before the goroutine starts: a quick return and a new
-	// run() would otherwise reassign the field and both readers close the new one.
-	readerDone := make(chan struct{})
-	p.readerDone = readerDone
-	go func() {
-		defer close(readerDone) // let close() join us so no read is left racing
-		// Poll with a short timeout instead of blocking in Read: os.File.Fd (called
-		// in New) detaches the tty from the runtime poller and puts it in blocking
-		// mode, so Close cannot interrupt a bare Read — the goroutine would leak and
-		// race the next terminal reader for input. Polling lets us observe done and
-		// exit on teardown. EINTR (e.g. from a delivered SIGWINCH) just re-polls.
-		for {
-			select {
-			case <-done:
-				return
-			default:
-			}
-			ready, perr := waitTTY(p.fd, 50*time.Millisecond)
-			if perr != nil {
-				if isInterrupted(perr) {
-					continue
-				}
-				select {
-				case reads <- readResult{err: perr}:
-				case <-done:
-				}
-				return
-			}
-			if !ready {
-				continue // timeout — loop back to re-check done
-			}
-			buf := make([]byte, 64)
-			m, rerr := p.tty.Read(buf)
-			if m > 0 {
-				select {
-				case reads <- readResult{data: buf[:m]}:
-				case <-done:
-					return
-				}
-			}
-			if rerr != nil || m == 0 {
-				select {
-				case reads <- readResult{err: rerr}:
-				case <-done:
-				}
-				return
-			}
-		}
-	}()
+	// hence the separate reader (see inputReader). Suspend stops and restarts it.
+	reads := make(chan paneRead)
+	p.reads = reads
+	p.startReader(nil)
+	defer p.stopReader()
 
 	// redraw paints one frame. It is a closure so the mouse loop can repaint
 	// after each event in a burst, letting the highlight follow the pointer
@@ -1134,6 +1131,16 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			if p.MaxCols > 0 && cols > p.MaxCols {
 				cols = p.MaxCols
 			}
+		}
+		if p.resumeRepaint {
+			// Back from Suspend: the terminal may have been resized and the
+			// child changed the screen and the auto-wrap flag; take the
+			// current size and paint every row from scratch.
+			p.resumeRepaint = false
+			autoWrapDisabled = false
+			p.applyWinch(&cols)
+			canvas = NewCanvas(cols, p.rows)
+			clearRows = 0
 		}
 		if p.ResizeConfig.AutoWrap && !autoWrapDisabled && p.tty != nil {
 			p.tty.WriteString("\x1b[?7l") //nolint:errcheck
@@ -1249,6 +1256,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 		// Check before doing another frame so a canceled Draw stays final.
 		if err := ctx.Err(); err != nil {
 			return err
+		}
+		if p.runPosted() {
+			dirty = true
 		}
 		if backgroundClock.reconcile(p.Background, p.ReduceMotion, p.BackgroundOnRedraw) && p.Metrics != nil {
 			p.Metrics.AstraTargetFPS = 0
@@ -1676,6 +1686,10 @@ func (p *Pane) close() {
 		return
 	}
 	p.restored = true
+	p.postMu.Lock()
+	p.postClosed = true
+	p.posted = nil
+	p.postMu.Unlock()
 	if p.ownsTTY {
 		releasePaneOwnership()
 		p.ownsTTY = false
@@ -1687,6 +1701,20 @@ func (p *Pane) close() {
 	if p.interrupts != nil {
 		signal.Stop(p.interrupts)
 	}
+
+	// Stop the reader and wait for it before the tty is drained and closed, so
+	// it cannot consume a keystroke meant for the next terminal reader or poll
+	// a closed (possibly reused) fd. Its self-pipe wakes it at once; the wait is
+	// bounded so teardown can never hang. A Run still in progress (Close from a
+	// handler) returns at its next loop turn.
+	p.stopReader()
+	if p.readerDone != nil {
+		select {
+		case <-p.readerDone:
+		case <-time.After(300 * time.Millisecond):
+		}
+	}
+	p.Quit()
 
 	p.disableMouse()
 	p.setBracketedPaste(false)
@@ -1715,16 +1743,6 @@ func (p *Pane) close() {
 
 	_ = term.Restore(p.fd, p.oldState)
 	_ = p.tty.Close()
-
-	// Wait for the reader goroutine to notice done (it polls on a 50ms cycle) and
-	// exit, so it cannot consume a keystroke meant for the next terminal reader.
-	// Bounded so teardown can never hang.
-	if p.readerDone != nil {
-		select {
-		case <-p.readerDone:
-		case <-time.After(300 * time.Millisecond):
-		}
-	}
 }
 
 // drainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
@@ -1734,7 +1752,9 @@ func (p *Pane) drainInput() {
 }
 
 func (p *Pane) installSignalHandler() {
-	p.interrupts = make(chan os.Signal, 1)
+	// Room for each of the three signals, so dropping a SIGINT on resume
+	// (Suspend) cannot cost a SIGTERM or SIGHUP that arrived alongside.
+	p.interrupts = make(chan os.Signal, 3)
 	// SIGWINCH goes to its own channel; the Run loop selects on it to reflow.
 	// Cap 1 coalesces a burst of resizes (e.g. an interactive drag) into one.
 	p.winch = make(chan os.Signal, 1)
