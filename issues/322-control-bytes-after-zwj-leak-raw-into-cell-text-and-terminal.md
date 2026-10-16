@@ -1,6 +1,6 @@
 # 322 — Control bytes after ZWJ leak raw into cell text and terminal
 
-**Status**: Open
+**Status**: Closed — Fixed: shared measure.JoinsAfterZWJ ends clusters at controls; Canvas.Row drops control runes from cell text.
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Security
