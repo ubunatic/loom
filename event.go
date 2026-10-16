@@ -311,7 +311,9 @@ func DecodeKey(b []byte) KeyEvent {
 }
 
 // csiModifierPrefix maps an xterm/kitty modifier parameter (1 + bitmask of
-// shift=1, alt=2, ctrl=4) to a key-name prefix such as "ctrl-shift-".
+// shift=1, alt=2, ctrl=4, super=8, hyper=16, meta=32) to a key-name prefix
+// such as "ctrl-shift-" or "super-". Caps Lock (64) and Num Lock (128) are
+// ignored.
 func csiModifierPrefix(param string) string {
 	if i := strings.IndexByte(param, ':'); i >= 0 {
 		param = param[:i]
@@ -320,16 +322,15 @@ func csiModifierPrefix(param string) string {
 	if err != nil || mod < 1 {
 		return ""
 	}
-	bits := (mod - 1) & 7
+	bits := (mod - 1) & 63
 	prefix := ""
-	if bits&4 != 0 {
-		prefix += "ctrl-"
-	}
-	if bits&1 != 0 {
-		prefix += "shift-"
-	}
-	if bits&2 != 0 {
-		prefix += "alt-"
+	for _, m := range []struct {
+		bit  int
+		name string
+	}{{4, "ctrl-"}, {1, "shift-"}, {2, "alt-"}, {8, "super-"}, {16, "hyper-"}, {32, "meta-"}} {
+		if bits&m.bit != 0 {
+			prefix += m.name
+		}
 	}
 	return prefix
 }
@@ -369,6 +370,12 @@ func decodeCSIu(b []byte) (KeyEvent, bool) {
 	case 127:
 		return KeyEvent{Key: prefix + "backspace"}, true
 	}
+	if name, ok := kittyFunctionalKey(code); ok {
+		return KeyEvent{Key: prefix + name}, true
+	}
+	if r, ok := kittyKeypadRune(code); ok {
+		code = int(r)
+	}
 	if code > 32 && code <= unicode.MaxRune && unicode.IsPrint(rune(code)) {
 		if prefix == "" {
 			return KeyEvent{Text: string(rune(code))}, true
@@ -376,6 +383,72 @@ func decodeCSIu(b []byte) (KeyEvent, bool) {
 		return KeyEvent{Key: prefix + string(rune(code))}, true
 	}
 	return KeyEvent{}, false
+}
+
+// Kitty functional keys live in the Unicode private use area (57344-63743).
+const (
+	kittyKeypadFirst = 57399 // KP_0
+	kittyKeypadLast  = 57427 // KP_BEGIN
+	kittyF13         = 57376
+	kittyF35         = 57398
+	kittyPUAFirst    = 57344
+	kittyPUALast     = 63743
+)
+
+// kittyKeypadRunes maps KP_0..KP_SEPARATOR (57399-57416) to the characters
+// the keypad types; KP_ENTER is handled as a named key.
+const kittyKeypadRunes = "0123456789./*-+\x00=,"
+
+// kittyKeypadRune returns the printable character of a keypad key code.
+func kittyKeypadRune(code int) (rune, bool) {
+	i := code - kittyKeypadFirst
+	if i < 0 || i >= len(kittyKeypadRunes) || kittyKeypadRunes[i] == 0 {
+		return 0, false
+	}
+	return rune(kittyKeypadRunes[i]), true
+}
+
+// kittyFunctionalKey names the private-use key codes that are not printable:
+// keypad Enter and navigation keys get their legacy names, F13-F35 are
+// "f13".."f35", and any other private-use code is "key-<code>" so it never
+// vanishes silently.
+func kittyFunctionalKey(code int) (string, bool) {
+	switch code {
+	case 57414:
+		return "enter", true
+	case 57417:
+		return "left", true
+	case 57418:
+		return "right", true
+	case 57419:
+		return "up", true
+	case 57420:
+		return "down", true
+	case 57421:
+		return "pgup", true
+	case 57422:
+		return "pgdown", true
+	case 57423:
+		return "home", true
+	case 57424:
+		return "end", true
+	case 57425:
+		return "insert", true
+	case 57426:
+		return "delete", true
+	case 57427:
+		return "begin", true
+	}
+	if code >= kittyF13 && code <= kittyF35 {
+		return "f" + strconv.Itoa(13+code-kittyF13), true
+	}
+	if _, ok := kittyKeypadRune(code); ok {
+		return "", false
+	}
+	if code >= kittyPUAFirst && code <= kittyPUALast {
+		return "key-" + strconv.Itoa(code), true
+	}
+	return "", false
 }
 
 // decodeModifyOtherKeys decodes the xterm modifyOtherKeys form

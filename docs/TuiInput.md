@@ -91,7 +91,11 @@ screen keeps its own stack. Modified Enter, Esc, Backspace and Tab then decode
 as `shift-enter`, `ctrl-enter`, `alt-enter`, `ctrl-esc`, `ctrl-backspace`,
 `ctrl-tab` and so on, and Ctrl+I/Ctrl+J/Ctrl+M as `ctrl-i`/`ctrl-j`/`ctrl-m`.
 Unmodified keys keep their legacy names (`enter`, `esc` from `ESC[27u`, `tab`,
-`backspace`; letters stay text), so existing bindings work unchanged. Terminals
+`backspace`; letters stay text), so existing bindings work unchanged. Keypad
+keys (codes 57399-57427) decode like their legacy counterparts (digits and
+operators as text, `enter`, `up`, `pgdown`, ...), F13-F35 as `f13`..`f35`, and
+other private-use codes as `key-<code>`. Super, Hyper and Meta add `super-`,
+`hyper-` and `meta-` after `ctrl-shift-alt-`; Caps/Num Lock are ignored. Terminals
 without the protocol ignore the push and behave as before (issue 321).
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;

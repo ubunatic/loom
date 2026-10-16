@@ -126,6 +126,19 @@ func capturePTY(master *os.File, reply string) *ptyCapture {
 
 func (c *ptyCapture) split(t *testing.T) (before, after string) {
 	t.Helper()
+	// Keep reading until the pty stays quiet, so bytes written just before
+	// split (resume modes, close teardown) are not lost in the pty buffer.
+	last, quiet := -1, time.Now()
+	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
+		c.mu.Lock()
+		n := c.buf.Len()
+		c.mu.Unlock()
+		if n != last {
+			last, quiet = n, time.Now()
+		} else if time.Since(quiet) >= 100*time.Millisecond {
+			break
+		}
+	}
 	close(c.done)
 	c.mu.Lock()
 	defer c.mu.Unlock()
