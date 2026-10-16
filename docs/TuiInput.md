@@ -80,6 +80,20 @@ applications; see `KeyDefaults.md` for the library's default key actions.
 - Home/End, Insert/Delete keep their xterm modifier parameter (`ESC[1;2H`, `ESC[1;5F`, `ESC[2;5~`, `ESC[3;2~`): they decode to `shift-home`, `ctrl-end`, `ctrl-insert`, `shift-delete` and so on. Plain forms (`ESC[H`, `ESC[1~`, `ESC[7~`, `ESC OH`, ...) stay `home`/`end`. Callers matching only the plain name no longer see modified presses (issues 257, 263; see `Upgrading.md`).
 - `0x00` decodes to `ctrl-space`. In RichTextEdit, Ctrl+Space selects the smallest closed sharp or rounded box perimeter under the cursor, falls back to word selection, or opens a cursor-anchored popover on whitespace. `^D` (Ctrl+D) or F5 toggles box drawing mode; `Enter` or `Esc` exits box drawing mode without inserting text. Within the popover, "Draw" is nested under the "Box" submenu. Up/Down may place the caret past line ends or below the last line; typing or drawing there materializes padding, while navigation alone leaves the document unchanged. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`); RichTextEdit does not bind Ctrl+Shift+B.
 
+### Kitty keyboard protocol (opt-in)
+
+Legacy terminals send Enter, Ctrl+J and Shift+Enter as the same byte, and
+Ctrl+I as Tab. Set `Pane.KittyKeyboard` (or spec `pane.kitty_keyboard`) before
+`Run` to push kitty progressive enhancement flag 1 (`ESC[>1u`) on start; Loom
+pops it (`ESC[<u`) on close, on a panic exit, before a `Suspend` child runs
+(pushing again on resume), and around alternate-screen switches, since each
+screen keeps its own stack. Modified Enter, Esc, Backspace and Tab then decode
+as `shift-enter`, `ctrl-enter`, `alt-enter`, `ctrl-esc`, `ctrl-backspace`,
+`ctrl-tab` and so on, and Ctrl+I/Ctrl+J/Ctrl+M as `ctrl-i`/`ctrl-j`/`ctrl-m`.
+Unmodified keys keep their legacy names (`enter`, `esc` from `ESC[27u`, `tab`,
+`backspace`; letters stay text), so existing bindings work unchanged. Terminals
+without the protocol ignore the push and behave as before (issue 321).
+
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Left/Right move along the bar, and Enter or Space activates the focused action.
 Up/Down are consumed while the bar is open. Esc closes the popover. These keys

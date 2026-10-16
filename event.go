@@ -334,8 +334,12 @@ func csiModifierPrefix(param string) string {
 	return prefix
 }
 
-// decodeCSIu decodes the kitty/CSI-u form \x1b[<code>;<mod>u for letters,
-// space, and tab. Legacy terminals never send it, so plain 0x09 stays "tab".
+// decodeCSIu decodes the kitty/CSI-u form \x1b[<code>;<mod>u (see
+// Pane.KittyKeyboard). Enter (13), Escape (27), Backspace (127), Tab (9) and
+// Space (32) keep their legacy names, prefixed by modifiers ("shift-enter",
+// "ctrl-esc", "alt-backspace", "ctrl-tab"); other printable code points decode
+// as text when unmodified and as "<mods>-<rune>" otherwise ("ctrl-i",
+// "alt-1"). Legacy terminals never send it, so plain 0x09 stays "tab".
 func decodeCSIu(b []byte) (KeyEvent, bool) {
 	if len(b) < 4 || b[1] != '[' || b[len(b)-1] != 'u' {
 		return KeyEvent{}, false
@@ -353,12 +357,19 @@ func decodeCSIu(b []byte) (KeyEvent, bool) {
 	if len(fields) == 2 {
 		prefix = csiModifierPrefix(fields[1])
 	}
-	switch {
-	case code == 9:
+	switch code {
+	case 9:
 		return KeyEvent{Key: prefix + "tab"}, true
-	case code == 32:
+	case 13:
+		return KeyEvent{Key: prefix + "enter"}, true
+	case 27:
+		return KeyEvent{Key: prefix + "esc"}, true
+	case 32:
 		return KeyEvent{Key: prefix + "space"}, true
-	case code >= 'a' && code <= 'z':
+	case 127:
+		return KeyEvent{Key: prefix + "backspace"}, true
+	}
+	if code > 32 && code <= unicode.MaxRune && unicode.IsPrint(rune(code)) {
 		if prefix == "" {
 			return KeyEvent{Text: string(rune(code))}, true
 		}

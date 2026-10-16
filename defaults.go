@@ -409,6 +409,7 @@ type PaneDefaults struct {
 	EscKeyTimeout time.Duration `yaml:"esc_key_timeout"`
 	GuardDuration time.Duration `yaml:"guard_duration"`
 	ViewPanStep   int           `yaml:"view_pan_step"`
+	KittyKeyboard bool          `yaml:"kitty_keyboard"`
 }
 
 // SplashDefaults defines specced defaults for splash lifecycle and widgets.

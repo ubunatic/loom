@@ -98,6 +98,12 @@ type Pane struct {
 	// EscapeQuits makes an unhandled Esc close the app. Esc never quits by
 	// default (spec escape_quits); overlays and widgets consume it first.
 	EscapeQuits bool
+	// KittyKeyboard opts in to the kitty keyboard protocol (progressive
+	// enhancement flag 1, "disambiguate escape codes") while Run is active, so
+	// Shift+Enter, Ctrl+Enter, Ctrl+I and friends arrive as distinct CSI-u keys.
+	// Loom pushes the flag on start and pops it on close, panic exit and around
+	// Suspend. Terminals without support ignore it. Spec: pane.kitty_keyboard.
+	KittyKeyboard bool
 	// OnCloseRequest, when non-nil, is asked before the pane closes because of
 	// a quit key or an interrupt/termination signal. Returning CloseVeto keeps
 	// the loop running; the app may call Quit later (e.g. after a dialog).
@@ -124,6 +130,7 @@ type Pane struct {
 	winchMeter  WinchMeter
 	altActive   bool
 	pasteMode   bool
+	kittyKeys   bool // kitty keyboard flag 1 is pushed on the current screen
 	fullActive  bool // primary-screen layout is full screen (from row 1)
 	staleRows   int  // rows below the pane left over from a shrink, erased by the next frame
 	inlineStart int  // pane top before the full-screen layout took over
@@ -682,6 +689,31 @@ func (p *Pane) setBracketedPaste(on bool) {
 	p.pasteMode = on
 }
 
+// Kitty keyboard protocol: push progressive enhancement flag 1 and pop it.
+// Each screen (primary, alternate) keeps its own stack, so switchAltScreen
+// pops before and pushes after a switch while the protocol is active.
+const (
+	kittyKeyboardPush = "\x1b[>1u"
+	kittyKeyboardPop  = "\x1b[<u"
+)
+
+// wantKittyKeyboard reports whether the pane opted in, directly or via spec.
+func (p *Pane) wantKittyKeyboard() bool {
+	return p.KittyKeyboard || SpeccedDefaults.Pane.KittyKeyboard
+}
+
+func (p *Pane) setKittyKeyboard(on bool) {
+	if p.tty == nil || p.kittyKeys == on {
+		return
+	}
+	if on {
+		p.tty.WriteString(kittyKeyboardPush) //nolint:errcheck
+	} else {
+		p.tty.WriteString(kittyKeyboardPop) //nolint:errcheck
+	}
+	p.kittyKeys = on
+}
+
 // Resize adjusts the pane height dynamically.
 // If the height increases and overflows the terminal screen, it scrolls the terminal up
 // to reserve the required space. If it decreases, it clears the abandoned lines.
@@ -912,6 +944,10 @@ func (p *Pane) switchAltScreen(on bool) {
 	if p.tty == nil || on == p.altActive {
 		return
 	}
+	if p.kittyKeys {
+		p.tty.WriteString(kittyKeyboardPop)        //nolint:errcheck
+		defer p.tty.WriteString(kittyKeyboardPush) //nolint:errcheck
+	}
 	if on {
 		p.savedStart, p.savedRows = p.startRow, p.rows
 		// Erase the frame already drawn on the primary screen, or it stays in
@@ -1082,6 +1118,10 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	}
 	p.setBracketedPaste(true)
 	defer p.setBracketedPaste(false)
+	if p.wantKittyKeyboard() {
+		p.setKittyKeyboard(true)
+		defer p.setKittyKeyboard(false)
+	}
 	// Probe in the selected screen before starting the input reader so the
 	// DSR reply cannot be consumed as a key event. Refresh after both signal
 	// registration and the probe, before allocating the first canvas.
@@ -1718,6 +1758,7 @@ func (p *Pane) close() {
 
 	p.disableMouse()
 	p.setBracketedPaste(false)
+	p.setKittyKeyboard(false) // pop on the current screen, before leaving alt
 
 	var b strings.Builder
 	_ = p.cursorShape.restore(&b)

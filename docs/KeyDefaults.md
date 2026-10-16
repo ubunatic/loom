@@ -21,5 +21,6 @@ bindings remain unchanged; conflicts are intentional and listed here.
 | activate/toggle | `insert` | Frame actions | not provided as a universal default; action specs decide conflicts |
 
 Terminal limitations: Ctrl-I is delivered as Tab, and Ctrl-M as Enter; terminals
-cannot distinguish those pairs at the byte-input layer. Function-key and modified
+cannot distinguish those pairs at the byte-input layer unless the pane opts in to
+the kitty keyboard protocol (`Pane.KittyKeyboard`, see TuiInput.md). Function-key and modified
 cursor support depends on the terminal's xterm-compatible sequences.

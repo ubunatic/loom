@@ -1,6 +1,6 @@
 # 321 — Opt-in kitty keyboard protocol so Shift+Enter and Ctrl+J differ from Enter
 
-**Status**: Open
+**Status**: Closed — Pane.KittyKeyboard / spec pane.kitty_keyboard pushes kitty flag 1; CSI-u decodes shift-enter, ctrl-enter, ctrl-i, ctrl-j etc. (v0.3.9)
 **Priority**: P2 (Medium)
 **Severity**: Feature
 **Category**: Input / Key Decoding
@@ -27,3 +27,12 @@ Alt+Enter and a trailing `\` (harnez #738).
 - Decoder tests for CSI-u Enter/Escape/Backspace with each modifier.
 - PTY test: push on start, pop on close and on panic exit.
 - Manual check in kitty, foot, WezTerm, Ghostty and a legacy terminal; record in the ticket.
+
+## 4. Resolution
+Implemented in v0.3.9: `Pane.KittyKeyboard` (spec `pane.kitty_keyboard`, default
+false) pushes `CSI > 1 u` in Run and pops `CSI < u` on close, panic exit, before a
+Suspend child (re-pushed on resume) and around alt-screen switches (per-screen
+stacks). CSI-u Enter/Esc/Backspace/Tab decode with modifier prefixes; other
+printable code points decode as text or `<mods>-<rune>`. Under the protocol Ctrl+I
+arrives as `ctrl-i`, distinct from Tab (317's terminal limitation). Manual checks
+in kitty, foot, WezTerm, Ghostty and a legacy terminal are still pending.

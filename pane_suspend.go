@@ -151,7 +151,8 @@ func (r *inputReader) loop(tty *os.File, fd int, reads chan<- paneRead, initial 
 //
 // Before fn runs, Suspend stops the input reader (unread input stays queued for
 // the child; bytes the pane already read are replayed after resume), leaves the
-// alternate screen, disables mouse tracking and bracketed paste, shows the
+// alternate screen, disables mouse tracking, bracketed paste and the kitty
+// keyboard protocol, shows the
 // cursor and restores the terminal mode the pane started from (cooked). After
 // fn returns, it re-enters raw mode, restores the screen, mouse and paste
 // modes, re-reads the terminal size, restarts the reader and repaints every
@@ -178,7 +179,7 @@ func (p *Pane) Suspend(fn func() error) (err error) {
 	}
 	p.suspended = true
 	held, readerRan := p.haltReader()
-	wasAlt, mouseMode, paste := p.altActive, p.mouseMode, p.pasteMode
+	wasAlt, mouseMode, paste, kitty := p.altActive, p.mouseMode, p.pasteMode, p.kittyKeys
 	p.leaveTerminal()
 
 	defer func() {
@@ -193,7 +194,7 @@ func (p *Pane) Suspend(fn func() error) (err error) {
 			}
 			return
 		}
-		if rerr := p.resumeTerminal(rawState, wasAlt, mouseMode, paste, held, readerRan); rerr != nil && err == nil {
+		if rerr := p.resumeTerminal(rawState, wasAlt, mouseMode, paste, kitty, held, readerRan); rerr != nil && err == nil {
 			err = rerr
 		}
 		if r != nil {
@@ -208,6 +209,7 @@ func (p *Pane) Suspend(fn func() error) (err error) {
 func (p *Pane) leaveTerminal() {
 	p.releaseMouse()
 	p.setBracketedPaste(false)
+	p.setKittyKeyboard(false) // pop on the current screen, before leaving alt
 	var b strings.Builder
 	_ = p.cursorShape.restore(&b)
 	if p.altActive {
@@ -229,7 +231,7 @@ func (p *Pane) leaveTerminal() {
 }
 
 // resumeTerminal undoes leaveTerminal and restarts the reader.
-func (p *Pane) resumeTerminal(rawState *term.State, wasAlt bool, mouseMode int, paste bool, held []byte, readerRan bool) error {
+func (p *Pane) resumeTerminal(rawState *term.State, wasAlt bool, mouseMode int, paste, kitty bool, held []byte, readerRan bool) error {
 	defer func() { p.suspended = false }()
 	err := term.Restore(p.fd, rawState)
 	if err != nil {
@@ -251,6 +253,7 @@ func (p *Pane) resumeTerminal(rawState *term.State, wasAlt bool, mouseMode int, 
 		p.setMouseMode(mouseMode)
 	}
 	p.setBracketedPaste(paste)
+	p.setKittyKeyboard(kitty)
 	p.dropSuspendSignals()
 	p.resumeRepaint = true
 	if readerRan {
