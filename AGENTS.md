@@ -1,5 +1,4 @@
-**Before any work, read all Harnez rules in one call: `harnez read .harnez/rules/Tools.md .harnez/rules/Issues.md .harnez/rules/Quota.md .harnez/rules/Subagents.md .harnez/rules/Output.md .harnez/rules/Local.md`. This follows Index.md order; Local.md overrides the other rules.**
-
+**Once per session, before your first task, read all Harnez rules in one call: `harnez read .harnez/rules/Tools.md .harnez/rules/Issues.md .harnez/rules/Quota.md .harnez/rules/Subagents.md .harnez/rules/Output.md .harnez/rules/Local.md`. Skip this if you already read them in this session. This follows Index.md order; Local.md overrides the other rules.**
 
 Adhere to the following conventions.
 
