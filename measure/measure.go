@@ -132,8 +132,9 @@ func StringWidthNew(text string) int {
 				hasZWJ = true
 				i += nsz
 				if i < n {
-					_, jsz := utf8.DecodeRuneInString(text[i:])
-					i += jsz
+					if jr, jsz := utf8.DecodeRuneInString(text[i:]); JoinsAfterZWJ(jr) {
+						i += jsz
+					}
 				}
 				continue
 			}
@@ -167,6 +168,16 @@ func StringWidthNew(text string) int {
 		}
 	}
 	return w
+}
+
+// JoinsAfterZWJ reports whether r may extend a grapheme cluster after a
+// zero-width joiner (U+200D). Only printable grapheme starts (letters,
+// numbers, punctuation, symbols such as emoji) join. Controls (C0, C1, DEL,
+// ESC), spaces, format runes and combining marks end the cluster so they go
+// through the normal parser/sanitiser instead of being smuggled into cell
+// text and written raw to the terminal.
+func JoinsAfterZWJ(r rune) bool {
+	return unicode.In(r, unicode.L, unicode.N, unicode.P, unicode.S)
 }
 
 // IsFormatRune returns true for variation selectors and joiner formatting controls.
@@ -269,7 +280,7 @@ func ClustersOld(text string) []string {
 			r := rs[i]
 			if r == 0x200D {
 				i++
-				if i < n {
+				if i < n && JoinsAfterZWJ(rs[i]) {
 					i++
 				}
 				continue
@@ -335,7 +346,7 @@ func ClustersNew(text string) []string {
 			r := rs[i]
 			if r == 0x200D {
 				i++
-				if i < n {
+				if i < n && JoinsAfterZWJ(rs[i]) {
 					i++
 				}
 				continue

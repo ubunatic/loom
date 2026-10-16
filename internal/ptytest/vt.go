@@ -188,8 +188,9 @@ func (v *VT) Write(p []byte) (int, error) {
 								v.pending = append([]byte(nil), data[i:]...)
 								return len(p), nil
 							}
-							_, jsz := utf8.DecodeRune(data[j:])
-							j += jsz
+							if jr, jsz := utf8.DecodeRune(data[j:]); measure.JoinsAfterZWJ(jr) {
+								j += jsz
+							}
 						}
 						continue
 					}

@@ -85,7 +85,7 @@ func ParseANSINew(s string) []Cell {
 				next := rs[j]
 				if next == 0x200D {
 					j++
-					if j < n {
+					if j < n && measure.JoinsAfterZWJ(rs[j]) {
 						j++
 					}
 					continue
@@ -167,7 +167,7 @@ func ParseANSIOld(s string) []Cell {
 				next := rs[j]
 				if next == 0x200D {
 					j++
-					if j < n {
+					if j < n && measure.JoinsAfterZWJ(rs[j]) {
 						j++
 					}
 					continue

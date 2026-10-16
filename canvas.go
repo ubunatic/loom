@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	"ubunatic.com/loom/measure"
 )
@@ -545,10 +546,10 @@ func (c *Canvas) Row(y int) string {
 			b.WriteString(cell.Style.ANSIFor(c.ColorProfile))
 			cur = cell.Style
 		}
-		if cell.Text == "" {
+		if text := safeCellText(cell.Text); text == "" {
 			b.WriteByte(' ')
 		} else {
-			b.WriteString(cell.Text)
+			b.WriteString(text)
 		}
 	}
 	b.WriteString("\x1b[0m") // reset after every row so colors don't bleed
@@ -736,6 +737,29 @@ func plainTerminalText(s string) string {
 
 // textClusters keeps base runes, combining marks, and emoji ZWJ sequences together.
 // Leading combining marks are dropped: they must not attach outside the region.
+// safeCellText drops control runes (C0 incl. ESC, DEL, C1) from cell text so
+// a cell can never emit terminal control bytes, whatever path filled it.
+// Controls have zero width, so dropping them keeps the row geometry; a cell
+// left empty is written as a blank by the caller.
+func safeCellText(s string) string {
+	clean := true
+	for i := 0; i < len(s); i++ {
+		if b := s[i]; b < 0x20 || b == 0x7f || (b == 0xc2 && i+1 < len(s) && s[i+1] >= 0x80 && s[i+1] <= 0x9f) {
+			clean = false
+			break
+		}
+	}
+	if clean {
+		return s
+	}
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, s)
+}
+
 func textClusters(text string) []string {
 	return measure.Clusters(text)
 }

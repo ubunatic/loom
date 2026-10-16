@@ -201,7 +201,7 @@ func ClipRow(row string, width int) string {
 				next := runes[j]
 				if next == 0x200D {
 					j++
-					if j < n {
+					if j < n && measure.JoinsAfterZWJ(runes[j]) {
 						j++
 					}
 					continue
