@@ -1,6 +1,6 @@
 # 330 — Snapshot exported package APIs and document stability policy
 
-**Status**: Open
+**Status**: Closed — implemented in dd43b76 with full suite passing
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
