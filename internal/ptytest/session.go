@@ -194,10 +194,18 @@ func (s *Session) Wait(timeout time.Duration) error {
 	s.t.Helper()
 	errc := make(chan error, 1)
 	go func() { errc <- s.cmd.Wait() }()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
 	select {
 	case err := <-errc:
-		return err
-	case <-time.After(timeout):
+		select {
+		case <-s.done:
+			return err
+		case <-timer.C:
+			s.t.Fatalf("PTY output did not reach EOF within %v; screen:\n%s", timeout, s.dump())
+			return err
+		}
+	case <-timer.C:
 		s.t.Fatalf("child did not exit within %v; screen:\n%s", timeout, s.dump())
 		return nil
 	}

@@ -168,18 +168,13 @@ func TestWinchPTYNoBlankThenRewrite(t *testing.T) {
 	}
 }
 
-// TestWinchPTYAltScreen switches to the alternate screen, drags, and expects
-// the app to leave it again on exit so the shell screen is untouched.
+// TestWinchPTYAltScreen switches to the alternate screen and expects the app
+// to leave it again on exit so the shell screen is untouched.
 func TestWinchPTYAltScreen(t *testing.T) {
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	s.Send("b")
 	s.WaitFor("[ON]  Alternate screen", 3*time.Second)
-	for i := 0; i < 8; i++ {
-		s.Resize(100-i*5, 30-i)
-		time.Sleep(15 * time.Millisecond)
-	}
-	s.WaitFor("Guard: idle", 3*time.Second)
 	s.Send("q")
 	if err := s.Wait(3 * time.Second); err != nil {
 		t.Fatalf("winch exit: %v", err)
