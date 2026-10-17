@@ -138,7 +138,10 @@ func waitForQuiet(s *ptytest.Session) [][]ptytest.Cell {
 
 // diffHighlight compares the current grid against a baseline grid without hard-coded colours,
 // isolating the cells carrying the newly activated highlight via frequency analysis.
-func diffHighlight(baseline, current [][]ptytest.Cell) (minX, minY, maxX, maxY int, found bool) {
+// rowLimit includes the grid and its padding, excluding unrelated footer updates.
+func diffHighlight(baseline, current [][]ptytest.Cell, rowLimit int) (minX, minY, maxX, maxY int, found bool) {
+	baseline = baseline[:min(len(baseline), max(0, rowLimit))]
+	current = current[:min(len(current), max(0, rowLimit))]
 	type point struct{ x, y int }
 	var changed []point
 
@@ -211,6 +214,10 @@ func diffHighlight(baseline, current [][]ptytest.Cell) (minX, minY, maxX, maxY i
 // This test exposes the offset bug in loomoji where mouse coordinates are
 // miscalculated relative to the grid viewport and padding.
 func TestLoomoji107HoverProbe(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loomoji")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/loomoji").CombinedOutput(); err != nil {
 		t.Fatalf("build loomoji: %v\n%s", err, out)
@@ -320,7 +327,7 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 			continue
 		}
 
-		minX, minY, maxX, maxY, found := diffHighlight(baseline, hoverGrid)
+		minX, minY, maxX, maxY, found := diffHighlight(baseline, hoverGrid, gridRows[len(gridRows)-1][0].y+1)
 
 		if !found {
 			res.boxStr = "none"
@@ -423,5 +430,29 @@ func TestLoomoji107HoverProbe(t *testing.T) {
 
 	if bugs > 0 {
 		t.Errorf("loomoji hover probe exposed %d offset bugs (expected under current bug):\n%s", bugs, tableStr)
+	}
+}
+
+func TestDiffHighlightExcludesFooter(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		output string
+		found  bool
+		bounds [4]int
+	}{
+		{name: "footer only", output: "\x1b[4;1H\x1b[44mf"},
+		{name: "grid and footer", output: "\x1b[2;2H\x1b[41mxx\x1b[4;1H\x1b[44mf", found: true, bounds: [4]int{1, 1, 2, 1}},
+		{name: "padding remains checked", output: "\x1b[2;1H\x1b[41mx\x1b[4;1H\x1b[44mf", found: true, bounds: [4]int{0, 1, 0, 1}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			terminal := ptytest.NewVT(6, 4)
+			baseline := terminal.Cells()
+			terminal.Write([]byte(tc.output))
+			x1, y1, x2, y2, found := diffHighlight(baseline, terminal.Cells(), 3)
+			got := [4]int{x1, y1, x2, y2}
+			if found != tc.found || found && got != tc.bounds {
+				t.Fatalf("highlight = %v, found=%v; want %v, found=%v", got, found, tc.bounds, tc.found)
+			}
+		})
 	}
 }
