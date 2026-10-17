@@ -1,6 +1,6 @@
 # 289 — Keep editor tests from overwriting tracked ANSI design files
 
-**Status**: Open
+**Status**: Closed — Tests always use t.TempDir even with generation flags; full make test-q1 passed with tracked designs unchanged (commit
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
