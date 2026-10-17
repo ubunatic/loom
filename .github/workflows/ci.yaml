@@ -39,8 +39,8 @@ jobs:
             ~/.cache/go-build
           key: go-lint-${{ hashFiles('go.sum') }}-${{ github.sha }}
           restore-keys: go-lint-${{ hashFiles('go.sum') }}-
-      - run: make gofmt-check
-      - run: go vet ./...
+      - run: make lint-tools
+      - run: make lint
       - run: go build ./...
       - run: make validate-spec
       - run: make geometry-replay
