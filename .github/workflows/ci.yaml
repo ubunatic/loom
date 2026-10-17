@@ -124,13 +124,16 @@ jobs:
         run: |
           base=$(git describe --tags --abbrev=0 --match 'v*')
           rc=0
-          go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261014143641-f0251eb4aa3e -base="$base" > api.txt 2>&1 || rc=$?
+          # Outside the checkout: gorelease rejects a tree with untracked files.
+          out="$RUNNER_TEMP/api.txt"
+          go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261014143641-f0251eb4aa3e -base="$base" > "$out" 2>&1 || rc=$?
+          cat "$out"
           {
             printf '### Public API vs %s\n\n```\n' "$base"
-            cat api.txt
+            cat "$out"
             printf '```\n'
           } >> "$GITHUB_STEP_SUMMARY"
-          if grep -q '^## incompatible changes' api.txt
+          if grep -q '^## incompatible changes' "$out"
           then
             printf '::warning title=incompatible API changes since %s::see the api job summary; the next release needs a minor bump and a docs/Upgrading.md row\n' "$base"
           fi
