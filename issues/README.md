@@ -346,3 +346,4 @@ upkeep.
 | 333 | [333-align-lint-and-package-test-targets-with-ci.md](333-align-lint-and-package-test-targets-with-ci.md) | Align lint and package test targets with CI | Open |
 | 334 | [334-github-ci-parallel-jobs-timing-summary-flake-hunt-cloud-agent.md](334-github-ci-parallel-jobs-timing-summary-flake-hunt-cloud-agent.md) | GitHub CI: parallel jobs, timing summary, flake hunt | Open — owned by the Claude cloud agent (ccr branch); placeholder reserved by host |
 | 335 | [335-verify-container-quality-gates-with-quota-compatible-runtime-access.md](335-verify-container-quality-gates-with-quota-compatible-runtime-access.md) | Verify container quality gates with quota-compatible runtime access | Open |
+| 336 | [336-exclude-footer-updates-from-loomoji-hover-screen-assertions.md](336-exclude-footer-updates-from-loomoji-hover-screen-assertions.md) | Exclude footer updates from Loomoji hover screen assertions | Open |
