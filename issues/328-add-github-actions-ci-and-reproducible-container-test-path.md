@@ -1,6 +1,6 @@
 # 328 — Add GitHub Actions CI and reproducible container test path
 
-**Status**: Open
+**Status**: Closed — CI and Podman/Docker checks pass; GOWORK isolation, PTY/TTY skips and gofmt are verified; fixed in 312b7d5
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
