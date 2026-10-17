@@ -4,7 +4,12 @@
 // Package spec embeds Loom's application specifications.
 package spec
 
-import "embed"
+import (
+	"embed"
+	"fmt"
+
+	"gopkg.in/yaml.v3"
+)
 
 //go:embed widgets.yaml defaults.yaml
 var widgetFiles embed.FS
@@ -14,3 +19,44 @@ func WidgetsYAML() ([]byte, error) { return widgetFiles.ReadFile("widgets.yaml")
 
 // DefaultsYAML returns the authoritative runtime defaults document.
 func DefaultsYAML() ([]byte, error) { return widgetFiles.ReadFile("defaults.yaml") }
+
+// GraphDefaults describes the graph renderer defaults in defaults.yaml.
+type GraphDefaults struct {
+	DefaultBackgroundANSI string               `yaml:"default_background_ansi"`
+	Bar                   GraphBarDefaults     `yaml:"bar"`
+	Sparkline             GraphGlyphDefaults   `yaml:"sparkline"`
+	StackedBar            GraphGlyphDefaults   `yaml:"stacked_bar"`
+	Treemap               GraphGlyphDefaults   `yaml:"treemap"`
+	Spinner               GraphSpinnerDefaults `yaml:"spinner"`
+}
+
+// GraphBarDefaults contains defaults specific to bar renderers.
+type GraphBarDefaults struct {
+	MaxWidth int `yaml:"max_width"`
+}
+
+// GraphGlyphDefaults stores an ordered set of glyphs as a Unicode string.
+type GraphGlyphDefaults struct {
+	Glyphs string `yaml:"glyphs"`
+}
+
+// GraphSpinnerDefaults contains the standard and Harnez spinner sequences.
+type GraphSpinnerDefaults struct {
+	Frames       string `yaml:"frames"`
+	HarnezFrames string `yaml:"harnez_frames"`
+}
+
+// LoadGraphDefaults reads graph defaults from the embedded authoritative document.
+func LoadGraphDefaults() (GraphDefaults, error) {
+	data, err := DefaultsYAML()
+	if err != nil {
+		return GraphDefaults{}, fmt.Errorf("spec: read defaults.yaml: %w", err)
+	}
+	var defaults struct {
+		Graph GraphDefaults `yaml:"graph"`
+	}
+	if err := yaml.Unmarshal(data, &defaults); err != nil {
+		return GraphDefaults{}, fmt.Errorf("spec: parse graph defaults: %w", err)
+	}
+	return defaults.Graph, nil
+}

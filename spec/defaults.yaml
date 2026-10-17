@@ -44,6 +44,20 @@ splash:
 spinner:
   tick_interval: 80ms
 
+graph:
+  default_background_ansi: "100"
+  bar:
+    max_width: 10
+  sparkline:
+    glyphs: "▁▂▃▄▅▆▇█"
+  stacked_bar:
+    glyphs: "█▓▒░"
+  treemap:
+    glyphs: "█▓▒░"
+  spinner:
+    frames: "⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    harnez_frames: "⠙⠹⠸⠼⠴⠦⠧⠇⠏⠋"
+
 clock:
   start: "Start"
   stop: "Stop"

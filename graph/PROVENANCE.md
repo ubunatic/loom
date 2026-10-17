@@ -29,12 +29,12 @@ The following files from `harnez/internal/rograph/` were ported into `ubunatic.c
 
 1. **Package Scope and Isolation**:
    - Ported under `ubunatic.com/loom/graph`.
-   - Preserved zero external dependencies (standard library only: `fmt`, `math`, `strings`, `unicode/utf8`).
+   - Rendering algorithms use the standard library and `measure`; rendering defaults are loaded through Loom's embedded `spec` package.
 
-2. **Elimination of Mutable Global State**:
+2. **Spec-Loaded Rendering Defaults**:
    - Harnez defined `var DefaultBackgroundANSI = "100"`, which was modified at runtime by spec loaders and caused mutable global coupling.
-   - Loom defines `const DefaultBackgroundANSI = "100"` as an immutable constant.
-   - Callers configure `BackgroundANSI` per invocation via `BarOptions` or `SparklineOptions`. A value of `"none"` cleanly suppresses the background SGR code without requiring global state mutation.
+   - Loom originally defined `const DefaultBackgroundANSI = "100"`; issue 326 moves graph width, ANSI background, glyph sequences, and spinner frames into `spec/defaults.yaml`.
+   - Compatibility names such as `DefaultBackgroundANSI` and `MaxWidth` expose the spec-loaded values, while renderers read the loaded defaults directly. Callers can still configure `BackgroundANSI` per invocation via `BarOptions` or `SparklineOptions`; `"none"` suppresses the background SGR code.
 
 3. **Guaranteed Exact Column Width Padding**:
    - Harnez's `PercentSparkline` emitted only `len(pcts)` runes when fewer samples than `maxWidth` were available, and `RenderSparkline` returned `""` on empty input. In a fixed-column terminal dashboard or box layout, this caused line lengths to collapse or misalign.

@@ -3,6 +3,8 @@ package loom
 import (
 	"testing"
 	"time"
+
+	"ubunatic.com/loom/spec"
 )
 
 func TestScrollbarSpecGlyphsFitOneCell(t *testing.T) {
@@ -14,6 +16,16 @@ func TestScrollbarSpecGlyphsFitOneCell(t *testing.T) {
 		if err := defs.validate(); err == nil {
 			t.Fatalf("accepted invalid scrollbar glyph %q", glyph)
 		}
+	}
+}
+
+func TestGraphDefaultsLoadFromSpec(t *testing.T) {
+	want, err := spec.LoadGraphDefaults()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := SpeccedDefaults.Graph; got != want {
+		t.Fatalf("graph defaults = %+v, spec has %+v", got, want)
 	}
 }
 

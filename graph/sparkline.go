@@ -8,11 +8,9 @@ import (
 	"strings"
 )
 
-// percentSparkChars are the 8 sparkline glyphs used for a 0-100% value's
-// height, low to high (▁ = idle/0%, █ = 100%). Unlike a relative
-// (per-series min/max) sparkline, this uses an absolute scale: a flat history
-// at 0% renders idle, not maxed out.
-var percentSparkChars = []rune("▁▂▃▄▅▆▇█")
+// percentSparkChars are the spec-loaded glyphs used for percent sparkline
+// values from low to high.
+var percentSparkChars = []rune(graphDefaults.Sparkline.Glyphs)
 
 // PercentSparkline renders one glyph per value in pcts (each 0-100) on a
 // rolling timeline, padded to exactly maxWidth characters with the idle

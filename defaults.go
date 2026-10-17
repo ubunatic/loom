@@ -4,17 +4,22 @@
 package loom
 
 import (
-	_ "embed"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom/spec"
 )
 
-//go:embed spec/defaults.yaml
-var defaultsYAML []byte
+var defaultsYAML = func() []byte {
+	data, err := spec.DefaultsYAML()
+	if err != nil {
+		panic(fmt.Sprintf("loom: read spec/defaults.yaml: %v", err))
+	}
+	return data
+}()
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
@@ -26,6 +31,7 @@ type LibDefaults struct {
 	Mouse        MouseDefaults        `yaml:"mouse"`
 	Splash       SplashDefaults       `yaml:"splash"`
 	Spinner      SpinnerDefaults      `yaml:"spinner"`
+	Graph        spec.GraphDefaults   `yaml:"graph"`
 	ProgressBar  ProgressBarDefaults  `yaml:"progress_bar"`
 	Media        MediaDefaults        `yaml:"media"`
 	Clock        ClockDefaults        `yaml:"clock"`

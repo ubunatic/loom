@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "collector"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "collector"],
   "properties": {
     "collector": {
       "type": "object",
@@ -330,6 +330,47 @@
       "required": ["tick_interval"],
       "properties": {
         "tick_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_background_ansi", "bar", "sparkline", "stacked_bar", "treemap", "spinner"],
+      "properties": {
+        "default_background_ansi": { "type": "string", "pattern": "^[0-9]+(;[0-9]+)*$" },
+        "bar": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["max_width"],
+          "properties": { "max_width": { "type": "integer", "minimum": 1 } }
+        },
+        "sparkline": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["glyphs"],
+          "properties": { "glyphs": { "type": "string", "minLength": 2 } }
+        },
+        "stacked_bar": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["glyphs"],
+          "properties": { "glyphs": { "type": "string", "minLength": 1 } }
+        },
+        "treemap": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["glyphs"],
+          "properties": { "glyphs": { "type": "string", "minLength": 1 } }
+        },
+        "spinner": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frames", "harnez_frames"],
+          "properties": {
+            "frames": { "type": "string", "minLength": 1 },
+            "harnez_frames": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     },
     "media": {

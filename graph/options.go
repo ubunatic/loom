@@ -10,16 +10,14 @@ import (
 	"ubunatic.com/loom/measure"
 )
 
-// DefaultBackgroundANSI is the SGR code RenderBar and RenderSparkline fall
-// back to when ANSI is true and the caller leaves BackgroundANSI empty.
-// It is an immutable constant ("100", bright-black) ensuring zero mutable
-// global state.
-const DefaultBackgroundANSI = "100"
+// DefaultBackgroundANSI is the spec-loaded SGR code used when ANSI is true
+// and the caller leaves BackgroundANSI empty.
+var DefaultBackgroundANSI = graphDefaults.DefaultBackgroundANSI
 
 func resolveBackgroundANSI(code string) string {
 	switch code {
 	case "":
-		return DefaultBackgroundANSI
+		return graphDefaults.DefaultBackgroundANSI
 	case "none", "-":
 		return ""
 	default:
@@ -45,7 +43,7 @@ func FormatPercent(percent float64, precision int) string {
 func optionWidth(width int) int {
 	switch {
 	case width == 0:
-		return MaxWidth
+		return graphDefaults.Bar.MaxWidth
 	case width < 0:
 		return 1
 	default:

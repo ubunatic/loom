@@ -7,10 +7,9 @@ import (
 	"strings"
 )
 
-// defaultStackedBarGlyphs are the default per-segment fill glyphs used when
-// StackedBarOptions.Glyphs is empty, cycling for bars with more segments
-// than glyphs.
-var defaultStackedBarGlyphs = []rune("█▓▒░")
+// defaultStackedBarGlyphs are the spec-loaded per-segment fills used when
+// StackedBarOptions.Glyphs is empty.
+var defaultStackedBarGlyphs = []rune(graphDefaults.StackedBar.Glyphs)
 
 // StackedBarOptions configures RenderStackedBar.
 type StackedBarOptions struct {

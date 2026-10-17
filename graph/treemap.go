@@ -12,10 +12,9 @@ import (
 	"ubunatic.com/loom/measure"
 )
 
-// defaultTreemapGlyphs are the default per-box fill glyphs used when
-// TreemapOptions.Glyphs is empty, cycling for treemaps with more segments
-// than glyphs.
-var defaultTreemapGlyphs = []rune("█▓▒░")
+// defaultTreemapGlyphs are the spec-loaded per-box fills used when
+// TreemapOptions.Glyphs is empty.
+var defaultTreemapGlyphs = []rune(graphDefaults.Treemap.Glyphs)
 
 // TreemapTheme selects RenderTreemap's visual style. See issue 040.
 type TreemapTheme int

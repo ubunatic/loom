@@ -71,7 +71,7 @@ func (g *Gauge) ContentWidth() int {
 		opts.Width = g.Width
 	}
 	if opts.Width < 1 {
-		opts.Width = graph.MaxWidth
+		opts.Width = SpeccedDefaults.Graph.Bar.MaxWidth
 	}
 	if opts.NoWrapper {
 		return opts.Width
@@ -146,7 +146,7 @@ func (s *Sparkline) ContentWidth() int {
 		width = s.Options.Width
 	}
 	if width < 1 {
-		width = graph.MaxWidth
+		width = SpeccedDefaults.Graph.Bar.MaxWidth
 	}
 	return width
 }

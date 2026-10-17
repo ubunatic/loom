@@ -12,9 +12,9 @@ import (
 	"strings"
 )
 
-// MaxWidth is the default maximum render width, in characters/glyphs, for
-// single-row graph bars and sparklines.
-const MaxWidth = 10
+// MaxWidth is the spec-loaded default maximum render width, in characters/
+// glyphs, for single-row graph bars and sparklines.
+var MaxWidth = graphDefaults.Bar.MaxWidth
 
 // RenderProgressBar generates an ANSI/Unicode progress bar of the given
 // character width: a "[filled empty]" bar using '█' for the filled portion

@@ -3,11 +3,11 @@
 
 package graph
 
-// DefaultSpinnerFrames are the standard 10-frame braille rotating spinner glyphs.
-var DefaultSpinnerFrames = []rune{'⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'}
+// DefaultSpinnerFrames are the standard spec-loaded braille spinner glyphs.
+var DefaultSpinnerFrames = []rune(graphDefaults.Spinner.Frames)
 
-// HarnezSpinnerFrames is an alternative braille sequence matching the Harnez reference target.
-var HarnezSpinnerFrames = []rune{'⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏', '⠋'}
+// HarnezSpinnerFrames is an alternative spec-loaded sequence matching the Harnez reference target.
+var HarnezSpinnerFrames = []rune(graphDefaults.Spinner.HarnezFrames)
 
 // SpinnerGlyph returns the braille spinner rune for a given frame index from DefaultSpinnerFrames.
 func SpinnerGlyph(frame int) rune {
