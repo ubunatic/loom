@@ -1,6 +1,6 @@
 # 290 — Keep the loom edit file browser usable after cancel and mouse activation
 
-**Status**: Closed — Keyboard and real PTY double-click regressions cover cancel/reopen, repeated activation, Save/Discard/Cancel and save failure; make check and make install passed; verified in the browser lifecycle test commit
+**Status**: Closed — Keyboard and real PTY mouse regressions cover cancel/reopen, repeated activation, Save/Discard/Cancel and save failure; make check and make install passed; verified in 823e069
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
