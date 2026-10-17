@@ -1,6 +1,6 @@
 # 333 — Align lint and package test targets with CI
 
-**Status**: Open
+**Status**: Closed — implemented in 1271e76; lint, short, full race and regular suites pass on Go 1.25.0; container runtime verification tracked in 335
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
