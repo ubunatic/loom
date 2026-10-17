@@ -6,8 +6,11 @@ package spec
 
 import "embed"
 
-//go:embed widgets.yaml
+//go:embed widgets.yaml defaults.yaml
 var widgetFiles embed.FS
 
 // WidgetsYAML returns the authoritative widget catalog document.
 func WidgetsYAML() ([]byte, error) { return widgetFiles.ReadFile("widgets.yaml") }
+
+// DefaultsYAML returns the authoritative runtime defaults document.
+func DefaultsYAML() ([]byte, error) { return widgetFiles.ReadFile("defaults.yaml") }

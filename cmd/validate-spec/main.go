@@ -94,11 +94,32 @@ func validatePair(root string, pair specPair) error {
 		}
 	}
 
+	if _, collectorOK := document["collector"].(map[string]any); collectorOK {
+		for _, value := range []string{"", "0m", "-1m", "not-a-duration"} {
+			if err := expectInvalid(schema, pair, document, "invalid_collector_retention", func(invalid map[string]any) error {
+				invalid["collector"].(map[string]any)["default_retention"] = value
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+	}
+
 	if _, modesOK := document["modes"].(map[string]any); modesOK {
-		for _, change := range []string{"missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n", "invalid_rate_step", "invalid_margin_rows", "invalid_margin_cols", "invalid_min_percent"} {
+		for _, change := range []string{"missing_mode_order", "incomplete_mode_order", "duplicate_mode_order", "unknown_mode_order", "missing_required_mode", "invalid_default_type", "unknown_mode_field", "empty_title", "invalid_guard_n", "invalid_rate_step", "invalid_margin_rows", "invalid_margin_cols", "invalid_min_percent"} {
 			if err := expectInvalid(schema, pair, document, change, func(invalid map[string]any) error {
 				invalidModes := invalid["modes"].(map[string]any)
 				switch change {
+				case "missing_mode_order":
+					delete(invalid, "mode_order")
+				case "incomplete_mode_order":
+					order := invalid["mode_order"].([]any)
+					invalid["mode_order"] = order[:len(order)-1]
+				case "duplicate_mode_order":
+					order := invalid["mode_order"].([]any)
+					order[0] = order[1]
+				case "unknown_mode_order":
+					invalid["mode_order"].([]any)[0] = "unknown-mode"
 				case "missing_required_mode":
 					delete(invalidModes, "coalesce")
 				case "invalid_default_type":

@@ -1,4 +1,17 @@
 # yaml-language-server: $schema=schemas/resize.schema.json
+mode_order:
+  - coalesce
+  - atomic_flush
+  - row_clear
+  - synchronized_output
+  - auto_wrap
+  - out_of_band_clear
+  - full_screen_buffer
+  - resize_handling
+  - width_guard
+  - adaptive_guard
+  - alt_screen
+
 modes:
   coalesce:
     title: "Resize-event coalescing"

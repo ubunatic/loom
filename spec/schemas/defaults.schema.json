@@ -3,8 +3,16 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "collector"],
   "properties": {
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["default_retention"],
+      "properties": {
+        "default_retention": {"type": "string", "pattern": "^[1-9][0-9]*(ns|us|ms|s|m|h)$"}
+      }
+    },
     "keycaps": {
       "type": "object",
       "additionalProperties": false,

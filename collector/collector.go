@@ -13,6 +13,10 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"gopkg.in/yaml.v3"
+
+	"ubunatic.com/loom/spec"
 )
 
 // Type identifies a configured collector implementation.
@@ -21,9 +25,27 @@ type Type string
 const (
 	// TypeFile reads a bounded file at the caller's cadence.
 	TypeFile Type = "file"
-	// DefaultRetention is the in-memory history window when a spec omits one.
-	DefaultRetention = 15 * time.Minute
 )
+
+// DefaultRetention is the specced in-memory history window when a spec omits one.
+var DefaultRetention = func() time.Duration {
+	data, err := spec.DefaultsYAML()
+	if err != nil {
+		panic(fmt.Sprintf("collector: read spec/defaults.yaml: %v", err))
+	}
+	var defaults struct {
+		Collector struct {
+			DefaultRetention time.Duration `yaml:"default_retention"`
+		} `yaml:"collector"`
+	}
+	if err := yaml.Unmarshal(data, &defaults); err != nil {
+		panic(fmt.Sprintf("collector: parse spec/defaults.yaml: %v", err))
+	}
+	if defaults.Collector.DefaultRetention <= 0 {
+		panic("collector: collector.default_retention must be positive")
+	}
+	return defaults.Collector.DefaultRetention
+}()
 
 // Record is one immutable collection result. Data is owned by the record and
 // must be copied before a caller retains or transforms it asynchronously.

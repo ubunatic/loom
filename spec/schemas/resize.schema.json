@@ -3,8 +3,17 @@
   "title": "Loom Winch resize modes specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["modes", "auto_fullscreen"],
+  "required": ["modes", "auto_fullscreen", "mode_order"],
   "properties": {
+    "mode_order": {
+      "type": "array",
+      "minItems": 11,
+      "maxItems": 11,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["coalesce", "atomic_flush", "row_clear", "synchronized_output", "auto_wrap", "out_of_band_clear", "full_screen_buffer", "resize_handling", "width_guard", "adaptive_guard", "alt_screen"]
+      }
+    },
     "auto_fullscreen": { "$ref": "#/definitions/auto_fullscreen" },
     "modes": {
       "type": "object",

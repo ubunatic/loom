@@ -47,30 +47,22 @@ type AutoFullscreenSpec struct {
 
 // ResizeModesSpec holds all resize modes declared in spec/resize.yaml.
 type ResizeModesSpec struct {
+	ModeOrder      []string                  `yaml:"mode_order"`
 	Modes          map[string]ResizeModeSpec `yaml:"modes"`
 	AutoFullscreen AutoFullscreenSpec        `yaml:"auto_fullscreen"`
 }
 
 // SpeccedResizeModeIDs lists all mode identifiers in fixed presentation order.
-var SpeccedResizeModeIDs = []string{
-	"coalesce",
-	"atomic_flush",
-	"row_clear",
-	"synchronized_output",
-	"auto_wrap",
-	"out_of_band_clear",
-	"full_screen_buffer",
-	"resize_handling",
-	"width_guard",
-	"adaptive_guard",
-	"alt_screen",
-}
+var SpeccedResizeModeIDs = append([]string(nil), SpeccedResizeModes.ModeOrder...)
 
 // SpeccedResizeModes is the loaded immutable spec of resize modes.
 var SpeccedResizeModes = func() ResizeModesSpec {
 	var spec ResizeModesSpec
 	if err := yaml.Unmarshal(resizeSpecYAML, &spec); err != nil {
 		panic(fmt.Sprintf("loom: parse spec/resize.yaml: %v", err))
+	}
+	if err := spec.validateModeOrder(); err != nil {
+		panic(fmt.Sprintf("loom: spec/resize.yaml: %v", err))
 	}
 	for id, m := range spec.Modes {
 		m.ID = id
@@ -81,6 +73,20 @@ var SpeccedResizeModes = func() ResizeModesSpec {
 	}
 	return spec
 }()
+
+func (s ResizeModesSpec) validateModeOrder() error {
+	if len(s.ModeOrder) == 0 || len(s.ModeOrder) != len(s.Modes) {
+		return fmt.Errorf("mode_order must list every mode exactly once")
+	}
+	seen := make(map[string]bool, len(s.ModeOrder))
+	for _, id := range s.ModeOrder {
+		if _, ok := s.Modes[id]; !ok || seen[id] {
+			return fmt.Errorf("mode_order has unknown or duplicate mode %q", id)
+		}
+		seen[id] = true
+	}
+	return nil
+}
 
 // ResizeConfig holds the active boolean flags controlling resize and flush behaviors.
 type ResizeConfig struct {
