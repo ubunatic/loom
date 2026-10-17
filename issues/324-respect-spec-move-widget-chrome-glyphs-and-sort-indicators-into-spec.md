@@ -1,6 +1,6 @@
 # 324 — respect spec: move widget chrome glyphs and sort indicators into spec
 
-**Status**: Open
+**Status**: Closed — Table sort glyphs and hint plus Choice placeholder load from validated defaults YAML; render and loader regression tests pass in make test-q1; make build install passed; fixed in the table chrome spec commit
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
