@@ -1,6 +1,6 @@
 # 332 — Split rich text editor and pane implementation by concern
 
-**Status**: Open
+**Status**: Closed — implemented in 323ee29, 204 declaration ASTs unchanged, full suite and API baseline passing
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
