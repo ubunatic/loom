@@ -118,9 +118,13 @@ jobs:
           key: go-api-${{ hashFiles('go.sum') }}-${{ github.sha }}
           restore-keys: go-api-${{ hashFiles('go.sum') }}-
       - name: gorelease
+        # gorelease needs a newer Go than go.mod selects; let go run fetch it.
+        env:
+          GOTOOLCHAIN: auto
         run: |
           base=$(git describe --tags --abbrev=0 --match 'v*')
-          go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261014143641-f0251eb4aa3e -base="$base" > api.txt 2>&1
+          rc=0
+          go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261014143641-f0251eb4aa3e -base="$base" > api.txt 2>&1 || rc=$?
           {
             printf '### Public API vs %s\n\n```\n' "$base"
             cat api.txt
@@ -130,6 +134,7 @@ jobs:
           then
             printf '::warning title=incompatible API changes since %s::see the api job summary; the next release needs a minor bump and a docs/Upgrading.md row\n' "$base"
           fi
+          exit "$rc"
 
   report:
     needs: [ lint, unit, race, api ]
