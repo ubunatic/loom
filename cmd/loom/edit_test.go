@@ -468,10 +468,10 @@ func TestEditViewLayoutHeaderAndStatusBars(t *testing.T) {
 }
 
 func TestGenerateAnsiDesignScreenshots(t *testing.T) {
+	// Legacy generation flags must never turn a test into a tracked-asset writer.
+	t.Setenv("GENERATE_DESIGN_SCREENSHOTS", "1")
+	t.Setenv("UPDATE_GOLDEN", "1")
 	designDir := t.TempDir()
-	if os.Getenv("GENERATE_DESIGN_SCREENSHOTS") == "1" || os.Getenv("UPDATE_GOLDEN") == "1" {
-		designDir = filepath.Join("..", "..", "docs", "design")
-	}
 
 	tmpDir := t.TempDir()
 	readmePath := filepath.Join(tmpDir, "README.md")
@@ -500,10 +500,11 @@ func TestGenerateAnsiDesignScreenshots(t *testing.T) {
 		if err != nil {
 			t.Fatalf("NewRichTextEditFromFile: %v", err)
 		}
-		view, err := newEditView(edit, displayPath, cfg)
+		view, err := newEditView(edit, srcPath, cfg)
 		if err != nil {
 			t.Fatalf("newEditView: %v", err)
 		}
+		view.filePath = displayPath
 
 		setup(view)
 
