@@ -1,6 +1,6 @@
 # 339 — Split Pane.run by lifecycle concern
 
-**Status**: In Progress
+**Status**: Closed — resolved in a1b4372
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

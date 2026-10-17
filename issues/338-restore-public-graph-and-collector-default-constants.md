@@ -1,6 +1,6 @@
 # 338 — Restore public graph and collector default constants
 
-**Status**: In Progress
+**Status**: Closed — resolved in a1b4372
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
