@@ -1,6 +1,6 @@
 # 335 — Verify container quality gates with quota-compatible runtime access
 
-**Status**: Open
+**Status**: Closed — host ran make container-test under podman: green after lint-tools/.harnez fix (beee70a)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
