@@ -1,6 +1,6 @@
 # 327 — respect spec: move collector retention and resize mode ordering into spec
 
-**Status**: Open
+**Status**: Closed — Collector retention and resize order load from validated embedded YAML; eviction, ordering and negative-schema regressions pass; make test-q1, make check and make build install passed; fixed in e7610b6
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
