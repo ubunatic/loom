@@ -211,6 +211,54 @@ func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
 	s.WaitFor("second file", 3*time.Second)
 }
 
+func TestEditPTYBrowserDoubleClickAfterCancel(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "doc.txt")
+	for name, body := range map[string]string{"doc.txt": "original body\n", "target.txt": "target body\n"} {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab", path)
+	s.WaitFor("original body", 3*time.Second)
+	s.Send("\x1bOQ")
+	s.WaitFor("target.txt", 3*time.Second)
+	s.Send("\x1b")
+	time.Sleep(100 * time.Millisecond) // allow the standalone Esc key timeout
+	s.Send("X")
+	s.WaitFor("· Modified", 3*time.Second) // cancel restored editor focus
+	s.Send("\x1bOQ")
+	s.WaitFor("target.txt", 3*time.Second)
+	doubleClick := func(name string) {
+		t.Helper()
+		for y, row := range s.Screen() {
+			if y > 1 && y < 19 {
+				if x := strings.Index(row, name); x >= 0 {
+					col := len([]rune(row[:x])) + 2
+					press := "\x1b[<0;" + strconv.Itoa(col) + ";" + strconv.Itoa(y+1) + "M"
+					release := "\x1b[<0;" + strconv.Itoa(col) + ";" + strconv.Itoa(y+1) + "m"
+					s.Send(press + release + press + release)
+					return
+				}
+			}
+		}
+		t.Fatalf("no browser row for %s: %s", name, strings.Join(s.Screen(), "\n"))
+	}
+	doubleClick("target.txt")
+	s.WaitFor("Save changes?", 3*time.Second)
+	s.Send("\x1b") // Cancel activation, then reuse the same picker.
+	time.Sleep(100 * time.Millisecond)
+	doubleClick("target.txt")
+	s.WaitFor("Save changes?", 3*time.Second)
+	s.Send("\x1b[C\r") // Discard
+	s.WaitFor("target body", 3*time.Second)
+	doubleClick("doc.txt")
+	s.WaitFor("original body", 3*time.Second)
+	if data, err := os.ReadFile(path); err != nil || string(data) != "original body\n" {
+		t.Fatalf("Discard changed original: %q, %v", data, err)
+	}
+}
+
 func TestEditPTYCtrlAltSDoesNotOpenSaveAs(t *testing.T) {
 	for name, seq := range map[string]string{
 		"legacy ESC ^S": "\x1b\x13",
