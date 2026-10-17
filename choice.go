@@ -32,7 +32,7 @@ func DefaultChoiceStyle() ChoiceStyle {
 }
 
 // DefaultPlaceholder is the search-bar hint of Choice and Table.
-const DefaultPlaceholder = "type to filter"
+var DefaultPlaceholder = SpeccedDefaults.Choice.DefaultPlaceholder
 
 // Choice is a filterable, keyboard-navigable list of Items.
 // Arrow keys move the selection; printable characters narrow the filter;

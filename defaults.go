@@ -39,6 +39,7 @@ type LibDefaults struct {
 	Tree         TreeDefaults         `yaml:"tree"`
 	Split        SplitDefaults        `yaml:"split"`
 	Choice       ChoiceDefaults       `yaml:"choice"`
+	Table        TableDefaults        `yaml:"table"`
 }
 
 // KeyCapDefaults defines the modifier glyphs KeyCap renders, in display order.
@@ -325,10 +326,18 @@ func (d SplitDefaults) validate() error {
 
 // ChoiceDefaults defines specced defaults for Choice.
 type ChoiceDefaults struct {
-	SelectionMarker  string `yaml:"selection_marker"`
-	UnselectedMarker string `yaml:"unselected_marker"`
-	CheckedMarker    string `yaml:"checked_marker"`
-	UncheckedMarker  string `yaml:"unchecked_marker"`
+	DefaultPlaceholder string `yaml:"default_placeholder"`
+	SelectionMarker    string `yaml:"selection_marker"`
+	UnselectedMarker   string `yaml:"unselected_marker"`
+	CheckedMarker      string `yaml:"checked_marker"`
+	UncheckedMarker    string `yaml:"unchecked_marker"`
+}
+
+// TableDefaults defines sort chrome for Table.
+type TableDefaults struct {
+	SortAscGlyph    string `yaml:"sort_asc_glyph"`
+	SortDescGlyph   string `yaml:"sort_desc_glyph"`
+	ControlsHintFmt string `yaml:"controls_hint_fmt"`
 }
 
 func (d ChoiceDefaults) validate() error {

@@ -179,11 +179,11 @@ func (t *Table) ensureSearchBar() *SearchBar {
 	}
 	controls := t.Controls
 	if controls == "" && t.SortCol >= 0 && t.SortCol < len(t.Columns) {
-		dir := "▲"
+		dir := SpeccedDefaults.Table.SortAscGlyph
 		if t.SortDesc {
-			dir = "▼"
+			dir = SpeccedDefaults.Table.SortDescGlyph
 		}
-		controls = fmt.Sprintf("[tab:%s%s !:flip]", dir, t.Columns[t.SortCol].Header)
+		controls = fmt.Sprintf(SpeccedDefaults.Table.ControlsHintFmt, dir, t.Columns[t.SortCol].Header)
 	}
 	t.searchBar.Controls = controls
 	t.searchBar.Focused = t.focused
@@ -272,8 +272,8 @@ func (t *Table) computeWidths() {
 			t.colWidths[i] = col.Width
 			continue
 		}
-		// +1: reserve one char for the sort indicator (▲ or ▼).
-		w := StringWidth(col.Header) + 1
+		indicatorWidth := max(StringWidth(SpeccedDefaults.Table.SortAscGlyph), StringWidth(SpeccedDefaults.Table.SortDescGlyph))
+		w := StringWidth(col.Header) + indicatorWidth
 		for _, row := range t.Rows {
 			if i < len(row.Cells) {
 				if cw := StringWidth(row.Cells[i]); cw > w {
@@ -291,9 +291,9 @@ func (t *Table) headerText(i int) string {
 		return h
 	}
 	if t.SortDesc {
-		return h + "▼"
+		return h + SpeccedDefaults.Table.SortDescGlyph
 	}
-	return h + "▲"
+	return h + SpeccedDefaults.Table.SortAscGlyph
 }
 
 // Draw renders the table into r.

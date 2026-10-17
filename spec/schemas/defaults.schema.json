@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table"],
   "properties": {
     "keycaps": {
       "type": "object",
@@ -127,11 +127,22 @@
         "default_gap": { "type": "integer", "minimum": 0 }
       }
     },
+    "table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sort_asc_glyph", "sort_desc_glyph", "controls_hint_fmt"],
+      "properties": {
+        "sort_asc_glyph": {"type": "string", "minLength": 1},
+        "sort_desc_glyph": {"type": "string", "minLength": 1},
+        "controls_hint_fmt": {"type": "string", "minLength": 1}
+      }
+    },
     "choice": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["selection_marker", "unselected_marker", "checked_marker", "unchecked_marker"],
+      "required": ["default_placeholder", "selection_marker", "unselected_marker", "checked_marker", "unchecked_marker"],
       "properties": {
+        "default_placeholder": {"type": "string", "minLength": 1},
         "selection_marker": { "type": "string", "minLength": 1 },
         "unselected_marker": { "type": "string" },
         "checked_marker": { "type": "string", "minLength": 1 },

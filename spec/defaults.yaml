@@ -124,10 +124,16 @@ split:
   default_gap: 1
 
 choice:
+  default_placeholder: "type to filter"
   selection_marker: "▶ "
   unselected_marker: "  "
   checked_marker: "[✓] "
   unchecked_marker: "[ ] "
+
+table:
+  sort_asc_glyph: "▲"
+  sort_desc_glyph: "▼"
+  controls_hint_fmt: "[tab:%s%s !:flip]"
 
 rich_text_edit:
   action_closes_menu: true
