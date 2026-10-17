@@ -25,9 +25,12 @@ type Session struct {
 	cmd    *exec.Cmd
 	done   chan struct{}
 
-	mu  sync.Mutex
-	vt  *VT
-	raw []byte
+	mu        sync.Mutex
+	vt        *VT
+	raw       []byte
+	changed   chan struct{}
+	revision  uint64
+	afterSend uint64
 }
 
 // Start runs the binary on a cols x rows PTY. It skips the test when PTYs are
@@ -58,7 +61,7 @@ func Start(t *testing.T, cols, rows int, name string, args ...string) *Session {
 	}
 	defer slave.Close()
 
-	s := &Session{t: t, master: master, done: make(chan struct{}), vt: NewVT(cols, rows)}
+	s := &Session{t: t, master: master, done: make(chan struct{}), changed: make(chan struct{}), vt: NewVT(cols, rows)}
 	s.setSize(cols, rows)
 	s.cmd = exec.Command(name, args...)
 	s.cmd.Stdin, s.cmd.Stdout, s.cmd.Stderr = slave, slave, slave
@@ -88,6 +91,9 @@ func (s *Session) pump() {
 			s.mu.Lock()
 			s.raw = append(s.raw, buf[:n]...)
 			s.vt.Write(buf[:n]) //nolint:errcheck
+			s.revision++
+			close(s.changed)
+			s.changed = make(chan struct{})
 			s.mu.Unlock()
 		}
 		if err != nil {
@@ -116,6 +122,7 @@ func (s *Session) Resize(cols, rows int) {
 // Send writes keystrokes to the child.
 func (s *Session) Send(keys string) {
 	s.t.Helper()
+	s.markSend()
 	if _, err := s.master.WriteString(keys); err != nil {
 		s.t.Fatalf("send %q: %v", keys, err)
 	}
@@ -124,9 +131,16 @@ func (s *Session) Send(keys string) {
 // SendRaw writes terminal input bytes without interpreting them.
 func (s *Session) SendRaw(data []byte) {
 	s.t.Helper()
+	s.markSend()
 	if _, err := s.master.Write(data); err != nil {
 		s.t.Fatalf("send raw input: %v", err)
 	}
+}
+
+func (s *Session) markSend() {
+	s.mu.Lock()
+	s.afterSend = s.revision
+	s.mu.Unlock()
 }
 
 // Screen returns the current screen rows.
@@ -134,6 +148,13 @@ func (s *Session) Screen() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return s.vt.Screen()
+}
+
+// Text returns the virtual terminal's visible screen joined by newlines.
+func (s *Session) Text() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.Text()
 }
 
 // Cells returns a snapshot of the current cell grid (runes and styles).
@@ -175,14 +196,52 @@ func (s *Session) Raw() []byte {
 // dump on timeout.
 func (s *Session) WaitFor(want string, timeout time.Duration) {
 	s.t.Helper()
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		if strings.Contains(s.dump(), want) {
+	s.WaitForState(timeout*RaceFactor, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), want)
+	})
+}
+
+// WaitForUpdate waits for want to appear in screen output produced after the
+// most recent Send or SendRaw call.
+func (s *Session) WaitForUpdate(want string, timeout time.Duration) {
+	s.t.Helper()
+	s.WaitForUpdateState(timeout*RaceFactor, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), want)
+	})
+}
+
+// WaitForState waits for a newly observed screen state. It wakes on PTY output
+// rather than polling, so race-instrumented tests do not depend on scheduler
+// timing or arbitrary sleeps.
+func (s *Session) WaitForState(timeout time.Duration, predicate func([]string) bool) {
+	s.waitForState(timeout, false, predicate)
+}
+
+// WaitForUpdateState waits for a screen predicate after the latest input.
+func (s *Session) WaitForUpdateState(timeout time.Duration, predicate func([]string) bool) {
+	s.waitForState(timeout, true, predicate)
+}
+
+func (s *Session) waitForState(timeout time.Duration, afterSend bool, predicate func([]string) bool) {
+	s.t.Helper()
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	for {
+		s.mu.Lock()
+		rows := s.vt.Screen()
+		changed := s.changed
+		ready := !afterSend || s.revision > s.afterSend
+		s.mu.Unlock()
+		if ready && predicate(rows) {
 			return
 		}
-		time.Sleep(10 * time.Millisecond)
+		select {
+		case <-changed:
+		case <-timer.C:
+			s.t.Fatalf("timed out waiting for screen state; screen:\n%s", strings.Join(s.Screen(), "\n"))
+			return
+		}
 	}
-	s.t.Fatalf("timed out waiting for %q; screen:\n%s", want, s.dump())
 }
 
 func (s *Session) dump() string {

@@ -7,28 +7,10 @@ snapshots and widgets.
 Package collector is experimental; its API may change between releases.
 See docs/APIStability.md for the package stability policy.
 
-VARIABLES
+CONSTANTS
 
-var DefaultRetention = func() time.Duration {
-	data, err := spec.DefaultsYAML()
-	if err != nil {
-		panic(fmt.Sprintf("collector: read spec/defaults.yaml: %v", err))
-	}
-	var defaults struct {
-		Collector struct {
-			DefaultRetention time.Duration `yaml:"default_retention"`
-		} `yaml:"collector"`
-	}
-	if err := yaml.Unmarshal(data, &defaults); err != nil {
-		panic(fmt.Sprintf("collector: parse spec/defaults.yaml: %v", err))
-	}
-	if defaults.Collector.DefaultRetention <= 0 {
-		panic("collector: collector.default_retention must be positive")
-	}
-	return defaults.Collector.DefaultRetention
-}()
-    DefaultRetention is the specced in-memory history window when a spec omits
-    one.
+const DefaultRetention = 15 * time.Minute
+    DefaultRetention is the in-memory history window used when a spec omits one.
 
 
 FUNCTIONS

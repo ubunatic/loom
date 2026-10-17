@@ -42,13 +42,13 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	from := len(s.Raw())
 	s.Send("word\x1b[D\x00") // Select the word from inside it with Ctrl-Space.
 	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
-	s.WaitFor("[ B", 3*time.Second)
+	s.WaitForUpdate("[ B", 3*time.Second)
 	clickEditPTY(t, s, 3, " B")
 	waitEditPTY(t, s, func() bool { return s.Cell(1, 1).Style.Bold })
-	s.WaitFor("Untitled · Modified", 3*time.Second)
+	s.WaitForUpdate("Untitled · Modified", 3*time.Second)
 	from = len(s.Raw())
 	s.Send("\x00") // Reopen the popover before checking its backdrop.
-	s.WaitFor("#FG", 3*time.Second)
+	s.WaitForUpdate("#FG", 3*time.Second)
 	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
 	from = len(s.Raw())
 	s.Send("\x1b[<0;1;24M")
@@ -56,7 +56,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	// The same backdrop click must not activate the bottom bar or insert a report.
 	from = len(s.Raw())
 	s.Send("\x13")
-	s.WaitFor("Name:", 3*time.Second)
+	s.WaitForUpdate("Name:", 3*time.Second)
 	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
 	from = len(s.Raw())
 	s.Send("\x1b[<0;1;24M")
@@ -64,7 +64,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	for _, button := range []bool{false, true} {
 		from = len(s.Raw())
 		s.Send("\x11")
-		s.WaitFor("Save changes?", 3*time.Second)
+		s.WaitForUpdate("Save changes?", 3*time.Second)
 		waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
 		from = len(s.Raw())
 		if button {
@@ -75,7 +75,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 		waitMouseMode303(t, s, from, mouseRelease303)
 	}
 	s.Send("\x11")
-	s.WaitFor("Save changes?", 3*time.Second)
+	s.WaitForUpdate("Save changes?", 3*time.Second)
 	clickEditPTY(t, s, 12, "Discard")
 	if err := s.Wait(3 * time.Second); err != nil {
 		t.Fatal(err)

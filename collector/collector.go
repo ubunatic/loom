@@ -27,8 +27,10 @@ const (
 	TypeFile Type = "file"
 )
 
-// DefaultRetention is the specced in-memory history window when a spec omits one.
-var DefaultRetention = func() time.Duration {
+// DefaultRetention is the in-memory history window used when a spec omits one.
+const DefaultRetention = 15 * time.Minute
+
+func init() {
 	data, err := spec.DefaultsYAML()
 	if err != nil {
 		panic(fmt.Sprintf("collector: read spec/defaults.yaml: %v", err))
@@ -44,8 +46,10 @@ var DefaultRetention = func() time.Duration {
 	if defaults.Collector.DefaultRetention <= 0 {
 		panic("collector: collector.default_retention must be positive")
 	}
-	return defaults.Collector.DefaultRetention
-}()
+	if defaults.Collector.DefaultRetention != DefaultRetention {
+		panic("collector: spec collector.default_retention differs from exported constant")
+	}
+}
 
 // Record is one immutable collection result. Data is owned by the record and
 // must be copied before a caller retains or transforms it asynchronously.

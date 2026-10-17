@@ -70,25 +70,53 @@ func Test302EditPTYHelpWheelBackdropAndInline(t *testing.T) {
 	s, _ := startMouseEditPTY(t, "base\n")
 	s.Send("\x1bOP")
 	s.WaitFor("RichTextEdit Help", 3*time.Second)
-	before := strings.Join(s.Screen(), "\n")
+	before := cellGridText(s.Cells())
 	s.Send("\x1b[<65;50;8M")
-	waitEditPTY(t, s, func() bool { return strings.Join(s.Screen(), "\n") != before })
-	if !strings.Contains(strings.Join(s.Screen(), "\n"), "RichTextEdit Help") {
+	waitEditPTY(t, s, func() bool { return cellGridText(s.Cells()) != before })
+	if !strings.Contains(cellGridText(s.Cells()), "RichTextEdit Help") {
 		t.Fatal("wheel dismissed help")
 	}
 	s.Send("\x1b[<0;1;24M") // Outside editor and popup: modal routing must win.
-	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "RichTextEdit Help") })
+	waitEditPTY(t, s, func() bool { return !strings.Contains(cellGridText(s.Cells()), "RichTextEdit Help") })
 	clickEditPTY(t, s, 21, " A ")
-	waitEditPTY(t, s, func() bool { return strings.Contains(strings.Join(s.Screen(), "\n"), " a ") })
-	if row := s.Screen()[23]; !strings.Contains(row, "┘") {
-		t.Fatalf("inline app leaves a blank bottom row: %q", row)
+	waitEditPTY(t, s, func() bool {
+		cells := s.Cells()
+		return strings.Contains(cellGridText(cells), " a ") && cellRowHasRune(cells[23], '┘')
+	})
+	if !cellRowHasRune(s.Cells()[23], '┘') {
+		t.Fatalf("inline app leaves a blank bottom row: %q", s.Screen()[23])
 	}
 	s.Resize(100, 18)
-	waitEditPTY(t, s, func() bool { return len(s.Screen()) == 18 && strings.Contains(s.Screen()[17], "┘") })
+	waitEditPTY(t, s, func() bool { return len(s.Cells()) == 18 && cellRowHasRune(s.Cells()[17], '┘') })
 	s.Send("\x11")
 	if err := s.Wait(3 * time.Second); err != nil {
 		t.Fatal(err)
 	}
+}
+
+func cellRowHasRune(row []ptytest.Cell, want rune) bool {
+	for _, cell := range row {
+		if cell.Rune == want {
+			return true
+		}
+	}
+	return false
+}
+
+func cellGridText(grid [][]ptytest.Cell) string {
+	rows := make([]string, len(grid))
+	for y, row := range grid {
+		var text strings.Builder
+		for _, cell := range row {
+			if cell.Text != "" {
+				text.WriteString(cell.Text)
+			} else if cell.Rune != 0 {
+				text.WriteRune(cell.Rune)
+			}
+		}
+		rows[y] = text.String()
+	}
+	return strings.Join(rows, "\n")
 }
 
 func Test302EditModalBlocksHostActions(t *testing.T) {

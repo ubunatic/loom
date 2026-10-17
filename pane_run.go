@@ -552,40 +552,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			// reports (1003 any-motion tracking floods them), so drain the whole
 			// buffer report-by-report and dispatch each in order.
 			if p.mouse && len(raw) >= 3 && raw[0] == 27 && raw[1] == '[' && raw[2] == '<' {
-				quit := false
-				for len(raw) > 0 {
-					me, used, ok := scanMouse(raw)
-					if !ok {
-						break
-					}
-					// Translate terminal 1-based coordinates to pane/canvas-absolute
-					// 0-based coordinates.
-					me.X--
-					me.Y -= p.startRow
-					if p.DebugMode {
-						me.X--
-						me.Y--
-					}
-					if p.cursorProximity {
-						if p.cursorStarTrail && p.mouseKnown && (me.X != p.mouseX || me.Y != p.mouseY) {
-							p.cursorTrail = append(p.cursorTrail, CursorTrailPoint{X: p.mouseX, Y: p.mouseY, At: time.Now()})
-							if len(p.cursorTrail) > SpeccedCursorStarTrail.MaxPoints {
-								p.cursorTrail = append([]CursorTrailPoint(nil), p.cursorTrail[len(p.cursorTrail)-SpeccedCursorStarTrail.MaxPoints:]...)
-							}
-						}
-						p.mouseX, p.mouseY = me.X, me.Y
-						p.mouseKnown = me.X >= 0 && me.X < canvas.Cols() && me.Y >= 0 && me.Y < canvas.Rows()
-						if me.Action == MousePress {
-							p.triggerCursorPulse(time.Now())
-						}
-					}
-					if p.mouse && p.dispatchMouse(root, me).Quit {
-						quit = true
-						break
-					}
-					raw = raw[used:]
-					redraw(false) // repaint after each event so the pointer is followed live
-				}
+				var quit bool
+				raw, quit = p.dispatchMouseRead(root, canvas, raw, redraw)
 				if quit {
 					return nil
 				}

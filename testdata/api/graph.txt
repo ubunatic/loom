@@ -8,9 +8,17 @@ The rendering primitives are adapted from Harnez's internal/rograph package
 
 CONSTANTS
 
+const DefaultBackgroundANSI = "100"
+    DefaultBackgroundANSI is the default SGR background code used when ANSI is
+    true and the caller leaves BackgroundANSI empty.
+
 const MaxTreemapNodes = 100
     MaxTreemapNodes is a sensible default node budget for AggregateTreemap, e.g.
     when reducing a full process tree to a glanceable treemap.
+
+const MaxWidth = 10
+    MaxWidth is the default maximum render width, in characters/glyphs,
+    for single-row graph bars and sparklines.
 
 
 VARIABLES
@@ -20,20 +28,12 @@ var BrailleSubCharacterGlyphs = []rune{'⡇'}
     half-cell width. Left column (4 dots): ⡇ (U+2847). Full cell (8 dots):
     ⣿ (U+28FF).
 
-var DefaultBackgroundANSI = graphDefaults.DefaultBackgroundANSI
-    DefaultBackgroundANSI is the spec-loaded SGR code used when ANSI is true and
-    the caller leaves BackgroundANSI empty.
-
 var DefaultSpinnerFrames = []rune(graphDefaults.Spinner.Frames)
     DefaultSpinnerFrames are the standard spec-loaded braille spinner glyphs.
 
 var HarnezSpinnerFrames = []rune(graphDefaults.Spinner.HarnezFrames)
     HarnezSpinnerFrames is an alternative spec-loaded sequence matching the
     Harnez reference target.
-
-var MaxWidth = graphDefaults.Bar.MaxWidth
-    MaxWidth is the spec-loaded default maximum render width, in characters/
-    glyphs, for single-row graph bars and sparklines.
 
 
 FUNCTIONS

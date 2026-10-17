@@ -40,14 +40,7 @@ func clickEditPTY(t *testing.T, s *ptytest.Session, row int, label string) {
 
 func waitEditPTY(t *testing.T, s *ptytest.Session, predicate func() bool) {
 	t.Helper()
-	until := time.Now().Add(3 * time.Second)
-	for time.Now().Before(until) {
-		if predicate() {
-			return
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
-	t.Fatalf("screen state did not arrive:\n%s", strings.Join(s.Screen(), "\n"))
+	s.WaitForUpdateState(3*time.Second*ptytest.RaceFactor, func([]string) bool { return predicate() })
 }
 
 func TestEditPTYBottomBarActionsAndToggles(t *testing.T) {
