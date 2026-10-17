@@ -239,6 +239,10 @@ func findRepoRoot(t *testing.T) string {
 }
 
 func buildTextrender(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "textrender")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/textrender").CombinedOutput(); err != nil {

@@ -11,6 +11,10 @@ import (
 )
 
 func TestVideoStreamAdvancesAndCloses(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	for _, tool := range []string{"ffmpeg", "ffprobe"} {
 		if _, err := exec.LookPath(tool); err != nil {
 			t.Skipf("%s is unavailable: %v", tool, err)

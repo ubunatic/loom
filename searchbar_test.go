@@ -121,6 +121,10 @@ func TestSearchBarCommandMode(t *testing.T) {
 }
 
 func TestChoiceSearchBarIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	items := []loom.Item{
 		{Name: "Apple"},
 		{Name: "Banana"},
@@ -156,6 +160,10 @@ func TestChoiceSearchBarIntegration(t *testing.T) {
 }
 
 func TestTableSearchBarIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	cols := []loom.Column{
 		{Header: "Item"},
 		{Header: "Qty"},

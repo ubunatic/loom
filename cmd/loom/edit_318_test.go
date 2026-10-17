@@ -7,6 +7,10 @@ import (
 )
 
 func Test318EditPTYFocusedPopoverArrowAway(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	for _, placement := range []string{"above", "below"} {
 		t.Run(placement, func(t *testing.T) {

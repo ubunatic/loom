@@ -35,6 +35,10 @@ func Test302EditArguments(t *testing.T) {
 }
 
 func Test302EditPTYUntitledAndMouseOff(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit")
 	s.WaitFor("Untitled · Unsaved", 3*time.Second)
@@ -58,6 +62,10 @@ func Test302EditPTYUntitledAndMouseOff(t *testing.T) {
 }
 
 func Test302EditPTYHelpWheelBackdropAndInline(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s, _ := startMouseEditPTY(t, "base\n")
 	s.Send("\x1bOP")

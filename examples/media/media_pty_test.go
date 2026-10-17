@@ -21,6 +21,10 @@ import (
 )
 
 func buildMediaDemo(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "loom-media")
 	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/media").CombinedOutput()
@@ -97,6 +101,10 @@ func writeSolidPNG(t *testing.T) string {
 }
 
 func writeVideo(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	for _, tool := range []string{"ffmpeg", "ffprobe"} {
 		if _, err := exec.LookPath(tool); err != nil {
@@ -112,6 +120,10 @@ func writeVideo(t *testing.T) string {
 }
 
 func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
 	// The media request promotes this full-width pane to the alternate screen,
@@ -179,6 +191,10 @@ func TestMediaDemoPTYFillsAvailableWidth(t *testing.T) {
 }
 
 func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	const cols, rows = 80, 24
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeSolidPNG(t))
 	s.WaitFor("Cols: 80", 5*time.Second)
@@ -209,6 +225,10 @@ func TestMediaDemoPTYZoomControlsRespondToKeyAndClick(t *testing.T) {
 }
 
 func TestMediaDemoPTYPlaysVideo(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	const cols, rows = 120, 40
 	s := ptytest.Start(t, cols, rows, buildMediaDemo(t), writeVideo(t))
 	// The media request promotes this full-width pane to the alternate screen,

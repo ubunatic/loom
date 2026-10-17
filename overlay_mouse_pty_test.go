@@ -27,6 +27,10 @@ func (w *overlayMousePTYWidget) ConsumeKey(e KeyEvent) EventResult {
 }
 
 func TestOverlayMousePaneHelpPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("LOOM_OVERLAY_MOUSE_HELPER", "1")
 	s := ptytest.Start(t, 80, 24, os.Args[0], "-test.run=^TestOverlayMousePaneHelpPTYHelper$")
 	wait := func(predicate func() bool) {
@@ -58,6 +62,10 @@ func TestOverlayMousePaneHelpPTY(t *testing.T) {
 }
 
 func TestOverlayMousePaneHelpPTYHelper(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	if os.Getenv("LOOM_OVERLAY_MOUSE_HELPER") == "" {
 		return
 	}

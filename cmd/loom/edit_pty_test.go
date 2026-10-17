@@ -24,6 +24,10 @@ func startEditPTY(t *testing.T, content string) (*ptytest.Session, string) {
 }
 
 func TestEditPTYHeaderHasNoDuplicateFileLabel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, _ := startEditPTY(t, "base\n")
 	s.WaitFor("doc.txt · Saved", 3*time.Second)
 	screen := s.Screen()
@@ -44,6 +48,10 @@ func TestEditPTYHeaderHasNoDuplicateFileLabel(t *testing.T) {
 }
 
 func TestEditPTYEscKeepsRunningAndQuitKeysAskFirst(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, path := startEditPTY(t, "base\n")
 	s.Send("hello")
 	s.WaitFor("hello", 3*time.Second)
@@ -78,6 +86,10 @@ func TestEditPTYEscKeepsRunningAndQuitKeysAskFirst(t *testing.T) {
 }
 
 func TestEditPTYSaveThenQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, path := startEditPTY(t, "base\n")
 	s.Send("hello")
 	s.WaitFor("hello", 3*time.Second)
@@ -93,6 +105,10 @@ func TestEditPTYSaveThenQuit(t *testing.T) {
 }
 
 func TestEditPTYSpanDeletionSaveAndQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	for _, dialog := range []bool{false, true} {
 		t.Run(strconv.FormatBool(dialog), func(t *testing.T) {
 			s, path := startEditPTY(t, "base\n")
@@ -127,6 +143,10 @@ func TestEditPTYSpanDeletionSaveAndQuit(t *testing.T) {
 }
 
 func TestEditPTYRightBorderSurvivesResizeSettling(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, _ := startEditPTY(t, "base\n")
 	for _, size := range [][2]int{{60, 18}, {80, 24}, {40, 16}} {
 		s.Resize(size[0], size[1])
@@ -148,6 +168,10 @@ func TestEditPTYRightBorderSurvivesResizeSettling(t *testing.T) {
 }
 
 func TestEditPTYCleanQuitKeysExit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	for _, key := range []string{"\x11", "\x1b[21~"} {
 		s, _ := startEditPTY(t, "base\n")
 		s.Send(key)
@@ -158,6 +182,10 @@ func TestEditPTYCleanQuitKeysExit(t *testing.T) {
 }
 
 func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, path := startEditPTY(t, "base\n")
 	s.WaitFor("· Saved", 3*time.Second)
 	s.Send("hello")
@@ -181,6 +209,10 @@ func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
 }
 
 func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	path := filepath.Join(dir, "doc.txt")
 	for name, body := range map[string]string{"doc.txt": "base\n", "b.txt": "second file\n"} {
@@ -212,6 +244,10 @@ func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
 }
 
 func TestEditPTYBrowserDoubleClickAfterCancel(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	path := filepath.Join(dir, "doc.txt")
 	for name, body := range map[string]string{"doc.txt": "original body\n", "target.txt": "target body\n"} {
@@ -260,6 +296,10 @@ func TestEditPTYBrowserDoubleClickAfterCancel(t *testing.T) {
 }
 
 func TestEditPTYCtrlAltSDoesNotOpenSaveAs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	for name, seq := range map[string]string{
 		"legacy ESC ^S": "\x1b\x13",
 		"CSI-u":         "\x1b[115;7u",
@@ -277,6 +317,10 @@ func TestEditPTYCtrlAltSDoesNotOpenSaveAs(t *testing.T) {
 }
 
 func TestEditPTYCtrlOFocusesBrowserAndCtrlWDiscardsToUntitled(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, path := startEditPTY(t, "base\n")
 	s.Send("\x0f") // ^O
 	s.WaitFor("doc.txt", 3*time.Second)

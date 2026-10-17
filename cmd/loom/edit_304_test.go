@@ -43,6 +43,10 @@ func Test304EditBackdropDoesNotChangeEditorOrHost(t *testing.T) {
 }
 
 func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	content := "first word\nsecond line\n"
 	s, path := startMouseEditPTY(t, content)

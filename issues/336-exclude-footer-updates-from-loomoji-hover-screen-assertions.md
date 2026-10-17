@@ -1,6 +1,6 @@
 # 336 — Exclude footer updates from Loomoji hover screen assertions
 
-**Status**: Open
+**Status**: Closed — implemented in b73861f; regression, full race and regular suites pass on Go 1.25.0
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

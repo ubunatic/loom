@@ -11,6 +11,10 @@ import (
 )
 
 func buildLoomBinary(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "loom")
 	cmd := exec.Command("go", "build", "-o", bin, ".")
@@ -21,6 +25,10 @@ func buildLoomBinary(t *testing.T) string {
 }
 
 func TestInfoPTYReportAndWatch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := buildLoomBinary(t)
 	info := ptytest.Start(t, 80, 24, bin, "info")
 	info.WaitFor("loom version", time.Second*3)

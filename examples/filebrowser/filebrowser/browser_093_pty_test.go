@@ -13,6 +13,10 @@ import (
 )
 
 func TestFilebrowser093PTYClick(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	for _, name := range []string{"alpha.txt", "beta.txt"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {
@@ -57,6 +61,10 @@ func TestFilebrowser093PTYClick(t *testing.T) {
 }
 
 func TestFilebrowserPTYDoubleClickOpensFileAndEntersDirectory(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	for _, name := range []string{"alpha.txt", "beta.txt"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {
@@ -145,6 +153,10 @@ func waitPTYFileContains(t *testing.T, path, want string, timeout time.Duration)
 }
 
 func TestFilebrowserPTYArrowMovesOneItem(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	for _, name := range []string{"alpha.txt", "beta.txt", "gamma.txt", "delta.txt"} {
 		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0o644); err != nil {

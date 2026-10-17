@@ -19,6 +19,10 @@ func waitMouseMode303(t *testing.T, s *ptytest.Session, from int, sequence strin
 }
 
 func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit")
 	s.WaitFor("Ln 1, Col 1", 3*time.Second)
@@ -79,6 +83,10 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 }
 
 func Test303EditPTYGlobalMouseGrabPersists(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s, _ := startMouseEditPTY(t, "base\n")
 	from := len(s.Raw())

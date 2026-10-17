@@ -26,10 +26,10 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Check formatting
-        run: make gofmt-check
-      - name: Vet
-        run: go vet ./...
+      - name: Install lint tools
+        run: make lint-tools
+      - name: Lint
+        run: make lint
       - name: Build
         run: go build ./...
       - name: Test with race detector

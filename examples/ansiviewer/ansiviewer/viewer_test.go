@@ -411,6 +411,10 @@ func testRecordFixture(t *testing.T, name string) {
 }
 
 func TestOpenRecorderPTYUsesRequestedGeometry(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave, err := openRecorderPTY(115, 37)
 	if err != nil {
 		t.Fatal(err)

@@ -166,6 +166,10 @@ func TestUsageWidgetInvalidatesAfterAsyncCollection(t *testing.T) {
 }
 
 func TestUsagePTYColorCellHelper(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	if os.Getenv("LOOM_USAGE_PTY_HELPER") == "" {
 		return
 	}
@@ -196,6 +200,10 @@ func TestUsagePTYColorCellHelper(t *testing.T) {
 }
 
 func TestUsagePTYColorCells(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	old, hadOld := os.LookupEnv("LOOM_USAGE_PTY_HELPER")
 	if err := os.Setenv("LOOM_USAGE_PTY_HELPER", "1"); err != nil {
 		t.Fatal(err)

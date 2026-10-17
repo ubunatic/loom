@@ -263,6 +263,10 @@ func openPTYForProbe(t *testing.T) (master, slave *os.File) {
 // openPTYWithCookedState is openPTYForProbe that also returns the slave's
 // initial (cooked) mode, for tests that hand the terminal to a child.
 func openPTYWithCookedState(t *testing.T) (master, slave *os.File, cooked *term.State) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	m, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {
@@ -392,6 +396,10 @@ func (w *cursorEffectsPTYWidget) ConsumeMouse(e MouseEvent) EventResult {
 }
 
 func TestFramePTYMouseDragOutsidePane(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 24, 10)
 	w := newCursorEffectsPTYWidget()
@@ -453,6 +461,10 @@ func (w *cursorEffectsPTYWidget) ConsumeKey(e KeyEvent) EventResult {
 }
 
 func TestCursorEffectsThroughPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 12, 4)
 	w := newCursorEffectsPTYWidget()
@@ -796,6 +808,10 @@ func TestPaneProbesZWJAfterEnteringAltScreen(t *testing.T) {
 }
 
 func TestKey088PTYCapture(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 40}
 	rec := newKeyRecorder(4)
@@ -953,6 +969,10 @@ func (w *ptyResizeWidget) history() []Rect {
 }
 
 func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1013,6 +1033,10 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 }
 
 func TestPTYResizeModeToggles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 60, 20)
 
@@ -1059,6 +1083,10 @@ func TestPTYResizeModeToggles(t *testing.T) {
 }
 
 func TestPTYResizeStaleRowClearing(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1097,6 +1125,10 @@ func TestPTYResizeStaleRowClearing(t *testing.T) {
 }
 
 func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1178,6 +1210,10 @@ func (w *runtimeBackgroundWidget) ConsumeKey(e KeyEvent) EventResult {
 }
 
 func TestPTYBackgroundTickerRuntimeLifecycle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 15, wantRows: 15, cols: 80, ResizeConfig: DefaultResizeConfig()}
@@ -1257,6 +1293,10 @@ func TestPTYBackgroundTickerRuntimeLifecycle(t *testing.T) {
 }
 
 func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1316,6 +1356,10 @@ func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 }
 
 func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1370,6 +1414,10 @@ func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
 }
 
 func TestPTYResizeWidthGuardDisabled(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 80, 24)
 
@@ -1445,6 +1493,10 @@ func (w *debugModePTYWidget) ConsumeMouse(e MouseEvent) EventResult {
 }
 
 func TestPaneDebugModePTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	if os.Getenv("LOOM_DEBUG_PTY_HELPER") == "1" {
 		w := &debugModePTYWidget{}
 		p, err := New(10)
@@ -1484,6 +1536,10 @@ func TestPaneDebugModePTY(t *testing.T) {
 }
 
 func TestPanePTYCloseRequestVetoThenQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 24, 4)
 	asked := make(chan CloseReason, 4)

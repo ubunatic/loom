@@ -100,6 +100,10 @@ func TestPaneableRunnerPreservesOptionalHooks(t *testing.T) {
 }
 
 func TestStandaloneChoiceClickConfirmPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	master, slave := openPTY(t)
 	setPTYSize(t, master, 40, 6)
 	pane := &Pane{tty: slave, fd: int(slave.Fd()), rows: 6, cols: 40, startRow: 1}

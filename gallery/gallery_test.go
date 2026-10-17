@@ -64,6 +64,10 @@ func TestNewUnknownDemo(t *testing.T) {
 }
 
 func TestGalleryChoiceQuitContractPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	waitForAbsent := func(t *testing.T, s *ptytest.Session, text string) {
 		t.Helper()
 		deadline := time.Now().Add(5 * time.Second)
@@ -164,6 +168,10 @@ func galleryThemeAfter(theme string) string {
 }
 
 func TestGalleryTextInputFocusPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -196,6 +204,10 @@ func TestGalleryTextInputFocusPTY(t *testing.T) {
 }
 
 func TestGalleryTimerControlsPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -244,6 +256,10 @@ func TestGalleryTimerControlsPTY(t *testing.T) {
 }
 
 func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -271,6 +287,10 @@ func TestGalleryThemeFooterSurfacePTY(t *testing.T) {
 }
 
 func TestGalleryDialogReselectionPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -307,6 +327,10 @@ func TestGalleryDialogReselectionPTY(t *testing.T) {
 }
 
 func TestGalleryTableClickSelectionPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -338,6 +362,10 @@ func TestGalleryTableClickSelectionPTY(t *testing.T) {
 }
 
 func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -375,6 +403,10 @@ func TestGalleryMenuAcceleratorTogglePTY(t *testing.T) {
 }
 
 func TestGalleryPaintCanvasTunePTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -396,6 +428,10 @@ func TestGalleryPaintCanvasTunePTY(t *testing.T) {
 }
 
 func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -416,6 +452,10 @@ func TestGalleryNumberInputRangeAlignmentPTY(t *testing.T) {
 }
 
 func TestGalleryNumberInputMousePTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -544,6 +584,10 @@ func TestGalleryMediaRetainsViewportAcrossTabSwitches(t *testing.T) {
 }
 
 func TestGalleryMediaZoomPanPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -727,6 +771,10 @@ func TestRichTextEditGalleryTypingAndViewEditToggle(t *testing.T) {
 }
 
 func TestRichTextEditGalleryTypingPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)
@@ -895,6 +943,10 @@ func TestMouseDrivenDemosRespondToClick(t *testing.T) {
 }
 
 func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -941,6 +993,10 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 }
 
 func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -1027,6 +1083,10 @@ func TestWidgetsPTYSizeAndF9ThemePropagation(t *testing.T) {
 }
 
 func TestRicherDemosPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -1101,6 +1161,10 @@ func ptyColorMatches(got ptytest.Color, want loom.Color) bool {
 }
 
 func TestPaintCanvasPTYMouseDragDrawsBrailleLine(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -1162,6 +1226,10 @@ func galleryHasBrailleGlyph(text string) bool {
 }
 
 func TestWidgetKeyRoutingPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	build := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom")
 	if output, err := build.CombinedOutput(); err != nil {
@@ -1220,6 +1288,10 @@ func TestWidgetKeyRoutingPTY(t *testing.T) {
 }
 
 func TestGalleryMouseRoutingPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if output, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build loom: %v\n%s", err, output)

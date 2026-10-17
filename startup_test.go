@@ -364,6 +364,10 @@ func TestStartupDismissalImmediateHandover(t *testing.T) {
 }
 
 func skipWithoutTTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	if os.Getenv("LOOM_CONTAINER_TEST") == "1" {
 		t.Skip("requires a foreground TTY; disabled for container tests")

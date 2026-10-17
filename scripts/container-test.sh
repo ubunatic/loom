@@ -12,7 +12,8 @@ run_check() {
     "$@" 2>&1 | tee "/out/${name}.log"
 }
 
-run_check gofmt make gofmt-check
-run_check vet go vet ./...
+run_check lint make lint
+run_check spec make validate-spec
+run_check geometry make geometry-replay
 run_check build go build ./...
 run_check test go test -race ./...

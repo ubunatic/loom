@@ -15,6 +15,10 @@ import (
 )
 
 func buildWinch(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "winch")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/winch").CombinedOutput(); err != nil {
@@ -28,6 +32,10 @@ func buildWinch(t *testing.T) string {
 // stays within the terminal width, and the settled screen after each resize
 // has no content left over from a previous, wider frame.
 func TestWinchPTYResizeStream(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 
@@ -64,6 +72,10 @@ func TestWinchPTYResizeStream(t *testing.T) {
 // burst and expects the status line to report an adaptive guard at some
 // frame, then to fall back to full width after the burst settles.
 func TestWinchPTYAdaptiveGuard(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	s.Send("a")
@@ -104,6 +116,10 @@ func framesMention(s *ptytest.Session, word string) bool {
 // slow drag (events too sparse to measure a speed) must keep the manual n,
 // and a rapid burst with the switch off must stay manual.
 func TestWinchPTYSlowDragAndManualBurst(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := buildWinch(t)
 
 	slow := ptytest.Start(t, 100, 30, bin)
@@ -147,6 +163,10 @@ var blankThenWrite = regexp.MustCompile(`\x1b\[2K[^\x1b]`)
 // rewriting it: rows are overwritten in place and trimmed with CSI K, and a
 // whole-line erase only ever clears rows below the canvas.
 func TestWinchPTYNoBlankThenRewrite(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	for i := 0; i < 6; i++ {
@@ -171,6 +191,10 @@ func TestWinchPTYNoBlankThenRewrite(t *testing.T) {
 // TestWinchPTYAltScreen switches to the alternate screen and expects the app
 // to leave it again on exit so the shell screen is untouched.
 func TestWinchPTYAltScreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s := ptytest.Start(t, 100, 30, buildWinch(t))
 	s.WaitFor("Resize Modes", 5*time.Second)
 	s.Send("b")
@@ -193,6 +217,10 @@ func TestWinchPTYAltScreen(t *testing.T) {
 // TestWinchPTYRenderTime expects render timing and the per-frame byte count to
 // show up, and the Astra toggle to keep working.
 func TestWinchPTYRenderTime(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s := ptytest.Start(t, 120, 30, buildWinch(t))
 	s.WaitFor("Render:", 5*time.Second)
 	s.WaitFor("B/frame", 5*time.Second) // first one-second window

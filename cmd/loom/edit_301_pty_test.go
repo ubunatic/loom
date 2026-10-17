@@ -51,6 +51,10 @@ func waitEditPTY(t *testing.T, s *ptytest.Session, predicate func() bool) {
 }
 
 func TestEditPTYBottomBarActionsAndToggles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s, path := startMouseEditPTY(t, "base\n")
 	s.WaitFor("^O", 3*time.Second)
@@ -97,6 +101,10 @@ func TestEditPTYBottomBarActionsAndToggles(t *testing.T) {
 }
 
 func TestEditPTYMouseStatusToggle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s, _ := startMouseEditPTY(t, "base\n")
 	icons := loom.SpeccedDefaults.Editor.StatusIcons
@@ -110,6 +118,10 @@ func TestEditPTYMouseStatusToggle(t *testing.T) {
 }
 
 func TestEditPTYDrawKeyAndBoxSubmenu(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	s, _ := startMouseEditPTY(t, "base\n")
 	s.Send("\x04\x1b[C\x1b[B\x04")
 	s.WaitFor("─┐", 3*time.Second)

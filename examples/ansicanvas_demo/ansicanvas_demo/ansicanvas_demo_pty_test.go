@@ -14,6 +14,10 @@ import (
 )
 
 func buildAnsiCanvasDemo(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansicanvas_demo")
 	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansicanvas_demo").CombinedOutput()
@@ -24,6 +28,10 @@ func buildAnsiCanvasDemo(t *testing.T) string {
 }
 
 func TestAnsiCanvasDemoPTYStartupAndQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := buildAnsiCanvasDemo(t)
 
 	s := ptytest.Start(t, 80, 24, bin)
@@ -45,6 +53,10 @@ func TestAnsiCanvasDemoPTYStartupAndQuit(t *testing.T) {
 }
 
 func TestAnsiCanvasDemoPTYNavigationAndTyping(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := buildAnsiCanvasDemo(t)
 
 	s := ptytest.Start(t, 80, 24, bin)

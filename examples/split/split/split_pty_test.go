@@ -14,6 +14,10 @@ import (
 )
 
 func TestSplitPTYScrollbarDrag(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "split")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/split").CombinedOutput(); err != nil {
 		t.Fatalf("build split: %v\n%s", err, out)

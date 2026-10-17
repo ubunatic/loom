@@ -18,6 +18,10 @@ import (
 // reads one line from the terminal: the line reaches the editor, not the pane,
 // and the resumed pane shows the edited note.
 func TestSuspendEditsNoteInEditor(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	bin := filepath.Join(dir, "suspend")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/suspend").CombinedOutput(); err != nil {

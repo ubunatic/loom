@@ -12,6 +12,10 @@ import (
 )
 
 func buildExample(t *testing.T, name string) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), name)
 	path := "ubunatic.com/loom/examples/" + name
@@ -47,6 +51,10 @@ func assertRowsFit(t *testing.T, s *ptytest.Session, phase string) {
 // TestRegisteredExamplesPTYSmoke exercises the same minimal terminal contract
 // for every registered example: draw at 80x24, accept input, and quit cleanly.
 func TestRegisteredExamplesPTYSmoke(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	for _, example := range examplesreg.Registry {
 		example := example
 		t.Run(example.Name, func(t *testing.T) {

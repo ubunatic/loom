@@ -14,6 +14,10 @@ import (
 )
 
 func buildAnsiEdit(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansiedit")
 	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansiedit").CombinedOutput()
@@ -24,6 +28,10 @@ func buildAnsiEdit(t *testing.T) string {
 }
 
 func TestAnsiEditPTYStartupAndQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	file := filepath.Join(t.TempDir(), "test.ansi")
 	bin := buildAnsiEdit(t)
 
@@ -47,6 +55,10 @@ func TestAnsiEditPTYStartupAndQuit(t *testing.T) {
 }
 
 func TestAnsiEditPTYTypingAndSaving(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	file := filepath.Join(t.TempDir(), "typed.ansi")
 	bin := buildAnsiEdit(t)
 
@@ -69,6 +81,10 @@ func TestAnsiEditPTYTypingAndSaving(t *testing.T) {
 }
 
 func TestAnsiEditPTYArrowNavigationDoesNotQuit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	file := filepath.Join(t.TempDir(), "nav.ansi")
 	bin := buildAnsiEdit(t)
 

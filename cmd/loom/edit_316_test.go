@@ -32,6 +32,10 @@ func Test316EditCustomPopupKeysBeforePanelTab(t *testing.T) {
 }
 
 func Test316EditPTYFocusDismissAndReopen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	s, _ := startEditPTY(t, "hello world\n")
 	s.Send("\x00")

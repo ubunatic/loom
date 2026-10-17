@@ -46,6 +46,10 @@ func TestAllTableMatchesStandaloneAndRoutesCells(t *testing.T) {
 }
 
 func TestAllDialogAndTableNavigationPTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	bin := filepath.Join(t.TempDir(), "loom")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/cmd/loom").CombinedOutput(); err != nil {
 		t.Fatalf("build: %v\n%s", err, out)

@@ -15,6 +15,10 @@ import (
 )
 
 func buildViewer(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "ansiviewer")
 	out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/ansiviewer").CombinedOutput()
@@ -25,6 +29,10 @@ func buildViewer(t *testing.T) string {
 }
 
 func TestViewerPTYShowsFilesAndQuits(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	if err := os.WriteFile(filepath.Join(dir, "hello.txt"), []byte("hello from PTY\n"), 0o644); err != nil {
 		t.Fatal(err)
@@ -41,6 +49,10 @@ func TestViewerPTYShowsFilesAndQuits(t *testing.T) {
 }
 
 func TestViewerPTYOpensFileArgument(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	file := filepath.Join(dir, "selected.txt")
 	if err := os.WriteFile(file, []byte("immediate file preview content\n"), 0o644); err != nil {

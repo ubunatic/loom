@@ -14,6 +14,10 @@ import (
 )
 
 func build(t *testing.T) string {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	bin := filepath.Join(t.TempDir(), "screens")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/screens").CombinedOutput(); err != nil {

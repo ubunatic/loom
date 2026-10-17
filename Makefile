@@ -6,6 +6,8 @@ _prim := \033[36m
 _rst  := \033[0m
 LOOMOJI_DIR ?= $(HOME)/.local/share/loomoji
 ANSIVIEWER_DESKTOP_DIR ?= $(HOME)/.local/share/applications
+PKG ?= .
+HARNEZ_VERSION ?= v0.1.30
 ANSIVIEWER_ICON_DIR ?= $(HOME)/.local/share/icons/hicolor/scalable/apps
 
 
@@ -23,6 +25,19 @@ test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the t
 check: ⚙️ validate-spec geometry-replay  ## validate specs, vet and test with the pinned module dependencies
 	GOWORK=off go vet ./...
 	GOWORK=off go test ./...
+
+test-pkg: ⚙️  ## test PKG (default .) with race detection and no cached results
+	go test -race -count=1 $(PKG)
+
+test-short: ⚙️  ## run fast unit tests, skipping PTY/media/subprocess integration
+	go test -short ./...
+
+lint-tools: ⚙️  ## install the pinned Harnez lint tool used by CI and containers
+	go install ubunatic.com/harnez/cmd/harnez@$(HARNEZ_VERSION)
+
+lint: ⚙️ gofmt-check  ## check formatting, vet, and Harnez rules on tracked sources
+	go vet ./...
+	git ls-files -z -- '*.go' '*.sh' '*.md' Makefile '*/Makefile' | xargs -0 -r harnez lint --check
 
 gofmt-check: ⚙️  ## fail when Go source is not gofmt-formatted
 	./scripts/check-gofmt.sh

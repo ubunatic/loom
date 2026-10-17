@@ -110,6 +110,10 @@ func TestZWJModeFromProbeAdvance(t *testing.T) {
 }
 
 func TestMeasureImportDoesNotProbeTTY(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	dir := t.TempDir()
 	source := filepath.Join(dir, "main.go")
 	if err := os.WriteFile(source, []byte("package main\nimport _ \"ubunatic.com/loom/measure\"\nfunc main() {}\n"), 0600); err != nil {
@@ -138,6 +142,10 @@ func TestMeasureImportDoesNotProbeTTY(t *testing.T) {
 }
 
 func openTestPTY(t *testing.T) (*os.File, *os.File) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
 	t.Helper()
 	master, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {

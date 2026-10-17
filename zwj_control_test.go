@@ -130,19 +130,28 @@ func TestCanvasRowSanitizesCellText(t *testing.T) {
 }
 
 func TestZWJEmojiStillOneCluster(t *testing.T) {
-	for _, e := range []string{"👨‍👩‍👧", "🏳️‍🌈", "❤️‍🔥"} {
-		cells := ParseANSI(e)
-		if len(cells) == 0 || cells[0].Text != e {
-			t.Errorf("ParseANSI(%q) first cell = %+v, want whole cluster", e, cells)
-		}
-		if cl := measure.Clusters(e); len(cl) != 1 || cl[0] != e {
-			t.Errorf("Clusters(%q) = %q, want one cluster", e, cl)
-		}
-		if got := ClipRow(e, 10); got != e {
-			t.Errorf("ClipRow(%q) = %q", e, got)
-		}
-		if w := measure.StringWidth(e); w != 2 {
-			t.Errorf("StringWidth(%q) = %d, want 2", e, w)
-		}
+	for _, mode := range []string{"join", "split"} {
+		t.Run(mode, func(t *testing.T) {
+			t.Setenv("LOOM_ZWJ", mode)
+			for i, e := range []string{"👨‍👩‍👧", "🏳️‍🌈", "❤️‍🔥"} {
+				cells := ParseANSI(e)
+				if len(cells) == 0 || cells[0].Text != e {
+					t.Errorf("ParseANSI(%q) first cell = %+v, want whole cluster", e, cells)
+				}
+				if cl := measure.Clusters(e); len(cl) != 1 || cl[0] != e {
+					t.Errorf("Clusters(%q) = %q, want one cluster", e, cl)
+				}
+				if got := ClipRow(e, 10); got != e {
+					t.Errorf("ClipRow(%q) = %q", e, got)
+				}
+				wantWidth := 2
+				if mode == "split" {
+					wantWidth = []int{6, 4, 4}[i]
+				}
+				if w := measure.StringWidth(e); w != wantWidth {
+					t.Errorf("StringWidth(%q) in %s mode = %d, want %d", e, mode, w, wantWidth)
+				}
+			}
+		})
 	}
 }
