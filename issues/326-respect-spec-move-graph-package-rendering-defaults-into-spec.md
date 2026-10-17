@@ -1,6 +1,6 @@
 # 326 — respect spec: move graph package rendering defaults into spec
 
-**Status**: Open
+**Status**: Closed — Graph widths, ANSI defaults, glyph tables, and spinner frames now load from schema-validated spec/defaults.yaml; make check and make container-test pass (a8f7d57).
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
