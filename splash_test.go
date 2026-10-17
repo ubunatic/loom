@@ -46,10 +46,14 @@ func TestSplashControllerProgression(t *testing.T) {
 }
 
 func TestSplashControllerDismissal(t *testing.T) {
+	started := make(chan struct{})
 	cfg := SplashConfig{
 		Tasks: []ProviderTask{
-			{Name: "mic", Symbol: "●", Duration: 500 * time.Millisecond},
-			{Name: "claude", Symbol: "✳", Duration: 500 * time.Millisecond},
+			{Name: "mic", Symbol: "●", Action: func(ctx context.Context) error {
+				close(started)
+				<-ctx.Done()
+				return ctx.Err()
+			}},
 		},
 		TickInterval: 10 * time.Millisecond,
 	}
@@ -60,8 +64,11 @@ func TestSplashControllerDismissal(t *testing.T) {
 
 	sc.Start(ctx)
 
-	// Simulate Esc key after short delay
-	time.Sleep(20 * time.Millisecond)
+	select {
+	case <-started:
+	case <-ctx.Done():
+		t.Fatal("splash context ended before task started")
+	}
 	handled := sc.ConsumeKey(KeyEvent{Key: "esc"}).Consumed
 	if !handled {
 		t.Errorf("ConsumeKey(esc) = false, want true")

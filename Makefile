@@ -31,7 +31,7 @@ container-test: ⚙️  ## run CI checks in an isolated Podman/Docker container
 	@test -n "$(ENGINE)"
 	@mkdir -p "$(CONTAINER_OUTPUT)"
 	$(ENGINE) build --file Containerfile --tag loom-test:local .
-	$(ENGINE) run --rm --env LOOM_CONTAINER_TEST=1 --volume "$(CONTAINER_OUTPUT):/out:rw,Z" loom-test:local
+	$(ENGINE) run --rm --cpus="$(CONTAINER_CPUS)" --env GOMAXPROCS="$(CONTAINER_CPUS)" --env TERM=dumb --env LOOM_CONTAINER_TEST=1 --volume "$(CONTAINER_OUTPUT):/out:rw,Z" loom-test:local
 
 release: check ⚙️  ## release the project using harnez
 	harnez release
@@ -72,3 +72,4 @@ test-q1: 🤖  # run tests under Quota-1 enforcement
 
 ENGINE ?= $(shell command -v podman || command -v docker)
 CONTAINER_OUTPUT ?= /tmp/loom-container-test
+CONTAINER_CPUS ?= 2

@@ -487,8 +487,11 @@ func TestDrawStatusIndicatorsUseThemeAndSpec(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	started := make(chan struct{})
+	release := make(chan struct{})
 	widget.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
-		time.Sleep(100 * time.Millisecond)
+		close(started)
+		<-release
 		return &core.Grid{Width: 1, Height: 1, Cells: [][]core.Cell{{{Ch: 'X'}}}}, nil
 	}
 	widget.ApplyTheme(loom.Theme("plain"))
@@ -501,29 +504,38 @@ func TestDrawStatusIndicatorsUseThemeAndSpec(t *testing.T) {
 	if got := canvas.Get(0, 0).Style; got.FG != loom.ColorRGB(128, 128, 128) || !got.Dim {
 		t.Errorf("plain loading style = %+v, want existing gray foreground and dim", got)
 	}
+	<-started
+	close(release)
+	<-widget.load.done
 }
 
 func TestDrawLoadsMediaImmediatelyOrInBackground(t *testing.T) {
 	for _, tc := range []struct {
-		name  string
-		delay time.Duration
+		name     string
+		blocking bool
 	}{
-		{name: "immediate", delay: 5 * time.Millisecond},
-		{name: "background", delay: 80 * time.Millisecond},
+		{name: "immediate"},
+		{name: "background", blocking: true},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			widget, err := NewImage(solidImage(2, 2, color.RGBA{R: 200, A: 255}), ModeHalfblock)
 			if err != nil {
 				t.Fatal(err)
 			}
+			started := make(chan struct{})
+			release := make(chan struct{})
 			widget.renderer = func(image.Image, Mode, int, int) (*core.Grid, error) {
-				time.Sleep(tc.delay)
+				close(started)
+				if tc.blocking {
+					<-release
+				}
 				return &core.Grid{Width: 1, Height: 1, Cells: [][]core.Cell{{{Ch: 'X'}}}}, nil
 			}
 			canvas := loom.NewCanvas(12, 3)
 			r := loom.Rect{X: 1, Y: 1, W: 10, H: 1}
 			widget.Draw(canvas, r)
-			if tc.delay < 50*time.Millisecond {
+			if !tc.blocking {
+				<-started
 				if !canvasContainsText(canvas, r, "X") {
 					t.Fatal("immediate draw did not render media")
 				}
@@ -539,7 +551,10 @@ func TestDrawLoadsMediaImmediatelyOrInBackground(t *testing.T) {
 			if !loadingFound {
 				t.Fatal("delayed draw did not show a dim loading indicator")
 			}
-			time.Sleep(tc.delay)
+			<-started
+			close(release)
+			result := <-widget.load.done
+			widget.load.done <- result
 			canvas = loom.NewCanvas(12, 3)
 			widget.Draw(canvas, r)
 			if !canvasContainsText(canvas, r, "X") {

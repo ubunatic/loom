@@ -393,6 +393,8 @@ func TestSidebarOutlineAndJumpCaret(t *testing.T) {
 
 func TestOutlineDoubleClickJumpsToSelectedSymbol(t *testing.T) {
 	app := NewApp()
+	now := time.Unix(0, 0)
+	app.sidebar.outline.doubleClick = loom.NewDoubleClickRecognizer(func() time.Time { return now })
 	app.editor.SetCaret(0, 0)
 	app.activeFocus = focusBrowser
 	app.sidebar.outline.refresh()
@@ -407,7 +409,7 @@ func TestOutlineDoubleClickJumpsToSelectedSymbol(t *testing.T) {
 		t.Fatalf("first click selected %d, caret (%d,%d), focus %v; want selection only", app.sidebar.outline.selected, row, col, app.activeFocus)
 	}
 	app.sidebar.outline.ConsumeMouse(loom.MouseEvent{Action: loom.MouseRelease, Button: loom.MouseLeft, Y: 0})
-	time.Sleep(10 * time.Millisecond)
+	now = now.Add(10 * time.Millisecond)
 	app.sidebar.outline.ConsumeMouse(click)
 	if row, col := app.editor.Caret(); row != symbol.Line || col != symbol.Column {
 		t.Fatalf("double-click caret = (%d,%d), want symbol at (%d,%d)", row, col, symbol.Line, symbol.Column)

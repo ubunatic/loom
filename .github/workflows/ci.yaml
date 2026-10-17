@@ -32,4 +32,8 @@ jobs:
       - name: Build
         run: go build ./...
       - name: Test with race detector
-        run: go test -race ./...
+        id: race
+        run: go test -race -json ./... | tee test.json
+      - name: Summarize race test failures
+        if: always() && steps.race.outcome == 'failure'
+        run: python3 scripts/summarize-go-test-json.py test.json
