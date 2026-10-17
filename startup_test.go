@@ -365,6 +365,9 @@ func TestStartupDismissalImmediateHandover(t *testing.T) {
 
 func skipWithoutTTY(t *testing.T) {
 	t.Helper()
+	if os.Getenv("LOOM_CONTAINER_TEST") == "1" {
+		t.Skip("requires a foreground TTY; disabled for container tests")
+	}
 	tty, err := os.Open("/dev/tty")
 	if err != nil {
 		t.Skipf("requires /dev/tty: %v", err)

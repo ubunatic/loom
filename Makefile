@@ -24,6 +24,15 @@ check: ⚙️ validate-spec geometry-replay  ## validate specs, vet and test wit
 	GOWORK=off go vet ./...
 	GOWORK=off go test ./...
 
+gofmt-check: ⚙️  ## fail when Go source is not gofmt-formatted
+	./scripts/check-gofmt.sh
+
+container-test: ⚙️  ## run CI checks in an isolated Podman/Docker container
+	@test -n "$(ENGINE)"
+	@mkdir -p "$(CONTAINER_OUTPUT)"
+	$(ENGINE) build --file Containerfile --tag loom-test:local .
+	$(ENGINE) run --rm --env LOOM_CONTAINER_TEST=1 --volume "$(CONTAINER_OUTPUT):/out:rw,Z" loom-test:local
+
 release: check ⚙️  ## release the project using harnez
 	harnez release
 
@@ -60,3 +69,6 @@ install: ⚙️
 
 test-q1: 🤖  # run tests under Quota-1 enforcement
 	harnez exec --quota-1 -- $(MAKE) test
+
+ENGINE ?= $(shell command -v podman || command -v docker)
+CONTAINER_OUTPUT ?= /tmp/loom-container-test

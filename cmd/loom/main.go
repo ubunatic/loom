@@ -361,7 +361,6 @@ func configureViewPane(pane *loom.Pane) {
 	pane.Resizeable = true
 }
 
-
 type ansiView struct {
 	buffer       *loom.AnsiBuffer
 	offsetX      int

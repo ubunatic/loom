@@ -465,4 +465,3 @@ func Record(ctx context.Context, out io.Writer, dir string, delay time.Duration,
 	}
 	return Render(out, dir, cols, rows)
 }
-

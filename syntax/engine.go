@@ -11,4 +11,3 @@ func (NullEngine) HighlightViewport(int, int) map[int][]Span { return map[int][]
 func (NullEngine) Symbols() []Symbol                         { return nil }
 func (NullEngine) Breadcrumb(int, int) []string              { return nil }
 func (NullEngine) Folds() [][2]int                           { return nil }
-

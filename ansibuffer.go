@@ -436,12 +436,12 @@ func (b *AnsiBuffer) Serialize() string {
 			return
 		}
 
-	styleANSI := target.Style().ANSI()
-	if lastStyle == BlankAnsiCell() {
-		styleANSI = strings.TrimSuffix(styleANSI, "\x1b[49m")
-		styleANSI = strings.TrimSuffix(styleANSI, "\x1b[39m")
-	}
-	buf.WriteString(styleANSI)
+		styleANSI := target.Style().ANSI()
+		if lastStyle == BlankAnsiCell() {
+			styleANSI = strings.TrimSuffix(styleANSI, "\x1b[49m")
+			styleANSI = strings.TrimSuffix(styleANSI, "\x1b[39m")
+		}
+		buf.WriteString(styleANSI)
 		lastStyle = target
 	}
 

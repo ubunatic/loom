@@ -34,6 +34,9 @@ type Session struct {
 // unavailable, per docs/Canary.md, and kills the child on cleanup.
 func Start(t *testing.T, cols, rows int, name string, args ...string) *Session {
 	t.Helper()
+	if os.Getenv("LOOM_CONTAINER_TEST") == "1" {
+		t.Skip("requires a real PTY; disabled for container tests")
+	}
 	master, err := os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
 	if err != nil {
 		t.Skipf("open /dev/ptmx: %v", err)
