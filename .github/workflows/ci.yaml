@@ -1,4 +1,4 @@
-name: CI
+name: ci
 
 on:
   push:
@@ -12,29 +12,148 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  GOWORK: "off"
+
+# lint, unit and race run in parallel; report adds the wall time. Raw logs
+# need admin rights to download, so each job writes failures, test time and
+# the slowest packages to its summary and annotations (gh run view shows them).
+# Each job keeps its own module and build cache (race builds differ), saved
+# per commit and restored from the newest for the same go.sum.
 jobs:
-  test:
-    name: Go checks (Linux)
-    runs-on: ubuntu-latest
+  lint:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - name: Check out source and LFS objects
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           lfs: true
-      - name: Set up Go
-        uses: actions/setup-go@v5
+      - uses: actions/setup-go@v7
         with:
           go-version-file: go.mod
-          cache: true
-      - name: Install lint tools
-        run: make lint-tools
-      - name: Lint
-        run: make lint
-      - name: Build
-        run: go build ./...
-      - name: Test with race detector
-        id: race
-        run: go test -race -json ./... | tee test.json
-      - name: Summarize race test failures
-        if: always() && steps.race.outcome == 'failure'
-        run: python3 scripts/summarize-go-test-json.py test.json
+          cache: false
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-lint-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          restore-keys: go-lint-${{ hashFiles('go.sum') }}-
+      - run: make gofmt-check
+      - run: go vet ./...
+      - run: go build ./...
+      - run: make validate-spec
+      - run: make geometry-replay
+
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-unit-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          restore-keys: go-unit-${{ hashFiles('go.sum') }}-
+      - name: go test -short
+        id: test
+        run: go test -short -json ./... > unit.json 2>&1
+      - name: summary
+        if: always() && steps.test.outcome != 'skipped'
+        run: go run .github/gotest-report.go -title "unit (go test -short)" unit.json
+
+  race:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          lfs: true
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-race-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          restore-keys: go-race-${{ hashFiles('go.sum') }}-
+      - name: go test -race
+        id: test
+        run: go test -race -json ./... > race.json 2>&1
+      - name: summary
+        if: always() && steps.test.outcome != 'skipped'
+        run: go run .github/gotest-report.go -title "race (go test -race)" race.json
+
+  # Public API check: gorelease compares the module with the latest tag. Pre-1.0,
+  # incompatible changes are allowed with a minor bump, so they warn, not fail;
+  # a breaking release adds a row to docs/Upgrading.md.
+  api:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+          cache: false
+      - uses: actions/cache@v5
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: go-api-${{ hashFiles('go.sum') }}-${{ github.sha }}
+          restore-keys: go-api-${{ hashFiles('go.sum') }}-
+      - name: gorelease
+        run: |
+          base=$(git describe --tags --abbrev=0 --match 'v*')
+          go run golang.org/x/exp/cmd/gorelease@v0.0.0-20261014143641-f0251eb4aa3e -base="$base" > api.txt 2>&1
+          {
+            printf '### Public API vs %s\n\n```\n' "$base"
+            cat api.txt
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if grep -q '^## incompatible changes' api.txt
+          then
+            printf '::warning title=incompatible API changes since %s::see the api job summary; the next release needs a minor bump and a docs/Upgrading.md row\n' "$base"
+          fi
+
+  report:
+    needs: [ lint, unit, race, api ]
+    if: always()
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      actions: read
+    steps:
+      - name: wall time
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LINT: ${{ needs.lint.result }}
+          UNIT: ${{ needs.unit.result }}
+          RACE: ${{ needs.race.result }}
+          API: ${{ needs.api.result }}
+        run: |
+          started=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" --jq .run_started_at)
+          wall=$(( $(date +%s) - $(date -d "$started" +%s) ))
+          {
+            printf '### CI wall time: %dm%02ds\n\n' $((wall / 60)) $((wall % 60))
+            printf '| job | result |\n|---|---|\n| lint | %s |\n| unit | %s |\n| race | %s |\n| api (informational) | %s |\n' "$LINT" "$UNIT" "$RACE" "$API"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if test "$LINT$UNIT$RACE" != successsuccesssuccess
+          then
+            exit 1
+          fi
