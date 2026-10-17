@@ -1,6 +1,6 @@
 # Flaky TestWinchPTYAltScreen on GitHub CI: alt screen not entered and left
 
-Status: Open
+Status: Closed — PTY Wait drains to EOF before Raw assertions; race count=20 passed locally and in 2-CPU container (866b510).
 
 ## Problem
 GitHub CI run 39010007435 (commit 2e3fda6) failed in `examples/winch/winch`:
