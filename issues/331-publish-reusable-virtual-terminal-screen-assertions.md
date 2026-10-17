@@ -1,6 +1,6 @@
 # 331 — Publish reusable virtual terminal screen assertions
 
-**Status**: Open
+**Status**: Closed — implemented in 3507fb6 with full suite passing
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
