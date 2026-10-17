@@ -1,7 +1,7 @@
 # Public API stability
 
 Loom is a public library. Stable packages are `ubunatic.com/loom`,
-`graph`, `layout` and `measure`. Preserve their exported signatures and documented
+`graph`, `layout`, `measure` and `loomtest`. Preserve their exported signatures and documented
 behavior between compatible releases. Additions require review too. An intentional
 breaking release must record migration instructions in `docs/Upgrading.md`.
 

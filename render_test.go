@@ -4,11 +4,12 @@
 package loom_test
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
 	"ubunatic.com/loom"
-	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/loomtest"
 )
 
 func TestCanvasFlushPreservesRightBorderWithAutoWrapDisabled(t *testing.T) {
@@ -17,7 +18,7 @@ func TestCanvasFlushPreservesRightBorderWithAutoWrapDisabled(t *testing.T) {
 		for y := range 3 {
 			c.Set(width-1, y, loom.Cell{Text: "│"})
 		}
-		vt := ptytest.NewVT(width, 3)
+		vt := loomtest.NewVT(width, 3)
 		vt.Write([]byte("\x1b[?7l"))
 		var out strings.Builder
 		c.Flush(&out, 1)
@@ -38,37 +39,42 @@ func TestCanvasFlushPreservesRightBorderWithAutoWrapDisabled(t *testing.T) {
 func TestCanvasFlushRowPositioning(t *testing.T) {
 	c := loom.NewCanvas(3, 2)
 	c.Write(0, 0, "ab", loom.Reset)
+	c.Write(0, 1, "xy", loom.Reset)
+	vt := loomtest.NewVT(6, 8)
+	vt.Write([]byte("\x1b[4;1Habove\x1b[5;1Hstale\x1b[6;1Hstale\x1b[7;1Hbelow"))
 	var b strings.Builder
-	c.Flush(&b, 5) // canvas top at terminal row 5
-	out := b.String()
-
-	if !strings.Contains(out, "\x1b[5;1H") {
-		t.Errorf("Flush missing row-1 move \\x1b[5;1H: %q", out)
-	}
-	if !strings.Contains(out, "\x1b[6;1H") {
-		t.Errorf("Flush missing row-2 move \\x1b[6;1H: %q", out)
+	c.Flush(&b, 5)
+	vt.Write([]byte(b.String()))
+	want := []string{"", "", "", "above", "ab", "xy", "below", ""}
+	if got := vt.Screen(); !slices.Equal(got, want) {
+		t.Fatalf("Flush at row 5: screen = %q, want %q", got, want)
 	}
 }
 
 func TestCanvasFlushCursorMove(t *testing.T) {
 	c := loom.NewCanvas(4, 2)
-	c.CursorX = 1
-	c.CursorY = 0
+	c.CursorX, c.CursorY = 1, 0
 	var b strings.Builder
 	c.Flush(&b, 5)
-	// Cursor at (startRow+CursorY, CursorX+1) = (5, 2), then made visible.
-	if !strings.HasSuffix(b.String(), "\x1b[5;2H\x1b[?25h\x1b[?2026l") {
-		t.Errorf("Flush should position, show the cursor, and end synchronized output: %q", b.String())
+	vt := loomtest.NewVT(8, 8)
+	vt.Write([]byte("\x1b[?25l"))
+	vt.Write([]byte(b.String()))
+	if x, y := vt.Cursor(); x != 1 || y != 4 || !vt.CursorVisible {
+		t.Fatalf("cursor = (%d,%d), visible=%v; want (1,4), visible", x, y, vt.CursorVisible)
+	}
+	if len(vt.Frames) != 1 {
+		t.Fatalf("completed synchronized frames = %d, want 1", len(vt.Frames))
 	}
 }
 
 func TestCanvasFlushNoCursorWhenHidden(t *testing.T) {
-	c := loom.NewCanvas(4, 1) // default CursorX/Y are -1 (hidden)
+	c := loom.NewCanvas(4, 1)
 	var b strings.Builder
 	c.Flush(&b, 3)
-	// No final cursor move should be emitted; output ends with the row reset.
-	if strings.HasSuffix(b.String(), "\x1b[3;1H") {
-		t.Error("hidden cursor should not emit a trailing absolute-position move")
+	vt := loomtest.NewVT(8, 6)
+	vt.Write([]byte(b.String()))
+	if vt.CursorVisible {
+		t.Fatal("Flush with no canvas cursor left the terminal cursor visible")
 	}
 }
 
