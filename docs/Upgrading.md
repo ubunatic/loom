@@ -8,6 +8,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| Unreleased | `collector.DefaultRetention` is now a variable loaded from `spec/defaults.yaml` (issue 327) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |
 | Unreleased | `DefaultPlaceholder` is now a variable loaded from `spec/defaults.yaml` (issue 324) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |
 | Unreleased | Modal overlay capture and temporary mouse grab: overlays implement `ModalTarget` and capture all mouse events while active; backdrop clicks dismiss the overlay as `loom.Handled()` without leaking to underlying widgets. In mouse-off (`"m"`) mode, opening an overlay temporarily engages mouse tracking in the terminal and restores `"m"` on close (issues 303, 304) | No caller workarounds needed; containers and `Pane` route directly to active modal targets. Embed static previews with `Modeless: true` if modal capture is not desired |
 | Unreleased | `RichTextEdit` hotkey and popover structure: box drawing bound to `ctrl-d` (`^D`) with Enter/Esc exiting box mode; "Draw" nested under "Box" submenu; bottom bar keycaps and status icons clickable (issue 301) | Use `ctrl-d` for box drawing or toggle via the Box submenu |
