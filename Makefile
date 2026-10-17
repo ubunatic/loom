@@ -7,7 +7,7 @@ _rst  := \033[0m
 LOOMOJI_DIR ?= $(HOME)/.local/share/loomoji
 ANSIVIEWER_DESKTOP_DIR ?= $(HOME)/.local/share/applications
 PKG ?= .
-HARNEZ_VERSION ?= v0.1.30
+HARNEZ_VERSION ?= v0.1.31-0.20261017105203-d20177ba69aa
 ANSIVIEWER_ICON_DIR ?= $(HOME)/.local/share/icons/hicolor/scalable/apps
 
 
@@ -33,11 +33,11 @@ test-short: ⚙️  ## run fast unit tests, skipping PTY/media/subprocess integr
 	go test -short ./...
 
 lint-tools: ⚙️  ## install the pinned Harnez lint tool used by CI and containers
-	go install ubunatic.com/harnez/cmd/harnez@$(HARNEZ_VERSION)
+	GOTOOLCHAIN=auto go install ubunatic.com/harnez/cmd/harnez@$(HARNEZ_VERSION)
 
 lint: ⚙️ gofmt-check  ## check formatting, vet, and Harnez rules on tracked sources
 	go vet ./...
-	git ls-files -z -- '*.go' '*.sh' '*.md' Makefile '*/Makefile' | xargs -0 -r harnez lint --check
+	git ls-files -z -- '*.go' '*.sh' '*.md' Makefile '*/Makefile' ':!:.harnez/**' | xargs -0 -r harnez lint --check
 
 gofmt-check: ⚙️  ## fail when Go source is not gofmt-formatted
 	./scripts/check-gofmt.sh
