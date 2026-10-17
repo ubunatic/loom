@@ -1,0 +1,65 @@
+package textedit // import "ubunatic.com/loom/examples/textedit/textedit"
+
+Package textedit is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package textedit provides a full-featured text editor example application in
+loom, featuring keybindings (C-s, C-S-s, C-o, C-c, C-v, C-x), MRU file list,
+syntax highlighting, collapsible filebrowser, and an embedded terminal.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the textedit root widget for in-process hosting.
+
+func Run(args []string) error
+    Run executes the textedit interactive example command.
+
+
+TYPES
+
+type SidebarMode int
+    SidebarMode defines the active tab in the left sidebar.
+
+const (
+	SidebarFiles SidebarMode = iota
+	SidebarOutline
+)
+type TextEditApp struct {
+	// Has unexported fields.
+}
+    TextEditApp is the root text editor application widget.
+
+func NewApp() *TextEditApp
+    NewApp initializes and returns a new TextEditApp.
+
+func (app *TextEditApp) ConsumeKey(e loom.KeyEvent) loom.EventResult
+
+func (app *TextEditApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult
+
+func (app *TextEditApp) Draw(c *loom.Canvas, r loom.Rect)
+
+func (app *TextEditApp) OpenFile(path string)
+    OpenFile opens path into the editor buffer and updates MRU list.
+
+func (app *TextEditApp) Outline() *outlineWidget
+    Outline returns the outline widget.
+
+func (app *TextEditApp) PaneRequest() loom.PaneRequest
+    PaneRequest declares terminal requirements.
+
+func (app *TextEditApp) SaveFile(path string)
+    SaveFile writes active editor contents to disk.
+
+func (app *TextEditApp) SetSidebarMode(mode SidebarMode)
+    SetSidebarMode sets the active sidebar tab.
+
+func (app *TextEditApp) SidebarMode() SidebarMode
+    SidebarMode returns the active sidebar tab.
+
+func (app *TextEditApp) ToggleFold(startLine, endLine int)
+    ToggleFold toggles folding on the given start and end lines.
+
+func (app *TextEditApp) ToggleSidebarMode()
+    ToggleSidebarMode toggles between Explorer and Outline tabs.
+

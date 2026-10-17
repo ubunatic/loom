@@ -1,0 +1,28 @@
+package gallery // import "ubunatic.com/loom/gallery"
+
+Package gallery is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package gallery provides live, sample-data demos for Loom widgets.
+
+FUNCTIONS
+
+func Names() []string
+    Names returns the available demo names in sorted order.
+
+func New(name string) (loom.Widget, error)
+    New constructs one demo by catalog widget name, accepting qualified names
+    such as "loom.TextInput" as well as short names.
+
+func NewAll() *loom.Tabs
+    NewAll constructs the complete gallery as a tabbed widget.
+
+func NewWithArgs(name string, args []string) (loom.Widget, error)
+    NewWithArgs constructs one demo by catalog widget name, passing demo
+    arguments.
+
+func RequiresAltScreen(names ...string) bool
+    RequiresAltScreen reports whether the named demo or demos need terminal keys
+    that VTE reserves while applications run on the primary screen. The combined
+    gallery includes RichTextEdit, so it also requests the alternate screen.
+

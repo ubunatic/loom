@@ -1,0 +1,93 @@
+package ansiedit // import "ubunatic.com/loom/examples/ansiedit/ansiedit"
+
+Package ansiedit is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+CONSTANTS
+
+const (
+	ModeOvertype = loom.AnsiModeOvertype
+	ModeInsert   = loom.AnsiModeInsert
+)
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the ansiedit root widget for in-process hosting.
+
+func Run(args []string) error
+    Run executes the ansiedit interactive editor command.
+
+
+TYPES
+
+type AnsiEditApp struct {
+	// Has unexported fields.
+}
+    AnsiEditApp is the root ANSI editor application widget.
+
+func NewAnsiEditApp(buf *Buffer) *AnsiEditApp
+    NewAnsiEditApp creates a new AnsiEditApp instance for a given buffer.
+
+func (app *AnsiEditApp) Buffer() *Buffer
+    Buffer returns the underlying buffer.
+
+func (app *AnsiEditApp) ConsumeKey(e loom.KeyEvent) loom.EventResult
+    ConsumeKey processes keyboard events, returning an EventResult value struct.
+    Navigation and editing keys are consumed without quitting. Explicit exit
+    keys (F10, Ctrl-Q) signal quit.
+
+func (app *AnsiEditApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult
+    ConsumeMouse handles mouse clicks.
+
+func (app *AnsiEditApp) Draw(c *loom.Canvas, r loom.Rect)
+    Draw renders the full 80x24 AnsiEdit frame and all subcomponents.
+
+func (app *AnsiEditApp) PaneRequest() loom.PaneRequest
+    PaneRequest declares terminal requirements.
+
+func (app *AnsiEditApp) Quit() bool
+    Quit reports whether the application has received a quit signal.
+
+type Buffer = loom.AnsiBuffer
+    Buffer is an in-memory 2D cell grid for ANSI art editing.
+
+func LoadBuffer(path string, defaultCols, defaultRows int) (*Buffer, error)
+    LoadBuffer reads an ANSI file and parses it into a 2D Buffer.
+
+func NewBuffer(cols, rows int) *Buffer
+    NewBuffer creates an empty ANSI buffer with the specified columns and rows.
+
+func ParseBuffer(content string, minCols, minRows int) (*Buffer, error)
+    ParseBuffer parses an ANSI string into a 2D Buffer.
+
+type BufferCell = loom.AnsiCell
+    BufferCell represents a single styled character cell in the ANSI canvas
+    buffer.
+
+func BlankCell() BufferCell
+    BlankCell returns a default empty cell.
+
+type EditMode = loom.AnsiEditMode
+    EditMode represents character insertion vs overtype behavior.
+
+type FocusArea int
+    FocusArea denotes which panel currently possesses user keyboard focus.
+
+const (
+	FocusCanvas FocusArea = iota
+	FocusSidePanel
+)
+func (f FocusArea) String() string
+
+type SidePanelMode int
+    SidePanelMode determines the active view in the left side panel.
+
+const (
+	PanelInfo SidePanelMode = iota
+	PanelPalette
+	PanelKeys
+	PanelTheme
+)
+func (m SidePanelMode) String() string
+

@@ -1,0 +1,43 @@
+package ansiviewer // import "ubunatic.com/loom/examples/ansiviewer/ansiviewer"
+
+Package ansiviewer is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+Package ansiviewer is a small ANSI-aware directory browser example.
+
+FUNCTIONS
+
+func Record(ctx context.Context, out io.Writer, dir string, delay time.Duration, cols, rows int) error
+    Record waits delay, renders exactly one frame of the real viewer widget,
+    and returns. The caller owns out; no child process or background goroutine
+    leaks.
+
+func RecordCommand(ctx context.Context, out io.Writer, delay time.Duration, command string, args ...string) error
+    RecordCommand runs command in a private PTY sized like the hosting terminal,
+    captures output until delay (or until the command exits), terminates only
+    its process group, and waits for the group to be reaped before returning.
+
+func Render(out io.Writer, dir string, cols, rows int) error
+    Render writes one deterministic headless frame from the real widget.
+
+func Run(args []string) error
+    Run starts the interactive viewer rooted at the optional directory argument.
+
+func New(dir string) (*browser, error)
+    New opens dir and returns an interactive viewer widget.
+
+
+TYPES
+
+type Kind string
+    Kind describes the content presentation selected for a path.
+
+const (
+	KindText   Kind = "text"
+	KindANSI   Kind = "ansi"
+	KindBinary Kind = "binary"
+	KindImage  Kind = "image"
+)
+func Classify(path string) Kind
+    Classify identifies a file using its extension and a small content sniff.
+

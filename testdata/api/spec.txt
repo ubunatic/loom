@@ -1,0 +1,48 @@
+package spec // import "ubunatic.com/loom/spec"
+
+Package spec embeds Loom's application specifications.
+
+Package spec is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+FUNCTIONS
+
+func DefaultsYAML() ([]byte, error)
+    DefaultsYAML returns the authoritative runtime defaults document.
+
+func WidgetsYAML() ([]byte, error)
+    WidgetsYAML returns the authoritative widget catalog document.
+
+
+TYPES
+
+type GraphBarDefaults struct {
+	MaxWidth int `yaml:"max_width"`
+}
+    GraphBarDefaults contains defaults specific to bar renderers.
+
+type GraphDefaults struct {
+	DefaultBackgroundANSI string               `yaml:"default_background_ansi"`
+	Bar                   GraphBarDefaults     `yaml:"bar"`
+	Sparkline             GraphGlyphDefaults   `yaml:"sparkline"`
+	StackedBar            GraphGlyphDefaults   `yaml:"stacked_bar"`
+	Treemap               GraphGlyphDefaults   `yaml:"treemap"`
+	Spinner               GraphSpinnerDefaults `yaml:"spinner"`
+}
+    GraphDefaults describes the graph renderer defaults in defaults.yaml.
+
+func LoadGraphDefaults() (GraphDefaults, error)
+    LoadGraphDefaults reads graph defaults from the embedded authoritative
+    document.
+
+type GraphGlyphDefaults struct {
+	Glyphs string `yaml:"glyphs"`
+}
+    GraphGlyphDefaults stores an ordered set of glyphs as a Unicode string.
+
+type GraphSpinnerDefaults struct {
+	Frames       string `yaml:"frames"`
+	HarnezFrames string `yaml:"harnez_frames"`
+}
+    GraphSpinnerDefaults contains the standard and Harnez spinner sequences.
+

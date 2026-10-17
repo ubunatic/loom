@@ -1,0 +1,161 @@
+package syntax // import "ubunatic.com/loom/syntax"
+
+Package syntax is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package syntax defines UI-neutral syntax highlighting interfaces and types.
+
+FUNCTIONS
+
+func ByteToRune(source []byte, offset int) int
+    ByteToRune converts a byte offset to a rune offset, clamping to source
+    bounds.
+
+func RuneToByte(source []byte, offset int) int
+    RuneToByte converts a rune offset to a byte offset, clamping to source
+    bounds.
+
+func RuneToDisplayCol(source []byte, offset int) int
+    RuneToDisplayCol returns the terminal-cell column at a rune offset.
+
+
+TYPES
+
+type Capture string
+    Capture names a standard syntax token class.
+
+const (
+	CaptureKeyword            Capture = "keyword"
+	CaptureFunction           Capture = "function"
+	CaptureFunctionCall       Capture = "function.call"
+	CaptureType               Capture = "type"
+	CaptureString             Capture = "string"
+	CaptureComment            Capture = "comment"
+	CaptureNumber             Capture = "number"
+	CaptureOperator           Capture = "operator"
+	CapturePunctuation        Capture = "punctuation"
+	CapturePunctuationBracket Capture = "punctuation.bracket"
+)
+type Edit struct {
+	StartByte, OldEndByte, NewEndByte    int
+	StartPoint, OldEndPoint, NewEndPoint Point
+}
+    Edit describes a byte-range replacement and its source positions.
+
+type Engine interface {
+	Language() string
+	NotifyEdit(edit Edit)
+	Parse(source []byte) error
+	HighlightLine(line int) []Span
+	HighlightViewport(startLine, endLine int) map[int][]Span
+}
+    Engine parses source and returns capture spans for lines or viewports.
+
+type LexicalEngine struct {
+	// Has unexported fields.
+}
+    LexicalEngine provides lightweight standard-library tokenization.
+
+func NewLexicalEngine(language string) *LexicalEngine
+    NewLexicalEngine creates a lexer for go, markdown, json, or yaml.
+
+func (e *LexicalEngine) Breadcrumb(line, col int) []string
+    Breadcrumb returns the scope hierarchy at the given zero-based line and
+    column.
+
+func (e *LexicalEngine) Folds() [][2]int
+    Folds returns all foldable range pairs [startLine, endLine] (0-based,
+    inclusive).
+
+func (e *LexicalEngine) HighlightLine(line int) []Span
+
+func (e *LexicalEngine) HighlightViewport(startLine, endLine int) map[int][]Span
+
+func (e *LexicalEngine) Language() string
+
+func (e *LexicalEngine) NotifyEdit(Edit)
+
+func (e *LexicalEngine) Parse(source []byte) error
+
+func (e *LexicalEngine) Symbols() []Symbol
+    Symbols returns all symbols recognized in the source.
+
+type Navigator interface {
+	OutlineProvider
+	Symbols() []Symbol
+	Breadcrumb(line, col int) []string
+	Folds() [][2]int
+}
+    Navigator provides structural navigation, breadcrumbs, and fold ranges.
+
+type NullEngine struct{}
+    NullEngine is a no-op syntax provider.
+
+func (NullEngine) Breadcrumb(int, int) []string
+
+func (NullEngine) Folds() [][2]int
+
+func (NullEngine) HighlightLine(int) []Span
+
+func (NullEngine) HighlightViewport(int, int) map[int][]Span
+
+func (NullEngine) Language() string
+
+func (NullEngine) NotifyEdit(Edit)
+
+func (NullEngine) Parse([]byte) error
+
+func (NullEngine) Symbols() []Symbol
+
+type OutlineProvider interface {
+	Symbols() []Symbol
+	Breadcrumb(line, col int) []string
+	Folds() [][2]int
+}
+    OutlineProvider supplies document symbols, breadcrumbs, and fold ranges.
+
+type Point struct{ Row, Column int }
+    Point is a zero-based source position. Column is measured in bytes.
+
+type Span struct {
+	Line               int
+	StartByte, EndByte int
+	StartRune, EndRune int
+	Capture            string
+}
+    Span identifies a captured token. Line is zero-based; byte and rune offsets
+    are zero-based offsets in the complete parsed document (not line-local).
+    Start offsets are inclusive and end offsets are exclusive. Byte offsets
+    always land on UTF-8 boundaries.
+
+type StyleResolver map[string]string
+    StyleResolver maps standard captures to ANSI SGR styles. Values are SGR
+    parameter strings, suitable for wrapping text in ESC[<value>m ... ESC[0m.
+    Both 16-color and 256-color terminals understand these standard sequences.
+
+func DefaultStyleResolver() StyleResolver
+    DefaultStyleResolver returns conventional colors for standard captures.
+
+func (r StyleResolver) Resolve(capture string) string
+    Resolve returns an SGR style, or empty when the capture is unknown.
+
+type Symbol struct {
+	Name    string
+	Kind    string
+	Line    int // 0-based start line
+	Column  int // 0-based start column
+	EndLine int // 0-based end line
+}
+    Symbol identifies a recognized code entity (function, method, type, heading,
+    key, etc.).
+
+type ThemeMap map[string]string
+    ThemeMap maps capture names to UI-owned theme identifiers. Values are
+    intentionally strings so this package does not depend on Loom's UI types.
+
+func DefaultThemeMap() ThemeMap
+    DefaultThemeMap provides conventional theme keys for standard captures.
+
+func (m ThemeMap) Resolve(capture string) string
+    Resolve returns the theme identifier for capture, or the empty string.
+

@@ -1,0 +1,113 @@
+package collector // import "ubunatic.com/loom/collector"
+
+Package collector defines the small boundary between changing data and
+rendering. Collectors return records; callers decide how records become
+snapshots and widgets.
+
+Package collector is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+VARIABLES
+
+var DefaultRetention = func() time.Duration {
+	data, err := spec.DefaultsYAML()
+	if err != nil {
+		panic(fmt.Sprintf("collector: read spec/defaults.yaml: %v", err))
+	}
+	var defaults struct {
+		Collector struct {
+			DefaultRetention time.Duration `yaml:"default_retention"`
+		} `yaml:"collector"`
+	}
+	if err := yaml.Unmarshal(data, &defaults); err != nil {
+		panic(fmt.Sprintf("collector: parse spec/defaults.yaml: %v", err))
+	}
+	if defaults.Collector.DefaultRetention <= 0 {
+		panic("collector: collector.default_retention must be positive")
+	}
+	return defaults.Collector.DefaultRetention
+}()
+    DefaultRetention is the specced in-memory history window when a spec omits
+    one.
+
+
+FUNCTIONS
+
+func Run(ctx context.Context, c Collector, interval time.Duration, sink func(Record) error) error
+    Run collects immediately and then at interval until cancellation. The sink
+    receives records independently of rendering and owns snapshot publication.
+
+
+TYPES
+
+type Collector interface {
+	Type() Type
+	Collect(context.Context, time.Time) (Record, error)
+}
+    Collector reads one source without knowing anything about widgets or
+    rendering.
+
+type FileCollector struct {
+	Path     string
+	MaxBytes int64
+}
+    FileCollector reads a file, rejecting records larger than MaxBytes.
+
+func (c FileCollector) Collect(ctx context.Context, at time.Time) (Record, error)
+    Collect reads one bounded file record. The timestamp is supplied by the
+    scheduler so collection timing remains testable and independent of Draw.
+
+func (FileCollector) Type() Type
+    Type identifies this collector as a file source.
+
+type History struct {
+	// Has unexported fields.
+}
+    History retains timestamped records only within a live in-memory window.
+
+func NewHistory(retention time.Duration) (*History, error)
+    NewHistory creates a live history with the requested retention window.
+
+func (h *History) Append(record Record)
+    Append publishes a record and removes samples older than the retention
+    window relative to the appended record timestamp.
+
+func (h *History) Snapshot() []Record
+    Snapshot returns a copy of the live records in chronological order.
+
+type Record struct {
+	At   time.Time
+	Data []byte
+}
+    Record is one immutable collection result. Data is owned by the record and
+    must be copied before a caller retains or transforms it asynchronously.
+
+type Spec struct {
+	ID        string `yaml:"id"`
+	Type      Type   `yaml:"type"`
+	Path      string `yaml:"path"`
+	Rate      string `yaml:"rate"`
+	Retention string `yaml:"retention"`
+	MaxBytes  int64  `yaml:"max_bytes"`
+}
+    Spec is the minimal declaration consumed by a file collector prototype.
+    Rate is a duration string such as "1s"; source-specific parsing remains
+    outside this package.
+
+func (s Spec) Build() (Collector, time.Duration, time.Duration, error)
+    Build creates the typed collector described by the declaration.
+
+func (s Spec) RetentionDuration() (time.Duration, error)
+    RetentionDuration resolves the in-memory history window. An omitted value
+    uses DefaultRetention; no collector state is persisted to disk.
+
+func (s Spec) Validate() error
+    Validate checks the bounded prototype declaration.
+
+type Type string
+    Type identifies a configured collector implementation.
+
+const (
+	// TypeFile reads a bounded file at the caller's cadence.
+	TypeFile Type = "file"
+)

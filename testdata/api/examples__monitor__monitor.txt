@@ -1,0 +1,33 @@
+package monitor // import "ubunatic.com/loom/examples/monitor/monitor"
+
+Package monitor is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package monitor prints the embedded static shell once, without opening a TTY.
+
+FUNCTIONS
+
+func Execute(ctx context.Context, args []string, out io.Writer) error
+    Execute runs the monitor example's cobra command against ctx/args/out,
+    for callers that need explicit context and output control (e.g. tests).
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget parses monitor flags and constructs the corresponding root widget.
+
+func NewWidgetFromOptions(opts Options) (loom.Widget, error)
+    NewWidgetFromOptions constructs the declaration-backed monitor widget.
+
+func Run(args []string) error
+    Run runs the monitor example with the given command-line args, writing to
+    stdout, matching the Run(args []string) error signature shared by the other
+    examples for loom-demo/loom-bench registration.
+
+
+TYPES
+
+type Options struct {
+	Watch bool
+	Width int
+}
+    Options configures the standalone command and hosted monitor widget.
+

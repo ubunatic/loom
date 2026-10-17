@@ -1,0 +1,187 @@
+package loomoji // import "ubunatic.com/loom/examples/loomoji/loomoji"
+
+Package loomoji is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package loomoji demonstrates a compact inline emoji and symbol picker.
+
+CONSTANTS
+
+const (
+	RenderModeDefault   = "default"
+	RenderModePad1      = "pad-1"
+	RenderModeNoVS16    = "no-vs16"
+	RenderModeNoVS16Pad = "no-vs16-pad"
+	RenderModeForceVS16 = "force-vs16"
+	RenderModeSplitZWJ  = "split-zwj"
+	RenderModeBaseOnly  = "base-only"
+)
+    Render mode identifiers
+
+
+FUNCTIONS
+
+func ApplyRenderMode(glyph, mode string) string
+    ApplyRenderMode transforms a glyph string according to the requested mode.
+
+func AvailableRenderModes(glyph string) []string
+    AvailableRenderModes returns the rendering modes applicable to a glyph.
+
+func EvaluateVTEMode(glyph string) string
+    EvaluateVTEMode returns the recommended rendering mode for a glyph in VTE
+    terminals from spec.
+
+func EvaluateVTEWidth(glyph string) int
+    EvaluateVTEWidth predicts/evaluates the cell width expected for a glyph in
+    VTE-based terminals.
+
+func FormatEmojiGrid(glyphs []string, width int, cols int) string
+    FormatEmojiGrid renders a single width section grid using the active render
+    path.
+
+func FormatEmojiGridWithPath(glyphs []string, width int, cols int, path measure.RenderPath) string
+    FormatEmojiGridWithPath renders a single width section grid for a specific
+    render path.
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget constructs the picker widget for embedding in another Loom app.
+
+func RenderEmojiGrid(allGlyphs []string, widthFilter string) (string, error)
+    RenderEmojiGrid renders a formatted ascii grid of emojis grouped by visual
+    width using the active render path.
+
+func RenderEmojiGridWithPath(allGlyphs []string, widthFilter string, path measure.RenderPath) (string, error)
+    RenderEmojiGridWithPath renders a formatted ascii grid of emojis grouped by
+    visual width for a specific render path.
+
+func Run(args []string) error
+    Run launches the interactive emoji and symbol picker.
+
+
+TYPES
+
+type MeasureFilter string
+    MeasureFilter selects one category of recorded measurements for review.
+
+const (
+	MeasureFilterAll             MeasureFilter = "all"
+	MeasureFilterUnassessed      MeasureFilter = "unassessed"
+	MeasureFilterWidth1          MeasureFilter = "width-1"
+	MeasureFilterWidth2          MeasureFilter = "width-2"
+	MeasureFilterWidth3          MeasureFilter = "width-3"
+	MeasureFilterWidth4          MeasureFilter = "width-4"
+	MeasureFilterUnsure          MeasureFilter = "unsure"
+	MeasureFilterDiffersFromLoom MeasureFilter = "differs-from-loom"
+	MeasureFilterHasComment      MeasureFilter = "has-comment"
+)
+type MeasureOptions struct {
+	Review          bool
+	Filter          MeasureFilter
+	DiffersFromLoom bool
+	HasComment      bool
+}
+    MeasureOptions selects either the normal unmeasured flow or recorded-glyph
+    review.
+
+type MeasureWidget struct {
+	// Has unexported fields.
+}
+    MeasureWidget guides a user through recording terminal-rendered glyph
+    widths.
+
+func NewMeasureWidget(store *MeasurementStore, jsonPath, textPath string) *MeasureWidget
+    NewMeasureWidget creates a keyboard-driven measure widget for unrecorded
+    loomoji glyphs.
+
+func NewMeasureWidgetWithOptions(store *MeasurementStore, jsonPath, textPath string, options MeasureOptions) *MeasureWidget
+    NewMeasureWidgetWithOptions creates a measurement widget with optional
+    review filters.
+
+func (w *MeasureWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult
+    ConsumeKey processes page answers, comments, confirmation, and navigation.
+
+func (*MeasureWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult
+    ConsumeMouse implements the loom.Widget interface; the measure flow is
+    keyboard-only.
+
+func (w *MeasureWidget) CurrentGlyph() string
+    CurrentGlyph returns the selected glyph on the current page, or an empty
+    string when complete.
+
+func (w *MeasureWidget) Draw(c *loom.Canvas, r loom.Rect)
+    Draw renders the current page as a numbered glyph measurement table.
+
+func (w *MeasureWidget) Err() error
+    Err reports the most recent page save failure, if any.
+
+func (w *MeasureWidget) PageGlyphs() []string
+    PageGlyphs returns up to twenty unmeasured glyphs in the current page.
+
+func (w *MeasureWidget) PageMeasurement(row int) Measurement
+    PageMeasurement returns a row's staged measurement, seeded with Loom's
+    computed width.
+
+func (w *MeasureWidget) Remaining() int
+    Remaining returns the number of glyphs on the current and following pages.
+
+type Measurement struct {
+	Glyph         string   `json:"glyph"`
+	Codepoints    []string `json:"codepoints"`
+	ComputedWidth int      `json:"computed_width"`
+	VTEWidth      int      `json:"vte_width,omitempty"`
+	MeasuredWidth int      `json:"measured_width"`
+	RenderMode    string   `json:"render_mode,omitempty"`
+	Answered      bool     `json:"answered,omitempty"`
+	Comment       string   `json:"comment,omitempty"`
+}
+    Measurement contains the observed and computed width of one glyph.
+    MeasuredWidth is 1 through 4 for a confirmed result and 0 for unsure/other.
+
+func NewMeasurement(glyph string) Measurement
+    NewMeasurement creates an unanswered record using Loom's current width
+    policy and VTE evaluation.
+
+type MeasurementStore struct {
+	Profile TerminalProfile        `json:"terminal"`
+	Entries map[string]Measurement `json:"measurements"`
+}
+    MeasurementStore holds observed widths for one terminal profile.
+
+func LoadMeasurementStore(path string) (*MeasurementStore, error)
+    LoadMeasurementStore reads a profile store from JSON.
+
+func NewMeasurementStore(profile TerminalProfile) *MeasurementStore
+    NewMeasurementStore creates an empty store for a terminal profile.
+
+func (s *MeasurementStore) Filter(glyphs []string, filter MeasureFilter) []string
+    Filter returns glyphs matching filter, preserving input order.
+
+func (s *MeasurementStore) Merge(measurements ...Measurement)
+    Merge adds measurements that are not already recorded, preserving prior
+    answers.
+
+func (s *MeasurementStore) Review(glyphs []string, filter MeasureFilter) []string
+    Review returns recorded glyphs matching filter, preserving input order.
+
+func (s *MeasurementStore) Save(path string) error
+    Save writes the store as indented JSON, replacing the target atomically.
+
+func (s *MeasurementStore) SaveTextReport(path string) error
+    SaveTextReport writes a stable, human-readable report for the store.
+
+func (s *MeasurementStore) Set(measurement Measurement)
+    Set stores a measurement, replacing any previous record for its glyph.
+
+func (s *MeasurementStore) Unmeasured(glyphs []string) []string
+    Unmeasured returns glyphs without a saved result, preserving input order.
+
+type TerminalProfile struct {
+	Term        string `json:"term"`
+	TermProgram string `json:"term_program,omitempty"`
+	VTEVersion  string `json:"vte_version,omitempty"`
+}
+    TerminalProfile identifies the terminal whose rendered widths were recorded.
+
+func (p TerminalProfile) Paths(dir string) (jsonPath, textPath string)
+    Paths returns the JSON and text report paths for a terminal profile.
+

@@ -1,0 +1,218 @@
+package measure // import "ubunatic.com/loom/measure"
+
+Package measure exposes Loom's terminal-cell measurement policy to layout
+planners and applications without introducing a second width contract.
+
+spec.go provides runtime configuration and override lookups for emoji and
+sequence widths.
+
+FUNCTIONS
+
+func ApplyAutoRenderMode(glyph string) string
+    ApplyAutoRenderMode transforms a glyph string according to the active
+    RenderPath.
+
+func ApplyNonVTEMode(glyph string) string
+    ApplyNonVTEMode transforms a glyph string using its authoritative Non-VTE
+    mode from the spec.
+
+func ApplyRenderMode(glyph, mode string) string
+    ApplyRenderMode transforms a glyph string according to the requested mode.
+
+func ApplyRenderPath(glyph string, path RenderPath) string
+    ApplyRenderPath transforms a glyph string according to the requested
+    RenderPath.
+
+func ApplyVTEMode(glyph string) string
+    ApplyVTEMode transforms a glyph string using its authoritative VTE mode from
+    the spec.
+
+func ClusterWidth(cluster string) int
+    ClusterWidth returns the visual column width of a single text cluster.
+
+func Clusters(text string) []string
+    Clusters returns printable base-rune clusters with combining marks attached.
+
+func ClustersNew(text string) []string
+    ClustersNew is the zero-allocation cluster slice scanner.
+
+func ClustersOld(text string) []string
+    ClustersOld is the legacy Clusters implementation preserved for comparison.
+
+func DetectZWJMode(input, output *os.File, row int)
+    DetectZWJMode probes an interactive terminal after its caller has entered
+    raw mode and selected its screen. It is safe to call with non-terminal
+    files.
+
+func Fit(text string, width int) string
+    Fit returns the longest prefix of text that fits within width terminal
+    cells. Terminal styling is stripped; combining marks and wide glyphs are
+    never split.
+
+func IsFormatRune(r rune) bool
+    IsFormatRune returns true for variation selectors and joiner formatting
+    controls.
+
+func JoinsAfterZWJ(r rune) bool
+    JoinsAfterZWJ reports whether r may extend a grapheme cluster after a
+    zero-width joiner (U+200D). Only printable grapheme starts (letters,
+    numbers, punctuation, symbols such as emoji) join. Controls (C0, C1, DEL,
+    ESC), spaces, format runes and combining marks end the cluster so they go
+    through the normal parser/sanitiser instead of being smuggled into cell text
+    and written raw to the terminal.
+
+func LoadEmojiSpec(spec EmojiSpec)
+    LoadEmojiSpec installs a validated EmojiSpec into the measurement runtime.
+
+func LoadEmojiSpecYAML(data []byte) error
+    LoadEmojiSpecYAML decodes and activates an emoji specification from YAML
+    bytes.
+
+func NonVTEMode(glyph string) string
+    NonVTEMode returns the authoritative modern Non-VTE / standard rendering
+    mode for a glyph from the spec.
+
+func Pad(text string, width int, right bool) string
+    Pad extends text to width terminal cells using spaces.
+
+func RenderMode(glyph string, path RenderPath) string
+    RenderMode returns the authoritative rendering mode for a glyph for the
+    given RenderPath.
+
+func ResetRenderPath()
+    ResetRenderPath clears any explicit RenderPath override, reverting to
+    autodetection.
+
+func RuneWidth(r rune) int
+    RuneWidth returns the visual column width of a single rune.
+
+func SetRenderPath(p RenderPath)
+    SetRenderPath sets an explicit override for the active RenderPath.
+
+func StringWidth(text string) int
+    StringWidth returns the visible terminal-cell width of text according to
+    Loom's rendering policy.
+
+func StringWidthNew(text string) int
+    StringWidthNew is the zero-allocation fast path for StringWidth.
+
+func StringWidthOld(text string) int
+    StringWidthOld is the legacy StringWidth preserved for fallback and
+    comparison.
+
+func Truncate(text string, width int, marker string) string
+    Truncate fits text to a terminal-cell budget. Terminal styling is stripped;
+    combining marks stay with their base and wide glyphs are never split.
+
+func TruncateLeft(text string, width int, marker string) string
+    TruncateLeft fits text to a terminal-cell budget while keeping its trailing
+    content. Terminal styling is stripped and wide glyphs are never split.
+
+func VTEMode(glyph string) string
+    VTEMode returns the authoritative VTE rendering mode for a glyph from the
+    spec.
+
+func ZWJClusterWidth(cluster string) int
+    ZWJClusterWidth reports the visible width of a ZWJ sequence under the
+    startup terminal probe, with LOOM_ZWJ=join|split taking precedence.
+
+
+TYPES
+
+type Constraints struct {
+	Width  Limit
+	Height Limit
+}
+    Constraints bounds measured outer dimensions. Preferred values are hints;
+    Min and Max are hard limits.
+
+func (c Constraints) Validate() error
+    Validate checks dimension ordering and rejects ambiguous negative values.
+
+type EmojiOverride struct {
+	Glyph      string   `yaml:"glyph"`
+	Codepoints []string `yaml:"codepoints"`
+	Width      int      `yaml:"width"`
+	VTEMode    string   `yaml:"vte_mode,omitempty"`
+	NonVTEMode string   `yaml:"non_vte_mode,omitempty"`
+	Note       string   `yaml:"note"`
+}
+    EmojiOverride defines an explicit glyph-to-width mapping.
+
+type EmojiSpec struct {
+	VS16DefaultWidth int             `yaml:"vs16_default_width"`
+	VS16VTEMode      string          `yaml:"vs16_vte_mode"`
+	VS16NonVTEMode   string          `yaml:"vs16_non_vte_mode,omitempty"`
+	ZWJDefaultWidth  int             `yaml:"zwj_default_width"`
+	FlagDefaultWidth int             `yaml:"flag_default_width"`
+	Overrides        []EmojiOverride `yaml:"overrides"`
+}
+    Package measure defines and loads emoji/sequence specifications. EmojiSpec
+    defines specced emoji and sequence width policy.
+
+func ActiveEmojiSpec() EmojiSpec
+    ActiveEmojiSpec returns a copy of the active emoji specification.
+
+type Insets struct {
+	Top, Right, Bottom, Left int
+}
+    Insets reserves cells around content. All values must be non-negative.
+
+func (i Insets) Height() int
+    Height returns the vertical cells occupied by the insets.
+
+func (i Insets) Width() int
+    Width returns the horizontal cells occupied by the insets.
+
+type Limit struct {
+	Min       int
+	Preferred int
+	Max       int
+	HasMax    bool
+}
+    Limit describes a minimum, preferred, and optional maximum dimension.
+
+type RenderPath string
+    RenderPath identifies the terminal rendering strategy and width alignment
+    profile.
+
+const (
+	// RenderPathVTE targets VTE-based terminals (e.g. GNOME Terminal, Tilix, Ptyxis)
+	// which render VS16 emojis across 2 cells but only advance the cursor by 1 cell.
+	RenderPathVTE RenderPath = "vte"
+
+	// RenderPathStandard targets modern non-VTE / Wayland terminals (e.g. Foot, Alacritty, Kitty, WezTerm, Ghostty)
+	// which advance cursor by 2 cells natively for wide emoji.
+	RenderPathStandard RenderPath = "standard"
+
+	// RenderPathNonVTE is an alias for RenderPathStandard.
+	RenderPathNonVTE RenderPath = "non-vte"
+)
+func ActiveRenderPath() RenderPath
+    ActiveRenderPath returns the currently active RenderPath (either manually
+    overridden or autodetected).
+
+func DetectRenderPath() RenderPath
+    DetectRenderPath inspects the process environment and terminal variables to
+    determine the active RenderPath.
+
+type Size struct {
+	Width  int
+	Height int
+}
+    Size describes the visible terminal-cell dimensions of text lines.
+
+func Lines(text string) Size
+    Lines returns the visible dimensions of a multi-line string. An empty string
+    is one empty line.
+
+func MeasureText(text string, availableWidth int, insets Insets, c Constraints) (Size, error)
+    MeasureText returns an outer size satisfying c. availableWidth, when
+    positive, is a hard width supplied by a parent planner. Insets are included
+    in the returned dimensions.
+
+func TextSize(text string, maxWidth int) Size
+    TextSize returns the visible size of text. When maxWidth is positive,
+    lines wrap at terminal-cell boundaries; explicit newlines are preserved.
+    A wide cluster is kept intact even when it exceeds maxWidth.
+

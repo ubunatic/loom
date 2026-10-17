@@ -1,0 +1,526 @@
+package graph // import "ubunatic.com/loom/graph"
+
+Package graph provides dependency-free renderers for single-row, fixed-width
+terminal graphs: determinate fill bars and rolling sparklines.
+
+The rendering primitives are adapted from Harnez's internal/rograph package
+(commit 01e59b331c9d85699e55fbbb946c579e19901083).
+
+CONSTANTS
+
+const MaxTreemapNodes = 100
+    MaxTreemapNodes is a sensible default node budget for AggregateTreemap, e.g.
+    when reducing a full process tree to a glanceable treemap.
+
+
+VARIABLES
+
+var BrailleSubCharacterGlyphs = []rune{'⡇'}
+    BrailleSubCharacterGlyphs provides the partial-fill braille glyph for
+    half-cell width. Left column (4 dots): ⡇ (U+2847). Full cell (8 dots):
+    ⣿ (U+28FF).
+
+var DefaultBackgroundANSI = graphDefaults.DefaultBackgroundANSI
+    DefaultBackgroundANSI is the spec-loaded SGR code used when ANSI is true and
+    the caller leaves BackgroundANSI empty.
+
+var DefaultSpinnerFrames = []rune(graphDefaults.Spinner.Frames)
+    DefaultSpinnerFrames are the standard spec-loaded braille spinner glyphs.
+
+var HarnezSpinnerFrames = []rune(graphDefaults.Spinner.HarnezFrames)
+    HarnezSpinnerFrames is an alternative spec-loaded sequence matching the
+    Harnez reference target.
+
+var MaxWidth = graphDefaults.Bar.MaxWidth
+    MaxWidth is the spec-loaded default maximum render width, in characters/
+    glyphs, for single-row graph bars and sparklines.
+
+
+FUNCTIONS
+
+func BracketedBarStep(value float64, opts BracketedBarOptions) int
+    BracketedBarStep returns the number of visible fill subunits for value, in
+    [0, width*subdivisions]. Two values with the same step render the same bar,
+    so callers can skip redraws when the step did not change. Pattern bars have
+    no fill and always return 0.
+
+func BracketedBarWidth(opts BracketedBarOptions) int
+    BracketedBarWidth returns the total visual column width of a bracketed bar.
+
+func FormatPercent(percent float64, precision int) string
+    FormatPercent formats a percent value with clamping and a trailing percent
+    sign. It is useful for callers that want a label next to RenderBar output.
+
+func PercentSparkline(pcts []float64, maxWidth int) string
+    PercentSparkline renders one glyph per value in pcts (each 0-100) on a
+    rolling timeline, padded to exactly maxWidth characters with the idle glyph
+    ('▁').
+
+    If len(pcts) > maxWidth, only the most recent maxWidth values are rendered.
+    If len(pcts) < maxWidth, the sparkline is left-padded with the idle glyph
+    ('▁') so that the output glyph count always equals maxWidth.
+
+    maxWidth < 1 clamps up to 1. The rendered glyphs are wrapped in a muted grey
+    background ANSI sequence (SGR 100, bright-black) matching Harnez.
+
+func RenderBar(value float64, opts BarOptions) string
+    RenderBar renders a single-value terminal bar or stripe. Values outside the
+    configured range are clamped, NaN values render as the minimum, and inverted
+    or empty ranges fall back to the zero-value 0-100 range.
+
+func RenderBracketedBar(value float64, opts BracketedBarOptions) string
+    RenderBracketedBar renders a bracketed progress or pattern bar. When
+    opts.Pattern is set, it fills the inner width with the repeated pattern.
+    Otherwise, it renders value (clamped to [0, 100]) using the configured
+    fill/empty glyphs.
+
+func RenderPercentSparkline(values []float64, opts SparklineOptions) string
+    RenderPercentSparkline renders values on a fixed 0-100 scale.
+
+func RenderProgressBar(usedPercent float64, width int) string
+    RenderProgressBar generates an ANSI/Unicode progress bar of the given
+    character width: a "[filled empty]" bar using '█' for the filled portion
+    and '░' for the empty portion, scaled to usedPercent (clamped to [0, 100]).
+    The boundary character where fill transitions from filled to empty renders
+    at eighth-block precision (▏▎▍▌▋▊▉█) rather than snapping to fully filled or
+    empty.
+
+    If width < 1, it clamps to 1.
+
+func RenderSparkline(values []float64, opts SparklineOptions) string
+    RenderSparkline renders up to Width terminal cells from the newest 2*Width
+    samples. Samples are oldest first. An odd-length window keeps its oldest
+    singleton as the first cell (duplicated across Braille columns); all later
+    cells contain adjacent pairs. Block cells deliberately use the newer value
+    of a pair so the current/latest observation is always represented. Relative
+    mode derives one range across the complete retained sample window.
+
+    Unless opts.NoPad is true, RenderSparkline guarantees exact Width output
+    even when values is empty or has fewer samples than 2*Width. Short histories
+    are left-padded with idle glyphs.
+
+func RenderStackedBar(values []float64, opts StackedBarOptions) string
+    RenderStackedBar renders values as a single-row proportional bar: width
+    cells divided among values by magnitude using the largest-remainder method,
+    so segment widths always sum to exactly width. NaN and negative values are
+    treated as zero. All-zero (or empty) input renders width blank cells.
+
+    This is a one-dimensional summary, not a 2D treemap: no per-segment labels
+    fit in a single row. Pair it with a legend, or use RenderTreemap for a
+    multi-row layout with boxes and labels.
+
+func RenderTreemap(segments []TreemapSegment, opts TreemapOptions) []string
+    RenderTreemap lays out segments as a 2D treemap: rectangular boxes tiling
+    a character grid within Width x Height, each box's area proportional to
+    its segment's value. Returns exactly Height rows, with bottom legend rows
+    sharing that canvas when boxes need them (see below); callers join with "\n"
+    or feed the rows directly into a larger layout.
+
+    Layout is a recursive binary split: segments are sorted by value descending,
+    partitioned as evenly as possible by cumulative value, and the current
+    rectangle is divided between the two partitions along whichever axis keeps
+    its children landscape (wider than tall, biased by treemapLandscapeBias)
+    rather than aiming for a square -- repeated until each partition holds one
+    segment. Boxes end up wider and shorter than a classic squarified treemap
+    would produce, which is deliberate: it's horizontal text that needs to fit
+    inside them. This produces a real, non-overlapping, gap-free 2D treemap
+    (unlike RenderStackedBar's single-row proportional bar), though it does not
+    attempt the squarified algorithm's optimal aspect ratios.
+
+    Each box's full label (name, plus value if ShowValues) is printed inside
+    it only when it fits without truncation -- a box too small to describe is
+    not given a truncated fragment of its name. Instead it gets a superscript
+    index number (¹, ², ³, ...), centered in the interior or, if even that
+    has no room, overlaid on the top border. Every numbered box is listed,
+    ranked biggest value first (independent of box layout order), on legend
+    rows below or beside the grid: "¹name ²name ...", each entry with its text
+    colored to match that box's identifying color when opts.ANSI is set (never
+    a filled background -- see treemapLegendCode), kept whole in the bottom
+    legend, which uses up to two rows by default or opts.LegendRows rows when
+    configured. Right placement wraps long entries across up to Height rows.
+    A bounded legend ends with "…" when entries remain.
+
+    Zero, negative, NaN, and infinite values are treated as zero and receive no
+    box (zero-area). Empty or all-zero input renders a blank grid.
+
+    CALLER RESPONSIBILITY -- terminal width overflow corrupts the whole grid,
+    not just one line: every returned row is exactly opts.Width display columns
+    (verify with measure.StringWidth on a row with its ANSI codes stripped,
+    never len() or utf8.RuneCountInString on a row that may carry ANSI).
+    This function has no way to know the real terminal width, so it trusts
+    opts.Width completely -- if the caller sets it (or lets it default) wider
+    than the terminal actually printing to, the terminal's own auto-wrap will
+    wrap each overflowing row onto the next physical line, and this function's
+    row-per-terminal-line assumption breaks: every subsequent row then lands
+    one line lower than intended, and boxes appear to scramble and jump between
+    "rows" that no longer correspond to actual grid rows. A single-row renderer
+    like RenderStackedBar mostly reflows harmlessly if this happens; a multi-row
+    grid like this one cannot, since each row's screen position is load-bearing.
+    This is a well-documented trap for coding agents building terminal UIs
+    specifically (see examples/treemap/main.go's resolveDimensions and its
+    test TestClampDimensionsNeverExceedsTerminal for a concrete repro and fix):
+    always clamp opts.Width/opts.Height to the ACTUAL current terminal size
+    (e.g. via golang.org/x/term.GetSize on the real output fd) before calling
+    this, never trust a caller-supplied or previously-cached size blindly, and
+    re-resolve it on every redraw in a watch/live-update loop since the terminal
+    can be resized between frames. Go cannot enforce this at compile time (it is
+    pure runtime string content), so there is no substitute for actually doing
+    the clamp -- this comment exists because skipping it fails silently and
+    confusingly rather than with a clear error.
+
+func SpinnerGlyph(frame int) rune
+    SpinnerGlyph returns the braille spinner rune for a given frame index from
+    DefaultSpinnerFrames.
+
+func SpinnerGlyphFrom(frames []rune, frame int) rune
+    SpinnerGlyphFrom returns the spinner rune from custom frames for a given
+    frame index.
+
+func SpinnerString(frame int) string
+    SpinnerString returns the braille spinner rune as a string.
+
+
+TYPES
+
+type BarOptions struct {
+	// Width is the number of graph glyphs inside the optional wrappers.
+	// Zero uses MaxWidth; negative values clamp to 1.
+	Width int
+	// Min and Max define the numeric range. The zero value means 0-100.
+	Min float64
+	Max float64
+	// Fill and Empty override the default terminal bar glyphs.
+	Fill  rune
+	Empty rune
+	// Left and Right wrap the graph. Empty uses the default "[" and "]"
+	// unless NoWrapper is true.
+	Left  string
+	Right string
+	// NoWrapper renders only the graph glyphs, useful for stripe-style bars.
+	NoWrapper bool
+	// IncludePercent appends a formatted percent label after the bar.
+	IncludePercent bool
+	// PercentPrecision controls the optional percent label. Negative values
+	// clamp to 0.
+	PercentPrecision int
+	// SubChar renders the single boundary character (where fill transitions
+	// from filled to empty) at sub-character precision instead of snapping
+	// it to fully filled or fully empty.
+	SubChar bool
+	// SubCharacterGlyphs supplies the ascending partial-fill glyphs. Empty
+	// uses rograph's legacy eighth-block sequence; callers with a visual spec
+	// should pass their resolved sequence.
+	SubCharacterGlyphs []rune
+	// ANSI wraps the rendered bar (including any percent label) in a
+	// background ANSI sequence, matching RenderSparkline's convention.
+	// Plain output is the default so callers can opt in only for terminal
+	// contexts.
+	ANSI bool
+	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
+	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// code while allowing ForegroundANSI to be applied.
+	BackgroundANSI string
+	// ForegroundANSI is an optional SGR foreground code applied to the graph
+	// glyphs only. Callers retain control of any nearby labels.
+	ForegroundANSI string
+}
+    BarOptions configures RenderBar. The zero value renders a 10-character 0-100
+    bar with the package's standard filled and empty glyphs.
+
+type BracketedBarOptions struct {
+	// Width is the inner character width of the bar (excluding brackets).
+	// Clamped to at least 1. Zero defaults to 32.
+	Width int
+	// Left and Right bracket strings. Default to "[" and "]".
+	Left  string
+	Right string
+	// Fill and Empty runes for determinate progress. Default to '⣿' and ' '.
+	Fill  rune
+	Empty rune
+	// Pattern overrides determinate fill with a fixed repeating string (e.g. ":").
+	Pattern string
+	// SubChar enables partial-cell braille boundary rendering.
+	SubChar bool
+	// SubCharacterGlyphs overrides the partial glyphs for sub-character rendering.
+	SubCharacterGlyphs []rune
+	// ANSI wraps the bar in styled escape sequences.
+	ANSI           bool
+	ForegroundANSI string
+	BackgroundANSI string
+}
+    BracketedBarOptions configures RenderBracketedBar.
+
+type CellStyle struct {
+	ForegroundANSI string
+	BackgroundANSI string
+}
+    CellStyle describes ANSI styling for a treemap cell.
+
+type ColorScale func(value, min, max float64) CellStyle
+    ColorScale maps a value in a range to a cell style.
+
+func HeatColorScale() ColorScale
+    HeatColorScale returns a blue-to-red 24-bit foreground heat scale.
+
+func LinearColorScale(from, to string) ColorScale
+    LinearColorScale interpolates RGB foreground colors between from and to.
+    Inputs are ANSI 24-bit color strings in the form "R,G,B".
+
+type SparklineOptions struct {
+	// Width is the exact number of terminal cells to render. Each cell
+	// consumes two chronological samples; zero uses MaxWidth and negative
+	// values clamp to one cell.
+	Width int
+	// Presentation selects block or Braille rendering. The zero value is
+	// SparklineBlocks.
+	Presentation SparklinePresentation
+	// Min and Max define the scale when FixedRange is true.
+	Min float64
+	Max float64
+	// FixedRange uses Min and Max instead of deriving a range from the
+	// rendered values. Use this for percent or other absolute-scale charts.
+	FixedRange bool
+	// ANSI wraps the sparkline in a background ANSI sequence. Plain output is
+	// the default so callers can opt in only for terminal contexts.
+	ANSI bool
+	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
+	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// code while allowing ForegroundANSI to be applied.
+	BackgroundANSI string
+	// ForegroundANSI returns the SGR foreground code for a rendered cell's
+	// representative value. Nil leaves the chart monochrome. The callback is
+	// deliberately spec-agnostic so this dependency-free package never needs
+	// to know an application's palette.
+	ForegroundANSI func(value float64) string
+	// Glyphs supplies low-to-high sparkline frames. Empty uses the package
+	// default (percentSparkChars).
+	Glyphs []rune
+	// NoPad disables automatic padding to Width cells. When true, empty
+	// inputs return "" and short inputs render fewer cells.
+	NoPad bool
+	// PadRune specifies an explicit rune to pad short or empty histories.
+	// If zero, the idle glyph appropriate for Presentation is used.
+	PadRune rune
+}
+    SparklineOptions configures RenderSparkline. The zero value renders a
+    no-ANSI, relative-scale block sparkline padded to MaxWidth cells.
+
+type SparklinePresentation uint8
+    SparklinePresentation selects how a pair of time-series samples is drawn.
+
+const (
+	// SparklineBlocks reduces each sample pair to its newer value and draws it
+	// with the configured lower-block glyph scale.
+	SparklineBlocks SparklinePresentation = iota
+	// SparklineBraille draws the older sample in the left Braille dot column
+	// and the newer sample in the right column. Each column is quantized to
+	// four bottom-aligned dots (left: 7,3,2,1; right: 8,6,5,4).
+	SparklineBraille
+)
+type StackedBarOptions struct {
+	// Width is the total character width of the bar. Zero uses MaxWidth;
+	// negative values clamp to 1.
+	Width int
+	// Glyphs supplies one fill glyph per segment, cycling if there are more
+	// segments than glyphs. Empty uses defaultStackedBarGlyphs.
+	Glyphs []rune
+	// Left and Right wrap the bar. Empty uses the default "[" and "]"
+	// unless NoWrapper is true.
+	Left  string
+	Right string
+	// NoWrapper renders only the segment glyphs, useful for embedding in a
+	// larger layout.
+	NoWrapper bool
+	// ANSI wraps segments in foreground/background ANSI sequences, matching
+	// RenderBar's convention.
+	ANSI bool
+	// BackgroundANSI is the SGR background code applied across the whole
+	// bar when ANSI is true. Empty uses DefaultBackgroundANSI. Passing
+	// "none" suppresses the background code while allowing ForegroundANSI.
+	BackgroundANSI string
+	// ForegroundANSI supplies one SGR foreground code per segment, cycling
+	// if there are more segments than codes. Nil leaves segments styled
+	// with BackgroundANSI only (if any).
+	ForegroundANSI []string
+}
+    StackedBarOptions configures RenderStackedBar.
+
+type TreemapCell struct {
+	Rect    TreemapRect
+	Segment TreemapSegment
+	Label   string
+	Value   float64
+	Index   int
+}
+    TreemapCell is the pre-render geometry and metadata for one segment.
+
+func LayoutTreemap(segments []TreemapSegment, w, h int, layout TreemapLayout) []TreemapCell
+    LayoutTreemap returns positive-valued segments as deterministic, integral
+    cells tiled within w by h. Non-positive, NaN, and infinite values are
+    omitted.
+
+type TreemapLayout int
+    TreemapLayout selects the partitioning strategy used by LayoutTreemap.
+
+const (
+	TreemapLayoutSliceDice TreemapLayout = iota
+	TreemapLayoutSquarified
+)
+type TreemapLegendPosition int
+    TreemapLegendPosition selects where numbered-box explanations appear.
+
+const (
+	// TreemapLegendBottom places the legend below the grid (the default).
+	TreemapLegendBottom TreemapLegendPosition = iota
+	// TreemapLegendRight places the legend beside the grid, within Width.
+	TreemapLegendRight
+)
+type TreemapNode struct {
+	Name     string
+	Value    float64
+	Children []TreemapNode
+}
+    TreemapNode is one node of a hierarchical usage tree, such as a process tree
+    with per-process CPU usage. Value is this node's own contribution, excluding
+    children; a node's total (used for sizing, sorting, and the TreemapSegment
+    it may collapse to) is its own Value plus every descendant's Value.
+
+type TreemapOptions struct {
+	// Width is the total output width, including a right legend when set;
+	// Height is the total output height, including a bottom legend when set.
+	// Zero/negative values clamp to 1.
+	Width  int
+	Height int
+	// LegendPosition chooses bottom or right placement. Right placement
+	// reserves columns from Width, leaving the rest for the treemap.
+	LegendPosition TreemapLegendPosition
+	// LegendWidth is the right legend's column width, excluding its one-cell
+	// gap. Zero uses one third of Width. Ignored for bottom placement.
+	LegendWidth int
+	// LegendRows limits bottom legend rows. Zero uses two rows; a negative
+	// value uses all available rows. Ignored on right, which uses up to Height rows.
+	LegendRows int
+	// LegendMinValue omits boxes with values below this threshold from the
+	// legend. Their boxes and markers remain visible. Zero disables filtering.
+	LegendMinValue float64
+	// Theme selects the visual style; the zero value is TreemapThemeClassic.
+	Theme TreemapTheme
+	// NoLabels suppresses per-box labeling entirely: no name/value text, no
+	// numbered fallback marker, and no legend row.
+	NoLabels bool
+	// ShowValues appends each segment's formatted value after its name,
+	// when there is room, using ValuePrecision decimal places and
+	// ValueSuffix (e.g. "%") after the number.
+	ShowValues     bool
+	ValuePrecision int
+	ValueSuffix    string
+	// NoBorder fills every box solid instead of drawing a border; boxes
+	// too small for a border (less than 3 columns or 2 rows) always fall
+	// back to a solid fill regardless of this flag.
+	NoBorder bool
+	// Glyphs supplies one fill glyph per segment (used for a box's
+	// interior when NoBorder or the box is too small to border, and for
+	// its border when ANSI is off), cycling if there are more segments
+	// than glyphs. Empty uses defaultTreemapGlyphs.
+	Glyphs []rune
+	// ANSI wraps each box's interior (and, unless NoBorder, its border) in
+	// a per-segment background/foreground ANSI sequence instead of using
+	// Glyphs to fill it.
+	ANSI bool
+	// BackgroundANSI supplies one SGR background code per segment,
+	// cycling if there are more segments than codes. Empty leaves a box
+	// unstyled aside from ForegroundANSI.
+	BackgroundANSI []string
+	// ForegroundANSI supplies one SGR foreground code per segment
+	// (applied to its border and label text), cycling if there are more
+	// segments than codes.
+	ForegroundANSI []string
+}
+    TreemapOptions configures RenderTreemap.
+
+type TreemapRect struct {
+	X, Y, W, H int
+}
+    TreemapRect is an integral cell-grid rectangle.
+
+type TreemapSegment struct {
+	Name  string
+	Value float64
+}
+    TreemapSegment is one aggregated entry ready for RenderTreemap or
+    RenderStackedBar: a label plus the combined value of everything it
+    represents.
+
+func AggregateTreemap(root TreemapNode, maxNodes int) []TreemapSegment
+    AggregateTreemap reduces a hierarchical usage tree, such as a process
+    tree with per-process CPU usage, to at most maxNodes segments suitable for
+    RenderTreemap or RenderStackedBar.
+
+    Same-name nodes are merged wherever they appear in the working set, summing
+    their values and pooling their children, so recurring node types (repeated
+    browser-tab renderer processes, for example) collapse into one segment
+    instead of each counting separately toward the node budget.
+
+    Detail is prioritized by weight: starting from root's (merged) children and
+    a synthetic contribution for root.Value when nonzero, the heaviest node
+    that still has children to reveal is repeatedly replaced by its own merged
+    children -- including a synthetic child carrying the node's own value,
+    so expanding a node never silently drops it -- until node count would exceed
+    maxNodes or no node has children left to reveal. A node whose full expansion
+    would overflow the budget (a process with dozens of direct children,
+    say) is not skipped outright: it expands partially, keeping only its
+    heaviest children and folding the rest into a same-level "other" child,
+    so one bushy branch can never permanently block all further detail the
+    way an all-or-nothing expansion would. A node left unexpanded (down to a
+    single leaf, or because the overall budget is exhausted) is reported as one
+    segment summing its own value and every descendant's value: "aggregating
+    lower nodes." If root already has more than maxNodes (merged) children,
+    the lightest are combined into a single trailing "other" segment before
+    expansion starts, so the budget is never exceeded on input either.
+
+    maxNodes <= 0 clamps to 1. Segments with a non-positive total are dropped.
+
+type TreemapTheme int
+    TreemapTheme selects RenderTreemap's visual style. See issue 040.
+
+const (
+	// TreemapThemeClassic is the original box-drawing style: a bordered box
+	// (┌─┐│└─┘) when it fits (opts.NoBorder unset, at least 3x2 cells), else
+	// a solid glyph/ANSI-background fill. The zero value, so every existing
+	// TreemapOptions{} literal (and every test written before theming
+	// existed) renders exactly as before.
+	TreemapThemeClassic TreemapTheme = iota
+	// TreemapThemeNumbered renders every box full-bleed -- no border cell
+	// is reserved, so labels get the box's entire area -- and softens its
+	// own TOP row and RIGHT column with a seven-eighths block glyph ('▇'
+	// top, '▉' right, U+2587/U+2589) instead of the hard one-cell-wide
+	// border line TreemapThemeClassic draws. Unlike a border, these glyphs
+	// don't fill their cell solid: only the majority (7/8) that faces this
+	// box's own interior carries its color -- a thin sliver gets no
+	// background SGR at all, so the ambient terminal background shows
+	// straight through it. This is purely local to each box's own
+	// rectangle (its topmost row and rightmost column), not dependent on
+	// what segment (if any) sits past that edge -- so two adjoining boxes
+	// never both try to render their shared seam.
+	//
+	// Every box with positive area also gets a superscript corner marker
+	// (see superscriptNumber), unconditionally, stamped into its own
+	// top-right corner cell -- ranked by value descending across ALL
+	// boxes, not just the ones whose full label doesn't fit. A box that
+	// also has room for its full label shows both: the label centered as
+	// usual, plus its corner number. The legend still
+	// lists only the boxes that needed a number in place of their label
+	// (the same criterion TreemapThemeClassic uses) -- a labeled box's
+	// corner number isn't explained there, since the box's own visible
+	// name already identifies it. The corner marker's own cell uses the
+	// same foreground-only style as the rest of its row/column: it floats
+	// over the ambient terminal background, not a filled swatch.
+	//
+	// Requires opts.ANSI and opts.BackgroundANSI (there is no color to
+	// paint the glyph/marker with otherwise); without either,
+	// TreemapThemeNumbered falls back to the identical solid-glyph
+	// full-bleed fill TreemapThemeClassic uses when NoBorder is set, and
+	// to TreemapThemeClassic's only-unlabelled-boxes marker/legend
+	// behavior.
+	TreemapThemeNumbered
+)

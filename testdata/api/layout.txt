@@ -1,0 +1,51 @@
+package layout // import "ubunatic.com/loom/layout"
+
+Package layout contains renderer-independent allocation primitives.
+
+FUNCTIONS
+
+func AlignOffset(available, size int, align Align) int
+    AlignOffset computes the offset of an element of size within total available
+    cells according to align. It returns 0 when available <= size or size <= 0.
+
+
+TYPES
+
+type Align int
+    Align controls horizontal or vertical placement inside available space.
+
+const (
+	// AlignStart aligns content to the leading edge (left or top).
+	AlignStart Align = iota
+	// AlignCenter centers content in the available space.
+	AlignCenter
+	// AlignEnd aligns content to the trailing edge (right or bottom).
+	AlignEnd
+)
+type Allocation struct {
+	Offset int
+	Size   int
+}
+    Allocation is the offset and size assigned to an item.
+
+func Plan(total, gap int, items []Item) ([]Allocation, error)
+    Plan allocates total cells among visible items separated by gap cells.
+    Preferred sizes are packed first, then items shrink from the end to their
+    minima or stretch from the beginning to their maxima. Both passes are
+    deterministic and preserve declaration order.
+
+type Constraint struct {
+	Min       int
+	Preferred int
+	Max       int
+	HasMax    bool
+}
+    Constraint bounds one layout item in cells. A zero Preferred uses Min.
+
+type Item struct {
+	Constraint Constraint
+	Visible    bool
+}
+    Item is one participant in a plan. Invisible items consume no cells and
+    retain a zero allocation in the result.
+

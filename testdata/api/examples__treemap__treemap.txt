@@ -1,0 +1,47 @@
+package treemap // import "ubunatic.com/loom/examples/treemap/treemap"
+
+Package treemap is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Command treemap renders the live process CPU-usage tree (via `ps`) as a
+graph.RenderTreemap box layout, sized to the terminal by default. It is a thin,
+standalone demo of ubunatic.com/loom/graph's AggregateTreemap + RenderTreemap:
+all process-tree reading lives here in the example, not in the dependency-free
+graph package.
+
+--watch keeps redrawing in place on an interval (like `watch ps`) until
+interrupted, instead of loom's declarative Pane/View widgets, so --ansi coloring
+survives (a loom.View strips inline ANSI from its lines). It still quits on
+loom's own default keys (q, Esc, Ctrl-C, Ctrl-Q, Ctrl-D) via a small raw-mode
+/dev/tty reader -- see watchForQuitKey.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget parses command-line arguments and builds the hosted treemap.
+
+func Run(args []string) error
+    Run parses args and runs the treemap example, matching the
+    Run(args []string) error signature shared by the other examples for
+    loom-demo/loom-bench registration.
+
+
+TYPES
+
+type Options struct {
+	Width          int
+	Height         int
+	MaxNodes       int
+	Theme          int
+	ANSI           bool
+	ShowValues     bool
+	Watch          bool
+	ExcludeSelf    bool
+	Interval       time.Duration
+	LegendPosition string
+	LegendRows     int
+	LegendWidth    int
+	LegendMinValue float64
+}
+    Options configures standalone rendering and the hosted treemap widget.
+

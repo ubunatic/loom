@@ -1,0 +1,45 @@
+package textrender // import "ubunatic.com/loom/examples/textrender/textrender"
+
+Package textrender is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+Package textrender demonstrates non-ASCII text rendering across loom widgets.
+
+VARIABLES
+
+var Cases = []TestCase{
+	{Label: "ASCII", Text: "Hello", WantWidth: 5},
+	{Label: "Accented Latin", Text: "Café", WantWidth: 4},
+	{Label: "German umlauts (precomposed)", Text: "Müller", WantWidth: 6},
+	{Label: "German umlauts (decomposed)", Text: "Mu\u0308ller", WantWidth: 6},
+	{Label: "CJK", Text: "中文", WantWidth: 4},
+	{Label: "Combining marks", Text: "e\u030a", WantWidth: 1},
+	{Label: "Symbols", Text: "♠♣♥♦", WantWidth: 4},
+	{Label: "Emoji", Text: "😀", WantWidth: 2},
+	{Label: "ZWJ sequence", Text: "👨\u200d👩\u200d👧", WantWidth: 2},
+	{Label: "Flag", Text: "🇩🇪", WantWidth: 2},
+	{Label: "Mixed line", Text: "Test中文♠😀", WantWidth: 11},
+}
+    Cases defines representative test samples covering various Unicode
+    categories
+
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the textrender example's root widget from command-line
+    args, without creating or running a Pane.
+
+func Run(args []string) error
+    Run runs the textrender example with cobra command support.
+
+
+TYPES
+
+type TestCase struct {
+	Label     string
+	Text      string
+	WantWidth int
+}
+    TestCase represents a labeled text sample with expected display width
+

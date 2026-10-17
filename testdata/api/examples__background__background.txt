@@ -1,0 +1,12 @@
+package background // import "ubunatic.com/loom/examples/background/background"
+
+Package background demonstrates the full-screen Astra star field.
+
+Package background is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+FUNCTIONS
+
+func Run(_ []string) error
+    Run starts the interactive image-background example.
+

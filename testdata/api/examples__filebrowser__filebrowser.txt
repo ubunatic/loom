@@ -1,0 +1,90 @@
+package filebrowser // import "ubunatic.com/loom/examples/filebrowser/filebrowser"
+
+Package filebrowser is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+Package filebrowser demonstrates a file list and live metadata in split panes.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the filebrowser root widget from command-line arguments,
+    without creating or running a Pane.
+
+func Run(args []string) error
+    Run parses args and runs the filebrowser example. It returns flag.ErrHelp
+    when -h/--help was requested, matching the standard flag package convention
+    so callers can treat that as a clean, non-error exit.
+
+
+TYPES
+
+type NavigationPane struct {
+	// Has unexported fields.
+}
+    NavigationPane provides a filterable, keyboard- and mouse-driven directory
+    list. Hosts can inspect Directory and Selected to update their own preview
+    or metadata.
+
+func NewNavigationPane(dir string, options NavigationPaneOptions) (*NavigationPane, error)
+    NewNavigationPane reads dir and creates a navigation pane with an initial
+    selection.
+
+func (p *NavigationPane) ApplyTheme(theme loom.ThemeColors)
+    ApplyTheme updates the Choice style from the theme.
+
+func (p *NavigationPane) ConsumeKey(e loom.KeyEvent) loom.EventResult
+    ConsumeKey processes navigation, filtering, directory opening, and
+    selection.
+
+func (p *NavigationPane) ConsumeMouse(e loom.MouseEvent) loom.EventResult
+    ConsumeMouse processes mouse selection and forwards quit requests.
+
+func (p *NavigationPane) ContentHeight() int
+    ContentHeight estimates the required height of the navigation list.
+
+func (p *NavigationPane) Directory() loom.Directory
+    Directory returns the current directory and its entries.
+
+func (p *NavigationPane) Draw(c *loom.Canvas, r loom.Rect)
+    Draw renders the navigation list within r.
+
+func (p *NavigationPane) Focused() bool
+    Focused reports whether the underlying choice list has input focus.
+
+func (p *NavigationPane) List() *loom.Choice
+    List returns the underlying Choice for styling and host integration.
+
+func (p *NavigationPane) Searching() bool
+    Searching reports whether typed text currently goes to the filter.
+
+func (p *NavigationPane) Selected() (loom.FileEntry, bool)
+    Selected returns the currently selected filesystem entry, if any.
+
+func (p *NavigationPane) SetFocus(focused bool)
+    SetFocus enables or disables input focus on the underlying choice list.
+
+func (p *NavigationPane) SetRoot(dir string)
+    SetRoot sets the directory where ESC requests a quit from the host. Passing
+    "" disables the root quit trigger.
+
+type NavigationPaneOptions struct {
+	// OnSelection is called when the current selection changes.
+	OnSelection func(loom.FileEntry)
+	// OnActivate is called when the user confirms a non-directory entry.
+	OnActivate func(loom.FileEntry)
+	// OnOpen is called after a directory has been opened successfully.
+	OnOpen func(loom.Directory)
+	// OnQuit is called when ESC is pressed at the filesystem root.
+	OnQuit func()
+	// SelectParent keeps the parent-directory row selected when a directory opens.
+	// By default, the first non-parent entry is selected.
+	SelectParent bool
+	// Style overrides the default Choice appearance when non-zero.
+	Style loom.ChoiceStyle
+	// TypeToSearch sends every typed character to the filter, as before "/" gating.
+	// By default, typing filters only after "/", so the app's own letter keys work.
+	TypeToSearch bool
+}
+    NavigationPaneOptions configures a reusable filesystem navigation pane.
+

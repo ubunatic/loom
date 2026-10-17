@@ -1,0 +1,35 @@
+package splash // import "ubunatic.com/loom/examples/splash/splash"
+
+Package splash is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package splash demonstrates the Harnez startup splash screen and transition
+lifecycle.
+
+FUNCTIONS
+
+func Execute(ctx context.Context, args []string, out io.Writer) error
+    Execute runs the splash example's cobra command against ctx/args/out,
+    for callers that need explicit context and output control (e.g. tests).
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the splash root widget from command-line arguments.
+
+func NewWidgetFromOptions(opts Options) (loom.Widget, error)
+    NewWidgetFromOptions builds the splash root widget from parsed options.
+
+func Run(args []string) error
+    Run runs the splash example with the given command-line args, writing to
+    stdout, matching the Run(args []string) error signature shared by the other
+    examples for loom-demo/loom-bench registration.
+
+
+TYPES
+
+type Options struct {
+	Watch  bool
+	Width  int
+	Height int
+}
+    Options holds configuration for the splash widget and CLI execution.
+

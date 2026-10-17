@@ -1,0 +1,17 @@
+package tabs // import "ubunatic.com/loom/examples/tabs/tabs"
+
+Package tabs is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package tabs demonstrates the loom.Tabs widget hosting child widgets with
+declarative key bindings, dynamic tab manipulation, and interactive chrome.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the tabs example's root widget from command-line args,
+    without creating or running a Pane.
+
+func Run(args []string) error
+    Run runs the tabs example with cobra command support.
+

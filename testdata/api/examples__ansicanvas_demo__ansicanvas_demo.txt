@@ -1,0 +1,43 @@
+package ansicanvas_demo // import "ubunatic.com/loom/examples/ansicanvas_demo/ansicanvas_demo"
+
+Package ansicanvas_demo demonstrates embedding loom.AnsiEditor directly in a
+clean, minimal Loom frame for 2D ANSI graphic text editing.
+
+Package ansicanvas_demo is experimental; its API may change between releases.
+See docs/APIStability.md for the package stability policy.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget builds the demo app widget for in-process hosting.
+
+func Run(args []string) error
+    Run executes the ansicanvas_demo command.
+
+
+TYPES
+
+type DemoApp struct {
+	// Has unexported fields.
+}
+    DemoApp embeds loom.AnsiEditor inside a minimal Loom Frame.
+
+func NewDemoApp(buf *loom.AnsiBuffer) *DemoApp
+    NewDemoApp creates a new DemoApp for the given ANSI buffer.
+
+func (a *DemoApp) ConsumeKey(e loom.KeyEvent) loom.EventResult
+    ConsumeKey handles key events and routes them to the editor and frame
+    actions.
+
+func (a *DemoApp) ConsumeMouse(e loom.MouseEvent) loom.EventResult
+    ConsumeMouse handles mouse events and routes them to the editor.
+
+func (a *DemoApp) Draw(c *loom.Canvas, r loom.Rect)
+    Draw renders the frame with live cursor coordinates in the status footer.
+
+func (a *DemoApp) Editor() *loom.AnsiEditor
+    Editor returns the embedded AnsiEditor widget.
+
+func (a *DemoApp) PaneRequest() loom.PaneRequest
+    PaneRequest declares terminal capabilities.
+

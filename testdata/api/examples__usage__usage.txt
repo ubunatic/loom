@@ -1,0 +1,61 @@
+package usage // import "ubunatic.com/loom/examples/usage/usage"
+
+Package usage is experimental; its API may change between releases. See
+docs/APIStability.md for the package stability policy.
+
+Package usage is a small Loom rebuild of the compact Harnez usage watch.
+
+FUNCTIONS
+
+func NewWidget(args []string) (loom.Widget, error)
+    NewWidget parses the standalone command's options and builds its root
+    widget.
+
+func NewWidgetFromOptions(opts Options) (loom.Widget, error)
+    NewWidgetFromOptions creates a hostable widget with an injectable source.
+
+func Run(args []string) error
+
+TYPES
+
+type DataSource interface {
+	Collect(context.Context, time.Time) (Snapshot, error)
+}
+    DataSource collects one coherent example snapshot.
+
+type DataSourceFunc func(context.Context, time.Time) (Snapshot, error)
+    DataSourceFunc adapts a function into a DataSource.
+
+func (f DataSourceFunc) Collect(ctx context.Context, at time.Time) (Snapshot, error)
+    Collect implements DataSource.
+
+type Options struct {
+	Source          DataSource
+	CollectInterval time.Duration
+	RedrawInterval  time.Duration
+	View            string
+}
+    Options configures collection and redraw cadence for a hosted widget.
+
+type Quota struct {
+	Name    string
+	Used    float64
+	ResetIn string
+}
+    Quota is a fake usage window used by this example's All Usage panel.
+
+type Snapshot struct {
+	CapturedAt  time.Time
+	Quotas      []Quota
+	CPUPercent  float64
+	CPUOK       bool
+	CPUHistory  []float64
+	NumCPU      int
+	Load1       float64
+	MemoryUsed  float64 // GiB
+	MemoryTotal float64 // GiB
+	MemoryOK    bool
+	Err         string
+}
+    Snapshot is the immutable data consumed by both example views.
+
