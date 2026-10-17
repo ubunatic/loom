@@ -344,3 +344,4 @@ upkeep.
 | 331 | [331-publish-reusable-virtual-terminal-screen-assertions.md](331-publish-reusable-virtual-terminal-screen-assertions.md) | Publish reusable virtual terminal screen assertions | Open |
 | 332 | [332-split-rich-text-editor-and-pane-implementation-by-concern.md](332-split-rich-text-editor-and-pane-implementation-by-concern.md) | Split rich text editor and pane implementation by concern | Open |
 | 333 | [333-align-lint-and-package-test-targets-with-ci.md](333-align-lint-and-package-test-targets-with-ci.md) | Align lint and package test targets with CI | Open |
+| 334 | [334-github-ci-parallel-jobs-timing-summary-flake-hunt-cloud-agent.md](334-github-ci-parallel-jobs-timing-summary-flake-hunt-cloud-agent.md) | GitHub CI: parallel jobs, timing summary, flake hunt | Open — owned by the Claude cloud agent (ccr branch); placeholder reserved by host |
