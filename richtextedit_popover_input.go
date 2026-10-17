@@ -1,0 +1,305 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package loom
+
+func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
+	e.popoverFocusSet = false
+	e.popoverSubmenuFocusSet = false
+	e.popoverPalette = ""
+	e.popoverSwatches = nil
+	e.popoverSubmenu = ""
+	e.popoverBoxChoices = nil
+	e.popoverAtCursor = false
+	if suppress {
+		e.popoverSuppressed = true
+	}
+}
+
+func (e *RichTextEdit) cancelPopover() {
+	if e.PopoverDefaults.UnselectOnCancel {
+		e.ClearSelection()
+	}
+	e.clearPopoverKeyboardState(true)
+}
+
+func (e *RichTextEdit) finishPopoverAction() {
+	if e.PopoverDefaults.UnselectAfterAction {
+		e.ClearSelection()
+	}
+	if e.PopoverDefaults.ActionClosesMenu {
+		e.clearPopoverKeyboardState(true)
+	}
+}
+
+func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
+	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || (!e.PopoverDefaults.AutoPopupOnSelection && !e.popoverExplicit && !e.popoverAtCursor) {
+		return Ignored(), false
+	}
+	submenuOpen := e.popoverPalette != "" || e.popoverSubmenu != ""
+	popoverArrow := key.Is("up", "down", "left", "right")
+	if !e.popoverFocusSet && !submenuOpen {
+		if popoverArrow {
+			_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
+			if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("down"))) {
+				e.popoverFocus = e.initialPopoverFocus()
+				e.popoverFocusSet = true
+				return Handled(), true
+			}
+			if e.PopoverDefaults.ArrowsCancelUnfocusedMenu {
+				e.cancelPopover()
+			}
+			return Ignored(), false
+		}
+		if key.Is("esc") {
+			e.cancelPopover()
+			return Handled(), true
+		}
+		if e.PopoverDefaults.MenuFocusKey == "" || !key.Is(e.PopoverDefaults.MenuFocusKey) {
+			return Ignored(), false
+		}
+	}
+	if !key.Is(e.PopoverDefaults.MenuFocusKey, "tab", "shift-tab", "backtab", "enter", "return", "space", " ", "esc", "up", "down", "left", "right") {
+		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
+			e.clearPopoverKeyboardState(true)
+		}
+		return Ignored(), false
+	}
+	if !e.popoverCanShow() {
+		e.clearPopoverKeyboardState(true)
+		return Handled(), true
+	}
+	if submenuOpen && !e.popoverSubmenuCanShow() {
+		e.clearPopoverKeyboardState(true)
+		return Handled(), true
+	}
+	firstFocus := !e.popoverFocusSet && e.PopoverDefaults.MenuFocusKey != "" && key.Is(e.PopoverDefaults.MenuFocusKey)
+	if !e.popoverFocusSet {
+		e.popoverFocus = e.initialPopoverFocus()
+		e.popoverFocusSet = true
+	}
+	if firstFocus {
+		return Handled(), true
+	}
+	if submenuOpen {
+		return e.consumePopoverSubmenuKey(key)
+	}
+	switch {
+	case key.Is("esc"):
+		if e.popoverPalette != "" || e.popoverSubmenu != "" {
+			e.popoverPalette = ""
+			e.popoverSwatches = nil
+			e.popoverSubmenu = ""
+			e.popoverBoxChoices = nil
+		} else {
+			e.cancelPopover()
+		}
+		return Handled(), true
+	case key.Is("tab", "shift-tab", "backtab"):
+		direction := 1
+		if key.Is("shift-tab", "backtab") {
+			direction = -1
+		}
+		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
+		return Handled(), true
+	case key.Is("left", "right"):
+		direction := 1
+		if key.Is("left") {
+			direction = -1
+		}
+		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
+		return Handled(), true
+	case key.Is("up", "down"):
+		_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
+		if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("down"))) {
+			e.cancelPopover()
+		}
+		return Handled(), true
+	case key.Is("enter", "return", "space", " "):
+		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
+			return Handled(), true
+		}
+		action := richPopoverActions[e.popoverFocus]
+		if action == "Link" {
+			return Handled(), true
+		}
+		if action == "#FG" || action == "#BG" {
+			e.applyPopoverAction(action)
+			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+			e.popoverSubmenuFocusSet = true
+			if !e.popoverSubmenuCanShow() {
+				e.clearPopoverKeyboardState(true)
+			}
+			return Handled(), true
+		}
+		e.applyPopoverAction(action)
+		if action == "Box" {
+			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+			e.popoverSubmenuFocusSet = true
+			if !e.popoverSubmenuCanShow() {
+				e.clearPopoverKeyboardState(true)
+			}
+			return Handled(), true
+		}
+		return Handled(), true
+	default:
+		return Ignored(), false
+	}
+}
+
+func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool) {
+	if !e.popoverSubmenuFocusSet {
+		e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+		e.popoverSubmenuFocusSet = true
+	}
+	if key.Is("esc") {
+		e.popoverPalette = ""
+		e.popoverSwatches = nil
+		e.popoverSubmenu = ""
+		e.popoverBoxChoices = nil
+		e.popoverSubmenuFocusSet = false
+		return Handled(), true
+	}
+	if key.Is("tab", "shift-tab", "backtab", "up", "down", "left", "right") {
+		direction := 1
+		if key.Is("shift-tab", "backtab", "up", "left") {
+			direction = -1
+		}
+		count := e.popoverSubmenuChoiceCount()
+		if count > 0 {
+			next := e.popoverSubmenuFocus + direction
+			if e.PopoverDefaults.CycleNavigation {
+				next = (next + count) % count
+			}
+			e.popoverSubmenuFocus = min(max(next, 0), count-1)
+		}
+		return Handled(), true
+	}
+	if key.Is("enter", "return", "space", " ") {
+		if e.popoverPalette != "" {
+			palette := e.popoverPalette
+			e.applyPopoverColor(palette, ColorIndex(uint8(e.popoverSubmenuFocus)))
+			return Handled(), true
+		}
+		labels := e.boxSubmenuLabels()
+		if e.popoverSubmenu == "Box" && e.popoverSubmenuFocus >= 0 && e.popoverSubmenuFocus < len(labels) {
+			e.applyBoxStyleChoice(labels[e.popoverSubmenuFocus])
+			return Handled(), true
+		}
+		return Handled(), true
+	}
+	return Ignored(), false
+}
+
+func (e *RichTextEdit) popoverSubmenuChoiceCount() int {
+	if e.popoverPalette != "" {
+		return 16
+	}
+	if e.popoverSubmenu == "Box" {
+		return len(e.boxSubmenuLabels())
+	}
+	return 0
+}
+
+func (e *RichTextEdit) initialPopoverSubmenuFocus() int {
+	if e.popoverSubmenu == "Box" && !e.HasSelection {
+		return len(e.boxSubmenuLabels()) - 1
+	}
+	return 0
+}
+
+func (e *RichTextEdit) popoverSubmenuCanShow() bool {
+	if !e.popoverCanShow() {
+		return false
+	}
+	r := e.lastRect
+	if e.popoverPalette != "" && r.W < 16 {
+		return false
+	}
+	if e.popoverSubmenu == "Box" {
+		width := 2 + len(e.boxSubmenuLabels()) - 1
+		for _, label := range e.boxSubmenuLabels() {
+			width += len(label) + 2
+		}
+		if width > r.W {
+			return false
+		}
+	}
+	return true
+}
+
+func (e *RichTextEdit) nextPopoverFocus(current, direction int) int {
+	for range len(richPopoverActions) {
+		next := current + direction
+		if !e.PopoverDefaults.CycleNavigation && (next < 0 || next >= len(richPopoverActions)) {
+			return current
+		}
+		current = (next + len(richPopoverActions)) % len(richPopoverActions)
+		if e.popoverActionEnabled(current) {
+			return current
+		}
+	}
+	return current
+}
+
+func (e *RichTextEdit) popoverActionEnabled(index int) bool {
+	if index < 0 || index >= len(richPopoverActions) || richPopoverActions[index] == "Link" {
+		return false
+	}
+	return e.HasSelection || richPopoverActions[index] == "Box"
+}
+
+func (e *RichTextEdit) initialPopoverFocus() int {
+	if !e.HasSelection && e.popoverAtCursor {
+		return 7
+	}
+	if e.boxSelection != nil {
+		return 7
+	}
+	for i, active := range []func(Style) bool{
+		func(s Style) bool { return s.Bold },
+		func(s Style) bool { return s.Italic },
+		func(s Style) bool { return s.Underline },
+	} {
+		if e.selectionUniformlyHas(active) {
+			return i
+		}
+	}
+	return 0
+}
+
+func (e *RichTextEdit) popoverCanShow() bool {
+	r := e.lastRect
+	if r.W < 18 || r.H < 3 || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode || !e.ShowPopover {
+		return false
+	}
+	lines := e.documentLines()
+	anchorLine, anchorCol := e.cursorCoordinates(lines)
+	if !e.popoverAtCursor {
+		from, _ := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		anchorLine, anchorCol = from.Line, richLineColumn(lines[from.Line], from.Offset)
+	}
+	anchorX := anchorCol - e.ScrollX
+	anchorY := anchorLine - e.ScrollY
+	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
+		return false
+	}
+	width := 2
+	for i, label := range SpeccedDefaults.RichTextEdit.PopoverLabels {
+		width += len(label) + 1
+		if i > 0 {
+			width++
+		}
+	}
+	barY := 0
+	if anchorY >= 2 {
+		barY = anchorY - 2
+	} else if anchorY+2 < r.H {
+		barY = anchorY + 2
+	} else {
+		return false
+	}
+	barX := min(max(0, anchorX-width/2), r.W-width)
+	return barX >= 0 && barY >= 0 && barY < r.H
+}
