@@ -1,6 +1,6 @@
 # GitHub CI: parallel jobs, timing summary, flake hunt
 
-Status: In Progress — owned by the Claude cloud agent (ccr branch)
+Status: Closed — parallel jobs, gorelease api check, nightly flake workflow; green on main (run 39149898741); flakes filed as GitHub #20, #21
 
 Scope: .github/ only — same design as harnez issue 809.
 
