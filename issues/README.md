@@ -350,3 +350,4 @@ upkeep.
 | 337 | [337-stabilize-pty-race-tests-with-screen-state-waits.md](337-stabilize-pty-race-tests-with-screen-state-waits.md) | Stabilize PTY race tests with screen-state waits | Closed — resolved in a1b4372 |
 | 338 | [338-restore-public-graph-and-collector-default-constants.md](338-restore-public-graph-and-collector-default-constants.md) | Restore public graph and collector default constants | Closed — resolved in a1b4372 |
 | 339 | [339-split-pane-run-by-lifecycle-concern.md](339-split-pane-run-by-lifecycle-concern.md) | Split Pane.run by lifecycle concern | Closed — resolved in a1b4372 |
+| 340 | [340-flaky-test304editptypopoverbackdropisolation-under-race-github-21.md](340-flaky-test304editptypopoverbackdropisolation-under-race-github-21.md) | Flaky Test304EditPTYPopoverBackdropIsolation under -race (GitHub #21) | Open |
