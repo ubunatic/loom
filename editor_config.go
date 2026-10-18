@@ -35,13 +35,13 @@ type EditorConfig struct {
 // DefaultEditorConfigPath returns the XDG config path for editor.yaml (~/.config/loom/editor.yaml).
 func DefaultEditorConfigPath() string {
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		return filepath.Join(xdg, "loom", "editor.yaml")
+		return filepath.Join(xdg, SpeccedDefaults.Editor.ConfigDirectory, SpeccedDefaults.Editor.ConfigFile)
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(".config", "loom", "editor.yaml")
+		return filepath.Join(SpeccedDefaults.Editor.ConfigFallbackDirectory, SpeccedDefaults.Editor.ConfigDirectory, SpeccedDefaults.Editor.ConfigFile)
 	}
-	return filepath.Join(home, ".config", "loom", "editor.yaml")
+	return filepath.Join(home, SpeccedDefaults.Editor.ConfigFallbackDirectory, SpeccedDefaults.Editor.ConfigDirectory, SpeccedDefaults.Editor.ConfigFile)
 }
 
 // LoadEditorConfig loads, parses, and validates editor preferences.

@@ -1408,10 +1408,10 @@ func TestRichTextEditNewEditClearsRedoBranch(t *testing.T) {
 
 func TestRichTextEditUndoLimit(t *testing.T) {
 	e := richTestEditor()
-	for range richUndoLimit + 20 {
+	for range SpeccedDefaults.RichTextEdit.UndoLimit + 20 {
 		richTestType(e, "a ")
 	}
-	if len(e.undoStack) != richUndoLimit {
+	if len(e.undoStack) != SpeccedDefaults.RichTextEdit.UndoLimit {
 		t.Fatalf("undo stack = %d", len(e.undoStack))
 	}
 }

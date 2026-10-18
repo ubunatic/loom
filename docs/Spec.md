@@ -195,3 +195,35 @@ hardcode Go literals that duplicate `spec/themes.yaml` or `spec/box.yaml`.
 Use `Theme(name)` or the embedded spec instead (see the `grid.go` `NewGrid`
 fix in issues/055, which replaced `ColorIndex(238)` with
 `Theme("plain").FocusBGColor()`).
+
+
+## Editor defaults
+
+[`spec/defaults.yaml`](../spec/defaults.yaml), validated by
+[`defaults.schema.json`](../spec/schemas/defaults.schema.json), owns `loom edit`
+defaults. Edit the YAML and rebuild/install to change them; it is embedded at
+compile time. No additional runtime configuration file is required.
+
+- `editor`: theme, mouse capture, alternate screen, initial pane height and
+  width cap, resize behavior, file-bar/sidebar visibility, browser width rules,
+  search overlay dimensions and initial mode, case sensitivity, status/hint
+  visibility, chrome glyphs, text, dialog buttons, hotkeys and screenshot naming,
+  directories, permissions and fallback dimensions. Config-path components also
+  live here; XDG environment handling follows the OS convention.
+- `rich_text_edit`: shared editor controls under `bindings`, undo limit,
+  multi-click interval, cursor/popover visibility, help dimensions and page step,
+  file creation policy, save permissions/final newline, file status chrome and
+  existing formatting/popover defaults. Binding groups include modifiers used by
+  selection and menu navigation; update related groups and help entries together.
+  Page navigation accepts `pgdown`/`pgup`, `pgdn`, `pagedown` and `pageup`.
+- `themes.yaml`, `box.yaml`, `cursor.yaml` and the other `defaults.yaml` sections
+  continue to own shared theme roles, box/cursor glyphs, pane and widget behavior.
+
+The editor uses logical lines with horizontal scrolling. It has no soft-wrap,
+line-number gutter or tab-expansion setting; raw text follows the existing
+Unicode display-width rules. Border thickness, row offsets, coordinate
+translation, ANSI encoding, input event names and format/action identifiers
+remain implementation or protocol mechanics. File formats and API contracts
+remain unchanged. `spec/schemas/editor.schema.json` continues to validate the
+existing runtime theme/mouse/alternate-screen preferences, separately from the
+embedded defaults schema.

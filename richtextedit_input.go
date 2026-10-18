@@ -49,14 +49,14 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		}
 		return Handled()
 	}
-	if key.Is("f1") {
+	if key.Is(SpeccedDefaults.RichTextEdit.HotkeyHelpBinding) {
 		e.ensureFileBar()
 		e.fileBar.menu.Open = false
 		e.fileBar.menu.SetFocus(false)
-		e.helpPopup = NewPopup("RichTextEdit Help", newRichTextEditHelp(e.helpSections))
+		e.helpPopup = NewPopup(SpeccedDefaults.RichTextEdit.HelpTitle, newRichTextEditHelp(e.helpSections))
 		return Handled()
 	}
-	if key.Is("f10") {
+	if key.Is(SpeccedDefaults.RichTextEdit.HotkeyQuitBinding) {
 		return Ignored()
 	}
 	if e.ShowFileBar {
@@ -69,7 +69,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		e.clampPosition(&e.Cursor, e.documentLines())
 		e.Cursor = e.normalizePosition(e.Cursor, 0)
 	}
-	if !key.Is("enter", "return") && (key.Key != "" || key.Text == "") {
+	if !key.Is(SpeccedDefaults.RichTextEdit.Bindings["newline"]...) && (key.Key != "" || key.Text == "") {
 		e.typingRun = false
 	}
 	if e.ViewMode && !richViewModeKey(key) {
@@ -82,7 +82,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	if e.ViewMode && e.BoxMode {
 		e.toggleBoxMode()
 	}
-	preserveSelection := !e.popoverFocusSet && e.popoverOpen() && key.Is("left", "right", "up", "down") && !e.PopoverDefaults.UnselectOnCancel
+	preserveSelection := !e.popoverFocusSet && e.popoverOpen() && key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...) && !e.PopoverDefaults.UnselectOnCancel
 	if result, handled := e.consumePopoverKey(key); handled {
 		return result
 	}
@@ -103,33 +103,33 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	}
 	if e.BoxMode {
 		switch {
-		case key.Is("esc", "enter", "return"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["box_exit"]...):
 			e.toggleBoxMode()
 			return Handled()
-		case key.Is("up"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...):
 			e.drawBoxStep(-1, 0)
 			return Handled()
-		case key.Is("right"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["right"]...):
 			e.drawBoxStep(0, 1)
 			return Handled()
-		case key.Is("down"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...):
 			e.drawBoxStep(1, 0)
 			return Handled()
-		case key.Is("left"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["left"]...):
 			e.drawBoxStep(0, -1)
 			return Handled()
-		case key.Is("ctrl-z", "ctrl-y", "ctrl-r", "ctrl-shift-y", "ctrl-shift-z"):
+		case key.Is(SpeccedDefaults.RichTextEdit.Bindings["history"]...):
 			e.toggleBoxMode()
 		default:
 			return Ignored()
 		}
 	}
 	switch {
-	case key.Is("ctrl-b"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["bold"]...):
 		e.toggleAttribute(func(s *Style, on bool) { s.Bold = on }, func(s Style) bool { return s.Bold })
-	case key.Is("ctrl-i") || (key.Is("tab") && e.HasSelection):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["italic"]...) || (key.Is(SpeccedDefaults.RichTextEdit.Bindings["tab"]...) && e.HasSelection):
 		e.toggleAttribute(func(s *Style, on bool) { s.Italic = on }, func(s Style) bool { return s.Italic })
-	case key.Is("ctrl-u"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["underline"]...):
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case key.Is(e.PopoverDefaults.PopupOpenKey):
 		e.dragSelecting = false
@@ -148,14 +148,14 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 			e.popoverAtCursor = true
 			e.ShowPopover = true
 		}
-	case key.Is("ctrl-c", "ctrl-insert"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["copy"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
 		if !e.copySelectionOrWord() {
 			return Ignored()
 		}
-	case key.Is("ctrl-x", "shift-delete"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["cut"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
@@ -164,25 +164,25 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 				e.deleteSelection()
 			}
 		})
-	case key.Is("ctrl-v", "shift-insert"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["paste"]...):
 		e.mutate(false, false, func() { e.insertRich(e.clipboard) })
-	case key.Is("ctrl-z", "ctrl-y"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["undo"]...):
 		e.undo()
-	case key.Is("ctrl-r", "ctrl-shift-y", "ctrl-shift-z"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["redo"]...):
 		e.redo()
-	case key.Is("left", "shift-left"):
-		e.moveHorizontal(-1, key.Is("shift-left"))
-	case key.Is("right", "shift-right"):
-		e.moveHorizontal(1, key.Is("shift-right"))
-	case key.Is("up", "shift-up"):
-		e.moveVertical(-1, key.Is("shift-up"))
-	case key.Is("down", "shift-down"):
-		e.moveVertical(1, key.Is("shift-down"))
-	case key.Is("home", "shift-home", "ctrl-a", "ctrl-shift-a"):
-		e.moveCursor(RichPosition{Line: e.Cursor.Line}, key.Is("shift-home", "ctrl-shift-a"))
-	case key.Is("end", "shift-end", "ctrl-e", "ctrl-shift-e"):
-		e.moveCursor(RichPosition{Line: e.Cursor.Line, Offset: richLineRuneCount(e.documentLines()[e.Cursor.Line])}, key.Is("shift-end", "ctrl-shift-e"))
-	case key.Is("ctrl-left"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["move_left"]...):
+		e.moveHorizontal(-1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_left"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["move_right"]...):
+		e.moveHorizontal(1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_right"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["move_up"]...):
+		e.moveVertical(-1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_up"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["move_down"]...):
+		e.moveVertical(1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_down"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["line_start"]...):
+		e.moveCursor(RichPosition{Line: e.Cursor.Line}, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_start"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["line_end"]...):
+		e.moveCursor(RichPosition{Line: e.Cursor.Line, Offset: richLineRuneCount(e.documentLines()[e.Cursor.Line])}, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_end"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["word_left"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
@@ -192,7 +192,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		} else {
 			e.moveCursor(e.wordPosition(-1), false)
 		}
-	case key.Is("ctrl-right"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["word_right"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
@@ -202,14 +202,14 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		} else {
 			e.moveCursor(e.wordPosition(1), false)
 		}
-	case key.Is("enter", "return"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["newline"]...):
 		e.mutate(true, true, func() { e.insertText("\n") })
-	case key.Is("backspace"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["delete_before"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
 		e.mutate(false, false, func() { e.deleteDirection(-1) })
-	case key.Is("delete"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["delete_after"]...):
 		if e.cursorInVoid {
 			return Ignored()
 		}
@@ -228,6 +228,5 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 
 // richViewModeKey reports whether key is navigation, selection or copy.
 func richViewModeKey(key KeyEvent) bool {
-	return key.Is("ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up",
-		"down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-a", "ctrl-shift-a", "ctrl-e", "ctrl-shift-e", "ctrl-left", "ctrl-right")
+	return key.Is(SpeccedDefaults.RichTextEdit.Bindings["view_navigation"]...)
 }

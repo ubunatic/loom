@@ -109,15 +109,10 @@ type RichTextEdit struct {
 	boxStrokeFGSet         bool
 }
 
-const (
-	richUndoLimit        = 100
-	richMultiClickWindow = 400 * time.Millisecond
-)
-
 // NewRichTextEdit creates a rich text view for doc. A nil document is treated
 // as an empty document.
 func NewRichTextEdit(doc *RichDocument) *RichTextEdit {
-	e := &RichTextEdit{Document: doc, PopoverDefaults: SpeccedDefaults.RichTextEdit, ShowCursor: true, ShowPopover: true, GhostCursorEnabled: SpeccedDefaults.RichTextEdit.GhostCursorEnabled, focused: true}
+	e := &RichTextEdit{Document: doc, PopoverDefaults: SpeccedDefaults.RichTextEdit, ShowCursor: SpeccedDefaults.RichTextEdit.ShowCursor, ShowPopover: SpeccedDefaults.RichTextEdit.ShowPopover, GhostCursorEnabled: SpeccedDefaults.RichTextEdit.GhostCursorEnabled, focused: true}
 	e.savedDocument = cloneRichDocumentLines(doc)
 	return e
 }
@@ -169,9 +164,9 @@ func (e *RichTextEdit) HotkeyHint(width int) string {
 // HotkeyBar returns structured, clickable hints for the editor's key actions.
 // Draw the bar in the host's hint row and route row-local mouse events to it.
 func (e *RichTextEdit) HotkeyBar() *HintBar {
-	mode := "View"
+	mode := SpeccedDefaults.RichTextEdit.ViewLabel
 	if e.ViewMode {
-		mode = "Edit"
+		mode = SpeccedDefaults.RichTextEdit.EditLabel
 	}
 	defs := SpeccedDefaults.RichTextEdit
 	entry := func(binding, label string) HintEntry {

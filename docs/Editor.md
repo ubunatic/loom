@@ -50,7 +50,7 @@ mousegrab: true
 altscreen: true
 ```
 
-The schema ships in the repository and is embedded for runtime validation; no external schema installation is performed. `--config`, `--theme`, `--mousegrab=false` and `--altscreen=false` override file preferences. Defaults are plain theme, mouse capture off, alternate screen on.
+The schema ships in the repository and is embedded for runtime validation; no external schema installation is performed. `--config`, `--theme`, `--mousegrab=false` and `--altscreen=false` override file preferences. Defaults come from the `editor` section of [spec/defaults.yaml](../spec/defaults.yaml): `julia256` theme, mouse capture off, alternate screen on. Shared editor controls and limits are in `rich_text_edit`. See [Editor defaults](Spec.md#editor-defaults) for the full ownership map; edit the embedded YAML and rebuild/install to manage defaults.
 
 
 Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `9f41045`, is draft/unmerged and proposes issues 280–284. Recheck live code, PR state and recent history before beginning ticket work.

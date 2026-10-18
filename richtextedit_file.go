@@ -106,7 +106,7 @@ func NewRichTextEditFromFileWith(path string, opts MarkupOptions) (*RichTextEdit
 		}
 	} else if err == nil {
 		doc.FromANSI(string(data))
-	} else if os.IsNotExist(err) {
+	} else if os.IsNotExist(err) && SpeccedDefaults.RichTextEdit.CreateMissingFile {
 		doc.Lines = []RichLine{{}}
 	} else {
 		return nil, fmt.Errorf("read RichTextEdit file %q: %w", path, err)
@@ -176,7 +176,11 @@ func (e *RichTextEdit) SaveAs(path string) error {
 	if e.SerializeDocument == nil && IsMarkupPath(path) {
 		data = []byte(e.Document.ToMarkup())
 	} else if e.SerializeDocument == nil {
-		data = []byte(e.Document.ToANSI() + "\n")
+		text := e.Document.ToANSI()
+		if SpeccedDefaults.RichTextEdit.FinalNewline {
+			text += "\n"
+		}
+		data = []byte(text)
 	} else {
 		data, err = e.SerializeDocument(e.Document)
 		if err != nil {
@@ -184,7 +188,7 @@ func (e *RichTextEdit) SaveAs(path string) error {
 			return e.LastSaveError
 		}
 	}
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, data, os.FileMode(SpeccedDefaults.RichTextEdit.FileMode)); err != nil {
 		e.LastSaveError = fmt.Errorf("loom: write rich document %q: %w", path, err)
 		return e.LastSaveError
 	}
@@ -244,7 +248,7 @@ func (e *RichTextEdit) openSavePicker() error {
 		return fmt.Errorf("loom: open save destination picker: %w", err)
 	}
 	e.savePicker = picker
-	e.savePopup = NewPopup("Save as", picker)
+	e.savePopup = NewPopup(SpeccedDefaults.RichTextEdit.SaveTitle, picker)
 	e.savePopup.Width = SpeccedDefaults.RichTextEdit.SavePopupMaxWidth
 	e.savePopup.Height = SpeccedDefaults.RichTextEdit.SavePopupMaxHeight
 	e.savePopup.Style = DefaultMenuStyle().Normal

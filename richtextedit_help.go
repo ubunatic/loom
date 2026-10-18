@@ -38,7 +38,9 @@ func (h *richTextEditHelp) plainLines(width int) []string {
 	return lines
 }
 
-func (h *richTextEditHelp) ContentHeight() int { return len(KeyHelpSections(h.sections, 68)) + 1 }
+func (h *richTextEditHelp) ContentHeight() int {
+	return len(KeyHelpSections(h.sections, SpeccedDefaults.RichTextEdit.HelpMaxWidth-4)) + 1
+}
 
 func (h *richTextEditHelp) Draw(c *Canvas, r Rect) {
 	if c == nil || r.W <= 0 || r.H <= 0 {
@@ -67,28 +69,28 @@ func (h *richTextEditHelp) Draw(c *Canvas, r Rect) {
 	if r.H > 0 {
 		y := r.Y + r.H - 1
 		c.PaintSurface(Rect{X: r.X, Y: y, W: r.W, H: 1}, Style{})
-		c.Write(r.X, y, TruncateText("↑/↓ Scroll · Esc Close", r.W, ""), Style{Dim: true})
+		c.Write(r.X, y, TruncateText(SpeccedDefaults.RichTextEdit.HelpFooter, r.W, ""), Style{Dim: true})
 	}
 }
 
 func (h *richTextEditHelp) ConsumeKey(e KeyEvent) EventResult {
 	switch {
-	case e.Is("up"):
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...):
 		h.scroll = max(0, h.scroll-1)
 		return Handled()
-	case e.Is("down"):
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...):
 		h.scroll++
 		return Handled()
-	case e.Is("pgup", "pageup"):
-		h.scroll = max(0, h.scroll-5)
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["page_up"]...):
+		h.scroll = max(0, h.scroll-SpeccedDefaults.RichTextEdit.HelpPageStep)
 		return Handled()
-	case e.Is("pgdn", "pgdown", "pagedown"):
-		h.scroll = min(h.maxScroll, h.scroll+5)
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["page_down"]...):
+		h.scroll = min(h.maxScroll, h.scroll+SpeccedDefaults.RichTextEdit.HelpPageStep)
 		return Handled()
-	case e.Is("home"):
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["home"]...):
 		h.scroll = 0
 		return Handled()
-	case e.Is("end"):
+	case e.Is(SpeccedDefaults.RichTextEdit.Bindings["end"]...):
 		h.scroll = h.maxScroll
 		return Handled()
 	default:

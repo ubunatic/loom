@@ -154,8 +154,8 @@ func (e *RichTextEdit) finishBoxStroke() {
 		return
 	}
 	e.undoStack = append(e.undoStack, before)
-	if len(e.undoStack) > richUndoLimit {
-		e.undoStack = e.undoStack[len(e.undoStack)-richUndoLimit:]
+	if len(e.undoStack) > SpeccedDefaults.RichTextEdit.UndoLimit {
+		e.undoStack = e.undoStack[len(e.undoStack)-SpeccedDefaults.RichTextEdit.UndoLimit:]
 	}
 	e.redoStack = nil
 }

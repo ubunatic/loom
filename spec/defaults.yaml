@@ -80,6 +80,62 @@ media:
   loading_threshold: 50ms
 
 editor:
+  search_regex: false
+  search_case_insensitive: true
+  screenshot_first_number: 1
+  screenshot_safe_characters: ".-_"
+  screenshot_replacement: "-"
+  config_directory: "loom"
+  config_file: "editor.yaml"
+  config_fallback_directory: ".config"
+  title: "loom edit"
+  initial_height: 24
+  max_cols: 0
+  resizeable: true
+  show_file_bar: true
+  show_side_panel: false
+  browser_max_width: 24
+  browser_width_divisor: 3
+  browser_min_width: 10
+  browser_narrow_divisor: 2
+  search_max_width: 48
+  search_max_height: 7
+  footer_min_height: 6
+  show_status_bar: true
+  show_hints: true
+  title_prefix: "─ "
+  title_suffix: " "
+  divider_glyph: "─"
+  browser_divider_glyph: "│"
+  position_format: "Ln %d, Col %d"
+  truncation: "..."
+  saved_prefix: "Saved: "
+  unsaved_title: "Save changes?"
+  unsaved_message: "Save changes to %s before closing?"
+  save_label: "Save"
+  discard_label: "Discard"
+  cancel_label: "Cancel"
+  search_title: "Search  F3 / ^F"
+  invalid_regex: "Invalid regex"
+  no_matches: "No matches"
+  match_format: "%d / %d matches"
+  search_navigation_hint: "Enter: next   S-Enter: prev"
+  normal_label: "Normal"
+  regex_label: "Regex"
+  mode_marker: " *"
+  regex_key_cap: "^R"
+  screenshot_directory: ["Pictures", "Screenshots"]
+  screenshot_marker: "-loom-edit-"
+  screenshot_number_width: 2
+  screenshot_extension: ".ansi"
+  screenshot_untitled: "document"
+  screenshot_width: 100
+  screenshot_height: 24
+  screenshot_directory_mode: 0o755
+  screenshot_file_mode: 0o644
+  screenshot_saved_prefix: "Saved screenshot: "
+  box_drop_priority: 1
+  screenshot_drop_priority: 2
   status_icons:
     theme: "◐"
     mouse_on: "M"
@@ -153,6 +209,79 @@ table:
   controls_hint_fmt: "[tab:%s%s !:flip]"
 
 rich_text_edit:
+  bindings:
+    up: ["up"]
+    down: ["down"]
+    left: ["left"]
+    right: ["right"]
+    cancel: ["esc"]
+    tab: ["tab"]
+    reverse_tab: ["shift-tab"]
+    focus: ["tab", "shift-tab"]
+    selection_italic: ["tab", "ctrl-i"]
+    search_next: ["enter"]
+    search_previous: ["shift-enter"]
+    regex: ["ctrl-r"]
+    newline: ["enter", "return"]
+    box_exit: ["esc", "enter", "return"]
+    bold: ["ctrl-b"]
+    italic: ["ctrl-i"]
+    underline: ["ctrl-u"]
+    copy: ["ctrl-c", "ctrl-insert"]
+    cut: ["ctrl-x", "shift-delete"]
+    paste: ["ctrl-v", "shift-insert"]
+    undo: ["ctrl-z", "ctrl-y"]
+    redo: ["ctrl-r", "ctrl-shift-y", "ctrl-shift-z"]
+    history: ["ctrl-z", "ctrl-y", "ctrl-r", "ctrl-shift-y", "ctrl-shift-z"]
+    move_left: ["left", "shift-left"]
+    move_right: ["right", "shift-right"]
+    move_up: ["up", "shift-up"]
+    move_down: ["down", "shift-down"]
+    select_left: ["shift-left"]
+    select_right: ["shift-right"]
+    select_up: ["shift-up"]
+    select_down: ["shift-down"]
+    line_start: ["home", "shift-home", "ctrl-a", "ctrl-shift-a"]
+    line_end: ["end", "shift-end", "ctrl-e", "ctrl-shift-e"]
+    select_start: ["shift-home", "ctrl-shift-a"]
+    select_end: ["shift-end", "ctrl-shift-e"]
+    word_left: ["ctrl-left"]
+    word_right: ["ctrl-right"]
+    delete_before: ["backspace"]
+    delete_after: ["delete"]
+    arrows: ["left", "right", "up", "down"]
+    menu_focus: ["tab", "shift-tab", "backtab"]
+    menu_reverse: ["shift-tab", "backtab"]
+    horizontal: ["left", "right"]
+    vertical: ["up", "down"]
+    activate: ["enter", "return", "space", " "]
+    submenu_move: ["tab", "shift-tab", "backtab", "up", "down", "left", "right"]
+    submenu_reverse: ["shift-tab", "backtab", "up", "left"]
+    page_up: ["pgup", "pageup"]
+    page_down: ["pgdn", "pgdown", "pagedown"]
+    home: ["home"]
+    end: ["end"]
+    view_navigation: ["ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up", "down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-a", "ctrl-shift-a", "ctrl-e", "ctrl-shift-e", "ctrl-left", "ctrl-right"]
+  undo_limit: 100
+  multi_click_window: "400ms"
+  show_cursor: true
+  show_popover: true
+  help_title: "RichTextEdit Help"
+  help_max_width: 72
+  help_max_height: 18
+  help_page_step: 5
+  help_footer: "↑/↓ Scroll · Esc Close"
+  save_title: "Save as"
+  file_mode: 0o644
+  final_newline: true
+  create_missing_file: true
+  view_label: "View"
+  edit_label: "Edit"
+  untitled_name: "Untitled"
+  box_hint: "[Box] Enter/Esc exits"
+  status_separator: " · "
+  status_truncation: "…"
+  popover_min_width: 18
   action_closes_menu: true
   menu_focus_key: ""
   arrows_cancel_unfocused_menu: true

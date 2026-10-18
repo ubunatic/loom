@@ -28,7 +28,7 @@ func (e *RichTextEdit) ensureFileBar() *richTextEditFileBar {
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyOpenLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyOpenBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestOpen() }},
 			{Label: SpeccedDefaults.RichTextEdit.HotkeyCloseLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeyCloseBinding), Action: func() { bar.menu.SetFocus(false); bar.edit.RequestClose() }},
 			{Label: defs.HotkeySaveLabel, Shortcut: KeyCap(SpeccedDefaults.RichTextEdit.HotkeySaveBinding), Action: func() { bar.save() }},
-			{Label: defs.HotkeySaveAsLabel + "…", Action: func() { bar.saveAs() }},
+			{Label: defs.HotkeySaveAsLabel + SpeccedDefaults.RichTextEdit.StatusTruncation, Action: func() { bar.saveAs() }},
 		},
 	})
 	bar.menu.Bottom = true
@@ -54,7 +54,7 @@ func (b *richTextEditFileBar) ConsumeKey(key KeyEvent) EventResult {
 	active := b.menu.Open || b.menu.Focused()
 	result := b.menu.ConsumeKey(key)
 	if !active {
-		if key.Is("f7") {
+		if key.Is(SpeccedDefaults.RichTextEdit.HotkeyViewEditBinding) {
 			if b.edit.BoxMode {
 				b.edit.toggleBoxMode()
 			}
@@ -94,12 +94,12 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 	status := b.status()
 	hints := ""
 	if b.edit.BoxMode {
-		hints = "[Box] Enter/Esc exits"
+		hints = SpeccedDefaults.RichTextEdit.BoxHint
 	}
-	statusSeparator := strings.LastIndex(status, " · ")
+	statusSeparator := strings.LastIndex(status, SpeccedDefaults.RichTextEdit.StatusSeparator)
 	minimumStatusWidth := StringWidth(status)
 	if statusSeparator >= 0 {
-		minimumStatusWidth = StringWidth("…" + status[statusSeparator:])
+		minimumStatusWidth = StringWidth(SpeccedDefaults.RichTextEdit.StatusTruncation + status[statusSeparator:])
 	}
 	minimumRowWidth := titleWidth + 1 + minimumStatusWidth + 1 + StringWidth(hints)
 	if StringWidth(hints) > available || bounds.W < minimumRowWidth {
@@ -113,8 +113,8 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 		text := " " + truncateRichTextFileBarStatus(status, statusWidth-1)
 		style := Style{FG: theme.PlaceholderFG.Color(), BG: theme.NormalBG.Color()}
 		c.Write(statusStart, row, text, style)
-		if separator := strings.LastIndex(text, " · "); separator >= 0 {
-			state := text[separator+len(" · "):]
+		if separator := strings.LastIndex(text, SpeccedDefaults.RichTextEdit.StatusSeparator); separator >= 0 {
+			state := text[separator+len(SpeccedDefaults.RichTextEdit.StatusSeparator):]
 			stateStyle := normal
 			switch state {
 			case DocStateUntitled.Label():
@@ -126,7 +126,7 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 			case DocStateError.Label():
 				stateStyle.FG = theme.MediaErrorFG.Color()
 			}
-			c.Write(statusStart+StringWidth(text[:separator+len(" · ")]), row, state, stateStyle)
+			c.Write(statusStart+StringWidth(text[:separator+len(SpeccedDefaults.RichTextEdit.StatusSeparator)]), row, state, stateStyle)
 		}
 	}
 	if hintWidth > 0 {
@@ -137,27 +137,27 @@ func (b *richTextEditFileBar) Draw(c *Canvas, bounds Rect) {
 func (b *richTextEditFileBar) status() string {
 	e := b.edit
 	e.ensureDocument()
-	name := "Untitled"
+	name := SpeccedDefaults.RichTextEdit.UntitledName
 	if e.FilePath != "" {
 		name = filepath.Base(e.FilePath)
 	}
 	status := e.DocState().Label()
-	return name + " · " + status
+	return name + SpeccedDefaults.RichTextEdit.StatusSeparator + status
 }
 
 func truncateRichTextFileBarStatus(status string, width int) string {
 	if StringWidth(status) <= width {
 		return status
 	}
-	separator := strings.LastIndex(status, " · ")
+	separator := strings.LastIndex(status, SpeccedDefaults.RichTextEdit.StatusSeparator)
 	if separator < 0 {
-		return TruncateText(status, width, "…")
+		return TruncateText(status, width, SpeccedDefaults.RichTextEdit.StatusTruncation)
 	}
 	suffix := status[separator:]
 	suffixWidth := StringWidth(suffix)
 	if suffixWidth >= width {
-		return TruncateText(status, width, "…")
+		return TruncateText(status, width, SpeccedDefaults.RichTextEdit.StatusTruncation)
 	}
 	nameWidth := width - suffixWidth
-	return TruncateText(status[:separator], nameWidth, "…") + suffix
+	return TruncateText(status[:separator], nameWidth, SpeccedDefaults.RichTextEdit.StatusTruncation) + suffix
 }

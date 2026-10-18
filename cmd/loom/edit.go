@@ -67,7 +67,6 @@ func editCommand() *cobra.Command {
 			}
 
 			edit := loom.NewRichTextEdit(nil)
-			edit.ShowFileBar = true
 			if path != "" {
 				edit, err = loom.NewRichTextEditFromFileWith(path, media.MarkupOptions(path))
 				if err != nil {
@@ -75,7 +74,9 @@ func editCommand() *cobra.Command {
 				}
 			}
 
-			pane, err := loom.New(24)
+			edit.ShowFileBar = loom.SpeccedDefaults.Editor.ShowFileBar
+
+			pane, err := loom.New(loom.SpeccedDefaults.Editor.InitialHeight)
 			if err != nil {
 				return err
 			}
@@ -93,15 +94,15 @@ func editCommand() *cobra.Command {
 
 	cmd.Flags().StringVarP(&configPath, "config", "c", "", "path to editor settings YAML file")
 	cmd.Flags().StringVarP(&themeName, "theme", "t", "", "color theme name")
-	cmd.Flags().BoolVarP(&mouseGrab, "mousegrab", "m", false, "enable mouse tracking/capture")
-	cmd.Flags().BoolVarP(&altScreen, "altscreen", "a", true, "use alternate screen buffer")
+	cmd.Flags().BoolVarP(&mouseGrab, "mousegrab", "m", loom.SpeccedDefaults.Editor.MouseGrab, "enable mouse tracking/capture")
+	cmd.Flags().BoolVarP(&altScreen, "altscreen", "a", loom.SpeccedDefaults.Editor.AltScreen, "use alternate screen buffer")
 
 	return cmd
 }
 
 func configureEditPane(pane *loom.Pane, cfg loom.EditorConfig) {
-	pane.MaxCols = 0
-	pane.Resizeable = true
+	pane.MaxCols = loom.SpeccedDefaults.Editor.MaxCols
+	pane.Resizeable = loom.SpeccedDefaults.Editor.Resizeable
 	pane.ResizeConfig.FullAlt = cfg.AltScreen
 	if cfg.MouseGrab {
 		pane.EnableMouse()
@@ -156,7 +157,8 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 		filePath:      path,
 		config:        cfg,
 		focused:       focusEditor,
-		showSidePanel: false, // initial toggle state
+		showSidePanel: loom.SpeccedDefaults.Editor.ShowSidePanel,
+		regexMode:     loom.SpeccedDefaults.Editor.SearchRegex,
 	}
 
 	v.bindEdit()
@@ -202,7 +204,7 @@ func (v *editView) bindEdit() {
 	v.edit.OnStateChange = func(state loom.DocState) {
 		switch state {
 		case loom.DocStateSaved:
-			v.statusMessage = "Saved: " + v.edit.FilePath
+			v.statusMessage = loom.SpeccedDefaults.Editor.SavedPrefix + v.edit.FilePath
 			v.filePath = v.edit.FilePath
 		case loom.DocStateModified:
 			v.statusMessage = ""
@@ -244,6 +246,7 @@ func (v *editView) openFile(path string) error {
 	}
 	v.edit = edit
 	v.filePath = path
+	v.edit.ShowFileBar = loom.SpeccedDefaults.Editor.ShowFileBar
 	v.bindEdit()
 	if theme := loom.Theme(v.config.Theme); v.config.Theme != "" {
 		v.edit.ApplyTheme(theme)
@@ -255,7 +258,7 @@ func (v *editView) openFile(path string) error {
 // helpSection describes the loom edit keys for the RichTextEdit F1 help.
 func helpSection() loom.HelpSection {
 	d := loom.SpeccedDefaults.Editor
-	return loom.HelpSection{Title: "loom edit", Entries: []loom.HelpEntry{
+	return loom.HelpSection{Title: loom.SpeccedDefaults.Editor.Title, Entries: []loom.HelpEntry{
 		{Cap: d.HotkeyFilesKey, Label: d.HotkeyFilesLabel},
 		{Cap: d.HotkeySearchKey, Label: d.HotkeySearchLabel},
 		{Keys: []string{d.HotkeyBoxBinding}, Label: d.HotkeyBoxLabel},
@@ -285,10 +288,10 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 		{Binding: richDefs.HotkeyHelpBinding, Label: richDefs.HotkeyHelpLabel, Action: func() loom.EventResult {
 			return v.edit.ConsumeKey(loom.KeyEvent{Key: richDefs.HotkeyHelpBinding})
 		}},
-		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, DropPriority: 1, Action: func() loom.EventResult {
+		{Key: editorDefs.HotkeyBoxKey, Binding: editorDefs.HotkeyBoxBinding, Label: editorDefs.HotkeyBoxLabel, DropPriority: editorDefs.BoxDropPriority, Action: func() loom.EventResult {
 			return v.edit.ConsumeKey(loom.KeyEvent{Key: editorDefs.HotkeyBoxBinding})
 		}},
-		{Binding: editorDefs.HotkeyScreenshotBinding, Label: editorDefs.HotkeyScreenshotLabel, DropPriority: 2, Action: func() loom.EventResult {
+		{Binding: editorDefs.HotkeyScreenshotBinding, Label: editorDefs.HotkeyScreenshotLabel, DropPriority: editorDefs.ScreenshotDropPriority, Action: func() loom.EventResult {
 			v.reportError(v.captureScreenshot())
 			return loom.Handled()
 		}},
@@ -331,16 +334,16 @@ func (v *editView) closeRequest(loom.CloseReason) loom.CloseDecision {
 }
 
 func (v *editView) showUnsavedDialog() loom.EventResult {
-	name := "Untitled"
+	name := loom.SpeccedDefaults.RichTextEdit.UntitledName
 	if v.filePath != "" {
 		name = filepath.Base(v.filePath)
 	}
-	dialog := loom.NewDialog("Save changes?", fmt.Sprintf("Save changes to %s before closing?", name), "Save", "Discard", "Cancel")
+	dialog := loom.NewDialog(loom.SpeccedDefaults.Editor.UnsavedTitle, fmt.Sprintf(loom.SpeccedDefaults.Editor.UnsavedMessage, name), loom.SpeccedDefaults.Editor.SaveLabel, loom.SpeccedDefaults.Editor.DiscardLabel, loom.SpeccedDefaults.Editor.CancelLabel)
 	dialog.OnSelect = func(button string) {
 		action := v.pendingAction
 		v.pendingAction = nil
 		switch button {
-		case "Save":
+		case loom.SpeccedDefaults.Editor.SaveLabel:
 			if err := v.edit.Save(); err != nil {
 				v.reportError(err)
 			} else if action != nil && v.edit.FilePath != "" {
@@ -348,7 +351,7 @@ func (v *editView) showUnsavedDialog() loom.EventResult {
 				// buffer only opens the picker, so it must remain open.
 				action()
 			}
-		case "Discard":
+		case loom.SpeccedDefaults.Editor.DiscardLabel:
 			if action != nil {
 				action()
 			}
@@ -390,9 +393,9 @@ func (v *editView) updateSearchMatches() {
 
 	lines := v.edit.Document.Lines
 	if v.regexMode {
-		re, err := regexp.Compile("(?i)" + v.searchQuery)
+		re, err := regexp.Compile(v.regexQuery())
 		if err != nil {
-			v.searchErr = "Invalid regex"
+			v.searchErr = loom.SpeccedDefaults.Editor.InvalidRegex
 			v.edit.Highlights = nil
 			return
 		}
@@ -413,7 +416,7 @@ func (v *editView) updateSearchMatches() {
 		queryRunes := len([]rune(v.searchQuery))
 		for lineIdx, line := range lines {
 			plainText := richLinePlainText(line)
-			for _, startRune := range findRuneMatches(plainText, v.searchQuery) {
+			for _, startRune := range findRuneMatchesWithCase(plainText, v.searchQuery, loom.SpeccedDefaults.Editor.SearchCaseInsensitive) {
 				v.searchMatches = append(v.searchMatches, searchMatch{
 					line:   lineIdx,
 					start:  startRune,
@@ -458,7 +461,7 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	normalStyle := theme.ChoiceStyle().Normal
 	dimStyle := loom.Style{Dim: true, FG: normalStyle.FG, BG: normalStyle.BG}
 
-	outer := loom.Box{Title: "loom edit", Style: boxStyle, Border: loom.BoxBorder{TitlePrefix: "─ ", TitleSuffix: " "}}
+	outer := loom.Box{Title: loom.SpeccedDefaults.Editor.Title, Style: boxStyle, Border: loom.BoxBorder{TitlePrefix: loom.SpeccedDefaults.Editor.TitlePrefix, TitleSuffix: loom.SpeccedDefaults.Editor.TitleSuffix}}
 	outer.Draw(canvas, rect)
 	v.editorRect, v.browserRect, v.searchRect = loom.Rect{}, loom.Rect{}, loom.Rect{}
 	v.edit.SetFocus(v.focused == focusEditor)
@@ -468,12 +471,12 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	innerX := rect.X + 1
 
 	// 3. Line Y=H-3: Divider, Line Y=H-2: Status, Line Y=H-1: Hotkeys
-	if rect.H >= 6 {
+	if rect.H >= loom.SpeccedDefaults.Editor.FooterMinHeight {
 		// Y=H-3
-		canvas.WriteDefault(innerX, rect.Y+rect.H-4, strings.Repeat("─", innerW), boxStyle.Border)
+		canvas.WriteDefault(innerX, rect.Y+rect.H-4, strings.Repeat(loom.SpeccedDefaults.Editor.DividerGlyph, innerW), boxStyle.Border)
 
 		// Y=H-2
-		absPath := "Untitled"
+		absPath := loom.SpeccedDefaults.RichTextEdit.UntitledName
 		if v.filePath != "" {
 			absPath = v.filePath
 			if abs, err := filepath.Abs(v.filePath); err == nil {
@@ -485,7 +488,7 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		}
 		curLine := v.edit.Cursor.Line + 1
 		curCol := v.edit.Cursor.Offset + 1
-		posStr := fmt.Sprintf("Ln %d, Col %d", curLine, curCol)
+		posStr := fmt.Sprintf(loom.SpeccedDefaults.Editor.PositionFormat, curLine, curCol)
 		indicators := loom.NewEditorStatusBar(v.config)
 		v.indicators = indicators
 		indicators.Entries[0].Action = v.cycleTheme
@@ -494,28 +497,35 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 		indicatorW := min(innerW, indicators.ContentWidth())
 		statusW := max(0, innerW-indicatorW-1)
 		leftW := max(0, statusW-loom.StringWidth(posStr)-2)
-		left := loom.TruncateText(absPath, leftW, "...")
+		left := loom.TruncateText(absPath, leftW, loom.SpeccedDefaults.Editor.Truncation)
 		statusLine := " " + left + strings.Repeat(" ", max(0, leftW-loom.StringWidth(left))) + " " + posStr
 		canvas.WriteDefault(innerX, rect.Y+rect.H-3, loom.TruncateText(statusLine, statusW, ""), normalStyle)
 		v.indicatorRect = loom.Rect{X: innerX + innerW - indicatorW, Y: rect.Y + rect.H - 3, W: indicatorW, H: 1}
-		indicators.Draw(canvas, v.indicatorRect)
+		if loom.SpeccedDefaults.Editor.ShowStatusBar {
+			indicators.Draw(canvas, v.indicatorRect)
+		} else {
+			canvas.Fill(loom.Rect{X: innerX, Y: rect.Y + rect.H - 3, W: innerW, H: 1}, loom.Cell{Text: " ", Style: normalStyle})
+			v.indicators = nil
+		}
 
 		// Y=H-1
-		v.hints = v.hotkeyBar()
-		v.hints.Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
+		if loom.SpeccedDefaults.Editor.ShowHints {
+			v.hints = v.hotkeyBar()
+			v.hints.Draw(canvas, loom.Rect{X: innerX, Y: rect.Y + rect.H - 2, W: innerW, H: 1})
+		}
 	}
 
 	contentY := rect.Y + 1
 	contentH := max(0, rect.H-4)
-	if rect.H < 6 {
+	if rect.H < loom.SpeccedDefaults.Editor.FooterMinHeight {
 		contentH = max(0, rect.H-2)
 	}
 
 	if contentH > 0 && innerW > 0 {
 		if v.showSidePanel {
-			browserW := min(24, innerW/3)
-			if browserW < 10 {
-				browserW = innerW / 2
+			browserW := min(loom.SpeccedDefaults.Editor.BrowserMaxWidth, innerW/loom.SpeccedDefaults.Editor.BrowserWidthDivisor)
+			if browserW < loom.SpeccedDefaults.Editor.BrowserMinWidth {
+				browserW = innerW / loom.SpeccedDefaults.Editor.BrowserNarrowDivisor
 			}
 			v.browserRect = loom.Rect{X: innerX, Y: contentY, W: browserW, H: contentH}
 
@@ -526,7 +536,7 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 			sepX := innerX + browserW
 			if sepX < innerX+innerW {
 				for y := contentY; y < contentY+contentH; y++ {
-					canvas.Set(sepX, y, loom.Cell{Text: "│", Style: boxStyle.Border})
+					canvas.Set(sepX, y, loom.Cell{Text: loom.SpeccedDefaults.Editor.BrowserDividerGlyph, Style: boxStyle.Border})
 				}
 			}
 
@@ -542,14 +552,14 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 
 		// Search Panel Overlay
 		if v.showSearch {
-			sWidth := min(48, v.editorRect.W)
-			sHeight := min(7, contentH)
+			sWidth := min(loom.SpeccedDefaults.Editor.SearchMaxWidth, v.editorRect.W)
+			sHeight := min(loom.SpeccedDefaults.Editor.SearchMaxHeight, contentH)
 			sX := max(v.editorRect.X, v.editorRect.X+v.editorRect.W-sWidth)
 			sY := v.editorRect.Y
 			v.searchRect = loom.Rect{X: sX, Y: sY, W: sWidth, H: sHeight}
 
 			if sWidth > 4 && sHeight > 2 {
-				searchBox := loom.Box{Title: "Search  F3 / ^F", Style: boxStyle}
+				searchBox := loom.Box{Title: loom.SpeccedDefaults.Editor.SearchTitle, Style: boxStyle}
 				searchBox.Draw(canvas, v.searchRect)
 
 				// Find input line
@@ -563,18 +573,18 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 
 				// Match counter line
 				if sHeight > 4 {
-					matchStr := "No matches"
+					matchStr := loom.SpeccedDefaults.Editor.NoMatches
 					if v.searchErr != "" {
 						matchStr = v.searchErr
 					} else if len(v.searchMatches) > 0 {
-						matchStr = fmt.Sprintf("%d / %d matches", v.searchIndex+1, len(v.searchMatches))
+						matchStr = fmt.Sprintf(loom.SpeccedDefaults.Editor.MatchFormat, v.searchIndex+1, len(v.searchMatches))
 					}
 					canvas.WriteDefault(sX+2, sY+3, loom.TruncateText(matchStr, sWidth-4, ""), dimStyle)
 				}
 
 				// Nav hints
 				if sHeight > 5 {
-					canvas.WriteDefault(sX+2, sY+4, loom.TruncateText("Enter: next   S-Enter: prev", sWidth-4, ""), dimStyle)
+					canvas.WriteDefault(sX+2, sY+4, loom.TruncateText(loom.SpeccedDefaults.Editor.SearchNavigationHint, sWidth-4, ""), dimStyle)
 				}
 			}
 		}
@@ -603,7 +613,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return v.edit.ConsumeKey(key)
 	}
 
-	if v.focused == focusEditor && (key.Is(v.edit.PopoverDefaults.MenuFocusKey, v.edit.PopoverDefaults.PopupOpenKey) || (v.edit.HasSelection && key.Is("tab", "ctrl-i"))) {
+	if v.focused == focusEditor && (key.Is(v.edit.PopoverDefaults.MenuFocusKey, v.edit.PopoverDefaults.PopupOpenKey) || (v.edit.HasSelection && key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["selection_italic"]...))) {
 		if result := v.edit.ConsumeKey(key); result.Consumed {
 			return result
 		}
@@ -632,7 +642,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		return loom.Handled()
 	}
 
-	if key.Is("tab", "shift-tab") && (v.showSearch || v.showSidePanel) {
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["focus"]...) && (v.showSearch || v.showSidePanel) {
 		focuses := []editFocus{focusEditor}
 		if v.showSidePanel {
 			focuses = append(focuses, focusBrowser)
@@ -643,7 +653,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 		for i, focus := range focuses {
 			if focus == v.focused {
 				step := 1
-				if key.Is("shift-tab") {
+				if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["reverse_tab"]...) {
 					step = -1
 				}
 				v.focused = focuses[(i+step+len(focuses))%len(focuses)]
@@ -658,25 +668,25 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	}
 
 	if v.showSearch && v.focused == focusSearch {
-		if key.Is("esc") {
+		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
 			v.toggleSearch()
 			return loom.Handled()
 		}
-		if key.Is("enter") {
+		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["search_next"]...) {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex + 1) % len(v.searchMatches)
 				v.highlightSearchMatch()
 			}
 			return loom.Handled()
 		}
-		if key.Is("shift-enter") {
+		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["search_previous"]...) {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex - 1 + len(v.searchMatches)) % len(v.searchMatches)
 				v.highlightSearchMatch()
 			}
 			return loom.Handled()
 		}
-		if key.Is("ctrl-r") {
+		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["regex"]...) {
 			v.regexMode = !v.regexMode
 			v.searchIndex = 0
 			v.updateSearchMatches()
@@ -713,7 +723,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if res.Quit {
 		return loom.Ignored()
 	}
-	if key.Is("esc") && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
+	if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
 		v.edit.ClearSelection()
 		return loom.Handled()
 	}
@@ -730,11 +740,11 @@ func (v *editView) reportError(err error) {
 }
 
 func (v *editView) modeBar() *loom.HintBar {
-	normal, regex := "Normal", "Regex"
+	normal, regex := loom.SpeccedDefaults.Editor.NormalLabel, loom.SpeccedDefaults.Editor.RegexLabel
 	if v.regexMode {
-		regex += " *"
+		regex += loom.SpeccedDefaults.Editor.ModeMarker
 	} else {
-		normal += " *"
+		normal += loom.SpeccedDefaults.Editor.ModeMarker
 	}
 	bar := loom.NewHintBar(
 		loom.HintEntry{Key: "", Label: normal, Action: func() loom.EventResult {
@@ -743,7 +753,7 @@ func (v *editView) modeBar() *loom.HintBar {
 			v.updateSearchMatches()
 			return loom.Handled()
 		}},
-		loom.HintEntry{Key: "^R", Binding: "ctrl-r", Label: regex, Action: func() loom.EventResult {
+		loom.HintEntry{Key: loom.SpeccedDefaults.Editor.RegexKeyCap, Binding: loom.SpeccedDefaults.RichTextEdit.Bindings["regex"][0], Label: regex, Action: func() loom.EventResult {
 			v.regexMode = true
 			v.searchIndex = 0
 			v.updateSearchMatches()
@@ -759,17 +769,17 @@ func (v *editView) captureScreenshot() error {
 	if err != nil {
 		return err
 	}
-	dir := filepath.Join(home, "Pictures", "Screenshots")
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	dir := filepath.Join(append([]string{home}, loom.SpeccedDefaults.Editor.ScreenshotDirectory...)...)
+	if err := os.MkdirAll(dir, os.FileMode(loom.SpeccedDefaults.Editor.ScreenshotDirectoryMode)); err != nil {
 		return err
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return err
 	}
-	num := 1
+	num := loom.SpeccedDefaults.Editor.ScreenshotFirstNumber
 	for _, entry := range entries {
-		prefix, _, ok := strings.Cut(entry.Name(), "-loom-edit-")
+		prefix, _, ok := strings.Cut(entry.Name(), loom.SpeccedDefaults.Editor.ScreenshotMarker)
 		if ok {
 			if n, err := strconv.Atoi(prefix); err == nil && n >= num {
 				num = n + 1
@@ -777,22 +787,22 @@ func (v *editView) captureScreenshot() error {
 		}
 	}
 	details := strings.Map(func(r rune) rune {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '.' || r == '-' || r == '_' {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) || strings.ContainsRune(loom.SpeccedDefaults.Editor.ScreenshotSafeCharacters, r) {
 			return r
 		}
-		return '-'
+		return []rune(loom.SpeccedDefaults.Editor.ScreenshotReplacement)[0]
 	}, filepath.Base(v.filePath))
 	if details == "" || details == "." {
-		details = "document"
+		details = loom.SpeccedDefaults.Editor.ScreenshotUntitled
 	}
 	w, h := v.lastRect.W, v.lastRect.H
 	if w <= 0 || h <= 0 {
-		w, h = 100, 24
+		w, h = loom.SpeccedDefaults.Editor.ScreenshotWidth, loom.SpeccedDefaults.Editor.ScreenshotHeight
 	}
 	content := strings.Join(loom.Render(v, w, h), "\n") + "\n"
 	for {
-		path := filepath.Join(dir, fmt.Sprintf("%02d-loom-edit-%s.ansi", num, details))
-		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+		path := filepath.Join(dir, fmt.Sprintf("%0*d%s%s%s", loom.SpeccedDefaults.Editor.ScreenshotNumberWidth, num, loom.SpeccedDefaults.Editor.ScreenshotMarker, details, loom.SpeccedDefaults.Editor.ScreenshotExtension))
+		file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, os.FileMode(loom.SpeccedDefaults.Editor.ScreenshotFileMode))
 		if os.IsExist(err) {
 			num++
 			continue
@@ -808,12 +818,23 @@ func (v *editView) captureScreenshot() error {
 		if closeErr != nil {
 			return closeErr
 		}
-		v.statusMessage = "Saved screenshot: " + path
+		v.statusMessage = loom.SpeccedDefaults.Editor.ScreenshotSavedPrefix + path
 		return nil
 	}
 }
 
+func (v *editView) regexQuery() string {
+	if loom.SpeccedDefaults.Editor.SearchCaseInsensitive {
+		return "(?i)" + v.searchQuery
+	}
+	return v.searchQuery
+}
+
 func findRuneMatches(line string, query string) []int {
+	return findRuneMatchesWithCase(line, query, loom.SpeccedDefaults.Editor.SearchCaseInsensitive)
+}
+
+func findRuneMatchesWithCase(line, query string, insensitive bool) []int {
 	lineRunes := []rune(line)
 	queryRunes := []rune(query)
 	if len(queryRunes) == 0 || len(lineRunes) < len(queryRunes) {
@@ -823,8 +844,10 @@ func findRuneMatches(line string, query string) []int {
 	for i := 0; i <= len(lineRunes)-len(queryRunes); i++ {
 		match := true
 		for j := 0; j < len(queryRunes); j++ {
-			r1 := unicode.ToLower(lineRunes[i+j])
-			r2 := unicode.ToLower(queryRunes[j])
+			r1, r2 := lineRunes[i+j], queryRunes[j]
+			if insensitive {
+				r1, r2 = unicode.ToLower(r1), unicode.ToLower(r2)
+			}
 			if r1 != r2 {
 				match = false
 				break
@@ -866,7 +889,7 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		return result
 	}
 
-	if v.hints != nil && v.lastRect.H >= 6 && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {
+	if v.hints != nil && v.lastRect.H >= loom.SpeccedDefaults.Editor.FooterMinHeight && mouse.Y == v.lastRect.Y+v.lastRect.H-2 {
 		mouseLocal := mouse
 		mouseLocal.Y = 0
 		mouseLocal.X -= v.lastRect.X + 1

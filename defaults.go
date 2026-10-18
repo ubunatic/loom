@@ -61,6 +61,64 @@ type KeyCapModifier struct {
 
 // EditorDefaults defines specced defaults for the Loom editor.
 type EditorDefaults struct {
+	SearchRegex              bool   `yaml:"search_regex"`
+	SearchCaseInsensitive    bool   `yaml:"search_case_insensitive"`
+	ScreenshotFirstNumber    int    `yaml:"screenshot_first_number"`
+	ScreenshotSafeCharacters string `yaml:"screenshot_safe_characters"`
+	ScreenshotReplacement    string `yaml:"screenshot_replacement"`
+	ConfigDirectory          string `yaml:"config_directory"`
+	ConfigFile               string `yaml:"config_file"`
+	ConfigFallbackDirectory  string `yaml:"config_fallback_directory"`
+
+	Title                   string   `yaml:"title"`
+	InitialHeight           int      `yaml:"initial_height"`
+	MaxCols                 int      `yaml:"max_cols"`
+	Resizeable              bool     `yaml:"resizeable"`
+	ShowFileBar             bool     `yaml:"show_file_bar"`
+	ShowSidePanel           bool     `yaml:"show_side_panel"`
+	BrowserMaxWidth         int      `yaml:"browser_max_width"`
+	BrowserWidthDivisor     int      `yaml:"browser_width_divisor"`
+	BrowserMinWidth         int      `yaml:"browser_min_width"`
+	BrowserNarrowDivisor    int      `yaml:"browser_narrow_divisor"`
+	SearchMaxWidth          int      `yaml:"search_max_width"`
+	SearchMaxHeight         int      `yaml:"search_max_height"`
+	FooterMinHeight         int      `yaml:"footer_min_height"`
+	ShowStatusBar           bool     `yaml:"show_status_bar"`
+	ShowHints               bool     `yaml:"show_hints"`
+	TitlePrefix             string   `yaml:"title_prefix"`
+	TitleSuffix             string   `yaml:"title_suffix"`
+	DividerGlyph            string   `yaml:"divider_glyph"`
+	BrowserDividerGlyph     string   `yaml:"browser_divider_glyph"`
+	PositionFormat          string   `yaml:"position_format"`
+	Truncation              string   `yaml:"truncation"`
+	SavedPrefix             string   `yaml:"saved_prefix"`
+	UnsavedTitle            string   `yaml:"unsaved_title"`
+	UnsavedMessage          string   `yaml:"unsaved_message"`
+	SaveLabel               string   `yaml:"save_label"`
+	DiscardLabel            string   `yaml:"discard_label"`
+	CancelLabel             string   `yaml:"cancel_label"`
+	SearchTitle             string   `yaml:"search_title"`
+	InvalidRegex            string   `yaml:"invalid_regex"`
+	NoMatches               string   `yaml:"no_matches"`
+	MatchFormat             string   `yaml:"match_format"`
+	SearchNavigationHint    string   `yaml:"search_navigation_hint"`
+	NormalLabel             string   `yaml:"normal_label"`
+	RegexLabel              string   `yaml:"regex_label"`
+	ModeMarker              string   `yaml:"mode_marker"`
+	RegexKeyCap             string   `yaml:"regex_key_cap"`
+	ScreenshotDirectory     []string `yaml:"screenshot_directory"`
+	ScreenshotMarker        string   `yaml:"screenshot_marker"`
+	ScreenshotNumberWidth   int      `yaml:"screenshot_number_width"`
+	ScreenshotExtension     string   `yaml:"screenshot_extension"`
+	ScreenshotUntitled      string   `yaml:"screenshot_untitled"`
+	ScreenshotWidth         int      `yaml:"screenshot_width"`
+	ScreenshotHeight        int      `yaml:"screenshot_height"`
+	ScreenshotDirectoryMode uint32   `yaml:"screenshot_directory_mode"`
+	ScreenshotFileMode      uint32   `yaml:"screenshot_file_mode"`
+	ScreenshotSavedPrefix   string   `yaml:"screenshot_saved_prefix"`
+	BoxDropPriority         int      `yaml:"box_drop_priority"`
+	ScreenshotDropPriority  int      `yaml:"screenshot_drop_priority"`
+
 	StatusIcons                  EditorStatusIcons `yaml:"status_icons"`
 	Theme                        string            `yaml:"theme"`
 	MouseGrab                    bool              `yaml:"mousegrab"`
@@ -96,6 +154,28 @@ type EditorStatusIcons struct {
 
 // RichTextEditDefaults defines selection and popover presentation defaults.
 type RichTextEditDefaults struct {
+	Bindings          map[string][]string `yaml:"bindings"`
+	UndoLimit         int                 `yaml:"undo_limit"`
+	MultiClickWindow  time.Duration       `yaml:"multi_click_window"`
+	ShowCursor        bool                `yaml:"show_cursor"`
+	ShowPopover       bool                `yaml:"show_popover"`
+	HelpTitle         string              `yaml:"help_title"`
+	HelpMaxWidth      int                 `yaml:"help_max_width"`
+	HelpMaxHeight     int                 `yaml:"help_max_height"`
+	HelpPageStep      int                 `yaml:"help_page_step"`
+	HelpFooter        string              `yaml:"help_footer"`
+	SaveTitle         string              `yaml:"save_title"`
+	FileMode          uint32              `yaml:"file_mode"`
+	FinalNewline      bool                `yaml:"final_newline"`
+	CreateMissingFile bool                `yaml:"create_missing_file"`
+	ViewLabel         string              `yaml:"view_label"`
+	EditLabel         string              `yaml:"edit_label"`
+	UntitledName      string              `yaml:"untitled_name"`
+	BoxHint           string              `yaml:"box_hint"`
+	StatusSeparator   string              `yaml:"status_separator"`
+	StatusTruncation  string              `yaml:"status_truncation"`
+	PopoverMinWidth   int                 `yaml:"popover_min_width"`
+
 	ActionClosesMenu          bool   `yaml:"action_closes_menu"`
 	MenuFocusKey              string `yaml:"menu_focus_key"`
 	ArrowsCancelUnfocusedMenu bool   `yaml:"arrows_cancel_unfocused_menu"`
@@ -178,6 +258,15 @@ func (d RichTextEditDefaults) helpRef(ref string) (binding, label string, ok boo
 }
 
 func (d RichTextEditDefaults) validate() error {
+	if d.UndoLimit < 1 || d.MultiClickWindow <= 0 || d.HelpPageStep < 1 || d.HelpMaxWidth < 1 || d.HelpMaxHeight < 1 || d.PopoverMinWidth < 1 {
+		return fmt.Errorf("rich_text_edit limits and timings must be positive")
+	}
+	for name, keys := range d.Bindings {
+		if len(keys) == 0 {
+			return fmt.Errorf("rich_text_edit.bindings.%s must not be empty", name)
+		}
+	}
+
 	if d.PopupOpenKey == "" {
 		return fmt.Errorf("rich_text_edit popup_open_key must not be empty")
 	}

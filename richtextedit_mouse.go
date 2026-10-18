@@ -219,7 +219,7 @@ func (e *RichTextEdit) registerClick(pos RichPosition) int {
 		now = e.now
 	}
 	at := now()
-	if e.clickCount > 0 && e.clickCount < 3 && pos == e.lastClickPos && at.Sub(e.lastClickAt) <= richMultiClickWindow {
+	if e.clickCount > 0 && e.clickCount < 3 && pos == e.lastClickPos && at.Sub(e.lastClickAt) <= SpeccedDefaults.RichTextEdit.MultiClickWindow {
 		e.clickCount++
 	} else {
 		e.clickCount = 1

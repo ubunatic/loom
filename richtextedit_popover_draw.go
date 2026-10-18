@@ -33,7 +33,7 @@ var _ Widget = (*RichTextEdit)(nil)
 // popoverGeometry is shared by drawing and modal capture so an invisible toolbar
 // never blocks document input, and keyboard opening acquires capture immediately.
 func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anchorX, pointerY int, pointer string, open bool) {
-	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < 18 || r.H < 3 {
+	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || r.W < SpeccedDefaults.RichTextEdit.PopoverMinWidth || r.H < 3 {
 		return
 	}
 	if !e.popoverExplicit && !e.popoverAtCursor {

@@ -37,11 +37,11 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		return Ignored(), false
 	}
 	submenuOpen := e.popoverPalette != "" || e.popoverSubmenu != ""
-	popoverArrow := key.Is("up", "down", "left", "right")
+	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
 	if !e.popoverFocusSet && !submenuOpen {
 		if popoverArrow {
 			_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
-			if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("down"))) {
+			if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...)) || (pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...))) {
 				e.popoverFocus = e.initialPopoverFocus()
 				e.popoverFocusSet = true
 				return Handled(), true
@@ -51,7 +51,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			}
 			return Ignored(), false
 		}
-		if key.Is("esc") {
+		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
 			e.cancelPopover()
 			return Handled(), true
 		}
@@ -59,7 +59,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			return Ignored(), false
 		}
 	}
-	if !key.Is(e.PopoverDefaults.MenuFocusKey, "tab", "shift-tab", "backtab", "enter", "return", "space", " ", "esc", "up", "down", "left", "right") {
+	if !(key.Is(e.PopoverDefaults.MenuFocusKey) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_focus"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)) {
 		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
 			e.clearPopoverKeyboardState(true)
 		}
@@ -85,7 +85,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		return e.consumePopoverSubmenuKey(key)
 	}
 	switch {
-	case key.Is("esc"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...):
 		if e.popoverPalette != "" || e.popoverSubmenu != "" {
 			e.popoverPalette = ""
 			e.popoverSwatches = nil
@@ -95,27 +95,27 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			e.cancelPopover()
 		}
 		return Handled(), true
-	case key.Is("tab", "shift-tab", "backtab"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_focus"]...):
 		direction := 1
-		if key.Is("shift-tab", "backtab") {
+		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_reverse"]...) {
 			direction = -1
 		}
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
-	case key.Is("left", "right"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["horizontal"]...):
 		direction := 1
-		if key.Is("left") {
+		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["left"]...) {
 			direction = -1
 		}
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
-	case key.Is("up", "down"):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["vertical"]...):
 		_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
-		if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is("up")) || (pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is("down"))) {
+		if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...)) || (pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...))) {
 			e.cancelPopover()
 		}
 		return Handled(), true
-	case key.Is("enter", "return", "space", " "):
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...):
 		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
 			return Handled(), true
 		}
@@ -152,7 +152,7 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
 		e.popoverSubmenuFocusSet = true
 	}
-	if key.Is("esc") {
+	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
 		e.popoverPalette = ""
 		e.popoverSwatches = nil
 		e.popoverSubmenu = ""
@@ -160,9 +160,9 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		e.popoverSubmenuFocusSet = false
 		return Handled(), true
 	}
-	if key.Is("tab", "shift-tab", "backtab", "up", "down", "left", "right") {
+	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["submenu_move"]...) {
 		direction := 1
-		if key.Is("shift-tab", "backtab", "up", "left") {
+		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["submenu_reverse"]...) {
 			direction = -1
 		}
 		count := e.popoverSubmenuChoiceCount()
@@ -175,7 +175,7 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		}
 		return Handled(), true
 	}
-	if key.Is("enter", "return", "space", " ") {
+	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...) {
 		if e.popoverPalette != "" {
 			palette := e.popoverPalette
 			e.applyPopoverColor(palette, ColorIndex(uint8(e.popoverSubmenuFocus)))
@@ -270,7 +270,7 @@ func (e *RichTextEdit) initialPopoverFocus() int {
 
 func (e *RichTextEdit) popoverCanShow() bool {
 	r := e.lastRect
-	if r.W < 18 || r.H < 3 || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode || !e.ShowPopover {
+	if r.W < SpeccedDefaults.RichTextEdit.PopoverMinWidth || r.H < 3 || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode || !e.ShowPopover {
 		return false
 	}
 	lines := e.documentLines()

@@ -80,8 +80,8 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.savePopup.Draw(c, r)
 	}
 	if e.helpPopup != nil {
-		e.helpPopup.Width = min(72, max(4, r.W-2))
-		e.helpPopup.Height = min(18, max(3, r.H))
+		e.helpPopup.Width = min(SpeccedDefaults.RichTextEdit.HelpMaxWidth, max(4, r.W-2))
+		e.helpPopup.Height = min(SpeccedDefaults.RichTextEdit.HelpMaxHeight, max(3, r.H))
 		e.helpPopup.Draw(c, r)
 	}
 }
