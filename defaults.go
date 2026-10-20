@@ -55,6 +55,7 @@ type ColorPickerDefaults struct {
 	Palette       []int               `yaml:"palette"`
 	InitialTarget string              `yaml:"initial_target"`
 	SwatchWidth   int                 `yaml:"swatch_width"`
+	ShowPreview   bool                `yaml:"show_preview"`
 	Labels        ColorPickerLabels   `yaml:"labels"`
 	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
 	PreviewText   string              `yaml:"preview_text"`
@@ -62,15 +63,12 @@ type ColorPickerDefaults struct {
 }
 
 type ColorPickerLabels struct {
-	FG      string `yaml:"fg"`
-	BG      string `yaml:"bg"`
 	Preview string `yaml:"preview"`
 }
 
 type ColorPickerGlyphs struct {
-	Separator string `yaml:"separator"`
-	Swatch    string `yaml:"swatch"`
-	Focus     string `yaml:"focus"`
+	Swatch     string `yaml:"swatch"`
+	ModeMarker string `yaml:"mode_marker"`
 }
 
 func (d ColorPickerDefaults) validate() error {
@@ -87,15 +85,13 @@ func (d ColorPickerDefaults) validate() error {
 	if d.InitialTarget != "fg" && d.InitialTarget != "bg" {
 		return fmt.Errorf("color_picker.initial_target must be fg or bg")
 	}
-	if d.Labels.FG == "" || d.Labels.BG == "" || d.Labels.Preview == "" || d.PreviewText == "" {
-		return fmt.Errorf("color_picker labels and preview text must not be empty")
+	if d.ShowPreview && (d.Labels.Preview == "" || d.PreviewText == "") {
+		return fmt.Errorf("color_picker preview label and text must not be empty when preview is enabled")
 	}
-	for _, glyph := range []string{d.Glyphs.Separator, d.Glyphs.Swatch, d.Glyphs.Focus} {
-		if glyph == "" || measure.StringWidth(glyph) != 1 {
-			return fmt.Errorf("color_picker glyphs must each occupy one display cell")
-		}
+	if d.Glyphs.Swatch == "" || d.Glyphs.ModeMarker == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.ModeMarker) != d.SwatchWidth {
+		return fmt.Errorf("color_picker swatch and mode marker must match swatch_width display cells")
 	}
-	for _, name := range []string{"select", "select_bg", "target_fg", "target_bg", "toggle_target", "close", "left", "right"} {
+	for _, name := range []string{"select", "mode_bg", "mode_fg", "close", "left", "right"} {
 		if len(d.Bindings[name]) == 0 {
 			return fmt.Errorf("color_picker.bindings.%s must not be empty", name)
 		}

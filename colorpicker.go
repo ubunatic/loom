@@ -84,17 +84,21 @@ func (p *ColorPicker) PreviewStyle() Style {
 	return Style{FG: p.FG, BG: p.BG}
 }
 
-// Measure reports the palette width and its three display rows.
+// Measure reports the one-row palette and its optional preview.
 func (p *ColorPicker) Measure(width int) measure.Size {
 	defs := SpeccedDefaults.ColorPicker
-	w := max(measure.StringWidth(defs.Labels.FG)+measure.StringWidth(defs.Labels.BG)+3, len(p.Palette)*defs.SwatchWidth)
+	w := len(p.Palette) * defs.SwatchWidth
 	if width > 0 && width < w {
 		w = width
 	}
-	return measure.Size{Width: w, Height: 3}
+	h := 2 // swatches and the mode marker row
+	if defs.ShowPreview {
+		h++
+	}
+	return measure.Size{Width: w, Height: h}
 }
 
-// Draw renders the FG/BG target selector, palette swatches and combined preview.
+// Draw renders contiguous color samples, a mode-specific focus marker and preview.
 func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	if c == nil || p == nil || r.W <= 0 || r.H <= 0 {
 		return
@@ -102,44 +106,30 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	p.lastRect = r
 	c.PaintSurface(r, p.Style)
 	defs := SpeccedDefaults.ColorPicker
-	if r.H >= 1 {
-		leftStyle, rightStyle := p.Style, p.Style
-		if p.Target == ColorPickerFG {
-			leftStyle = p.FocusStyle
+	for i, color := range p.Palette {
+		x := i * defs.SwatchWidth
+		if x >= r.W {
+			break
+		}
+		style := p.Style
+		if p.Target == ColorPickerBG {
+			style.FG, style.BG = p.FG, color
 		} else {
-			rightStyle = p.FocusStyle
+			style.FG, style.BG = color, p.BG
 		}
-		leftWidth := measure.StringWidth(defs.Labels.FG)
-		separatorX := leftWidth + 1
-		rightX := leftWidth + 3
-		writeColorPickerText(c, r, 0, 0, defs.Labels.FG, leftStyle)
-		writeColorPickerText(c, r, leftWidth, 0, " ", p.Style)
-		writeColorPickerText(c, r, separatorX, 0, defs.Glyphs.Separator, p.Style)
-		writeColorPickerText(c, r, separatorX+1, 0, " ", p.Style)
-		writeColorPickerText(c, r, rightX, 0, defs.Labels.BG, rightStyle)
-	}
-	if r.H >= 2 {
-		for i, color := range p.Palette {
-			x := i * defs.SwatchWidth
-			if x >= r.W {
-				break
-			}
-			glyph := defs.Glyphs.Swatch
-			style := p.Style
-			style.BG = color
-			if i == p.Selected {
-				glyph = defs.Glyphs.Focus
-				if p.focused {
-					style.Bold = true
-				}
-			}
-			writeColorPickerText(c, r, x, 1, glyph, style)
-			for pad := 1; pad < defs.SwatchWidth && x+pad < r.W; pad++ {
-				c.Set(r.X+x+pad, r.Y+1, Cell{Text: " ", Style: style})
-			}
+		if i == p.Selected && p.Target == ColorPickerFG {
+			style.Underline = true
+		}
+		writeColorPickerText(c, r, x, 0, defs.Glyphs.Swatch, style)
+		for pad := measure.StringWidth(defs.Glyphs.Swatch); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
+			c.Set(r.X+x+pad, r.Y, Cell{Text: " ", Style: style})
 		}
 	}
-	if r.H >= 3 {
+	if p.Target == ColorPickerBG && r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
+		markerX := p.Selected * defs.SwatchWidth
+		writeColorPickerText(c, r, markerX, 1, defs.Glyphs.ModeMarker, p.FocusStyle)
+	}
+	if defs.ShowPreview && r.H >= 3 {
 		text := defs.Labels.Preview + " " + defs.PreviewText
 		writeColorPickerText(c, r, 0, 2, text, p.PreviewStyle())
 	}
@@ -188,7 +178,7 @@ func (p *ColorPicker) changeTarget(target ColorPickerTarget, assign bool) {
 	}
 }
 
-// ConsumeKey handles palette navigation, target changes and completion.
+// ConsumeKey handles palette navigation, mode changes and completion.
 func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	if p == nil {
 		return Ignored()
@@ -199,17 +189,11 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 			p.OnClose()
 		}
 		return DoneResult()
-	case p.matches(e, "toggle_target"):
-		p.Target = ColorPickerFG + ColorPickerBG - p.Target
+	case p.matches(e, "mode_bg"):
+		p.Target = ColorPickerBG
 		return Handled()
-	case p.matches(e, "target_fg"):
-		p.changeTarget(ColorPickerFG, true)
-		return Handled()
-	case p.matches(e, "target_bg"):
-		p.changeTarget(ColorPickerBG, true)
-		return Handled()
-	case p.matches(e, "select_bg"):
-		p.changeTarget(ColorPickerBG, true)
+	case p.matches(e, "mode_fg"):
+		p.Target = ColorPickerFG
 		return Handled()
 	case p.matches(e, "select"):
 		p.changeTarget(p.Target, true)
@@ -217,15 +201,11 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	case p.matches(e, "left"):
 		if p.Selected > 0 {
 			p.Selected--
-		} else {
-			p.Target = ColorPickerFG + ColorPickerBG - p.Target
 		}
 		return Handled()
 	case p.matches(e, "right"):
 		if p.Selected+1 < len(p.Palette) {
 			p.Selected++
-		} else {
-			p.Target = ColorPickerFG + ColorPickerBG - p.Target
 		}
 		return Handled()
 	default:
@@ -233,41 +213,24 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	}
 }
 
-// ConsumeMouse selects a swatch or changes target through the top-line controls.
+// ConsumeMouse selects a swatch or switches to background mode on right-click.
 func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	if p == nil || e.Action != MousePress || e.X < 0 || e.X >= p.lastRect.W || e.Y < 0 || e.Y >= p.lastRect.H {
 		return Ignored()
 	}
+	if e.Button == MouseRight {
+		p.Target = ColorPickerBG
+		return Handled()
+	}
+	if e.Button != MouseLeft || e.Y != 0 {
+		return Ignored()
+	}
 	defs := SpeccedDefaults.ColorPicker
-	if e.Y == 0 && e.Button == MouseLeft {
-		leftWidth := measure.StringWidth(defs.Labels.FG)
-		if e.X >= 0 && e.X < leftWidth {
-			p.Target = ColorPickerFG
-			return Handled()
-		}
-		rightX := leftWidth + 3
-		rightWidth := measure.StringWidth(defs.Labels.BG)
-		if e.X >= rightX && e.X < rightX+rightWidth {
-			p.Target = ColorPickerBG
-			return Handled()
-		}
-		return Ignored()
-	}
-	if e.Y != 1 || e.X < 0 || e.X >= p.lastRect.W || e.Y >= p.lastRect.H {
-		return Ignored()
-	}
-	if e.Button != MouseLeft && e.Button != MouseRight {
-		return Ignored()
-	}
 	index := e.X / defs.SwatchWidth
 	if index < 0 || index >= len(p.Palette) {
 		return Ignored()
 	}
 	p.Selected = index
-	target := p.Target
-	if e.Shift || e.Button == MouseRight {
-		target = ColorPickerBG
-	}
-	p.changeTarget(target, true)
+	p.changeTarget(p.Target, true)
 	return Handled()
 }

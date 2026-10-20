@@ -151,14 +151,15 @@ func (e *RichTextEdit) drawPopoverColorPicker(c *Canvas, r Rect, barX, barY int)
 		e.popoverColorPicker = nil
 		return
 	}
-	pickerW := e.popoverColorPicker.Measure(r.W).Width
-	pickerY := min(max(0, barY+1), r.H-3)
-	if pickerY < 0 || pickerY+3 > r.H || pickerW > r.W {
+	pickerSize := e.popoverColorPicker.Measure(r.W)
+	pickerW, pickerH := pickerSize.Width, pickerSize.Height
+	pickerY := min(max(0, barY+1), r.H-pickerH)
+	if pickerY < 0 || pickerY+pickerH > r.H || pickerW > r.W {
 		return
 	}
 	pickerX := min(max(0, button.X+button.W/2-pickerW/2), r.W-pickerW)
-	e.popoverColorRect = Rect{X: pickerX, Y: pickerY, W: pickerW, H: 3}
-	e.popoverColorPicker.Draw(c, Rect{X: r.X + pickerX, Y: r.Y + pickerY, W: pickerW, H: 3})
+	e.popoverColorRect = Rect{X: pickerX, Y: pickerY, W: pickerW, H: pickerH}
+	e.popoverColorPicker.Draw(c, Rect{X: r.X + pickerX, Y: r.Y + pickerY, W: pickerW, H: pickerH})
 }
 
 func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {

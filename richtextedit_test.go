@@ -846,6 +846,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 	}
 
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "b"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if got := styleAt(0).BG; got != ColorIndex(3) {
 		t.Fatalf("unselected prefix BG = %v, want 3", got)
 	}
@@ -881,14 +882,19 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	edit.Draw(canvas, canvas.Bounds())
 	defs := SpeccedDefaults.ColorPicker
 	swatchX := edit.popoverColorRect.X + 3*defs.SwatchWidth
-	swatchY := edit.popoverColorRect.Y + 1
+	swatchY := edit.popoverColorRect.Y
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != edit.popoverColorPicker.Palette[3] {
 		t.Fatalf("mouse FG = %v, want %v", got, edit.popoverColorPicker.Palette[3])
 	}
-	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX + defs.SwatchWidth, Y: swatchY, Shift: true})
+	beforeBG := edit.Document.Lines[0].Spans[0].Style.BG
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: swatchX + defs.SwatchWidth, Y: swatchY})
+	if edit.Document.Lines[0].Spans[0].Style.BG != beforeBG || edit.popoverColorPicker.Target != ColorPickerBG {
+		t.Fatal("right-click should switch to BG mode without picking")
+	}
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX + defs.SwatchWidth, Y: swatchY})
 	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != edit.popoverColorPicker.Palette[4] {
-		t.Fatalf("shift mouse BG = %v, want %v", got, edit.popoverColorPicker.Palette[4])
+		t.Fatalf("mouse BG = %v, want %v", got, edit.popoverColorPicker.Palette[4])
 	}
 	edit.ConsumeKey(KeyEvent{Key: "esc"})
 
@@ -899,7 +905,7 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	clickPickerButton()
 	edit.Draw(canvas, canvas.Bounds())
 	swatchX = edit.popoverColorRect.X + 5*defs.SwatchWidth
-	swatchY = edit.popoverColorRect.Y + 1
+	swatchY = edit.popoverColorRect.Y
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	edit.ConsumeKey(KeyEvent{Key: "enter"})
 	edit.ConsumeKey(KeyEvent{Text: "z"})

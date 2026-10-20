@@ -57,18 +57,30 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	if picker == nil {
 		t.Fatal("Space did not open embedded ColorPicker")
 	}
-	if got := edit.ConsumeKey(KeyEvent{Key: "tab"}); got.Consumed {
-		t.Fatalf("Tab was consumed by embedded ColorPicker: %+v", got)
+	before := edit.Document.Lines[0].Spans[0].Style
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	if picker.Target != ColorPickerBG || edit.Document.Lines[0].Spans[0].Style != before {
+		t.Fatalf("Tab changed mode/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "right"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[1] {
+		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[1])
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	before = edit.Document.Lines[0].Spans[0].Style
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "up"}))
+	if picker.Target != ColorPickerFG || edit.Document.Lines[0].Spans[0].Style != before {
+		t.Fatalf("Up changed mode/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
+	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[1] {
 		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[1])
 	}
-	edit.Draw(canvas, canvas.Bounds())
-	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "b"}))
-	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[1] {
-		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[1])
+	for _, key := range []KeyEvent{{Text: "f"}, {Text: "x"}, {Key: "shift-space"}} {
+		if got := edit.ConsumeKey(key); got.Consumed {
+			t.Errorf("removed picker key %+v was consumed", key)
+		}
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
 	if edit.popoverColorPicker != nil {
@@ -130,7 +142,7 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	popoverFocusAction(t, frameEdit, "ColorPicker")
 	assertMenuHandled(t, frame.ConsumeKey(KeyEvent{Key: "space"}))
 	focus := frame.focused
-	frame.ConsumeKey(KeyEvent{Key: "tab"}) // Frame owns Tab traversal.
+	assertMenuHandled(t, frame.ConsumeKey(KeyEvent{Key: "tab"})) // The picker owns Tab while open.
 	if frame.focused != focus {
 		t.Fatalf("Frame traversed focus while submenu was open: %d -> %d", focus, frame.focused)
 	}
@@ -143,9 +155,9 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	popoverFocusAction(t, splitEdit, "ColorPicker")
 	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "space"}))
 	focus = split.focus
-	split.ConsumeKey(KeyEvent{Key: "tab"}) // Split owns Tab traversal.
-	if split.focus == focus {
-		t.Fatalf("Split did not receive Tab from embedded picker: focus stayed %d", focus)
+	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "tab"}))
+	if split.focus != focus || splitEdit.popoverColorPicker.Target != ColorPickerBG {
+		t.Fatalf("active picker Tab escaped to Split: focus=%d target=%v", split.focus, splitEdit.popoverColorPicker.Target)
 	}
 }
 
@@ -171,6 +183,10 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	assertMenuHandled(t, tabs.ConsumeKey(space))
 	if edit.popoverColorPicker == nil {
 		t.Fatal("Space did not open embedded ColorPicker")
+	}
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "tab"}))
+	if edit.popoverColorPicker.Target != ColorPickerBG || tabs.Focus() != focus {
+		t.Fatalf("active picker Tab escaped to Tabs: target=%v focus=%d", edit.popoverColorPicker.Target, tabs.Focus())
 	}
 	for _, key := range []string{"left", "right"} {
 		assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: key}))

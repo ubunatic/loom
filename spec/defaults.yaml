@@ -172,21 +172,17 @@ color_picker:
   palette: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   initial_target: "fg"
   swatch_width: 2
+  show_preview: true
   labels:
-    fg: "FG"
-    bg: "BG"
     preview: "Preview"
   glyphs:
-    separator: "│"
-    swatch: "■"
-    focus: "▣"
+    swatch: "Aa"
+    mode_marker: "▔▔"
   preview_text: "AaBb"
   bindings:
     select: ["space", " "]
-    select_bg: ["shift-space"]
-    target_fg: ["f"]
-    target_bg: ["b"]
-    toggle_target: ["x"]
+    mode_bg: ["down", "tab", "b"]
+    mode_fg: ["up"]
     close: ["enter", "esc", "ctrl-space"]
     left: ["left"]
     right: ["right"]
@@ -383,7 +379,7 @@ rich_text_edit:
         - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
         - {keys: ["ctrl-z"], label: "Undo"}
         - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
-        - {keys: ["space", "shift-space", "f", "b", "x", "left", "right"], label: "Color picker: set target or swatch; Enter/Esc closes"}
+        - {keys: ["space", "left", "right", "down", "tab", "b", "up"], label: "Color picker: choose color; right-click switches to BG; Enter/Esc closes"}
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}

@@ -53,7 +53,7 @@ widgets:
     source: choice.go
   - name: loom.ColorPicker
     package: loom
-    purpose: Choose foreground and background colors with a combined style preview.
+    purpose: Choose foreground or background colors with one palette row and an optional combined style preview.
     category: input
     example: |-
       picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
