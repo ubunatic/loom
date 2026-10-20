@@ -62,5 +62,6 @@
 | [studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md](studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md) | 2026-10-10 Lean Sprint Study: Configurable Popover Menu Semantics in loom edit (Issue 316) |
 | [studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md](studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md) | 2026-10-10 Lean Sprint Study: Directional Popover Focus and Tab/Ctrl+I Decoupling (Issue 317) |
 | [studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md) | 2026-10-10 Lean Sprint Study: Cancel Focused Popover on Arrow Away from Menu Bar (Issue 318) |
+| [studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md](studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md) | Two-Agent Lean Sprint: Issue 342 (Ctrl+Space popover toggle, mousegrab default) |
 
 Study files are the source of truth for this table.
