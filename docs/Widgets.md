@@ -543,6 +543,29 @@ Every catalog widget has a live demo in the `gallery/` package: `loom widgets --
 `PaintCanvas` draws braille dots with the left mouse button. Press to start a stroke,
 drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 
+### Color Picker (`loom.ColorPicker`)
+
+`ColorPicker` exposes its current `FG`, `BG`, active `Target` and `Selected`
+swatch. `PreviewStyle()` returns both selected colors together. `OnChange` reports
+the channel and color after an assignment; `OnClose` runs for Enter, Esc or
+Ctrl+Space, with `DoneResult` so an embedded host keeps running. The palette,
+labels, glyphs and key bindings come from `spec/defaults.yaml`.
+
+```go
+picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
+picker.OnChange = func(target loom.ColorPickerTarget, color loom.Color) {
+    // Store the selected foreground or background.
+}
+picker.OnClose = func() { /* finish the picker session */ }
+frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
+```
+
+Click or Space assigns to the active target; Shift+click, Shift+Space and
+right-click assign the background. `f` and `b` assign the focused swatch to
+foreground or background. The clickable `FG │ BG` line changes the target,
+`x` flips it, and Left/Right move through swatches and flip targets at the ends.
+Tab is left to the containing widget.
+
 ### Standalone Form Controls
 
 `NumberInput` and `Toggle` can be used outside a `Settings` list. Both bind to

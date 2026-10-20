@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "collector"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "collector"],
   "properties": {
     "collector": {
       "type": "object",
@@ -136,6 +136,49 @@
       "properties": {
         "prompt": { "type": "string", "minLength": 1 },
         "placeholder": { "type": "string", "minLength": 1 }
+      }
+    },
+    "color_picker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["palette", "initial_target", "swatch_width", "labels", "glyphs", "preview_text", "bindings"],
+      "properties": {
+        "palette": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
+        "initial_target": {"type": "string", "enum": ["fg", "bg"]},
+        "swatch_width": {"type": "integer", "minimum": 1},
+        "labels": {
+          "type": "object", "additionalProperties": false,
+          "required": ["fg", "bg", "preview"],
+          "properties": {
+            "fg": {"type": "string", "minLength": 1},
+            "bg": {"type": "string", "minLength": 1},
+            "preview": {"type": "string", "minLength": 1}
+          }
+        },
+        "glyphs": {
+          "type": "object", "additionalProperties": false,
+          "required": ["separator", "swatch", "focus"],
+          "properties": {
+            "separator": {"type": "string", "minLength": 1},
+            "swatch": {"type": "string", "minLength": 1},
+            "focus": {"type": "string", "minLength": 1}
+          }
+        },
+        "preview_text": {"type": "string", "minLength": 1},
+        "bindings": {
+          "type": "object", "additionalProperties": false,
+          "required": ["select", "select_bg", "target_fg", "target_bg", "toggle_target", "close", "left", "right"],
+          "properties": {
+            "select": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "select_bg": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "target_fg": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "target_bg": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "toggle_target": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "close": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "left": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "right": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+          }
+        }
       }
     },
     "number_input": {

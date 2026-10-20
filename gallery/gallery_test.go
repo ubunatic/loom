@@ -686,8 +686,9 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 		"ProgressBar": true, "Spinner": true, "Stopwatch": true, "Timer": true,
 	}
 	keys := map[string]loom.KeyEvent{
-		"HintBar": {Key: "f7"},
-		"Choice":  {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "right"},
+		"ColorPicker": {Key: "right"},
+		"HintBar":     {Key: "f7"},
+		"Choice":      {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "right"},
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"SearchBar": {Text: "x"},

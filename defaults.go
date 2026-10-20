@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom/measure"
 	"ubunatic.com/loom/spec"
 )
 
@@ -38,6 +39,7 @@ type LibDefaults struct {
 	PaintCanvas  PaintCanvasDefaults  `yaml:"paint_canvas"`
 	Editor       EditorDefaults       `yaml:"editor"`
 	SearchBar    SearchBarDefaults    `yaml:"search_bar"`
+	ColorPicker  ColorPickerDefaults  `yaml:"color_picker"`
 	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
 	NumberInput  NumberInputDefaults  `yaml:"number_input"`
 	Toggle       ToggleDefaults       `yaml:"toggle"`
@@ -46,6 +48,59 @@ type LibDefaults struct {
 	Split        SplitDefaults        `yaml:"split"`
 	Choice       ChoiceDefaults       `yaml:"choice"`
 	Table        TableDefaults        `yaml:"table"`
+}
+
+// ColorPickerDefaults defines the ColorPicker's palette, labels, glyphs and keys.
+type ColorPickerDefaults struct {
+	Palette       []int               `yaml:"palette"`
+	InitialTarget string              `yaml:"initial_target"`
+	SwatchWidth   int                 `yaml:"swatch_width"`
+	Labels        ColorPickerLabels   `yaml:"labels"`
+	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
+	PreviewText   string              `yaml:"preview_text"`
+	Bindings      map[string][]string `yaml:"bindings"`
+}
+
+type ColorPickerLabels struct {
+	FG      string `yaml:"fg"`
+	BG      string `yaml:"bg"`
+	Preview string `yaml:"preview"`
+}
+
+type ColorPickerGlyphs struct {
+	Separator string `yaml:"separator"`
+	Swatch    string `yaml:"swatch"`
+	Focus     string `yaml:"focus"`
+}
+
+func (d ColorPickerDefaults) validate() error {
+	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 {
+		return fmt.Errorf("color_picker palette and swatch_width must be valid")
+	}
+	seen := make(map[int]bool, len(d.Palette))
+	for _, color := range d.Palette {
+		if color < 0 || color > 255 || seen[color] {
+			return fmt.Errorf("color_picker palette values must be unique indexes from 0 to 255")
+		}
+		seen[color] = true
+	}
+	if d.InitialTarget != "fg" && d.InitialTarget != "bg" {
+		return fmt.Errorf("color_picker.initial_target must be fg or bg")
+	}
+	if d.Labels.FG == "" || d.Labels.BG == "" || d.Labels.Preview == "" || d.PreviewText == "" {
+		return fmt.Errorf("color_picker labels and preview text must not be empty")
+	}
+	for _, glyph := range []string{d.Glyphs.Separator, d.Glyphs.Swatch, d.Glyphs.Focus} {
+		if glyph == "" || measure.StringWidth(glyph) != 1 {
+			return fmt.Errorf("color_picker glyphs must each occupy one display cell")
+		}
+	}
+	for _, name := range []string{"select", "select_bg", "target_fg", "target_bg", "toggle_target", "close", "left", "right"} {
+		if len(d.Bindings[name]) == 0 {
+			return fmt.Errorf("color_picker.bindings.%s must not be empty", name)
+		}
+	}
+	return nil
 }
 
 // KeyCapDefaults defines the modifier glyphs KeyCap renders, in display order.
@@ -549,6 +604,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Mouse.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.ColorPicker.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.RichTextEdit.validate(); err != nil {

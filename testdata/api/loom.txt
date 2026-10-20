@@ -95,6 +95,9 @@ var SpeccedDefaults = func() LibDefaults {
 	if err := defs.Mouse.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
+	if err := defs.ColorPicker.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
 	if err := defs.RichTextEdit.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
@@ -1181,6 +1184,81 @@ func (c Color) RGB() (r, g, b uint8, ok bool)
     palette (6x6x6 color cube and grayscale ramp; 0-15 use common ANSI RGB
     values).
 
+type ColorPicker struct {
+	FG, BG     Color
+	Target     ColorPickerTarget
+	Selected   int
+	Palette    []Color
+	Style      Style
+	FocusStyle Style
+	OnChange   func(ColorPickerTarget, Color)
+	OnClose    func()
+
+	// Has unexported fields.
+}
+    ColorPicker selects a foreground or background color and previews the pair.
+
+func NewColorPicker(fg, bg Color) *ColorPicker
+    NewColorPicker creates a picker initialized with foreground and background
+    colors.
+
+func (p *ColorPicker) ApplyTheme(theme ThemeColors)
+    ApplyTheme updates the normal and focused styles from a host theme.
+
+func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult
+    ConsumeKey handles palette navigation, target changes and completion.
+
+func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult
+    ConsumeMouse selects a swatch or changes target through the top-line
+    controls.
+
+func (p *ColorPicker) Draw(c *Canvas, r Rect)
+    Draw renders the FG/BG target selector, palette swatches and combined
+    preview.
+
+func (p *ColorPicker) Focused() bool
+    Focused reports whether this picker owns keyboard focus.
+
+func (p *ColorPicker) Measure(width int) measure.Size
+    Measure reports the palette width and its three display rows.
+
+func (p *ColorPicker) PreviewStyle() Style
+    PreviewStyle returns the selected foreground and background as one style.
+
+func (p *ColorPicker) SetFocus(focused bool)
+    SetFocus updates keyboard focus rendering.
+
+type ColorPickerDefaults struct {
+	Palette       []int               `yaml:"palette"`
+	InitialTarget string              `yaml:"initial_target"`
+	SwatchWidth   int                 `yaml:"swatch_width"`
+	Labels        ColorPickerLabels   `yaml:"labels"`
+	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
+	PreviewText   string              `yaml:"preview_text"`
+	Bindings      map[string][]string `yaml:"bindings"`
+}
+    ColorPickerDefaults defines the ColorPicker's palette, labels, glyphs and
+    keys.
+
+type ColorPickerGlyphs struct {
+	Separator string `yaml:"separator"`
+	Swatch    string `yaml:"swatch"`
+	Focus     string `yaml:"focus"`
+}
+
+type ColorPickerLabels struct {
+	FG      string `yaml:"fg"`
+	BG      string `yaml:"bg"`
+	Preview string `yaml:"preview"`
+}
+
+type ColorPickerTarget uint8
+    ColorPickerTarget names the channel a ColorPicker assigns colors to.
+
+const (
+	ColorPickerFG ColorPickerTarget = iota
+	ColorPickerBG
+)
 type ColorProfile uint8
     ColorProfile is the color capability available at an ANSI output boundary.
 
@@ -2244,6 +2322,7 @@ type LibDefaults struct {
 	PaintCanvas  PaintCanvasDefaults  `yaml:"paint_canvas"`
 	Editor       EditorDefaults       `yaml:"editor"`
 	SearchBar    SearchBarDefaults    `yaml:"search_bar"`
+	ColorPicker  ColorPickerDefaults  `yaml:"color_picker"`
 	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
 	NumberInput  NumberInputDefaults  `yaml:"number_input"`
 	Toggle       ToggleDefaults       `yaml:"toggle"`
@@ -2515,8 +2594,11 @@ type MouseDefaults struct {
 type MouseEvent struct {
 	Action     MouseAction
 	Button     MouseButton
-	X, Y       int // DecodeMouse reports 1-based terminal coordinates; Pane converts them before widget dispatch.
-	RawX, RawY int // Original 1-based SGR coordinates, preserved when Pane translates X/Y.
+	Shift      bool // SGR modifier bit 4.
+	Alt        bool // SGR modifier bit 8.
+	Ctrl       bool // SGR modifier bit 16.
+	X, Y       int  // DecodeMouse reports 1-based terminal coordinates; Pane converts them before widget dispatch.
+	RawX, RawY int  // Original 1-based SGR coordinates, preserved when Pane translates X/Y.
 }
     MouseEvent is a decoded SGR (1006) mouse report.
 

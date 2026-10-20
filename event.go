@@ -111,8 +111,11 @@ const (
 type MouseEvent struct {
 	Action     MouseAction
 	Button     MouseButton
-	X, Y       int // DecodeMouse reports 1-based terminal coordinates; Pane converts them before widget dispatch.
-	RawX, RawY int // Original 1-based SGR coordinates, preserved when Pane translates X/Y.
+	Shift      bool // SGR modifier bit 4.
+	Alt        bool // SGR modifier bit 8.
+	Ctrl       bool // SGR modifier bit 16.
+	X, Y       int  // DecodeMouse reports 1-based terminal coordinates; Pane converts them before widget dispatch.
+	RawX, RawY int  // Original 1-based SGR coordinates, preserved when Pane translates X/Y.
 }
 
 // DecodeKey converts raw bytes from a /dev/tty read into a KeyEvent.
@@ -489,14 +492,21 @@ func DecodeMouse(b []byte) (MouseEvent, bool) {
 	btn := cb & 3
 	motion := cb&32 != 0
 	scroll := cb&64 != 0
+	makeEvent := func(action MouseAction, button MouseButton) MouseEvent {
+		return MouseEvent{
+			Action: action, Button: button,
+			Shift: cb&4 != 0, Alt: cb&8 != 0, Ctrl: cb&16 != 0,
+			X: cx, Y: cy, RawX: cx, RawY: cy,
+		}
+	}
 
 	var action MouseAction
 	var button MouseButton
 	switch {
 	case scroll && btn == 0:
-		return MouseEvent{Action: MouseScrollUp, Button: MouseNone, X: cx, Y: cy, RawX: cx, RawY: cy}, true
+		return makeEvent(MouseScrollUp, MouseNone), true
 	case scroll && btn == 1:
-		return MouseEvent{Action: MouseScrollDown, Button: MouseNone, X: cx, Y: cy, RawX: cx, RawY: cy}, true
+		return makeEvent(MouseScrollDown, MouseNone), true
 	case motion:
 		if btn == 3 {
 			action = MouseHover
@@ -512,7 +522,7 @@ func DecodeMouse(b []byte) (MouseEvent, bool) {
 		action = MouseRelease
 		button = MouseButton(btn)
 	}
-	return MouseEvent{Action: action, Button: button, X: cx, Y: cy, RawX: cx, RawY: cy}, true
+	return makeEvent(action, button), true
 }
 
 // scanMouse extracts the leading SGR mouse report from b, returning the decoded

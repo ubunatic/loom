@@ -88,6 +88,22 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	}
 }
 
+func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
+	got := SpeccedDefaults.ColorPicker
+	if err := got.validate(); err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Palette) != 16 || got.Palette[0] != 0 || got.Palette[15] != 15 {
+		t.Fatalf("picker palette = %v, want indexes 0 through 15", got.Palette)
+	}
+	if got.Labels.FG == "" || got.Labels.BG == "" || got.Labels.Preview == "" || got.Glyphs.Separator == "" || got.Glyphs.Swatch == "" || got.Glyphs.Focus == "" {
+		t.Fatalf("picker labels/glyphs incomplete: %+v", got)
+	}
+	if got.Bindings["target_fg"][0] == "" || got.Bindings["target_bg"][0] == "" || got.Bindings["toggle_target"][0] == "" || got.Bindings["close"][0] == "" {
+		t.Fatalf("picker bindings incomplete: %+v", got.Bindings)
+	}
+}
+
 func TestPaneDefaultsLoadFromSpec(t *testing.T) {
 	got := SpeccedDefaults.Pane
 	if got.MaxCols != 50 {

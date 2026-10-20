@@ -62,6 +62,52 @@ func TestDecodeMouseButtons(t *testing.T) {
 	}
 }
 
+func TestDecodeMouseSGRModifiersAcrossActions(t *testing.T) {
+	cases := []struct {
+		name   string
+		raw    string
+		action loom.MouseAction
+	}{
+		{"press-combined", "\x1b[<28;2;3M", loom.MousePress},
+		{"release-combined", "\x1b[<30;2;3m", loom.MouseRelease},
+		{"motion-combined", "\x1b[<60;2;3M", loom.MouseDrag},
+		{"hover-combined", "\x1b[<63;2;3M", loom.MouseHover},
+		{"wheel-up-combined", "\x1b[<92;2;3M", loom.MouseScrollUp},
+		{"wheel-down-combined", "\x1b[<93;2;3M", loom.MouseScrollDown},
+		{"shift", "\x1b[<4;2;3M", loom.MousePress},
+		{"alt", "\x1b[<8;2;3M", loom.MousePress},
+		{"ctrl", "\x1b[<16;2;3M", loom.MousePress},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			event, ok := loom.DecodeMouse([]byte(tc.raw))
+			if !ok {
+				t.Fatal("report did not decode")
+			}
+			if event.Action != tc.action {
+				t.Fatalf("action = %v, want %v", event.Action, tc.action)
+			}
+			if !event.Shift && !event.Alt && !event.Ctrl {
+				t.Fatalf("modifiers were discarded: %+v", event)
+			}
+			if tc.name == "press-combined" || tc.name == "release-combined" || tc.name == "motion-combined" || tc.name == "hover-combined" || tc.name == "wheel-up-combined" || tc.name == "wheel-down-combined" {
+				if !event.Shift || !event.Alt || !event.Ctrl {
+					t.Fatalf("combined modifiers = shift %v alt %v ctrl %v", event.Shift, event.Alt, event.Ctrl)
+				}
+			}
+			if tc.name == "shift" && (!event.Shift || event.Alt || event.Ctrl) {
+				t.Fatalf("shift flags = %+v", event)
+			}
+			if tc.name == "alt" && (event.Shift || !event.Alt || event.Ctrl) {
+				t.Fatalf("alt flags = %+v", event)
+			}
+			if tc.name == "ctrl" && (event.Shift || event.Alt || !event.Ctrl) {
+				t.Fatalf("ctrl flags = %+v", event)
+			}
+		})
+	}
+}
+
 func TestDecodeMouseHoverAndDrag(t *testing.T) {
 	// motion bit (32) + button 3 (none) = 35 → hover.
 	hover, ok := loom.DecodeMouse([]byte("\x1b[<35;7;8M"))

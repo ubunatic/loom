@@ -51,6 +51,17 @@ widgets:
           {Name: "Beta"},
       })
     source: choice.go
+  - name: loom.ColorPicker
+    package: loom
+    purpose: Choose foreground and background colors with a combined style preview.
+    category: input
+    example: |-
+      picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
+      frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
+      _ = frame
+    source: colorpicker.go
+    docs: docs/Widgets.md
+    ticket: issues/346
   - name: loom.Confirm
     package: loom
     purpose: Ask for a yes or no response.
