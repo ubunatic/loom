@@ -320,6 +320,8 @@ Tab policy: Tab belongs to containers (Split, Form, FilePicker, the gallery's
 demo switch), which use it to move focus. A widget must not consume Tab unless
 Tab is its documented action: Dialog moves between buttons with left/right only,
 while Table uses Tab for sort and shows it as `[tab:…]` (open question in issue 277).
+The focused `ColorPicker` also consumes Tab to switch from foreground to
+background mode; its parent only sees Tab when the picker is not active.
 
 Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
 [Upgrading](Upgrading.md) for the mapping to `EventResult`.
@@ -403,8 +405,8 @@ clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the
-selection formatting popover. While the embedded ColorPicker is open, Tab is
-left to the containing focus manager; Enter or Esc closes the picker, while
+selection formatting popover. While the embedded ColorPicker is open, Tab
+switches it to background mode; Enter or Esc closes the picker, while
 Ctrl+Space closes the entire formatting popover.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
@@ -548,11 +550,11 @@ drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 
 ### Color Picker (`loom.ColorPicker`)
 
-`ColorPicker` exposes its current `FG`, `BG`, active `Target` and `Selected`
+`ColorPicker` exposes its current `FG`, `BG`, active `Target` mode and `Selected`
 swatch. `PreviewStyle()` returns both selected colors together. `OnChange` reports
 the channel and color after an assignment; `OnClose` runs for Enter, Esc or
-Ctrl+Space, with `DoneResult` so an embedded host keeps running. The palette,
-labels, glyphs and key bindings come from `spec/defaults.yaml`.
+Ctrl+Space, with `DoneResult` so an embedded host keeps running. Palette, glyphs,
+preview visibility and key bindings come from `spec/defaults.yaml`.
 
 ```go
 picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
@@ -563,11 +565,16 @@ picker.OnClose = func() { /* finish the picker session */ }
 frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
 ```
 
-Click or Space assigns to the active target; Shift+click, Shift+Space and
-right-click assign the background. `f` and `b` assign the focused swatch to
-foreground or background. The clickable `FG │ BG` line changes the target,
-`x` flips it, and Left/Right move through swatches and flip targets at the ends.
-Tab is left to the containing widget.
+The picker opens in foreground mode with one row of contiguous `Aa` samples.
+Each sample shows that foreground on the current background; in background mode
+the current foreground appears on each candidate background. Underline marks the
+focused foreground sample; `▔▔` below a sample marks focus in background mode.
+Down, Tab, `b`, or right-click switches to background mode without picking a
+color; Up returns to foreground mode. Left/Right move through samples. Click or
+Space picks the focused sample for the current mode. Shift+click and Shift+Space
+have no special action. Enter/Esc close the picker; Ctrl+Space closes its
+containing formatting popover. Set `color_picker.show_preview` to false to hide
+the preview row.
 
 ### Standalone Form Controls
 

@@ -8,6 +8,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| Unreleased | `ColorPicker` now switches FG/BG mode with Down/Tab/`b`/right-click and Up; right-click no longer picks, Shift+click/Shift+Space/`f`/`x` are removed, and the FG/BG selector row is gone (issue 347) | Use `Target` as the current mode; switch modes before picking with Click or Space |
 | Unreleased | `collector.DefaultRetention` is now a variable loaded from `spec/defaults.yaml` (issue 327) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |
 | Unreleased | `DefaultPlaceholder` is now a variable loaded from `spec/defaults.yaml` (issue 324) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |
 | Unreleased | `graph.MaxWidth` and `graph.DefaultBackgroundANSI` are now variables loaded from `spec/defaults.yaml` (issue 326) | Use them in runtime expressions; replace uses requiring Go constants with application-owned constants |
