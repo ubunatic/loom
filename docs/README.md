@@ -63,5 +63,6 @@
 | [studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md](studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md) | 2026-10-10 Lean Sprint Study: Directional Popover Focus and Tab/Ctrl+I Decoupling (Issue 317) |
 | [studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md) | 2026-10-10 Lean Sprint Study: Cancel Focused Popover on Arrow Away from Menu Bar (Issue 318) |
 | [studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md](studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md) | Two-Agent Lean Sprint: Issue 342 (Ctrl+Space popover toggle, mousegrab default) |
+| [studies/2026-10-21-two-agent-lean-sprint-issue-346-colorpicker.md](studies/2026-10-21-two-agent-lean-sprint-issue-346-colorpicker.md) | Two-Agent Lean Sprint: Issue 346 (ColorPicker widget, 🎨 popover item) |
 
 Study files are the source of truth for this table.
