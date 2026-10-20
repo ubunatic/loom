@@ -53,6 +53,16 @@ modes. One row of 16 contiguous 2-cell `Aa` swatches (32 columns, no spacers).
 - Dropped: two-row design A, `●` cursor, right-click as BG pick, and the 346 shortcuts
   Shift+click, Shift+Space and `f` (user "go" on the recommendation, 2026-10-21).
 
+## M3 — Toggle keys
+
+M2 delivered (2eb0d14, dddfacb, 9d21eb3): one-row mode picker; host `make test-q1` green; live
+tmux check: opens FG with underline, Down → BG with `▔▔`, Up → FG.
+
+Pre-Work (user "toggle", 2026-10-21): Tab, `b` and right-click are one-way to BG today. Make them
+toggle FG↔BG (no color change); Down stays → BG, Up stays → FG. Spec the toggle binding
+(e.g. `mode_toggle: [tab, b]`), update tests (press twice returns to FG, for keys and right-click),
+docs/Widgets.md and F1 help.
+
 ## M2 — Implement chosen design
 
 Keep the 346 widget API where possible minus the target switcher; spec keys
