@@ -1,6 +1,6 @@
 # 346 — loom: ColorPicker widget for FG/BG; replace #FG/#BG popover items with one 🎨 item
 
-**Status**: Open
+**Status**: Closed — ColorPicker widget + SGR modifiers (61e9c25) and 🎨 popover integration (cd39f81); host make test-q1 green; live loom edit check passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
