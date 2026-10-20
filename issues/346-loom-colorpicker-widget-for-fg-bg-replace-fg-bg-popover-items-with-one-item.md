@@ -68,7 +68,15 @@ All of these are supported; Shift variants remain primary where the terminal for
 other modifier) bits in `MouseEvent` from SGR with decoder tests; palette/labels/glyph in spec
 (+ schema); gallery entry. No RichTextEdit changes yet.
 
+M1 delivered (61e9c25): ColorPicker widget, SGR Shift/Alt/Ctrl in `MouseEvent`, `color_picker` spec +
+schema, gallery demo, docs. Dev's single q1 run failed (catalog doc ref, API snapshot); both fixed;
+host rerun of `make test-q1` green.
+
 ## M2 — Popover integration under 🎨
+
+Pre-Work (from M1 review): none blocking. Keep the M1 widget API; RichTextEdit embeds it rather
+than copying its logic. Remove the hardcoded 16-swatch palette (richtextedit_popover_draw.go:142)
+in favour of `color_picker.palette`.
 
 Replace `#FG`/`#BG` with `🎨` opening the embedded ColorPicker; route events through it; apply to
 selection or typing style (new: typing style when nothing selected); display-width toolbar
