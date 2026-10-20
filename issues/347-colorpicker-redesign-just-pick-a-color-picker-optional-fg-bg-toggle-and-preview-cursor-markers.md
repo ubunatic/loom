@@ -40,8 +40,17 @@ Decisions (user, 2026-10-21, supersede items 1 and 5 above):
   terminal that right-click reaches loom in both modes before relying on it.
 - Markers take no extra columns: they reuse existing swatch spacing; layout width is unchanged.
 
-Still open for M1: with no switcher, how a BG pick starts in each design (Shift+click/Shift+Space
-and `b` from 346, right-click, or two entry points from the 🎨 bar).
+Chosen design (user, 2026-10-21, after gapless proposals f114015): one picker for both mousegrab
+modes. One row of 16 contiguous 2-cell `Aa` swatches (32 columns, no spacers).
+- FG mode (default on open): swatches show each color as FG on the current BG (design B FG row);
+  the focused swatch is marked by underlining its text. This underline also signals FG mode.
+- BG mode: swatches show the current FG on each color (design B BG row); the focused swatch is
+  marked by a line on the row below the cell (`▔▔`). This marker is hidden in FG mode.
+- Mode switch (no color change): Down, Tab, `b`, and right-click. Down acts like Tab here; Tab is
+  this widget's documented action (document it under the Tab policy in docs/Widgets.md).
+- Click or Space picks the focused/clicked color for the current mode.
+- Dropped: two-row design A, `●` cursor, right-click/Shift as BG pick (Shift+click, Shift+Space,
+  `f` to be reconsidered in M2 plan; propose keeping or removing them).
 
 ## M2 — Implement chosen design
 
