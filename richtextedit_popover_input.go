@@ -33,6 +33,10 @@ func (e *RichTextEdit) finishPopoverAction() {
 }
 
 func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
+	if key.Is(e.PopoverDefaults.PopupOpenKey) && e.popoverOpen() {
+		e.clearPopoverKeyboardState(true)
+		return Handled(), true
+	}
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || (!e.PopoverDefaults.AutoPopupOnSelection && !e.popoverExplicit && !e.popoverAtCursor) {
 		return Ignored(), false
 	}

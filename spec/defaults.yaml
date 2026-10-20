@@ -145,7 +145,7 @@ editor:
     fg: 15
     bg: 239
   theme: "julia256"
-  mousegrab: false
+  mousegrab: true
   altscreen: true
   hotkey_files_key: "^O"
   hotkey_files_binding: "ctrl-o"

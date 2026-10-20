@@ -55,12 +55,24 @@ func TestEditorSpecDrivesLayoutAndActions(t *testing.T) {
 
 func TestEditorFlagDefaultsComeFromSpec(t *testing.T) {
 	d := loom.SpeccedDefaults.Editor
+	if !d.MouseGrab {
+		t.Fatal("spec mousegrab default = false, want true")
+	}
 	cmd := editCommand()
 	if got, _ := cmd.Flags().GetBool("altscreen"); got != d.AltScreen {
 		t.Fatal("altscreen flag differs from spec")
 	}
 	if got, _ := cmd.Flags().GetBool("mousegrab"); got != d.MouseGrab {
 		t.Fatal("mousegrab flag differs from spec")
+	}
+	for _, flag := range []string{"--mousegrab=false", "-m=false"} {
+		cmd := editCommand()
+		if err := cmd.ParseFlags([]string{flag}); err != nil {
+			t.Fatalf("ParseFlags(%q): %v", flag, err)
+		}
+		if got, _ := cmd.Flags().GetBool("mousegrab"); got {
+			t.Errorf("%s left mousegrab enabled", flag)
+		}
 	}
 }
 

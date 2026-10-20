@@ -374,8 +374,11 @@ Once focused on the main menu bar, pressing the arrow away from the toolbar back
 towards the text (Up when below, Down when above) cancels the popover; Left/Right
 navigate actions, and Enter or Space activates the focused action. In a submenu,
 Tab/Shift+Tab and arrows move through choices, and Enter or Space applies one.
-Esc closes the submenu before the bar. Ctrl+Space reopens a dismissed toolbar
-while preserving the selection. The
+Esc closes the submenu before the bar. Ctrl+Space closes an open toolbar or
+submenu and returns input to the editor without changing the document or
+selection; another Ctrl+Space reopens the toolbar while preserving selection.
+When the bar is closed, Ctrl+Space selects a box or word, or opens a popover at
+the cursor on whitespace. The
 focused action is highlighted; the initial focus follows uniformly active
 bold, italic, underline, or box selection, otherwise B. Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them

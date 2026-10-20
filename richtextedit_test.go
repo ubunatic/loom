@@ -991,6 +991,55 @@ func TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover(t *testing.T) {
 	t.Fatal("blank-cell popover did not draw the Draw action")
 }
 
+func TestRichTextEditCtrlSpaceClosesAndReopensPopover(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		focused bool
+		submenu bool
+	}{
+		{name: "unfocused"},
+		{name: "focused", focused: true},
+		{name: "Box submenu", focused: true, submenu: true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := richTestEditor(RichSpan{Text: "one two"})
+			e.Cursor.Offset = 5
+			e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
+			e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+			before := richLinesText(e.Document.Lines)
+			from, to := e.SelectionFrom, e.SelectionTo
+			if tc.focused {
+				e.ConsumeKey(KeyEvent{Key: "down"})
+			}
+			if tc.submenu {
+				e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
+				for _, button := range e.popoverButtons {
+					if button.label == "Box" {
+						e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y})
+						break
+					}
+				}
+				if e.popoverSubmenu != "Box" {
+					t.Fatal("mouse did not open Box submenu")
+				}
+			}
+			if got := e.ConsumeKey(KeyEvent{Key: "ctrl-space"}); !got.Consumed || got.Quit {
+				t.Fatalf("close result = %+v", got)
+			}
+			if e.popoverOpen() || e.popoverFocusSet || e.popoverSubmenu != "" || !e.Focused() {
+				t.Fatalf("popover did not close cleanly: open=%v focus=%v submenu=%q editorFocused=%v", e.popoverOpen(), e.popoverFocusSet, e.popoverSubmenu, e.Focused())
+			}
+			if richLinesText(e.Document.Lines) != before || !e.HasSelection || e.SelectionFrom != from || e.SelectionTo != to {
+				t.Fatalf("toggle changed document or selection: %q selection=%+v-%+v has=%v", richLinesText(e.Document.Lines), e.SelectionFrom, e.SelectionTo, e.HasSelection)
+			}
+			e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+			if !e.popoverOpen() || !e.HasSelection || e.SelectionFrom != from || e.SelectionTo != to {
+				t.Fatal("second toggle did not reopen popover with selection intact")
+			}
+		})
+	}
+}
+
 func TestRichTextEditVerticalVoidCursorDoesNotEditUntilTyping(t *testing.T) {
 	e := richEditorLines("abcd", "x")
 	e.GhostCursorEnabled = true
