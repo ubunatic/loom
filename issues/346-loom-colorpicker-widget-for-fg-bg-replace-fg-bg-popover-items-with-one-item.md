@@ -38,6 +38,18 @@ a user decision or denied permission.
 - `🎨` is double width; validate the bar and picker with `loom eval`, `loom measure` and
   `loom check-box`.
 
+## Decision: input fallbacks (user, 2026-10-20)
+
+All of these are supported; Shift variants remain primary where the terminal forwards them:
+
+- Mouse: click → FG, Shift+click → BG, right-click → BG.
+- Keyboard on a focused swatch: Space → active target, Shift+Space → BG, `f` → FG, `b` → BG.
+- Visible `FG │ BG` target toggle at the top of the picker (clickable); Space and plain click pick
+  for the active target; `x` (and Left/Right at the swatch edge) flips the target. Not Tab (Tab
+  belongs to containers).
+- Preview shows both colors; Enter and Esc close; Ctrl+Space closes all per 342.
+- Rejected: split swatch halves; Enter/Shift+Enter picking.
+
 ## Verification
 
 Widget unit tests (FG, BG, both, keyboard and mouse, modifier decoding), popover test that `🎨`
