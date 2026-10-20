@@ -27,3 +27,18 @@
 - Mousegrab: set `mousegrab: true` in `spec/defaults.yaml`; check that `--mousegrab=false` / `-m=false`
   still disables it and update help/man/docs mentioning the old default.
 - Tests: unit test for the Ctrl+Space toggle; default test for mousegrab.
+
+## 3. Searcher findings (2026-10-20)
+
+- `RichTextEdit.consumeKey` (richtextedit_input.go:86) calls `consumePopoverKey` before the
+  Ctrl+Space binding (l.134). Unfocused popover or Box submenu: Ctrl+Space falls through and
+  reopens/resets the popover; it never closes it. No spec YAML covers Ctrl+Space; document in
+  docs/Widgets.md:377 and docs/TuiInput.md:81.
+- Toggle test goes beside `TestRichTextEditCtrlSpaceSelectsWordAndOpensPopover` (richtextedit_test.go:964).
+- Mousegrab tests: `TestEditorFlagDefaultsComeFromSpec` (cmd/loom/edit_spec_test.go:58),
+  `TestLoadEditorConfigDefaults` (editor_config_test.go:15), override test cmd/loom/main_test.go:1048.
+  Stale doc: docs/Editor.md:53 ("mouse capture off").
+- Write set: richtextedit_popover_input.go, richtextedit_test.go, spec/defaults.yaml, one of the
+  default tests, docs/Widgets.md, docs/TuiInput.md, docs/Editor.md.
+
+## M1 — Popover toggle + mousegrab default (single milestone)
