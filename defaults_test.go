@@ -99,7 +99,7 @@ func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
 	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.ModeMarker == "" {
 		t.Fatalf("picker preview/glyphs incomplete: %+v", got)
 	}
-	if got.Bindings["mode_bg"][0] == "" || got.Bindings["mode_fg"][0] == "" || got.Bindings["close"][0] == "" {
+	if got.Bindings["mode_bg"][0] != "down" || got.Bindings["mode_fg"][0] != "up" || got.Bindings["mode_toggle"][0] != "tab" || got.Bindings["close"][0] == "" {
 		t.Fatalf("picker bindings incomplete: %+v", got.Bindings)
 	}
 	for _, removed := range []string{"select_bg", "target_fg", "target_bg", "toggle_target"} {

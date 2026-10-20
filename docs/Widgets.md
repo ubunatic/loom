@@ -320,8 +320,9 @@ Tab policy: Tab belongs to containers (Split, Form, FilePicker, the gallery's
 demo switch), which use it to move focus. A widget must not consume Tab unless
 Tab is its documented action: Dialog moves between buttons with left/right only,
 while Table uses Tab for sort and shows it as `[tab:…]` (open question in issue 277).
-The focused `ColorPicker` also consumes Tab to switch from foreground to
-background mode; its parent only sees Tab when the picker is not active.
+The focused `ColorPicker` consumes Tab as a documented action to toggle between
+foreground and background modes; its parent only sees Tab when the picker is not
+active.
 
 Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
 [Upgrading](Upgrading.md) for the mapping to `EventResult`.
@@ -569,10 +570,10 @@ The picker opens in foreground mode with one row of contiguous `Aa` samples.
 Each sample shows that foreground on the current background; in background mode
 the current foreground appears on each candidate background. Underline marks the
 focused foreground sample; `▔▔` below a sample marks focus in background mode.
-Down, Tab, `b`, or right-click switches to background mode without picking a
-color; Up returns to foreground mode. Left/Right move through samples. Click or
-Space picks the focused sample for the current mode. Shift+click and Shift+Space
-have no special action. Enter/Esc close the picker; Ctrl+Space closes its
+Down sets background mode and Up sets foreground mode without picking a color.
+Tab, `b`, and right-click toggle between the two modes, also without changing
+colors. Left/Right move through samples. Click or Space picks the focused sample
+for the current mode. Enter/Esc close the picker; Ctrl+Space closes its
 containing formatting popover. Set `color_picker.show_preview` to false to hide
 the preview row.
 

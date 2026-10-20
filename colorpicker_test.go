@@ -13,12 +13,30 @@ func TestColorPickerModeAndKeyboardInput(t *testing.T) {
 	fg, bg, selected := picker.FG, picker.BG, picker.Selected
 	changed := 0
 	picker.OnChange = func(ColorPickerTarget, Color) { changed++ }
-	for _, key := range []KeyEvent{{Key: "down"}, {Key: "tab"}, {Text: "b"}} {
+	for _, key := range []KeyEvent{{Key: "down"}} {
 		if got := picker.ConsumeKey(key); got != Handled() {
 			t.Fatalf("BG mode key %+v result = %+v", key, got)
 		}
 		if picker.Target != ColorPickerBG || picker.FG != fg || picker.BG != bg || picker.Selected != selected || changed != 0 {
 			t.Fatalf("BG mode switch changed picker: target=%v colors=%v/%v selected=%d callback=%d", picker.Target, picker.FG, picker.BG, picker.Selected, changed)
+		}
+	}
+	for _, key := range []KeyEvent{{Key: "tab"}, {Text: "b"}} {
+		picker.Target = ColorPickerFG
+		if got := picker.ConsumeKey(key); got != Handled() || picker.Target != ColorPickerBG {
+			t.Fatalf("toggle key %+v from FG result/target = %+v/%v", key, got, picker.Target)
+		}
+		if picker.FG != fg || picker.BG != bg || picker.Selected != selected || changed != 0 {
+			t.Fatalf("toggle key %+v changed colors/selection/callbacks", key)
+		}
+		if got := picker.ConsumeKey(key); got != Handled() || picker.Target != ColorPickerFG {
+			t.Fatalf("toggle key %+v twice result/target = %+v/%v", key, got, picker.Target)
+		}
+		if picker.FG != fg || picker.BG != bg || picker.Selected != selected || changed != 0 {
+			t.Fatalf("toggle key %+v second press changed colors/selection/callbacks", key)
+		}
+		if got := picker.ConsumeKey(KeyEvent{Key: "up"}); got != Handled() || picker.Target != ColorPickerFG {
+			t.Fatalf("Up result/target = %+v/%v", got, picker.Target)
 		}
 	}
 	if got := picker.ConsumeKey(KeyEvent{Key: "up"}); got != Handled() || picker.Target != ColorPickerFG {
@@ -78,12 +96,15 @@ func TestColorPickerMouseModesAndBounds(t *testing.T) {
 	}
 	picker.Target, picker.Selected = ColorPickerFG, selected
 	fg, bg = picker.FG, picker.BG
-	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 7, Y: 0}); got != Handled() {
-		t.Fatalf("right-click result = %+v", got)
+	for i, target := range []ColorPickerTarget{ColorPickerBG, ColorPickerFG} {
+		if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: 7, Y: 0}); got != Handled() {
+			t.Fatalf("right-click %d result = %+v", i+1, got)
+		}
+		if picker.Target != target || picker.Selected != selected || picker.FG != fg || picker.BG != bg || changed != 1 {
+			t.Fatalf("right-click %d changed selection/colors: target=%v selected=%d FG=%v BG=%v callbacks=%d", i+1, picker.Target, picker.Selected, picker.FG, picker.BG, changed)
+		}
 	}
-	if picker.Target != ColorPickerBG || picker.Selected != selected || picker.FG != fg || picker.BG != bg || changed != 1 {
-		t.Fatalf("right-click picked a color: target=%v selected=%d FG=%v BG=%v callbacks=%d", picker.Target, picker.Selected, picker.FG, picker.BG, changed)
-	}
+	picker.Target = ColorPickerBG
 	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 6, Y: 0}); got != Handled() || picker.BG != picker.Palette[3] || changed != 2 {
 		t.Fatalf("BG left-click result=%+v BG=%v callbacks=%d", got, picker.BG, changed)
 	}

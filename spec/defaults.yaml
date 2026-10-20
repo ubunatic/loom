@@ -181,8 +181,9 @@ color_picker:
   preview_text: "AaBb"
   bindings:
     select: ["space", " "]
-    mode_bg: ["down", "tab", "b"]
+    mode_bg: ["down"]
     mode_fg: ["up"]
+    mode_toggle: ["tab", "b"]
     close: ["enter", "esc", "ctrl-space"]
     left: ["left"]
     right: ["right"]
@@ -379,7 +380,7 @@ rich_text_edit:
         - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
         - {keys: ["ctrl-z"], label: "Undo"}
         - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
-        - {keys: ["space", "left", "right", "down", "tab", "b", "up"], label: "Color picker: choose color; right-click switches to BG; Enter/Esc closes"}
+        - {keys: ["space", "left", "right", "down", "tab", "b", "up"], label: "Color picker: choose color; Tab, b or right-click toggles FG/BG; Down/Up sets BG/FG; Enter/Esc closes"}
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}

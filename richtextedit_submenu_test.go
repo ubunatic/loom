@@ -188,6 +188,10 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	if edit.popoverColorPicker.Target != ColorPickerBG || tabs.Focus() != focus {
 		t.Fatalf("active picker Tab escaped to Tabs: target=%v focus=%d", edit.popoverColorPicker.Target, tabs.Focus())
 	}
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "tab"}))
+	if edit.popoverColorPicker.Target != ColorPickerFG || tabs.Focus() != focus {
+		t.Fatalf("second picker Tab escaped to Tabs or failed to toggle back: target=%v focus=%d", edit.popoverColorPicker.Target, tabs.Focus())
+	}
 	for _, key := range []string{"left", "right"} {
 		assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: key}))
 	}

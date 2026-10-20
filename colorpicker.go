@@ -195,6 +195,9 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	case p.matches(e, "mode_fg"):
 		p.Target = ColorPickerFG
 		return Handled()
+	case p.matches(e, "mode_toggle"):
+		p.toggleTarget()
+		return Handled()
 	case p.matches(e, "select"):
 		p.changeTarget(p.Target, true)
 		return Handled()
@@ -213,13 +216,21 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	}
 }
 
-// ConsumeMouse selects a swatch or switches to background mode on right-click.
+func (p *ColorPicker) toggleTarget() {
+	if p.Target == ColorPickerFG {
+		p.Target = ColorPickerBG
+	} else {
+		p.Target = ColorPickerFG
+	}
+}
+
+// ConsumeMouse selects a swatch or toggles modes on right-click.
 func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	if p == nil || e.Action != MousePress || e.X < 0 || e.X >= p.lastRect.W || e.Y < 0 || e.Y >= p.lastRect.H {
 		return Ignored()
 	}
 	if e.Button == MouseRight {
-		p.Target = ColorPickerBG
+		p.toggleTarget()
 		return Handled()
 	}
 	if e.Button != MouseLeft || e.Y != 0 {

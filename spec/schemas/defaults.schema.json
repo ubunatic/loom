@@ -165,11 +165,12 @@
         "preview_text": {"type": "string", "minLength": 1},
         "bindings": {
           "type": "object", "additionalProperties": false,
-          "required": ["select", "mode_bg", "mode_fg", "close", "left", "right"],
+          "required": ["select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right"],
           "properties": {
             "select": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "mode_bg": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "mode_fg": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+            "mode_toggle": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "close": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "left": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
             "right": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}

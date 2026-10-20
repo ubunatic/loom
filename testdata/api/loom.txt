@@ -1209,7 +1209,7 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult
     ConsumeKey handles palette navigation, mode changes and completion.
 
 func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult
-    ConsumeMouse selects a swatch or switches to background mode on right-click.
+    ConsumeMouse selects a swatch or toggles modes on right-click.
 
 func (p *ColorPicker) Draw(c *Canvas, r Rect)
     Draw renders contiguous color samples, a mode-specific focus marker and
