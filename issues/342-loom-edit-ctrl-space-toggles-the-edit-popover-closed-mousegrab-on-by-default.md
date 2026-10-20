@@ -1,6 +1,6 @@
 # 342 — loom edit: Ctrl+Space toggles the edit popover closed; mousegrab on by default
 
-**Status**: Open
+**Status**: Closed — Implemented in e13dc01 (Ctrl+Space closes popover, mousegrab default on) and 2b3f142 (PTY tests); make test-q1 green, make install done
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
