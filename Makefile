@@ -7,7 +7,7 @@ _rst  := \033[0m
 LOOMOJI_DIR ?= $(HOME)/.local/share/loomoji
 ANSIVIEWER_DESKTOP_DIR ?= $(HOME)/.local/share/applications
 PKG ?= .
-HARNEZ_VERSION ?= v0.1.31
+HARNEZ_VERSION ?= v0.1.33
 ANSIVIEWER_ICON_DIR ?= $(HOME)/.local/share/icons/hicolor/scalable/apps
 
 
