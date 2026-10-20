@@ -1,4 +1,4 @@
-# 347 — ColorPicker redesign: just-pick-a-color picker, optional FG|BG toggle and preview, cursor markers
+# 347 — ColorPicker redesign: just-pick-a-color picker without FG|BG switcher, optional preview, cursor markers
 
 **Status**: Open
 **Priority**: P2 (Medium)
