@@ -42,3 +42,13 @@
   default tests, docs/Widgets.md, docs/TuiInput.md, docs/Editor.md.
 
 ## M1 — Popover toggle + mousegrab default (single milestone)
+
+M1 delivered (e13dc01): popover toggle and mousegrab default; regression tests failed before fix, pass after.
+
+## M2 — PTY tests for the new mousegrab default
+
+Pre-Work / Required Refinements (from M1 review): `make test-q1` fails in three cmd/loom PTY tests that
+assumed mouse capture off by default: `Test302EditPTYUntitledAndMouseOff`, `Test303EditPTYTemporaryMouseGrab`,
+`TestEditPTYHeaderHasNoDuplicateFileLabel`. Tests that exercise mouse-off mode must pass `--mousegrab=false`
+explicitly (keep their intent); a test that only failed by side effect must be fixed for the new default,
+not loosened. Then the full `make test-q1` must be green (ticket 341 flake excepted, reported if hit).
