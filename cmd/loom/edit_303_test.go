@@ -24,7 +24,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit")
+	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab=false")
 	s.WaitFor("Ln 1, Col 1", 3*time.Second)
 	for _, closeWith := range []string{"\x1b", "\x1b[<0;1;24M"} {
 		from := len(s.Raw())

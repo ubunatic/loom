@@ -40,7 +40,7 @@ func Test302EditPTYUntitledAndMouseOff(t *testing.T) {
 	}
 
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
-	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit")
+	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab=false")
 	s.WaitFor("Untitled · Unsaved", 3*time.Second)
 	s.WaitFor("Ln 1, Col 1", 3*time.Second)
 	raw := string(s.Raw())

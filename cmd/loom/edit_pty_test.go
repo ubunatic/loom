@@ -40,7 +40,7 @@ func TestEditPTYHeaderHasNoDuplicateFileLabel(t *testing.T) {
 		t.Fatalf("File label x%d, file name x%d, want 1 each and file bar above bottom status:\n%s", files, names, strings.Join(screen, "\n"))
 	}
 	icons := loom.SpeccedDefaults.Editor.StatusIcons
-	for _, icon := range []string{icons.Theme, icons.MouseOff, icons.AltOn} {
+	for _, icon := range []string{icons.Theme, icons.MouseOn, icons.AltOn} {
 		if !strings.Contains(screen[21], " "+icon+" ") {
 			t.Fatalf("bottom status missing %q: %q", icon, screen[21])
 		}
