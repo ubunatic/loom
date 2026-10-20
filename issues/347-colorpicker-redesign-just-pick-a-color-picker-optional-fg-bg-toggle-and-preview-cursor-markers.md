@@ -31,15 +31,22 @@ each showing FG-pick and BG-pick state, cursor markers, with and without preview
 `loom eval` and `loom measure` (plus `loom check-box` if bordered). Present them to the user and record
 the chosen design and decisions here. Do not start M2 before that.
 
-Open questions for the user in M1:
-- What does right-click do instead: nothing, or another action?
-- With the toggle off, how is a BG pick started? Candidates: Shift+click/Shift+Space and `b` stay
-  (from 346); or the 🎨 bar offers two entry points; or a key flips the swatch rendering (item 4).
-- Do markers take extra columns (layout width) or replace swatch padding?
+Decisions (user, 2026-10-21, supersede items 1 and 5 above):
+- `FG │ BG` switcher: remove it entirely (not an optional setting). Drop its spec keys, code,
+  `x` binding and tests.
+- Right-click depends on the design: include at least one design where right-click is the BG
+  action. Which picker design is used depends on whether mousegrab is on (342 default on; 303
+  temporary grab when off): propose which design applies in each mode, and verify in a live
+  terminal that right-click reaches loom in both modes before relying on it.
+- Markers take no extra columns: they reuse existing swatch spacing; layout width is unchanged.
+
+Still open for M1: with no switcher, how a BG pick starts in each design (Shift+click/Shift+Space
+and `b` from 346, right-click, or two entry points from the 🎨 bar).
 
 ## M2 — Implement chosen design
 
-Keep the 346 widget API where possible; spec keys `color_picker.show_target_toggle: false`,
-`color_picker.show_preview: true`, marker glyphs; remove the right-click → BG mapping; update tests,
+Keep the 346 widget API where possible minus the target switcher; spec keys
+`color_picker.show_preview: true`, marker glyphs, and the mousegrab-dependent design choice;
+right-click per the chosen design; update tests,
 gallery, docs/Widgets.md, F1 help, `docs/progress/ColorPicker.ansi`. Mouse/event change: start on
 `codex:sol:med`. Live-check the installed `loom edit`.
