@@ -63,6 +63,17 @@ toggle FG↔BG (no color change); Down stays → BG, Up stays → FG. Spec the t
 (e.g. `mode_toggle: [tab, b]`), update tests (press twice returns to FG, for keys and right-click),
 docs/Widgets.md and F1 help.
 
+## M4 — Marker fixes (user /issue, 2026-10-21; filed here, not as a new ticket)
+
+Pre-Work:
+1. Bug: in BG mode the `▔▔` marker cell is drawn with the selection/focus colour as its background
+   (live: fg 16 on bg 51, a solid cyan block under the swatch). Draw the marker glyph on the popover
+   background, with a spec'd marker FG colour; no focus fill.
+2. FG mode uses the same `▔▔` marker below the focused swatch instead of underlining its text
+   (supersedes the "underlined focused text" decision). The mode remains visible from the swatch
+   rendering (colour as FG vs as BG). Update spec, tests (marker shown in both modes, no underline,
+   marker cell bg = popover bg), docs/Widgets.md, docs/progress/ColorPicker.ansi; validate ANSI.
+
 ## M2 — Implement chosen design
 
 Keep the 346 widget API where possible minus the target switcher; spec keys
