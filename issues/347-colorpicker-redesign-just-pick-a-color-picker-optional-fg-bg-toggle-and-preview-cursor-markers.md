@@ -49,8 +49,9 @@ modes. One row of 16 contiguous 2-cell `Aa` swatches (32 columns, no spacers).
 - Mode switch (no color change): Down, Tab, `b`, and right-click. Down acts like Tab here; Tab is
   this widget's documented action (document it under the Tab policy in docs/Widgets.md).
 - Click or Space picks the focused/clicked color for the current mode.
-- Dropped: two-row design A, `●` cursor, right-click/Shift as BG pick (Shift+click, Shift+Space,
-  `f` to be reconsidered in M2 plan; propose keeping or removing them).
+- Up switches back to FG mode (counterpart of Down).
+- Dropped: two-row design A, `●` cursor, right-click as BG pick, and the 346 shortcuts
+  Shift+click, Shift+Space and `f` (user "go" on the recommendation, 2026-10-21).
 
 ## M2 — Implement chosen design
 
