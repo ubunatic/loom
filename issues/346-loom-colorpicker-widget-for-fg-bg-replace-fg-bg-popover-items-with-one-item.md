@@ -50,6 +50,31 @@ All of these are supported; Shift variants remain primary where the terminal for
 - Preview shows both colors; Enter and Esc close; Ctrl+Space closes all per 342.
 - Rejected: split swatch halves; Enter/Shift+Enter picking.
 
+## Searcher findings (2026-10-20)
+
+- Palette today: actions `richPopoverActions` (richtextedit_popover_draw.go:29), 16 hardcoded
+  `ColorIndex` swatches (l.142), toolbar width `len(label)+1` (l.112, wrong for 🎨: use display
+  width), Box/color submenu as private state (`popoverSubmenu`, l.261). Mouse pick
+  richtextedit_mouse.go:107, key pick richtextedit_popover_input.go:182, apply
+  richtextedit_style.go:6 (selection only; no-selection typing style is not updated today).
+- No reusable picker exists; implement `Widget` (widget.go:23). Gallery: spec/widgets.yaml:253 + `gallery/`.
+- Input: right button decoded (event.go:100, 489); SGR modifier bits are discarded and `MouseEvent`
+  has no Shift field — add it. Kitty `shift-space` already decoded (event.go:344, 368).
+- Tests to update: richtextedit_test.go:808, richtextedit_submenu_test.go:52, richtextedit_golden_test.go:46.
+
+## M1 — ColorPicker widget + mouse modifier decoding
+
+`colorpicker.go` + tests implementing all decided inputs, preview and target toggle; Shift (and
+other modifier) bits in `MouseEvent` from SGR with decoder tests; palette/labels/glyph in spec
+(+ schema); gallery entry. No RichTextEdit changes yet.
+
+## M2 — Popover integration under 🎨
+
+Replace `#FG`/`#BG` with `🎨` opening the embedded ColorPicker; route events through it; apply to
+selection or typing style (new: typing style when nothing selected); display-width toolbar
+geometry; Ctrl+Space closes all; update tests, golden/ANSI mockups (`loom eval`/`measure`/`check-box`),
+F1 help, docs/Widgets.md.
+
 ## Verification
 
 Widget unit tests (FG, BG, both, keyboard and mouse, modifier decoding), popover test that `🎨`
