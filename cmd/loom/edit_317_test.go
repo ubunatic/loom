@@ -52,18 +52,18 @@ func Test317EditPTYDirectionalFocusAndItalic(t *testing.T) {
 				row, toward, away = 3, "\x1b[A", "\x1b[B"
 			}
 			s.Send("\x00")
-			s.WaitFor("#FG", 3*time.Second)
+			s.WaitFor("🎨", 3*time.Second)
 			s.Send("\t") // Legacy Ctrl-I is the same byte as Tab.
 			waitEditPTY(t, s, func() bool { return s.Cell(1, row).Style.Italic })
 			s.Send("\t")
 			waitEditPTY(t, s, func() bool { return !s.Cell(1, row).Style.Italic })
 			s.Send(away)
-			waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG") })
+			waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨") })
 			s.Send("\x00")
-			s.WaitFor("#FG", 3*time.Second)
+			s.WaitFor("🎨", 3*time.Second)
 			s.Send(toward + "\x1b[C\r") // Focus, choose Italic, apply.
 			waitEditPTY(t, s, func() bool {
-				return s.Cell(1, row).Style.Italic && !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG")
+				return s.Cell(1, row).Style.Italic && !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨")
 			})
 		})
 	}

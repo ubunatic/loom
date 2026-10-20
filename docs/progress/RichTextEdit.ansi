@@ -1,12 +1,10 @@
-[0m[1m[39m[49mWelcome to [0m[1m[39m[49mLoom[0m[1m[39m[49m RichText![0m[39m[49m                                                       [0m
-                                                                                [0m
-Try [0m[1m[39m[49mbold[0m[39m[49m, [0m[3m[39m[49mitalic[0m[39m[49m, and [0m[4m[39m[49munderline[0m[39m[49m formatting.                                     [0m
-Mention [0m[1m[39m[49m@ada[0m[39m[49m or open [0m[4m[39m[49mloom.dev[0m[39m[49m.                                                  [0m
-[0m[2m[39m[49mDrag to select; click B/I/U/S, #FG, #BG or Box. Box offers Plain, Rounded and Dr[0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
-                                                                                [0m
- [0m[4m[39m[49mF[0m[39m[49mile  Untitled · [0m[2m[39m[49mUnsaved[0m[39m[49m                                                       [0m
+[0m[39m[49m┌──[0m[1m[39m[49m RichTextEdit: Selection & Color Picker [0m[39m[49m────────────────────────────────────┐[0m
+[0m[39m[49m│[0m[39m[49m   Select text, then use the single 🎨 action to set both colors.             [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m   Selected phrase:[0m[1m[39m[49msome styled text[0m[39m[49m                                           [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m   [0m[1m[39m[49m[ B │ I │ U │ S │ Link │ 🎨 │ Box ][0m[39m[49m                                        [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m               [0m[39m[49m▲[0m[39m[49m                                                              [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m       [0m[39m[49mFG[0m[39m[49m │ BG                         [0m[39m[49m                                       [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m       [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[1m[39m[49m▣ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m■ [0m[39m[49m                                       [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m       [0m[39m[49mPreview AaBb[0m[39m[49m                    [0m[39m[49m                                       [0m[39m[49m│[0m
+[0m[39m[49m│[0m[39m[49m   Click or Space assigns; Shift+click, b, or Shift+Space chooses BG.         [0m[39m[49m│[0m
+[0m[39m[49m└──────────────────────────────────────────────────────────────────────────────┘[0m

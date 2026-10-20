@@ -49,41 +49,30 @@ func assertMenuHandled(t *testing.T, got EventResult) {
 	}
 }
 
-func TestRichTextEditKeyboardColorSubmenusWrapApplyAndUndo(t *testing.T) {
-	for _, palette := range []string{"#FG", "#BG"} {
-		t.Run(palette, func(t *testing.T) {
-			edit, canvas := newSubmenuTestEditor()
-			popoverFocusAction(t, edit, palette)
-			assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
-			if edit.popoverPalette != palette || !edit.popoverSubmenuFocusSet || edit.popoverSubmenuFocus != 0 {
-				t.Fatalf("opened %s submenu state = palette:%q focus:%d set:%v", palette, edit.popoverPalette, edit.popoverSubmenuFocus, edit.popoverSubmenuFocusSet)
-			}
-			for _, key := range []string{"right", "left", "left", "down", "tab"} {
-				assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: key}))
-			}
-			if edit.popoverSubmenuFocus != 1 {
-				t.Fatalf("submenu wrap sequence focus = %d, want 1", edit.popoverSubmenuFocus)
-			}
-			edit.Draw(canvas, canvas.Bounds())
-			if len(edit.popoverSwatches) != 16 || !canvas.Get(edit.popoverSwatches[1].rect.X, edit.popoverSwatches[1].rect.Y).Style.Invert {
-				t.Fatal("focused palette choice was not visibly highlighted")
-			}
-			for i := 0; i < 5; i++ {
-				assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
-			}
-			assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))
-			if edit.popoverPalette != "" || edit.popoverSubmenu != "" || edit.popoverFocusSet {
-				t.Fatalf("palette apply left menu open: palette=%q submenu=%q focusSet=%v", edit.popoverPalette, edit.popoverSubmenu, edit.popoverFocusSet)
-			}
-			want := ColorIndex(6)
-			if got := edit.Document.Lines[0].Spans[0].Style; palette == "#FG" && got.FG != want || palette == "#BG" && got.BG != want {
-				t.Fatalf("applied %s style = %+v, want color %v", palette, got, want)
-			}
-			edit.undo()
-			if got := edit.Document.Lines[0].Spans[0].Style; got != (Style{}) {
-				t.Fatalf("undo %s color = %+v, want original style", palette, got)
-			}
-		})
+func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
+	edit, canvas := newSubmenuTestEditor()
+	popoverFocusAction(t, edit, "ColorPicker")
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	picker := edit.popoverColorPicker
+	if picker == nil {
+		t.Fatal("Space did not open embedded ColorPicker")
+	}
+	if got := edit.ConsumeKey(KeyEvent{Key: "tab"}); got.Consumed {
+		t.Fatalf("Tab was consumed by embedded ColorPicker: %+v", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "right"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[1] {
+		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[1])
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "b"}))
+	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[1] {
+		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[1])
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
+	if edit.popoverColorPicker != nil {
+		t.Fatal("Escape did not close ColorPicker")
 	}
 }
 
@@ -125,7 +114,7 @@ func TestRichTextEditSubmenuEscapeReturnsToBarThenText(t *testing.T) {
 	popoverFocusAction(t, edit, "Box")
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
-	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || edit.popoverFocus != 7 || !edit.HasSelection {
+	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || edit.popoverFocus != len(richPopoverActions)-1 || !edit.HasSelection {
 		t.Fatalf("first Esc did not restore Box bar focus: submenu=%q focusSet=%v focus=%d selection=%v", edit.popoverSubmenu, edit.popoverFocusSet, edit.popoverFocus, edit.HasSelection)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
@@ -138,10 +127,10 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	frameEdit, _ := newSubmenuTestEditor()
 	frame := &Frame{Boxes: []Box{{ID: "editor", Child: frameEdit}}}
 	frame.Draw(NewCanvas(60, 8), Rect{W: 60, H: 8})
-	popoverFocusAction(t, frameEdit, "#FG")
+	popoverFocusAction(t, frameEdit, "ColorPicker")
 	assertMenuHandled(t, frame.ConsumeKey(KeyEvent{Key: "space"}))
 	focus := frame.focused
-	assertMenuHandled(t, frame.ConsumeKey(KeyEvent{Key: "tab"}))
+	frame.ConsumeKey(KeyEvent{Key: "tab"}) // Frame owns Tab traversal.
 	if frame.focused != focus {
 		t.Fatalf("Frame traversed focus while submenu was open: %d -> %d", focus, frame.focused)
 	}
@@ -151,12 +140,12 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	split.Orientation = Vertical
 	split.Ratio = 0.7
 	split.Draw(NewCanvas(60, 8), Rect{W: 60, H: 8})
-	popoverFocusAction(t, splitEdit, "#BG")
+	popoverFocusAction(t, splitEdit, "ColorPicker")
 	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "space"}))
 	focus = split.focus
-	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "tab"}))
-	if split.focus != focus {
-		t.Fatalf("Split traversed focus while submenu was open: %d -> %d", focus, split.focus)
+	split.ConsumeKey(KeyEvent{Key: "tab"}) // Split owns Tab traversal.
+	if split.focus == focus {
+		t.Fatalf("Split did not receive Tab from embedded picker: focus stayed %d", focus)
 	}
 }
 
@@ -170,7 +159,7 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	canvas := NewCanvas(80, 10)
 	tabs.Draw(canvas, canvas.Bounds())
 
-	popoverFocusAction(t, edit, "#FG")
+	popoverFocusAction(t, edit, "ColorPicker")
 	cursor, selectionFrom, selectionTo, selection := edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection
 	focus := tabs.Focus()
 
@@ -180,18 +169,18 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 		t.Fatalf("decoded Space = %+v, want printable space text", space)
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(space))
-	if edit.popoverPalette != "#FG" {
-		t.Fatalf("Space did not open focused FG submenu: %q", edit.popoverPalette)
+	if edit.popoverColorPicker == nil {
+		t.Fatal("Space did not open embedded ColorPicker")
 	}
-	for _, key := range []string{"up", "down", "left", "right"} {
+	for _, key := range []string{"left", "right"} {
 		assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: key}))
 	}
 	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
 		t.Fatalf("submenu arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
-	if edit.popoverPalette != "" || !edit.popoverFocusSet {
-		t.Fatal("Escape did not return from submenu to the focused bar")
+	if edit.popoverColorPicker != nil {
+		t.Fatal("Escape did not close ColorPicker")
 	}
 	// Horizontal arrows move bar focus. The below-anchor toolbar consumes Up
 	// as dismissal without moving the document or Tabs focus.
@@ -209,11 +198,11 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 		t.Fatalf("bar arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
-	popoverFocusAction(t, edit, "#FG")
+	popoverFocusAction(t, edit, "ColorPicker")
 	assertMenuHandled(t, tabs.ConsumeKey(space))
-	assertMenuHandled(t, tabs.ConsumeKey(space))
-	if edit.popoverPalette != "" || edit.HasSelection != selection || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo {
-		t.Fatalf("submenu Space did not apply in place: palette=%q cursor=%+v selection=%+v..%+v active=%v", edit.popoverPalette, edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
+	if edit.popoverColorPicker != nil || edit.HasSelection != selection || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo {
+		t.Fatalf("picker session changed editor selection: cursor=%+v selection=%+v..%+v active=%v", edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 }
 
@@ -224,8 +213,8 @@ func TestRichTextEditKeyboardSubmenuDismissesWhenItCannotFit(t *testing.T) {
 	edit.popoverFocusSet = true
 	edit.popoverFocus = 5
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
-	if edit.popoverPalette != "" || edit.popoverFocusSet || !edit.popoverSuppressed {
-		t.Fatalf("unrenderable palette retained focus: palette=%q focusSet=%v suppressed=%v", edit.popoverPalette, edit.popoverFocusSet, edit.popoverSuppressed)
+	if edit.popoverColorPicker != nil || edit.popoverFocusSet || !edit.popoverSuppressed {
+		t.Fatalf("unrenderable toolbar retained input focus: picker=%v focusSet=%v suppressed=%v", edit.popoverColorPicker != nil, edit.popoverFocusSet, edit.popoverSuppressed)
 	}
 }
 

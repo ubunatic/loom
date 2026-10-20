@@ -23,28 +23,28 @@ func Test318EditPTYFocusedPopoverArrowAway(t *testing.T) {
 				toward, away = "\x1b[A", "\x1b[B"
 			}
 			s.Send("\x00")
-			s.WaitFor("#FG", 3*time.Second)
+			s.WaitFor("🎨", 3*time.Second)
 			s.Send(toward + away)
 			waitEditPTY(t, s, func() bool {
 				screen := strings.Join(s.Screen(), "\n")
-				return !strings.Contains(screen, "#FG") && strings.Contains(screen, status)
+				return !strings.Contains(screen, "🎨") && strings.Contains(screen, status)
 			})
 			s.Send("\x00")
-			s.WaitFor("#FG", 3*time.Second)
+			s.WaitFor("🎨", 3*time.Second)
 			// Open Box and verify both vertical arrows move its highlighted choice.
-			s.Send(toward + strings.Repeat("\x1b[C", 6) + "\r")
+			s.Send(toward + strings.Repeat("\x1b[C", 5) + "\r")
 			s.WaitFor("Rounded", 3*time.Second)
 			s.WaitFor("Plain", 3*time.Second)
 			s.WaitFor("Rounded", 3*time.Second)
 			s.Send("\x1b[B")
 			waitEditPTY(t, s, func() bool {
 				screen := strings.Join(s.Screen(), "\n")
-				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "#FG")
+				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "🎨")
 			})
 			s.Send("\x1b[A")
 			waitEditPTY(t, s, func() bool {
 				screen := strings.Join(s.Screen(), "\n")
-				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "#FG")
+				return strings.Contains(screen, "Plain") && strings.Contains(screen, "Rounded") && strings.Contains(screen, "🎨")
 			})
 		})
 	}

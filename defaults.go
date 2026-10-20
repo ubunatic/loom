@@ -363,8 +363,8 @@ func (d RichTextEditDefaults) validate() error {
 	if d.SeparatorGlyph == "" || d.PointerUpGlyph == "" || d.PointerDownGlyph == "" {
 		return fmt.Errorf("rich_text_edit glyphs must not be empty")
 	}
-	if len(d.PopoverLabels) != 8 {
-		return fmt.Errorf("rich_text_edit.popover_labels must contain 8 labels")
+	if len(d.PopoverLabels) != 7 {
+		return fmt.Errorf("rich_text_edit.popover_labels must contain 7 labels")
 	}
 	if d.BoxDrawLabel == "" {
 		return fmt.Errorf("rich_text_edit.box_draw_label must not be empty")

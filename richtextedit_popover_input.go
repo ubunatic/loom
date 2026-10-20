@@ -6,8 +6,8 @@ package loom
 func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverFocusSet = false
 	e.popoverSubmenuFocusSet = false
-	e.popoverPalette = ""
-	e.popoverSwatches = nil
+	e.popoverColorPicker = nil
+	e.popoverColorRect = Rect{}
 	e.popoverSubmenu = ""
 	e.popoverBoxChoices = nil
 	e.popoverAtCursor = false
@@ -37,10 +37,20 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.clearPopoverKeyboardState(true)
 		return Handled(), true
 	}
+	if e.popoverColorPicker != nil {
+		result := e.popoverColorPicker.ConsumeKey(key)
+		if result.Done {
+			return Handled(), true
+		}
+		if result.Consumed {
+			return result, true
+		}
+		return Ignored(), true
+	}
 	if e.ViewMode || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.popoverSuppressed || (!e.PopoverDefaults.AutoPopupOnSelection && !e.popoverExplicit && !e.popoverAtCursor) {
 		return Ignored(), false
 	}
-	submenuOpen := e.popoverPalette != "" || e.popoverSubmenu != ""
+	submenuOpen := e.popoverSubmenu != ""
 	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
 	if !e.popoverFocusSet && !submenuOpen {
 		if popoverArrow {
@@ -64,7 +74,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		}
 	}
 	if !(key.Is(e.PopoverDefaults.MenuFocusKey) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_focus"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)) {
-		if e.popoverAtCursor || e.popoverFocusSet || e.popoverPalette != "" {
+		if e.popoverAtCursor || e.popoverFocusSet {
 			e.clearPopoverKeyboardState(true)
 		}
 		return Ignored(), false
@@ -90,9 +100,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	switch {
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...):
-		if e.popoverPalette != "" || e.popoverSubmenu != "" {
-			e.popoverPalette = ""
-			e.popoverSwatches = nil
+		if e.popoverSubmenu != "" {
 			e.popoverSubmenu = ""
 			e.popoverBoxChoices = nil
 		} else {
@@ -127,15 +135,6 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		if action == "Link" {
 			return Handled(), true
 		}
-		if action == "#FG" || action == "#BG" {
-			e.applyPopoverAction(action)
-			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
-			e.popoverSubmenuFocusSet = true
-			if !e.popoverSubmenuCanShow() {
-				e.clearPopoverKeyboardState(true)
-			}
-			return Handled(), true
-		}
 		e.applyPopoverAction(action)
 		if action == "Box" {
 			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
@@ -157,8 +156,6 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		e.popoverSubmenuFocusSet = true
 	}
 	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
-		e.popoverPalette = ""
-		e.popoverSwatches = nil
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
 		e.popoverSubmenuFocusSet = false
@@ -180,11 +177,6 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 		return Handled(), true
 	}
 	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...) {
-		if e.popoverPalette != "" {
-			palette := e.popoverPalette
-			e.applyPopoverColor(palette, ColorIndex(uint8(e.popoverSubmenuFocus)))
-			return Handled(), true
-		}
 		labels := e.boxSubmenuLabels()
 		if e.popoverSubmenu == "Box" && e.popoverSubmenuFocus >= 0 && e.popoverSubmenuFocus < len(labels) {
 			e.applyBoxStyleChoice(labels[e.popoverSubmenuFocus])
@@ -196,9 +188,6 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 }
 
 func (e *RichTextEdit) popoverSubmenuChoiceCount() int {
-	if e.popoverPalette != "" {
-		return 16
-	}
 	if e.popoverSubmenu == "Box" {
 		return len(e.boxSubmenuLabels())
 	}
@@ -217,9 +206,6 @@ func (e *RichTextEdit) popoverSubmenuCanShow() bool {
 		return false
 	}
 	r := e.lastRect
-	if e.popoverPalette != "" && r.W < 16 {
-		return false
-	}
 	if e.popoverSubmenu == "Box" {
 		width := 2 + len(e.boxSubmenuLabels()) - 1
 		for _, label := range e.boxSubmenuLabels() {
@@ -250,15 +236,15 @@ func (e *RichTextEdit) popoverActionEnabled(index int) bool {
 	if index < 0 || index >= len(richPopoverActions) || richPopoverActions[index] == "Link" {
 		return false
 	}
-	return e.HasSelection || richPopoverActions[index] == "Box"
+	return e.HasSelection || richPopoverActions[index] == "Box" || richPopoverActions[index] == "ColorPicker"
 }
 
 func (e *RichTextEdit) initialPopoverFocus() int {
 	if !e.HasSelection && e.popoverAtCursor {
-		return 7
+		return len(richPopoverActions) - 1
 	}
 	if e.boxSelection != nil {
-		return 7
+		return len(richPopoverActions) - 1
 	}
 	for i, active := range []func(Style) bool{
 		func(s Style) bool { return s.Bold },

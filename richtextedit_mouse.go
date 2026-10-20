@@ -79,15 +79,16 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 				return Handled()
 			}
 		}
+		if e.popoverColorPicker != nil && e.popoverColorRect.Contains(mouse.X, mouse.Y) {
+			childMouse := mouse
+			childMouse.X -= e.popoverColorRect.X
+			childMouse.Y -= e.popoverColorRect.Y
+			return e.popoverColorPicker.ConsumeMouse(childMouse)
+		}
 		if e.PopoverDefaults.MouseHoverFocus && mouse.Action == MouseHover {
 			for i, button := range e.popoverButtons {
 				if button.enabled && button.rect.Contains(mouse.X, mouse.Y) {
 					e.popoverFocus, e.popoverFocusSet = i, true
-				}
-			}
-			for i, swatch := range e.popoverSwatches {
-				if swatch.rect.Contains(mouse.X, mouse.Y) {
-					e.popoverFocusSet, e.popoverSubmenuFocusSet, e.popoverSubmenuFocus = true, true, i
 				}
 			}
 			for i, choice := range e.popoverBoxChoices {
@@ -100,13 +101,6 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 			for _, choice := range e.popoverBoxChoices {
 				if choice.rect.Contains(mouse.X, mouse.Y) {
 					e.applyBoxStyleChoice(choice.label)
-					e.popoverRelease = true
-					return Handled()
-				}
-			}
-			for _, swatch := range e.popoverSwatches {
-				if swatch.rect.Contains(mouse.X, mouse.Y) {
-					e.applyPopoverColor(e.popoverPalette, swatch.color)
 					e.popoverRelease = true
 					return Handled()
 				}
@@ -131,8 +125,6 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 		return Handled()
 	}
 	if mouse.Action == MousePress {
-		e.popoverPalette = ""
-		e.popoverSwatches = nil
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
 	}

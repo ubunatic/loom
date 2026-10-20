@@ -239,8 +239,8 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
 	canvas := NewCanvas(50, 6)
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
-	if len(edit.popoverButtons) != 8 {
-		t.Fatalf("popover buttons = %d, want 8", len(edit.popoverButtons))
+	if len(edit.popoverButtons) != 7 {
+		t.Fatalf("popover buttons = %d, want 7", len(edit.popoverButtons))
 	}
 	for i, button := range edit.popoverButtons {
 		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
@@ -295,7 +295,7 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	canvas := NewCanvas(60, 4)
 	edit.Draw(canvas, Rect{W: 60, H: 4})
 	edit.ConsumeKey(KeyEvent{Key: "down"})
-	for i := 0; i < 6; i++ {
+	for i := 0; i < 5; i++ {
 		if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || result.Done || result.Quit {
 			t.Fatalf("Tab %d result = %+v", i, result)
 		}
@@ -315,7 +315,7 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Box" {
 		t.Fatalf("reverse wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "#BG" {
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "ColorPicker" {
 		t.Fatalf("Link must be skipped in reverse wrap; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
 }
@@ -787,7 +787,7 @@ func TestRichTextEditPopoverFallsBelowAndConsumesPlaceholders(t *testing.T) {
 	if first.Y != 2 || upPointer.Text != SpeccedDefaults.RichTextEdit.PointerUpGlyph || upPointer.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PointerFG)) {
 		t.Fatalf("popover failed below-selection placement: first=%+v pointer=%q", first, canvas.Get(first.X, 1).Text)
 	}
-	for _, label := range []string{"Link", "#FG", "#BG"} {
+	for _, label := range []string{"Link", "🎨"} {
 		for _, button := range edit.popoverButtons {
 			if button.label == label {
 				result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
@@ -813,34 +813,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 	}}}}
 	edit := NewRichTextEdit(doc)
 	edit.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 8})
-	canvas := NewCanvas(50, 5)
-	edit.Draw(canvas, Rect{W: 40, H: 5})
-
-	clickButton := func(label string) {
-		t.Helper()
-		for _, button := range edit.popoverButtons {
-			if button.label == label {
-				if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y}); !result.Consumed {
-					t.Fatalf("%s click was not consumed", label)
-				}
-				return
-			}
-		}
-		t.Fatalf("popover button %s not found", label)
-	}
-	clickSwatch := func(index int) {
-		t.Helper()
-		if len(edit.popoverSwatches) != 16 {
-			t.Fatalf("palette swatches = %d, want 16", len(edit.popoverSwatches))
-		}
-		swatch := edit.popoverSwatches[index]
-		if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatch.rect.X, Y: swatch.rect.Y}); !result.Consumed {
-			t.Fatalf("color %d click was not consumed", index)
-		}
-		if edit.popoverPalette != "" {
-			t.Fatalf("palette remained open after choosing color %d", index)
-		}
-	}
+	edit.Draw(NewCanvas(50, 5), Rect{W: 40, H: 5})
 	styleAt := func(offset int) Style {
 		for _, span := range doc.Lines[0].Spans {
 			length := len([]rune(span.Text))
@@ -853,9 +826,10 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 		return Style{}
 	}
 
-	clickButton("#FG")
-	edit.Draw(canvas, Rect{W: 40, H: 5})
-	clickSwatch(10)
+	popoverFocusAction(t, edit, "ColorPicker")
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	edit.popoverColorPicker.Selected = 10
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if got := styleAt(0).FG; got != ColorIndex(2) {
 		t.Fatalf("unselected prefix FG = %v, want 2", got)
 	}
@@ -871,21 +845,67 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 		t.Fatal("FG palette erased existing attributes")
 	}
 
-	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-	edit.Draw(canvas, Rect{W: 40, H: 5})
-	clickButton("#BG")
-	edit.Draw(canvas, Rect{W: 40, H: 5})
-	clickSwatch(9)
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "b"}))
 	if got := styleAt(0).BG; got != ColorIndex(3) {
 		t.Fatalf("unselected prefix BG = %v, want 3", got)
 	}
 	for _, offset := range []int{1, 2, 5, 6, 7} {
-		if got := styleAt(offset).BG; got != ColorIndex(9) {
-			t.Errorf("selected offset %d BG = %v, want 8", offset, got)
+		if got := styleAt(offset).BG; got != ColorIndex(10) {
+			t.Errorf("selected offset %d BG = %v, want 10", offset, got)
 		}
 	}
 	if got := styleAt(8).BG; got != ColorIndex(7) {
 		t.Fatalf("unselected suffix BG = %v, want 7", got)
+	}
+}
+
+func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
+	edit := richTestEditor(RichSpan{Text: "abc"})
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 2})
+	canvas := NewCanvas(60, 8)
+	edit.Draw(canvas, canvas.Bounds())
+	clickPickerButton := func() {
+		t.Helper()
+		for _, button := range edit.popoverButtons {
+			if button.action == "ColorPicker" {
+				edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X + 1, Y: button.rect.Y})
+				return
+			}
+		}
+		t.Fatal("ColorPicker toolbar button not found")
+	}
+	clickPickerButton()
+	if edit.popoverColorPicker == nil {
+		t.Fatal("toolbar click did not open ColorPicker")
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	defs := SpeccedDefaults.ColorPicker
+	swatchX := edit.popoverColorRect.X + 3*defs.SwatchWidth
+	swatchY := edit.popoverColorRect.Y + 1
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
+	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != edit.popoverColorPicker.Palette[3] {
+		t.Fatalf("mouse FG = %v, want %v", got, edit.popoverColorPicker.Palette[3])
+	}
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX + defs.SwatchWidth, Y: swatchY, Shift: true})
+	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != edit.popoverColorPicker.Palette[4] {
+		t.Fatalf("shift mouse BG = %v, want %v", got, edit.popoverColorPicker.Palette[4])
+	}
+	edit.ConsumeKey(KeyEvent{Key: "esc"})
+
+	edit.ClearSelection()
+	edit.Cursor = RichPosition{Offset: 3}
+	edit.popoverAtCursor, edit.popoverExplicit, edit.popoverSuppressed = true, true, false
+	edit.Draw(canvas, canvas.Bounds())
+	clickPickerButton()
+	edit.Draw(canvas, canvas.Bounds())
+	swatchX = edit.popoverColorRect.X + 5*defs.SwatchWidth
+	swatchY = edit.popoverColorRect.Y + 1
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
+	edit.ConsumeKey(KeyEvent{Key: "enter"})
+	edit.ConsumeKey(KeyEvent{Text: "z"})
+	last := edit.Document.Lines[0].Spans[len(edit.Document.Lines[0].Spans)-1]
+	if last.Text != "z" || last.Style.FG != ColorIndex(uint8(defs.Palette[5])) {
+		t.Fatalf("typing style after picker = %+v, want FG %d", last, defs.Palette[5])
 	}
 }
 
@@ -1792,15 +1812,15 @@ func TestRichTextEditPopoverExtendedFlags(t *testing.T) {
 	if e.popoverFocus != 0 {
 		t.Fatal("navigation wrapped")
 	}
-	e.popoverPalette = "#FG"
-	e.popoverSubmenuFocusSet = true
+	e.popoverColorPicker = NewColorPicker(ColorIndex(7), ColorIndex(0))
+	e.popoverColorPicker.OnClose = func() { e.popoverColorPicker = nil }
 	e.ConsumeKey(KeyEvent{Key: "left"})
-	if e.popoverSubmenuFocus != 0 {
-		t.Fatal("palette wrapped")
+	if e.popoverColorPicker.Selected != 0 {
+		t.Fatal("picker selection wrapped")
 	}
 	e.ConsumeKey(KeyEvent{Key: "esc"})
-	if !e.popoverOpen() || e.popoverPalette != "" {
-		t.Fatal("submenu Esc dismissed toolbar")
+	if e.popoverColorPicker != nil {
+		t.Fatal("picker Esc did not close")
 	}
 	e.PopoverDefaults.DismissOnScroll = false
 	e.Draw(NewCanvas(60, 7), Rect{W: 60, H: 7})
@@ -1943,7 +1963,7 @@ func Test318FocusedPopoverVerticalArrows(t *testing.T) {
 
 func Test318PopoverSubmenuVerticalArrows(t *testing.T) {
 	for _, placement := range []string{"above", "below"} {
-		for _, action := range []string{"#FG", "#BG", "Box"} {
+		for _, action := range []string{"Box"} {
 			t.Run(placement+"/"+action, func(t *testing.T) {
 				doc := &RichDocument{}
 				doc.FromANSI("hello\nhello\nhello\nhello\nhello")

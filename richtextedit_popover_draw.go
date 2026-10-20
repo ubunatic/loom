@@ -6,6 +6,8 @@ package loom
 import (
 	"strings"
 	"time"
+
+	"ubunatic.com/loom/measure"
 )
 
 type richPopoverButton struct {
@@ -15,18 +17,13 @@ type richPopoverButton struct {
 	enabled bool
 }
 
-type richPopoverSwatch struct {
-	color Color
-	rect  Rect
-}
-
 type richPopoverBoxChoice struct {
 	label string
 	style BoxBorderStyle
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "Link", "#FG", "#BG", "Box"}
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "ColorPicker", "Box"}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -65,7 +62,7 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 	width := 2
 	labels := SpeccedDefaults.RichTextEdit.PopoverLabels
 	for i, label := range labels {
-		width += len(label) + 1
+		width += measure.StringWidth(label) + 1
 		if i > 0 {
 			width++
 		}
@@ -89,13 +86,15 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
-	e.popoverSwatches = nil
 	e.popoverBoxChoices = nil
-	if (e.popoverPalette != "" || e.popoverSubmenu != "") && !e.popoverSubmenuCanShow() {
+	if e.popoverSubmenu != "" && !e.popoverSubmenuCanShow() {
 		e.clearPopoverKeyboardState(true)
 	}
 	bar, anchorX, pointerY, pointer, open := e.popoverGeometry(r, lines)
 	if !open {
+		if e.popoverColorPicker != nil {
+			e.clearPopoverKeyboardState(true)
+		}
 		return
 	}
 	barX, barY, width := bar.X, bar.Y, bar.W
@@ -109,25 +108,23 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	c.Set(r.X+barX+width-1, r.Y+barY, Cell{Text: "]", Style: toolbarStyle})
 	x := barX + 1
 	for i, label := range labels {
-		button := Rect{X: x, Y: barY, W: len(label) + 1, H: 1}
+		button := Rect{X: x, Y: barY, W: measure.StringWidth(label) + 1, H: 1}
 		action := richPopoverActions[i]
 		enabled := e.popoverActionEnabled(i)
 		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: action, rect: button, enabled: enabled})
-		for j, ch := range " " + label {
-			style := toolbarStyle
-			if !enabled {
-				style.Dim = true
-			}
-			if label == "B" && ch == 'B' {
-				style.Bold = true
-			}
-			if e.popoverFocusSet && i == e.popoverFocus {
-				style.FG = ColorIndex(uint8(defs.PopoverFocusFG))
-				style.BG = ColorIndex(uint8(defs.PopoverFocusBG))
-				style.Dim = false
-			}
-			c.Set(r.X+x+j, r.Y+barY, Cell{Text: string(ch), Style: style})
+		style := toolbarStyle
+		if !enabled {
+			style.Dim = true
 		}
+		if label == "B" {
+			style.Bold = true
+		}
+		if e.popoverFocusSet && i == e.popoverFocus {
+			style.FG = ColorIndex(uint8(defs.PopoverFocusFG))
+			style.BG = ColorIndex(uint8(defs.PopoverFocusBG))
+			style.Dim = false
+		}
+		c.Write(r.X+x, r.Y+barY, " "+label, style)
 		x += button.W
 		if i < len(labels)-1 {
 			c.Set(r.X+x, r.Y+barY, Cell{Text: defs.SeparatorGlyph, Style: Style{FG: ColorIndex(uint8(defs.SeparatorFG)), BG: ColorIndex(uint8(defs.SeparatorBG))}})
@@ -135,42 +132,33 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		}
 	}
 	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(uint8(defs.PointerFG))}})
-	e.drawPopoverPalette(c, r, barX, barY)
+	e.drawPopoverColorPicker(c, r, barX, barY)
 	e.drawPopoverBoxStyles(c, r, barY)
 }
 
-func (e *RichTextEdit) drawPopoverPalette(c *Canvas, r Rect, barX, barY int) {
-	if e.popoverPalette == "" || r.W < 16 {
+func (e *RichTextEdit) drawPopoverColorPicker(c *Canvas, r Rect, barX, barY int) {
+	if e.popoverColorPicker == nil {
 		return
 	}
 	var button Rect
 	for _, item := range e.popoverButtons {
-		if item.label == e.popoverPalette {
+		if item.action == "ColorPicker" {
 			button = item.rect
 			break
 		}
 	}
 	if button.W == 0 {
-		e.popoverPalette = ""
+		e.popoverColorPicker = nil
 		return
 	}
-	paletteY := barY + 1
-	if paletteY >= r.H {
-		paletteY = barY - 1
-	}
-	if paletteY < 0 || paletteY >= r.H {
+	pickerW := e.popoverColorPicker.Measure(r.W).Width
+	pickerY := min(max(0, barY+1), r.H-3)
+	if pickerY < 0 || pickerY+3 > r.H || pickerW > r.W {
 		return
 	}
-	paletteX := min(max(0, button.X+button.W/2-8), r.W-16)
-	for i := 0; i < 16; i++ {
-		color := ColorIndex(uint8(i))
-		cellStyle := Style{BG: color}
-		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
-			cellStyle.Invert = true
-		}
-		c.Set(r.X+paletteX+i, r.Y+paletteY, Cell{Text: " ", Style: cellStyle})
-		e.popoverSwatches = append(e.popoverSwatches, richPopoverSwatch{color: color, rect: Rect{X: paletteX + i, Y: paletteY, W: 1, H: 1}})
-	}
+	pickerX := min(max(0, button.X+button.W/2-pickerW/2), r.W-pickerW)
+	e.popoverColorRect = Rect{X: pickerX, Y: pickerY, W: pickerW, H: 3}
+	e.popoverColorPicker.Draw(c, Rect{X: r.X + pickerX, Y: r.Y + pickerY, W: pickerW, H: 3})
 }
 
 func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
@@ -232,10 +220,8 @@ func (e *RichTextEdit) popoverHit(x, y int) bool {
 	if e.popoverSuppressed || !e.ShowPopover || (!e.HasSelection && !e.popoverAtCursor) || e.ViewMode {
 		return false
 	}
-	for _, swatch := range e.popoverSwatches {
-		if swatch.rect.Contains(x, y) {
-			return true
-		}
+	if e.popoverColorPicker != nil && e.popoverColorRect.Contains(x, y) {
+		return true
 	}
 	for _, choice := range e.popoverBoxChoices {
 		if choice.rect.Contains(x, y) {
@@ -260,8 +246,6 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 	}
 	switch label {
 	case "Box":
-		e.popoverPalette = ""
-		e.popoverSwatches = nil
 		e.popoverSubmenuFocusSet = false
 		if e.popoverSubmenu == "Box" {
 			e.popoverSubmenu = ""
@@ -279,16 +263,11 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case "S":
 		e.toggleAttribute(func(s *Style, on bool) { s.Strike = on }, func(s Style) bool { return s.Strike })
-	case "#FG", "#BG":
+	case "ColorPicker":
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
 		e.popoverSubmenuFocusSet = false
-		if e.popoverPalette == label {
-			e.popoverPalette = ""
-			e.popoverSwatches = nil
-		} else {
-			e.popoverPalette = label
-		}
+		e.openPopoverColorPicker()
 	}
 }
 

@@ -326,7 +326,7 @@ rich_text_edit:
   pointer_up_glyph: "▲"
   pointer_down_glyph: "▼"
   pointer_fg: 8
-  popover_labels: ["B", "I", "U", "S", "Link", "#FG", "#BG", "Box"]
+  popover_labels: ["B", "I", "U", "S", "Link", "🎨", "Box"]
   box_draw_label: "Draw"
   box_style_labels: ["Plain", "Rounded"]
   box_style_default: "plain"
@@ -383,6 +383,7 @@ rich_text_edit:
         - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
         - {keys: ["ctrl-z"], label: "Undo"}
         - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
+        - {keys: ["space", "shift-space", "f", "b", "x", "left", "right"], label: "Color picker: set target or swatch; Enter/Esc closes"}
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}

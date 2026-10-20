@@ -81,8 +81,8 @@ type RichTextEdit struct {
 	dragSelecting          bool
 	activeStyleSet         bool
 	popoverButtons         []richPopoverButton
-	popoverPalette         string
-	popoverSwatches        []richPopoverSwatch
+	popoverColorPicker     *ColorPicker
+	popoverColorRect       Rect
 	popoverSubmenu         string
 	popoverBoxChoices      []richPopoverBoxChoice
 	popoverRelease         bool
@@ -152,6 +152,9 @@ func (e *RichTextEdit) ModalMouseTarget() (Widget, Rect) {
 }
 
 func (e *RichTextEdit) popoverOpen() bool {
+	if e.popoverColorPicker != nil {
+		return true
+	}
 	_, _, _, _, open := e.popoverGeometry(e.lastRect, e.documentLines())
 	return open
 }

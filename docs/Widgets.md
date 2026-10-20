@@ -351,9 +351,10 @@ variants (`Shift+Home`, `Shift+End`, `Ctrl+Shift+A`, `Ctrl+Shift+E`, the last tw
 on CSI-u terminals) that extend the selection, mouse drag selection, and inline bold,
 italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). A non-empty
 selection shows a floating formatting popover by default; set `ShowPopover` to
-false to hide it. Its B/I/U/S buttons toggle styles on the selection. Click
-`#FG` or `#BG` to open a 16-color ANSI swatch row and apply a color across the
-selected spans. Mouse coordinates are child-local, so the editor can handle
+false to hide it. Its B/I/U/S buttons toggle styles on the selection. The 🎨
+button opens the reusable `ColorPicker` with the current FG/BG pair and a
+preview; swatches update the selected spans or the typing style when there is no
+selection. Mouse coordinates are child-local, so the editor can handle
 selection drags and popover clicks directly. `RichSpan` can also carry link,
 code, or `RichPill` metadata; pill spans are atomic when deleted. The widget
 gallery demonstrates selection formatting and color picking alongside mention
@@ -402,7 +403,9 @@ clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the
-selection formatting popover.
+selection formatting popover. While the embedded ColorPicker is open, Tab is
+left to the containing focus manager; Enter or Esc closes the picker, while
+Ctrl+Space closes the entire formatting popover.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,

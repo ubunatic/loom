@@ -3,10 +3,50 @@
 
 package loom
 
-func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {
-	if !e.HasSelection || (palette != "#FG" && palette != "#BG") {
-		e.popoverPalette = ""
-		e.popoverSwatches = nil
+import "ubunatic.com/loom/measure"
+
+func (e *RichTextEdit) openPopoverColorPicker() {
+	style := e.ActiveStyle
+	if e.HasSelection {
+		lines := e.documentLines()
+		from, _ := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		line := lines[from.Line]
+		column := richLineColumn(line, from.Offset)
+		for _, span := range line.Spans {
+			width := measure.StringWidth(span.Text)
+			if column < width {
+				style = span.Style
+				break
+			}
+			column -= width
+		}
+	} else if !e.cursorInVoid {
+		lines := e.documentLines()
+		position := e.Cursor
+		e.clampPosition(&position, lines)
+		left, right := splitRichLine(lines[position.Line], position.Offset)
+		style = e.insertionStyle(left, right)
+	}
+	picker := NewColorPicker(style.FG, style.BG)
+	picker.OnChange = func(target ColorPickerTarget, color Color) {
+		e.applyPopoverColor(target, color)
+	}
+	picker.OnClose = func() {
+		e.popoverColorPicker = nil
+		e.popoverColorRect = Rect{}
+	}
+	e.popoverColorPicker = picker
+}
+
+func (e *RichTextEdit) applyPopoverColor(target ColorPickerTarget, color Color) {
+	if !e.HasSelection {
+		if target == ColorPickerFG {
+			e.ActiveStyle.FG = color
+		} else {
+			e.ActiveStyle.BG = color
+		}
+		e.activeStyleSet = true
 		return
 	}
 	e.mutate(false, false, func() {
@@ -17,15 +57,12 @@ func (e *RichTextEdit) applyPopoverColor(palette string, color Color) {
 		from, to = expandRangeForPills(lines, from, to)
 		for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
 			start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
-			lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, palette, color)
+			lines[lineIndex].Spans = colorRichLine(lines[lineIndex], start, end, target, color)
 		}
 	})
-	e.popoverPalette = ""
-	e.popoverSwatches = nil
-	e.finishPopoverAction()
 }
 
-func colorRichLine(line RichLine, start, end int, field string, color Color) []RichSpan {
+func colorRichLine(line RichLine, start, end int, target ColorPickerTarget, color Color) []RichSpan {
 	var result []RichSpan
 	offset := 0
 	for _, span := range line.Spans {
@@ -41,7 +78,7 @@ func colorRichLine(line RichLine, start, end int, field string, color Color) []R
 		selected, suffix := splitRichLine(RichLine{Spans: rest}, localEnd-localStart)
 		result = append(result, prefix...)
 		for i := range selected {
-			if field == "#FG" {
+			if target == ColorPickerFG {
 				selected[i].Style.FG = color
 			} else {
 				selected[i].Style.BG = color

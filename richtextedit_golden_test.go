@@ -51,7 +51,7 @@ func TestRichTextEditPopoverControlsMatchV2Mockup(t *testing.T) {
 	fixture := &RichDocument{}
 	fixture.FromANSI(strings.TrimSuffix(string(data), "\n"))
 	mockupText := fixture.ToPlainText()
-	for _, label := range []string{"B", "I", "U", "#FG", "#BG", "Link"} {
+	for _, label := range []string{"B", "I", "U", "🎨", "Link"} {
 		if !strings.Contains(mockupText, label) {
 			t.Fatalf("v2 mockup is missing %q control", label)
 		}

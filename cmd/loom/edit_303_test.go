@@ -48,7 +48,7 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	s.WaitForUpdate("Untitled · Modified", 3*time.Second)
 	from = len(s.Raw())
 	s.Send("\x00") // Reopen the popover before checking its backdrop.
-	s.WaitForUpdate("#FG", 3*time.Second)
+	s.WaitForUpdate("🎨", 3*time.Second)
 	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
 	from = len(s.Raw())
 	s.Send("\x1b[<0;1;24M")

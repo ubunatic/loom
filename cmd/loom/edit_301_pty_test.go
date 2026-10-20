@@ -121,9 +121,9 @@ func TestEditPTYDrawKeyAndBoxSubmenu(t *testing.T) {
 	s.Send("\x1a")
 	s.WaitFor("· Saved", 3*time.Second)
 	s.Send("\x00") // Ctrl-Space selects the word and opens its toolbar.
-	s.WaitFor("#FG", 3*time.Second)
+	s.WaitFor("🎨", 3*time.Second)
 	for row, text := range s.Screen() {
-		if strings.Contains(text, "#FG") {
+		if strings.Contains(text, "🎨") {
 			if strings.Contains(text, "Draw") {
 				t.Fatal("Draw is top-level")
 			}

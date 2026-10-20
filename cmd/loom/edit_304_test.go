@@ -51,7 +51,7 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 	content := "first word\nsecond line\n"
 	s, path := startMouseEditPTY(t, content)
 	s.Send("\x1b[C\x1b[C\x00") // Move inside a word, then Ctrl-Space.
-	s.WaitFor("#FG", 3*time.Second)
+	s.WaitFor("🎨", 3*time.Second)
 	cursorPattern := regexp.MustCompile(`Ln [0-9]+, Col [0-9]+`)
 	cursor := cursorPattern.FindString(strings.Join(s.Screen(), "\n"))
 	if cursor == "" {
@@ -64,7 +64,7 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 	// Queue the full dismissal gesture together so Pane must isolate every
 	// report even when it redraws and releases modal ownership between them.
 	s.Send("\x1b[<65;26;2M\x1b[<0;26;2M\x1b[<32;10;3M\x1b[<0;10;3m")
-	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "#FG") })
+	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨") })
 	// Saving gives an observable acknowledgement after all queued reports.
 	s.Send("\x13\x1bOP")
 	s.WaitFor("RichTextEdit Help", 3*time.Second)
