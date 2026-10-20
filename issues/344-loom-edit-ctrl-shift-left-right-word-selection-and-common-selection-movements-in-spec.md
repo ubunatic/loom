@@ -29,7 +29,13 @@ Each needs a spec binding, decoder support, and a test (select, then extend/shri
 | line start/end | Shift+Home/End (present) |
 | document start/end | Ctrl+Shift+Home/End (check) |
 | page | Shift+PgUp/PgDn (check) |
-| select all | Ctrl+A conflicts with `line_start`; decide (ask user) |
+| select all | `ctrl-alt-a`, `alt-a`, `super-a` (decided 2026-10-20); Ctrl+A stays `line_start` |
+
+Select all: Ctrl+A is kept as line-start navigation and must not be the default. Bind
+`select_all: ["ctrl-alt-a", "alt-a", "super-a"]`. Verify the decoder emits each: `ESC a` /
+`ESC ^A` (legacy alt), and kitty CSI-u forms incl. super (`super-a` only arrives where the terminal
+forwards Cmd/Super, e.g. kitty, WezTerm, Ghostty). macOS: Option must act as Meta for Alt keys; note
+this in docs/TuiInput.md.
 
 Also add the new keys to `view_navigation` where read-only selection applies, and to F1 help.
 Event routing ticket: start on `codex:sol:med`.
