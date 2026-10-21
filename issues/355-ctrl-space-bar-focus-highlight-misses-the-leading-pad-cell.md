@@ -16,8 +16,14 @@ denied permission.
 
 Bar ` B ▏I ▏U ▏S ▏…`: with S focused, only `S ` is highlighted; the space before `S` is not.
 
-## Decision (host)
+## Decision (host, revised after M1 review)
 
-An item's highlight spans the cells from just after the previous separator up to its own separator,
-so ` S ` is highlighted. The first item includes the leading edge pad, the last item (`≡`) its
-trailing pad. Separators stay unhighlighted. Mouse hit areas match the highlighted cells.
+The user's layout ` B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏≡ ` stays exactly as designed (353); no extra
+spaces. The "character before" an item is the `▏` separator cell (for B, the leading edge pad).
+An item's highlight spans that preceding cell plus its label and trailing space, e.g. `▏S `; the
+`▏` glyph keeps its FG on the focus BG, giving a thin left edge. Mouse hit areas match.
+
+## M1 review (930f803, rejected)
+
+M1 added a space before every label (` B ▏ I ▏ U ▏…`), which changes the user's layout and broke
+Test303 (its click columns). Revert that geometry; implement the decision above.
