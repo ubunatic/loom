@@ -358,7 +358,7 @@
         "menu_focus_key": {"type": "string", "default": ""},
         "arrows_cancel_unfocused_menu": {"type": "boolean", "default": true},
         "unselect_after_action": {"type": "boolean", "default": false},
-        "unselect_on_cancel": {"type": "boolean", "default": false},
+        "unselect_on_cancel": {"type": "boolean", "default": true},
         "popup_open_key": {"type": "string", "default": "ctrl-space", "minLength": 1},
         "auto_popup_on_selection": {"type": "boolean", "default": true},
         "popup_open_delay_ms": {"type": "integer", "default": 0, "minimum": 0},

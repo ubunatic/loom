@@ -392,13 +392,14 @@ Left/Right dismiss it and move the editor cursor.
 With a selection, plain Left collapses to its start and plain Right to its end,
 closing the unfocused bar; the same editor behavior applies when the bar is
 hidden. Shift+Left/Right and Ctrl+Shift+Left/Right keep extending selections.
-Once focused on the main menu bar, pressing the arrow away from the toolbar back
-towards the text (Up when below, Down when above) cancels the popover; Left/Right
+Once focused on the main menu bar, the arrow away from the toolbar back towards
+the text (Up when below, Down when above) cancels the popover; Left/Right
 navigate actions, and Enter or Space activates the focused action. In a submenu,
 Tab/Shift+Tab and arrows move through choices, and Enter or Space applies one.
-Esc closes the submenu before the bar. Ctrl+Space closes an open toolbar or
-submenu and returns input to the editor without changing the document or
-selection; another Ctrl+Space reopens the toolbar while preserving selection.
+Esc closes the submenu before the bar. When the bar closes with Esc, an arrow,
+Ctrl+Space, an action, a color pick, or an outside click, the selection clears
+and the cursor stays in place. The ≡ Select all action keeps its new selection.
+Another Ctrl+Space opens the popover at the cursor.
 Less common editor actions belong in the single ≡ hamburger submenu, not as
 additional top-level toolbar buttons; it currently contains Select all.
 When the bar is closed, Ctrl+Space selects a box or word, or opens a popover at

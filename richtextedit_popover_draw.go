@@ -466,12 +466,15 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 }
 
 func (e *RichTextEdit) applyHamburgerItem(index int) {
-	if index >= 0 && index < len(SpeccedDefaults.RichTextEdit.PopoverHamburgerActions) && SpeccedDefaults.RichTextEdit.PopoverHamburgerActions[index] == "select_all" {
+	selectAll := index >= 0 && index < len(SpeccedDefaults.RichTextEdit.PopoverHamburgerActions) && SpeccedDefaults.RichTextEdit.PopoverHamburgerActions[index] == "select_all"
+	if selectAll {
 		e.selectAll()
 	}
-	e.popoverSubmenu = ""
-	e.popoverHamburgerChoices = nil
-	e.popoverSubmenuFocusSet = false
+	if selectAll {
+		e.clearPopoverKeyboardState(true)
+	} else {
+		e.finishPopoverAction()
+	}
 }
 
 func (e *RichTextEdit) boxSubmenuLabels() []string {

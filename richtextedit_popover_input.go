@@ -31,13 +31,16 @@ func (e *RichTextEdit) finishPopoverAction() {
 		e.ClearSelection()
 	}
 	if e.PopoverDefaults.ActionClosesMenu {
+		if e.PopoverDefaults.UnselectOnCancel {
+			e.ClearSelection()
+		}
 		e.clearPopoverKeyboardState(true)
 	}
 }
 
 func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	if key.Is(e.PopoverDefaults.PopupOpenKey) && e.popoverOpen() {
-		e.clearPopoverKeyboardState(true)
+		e.cancelPopover()
 		return Handled(), true
 	}
 	if e.popoverColorPicker != nil {
@@ -93,7 +96,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	if !(key.Is(e.PopoverDefaults.MenuFocusKey) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_focus"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)) {
 		if e.popoverAtCursor || e.popoverFocusSet {
-			e.clearPopoverKeyboardState(true)
+			e.cancelPopover()
 		}
 		return Ignored(), false
 	}
