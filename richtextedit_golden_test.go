@@ -62,7 +62,7 @@ func TestRichTextEditPopoverControlsMatchV2Mockup(t *testing.T) {
 	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 6})
 	canvas := NewCanvas(48, 5)
 	edit.Draw(canvas, Rect{W: 40, H: 5})
-	labels := SpeccedDefaults.RichTextEdit.PopoverLabels
+	labels := richPopoverLabels()
 	if len(edit.popoverButtons) != len(labels) {
 		t.Fatalf("rendered toolbar has %d controls, want %d", len(edit.popoverButtons), len(labels))
 	}

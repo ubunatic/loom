@@ -96,11 +96,23 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 					e.popoverFocusSet, e.popoverSubmenuFocusSet, e.popoverSubmenuFocus = true, true, i
 				}
 			}
+			for i := range e.popoverHamburgerChoices {
+				if e.popoverHamburgerChoices[i].rect.Contains(mouse.X, mouse.Y) {
+					e.popoverFocusSet, e.popoverSubmenuFocusSet, e.popoverSubmenuFocus = true, true, i
+				}
+			}
 		}
 		if mouse.Action == MousePress && mouse.Button == MouseLeft {
 			for _, choice := range e.popoverBoxChoices {
 				if choice.rect.Contains(mouse.X, mouse.Y) {
 					e.applyBoxStyleChoice(choice.label)
+					e.popoverRelease = true
+					return Handled()
+				}
+			}
+			for _, choice := range e.popoverHamburgerChoices {
+				if choice.rect.Contains(mouse.X, mouse.Y) {
+					e.applyHamburgerItem(choice.index)
 					e.popoverRelease = true
 					return Handled()
 				}
@@ -127,6 +139,7 @@ func (e *RichTextEdit) consumeMouse(mouse MouseEvent) EventResult {
 	if mouse.Action == MousePress {
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
+		e.popoverHamburgerChoices = nil
 	}
 	switch mouse.Action {
 	case MouseScrollUp:

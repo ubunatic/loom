@@ -71,6 +71,9 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
 		}
 	}
+	if got.PopoverHamburgerLabel != "≡" || len(got.PopoverHamburgerItems) != 1 || got.PopoverHamburgerItems[0] != "Select all" || len(got.PopoverHamburgerActions) != 1 || got.PopoverHamburgerActions[0] != "select_all" {
+		t.Fatalf("hamburger defaults = %q/%q/%q", got.PopoverHamburgerLabel, got.PopoverHamburgerItems, got.PopoverHamburgerActions)
+	}
 	if got.BoxStyleDefault != "plain" || len(got.BoxStyleLabels) != 2 || got.BoxStyleLabels[0] != "Plain" || got.BoxStyleLabels[1] != "Rounded" {
 		t.Fatalf("box style defaults = %q %q, want plain and Plain/Rounded", got.BoxStyleDefault, got.BoxStyleLabels)
 	}

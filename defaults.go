@@ -245,45 +245,48 @@ type RichTextEditDefaults struct {
 	DismissOnScroll           bool   `yaml:"dismiss_on_scroll"`
 	MouseHoverFocus           bool   `yaml:"mouse_hover_focus"`
 
-	SelectionBG           int           `yaml:"selection_bg"`
-	ToolbarFG             int           `yaml:"toolbar_fg"`
-	ToolbarBG             int           `yaml:"toolbar_bg"`
-	SeparatorGlyph        string        `yaml:"separator_glyph"`
-	SeparatorFG           int           `yaml:"separator_fg"`
-	SeparatorBG           int           `yaml:"separator_bg"`
-	PointerUpGlyph        string        `yaml:"pointer_up_glyph"`
-	PointerDownGlyph      string        `yaml:"pointer_down_glyph"`
-	PointerFG             int           `yaml:"pointer_fg"`
-	BoxDrawLabel          string        `yaml:"box_draw_label"`
-	PopoverLabels         []string      `yaml:"popover_labels"`
-	BoxStyleLabels        []string      `yaml:"box_style_labels"`
-	BoxStyleDefault       string        `yaml:"box_style_default"`
-	GhostCursorEnabled    bool          `yaml:"ghost_cursor_enabled"`
-	PopoverFocusFG        int           `yaml:"popover_focus_fg"`
-	PopoverFocusBG        int           `yaml:"popover_focus_bg"`
-	LinkFG                int           `yaml:"link_fg"`
-	LinkUnderline         bool          `yaml:"link_underline"`
-	SavePopupMaxWidth     int           `yaml:"save_popup_max_width"`
-	SavePopupMaxHeight    int           `yaml:"save_popup_max_height"`
-	StateUntitledLabel    string        `yaml:"state_untitled_label"`
-	StateSavedLabel       string        `yaml:"state_saved_label"`
-	StateModifiedLabel    string        `yaml:"state_modified_label"`
-	StateErrorLabel       string        `yaml:"state_error_label"`
-	FileMenuTitle         string        `yaml:"file_menu_title"`
-	FileMenuMnemonic      string        `yaml:"file_menu_mnemonic"`
-	HotkeyHelpBinding     string        `yaml:"hotkey_help_binding"`
-	HotkeyHelpLabel       string        `yaml:"hotkey_help_label"`
-	HotkeySaveBinding     string        `yaml:"hotkey_save_binding"`
-	HotkeySaveLabel       string        `yaml:"hotkey_save_label"`
-	HotkeySaveAsLabel     string        `yaml:"hotkey_save_as_label"`
-	HotkeyOpenBinding     string        `yaml:"hotkey_open_binding"`
-	HotkeyOpenLabel       string        `yaml:"hotkey_open_label"`
-	HotkeyCloseBinding    string        `yaml:"hotkey_close_binding"`
-	HotkeyCloseLabel      string        `yaml:"hotkey_close_label"`
-	HotkeyViewEditBinding string        `yaml:"hotkey_view_edit_binding"`
-	HotkeyQuitBinding     string        `yaml:"hotkey_quit_binding"`
-	HotkeyQuitLabel       string        `yaml:"hotkey_quit_label"`
-	HelpSections          []HelpSection `yaml:"help_sections"`
+	SelectionBG             int           `yaml:"selection_bg"`
+	ToolbarFG               int           `yaml:"toolbar_fg"`
+	ToolbarBG               int           `yaml:"toolbar_bg"`
+	SeparatorGlyph          string        `yaml:"separator_glyph"`
+	SeparatorFG             int           `yaml:"separator_fg"`
+	SeparatorBG             int           `yaml:"separator_bg"`
+	PointerUpGlyph          string        `yaml:"pointer_up_glyph"`
+	PointerDownGlyph        string        `yaml:"pointer_down_glyph"`
+	PointerFG               int           `yaml:"pointer_fg"`
+	BoxDrawLabel            string        `yaml:"box_draw_label"`
+	PopoverLabels           []string      `yaml:"popover_labels"`
+	PopoverHamburgerLabel   string        `yaml:"popover_hamburger_label"`
+	PopoverHamburgerItems   []string      `yaml:"popover_hamburger_items"`
+	PopoverHamburgerActions []string      `yaml:"popover_hamburger_actions"`
+	BoxStyleLabels          []string      `yaml:"box_style_labels"`
+	BoxStyleDefault         string        `yaml:"box_style_default"`
+	GhostCursorEnabled      bool          `yaml:"ghost_cursor_enabled"`
+	PopoverFocusFG          int           `yaml:"popover_focus_fg"`
+	PopoverFocusBG          int           `yaml:"popover_focus_bg"`
+	LinkFG                  int           `yaml:"link_fg"`
+	LinkUnderline           bool          `yaml:"link_underline"`
+	SavePopupMaxWidth       int           `yaml:"save_popup_max_width"`
+	SavePopupMaxHeight      int           `yaml:"save_popup_max_height"`
+	StateUntitledLabel      string        `yaml:"state_untitled_label"`
+	StateSavedLabel         string        `yaml:"state_saved_label"`
+	StateModifiedLabel      string        `yaml:"state_modified_label"`
+	StateErrorLabel         string        `yaml:"state_error_label"`
+	FileMenuTitle           string        `yaml:"file_menu_title"`
+	FileMenuMnemonic        string        `yaml:"file_menu_mnemonic"`
+	HotkeyHelpBinding       string        `yaml:"hotkey_help_binding"`
+	HotkeyHelpLabel         string        `yaml:"hotkey_help_label"`
+	HotkeySaveBinding       string        `yaml:"hotkey_save_binding"`
+	HotkeySaveLabel         string        `yaml:"hotkey_save_label"`
+	HotkeySaveAsLabel       string        `yaml:"hotkey_save_as_label"`
+	HotkeyOpenBinding       string        `yaml:"hotkey_open_binding"`
+	HotkeyOpenLabel         string        `yaml:"hotkey_open_label"`
+	HotkeyCloseBinding      string        `yaml:"hotkey_close_binding"`
+	HotkeyCloseLabel        string        `yaml:"hotkey_close_label"`
+	HotkeyViewEditBinding   string        `yaml:"hotkey_view_edit_binding"`
+	HotkeyQuitBinding       string        `yaml:"hotkey_quit_binding"`
+	HotkeyQuitLabel         string        `yaml:"hotkey_quit_label"`
+	HelpSections            []HelpSection `yaml:"help_sections"`
 }
 
 // HelpEntry is one row of a help section. Keys are bindings rendered with
@@ -366,6 +369,14 @@ func (d RichTextEditDefaults) validate() error {
 	}
 	if len(d.PopoverLabels) != 7 {
 		return fmt.Errorf("rich_text_edit.popover_labels must contain 7 labels")
+	}
+	if d.PopoverHamburgerLabel == "" || len(d.PopoverHamburgerItems) == 0 || len(d.PopoverHamburgerItems) != len(d.PopoverHamburgerActions) {
+		return fmt.Errorf("rich_text_edit hamburger label and items must not be empty")
+	}
+	for i, action := range d.PopoverHamburgerActions {
+		if action != "select_all" || d.PopoverHamburgerItems[i] == "" {
+			return fmt.Errorf("rich_text_edit hamburger item %d has invalid label or action", i)
+		}
 	}
 	if d.BoxDrawLabel == "" {
 		return fmt.Errorf("rich_text_edit.box_draw_label must not be empty")

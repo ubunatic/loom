@@ -23,7 +23,18 @@ type richPopoverBoxChoice struct {
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "Link", "ColorPicker", "Box"}
+type richPopoverHamburgerChoice struct {
+	label string
+	index int
+	rect  Rect
+}
+
+var richPopoverActions = []string{"B", "I", "U", "S", "Link", "ColorPicker", "Box", "Hamburger"}
+
+func richPopoverLabels() []string {
+	labels := append([]string(nil), SpeccedDefaults.RichTextEdit.PopoverLabels...)
+	return append(labels, SpeccedDefaults.RichTextEdit.PopoverHamburgerLabel)
+}
 
 var _ Widget = (*RichTextEdit)(nil)
 
@@ -60,7 +71,7 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 		return
 	}
 	width := 2
-	labels := SpeccedDefaults.RichTextEdit.PopoverLabels
+	labels := richPopoverLabels()
 	for i, label := range labels {
 		width += measure.StringWidth(label) + 1
 		if i > 0 {
@@ -98,6 +109,7 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverBoxChoices = nil
+	e.popoverHamburgerChoices = nil
 	e.popoverColorRect = Rect{}
 	if e.popoverSubmenu != "" && !e.popoverSubmenuCanShow() {
 		e.clearPopoverKeyboardState(true)
@@ -111,7 +123,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	}
 	barX, barY, width := bar.X, bar.Y, bar.W
 	defs := SpeccedDefaults.RichTextEdit
-	labels := defs.PopoverLabels
+	labels := richPopoverLabels()
 	toolbarStyle := Style{FG: ColorIndex(uint8(defs.ToolbarFG)), BG: ColorIndex(uint8(defs.ToolbarBG)), Bold: true}
 	for x := 0; x < width; x++ {
 		c.Set(r.X+barX+x, r.Y+barY, Cell{Text: " ", Style: toolbarStyle})
@@ -146,6 +158,27 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	c.Set(r.X+barX+min(max(0, anchorX-barX), width-1), r.Y+pointerY, Cell{Text: pointer, Style: Style{FG: ColorIndex(uint8(defs.PointerFG))}})
 	e.drawPopoverColorPicker(c, r, barX, barY)
 	e.drawPopoverBoxStyles(c, r, barY)
+	e.drawPopoverHamburger(c, r, barY)
+}
+
+func richPopoverBarWidth() int {
+	width := 2
+	for i, label := range richPopoverLabels() {
+		width += measure.StringWidth(label) + 1
+		if i > 0 {
+			width++
+		}
+	}
+	return width
+}
+
+func popoverActionIndex(action string) int {
+	for i, candidate := range richPopoverActions {
+		if candidate == action {
+			return i
+		}
+	}
+	return 0
 }
 
 func (e *RichTextEdit) drawPopoverColorPicker(c *Canvas, r Rect, barX, barY int) {
@@ -228,6 +261,60 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 	}
 }
 
+func (e *RichTextEdit) hamburgerSubmenuWidth() int {
+	width := 2
+	for _, label := range SpeccedDefaults.RichTextEdit.PopoverHamburgerItems {
+		width += measure.StringWidth(label) + 2
+	}
+	return width
+}
+
+func (e *RichTextEdit) drawPopoverHamburger(c *Canvas, r Rect, barY int) {
+	if e.popoverSubmenu != "Hamburger" {
+		return
+	}
+	var button Rect
+	for _, item := range e.popoverButtons {
+		if item.action == "Hamburger" {
+			button = item.rect
+			break
+		}
+	}
+	if button.W == 0 {
+		return
+	}
+	labels := SpeccedDefaults.RichTextEdit.PopoverHamburgerItems
+	width := e.hamburgerSubmenuWidth()
+	placement, ok := e.popoverSubmenuPlacement(r, button.X+button.W/2-width/2, width, 1, barY)
+	if !ok {
+		e.clearPopoverKeyboardState(true)
+		return
+	}
+	style := Style{FG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarFG)), BG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG)), Bold: true}
+	for x := 0; x < width; x++ {
+		c.Set(r.X+placement.X+x, r.Y+placement.Y, Cell{Text: " ", Style: style})
+	}
+	c.Set(r.X+placement.X, r.Y+placement.Y, Cell{Text: "[", Style: style})
+	c.Set(r.X+placement.X+width-1, r.Y+placement.Y, Cell{Text: "]", Style: style})
+	x := placement.X + 1
+	for i, label := range labels {
+		choiceWidth := measure.StringWidth(label) + 2
+		choice := richPopoverHamburgerChoice{label: label, index: i, rect: Rect{X: x, Y: placement.Y, W: choiceWidth, H: 1}}
+		e.popoverHamburgerChoices = append(e.popoverHamburgerChoices, choice)
+		choiceStyle := style
+		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
+			choiceStyle.FG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG))
+			choiceStyle.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG))
+		}
+		c.Write(r.X+x, r.Y+placement.Y, " "+label+" ", choiceStyle)
+		x += choiceWidth
+		if i < len(labels)-1 {
+			c.Set(r.X+x, r.Y+placement.Y, Cell{Text: SpeccedDefaults.RichTextEdit.SeparatorGlyph, Style: style})
+			x++
+		}
+	}
+}
+
 func (e *RichTextEdit) popoverSubmenuPlacement(r Rect, x, width, height, barY int) (Rect, bool) {
 	if width <= 0 || height <= 0 || width > r.W || height > r.H {
 		return Rect{}, false
@@ -305,6 +392,11 @@ func (e *RichTextEdit) popoverHit(x, y int) bool {
 			return true
 		}
 	}
+	for _, choice := range e.popoverHamburgerChoices {
+		if choice.rect.Contains(x, y) {
+			return true
+		}
+	}
 	for _, button := range e.popoverButtons {
 		if button.enabled && button.rect.Contains(x, y) {
 			return true
@@ -330,6 +422,14 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 		} else {
 			e.popoverSubmenu = "Box"
 		}
+	case "Hamburger":
+		e.popoverSubmenuFocusSet = false
+		if e.popoverSubmenu == "Hamburger" {
+			e.popoverSubmenu = ""
+			e.popoverHamburgerChoices = nil
+		} else {
+			e.popoverSubmenu = "Hamburger"
+		}
 	case "Draw":
 		e.toggleBoxMode()
 	case "B":
@@ -346,6 +446,15 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 		e.popoverSubmenuFocusSet = false
 		e.openPopoverColorPicker()
 	}
+}
+
+func (e *RichTextEdit) applyHamburgerItem(index int) {
+	if index >= 0 && index < len(SpeccedDefaults.RichTextEdit.PopoverHamburgerActions) && SpeccedDefaults.RichTextEdit.PopoverHamburgerActions[index] == "select_all" {
+		e.selectAll()
+	}
+	e.popoverSubmenu = ""
+	e.popoverHamburgerChoices = nil
+	e.popoverSubmenuFocusSet = false
 }
 
 func (e *RichTextEdit) boxSubmenuLabels() []string {

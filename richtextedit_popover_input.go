@@ -10,6 +10,7 @@ func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverColorRect = Rect{}
 	e.popoverSubmenu = ""
 	e.popoverBoxChoices = nil
+	e.popoverHamburgerChoices = nil
 	e.popoverAtCursor = false
 	if suppress {
 		e.popoverSuppressed = true
@@ -146,6 +147,14 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 			}
 			return Handled(), true
 		}
+		if action == "Hamburger" {
+			e.popoverSubmenuFocus = 0
+			e.popoverSubmenuFocusSet = true
+			if !e.popoverSubmenuCanShow() {
+				e.clearPopoverKeyboardState(true)
+			}
+			return Handled(), true
+		}
 		return Handled(), true
 	default:
 		return Ignored(), false
@@ -160,6 +169,7 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 	if key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil
+		e.popoverHamburgerChoices = nil
 		e.popoverSubmenuFocusSet = false
 		return Handled(), true
 	}
@@ -184,6 +194,11 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 			e.applyBoxStyleChoice(labels[e.popoverSubmenuFocus])
 			return Handled(), true
 		}
+		items := SpeccedDefaults.RichTextEdit.PopoverHamburgerItems
+		if e.popoverSubmenu == "Hamburger" && e.popoverSubmenuFocus >= 0 && e.popoverSubmenuFocus < len(items) {
+			e.applyHamburgerItem(e.popoverSubmenuFocus)
+			return Handled(), true
+		}
 		return Handled(), true
 	}
 	return Ignored(), false
@@ -192,6 +207,9 @@ func (e *RichTextEdit) consumePopoverSubmenuKey(key KeyEvent) (EventResult, bool
 func (e *RichTextEdit) popoverSubmenuChoiceCount() int {
 	if e.popoverSubmenu == "Box" {
 		return len(e.boxSubmenuLabels())
+	}
+	if e.popoverSubmenu == "Hamburger" {
+		return len(SpeccedDefaults.RichTextEdit.PopoverHamburgerItems)
 	}
 	return 0
 }
@@ -217,6 +235,9 @@ func (e *RichTextEdit) popoverSubmenuCanShow() bool {
 			return false
 		}
 	}
+	if e.popoverSubmenu == "Hamburger" && e.hamburgerSubmenuWidth() > r.W {
+		return false
+	}
 	return true
 }
 
@@ -238,15 +259,15 @@ func (e *RichTextEdit) popoverActionEnabled(index int) bool {
 	if index < 0 || index >= len(richPopoverActions) || richPopoverActions[index] == "Link" {
 		return false
 	}
-	return e.HasSelection || richPopoverActions[index] == "Box" || richPopoverActions[index] == "ColorPicker"
+	return e.HasSelection || richPopoverActions[index] == "Box" || richPopoverActions[index] == "ColorPicker" || richPopoverActions[index] == "Hamburger"
 }
 
 func (e *RichTextEdit) initialPopoverFocus() int {
 	if !e.HasSelection && e.popoverAtCursor {
-		return len(richPopoverActions) - 1
+		return popoverActionIndex("Box")
 	}
 	if e.boxSelection != nil {
-		return len(richPopoverActions) - 1
+		return popoverActionIndex("Box")
 	}
 	for i, active := range []func(Style) bool{
 		func(s Style) bool { return s.Bold },
@@ -277,12 +298,9 @@ func (e *RichTextEdit) popoverCanShow() bool {
 	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
 		return false
 	}
-	width := 2
-	for i, label := range SpeccedDefaults.RichTextEdit.PopoverLabels {
-		width += len(label) + 1
-		if i > 0 {
-			width++
-		}
+	width := richPopoverBarWidth()
+	if r.W < width {
+		return false
 	}
 	barY := 0
 	if anchorY >= 2 {

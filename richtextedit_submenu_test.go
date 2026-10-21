@@ -49,6 +49,79 @@ func assertMenuHandled(t *testing.T, got EventResult) {
 	}
 }
 
+func TestRichTextEditHamburgerSubmenuKeyboardAndMouse(t *testing.T) {
+	newEditor := func() (*RichTextEdit, *Canvas) {
+		edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{
+			{Spans: []RichSpan{{Text: "alpha βeta"}}},
+			{Spans: []RichSpan{{Text: "second line"}}},
+		}})
+		edit.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 4})
+		canvas := NewCanvas(64, 8)
+		edit.Draw(canvas, canvas.Bounds())
+		return edit, canvas
+	}
+
+	edit, canvas := newEditor()
+	popoverFocusAction(t, edit, "Hamburger")
+	if got := edit.popoverButtons[popoverActionIndex("Hamburger")].label; got != SpeccedDefaults.RichTextEdit.PopoverHamburgerLabel {
+		t.Fatalf("hamburger button = %q", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))
+	if edit.popoverSubmenu != "Hamburger" {
+		t.Fatalf("keyboard did not open hamburger submenu: %q", edit.popoverSubmenu)
+	}
+	edit.Draw(canvas, canvas.Bounds())
+	if len(edit.popoverHamburgerChoices) != 1 || edit.popoverHamburgerChoices[0].label != "Select all" {
+		t.Fatalf("hamburger choices = %+v", edit.popoverHamburgerChoices)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
+	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || richPopoverActions[edit.popoverFocus] != "Hamburger" {
+		t.Fatalf("Escape did not return to hamburger bar entry: submenu=%q focus=%d", edit.popoverSubmenu, edit.popoverFocus)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))
+	if !edit.HasSelection || edit.SelectionFrom != (RichPosition{}) || edit.SelectionTo != (RichPosition{Line: 1, Offset: 11}) {
+		t.Fatalf("Select all range = %+v..%+v active=%v", edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	}
+	if got := richTestText(edit); got != "alpha βeta\nsecond line" {
+		t.Fatalf("Select all changed document: %q", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
+	if edit.popoverSubmenu != "" || edit.popoverFocusSet {
+		t.Fatalf("Ctrl+Space left menu open: submenu=%q focus=%v", edit.popoverSubmenu, edit.popoverFocusSet)
+	}
+
+	mouseEdit, mouseCanvas := newEditor()
+	button := mouseEdit.popoverButtons[popoverActionIndex("Hamburger")]
+	if got := mouseEdit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y}); !got.Consumed {
+		t.Fatalf("mouse hamburger press = %+v", got)
+	}
+	mouseEdit.Draw(mouseCanvas, mouseCanvas.Bounds())
+	if mouseEdit.popoverSubmenu != "Hamburger" || len(mouseEdit.popoverHamburgerChoices) != 1 {
+		t.Fatalf("mouse did not open hamburger submenu: %q choices=%d", mouseEdit.popoverSubmenu, len(mouseEdit.popoverHamburgerChoices))
+	}
+	choice := mouseEdit.popoverHamburgerChoices[0]
+	if got := mouseEdit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: choice.rect.X + 1, Y: choice.rect.Y}); !got.Consumed {
+		t.Fatalf("mouse Select all press = %+v", got)
+	}
+	if !mouseEdit.HasSelection || mouseEdit.SelectionFrom != (RichPosition{}) || mouseEdit.SelectionTo != (RichPosition{Line: 1, Offset: 11}) {
+		t.Fatalf("mouse Select all range = %+v..%+v active=%v", mouseEdit.SelectionFrom, mouseEdit.SelectionTo, mouseEdit.HasSelection)
+	}
+}
+
+func TestRichTextEditPopoverHamburgerRequiresFullBarWidth(t *testing.T) {
+	edit := richTestEditor(RichSpan{Text: "abc"})
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 3})
+	for _, width := range []int{18, 30, richPopoverBarWidth()} {
+		canvas := NewCanvas(width, 5)
+		edit.Draw(canvas, canvas.Bounds())
+		wantOpen := width >= richPopoverBarWidth()
+		if got := len(edit.popoverButtons) > 0; got != wantOpen {
+			t.Fatalf("popover width %d open=%v, want %v (bar width %d)", width, got, wantOpen, richPopoverBarWidth())
+		}
+	}
+}
+
 func TestRichTextEditPopoverSubmenusDoNotCoverSelection(t *testing.T) {
 	for _, tc := range []struct {
 		name     string
@@ -163,7 +236,7 @@ func TestRichTextEditSubmenuEscapeReturnsToBarThenText(t *testing.T) {
 	popoverFocusAction(t, edit, "Box")
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
-	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || edit.popoverFocus != len(richPopoverActions)-1 || !edit.HasSelection {
+	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || edit.popoverFocus != popoverActionIndex("Box") || !edit.HasSelection {
 		t.Fatalf("first Esc did not restore Box bar focus: submenu=%q focusSet=%v focus=%d selection=%v", edit.popoverSubmenu, edit.popoverFocusSet, edit.popoverFocus, edit.HasSelection)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))

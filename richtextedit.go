@@ -66,47 +66,48 @@ type RichTextEdit struct {
 	// callback uses RichDocument.ToANSI.
 	SerializeDocument func(*RichDocument) ([]byte, error)
 
-	focused                bool
-	lastRect               Rect
-	savePicker             *FilePicker
-	savePopup              *Popup
-	helpPopup              *Popup
-	helpSections           []HelpSection
-	fileBar                *richTextEditFileBar
-	chromeTheme            *ThemeColors
-	savedDocument          []RichLine
-	notifiedState          DocState
-	selectionAnchor        RichPosition
-	selectionExtending     bool
-	dragSelecting          bool
-	activeStyleSet         bool
-	popoverButtons         []richPopoverButton
-	popoverColorPicker     *ColorPicker
-	popoverColorRect       Rect
-	popoverSubmenu         string
-	popoverBoxChoices      []richPopoverBoxChoice
-	popoverRelease         bool
-	popoverFocus           int
-	popoverFocusSet        bool
-	popoverSubmenuFocus    int
-	popoverSubmenuFocusSet bool
-	popoverSuppressed      bool
-	popoverAtCursor        bool
-	cursorInVoid           bool
-	voidLine               int
-	voidColumn             int
-	clipboard              []RichLine
-	undoStack              []richSnapshot
-	redoStack              []richSnapshot
-	typingRun              bool
-	clickCount             int
-	lastClickAt            time.Time
-	lastClickPos           RichPosition
-	now                    func() time.Time
-	boxStrokeBefore        *richSnapshot
-	boxSelection           *richBoxSelection
-	boxStrokeFG            Color
-	boxStrokeFGSet         bool
+	focused                 bool
+	lastRect                Rect
+	savePicker              *FilePicker
+	savePopup               *Popup
+	helpPopup               *Popup
+	helpSections            []HelpSection
+	fileBar                 *richTextEditFileBar
+	chromeTheme             *ThemeColors
+	savedDocument           []RichLine
+	notifiedState           DocState
+	selectionAnchor         RichPosition
+	selectionExtending      bool
+	dragSelecting           bool
+	activeStyleSet          bool
+	popoverButtons          []richPopoverButton
+	popoverColorPicker      *ColorPicker
+	popoverColorRect        Rect
+	popoverSubmenu          string
+	popoverBoxChoices       []richPopoverBoxChoice
+	popoverHamburgerChoices []richPopoverHamburgerChoice
+	popoverRelease          bool
+	popoverFocus            int
+	popoverFocusSet         bool
+	popoverSubmenuFocus     int
+	popoverSubmenuFocusSet  bool
+	popoverSuppressed       bool
+	popoverAtCursor         bool
+	cursorInVoid            bool
+	voidLine                int
+	voidColumn              int
+	clipboard               []RichLine
+	undoStack               []richSnapshot
+	redoStack               []richSnapshot
+	typingRun               bool
+	clickCount              int
+	lastClickAt             time.Time
+	lastClickPos            RichPosition
+	now                     func() time.Time
+	boxStrokeBefore         *richSnapshot
+	boxSelection            *richBoxSelection
+	boxStrokeFG             Color
+	boxStrokeFGSet          bool
 }
 
 // NewRichTextEdit creates a rich text view for doc. A nil document is treated

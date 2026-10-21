@@ -390,6 +390,8 @@ Tab/Shift+Tab and arrows move through choices, and Enter or Space applies one.
 Esc closes the submenu before the bar. Ctrl+Space closes an open toolbar or
 submenu and returns input to the editor without changing the document or
 selection; another Ctrl+Space reopens the toolbar while preserving selection.
+Less common editor actions belong in the single ≡ hamburger submenu, not as
+additional top-level toolbar buttons; it currently contains Select all.
 When the bar is closed, Ctrl+Space selects a box or word, or opens a popover at
 the cursor on whitespace. The
 focused action is highlighted; the initial focus follows uniformly active

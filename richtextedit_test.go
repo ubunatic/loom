@@ -239,12 +239,12 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
 	canvas := NewCanvas(50, 6)
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
-	if len(edit.popoverButtons) != 7 {
-		t.Fatalf("popover buttons = %d, want 7", len(edit.popoverButtons))
+	if len(edit.popoverButtons) != len(richPopoverActions) {
+		t.Fatalf("popover buttons = %d, want %d", len(edit.popoverButtons), len(richPopoverActions))
 	}
 	for i, button := range edit.popoverButtons {
-		if button.label != SpeccedDefaults.RichTextEdit.PopoverLabels[i] {
-			t.Fatalf("popover label %d = %q, want %q", i, button.label, SpeccedDefaults.RichTextEdit.PopoverLabels[i])
+		if button.label != richPopoverLabels()[i] {
+			t.Fatalf("popover label %d = %q, want %q", i, button.label, richPopoverLabels()[i])
 		}
 	}
 	first := edit.popoverButtons[0].rect
@@ -309,11 +309,17 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	if cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG)) || cell.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG)) {
 		t.Fatalf("focused Draw style = %+v", cell.Style)
 	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Hamburger" {
+		t.Fatalf("forward navigation should reach hamburger; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "B" {
 		t.Fatalf("forward wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Hamburger" {
+		t.Fatalf("reverse navigation should return to hamburger; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Box" {
-		t.Fatalf("reverse wrap result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
+		t.Fatalf("reverse navigation from hamburger should reach Box; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "shift-tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "ColorPicker" {
 		t.Fatalf("Link must be skipped in reverse wrap; result/focus = %+v/%q", result, richPopoverActions[edit.popoverFocus])

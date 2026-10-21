@@ -340,6 +340,9 @@ rich_text_edit:
   pointer_down_glyph: "▼"
   pointer_fg: 8
   popover_labels: ["B", "I", "U", "S", "Link", "🎨", "Box"]
+  popover_hamburger_label: "≡"
+  popover_hamburger_items: ["Select all"]
+  popover_hamburger_actions: ["select_all"]
   box_draw_label: "Draw"
   box_style_labels: ["Plain", "Rounded"]
   box_style_default: "plain"
@@ -408,7 +411,7 @@ rich_text_edit:
         - {keys: ["ctrl-b"], label: "Bold"}
         - {keys: ["tab", "ctrl-i"], label: "Italic (selected text)"}
         - {keys: ["ctrl-u"], label: "Underline"}
-        - {keys: ["ctrl-space"], label: "Formatting popover (Up/Down focuses toolbar, Tab or arrows choose, Enter applies, Esc closes)"}
+        - {keys: ["ctrl-space"], label: "Formatting popover (Up/Down focuses toolbar, Tab or arrows choose, Enter applies; ≡ opens Select all; Esc closes)"}
     - title: "Modes and boxes"
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}
