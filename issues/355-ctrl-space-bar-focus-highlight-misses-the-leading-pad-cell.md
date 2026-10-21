@@ -1,6 +1,6 @@
 # 355 — Ctrl+Space bar focus highlight misses the leading pad cell
 
-**Status**: Open
+**Status**: Closed — Done in fa2d988 (930f803 rejected: it changed the layout): 353 layout kept; focused item highlight spans the preceding ▏ (or leading pad) plus label and trailing space, mouse hit rect matches; dev q1 green; live tmux: focus BG starts at the ▏ before S
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
