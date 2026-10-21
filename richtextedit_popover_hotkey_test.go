@@ -19,7 +19,7 @@ func TestRichTextEditPopoverLabelsAndHotkeys(t *testing.T) {
 	for x := bar.X; x < edit.popoverButtons[len(edit.popoverButtons)-1].rect.X+edit.popoverButtons[len(edit.popoverButtons)-1].rect.W; x++ {
 		got.WriteString(canvas.Get(x, bar.Y).Text)
 	}
-	want := " B ▏ I ▏ U ▏ S ▏ 🎨 ▏ Frame ▏ Link ▏ ≡ "
+	want := " B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏≡ "
 	if got.String() != want {
 		t.Fatalf("toolbar = %q, want %q", got.String(), want)
 	}
@@ -48,56 +48,67 @@ func TestRichTextEditFocusedPopoverHighlightsWholeItemByDisplayColumn(t *testing
 	canvas := NewCanvas(100, 5)
 	defs := SpeccedDefaults.RichTextEdit
 	focusBG := ColorIndex(uint8(defs.PopoverFocusBG))
+	focusFG := ColorIndex(uint8(defs.PopoverFocusFG))
+	separatorFG := ColorIndex(uint8(defs.SeparatorFG))
 	separatorBG := ColorIndex(uint8(defs.SeparatorBG))
 
-	for focused := range richPopoverActions {
+	for _, action := range []string{"B", "S", "ColorPicker", "Hamburger"} {
+		focused := popoverActionIndex(action)
 		edit.popoverFocus, edit.popoverFocusSet = focused, true
 		edit.Draw(canvas, canvas.Bounds())
-		for i, button := range edit.popoverButtons {
-			column := button.rect.X
-			for column < button.rect.X+button.rect.W {
-				cell := canvas.Get(column, button.rect.Y)
-				wantFocused := i == focused
-				if (cell.Style.BG == focusBG) != wantFocused {
-					t.Errorf("focus %q column %d cell %+v, focused=%v", button.action, column-button.rect.X, cell, wantFocused)
-				}
-				column++
+		button := edit.popoverButtons[focused]
+		for column := 0; column < button.rect.W; column++ {
+			cell := canvas.Get(button.rect.X+column, button.rect.Y)
+			wantFG := focusFG
+			if focused > 0 && column == 0 {
+				wantFG = separatorFG
 			}
-			if i < len(edit.popoverButtons)-1 {
-				separatorX := button.rect.X + button.rect.W
-				cell := canvas.Get(separatorX, button.rect.Y)
-				if cell.Text != defs.SeparatorGlyph || cell.Style.BG != separatorBG || cell.Style.BG == focusBG {
-					t.Errorf("focus %q separator after %s = %+v", button.action, button.action, cell)
-				}
+			if cell.Style.BG != focusBG || cell.Style.FG != wantFG {
+				t.Errorf("focus %q column %d cell %+v, want FG=%v BG=%v", action, column, cell, wantFG, focusBG)
+			}
+		}
+		if focused == 0 {
+			if got := canvas.Get(button.rect.X, button.rect.Y).Text; got != " " {
+				t.Errorf("B leading edge pad = %q, want space", got)
+			}
+		} else if got := canvas.Get(button.rect.X, button.rect.Y).Text; got != defs.SeparatorGlyph {
+			t.Errorf("%s preceding separator = %q, want %q", action, got, defs.SeparatorGlyph)
+		}
+		if got := canvas.Get(button.rect.X+1, button.rect.Y).Text; got != button.label {
+			t.Errorf("%s label cell = %q, want %q", action, got, button.label)
+		}
+		if got := canvas.Get(button.rect.X+button.rect.W-1, button.rect.Y).Text; got != " " {
+			t.Errorf("%s trailing pad = %q, want space", action, got)
+		}
+		if action == "ColorPicker" && button.rect.W != measure.StringWidth("🎨")+2 {
+			t.Errorf("color item width = %d, want display width %d plus separator and pad", button.rect.W, measure.StringWidth("🎨")+2)
+		}
+		if focused < len(edit.popoverButtons)-1 {
+			separator := canvas.Get(button.rect.X+button.rect.W, button.rect.Y)
+			if separator.Text != defs.SeparatorGlyph || separator.Style.BG != separatorBG {
+				t.Errorf("separator after %s = %+v, want unhighlighted separator", action, separator)
 			}
 		}
 	}
-
-	first, last := edit.popoverButtons[0].rect, edit.popoverButtons[len(edit.popoverButtons)-1].rect
-	if canvas.Get(first.X, first.Y).Text != " " {
-		t.Fatalf("first item leading edge pad = %+v", canvas.Get(first.X, first.Y))
-	}
-	if canvas.Get(last.X+last.W-1, last.Y).Text != " " {
-		t.Fatalf("last item trailing edge pad = %+v", canvas.Get(last.X+last.W-1, last.Y))
-	}
-	color := edit.popoverButtons[popoverActionIndex("ColorPicker")].rect
-	if color.W != measure.StringWidth("🎨")+2 {
-		t.Fatalf("color item width = %d, want display width %d plus two pads", color.W, measure.StringWidth("🎨")+2)
-	}
 }
 
-func TestRichTextEditPopoverLeadingPadMouseHitActivatesItem(t *testing.T) {
+func TestRichTextEditPopoverSeparatorMouseHitActivatesFollowingItem(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}}
 	edit := NewRichTextEdit(doc)
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 8})
 	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-	edit.Draw(NewCanvas(100, 5), Rect{W: 100, H: 5})
+	canvas := NewCanvas(100, 5)
+	edit.Draw(canvas, Rect{W: 100, H: 5})
 	button := edit.popoverButtons[popoverActionIndex("S")]
+	previous := edit.popoverButtons[popoverActionIndex("U")].rect
+	if button.rect.X != previous.X+previous.W || canvas.Get(button.rect.X, button.rect.Y).Text != SpeccedDefaults.RichTextEdit.SeparatorGlyph {
+		t.Fatal("S hit area does not include its preceding separator")
+	}
 	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y}); !result.Consumed {
-		t.Fatal("leading pad click was not consumed")
+		t.Fatal("separator click was not consumed")
 	}
 	if !doc.Lines[0].Spans[0].Style.Strike {
-		t.Fatal("leading pad click did not activate the S item")
+		t.Fatal("separator click did not activate the S item")
 	}
 }
 

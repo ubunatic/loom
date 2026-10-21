@@ -70,10 +70,10 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 	if anchorX < 0 || anchorX >= r.W || anchorY < 0 || anchorY >= r.H {
 		return
 	}
-	width := 0
+	width := 1 // Leading padding before the first label.
 	labels := richPopoverLabels()
 	for i, label := range labels {
-		width += measure.StringWidth(label) + 2
+		width += measure.StringWidth(label) + 1
 		if i < len(labels)-1 {
 			width++
 		}
@@ -127,8 +127,14 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	toolbarStyle := Style{FG: ColorIndex(uint8(defs.ToolbarFG)), BG: ColorIndex(uint8(defs.ToolbarBG))}
 	x := barX
 	for i, label := range labels {
-		prefix := 1
-		button := Rect{X: x, Y: barY, W: measure.StringWidth(label) + 2, H: 1}
+		prefix := 0
+		buttonX := x
+		if i == 0 {
+			prefix = 1
+		} else {
+			buttonX-- // The preceding separator belongs to this item's hit area.
+		}
+		button := Rect{X: buttonX, Y: barY, W: measure.StringWidth(label) + 2, H: 1}
 		action := richPopoverActions[i]
 		enabled := e.popoverActionEnabled(i)
 		e.popoverButtons = append(e.popoverButtons, richPopoverButton{label: label, action: action, rect: button, enabled: enabled})
@@ -143,7 +149,10 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		}
 		runeIndex := SpeccedDefaults.RichTextEdit.PopoverHotkeyIndices[i]
 		column := 0
-		text := " " + label + " "
+		text := label + " "
+		if prefix != 0 {
+			text = " " + text
+		}
 		for j, ch := range []rune(text) {
 			runeStyle := style
 			if j-prefix == runeIndex {
@@ -152,9 +161,13 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 			c.Write(r.X+x+column, r.Y+barY, string(ch), runeStyle)
 			column += measure.RuneWidth(ch)
 		}
-		x += button.W
+		x += measure.StringWidth(label) + prefix + 1
 		if i < len(labels)-1 {
-			c.Set(r.X+x, r.Y+barY, Cell{Text: defs.SeparatorGlyph, Style: Style{FG: ColorIndex(uint8(defs.SeparatorFG)), BG: ColorIndex(uint8(defs.SeparatorBG))}})
+			separatorStyle := Style{FG: ColorIndex(uint8(defs.SeparatorFG)), BG: ColorIndex(uint8(defs.SeparatorBG))}
+			if e.popoverFocusSet && i+1 == e.popoverFocus {
+				separatorStyle.BG = ColorIndex(uint8(defs.PopoverFocusBG))
+			}
+			c.Set(r.X+x, r.Y+barY, Cell{Text: defs.SeparatorGlyph, Style: separatorStyle})
 			x++
 		}
 	}
@@ -166,9 +179,9 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 
 func richPopoverBarWidth() int {
 	labels := richPopoverLabels()
-	width := 0
+	width := 1 // Leading padding before the first label.
 	for i, label := range labels {
-		width += measure.StringWidth(label) + 2
+		width += measure.StringWidth(label) + 1
 		if i < len(labels)-1 {
 			width++
 		}
