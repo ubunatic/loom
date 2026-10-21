@@ -286,7 +286,7 @@
         "bindings": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["up", "down", "left", "right", "cancel", "tab", "reverse_tab", "focus", "selection_italic", "search_next", "search_previous", "regex", "newline", "box_exit", "bold", "italic", "underline", "copy", "cut", "paste", "undo", "redo", "history", "move_left", "move_right", "move_up", "move_down", "select_left", "select_right", "select_up", "select_down", "line_start", "line_end", "select_start", "select_end", "word_left", "word_right", "delete_before", "delete_after", "arrows", "menu_focus", "menu_reverse", "horizontal", "vertical", "activate", "submenu_move", "submenu_reverse", "page_up", "page_down", "home", "end", "view_navigation"],
+          "required": ["up", "down", "left", "right", "cancel", "tab", "reverse_tab", "focus", "selection_italic", "search_next", "search_previous", "regex", "newline", "box_exit", "bold", "italic", "underline", "copy", "cut", "paste", "undo", "redo", "history", "move_left", "move_right", "move_up", "move_down", "select_left", "select_right", "select_up", "select_down", "line_start", "line_end", "select_start", "select_end", "word_left", "word_right", "delete_before", "delete_after", "arrows", "menu_entry", "menu_focus", "menu_reverse", "horizontal", "vertical", "activate", "submenu_move", "submenu_reverse", "page_up", "page_down", "home", "end", "view_navigation"],
           "properties": {
             "up": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "down": {"type": "array", "minItems": 1, "items": {"type": "string"}},
@@ -328,6 +328,7 @@
             "delete_before": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "delete_after": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "arrows": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+            "menu_entry": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "menu_focus": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "menu_reverse": {"type": "array", "minItems": 1, "items": {"type": "string"}},
             "horizontal": {"type": "array", "minItems": 1, "items": {"type": "string"}},

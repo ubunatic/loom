@@ -14,6 +14,7 @@ The [approved ANSI mockups](design/loom-edit-design-notes.md) are visual guidanc
 - **Side panel**: `^O` (and `F2`) toggles the file browser side panel open and closed ([301](../issues/301-loom-edit-refine-hotkeys-nest-draw-under-box-and-make-bottom-bar-items-clickable.md)).
 - **Search**: `^F` (and `F3`) opens the search overlay ([301](../issues/301-loom-edit-refine-hotkeys-nest-draw-under-box-and-make-bottom-bar-items-clickable.md)).
 - **Screenshot**: `^P` captures the complete visible editor to `~/Pictures/Screenshots/<num>-loom-edit-<details>.ansi` ([284](../issues/284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md)).
+- **Formatting popover**: After `Ctrl+Space`, Up or Down focuses the toolbar above or below the selection. Left/Right move the editor cursor until the toolbar has focus; then they navigate actions ([349](../issues/349-loom-edit-arrow-towards-the-popover-should-enter-it-also-when-it-opens-above-the-selection.md)).
 
 ## ANSI assets and evidence
 

@@ -275,6 +275,7 @@ rich_text_edit:
     delete_before: ["backspace"]
     delete_after: ["delete"]
     arrows: ["left", "right", "up", "down"]
+    menu_entry: ["up", "down"]
     menu_focus: ["tab", "shift-tab", "backtab"]
     menu_reverse: ["shift-tab", "backtab"]
     horizontal: ["left", "right"]
@@ -391,7 +392,7 @@ rich_text_edit:
         - {keys: ["ctrl-b"], label: "Bold"}
         - {keys: ["tab", "ctrl-i"], label: "Italic (selected text)"}
         - {keys: ["ctrl-u"], label: "Underline"}
-        - {keys: ["ctrl-space"], label: "Formatting popover (arrow towards toolbar focuses, Tab or arrows choose, Enter applies, Esc closes)"}
+        - {keys: ["ctrl-space"], label: "Formatting popover (Up/Down focuses toolbar, Tab or arrows choose, Enter applies, Esc closes)"}
     - title: "Modes and boxes"
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}

@@ -58,6 +58,8 @@ func Test317EditPTYDirectionalFocusAndItalic(t *testing.T) {
 			s.Send("\t")
 			waitEditPTY(t, s, func() bool { return !s.Cell(1, row).Style.Italic })
 			s.Send(away)
+			waitEditPTY(t, s, func() bool { return editPTYPopoverBFocused(s) })
+			s.Send("\x1b")
 			waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨") })
 			s.Send("\x00")
 			s.WaitFor("🎨", 3*time.Second)

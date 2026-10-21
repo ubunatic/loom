@@ -1884,16 +1884,19 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 				before := e.Cursor
 				from, to := e.SelectionFrom, e.SelectionTo
 				result := e.ConsumeKey(KeyEvent{Key: key})
-				toward := (placement == "above" && key == "up") || (placement == "below" && key == "down")
-				if !result.Consumed || e.popoverFocusSet != toward || e.popoverSuppressed == toward {
+				entry := key == "up" || key == "down"
+				if !result.Consumed || e.popoverFocusSet != entry || e.popoverSuppressed == entry {
 					t.Fatalf("arrow state: %+v focused=%v suppressed=%v", result, e.popoverFocusSet, e.popoverSuppressed)
 				}
 				if e.SelectionFrom != from || e.SelectionTo != to || !e.HasSelection {
 					t.Fatal("arrow lost selection")
 				}
-				if toward {
+				if entry {
 					if e.Cursor != before {
 						t.Fatal("focus moved cursor")
+					}
+					if e.popoverFocus != e.initialPopoverFocus() {
+						t.Fatal("vertical entry did not set initial bar focus")
 					}
 					e.ConsumeKey(KeyEvent{Key: "right"})
 					if e.popoverFocus != 1 {
@@ -1912,6 +1915,29 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func Test349PopoverMenuEntryBinding(t *testing.T) {
+	bindings := SpeccedDefaults.RichTextEdit.Bindings
+	defer func() { SpeccedDefaults.RichTextEdit.Bindings = bindings }()
+	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+	e.PopoverDefaults.PositionPreference = "above"
+	e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	e.Draw(NewCanvas(40, 6), Rect{W: 40, H: 6})
+	e.ConsumeKey(KeyEvent{Key: "up"})
+	if !e.popoverFocusSet {
+		t.Fatal("default vertical entry did not focus bar")
+	}
+	e.clearPopoverKeyboardState(false)
+	customBindings := make(map[string][]string, len(bindings))
+	for name, keys := range bindings {
+		customBindings[name] = keys
+	}
+	customBindings["menu_entry"] = []string{"ctrl-j"}
+	SpeccedDefaults.RichTextEdit.Bindings = customBindings
+	if result := e.ConsumeKey(KeyEvent{Key: "ctrl-j"}); !result.Consumed || !e.popoverFocusSet {
+		t.Fatalf("configured entry result/focus = %+v/%v", result, e.popoverFocusSet)
 	}
 }
 

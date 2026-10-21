@@ -53,13 +53,15 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	submenuOpen := e.popoverSubmenu != ""
 	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
 	if !e.popoverFocusSet && !submenuOpen {
-		if popoverArrow {
-			_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
-			if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...)) || (pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...))) {
+		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_entry"]...) {
+			_, _, _, _, open := e.popoverGeometry(e.lastRect, e.documentLines())
+			if open {
 				e.popoverFocus = e.initialPopoverFocus()
 				e.popoverFocusSet = true
 				return Handled(), true
 			}
+		}
+		if popoverArrow {
 			if e.PopoverDefaults.ArrowsCancelUnfocusedMenu {
 				e.cancelPopover()
 			}

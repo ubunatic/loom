@@ -18,6 +18,9 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
 	content := strings.Join(view.plainLines(72), "\n")
+	if !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down focuses toolbar") {
+		t.Error("F1 help omits bidirectional formatting popover focus")
+	}
 	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
 		if !strings.Contains(content, binding) {
 			t.Errorf("help omits binding %q", binding)
