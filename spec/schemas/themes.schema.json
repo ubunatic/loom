@@ -36,7 +36,9 @@
         "status_fg", "status_bg", "status_bold", "status_dim",
         "progress_fg", "progress_bg", "progress_bold",
         "border_fg",   "border_bg",
-        "focus_bg", "media_loading_fg", "media_loading_dim", "media_error_fg"
+        "focus_bg", "media_loading_fg", "media_loading_dim", "media_error_fg",
+        "chart_palette", "chart_label_fg", "chart_axis_fg",
+        "pill_fetching_fg", "pill_done_fg", "pill_failed_fg"
       ],
       "properties": {
         "normal_fg":     { "$ref": "#/definitions/themeColor" },
@@ -74,7 +76,18 @@
         "key_cap_fg": { "$ref": "#/definitions/themeColor" },
         "key_cap_bg": { "$ref": "#/definitions/themeColor" },
         "modified_fg": { "$ref": "#/definitions/themeColor" },
-        "saved_fg": { "$ref": "#/definitions/themeColor" }
+        "saved_fg": { "$ref": "#/definitions/themeColor" },
+        "chart_palette": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/themeColor" },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "chart_label_fg": { "$ref": "#/definitions/themeColor" },
+        "chart_axis_fg": { "$ref": "#/definitions/themeColor" },
+        "pill_fetching_fg": { "$ref": "#/definitions/themeColor" },
+        "pill_done_fg": { "$ref": "#/definitions/themeColor" },
+        "pill_failed_fg": { "$ref": "#/definitions/themeColor" }
       }
     }
   }

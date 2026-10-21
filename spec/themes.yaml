@@ -16,6 +16,12 @@ themes:
     key_cap_bg: 238
     modified_fg: 214
     saved_fg: 114
+    chart_palette: [6, 3, 5, 2, 4, 1]
+    chart_label_fg: 7
+    chart_axis_fg: 8
+    pill_fetching_fg: 3
+    pill_done_fg: 2
+    pill_failed_fg: 1
     normal_fg:        default
     normal_bg:        default
     selected_fg:      default # bold carries the highlight
@@ -59,6 +65,12 @@ themes:
     key_cap_bg: 25
     modified_fg: 214
     saved_fg: 114
+    chart_palette: [6, 3, 5, 2, 4, 1]
+    chart_label_fg: 7
+    chart_axis_fg: 8
+    pill_fetching_fg: 3
+    pill_done_fg: 2
+    pill_failed_fg: 1
     normal_fg:        252 # soft white (#d0d0d0)
     normal_bg:        69  # saturated steel blue (#5f87ff)
     selected_fg:      16  # fixed black (#000000)
@@ -98,6 +110,12 @@ themes:
     key_cap_bg: 25
     modified_fg: 214
     saved_fg: 114
+    chart_palette: [6, 3, 5, 2, 4, 1]
+    chart_label_fg: 7
+    chart_axis_fg: 8
+    pill_fetching_fg: 3
+    pill_done_fg: 2
+    pill_failed_fg: 1
     normal_fg:        231 # white (#ffffff)
     normal_bg:        27  # blue (#005fd7)
     selected_fg:      16  # black (#000000)
@@ -137,6 +155,12 @@ themes:
     key_cap_bg: 25
     modified_fg: 214
     saved_fg: 114
+    chart_palette: [6, 3, 5, 2, 4, 1]
+    chart_label_fg: 7
+    chart_axis_fg: 8
+    pill_fetching_fg: 3
+    pill_done_fg: 2
+    pill_failed_fg: 1
     normal_fg:        252 # soft white (#d0d0d0)
     normal_bg:        19  # navy (#0000af)
     selected_fg:      16
@@ -184,6 +208,12 @@ themes:
     key_cap_bg: 239
     modified_fg: 214
     saved_fg: 114
+    chart_palette: [6, 3, 5, 2, 4, 1]
+    chart_label_fg: 7
+    chart_axis_fg: 8
+    pill_fetching_fg: 3
+    pill_done_fg: 2
+    pill_failed_fg: 1
     normal_fg:        250 # lightgray (#bcbcbc)
     normal_bg:        237 # color237, calm dark grey panel
     selected_fg:      16  # fixed black (#000000)

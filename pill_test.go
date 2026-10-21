@@ -61,14 +61,15 @@ func TestPillClusterDraw(t *testing.T) {
 }
 
 func TestProviderStateStyles(t *testing.T) {
-	if s := StyleForProviderState(ProviderDone); s.FG != colorGreen {
-		t.Errorf("ProviderDone style.FG = %v, want %v", s.FG, colorGreen)
+	theme := DefaultTheme()
+	if s := StyleForProviderState(ProviderDone); s.FG != theme.PillDoneFG.Color() {
+		t.Errorf("ProviderDone style.FG = %v, want %v", s.FG, theme.PillDoneFG.Color())
 	}
-	if s := StyleForProviderState(ProviderFetching); s.FG != colorYellow {
-		t.Errorf("ProviderFetching style.FG = %v, want %v", s.FG, colorYellow)
+	if s := StyleForProviderState(ProviderFetching); s.FG != theme.PillFetchingFG.Color() {
+		t.Errorf("ProviderFetching style.FG = %v, want %v", s.FG, theme.PillFetchingFG.Color())
 	}
-	if s := StyleForProviderState(ProviderFailed); s.FG != colorRed {
-		t.Errorf("ProviderFailed style.FG = %v, want %v", s.FG, colorRed)
+	if s := StyleForProviderState(ProviderFailed); s.FG != theme.PillFailedFG.Color() {
+		t.Errorf("ProviderFailed style.FG = %v, want %v", s.FG, theme.PillFailedFG.Color())
 	}
 	if s := StyleForProviderState(ProviderPending); !s.Dim {
 		t.Errorf("ProviderPending style.Dim = false, want true")

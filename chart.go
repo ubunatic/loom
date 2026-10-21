@@ -40,13 +40,12 @@ type Chart struct {
 	RangeSet bool
 }
 
-var chartColors = [...]Color{ColorIndex(6), ColorIndex(3), ColorIndex(5), ColorIndex(2), ColorIndex(4), ColorIndex(1)}
-
 // Draw renders the chart clipped to r. It is safe for small or empty regions.
 func (ch *Chart) Draw(c *Canvas, r Rect) {
 	if ch == nil || c == nil || r.W <= 0 || r.H <= 0 || len(ch.Series) == 0 {
 		return
 	}
+	theme := DefaultTheme()
 	series := ch.Series
 	minV, maxV := math.Inf(1), math.Inf(-1)
 	for _, s := range series {
@@ -88,8 +87,8 @@ func (ch *Chart) Draw(c *Canvas, r Rect) {
 	if dataW <= 0 {
 		return
 	}
-	labelStyle := Style{FG: ColorIndex(7)}
-	axisStyle := Style{FG: ColorIndex(8)}
+	labelStyle := Style{FG: theme.ChartLabelFG.Color()}
+	axisStyle := Style{FG: theme.ChartAxisFG.Color()}
 	tickCount := int(math.Round((maxV-minV)/step)) + 1
 	for i := 0; i < tickCount; i++ {
 		y := plotY + plotH - 1 - i*(plotH-1)/maxInt(1, tickCount-1)
@@ -111,9 +110,9 @@ func (ch *Chart) Draw(c *Canvas, r Rect) {
 		return
 	}
 	if ch.Mode == ChartGroupedBar {
-		ch.drawBars(c, series, dataX, plotY, dataW, plotH, minV, maxV, count)
+		ch.drawBars(c, series, dataX, plotY, dataW, plotH, minV, maxV, count, theme.ChartPalette)
 	} else {
-		ch.drawLines(c, series, dataX, plotY, dataW, plotH, minV, maxV, count)
+		ch.drawLines(c, series, dataX, plotY, dataW, plotH, minV, maxV, count, theme.ChartPalette)
 	}
 	for i := 0; i < count; i++ {
 		if i%maxInt(1, count/4) == 0 {
@@ -130,7 +129,7 @@ func (ch *Chart) Draw(c *Canvas, r Rect) {
 			}
 			color := s.Color
 			if color == (Color{}) {
-				color = chartColors[i%len(chartColors)]
+				color = theme.ChartPalette[i%len(theme.ChartPalette)].Color()
 			}
 			c.Write(x, y, "● "+name, Style{FG: color})
 			x += len([]rune("● "+name)) + 2
@@ -161,13 +160,13 @@ type chartDots struct {
 	style Style
 }
 
-func (ch *Chart) drawLines(c *Canvas, ss []ChartSeries, x, y, w, h int, lo, hi float64, n int) {
+func (ch *Chart) drawLines(c *Canvas, ss []ChartSeries, x, y, w, h int, lo, hi float64, n int, palette [6]ThemeColor) {
 	pixels := make(map[[2]int]chartDots)
 	pixelW, pixelH := w*2, h*4
 	for si, s := range ss {
 		color := s.Color
 		if color == (Color{}) {
-			color = chartColors[si%len(chartColors)]
+			color = palette[si%len(palette)].Color()
 		}
 		st := Style{FG: color}
 		prevX, prevY := -1, -1
@@ -229,13 +228,13 @@ func rasterChartLine(pixels map[[2]int]chartDots, x0, y0, x1, y1 int, style Styl
 	}
 }
 
-func (ch *Chart) drawBars(c *Canvas, ss []ChartSeries, x, y, w, h int, lo, hi float64, n int) {
+func (ch *Chart) drawBars(c *Canvas, ss []ChartSeries, x, y, w, h int, lo, hi float64, n int, palette [6]ThemeColor) {
 	group := maxInt(1, w/n)
 	bw := maxInt(1, (group-1)/len(ss))
 	for si, s := range ss {
 		color := s.Color
 		if color == (Color{}) {
-			color = chartColors[si%len(chartColors)]
+			color = palette[si%len(palette)].Color()
 		}
 		for i, v := range s.Values {
 			bx := x + i*group + si*bw

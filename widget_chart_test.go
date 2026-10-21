@@ -21,6 +21,45 @@ func TestChartRendersAxesAndSingleLineWithoutLegend(t *testing.T) {
 	}
 }
 
+func TestChartUsesDefaultThemeColors(t *testing.T) {
+	theme := DefaultTheme()
+	series := make([]ChartSeries, len(theme.ChartPalette))
+	for i := range series {
+		series[i] = ChartSeries{Name: "series", Values: []float64{float64(i + 1)}}
+	}
+	chart := &Chart{Mode: ChartGroupedBar, Series: series}
+	c := NewCanvas(60, 10)
+	chart.Draw(c, Rect{W: 60, H: 10})
+
+	gotBars := map[Color]bool{}
+	gotAxis, gotLabel := false, false
+	for y := 0; y < c.rows; y++ {
+		for x := 0; x < c.cols; x++ {
+			cell := c.Get(x, y)
+			if cell.Text == "█" {
+				gotBars[cell.Style.FG] = true
+			}
+			if cell.Text == "│" || cell.Text == "└" {
+				gotAxis = gotAxis || cell.Style.FG == theme.ChartAxisFG.Color()
+			}
+			if x < 6 && cell.Text >= "0" && cell.Text <= "9" {
+				gotLabel = gotLabel || cell.Style.FG == theme.ChartLabelFG.Color()
+			}
+		}
+	}
+	for i, color := range theme.ChartPalette {
+		if !gotBars[color.Color()] {
+			t.Errorf("bar colors = %v, missing default theme chart palette color %d: %v", gotBars, i, color.Color())
+		}
+	}
+	if !gotAxis {
+		t.Errorf("chart axis did not use default theme color %v", theme.ChartAxisFG.Color())
+	}
+	if !gotLabel {
+		t.Errorf("chart labels did not use default theme color %v", theme.ChartLabelFG.Color())
+	}
+}
+
 func hasBrailleGlyph(text string) bool {
 	for _, r := range text {
 		if r >= 0x2800 && r <= 0x28ff {

@@ -33,23 +33,18 @@ type ProviderPill struct {
 	State  ProviderState
 }
 
-var (
-	colorYellow = ColorIndex(3)
-	colorGreen  = ColorIndex(2)
-	colorRed    = ColorIndex(1)
-)
-
 // StyleForProviderState returns the visual style corresponding to a provider state.
 func StyleForProviderState(state ProviderState) Style {
+	theme := DefaultTheme()
 	switch state {
 	case ProviderPending:
 		return Style{Dim: true}
 	case ProviderFetching:
-		return Style{FG: colorYellow}
+		return Style{FG: theme.PillFetchingFG.Color()}
 	case ProviderDone:
-		return Style{FG: colorGreen}
+		return Style{FG: theme.PillDoneFG.Color()}
 	case ProviderFailed:
-		return Style{FG: colorRed}
+		return Style{FG: theme.PillFailedFG.Color()}
 	case ProviderSkipped:
 		return Style{Dim: true}
 	default:
