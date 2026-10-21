@@ -361,10 +361,11 @@ italic, and underline shortcuts (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`). A non-empty
 selection shows a floating formatting popover by default; set `ShowPopover` to
 false to hide it. Its B/I/U/S buttons toggle styles on the selection. The bar
 uses `▏` separators and offers 🎨, Frame, Link and the ≡ submenu. The b/B, i/I,
-u/U and s/S hotkeys toggle formatting; f/F opens Frame. L/l activates the disabled Link entry
-without changing the document. These letters work when the bar was opened with
-Ctrl+Space or focused from the keyboard; they remain normal text while the
-selection popover is merely auto-shown. The 🎨
+u/U and s/S hotkeys toggle formatting; f/F opens Frame. L/l activates the
+disabled Link entry without changing the document. Ctrl+Space opens the bar
+focused on its first item; Up/Down enters an auto-shown bar before its letters
+act as hotkeys. Letters remain normal text while the selection popover is
+unfocused. The 🎨
 button opens the reusable `ColorPicker` with the current FG/BG pair and a
 preview; swatches update the selected spans or the typing style when there is no
 selection. Mouse coordinates are child-local, so the editor can handle
@@ -399,8 +400,9 @@ Less common editor actions belong in the single ≡ hamburger submenu, not as
 additional top-level toolbar buttons; it currently contains Select all.
 When the bar is closed, Ctrl+Space selects a box or word, or opens a popover at
 the cursor on whitespace. The
-focused action is highlighted; the initial focus follows uniformly active
-bold, italic, underline, or box selection, otherwise B. Drawing past a line end
+focused action is highlighted; Ctrl+Space starts at B, while Up/Down entry
+follows uniformly active bold, italic, underline, or box selection, otherwise B.
+Drawing past a line end
 pads that row with spaces; drawing below the document appends rows and pads them
 to the current display column. Up/Down can place the caret beyond the end of a
 line or below the final line without editing; typing or drawing there pads the

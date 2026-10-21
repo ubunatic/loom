@@ -55,7 +55,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	submenuOpen := e.popoverSubmenu != ""
 	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
-	if !submenuOpen && (e.popoverExplicit || e.popoverFocusSet) {
+	if !submenuOpen && e.popoverFocusSet {
 		if index := e.popoverHotkeyIndex(key); index >= 0 {
 			if !e.popoverActionEnabled(index) {
 				return Handled(), true

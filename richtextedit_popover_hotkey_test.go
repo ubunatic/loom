@@ -53,7 +53,7 @@ func TestRichTextEditPopoverLetterHotkeys(t *testing.T) {
 		edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 		edit.Draw(NewCanvas(70, 5), Rect{W: 70, H: 5})
 		if result := edit.ConsumeKey(KeyEvent{Key: tc.key, Text: tc.key}); !result.Consumed {
-			t.Fatalf("%q was not consumed while explicit bar open", tc.key)
+			t.Fatalf("%q was not consumed while toolbar focused", tc.key)
 		}
 		style := doc.Lines[0].Spans[0].Style
 		if !styleForAction(style, tc.action) {
@@ -67,7 +67,7 @@ func TestRichTextEditPopoverLetterHotkeys(t *testing.T) {
 		edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 		edit.Draw(NewCanvas(70, 5), Rect{W: 70, H: 5})
 		if result := edit.ConsumeKey(KeyEvent{Key: key, Text: key}); !result.Consumed {
-			t.Errorf("%q was not consumed while explicit bar open", key)
+			t.Errorf("%q was not consumed while toolbar focused", key)
 		}
 		if key == "f" || key == "F" {
 			if edit.popoverSubmenu != "Box" {
@@ -84,19 +84,19 @@ func TestRichTextEditPopoverLetterHotkeys(t *testing.T) {
 	}
 }
 
-func TestRichTextEditCtrlSpaceWordSelectionKeepsBarExplicitForHotkeys(t *testing.T) {
+func TestRichTextEditCtrlSpaceFocusesFirstItemForHotkeys(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello loom"}}}}}
 	edit := NewRichTextEdit(doc)
 	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-	if !edit.popoverExplicit || !edit.HasSelection {
-		t.Fatalf("Ctrl+Space selection state: explicit=%v selection=%v", edit.popoverExplicit, edit.HasSelection)
+	if !edit.popoverFocusSet || edit.popoverFocus != 0 || !edit.HasSelection {
+		t.Fatalf("Ctrl+Space focus state: focused=%v index=%d selection=%v", edit.popoverFocusSet, edit.popoverFocus, edit.HasSelection)
 	}
 	edit.Draw(NewCanvas(70, 5), Rect{W: 70, H: 5})
-	if result := edit.ConsumeKey(KeyEvent{Key: "F", Text: "F"}); !result.Consumed || edit.popoverSubmenu != "Box" {
-		t.Fatalf("F after Ctrl+Space = %+v, submenu=%q", result, edit.popoverSubmenu)
+	if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed || !doc.Lines[0].Spans[0].Style.Bold {
+		t.Fatalf("b after Ctrl+Space = %+v, style=%+v", result, doc.Lines[0].Spans[0].Style)
 	}
 	if got := doc.ToPlainText(); got != "hello loom" {
-		t.Fatalf("F edited selected text to %q", got)
+		t.Fatalf("b edited selected text to %q", got)
 	}
 }
 
@@ -123,6 +123,45 @@ func TestRichTextEditPopoverLetterTypesInUnfocusedAutoBar(t *testing.T) {
 	}
 	if got := doc.ToPlainText(); got != "b" {
 		t.Fatalf("typed text = %q, want replacement text", got)
+	}
+}
+
+func TestRichTextEditFocusedBarReturnsTypingAfterDismissal(t *testing.T) {
+	for _, dismissal := range []string{"esc"} {
+		doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "word"}}}}}
+		edit := NewRichTextEdit(doc)
+		edit.SetSelection(RichPosition{}, RichPosition{Offset: 4})
+		edit.Draw(NewCanvas(70, 5), Rect{W: 70, H: 5})
+		if result := edit.ConsumeKey(KeyEvent{Key: "up"}); !result.Consumed || !edit.popoverFocusSet {
+			t.Fatalf("Up did not focus auto-shown toolbar before %s: %+v", dismissal, result)
+		}
+		if result := edit.ConsumeKey(KeyEvent{Key: dismissal}); !result.Consumed || edit.popoverFocusSet {
+			t.Fatalf("%s did not dismiss focused toolbar: %+v focus=%v", dismissal, result, edit.popoverFocusSet)
+		}
+		if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed {
+			t.Fatalf("b after %s was not typed", dismissal)
+		}
+		if got := doc.ToPlainText(); got != "b" {
+			t.Fatalf("text after %s and b = %q, want replacement text", dismissal, got)
+		}
+	}
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "word"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 4})
+	edit.Draw(NewCanvas(70, 5), Rect{W: 70, H: 5})
+	if result := edit.ConsumeKey(KeyEvent{Key: "down"}); !result.Consumed || !edit.popoverFocusSet {
+		t.Fatalf("Down did not focus auto-shown toolbar: %+v", result)
+	}
+	_, _, _, pointer, _ := edit.popoverGeometry(edit.lastRect, edit.documentLines())
+	away := "up"
+	if pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph {
+		away = "down"
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: away}); !result.Consumed || edit.popoverFocusSet {
+		t.Fatalf("arrow away %s did not dismiss focused toolbar: %+v focus=%v pointer=%q", away, result, edit.popoverFocusSet, pointer)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed || doc.ToPlainText() != "b" {
+		t.Fatalf("b after arrow-away was not typed: %+v text=%q", result, doc.ToPlainText())
 	}
 }
 

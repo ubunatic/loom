@@ -30,7 +30,7 @@ func editPTYPopoverBFocused(s *ptytest.Session) bool {
 	return false
 }
 
-func Test349EditPTYEitherVerticalArrowFocusesPopover(t *testing.T) {
+func Test349EditPTYCtrlSpaceFocusesFirstPopoverAction(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")
 	}
@@ -38,23 +38,17 @@ func Test349EditPTYEitherVerticalArrowFocusesPopover(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("COLORTERM", "truecolor")
 	for _, placement := range []string{"above", "below"} {
-		for _, key := range []string{"\x1b[A", "\x1b[B"} {
-			t.Run(placement+"/"+key, func(t *testing.T) {
-				s, _ := startEditPTY(t, "hello world\nhello world\nhello world\nhello world\n")
-				status := "Ln 1, Col 6"
-				if placement == "above" {
-					s.Send("\x1b[B\x1b[B")
-					s.WaitFor("Ln 3, Col 1", 3*time.Second)
-					status = "Ln 3, Col 6"
-				}
-				s.Send("\x00")
-				s.WaitFor("🎨", 3*time.Second)
-				s.Send(key)
-				waitEditPTY(t, s, func() bool { return editPTYPopoverBFocused(s) })
-				if !strings.Contains(strings.Join(s.Screen(), "\n"), status) {
-					t.Fatal("vertical arrow moved the editor cursor instead of focusing the toolbar")
-				}
-			})
-		}
+		t.Run(placement, func(t *testing.T) {
+			s, _ := startEditPTY(t, "hello world\nhello world\nhello world\nhello world\n")
+			if placement == "above" {
+				s.Send("\x1b[B\x1b[B")
+				s.WaitFor("Ln 3, Col 1", 3*time.Second)
+			}
+			s.Send("\x00")
+			s.WaitFor("🎨", 3*time.Second)
+			waitEditPTY(t, s, func() bool { return editPTYPopoverBFocused(s) })
+			s.Send("b")
+			waitEditPTY(t, s, func() bool { return strings.Contains(strings.Join(s.Screen(), "\n"), "Modified") })
+		})
 	}
 }

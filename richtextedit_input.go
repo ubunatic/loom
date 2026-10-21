@@ -148,6 +148,8 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 			e.ShowPopover = true
 		}
 		e.popoverExplicit = true
+		e.popoverFocus = 0
+		e.popoverFocusSet = true
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["copy"]...):
 		if e.cursorInVoid {
 			return Ignored()

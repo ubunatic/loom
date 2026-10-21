@@ -1,7 +1,6 @@
 package main
 
 import (
-	"strings"
 	"testing"
 	"time"
 
@@ -36,7 +35,7 @@ func Test317EditSelectionTabBeforePanels(t *testing.T) {
 	}
 }
 
-func Test317EditPTYDirectionalFocusAndItalic(t *testing.T) {
+func Test317EditPTYFocusedPopoverHotkeyTogglesItalic(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")
 	}
@@ -45,28 +44,18 @@ func Test317EditPTYDirectionalFocusAndItalic(t *testing.T) {
 	for _, placement := range []string{"above", "below"} {
 		t.Run(placement, func(t *testing.T) {
 			s, _ := startEditPTY(t, "hello world\nhello world\nhello world\nhello world\n")
-			row, toward, away := 1, "\x1b[B", "\x1b[A"
+			row := 1
 			if placement == "above" {
 				s.Send("\x1b[B\x1b[B")
 				s.WaitFor("Ln 3, Col 1", 3*time.Second)
-				row, toward, away = 3, "\x1b[A", "\x1b[B"
+				row = 3
 			}
 			s.Send("\x00")
 			s.WaitFor("🎨", 3*time.Second)
-			s.Send("\t") // Legacy Ctrl-I is the same byte as Tab.
+			s.Send("i")
 			waitEditPTY(t, s, func() bool { return s.Cell(1, row).Style.Italic })
-			s.Send("\t")
+			s.Send("i")
 			waitEditPTY(t, s, func() bool { return !s.Cell(1, row).Style.Italic })
-			s.Send(away)
-			waitEditPTY(t, s, func() bool { return editPTYPopoverBFocused(s) })
-			s.Send("\x1b")
-			waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨") })
-			s.Send("\x00")
-			s.WaitFor("🎨", 3*time.Second)
-			s.Send(toward + "\x1b[C\r") // Focus, choose Italic, apply.
-			waitEditPTY(t, s, func() bool {
-				return s.Cell(1, row).Style.Italic && !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨")
-			})
 		})
 	}
 }

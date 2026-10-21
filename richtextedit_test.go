@@ -1279,6 +1279,7 @@ func TestRichTextEditMovingCursorClearsBoxSelection(t *testing.T) {
 	if e.boxSelection == nil {
 		t.Fatal("ctrl-space did not select the box")
 	}
+	e.ConsumeKey(KeyEvent{Key: "esc"})
 	e.ConsumeKey(KeyEvent{Key: "right"})
 	if e.boxSelection != nil || e.HasSelection {
 		t.Fatalf("cursor movement retained box selection: box=%+v has=%v", e.boxSelection, e.HasSelection)
@@ -1918,7 +1919,7 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 					}
 				}
 				e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-				if !e.popoverOpen() || e.popoverSuppressed || e.popoverFocusSet || e.SelectionFrom != from || e.SelectionTo != to {
+				if !e.popoverOpen() || e.popoverSuppressed || !e.popoverFocusSet || e.popoverFocus != 0 || e.SelectionFrom != from || e.SelectionTo != to {
 					t.Fatal("reopening lost selection or focus state")
 				}
 			})
