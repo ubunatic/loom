@@ -17,6 +17,10 @@ indicator (`cmd/loom/edit.go:495`, `toggleMouseGrab` at l.968). Unverified: with
 terminal sends no clicks, so the `m` indicator likely cannot turn grab back on; users who turn it
 off to use native text selection must restart to get it back.
 
+## Decision (user, 2026-10-21)
+
+Key: **Ctrl+G** (`ctrl-g`); no binding in spec/defaults.yaml used it at that date.
+
 ## Plan
 
 - Verify the unverified claim above first (PTY test: grab off, click indicator).
