@@ -126,13 +126,18 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 		if cell.Style.FG != picker.Palette[i] || cell.Style.BG != picker.BG {
 			t.Errorf("FG swatch %d style = %+v", i, cell.Style)
 		}
-		if cell.Style.Underline != (i == picker.Selected) {
-			t.Errorf("FG swatch %d underline=%v", i, cell.Style.Underline)
+		if cell.Style.Underline {
+			t.Errorf("FG swatch %d unexpectedly underlined", i)
 		}
 	}
 	for x := range 32 {
-		if cell := canvas.Get(2+x, 2); cell.Text != " " {
-			t.Fatalf("mode marker visible in FG mode at %d: %+v", x, cell)
+		cell := canvas.Get(2+x, 2)
+		if x == picker.Selected*2 || x == picker.Selected*2+1 {
+			if cell.Text != "▔" || cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || cell.Style.BG != picker.Style.BG {
+				t.Fatalf("FG marker cell = %+v", cell)
+			}
+		} else if cell.Text != " " {
+			t.Fatalf("unexpected FG mode marker at %d: %+v", x, cell)
 		}
 	}
 	preview := canvas.Get(2, 3)
@@ -146,9 +151,15 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 		if cell.Style.FG != picker.FG || cell.Style.BG != picker.Palette[i] {
 			t.Errorf("BG swatch %d style = %+v", i, cell.Style)
 		}
+		if cell.Style.Underline {
+			t.Errorf("BG swatch %d unexpectedly underlined", i)
+		}
 	}
-	if got := canvas.Get(8, 2); got.Text != "▔" || got.Style != picker.FocusStyle {
+	if got := canvas.Get(8, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
 		t.Fatalf("BG marker = %+v", got)
+	}
+	if got := canvas.Get(9, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
+		t.Fatalf("BG marker second cell = %+v", got)
 	}
 	old := SpeccedDefaults.ColorPicker.ShowPreview
 	SpeccedDefaults.ColorPicker.ShowPreview = false

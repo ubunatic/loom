@@ -1212,8 +1212,7 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult
     ConsumeMouse selects a swatch or toggles modes on right-click.
 
 func (p *ColorPicker) Draw(c *Canvas, r Rect)
-    Draw renders contiguous color samples, a mode-specific focus marker and
-    preview.
+    Draw renders contiguous color samples, a focus marker and preview.
 
 func (p *ColorPicker) Focused() bool
     Focused reports whether this picker owns keyboard focus.
@@ -1231,14 +1230,15 @@ type ColorPickerDefaults struct {
 	Palette       []int               `yaml:"palette"`
 	InitialTarget string              `yaml:"initial_target"`
 	SwatchWidth   int                 `yaml:"swatch_width"`
+	MarkerFG      int                 `yaml:"marker_fg"`
 	ShowPreview   bool                `yaml:"show_preview"`
 	Labels        ColorPickerLabels   `yaml:"labels"`
 	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
 	PreviewText   string              `yaml:"preview_text"`
 	Bindings      map[string][]string `yaml:"bindings"`
 }
-    ColorPickerDefaults defines the ColorPicker's palette, labels, glyphs and
-    keys.
+    ColorPickerDefaults defines the ColorPicker's palette, marker color, labels,
+    glyphs and keys.
 
 type ColorPickerGlyphs struct {
 	Swatch     string `yaml:"swatch"`

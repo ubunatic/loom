@@ -98,7 +98,7 @@ func (p *ColorPicker) Measure(width int) measure.Size {
 	return measure.Size{Width: w, Height: h}
 }
 
-// Draw renders contiguous color samples, a mode-specific focus marker and preview.
+// Draw renders contiguous color samples, a focus marker and preview.
 func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	if c == nil || p == nil || r.W <= 0 || r.H <= 0 {
 		return
@@ -117,17 +117,15 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 		} else {
 			style.FG, style.BG = color, p.BG
 		}
-		if i == p.Selected && p.Target == ColorPickerFG {
-			style.Underline = true
-		}
 		writeColorPickerText(c, r, x, 0, defs.Glyphs.Swatch, style)
 		for pad := measure.StringWidth(defs.Glyphs.Swatch); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
 			c.Set(r.X+x+pad, r.Y, Cell{Text: " ", Style: style})
 		}
 	}
-	if p.Target == ColorPickerBG && r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
+	if r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
 		markerX := p.Selected * defs.SwatchWidth
-		writeColorPickerText(c, r, markerX, 1, defs.Glyphs.ModeMarker, p.FocusStyle)
+		markerStyle := Style{FG: ColorIndex(uint8(defs.MarkerFG)), BG: p.Style.BG}
+		writeColorPickerText(c, r, markerX, 1, defs.Glyphs.ModeMarker, markerStyle)
 	}
 	if defs.ShowPreview && r.H >= 3 {
 		text := defs.Labels.Preview + " " + defs.PreviewText

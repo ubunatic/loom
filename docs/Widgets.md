@@ -568,8 +568,9 @@ frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
 
 The picker opens in foreground mode with one row of contiguous `Aa` samples.
 Each sample shows that foreground on the current background; in background mode
-the current foreground appears on each candidate background. Underline marks the
-focused foreground sample; `▔▔` below a sample marks focus in background mode.
+the current foreground appears on each candidate background. `▔▔` below a
+sample marks the focus in both modes; the marker uses `color_picker.marker_fg`
+on the popover background. Swatches are not underlined or focus-filled.
 Down sets background mode and Up sets foreground mode without picking a color.
 Tab, `b`, and right-click toggle between the two modes, also without changing
 colors. Left/Right move through samples. Click or Space picks the focused sample

@@ -96,7 +96,7 @@ func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
 	if len(got.Palette) != 16 || got.Palette[0] != 0 || got.Palette[15] != 15 {
 		t.Fatalf("picker palette = %v, want indexes 0 through 15", got.Palette)
 	}
-	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.ModeMarker == "" {
+	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.ModeMarker == "" || got.MarkerFG != 51 {
 		t.Fatalf("picker preview/glyphs incomplete: %+v", got)
 	}
 	if got.Bindings["mode_bg"][0] != "down" || got.Bindings["mode_fg"][0] != "up" || got.Bindings["mode_toggle"][0] != "tab" || got.Bindings["close"][0] == "" {

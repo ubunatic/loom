@@ -172,6 +172,7 @@ color_picker:
   palette: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   initial_target: "fg"
   swatch_width: 2
+  marker_fg: 51
   show_preview: true
   labels:
     preview: "Preview"

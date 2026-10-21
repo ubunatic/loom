@@ -50,11 +50,12 @@ type LibDefaults struct {
 	Table        TableDefaults        `yaml:"table"`
 }
 
-// ColorPickerDefaults defines the ColorPicker's palette, labels, glyphs and keys.
+// ColorPickerDefaults defines the ColorPicker's palette, marker color, labels, glyphs and keys.
 type ColorPickerDefaults struct {
 	Palette       []int               `yaml:"palette"`
 	InitialTarget string              `yaml:"initial_target"`
 	SwatchWidth   int                 `yaml:"swatch_width"`
+	MarkerFG      int                 `yaml:"marker_fg"`
 	ShowPreview   bool                `yaml:"show_preview"`
 	Labels        ColorPickerLabels   `yaml:"labels"`
 	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
@@ -72,8 +73,8 @@ type ColorPickerGlyphs struct {
 }
 
 func (d ColorPickerDefaults) validate() error {
-	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 {
-		return fmt.Errorf("color_picker palette and swatch_width must be valid")
+	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.MarkerFG < 0 || d.MarkerFG > 255 {
+		return fmt.Errorf("color_picker palette, swatch_width and marker_fg must be valid")
 	}
 	seen := make(map[int]bool, len(d.Palette))
 	for _, color := range d.Palette {
