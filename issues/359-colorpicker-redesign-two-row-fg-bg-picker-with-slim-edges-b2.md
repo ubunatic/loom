@@ -1,6 +1,6 @@
 # 359 — ColorPicker redesign: two-row FG/BG picker with slim edges (b2)
 
-**Status**: Open
+**Status**: Closed — Implemented and documented the two-row FG/BG ColorPicker redesign; focused tests and q1 pass, ANSI layout validates, and install succeeds.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
