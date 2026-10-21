@@ -74,6 +74,11 @@ Pre-Work:
    rendering (colour as FG vs as BG). Update spec, tests (marker shown in both modes, no underline,
    marker cell bg = popover bg), docs/Widgets.md, docs/progress/ColorPicker.ansi; validate ANSI.
 
+M3 delivered (7c8c027): Tab/`b`/right-click toggle. M4 delivered (77c089c): `▔▔` in both modes on
+popover bg (`marker_fg: 51`), no underline. Dev q1 runs failed on test setup/API snapshot, fixed
+unrerun; host `make test-q1` after M4 green. Live tmux: marker on plain bg in FG and BG mode, Tab
+and `b` toggle both ways. Pending: user right-click check in a real terminal (grab on and off).
+
 ## M2 — Implement chosen design
 
 Keep the 346 widget API where possible minus the target switcher; spec keys
