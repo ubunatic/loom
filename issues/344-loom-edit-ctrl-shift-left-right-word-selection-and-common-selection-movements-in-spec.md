@@ -1,6 +1,6 @@
 # 344 — loom edit: Ctrl+Shift+Left/Right word selection and common selection movements in spec
 
-**Status**: Open
+**Status**: Closed — Done in dcfe1e0: specced word (Ctrl+Shift+Left/Right), document (Ctrl[+Shift]+Home/End), page (Shift+PgUp/PgDn) selection and reusable select_all on ctrl-alt-a/alt-a/super-a, Ctrl+A stays line start; decoder and movement tests; host q1 green; live tmux check of word select and Alt+A (legacy and CSI-u)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
