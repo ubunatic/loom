@@ -180,6 +180,7 @@ color_picker:
   leading_padding: 1
   preview_padding: 1
   preview_width: 9
+  panel_bg: 8
   marker_fg: 51
   show_preview: true
   labels:

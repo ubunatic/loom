@@ -145,7 +145,7 @@
     "color_picker": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["palette", "initial_target", "swatch_width", "leading_padding", "preview_padding", "preview_width", "marker_fg", "show_preview", "labels", "glyphs", "bindings"],
+      "required": ["palette", "initial_target", "swatch_width", "leading_padding", "preview_padding", "preview_width", "panel_bg", "marker_fg", "show_preview", "labels", "glyphs", "bindings"],
       "properties": {
         "palette": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
         "initial_target": {"type": "string", "enum": ["fg", "bg"]},
@@ -153,6 +153,7 @@
         "leading_padding": {"type": "integer", "minimum": 0},
         "preview_padding": {"type": "integer", "minimum": 0},
         "preview_width": {"type": "integer", "minimum": 1},
+        "panel_bg": {"type": "integer", "minimum": 0, "maximum": 255},
         "marker_fg": {"type": "integer", "minimum": 0, "maximum": 255},
         "show_preview": {"type": "boolean"},
         "labels": {

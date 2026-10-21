@@ -582,7 +582,12 @@ selections. `ResetSelected` focuses the terminal-default cell while keeping
 `OnChange` reports each channel applied through Space, a swatch click or Enter;
 `OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
 host keeps running. Palette, edge glyphs, preview dimensions and key bindings
-come from `spec/defaults.yaml`.
+come from `spec/defaults.yaml`. The panel uses `color_picker.panel_bg` (default
+palette 8); its edge glyphs use that color as their foreground so they extend
+the panel against the surrounding editor background. Swatches remain `Aa`
+cells with one letter and one padding space per palette position. Row 3 stays
+panel background through columns 0–8, then draws upper-edge glyphs from column
+9; the BG marker overlays its selected cell, including palette index 15.
 
 ```go
 picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))

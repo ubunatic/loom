@@ -82,37 +82,61 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(11), ColorIndex(4))
 	canvas := NewCanvas(40, 8)
 	canvas.Write(20, 5, "Z", Style{FG: ColorIndex(2), BG: ColorIndex(3)})
-	picker.Draw(canvas, Rect{X: 2, Y: 1, W: 35, H: 6})
+	picker.Draw(canvas, Rect{W: 35, H: 6})
+	panelBG := ColorIndex(uint8(SpeccedDefaults.ColorPicker.PanelBG))
 	for i, color := range picker.Palette {
-		fg := canvas.Get(2+3+(i*2), 2)
-		bg := canvas.Get(2+3+(i*2), 3)
-		if fg.Style.FG != color || fg.Style.BG != picker.Style.BG {
+		fg := canvas.Get(3+(i*2), 1)
+		bg := canvas.Get(3+(i*2), 2)
+		if fg.Style.FG != color || fg.Style.BG != panelBG {
 			t.Errorf("FG swatch %d style=%+v", i, fg.Style)
 		}
 		if bg.Style.FG != picker.Style.FG || bg.Style.BG != color {
 			t.Errorf("BG swatch %d style=%+v", i, bg.Style)
 		}
 	}
-	if got := canvas.Get(3, 2); got.Style.FG != ColorReset() || got.Style.BG != picker.Style.BG {
+	if got := canvas.Get(1, 1); got.Style.FG != ColorReset() || got.Style.BG != panelBG {
 		t.Errorf("FG reset cell style=%+v", got.Style)
 	}
-	if got := canvas.Get(3, 3); got.Style.FG != picker.Style.FG || got.Style.BG != picker.Style.BG {
+	if got := canvas.Get(1, 2); got.Style.FG != picker.Style.FG || got.Style.BG != panelBG {
 		t.Errorf("BG reset cell style=%+v", got.Style)
 	}
+	for _, pos := range [][2]int{{0, 1}, {0, 2}, {0, 4}, {8, 4}} {
+		if got := canvas.Get(pos[0], pos[1]); got.Style.BG != panelBG {
+			t.Errorf("panel padding at (%d,%d) style=%+v, want panel BG %v", pos[0], pos[1], got.Style, panelBG)
+		}
+	}
 	for x := 0; x < 35; x++ {
-		if got := canvas.Get(2+x, 1); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeLower {
+		wantFG := panelBG
+		if x >= 25 && x < 27 {
+			wantFG = ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG))
+		}
+		if got := canvas.Get(x, 0); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeLower || got.Style.FG != wantFG {
 			t.Errorf("lower edge column %d=%+v", x, got)
 			break
 		}
 	}
-	if got := canvas.Get(3, 5); got.Text != "P" || got.Style.FG != picker.FG || got.Style.BG != picker.BG {
+	if got := canvas.Get(1, 4); got.Text != "P" || got.Style.FG != picker.FG || got.Style.BG != picker.BG {
 		t.Fatalf("preview label cell=%+v", got)
 	}
-	if got := canvas.Get(11, 6); got.Text != " " {
+	if got := canvas.Get(9, 5); got.Text != " " {
 		t.Fatalf("preview rug extends past column 8: %+v", got)
 	}
 	if got := canvas.Get(20, 5); got.Text != "Z" || got.Style.FG != ColorIndex(2) || got.Style.BG != ColorIndex(3) {
 		t.Fatalf("preview rug cleared content outside its 9 columns: %+v", got)
+	}
+	if got := canvas.Get(9, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != panelBG {
+		t.Fatalf("upper edge begins at column 9 with panel color: %+v", got)
+	}
+	for x := 0; x < 9; x++ {
+		if got := canvas.Get(x, 3); got.Text != " " || got.Style.BG != panelBG {
+			t.Errorf("row 3 panel segment column %d=%+v", x, got)
+		}
+	}
+	markerPicker := NewColorPicker(ColorIndex(1), ColorIndex(15))
+	markerCanvas := NewCanvas(35, 6)
+	markerPicker.Draw(markerCanvas, Rect{W: 35, H: 6})
+	if got := markerCanvas.Get(33, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) {
+		t.Fatalf("palette 15 marker should overlay upper edge: %+v", got)
 	}
 	defs := SpeccedDefaults.ColorPicker
 	old := defs.ShowPreview

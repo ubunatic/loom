@@ -58,6 +58,7 @@ type ColorPickerDefaults struct {
 	LeadingPadding int                 `yaml:"leading_padding"`
 	PreviewPadding int                 `yaml:"preview_padding"`
 	PreviewWidth   int                 `yaml:"preview_width"`
+	PanelBG        int                 `yaml:"panel_bg"`
 	MarkerFG       int                 `yaml:"marker_fg"`
 	ShowPreview    bool                `yaml:"show_preview"`
 	Labels         ColorPickerLabels   `yaml:"labels"`
@@ -77,8 +78,8 @@ type ColorPickerGlyphs struct {
 }
 
 func (d ColorPickerDefaults) validate() error {
-	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.LeadingPadding < 0 || d.PreviewPadding < 0 || d.PreviewWidth < 1 || d.MarkerFG < 0 || d.MarkerFG > 255 {
-		return fmt.Errorf("color_picker palette, widths, padding and marker_fg must be valid")
+	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.LeadingPadding < 0 || d.PreviewPadding < 0 || d.PreviewWidth < 1 || d.PanelBG < 0 || d.PanelBG > 255 || d.MarkerFG < 0 || d.MarkerFG > 255 {
+		return fmt.Errorf("color_picker palette, widths, padding, panel_bg and marker_fg must be valid")
 	}
 	seen := make(map[int]bool, len(d.Palette))
 	for _, color := range d.Palette {

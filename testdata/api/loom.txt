@@ -1238,6 +1238,7 @@ type ColorPickerDefaults struct {
 	LeadingPadding int                 `yaml:"leading_padding"`
 	PreviewPadding int                 `yaml:"preview_padding"`
 	PreviewWidth   int                 `yaml:"preview_width"`
+	PanelBG        int                 `yaml:"panel_bg"`
 	MarkerFG       int                 `yaml:"marker_fg"`
 	ShowPreview    bool                `yaml:"show_preview"`
 	Labels         ColorPickerLabels   `yaml:"labels"`
