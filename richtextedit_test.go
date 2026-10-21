@@ -277,7 +277,6 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	}
 	for _, label := range []string{"I", "U", "S"} {
 		edit.SetSelection(selectionFrom, selectionTo)
-		edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 		edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
 		for _, button := range edit.popoverButtons {
 			if button.label == label {
