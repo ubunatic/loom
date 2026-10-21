@@ -1,6 +1,6 @@
 # 357 — ColorPicker: Enter applies the highlighted swatch
 
-**Status**: Open
+**Status**: Closed — Done in 9858dbb + 0418828: Enter applies the highlighted swatch (FG, BG, ∅) and closes the picker, which clears the selection per 358; Space still applies and stays open; spec/schema, F1, Widgets and Upgrading (358 row) updated; host q1 green; live tmux: Ctrl+Space, 🎨, Enter, Right Right, Enter saves hello in palette colour 1 with picker and bar closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
