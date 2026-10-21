@@ -30,8 +30,20 @@ Down focuses it, Down again closes it but keeps the selection, a third Down clea
 - The cursor stays where it is (selection end for a forward selection); text is not changed.
 - The spec flag `unselect_on_cancel` (spec/defaults.yaml:327, false today) is the likely switch;
   flip its default to true if it covers all cases above, otherwise extend it. Keep it configurable.
-- Bar above: Up on the focused bar closes it (mirror of Down on a bar below). Down on a focused bar
-  above and Up on a focused bar below keep today's behavior.
+- Bar above: Up on the focused bar closes it (mirror of Down on a bar below). Revised after M2
+  (0c249e4): either vertical arrow closes a focused bar in both positions; simpler and consistent.
+
+## M1/M2 review (host, 2026-10-21)
+
+3d75d0e (close paths, default flip) and 0c249e4 (vertical arrows close) landed; host q1 red in
+~14 tests (304, 317, popover/hamburger/box/Ctrl+Space). They predate 358 and encode the old
+"selection survives a close" rule, which 358 changes on purpose.
+
+### M3 pre-work
+
+Update each failing test to the 358 rule, one by one: keep its original intent (isolation, style
+applied, focus, undo) and only change the selection expectation after a close. If a failure is not
+about the kept selection (e.g. italic not applied, wrong cursor, mouse leak), it is a bug: fix code.
 - Submenus (user, 2026-10-21): open only with Enter or Space, never with Up/Down. On the focused bar
   the away-arrow closes it on every item, submenu items included (today Down on Frame/≡ does
   nothing; that becomes "close"). Inside an open submenu Up/Down move between its items; Escape
