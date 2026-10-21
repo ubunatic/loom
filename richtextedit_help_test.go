@@ -18,7 +18,7 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
 	content := strings.Join(view.plainLines(72), "\n")
-	if !strings.Contains(strings.Join(strings.Fields(content), " "), "opens focused at B") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down enters auto-shown bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "closing clears selection") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Select all keeps its selection") {
+	if !strings.Contains(strings.Join(strings.Fields(content), " "), "opens focused at B") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down enters auto-shown bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "either arrow closes a focused bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "closing clears selection") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Select all keeps its selection") {
 		t.Error("F1 help omits Ctrl+Space focus, toolbar entry, close selection behavior, or Select all exception")
 	}
 	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧⌃Left", "⇧⌃Right", "⌃Home", "⌃End", "⇧⌃Home", "⇧⌃End", "⇧PgUp", "⇧PgDn", "⌥A", "⌃⌥A", "⌘A", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {

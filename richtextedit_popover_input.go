@@ -143,10 +143,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		e.popoverFocus = e.nextPopoverFocus(e.popoverFocus, direction)
 		return Handled(), true
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["vertical"]...):
-		_, _, _, pointer, open := e.popoverGeometry(e.lastRect, e.documentLines())
-		if open && ((pointer == SpeccedDefaults.RichTextEdit.PointerUpGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["up"]...)) || (pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph && key.Is(SpeccedDefaults.RichTextEdit.Bindings["down"]...))) {
-			e.cancelPopover()
-		}
+		e.cancelPopover()
 		return Handled(), true
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...):
 		e.activatePopoverAction(e.popoverFocus)

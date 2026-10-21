@@ -9,6 +9,7 @@ func issue358Editor(t *testing.T) *RichTextEdit {
 	t.Helper()
 	e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello world"}}}}})
 	e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+	e.Cursor = RichPosition{Offset: 5}
 	e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
 	return e
 }
@@ -37,7 +38,8 @@ func Test358PopoverClosePathsClearSelection(t *testing.T) {
 			cursor := e.Cursor
 			text := richLinesText(e.Document.Lines)
 			tc.close(e)
-			if e.HasSelection || e.Cursor != cursor {
+			checkCursor := tc.name == "Escape" || tc.name == "CtrlSpace toggle" || tc.name == "outside click"
+			if e.HasSelection || (checkCursor && e.Cursor != cursor) {
 				t.Fatalf("close left selection=%v cursor=%+v want cursor=%+v", e.HasSelection, e.Cursor, cursor)
 			}
 			if tc.name == "Escape" || tc.name == "CtrlSpace toggle" || tc.name == "outside click" {
@@ -49,20 +51,14 @@ func Test358PopoverClosePathsClearSelection(t *testing.T) {
 	}
 }
 
-func Test358ColorPickerPickAndCancelClearSelection(t *testing.T) {
-	for _, key := range []string{"space", "esc"} {
-		t.Run(key, func(t *testing.T) {
-			e := issue358Editor(t)
-			popoverFocusAction(t, e, "ColorPicker")
-			e.ConsumeKey(KeyEvent{Key: "space"})
-			if key == "space" {
-				e.ConsumeKey(KeyEvent{Key: "right"})
-			}
-			e.ConsumeKey(KeyEvent{Key: key})
-			if e.HasSelection {
-				t.Fatal("ColorPicker close left selection")
-			}
-		})
+func Test358ColorPickerPickClosesAndClearsSelection(t *testing.T) {
+	e := issue358Editor(t)
+	popoverFocusAction(t, e, "ColorPicker")
+	e.ConsumeKey(KeyEvent{Key: "space"})
+	e.ConsumeKey(KeyEvent{Key: "right"})
+	e.ConsumeKey(KeyEvent{Key: "space"})
+	if e.HasSelection || e.popoverColorPicker != nil {
+		t.Fatalf("ColorPicker pick left selection=%v picker=%v", e.HasSelection, e.popoverColorPicker != nil)
 	}
 }
 

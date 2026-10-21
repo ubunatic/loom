@@ -161,6 +161,7 @@ func TestRichTextEditPopoverSubmenusDoNotCoverSelection(t *testing.T) {
 
 func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	edit, canvas := newSubmenuTestEditor()
+	edit.PopoverDefaults.ActionClosesMenu = false
 	edit.Document.Lines[0].Spans[0].Style = Style{FG: ColorIndex(7), BG: ColorIndex(4)}
 	popoverFocusAction(t, edit, "ColorPicker")
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
@@ -201,6 +202,7 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 
 func TestRichTextEditColorPickerResetCellAppliesBothChannels(t *testing.T) {
 	edit, canvas := newSubmenuTestEditor()
+	edit.PopoverDefaults.ActionClosesMenu = false
 	edit.Document.Lines[0].Spans[0].Style = Style{FG: ColorIndex(7), BG: ColorIndex(4)}
 	popoverFocusAction(t, edit, "ColorPicker")
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))

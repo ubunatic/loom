@@ -337,8 +337,8 @@ func TestRichTextEditPopoverInitialFocusAndEnter(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: "enter"}); !result.Consumed || result.Done || result.Quit {
 		t.Fatalf("Enter result = %+v", result)
 	}
-	if doc.Lines[0].Spans[0].Style.Bold || !edit.HasSelection || !edit.popoverSuppressed {
-		t.Fatalf("Enter should toggle initial B and dismiss while preserving selection: style=%+v selection=%v suppressed=%v", doc.Lines[0].Spans[0].Style, edit.HasSelection, edit.popoverSuppressed)
+	if doc.Lines[0].Spans[0].Style.Bold || edit.HasSelection || !edit.popoverSuppressed {
+		t.Fatalf("Enter should toggle initial B, close the bar and clear selection: style=%+v selection=%v suppressed=%v", doc.Lines[0].Spans[0].Style, edit.HasSelection, edit.popoverSuppressed)
 	}
 	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
 	if len(edit.popoverButtons) != 0 {
@@ -346,7 +346,7 @@ func TestRichTextEditPopoverInitialFocusAndEnter(t *testing.T) {
 	}
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 6})
 	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
-	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || result.Done || result.Quit || !edit.HasSelection {
+	if result := edit.ConsumeKey(KeyEvent{Key: "esc"}); !result.Consumed || result.Done || result.Quit || edit.HasSelection {
 		t.Fatalf("Esc result/selection = %+v/%v", result, edit.HasSelection)
 	}
 	edit.Draw(NewCanvas(60, 4), Rect{W: 60, H: 4})
@@ -820,6 +820,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 		{Text: "ghij", Style: Style{FG: ColorIndex(6), BG: ColorIndex(7), Underline: true}},
 	}}}}
 	edit := NewRichTextEdit(doc)
+	edit.PopoverDefaults.ActionClosesMenu = false
 	edit.SetSelection(RichPosition{Offset: 1}, RichPosition{Offset: 8})
 	edit.Draw(NewCanvas(50, 5), Rect{W: 40, H: 5})
 	styleAt := func(offset int) Style {
@@ -870,6 +871,7 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 
 func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	edit := richTestEditor(RichSpan{Text: "abc"})
+	edit.PopoverDefaults.ActionClosesMenu = false
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 2})
 	canvas := NewCanvas(60, 8)
 	edit.Draw(canvas, canvas.Bounds())
@@ -1063,12 +1065,12 @@ func TestRichTextEditCtrlSpaceClosesAndReopensPopover(t *testing.T) {
 			if e.popoverOpen() || e.popoverFocusSet || e.popoverSubmenu != "" || !e.Focused() {
 				t.Fatalf("popover did not close cleanly: open=%v focus=%v submenu=%q editorFocused=%v", e.popoverOpen(), e.popoverFocusSet, e.popoverSubmenu, e.Focused())
 			}
-			if richLinesText(e.Document.Lines) != before || !e.HasSelection || e.SelectionFrom != from || e.SelectionTo != to {
+			if richLinesText(e.Document.Lines) != before || e.HasSelection || e.SelectionFrom != from || e.SelectionTo != to {
 				t.Fatalf("toggle changed document or selection: %q selection=%+v-%+v has=%v", richLinesText(e.Document.Lines), e.SelectionFrom, e.SelectionTo, e.HasSelection)
 			}
 			e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-			if !e.popoverOpen() || !e.HasSelection || e.SelectionFrom != from || e.SelectionTo != to {
-				t.Fatal("second toggle did not reopen popover with selection intact")
+			if !e.popoverOpen() {
+				t.Fatal("second toggle did not reopen the popover")
 			}
 		})
 	}
@@ -1798,6 +1800,7 @@ func TestRichTextEditPopoverActionFlags(t *testing.T) {
 		for _, unselect := range []bool{false, true} {
 			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
 			e.PopoverDefaults.ActionClosesMenu, e.PopoverDefaults.UnselectAfterAction = closeMenu, unselect
+			e.PopoverDefaults.UnselectOnCancel = false
 			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
 			e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
 			e.ConsumeKey(KeyEvent{Key: "down"})
@@ -1999,9 +2002,9 @@ func Test318FocusedPopoverVerticalArrows(t *testing.T) {
 					e.SetSelection(RichPosition{Line: 2, Offset: 1}, RichPosition{Line: 2, Offset: 4})
 					canvas := NewCanvas(60, 8)
 					e.Draw(canvas, canvas.Bounds())
-					toward, away := "up", "down"
+					toward := "up"
 					if placement == "below" {
-						toward, away = "down", "up"
+						toward = "down"
 					}
 					if focus == "keyboard" {
 						e.ConsumeKey(KeyEvent{Key: toward})
@@ -2015,11 +2018,8 @@ func Test318FocusedPopoverVerticalArrows(t *testing.T) {
 					}
 					before := e.Cursor
 					from, to := e.SelectionFrom, e.SelectionTo
-					if result, handled := e.consumePopoverKey(KeyEvent{Key: toward}); !result.Consumed || !handled || !e.popoverFocusSet || e.popoverSuppressed {
-						t.Fatal("arrow toward focused toolbar dismissed it")
-					}
-					if result := e.ConsumeKey(KeyEvent{Key: away}); !result.Consumed || !e.popoverSuppressed || e.popoverFocusSet || e.popoverOpen() {
-						t.Fatalf("dismissal result=%+v suppressed=%v focused=%v", result, e.popoverSuppressed, e.popoverFocusSet)
+					if result := e.ConsumeKey(KeyEvent{Key: toward}); !result.Consumed || !e.popoverSuppressed || e.popoverFocusSet || e.popoverOpen() {
+						t.Fatalf("entry-arrow dismissal result=%+v suppressed=%v focused=%v", result, e.popoverSuppressed, e.popoverFocusSet)
 					}
 					if e.Cursor != before || e.HasSelection == unselect {
 						t.Fatal("dismissal moved cursor or ignored selection policy")
@@ -2030,6 +2030,30 @@ func Test318FocusedPopoverVerticalArrows(t *testing.T) {
 					e.Draw(canvas, canvas.Bounds())
 					if len(e.popoverButtons) != 0 {
 						t.Fatal("dismissed toolbar reappeared on redraw")
+					}
+				})
+			}
+		}
+	}
+}
+
+func Test358FocusedEntryArrowClosesAndClearsSelection(t *testing.T) {
+	for _, placement := range []string{"above", "below"} {
+		for _, action := range []string{"B", "ColorPicker", "Box", "Hamburger"} {
+			for _, arrow := range []string{"up", "down"} {
+				t.Run(placement+"/"+action+"/"+arrow, func(t *testing.T) {
+					e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+					e.PopoverDefaults.PositionPreference = placement
+					e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
+					canvas := NewCanvas(60, 8)
+					e.Draw(canvas, canvas.Bounds())
+					for index, name := range richPopoverActions {
+						if name == action {
+							e.popoverFocus, e.popoverFocusSet = index, true
+						}
+					}
+					if result := e.ConsumeKey(KeyEvent{Key: arrow}); !result.Consumed || e.HasSelection || e.popoverOpen() {
+						t.Fatalf("focused entry arrow result=%+v selected=%v open=%v", result, e.HasSelection, e.popoverOpen())
 					}
 				})
 			}

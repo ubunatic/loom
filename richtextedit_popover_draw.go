@@ -473,6 +473,9 @@ func (e *RichTextEdit) applyHamburgerItem(index int) {
 	if selectAll {
 		e.clearPopoverKeyboardState(true)
 	} else {
+		e.popoverSubmenu = ""
+		e.popoverHamburgerChoices = nil
+		e.popoverSubmenuFocusSet = false
 		e.finishPopoverAction()
 	}
 }
