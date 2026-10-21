@@ -33,6 +33,9 @@ stop and report when blocked on a user decision or denied permission.
   `f`/`F`, ...). When the popover was not opened by Ctrl+Space and the bar is unfocused, letters must
   keep typing into the text if the library auto-shows the bar on selection; the plan must check.
 - 345 rule holds: no new bar items.
+- Link (plan finding: disabled, no handler): stays disabled in this ticket; no URL prompt. `L` is
+  wired to the same activation path and does nothing while Link is disabled (it must not type `L`
+  when the bar is explicitly open). A Link prompt is a separate feature.
 
 ## Verification
 
