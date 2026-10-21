@@ -8,6 +8,8 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| Unreleased | `RichTextEdit` popover closes now clear the selection by default; either vertical arrow closes a focused bar, including when the bar is above the text (issue 358) | Set `UnselectOnCancel` to `false` to retain selections on close; update integrations that expected the focused bar to remain open after a vertical arrow |
+| Unreleased | `ColorPicker` Enter applies the highlighted swatch and closes; Enter was removed from `color_picker.bindings.close` and added to `apply` (issue 357) | Move custom Enter close bindings to another key; use Space to apply while keeping the picker open |
 | Unreleased | `ColorPicker` now switches FG/BG mode with Down/Tab/`b`/right-click and Up; right-click no longer picks, Shift+click/Shift+Space/`f`/`x` are removed, and the FG/BG selector row is gone. `ColorPickerGlyphs.Separator`/`Focus` and `ColorPickerLabels.FG`/`BG` were removed (issue 347) | Use `Target` as the current mode; switch modes before picking with Click or Space; remove references to the deleted config fields |
 | Unreleased | `collector.DefaultRetention` is now a variable loaded from `spec/defaults.yaml` (issue 327) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |
 | Unreleased | `DefaultPlaceholder` is now a variable loaded from `spec/defaults.yaml` (issue 324) | Use it in runtime expressions; replace uses requiring a Go constant with an application-owned constant |

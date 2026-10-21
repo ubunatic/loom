@@ -93,7 +93,7 @@ func (d ColorPickerDefaults) validate() error {
 	if d.Glyphs.Swatch == "" || d.Glyphs.ModeMarker == "" || d.Glyphs.Reset == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.ModeMarker) != d.SwatchWidth || measure.StringWidth(d.Glyphs.Reset) != d.SwatchWidth {
 		return fmt.Errorf("color_picker swatch and mode marker must match swatch_width display cells")
 	}
-	for _, name := range []string{"select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right", "home"} {
+	for _, name := range []string{"apply", "select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right", "home"} {
 		if len(d.Bindings[name]) == 0 {
 			return fmt.Errorf("color_picker.bindings.%s must not be empty", name)
 		}

@@ -215,6 +215,12 @@ func TestRichTextEditColorPickerResetCellAppliesBothChannels(t *testing.T) {
 		t.Fatalf("keyboard FG reset style = %+v", got)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "home"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorReset() {
+		t.Fatalf("keyboard BG reset style = %+v", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
 	edit.Draw(canvas, canvas.Bounds())
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: edit.popoverColorRect.X, Y: edit.popoverColorRect.Y})
 	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorReset() {
@@ -333,9 +339,12 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 		t.Fatalf("submenu arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
-	if edit.popoverColorPicker != nil {
-		t.Fatal("Escape did not close ColorPicker")
+	if edit.popoverColorPicker != nil || edit.popoverFocusSet || edit.HasSelection {
+		t.Fatal("Escape did not close ColorPicker and clear the formatting session")
 	}
+	edit.SetSelection(selectionFrom, selectionTo)
+	tabs.Draw(canvas, canvas.Bounds())
+	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
 	// Horizontal arrows move bar focus. The below-anchor toolbar consumes Up
 	// as dismissal without moving the document or Tabs focus.
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "right"}))
@@ -356,8 +365,8 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	cursor, selectionFrom, selectionTo, selection = edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection
 	assertMenuHandled(t, tabs.ConsumeKey(space))
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
-	if edit.popoverColorPicker != nil || edit.HasSelection != selection || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo {
-		t.Fatalf("picker session changed editor selection: cursor=%+v selection=%+v..%+v active=%v", edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
+	if edit.popoverColorPicker != nil || edit.HasSelection || edit.Cursor != cursor {
+		t.Fatalf("picker close did not clear selection and preserve cursor: cursor=%+v want=%+v selection=%+v..%+v active=%v", edit.Cursor, cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 }
 

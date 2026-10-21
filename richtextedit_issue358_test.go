@@ -56,9 +56,19 @@ func Test358ColorPickerPickClosesAndClearsSelection(t *testing.T) {
 	popoverFocusAction(t, e, "ColorPicker")
 	e.ConsumeKey(KeyEvent{Key: "space"})
 	e.ConsumeKey(KeyEvent{Key: "right"})
+	e.ConsumeKey(KeyEvent{Key: "enter"})
+	if e.HasSelection || e.popoverColorPicker != nil || e.Document.Lines[0].Spans[0].Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.Palette[0])) {
+		t.Fatalf("ColorPicker Enter result selection=%v picker=%v style=%+v", e.HasSelection, e.popoverColorPicker != nil, e.Document.Lines[0].Spans[0].Style)
+	}
+}
+
+func Test358ColorPickerEscapeClosesAndClearsSelection(t *testing.T) {
+	e := issue358Editor(t)
+	popoverFocusAction(t, e, "ColorPicker")
 	e.ConsumeKey(KeyEvent{Key: "space"})
-	if e.HasSelection || e.popoverColorPicker != nil {
-		t.Fatalf("ColorPicker pick left selection=%v picker=%v", e.HasSelection, e.popoverColorPicker != nil)
+	e.ConsumeKey(KeyEvent{Key: "esc"})
+	if e.HasSelection || e.popoverColorPicker != nil || e.popoverFocusSet {
+		t.Fatalf("ColorPicker Escape left selection=%v picker=%v focus=%v", e.HasSelection, e.popoverColorPicker != nil, e.popoverFocusSet)
 	}
 }
 

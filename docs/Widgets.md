@@ -604,9 +604,10 @@ on the popover background. Swatches are not underlined or focus-filled.
 Down sets background mode and Up sets foreground mode without picking a color.
 Tab, `b`, and right-click toggle between the two modes, also without changing
 colors. Left/Right move through samples. Click or Space picks the focused sample
-for the current mode. Enter/Esc close the picker; Ctrl+Space closes its
-containing formatting popover. Set `color_picker.show_preview` to false to hide
-the preview row.
+for the current mode and leaves the picker open. Enter applies the focused
+sample and closes the picker; Esc closes without applying. Ctrl+Space closes
+its containing formatting popover. Set `color_picker.show_preview` to false to
+hide the preview row.
 
 ### Standalone Form Controls
 

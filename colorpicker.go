@@ -208,6 +208,12 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		return Ignored()
 	}
 	switch {
+	case p.matches(e, "apply"):
+		p.changeTarget(p.Target, true)
+		if p.OnClose != nil {
+			p.OnClose()
+		}
+		return DoneResult()
 	case p.matches(e, "close"):
 		if p.OnClose != nil {
 			p.OnClose()

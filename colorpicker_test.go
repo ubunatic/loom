@@ -72,6 +72,17 @@ func TestColorPickerModeAndKeyboardInput(t *testing.T) {
 	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.BG != picker.Palette[0] || changed != 3 {
 		t.Fatalf("BG Space pick result=%+v BG=%v callback=%d", got, picker.BG, changed)
 	}
+	picker.Selected = 1
+	closed := 0
+	picker.OnClose = func() { closed++ }
+	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || picker.BG != picker.Palette[1] || changed != 4 || closed != 1 {
+		t.Fatalf("BG Enter apply result=%+v BG=%v callback=%d close=%d", got, picker.BG, changed, closed)
+	}
+	picker.Target = ColorPickerFG
+	picker.ResetSelected = true
+	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || picker.FG != ColorReset() || changed != 5 || closed != 2 {
+		t.Fatalf("reset Enter result=%+v FG=%v callback=%d close=%d", got, picker.FG, changed, closed)
+	}
 }
 
 func TestColorPickerResetCellKeyboardAndMouse(t *testing.T) {
@@ -206,12 +217,12 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 	}
 	closed := 0
 	picker.OnClose = func() { closed++ }
-	for _, key := range []string{"enter", "esc", "ctrl-space"} {
+	for _, key := range []string{"esc", "ctrl-space"} {
 		if got := picker.ConsumeKey(KeyEvent{Key: key}); got != DoneResult() {
 			t.Errorf("close key %s result = %+v", key, got)
 		}
 	}
-	if closed != 3 {
+	if closed != 2 {
 		t.Fatalf("close callbacks = %d", closed)
 	}
 }
