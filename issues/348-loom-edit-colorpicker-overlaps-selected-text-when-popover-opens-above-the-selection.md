@@ -1,6 +1,6 @@
 # 348 — loom edit: ColorPicker overlaps selected text when popover opens above the selection
 
-**Status**: Open
+**Status**: Closed — Fixed in 8df60ad: submenus open on the side away from the selection, stay closed when they would cover it; regression test for picker and Box, host q1 green, live tmux check with the bar above the selection
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
