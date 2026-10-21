@@ -1752,6 +1752,10 @@ func TestRichTextEditDisplayHighlightPreservesDocumentAndSelection(t *testing.T)
 }
 
 func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
+	bindings := SpeccedDefaults.RichTextEdit.Bindings
+	originalMenuEntry := bindings["menu_entry"]
+	bindings["menu_entry"] = []string{"ctrl-j"}
+	defer func() { bindings["menu_entry"] = originalMenuEntry }()
 	for _, cancel := range []bool{false, true} {
 		for _, unselect := range []bool{false, true} {
 			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello world"}}}}})
@@ -1762,17 +1766,14 @@ func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
 			if e.popoverFocusSet {
 				t.Fatal("automatic menu focused")
 			}
-			e.ConsumeKey(KeyEvent{Key: "right"})
-			wantCursor := 5
-			if cancel && unselect {
-				wantCursor = 1
-			}
-			if e.Cursor.Offset != wantCursor || e.popoverFocusSet || e.HasSelection == unselect {
+			e.ConsumeKey(KeyEvent{Key: "up"})
+			if e.Cursor.Offset != 0 || e.popoverFocusSet || e.HasSelection == unselect {
 				t.Fatalf("arrow state: cursor=%v selected=%v", e.Cursor, e.HasSelection)
 			}
-			if !unselect && e.popoverSuppressed != cancel {
+			if e.popoverSuppressed != cancel {
 				t.Fatal("arrow cancellation flag ignored")
 			}
+			bindings["menu_entry"] = originalMenuEntry
 			e.Cursor.Offset = 5
 			e.SetSelection(RichPosition{}, RichPosition{Offset: 5})
 			e.cancelPopover()
@@ -1787,6 +1788,7 @@ func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
 			if !e.popoverFocusSet || e.popoverFocus != 1 || e.Cursor.Offset != 5 {
 				t.Fatal("focused arrow did not navigate menu")
 			}
+			bindings["menu_entry"] = []string{"ctrl-j"}
 		}
 	}
 }
@@ -1894,10 +1896,10 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 				from, to := e.SelectionFrom, e.SelectionTo
 				result := e.ConsumeKey(KeyEvent{Key: key})
 				entry := key == "up" || key == "down"
-				if !result.Consumed || e.popoverFocusSet != entry || e.popoverSuppressed == entry {
+				if !result.Consumed || e.popoverFocusSet != entry || (!entry && (key == "up" || key == "down") && !e.popoverSuppressed) || (!entry && (key == "left" || key == "right") && e.popoverSuppressed) {
 					t.Fatalf("arrow state: %+v focused=%v suppressed=%v", result, e.popoverFocusSet, e.popoverSuppressed)
 				}
-				if e.SelectionFrom != from || e.SelectionTo != to || !e.HasSelection {
+				if entry && (e.SelectionFrom != from || e.SelectionTo != to || !e.HasSelection) {
 					t.Fatal("arrow lost selection")
 				}
 				if entry {
@@ -1917,13 +1919,46 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 					if e.Cursor != want {
 						t.Fatalf("cursor = %+v, want %+v", e.Cursor, want)
 					}
+					if key == "left" || key == "right" {
+						if e.HasSelection || e.popoverOpen() {
+							t.Fatal("plain horizontal arrow did not collapse selection and close bar")
+						}
+					} else if !e.HasSelection {
+						t.Fatal("plain vertical arrow changed selection")
+					}
 				}
-				e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-				if !e.popoverOpen() || e.popoverSuppressed || !e.popoverFocusSet || e.popoverFocus != 0 || e.SelectionFrom != from || e.SelectionTo != to {
-					t.Fatal("reopening lost selection or focus state")
+				if entry || (key != "left" && key != "right") {
+					e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+					if !e.popoverOpen() || e.popoverSuppressed || !e.popoverFocusSet || e.popoverFocus != 0 || e.SelectionFrom != from || e.SelectionTo != to {
+						t.Fatal("reopening lost selection or focus state")
+					}
 				}
 			})
 		}
+	}
+}
+
+func TestRichTextEditPlainHorizontalCollapsesSelectionWithoutPopover(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		from, to RichPosition
+		key      string
+		want     RichPosition
+	}{
+		{"left", RichPosition{Offset: 1}, RichPosition{Offset: 4}, "left", RichPosition{Offset: 1}},
+		{"right", RichPosition{Offset: 1}, RichPosition{Offset: 4}, "right", RichPosition{Offset: 4}},
+		{"reversed left", RichPosition{Offset: 4}, RichPosition{Offset: 1}, "left", RichPosition{Offset: 1}},
+		{"reversed right", RichPosition{Offset: 4}, RichPosition{Offset: 1}, "right", RichPosition{Offset: 4}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "hello"}}}}})
+			e.ShowPopover = false
+			e.SetSelection(tc.from, tc.to)
+			e.ConsumeKey(KeyEvent{Key: tc.key})
+			if e.Cursor != tc.want || e.HasSelection {
+				t.Fatalf("cursor=%+v selected=%v, want %+v and no selection", e.Cursor, e.HasSelection, tc.want)
+			}
+		})
 	}
 }
 

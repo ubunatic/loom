@@ -82,7 +82,8 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 	if e.ViewMode && e.BoxMode {
 		e.toggleBoxMode()
 	}
-	preserveSelection := !e.popoverFocusSet && e.popoverOpen() && key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...) && !e.PopoverDefaults.UnselectOnCancel
+	plainHorizontal := key.Is(SpeccedDefaults.RichTextEdit.Bindings["left"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["right"]...)
+	preserveSelection := !plainHorizontal && !e.popoverFocusSet && e.popoverOpen() && key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...) && !e.PopoverDefaults.UnselectOnCancel
 	if result, handled := e.consumePopoverKey(key); handled {
 		return result
 	}

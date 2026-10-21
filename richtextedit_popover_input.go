@@ -55,6 +55,7 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	submenuOpen := e.popoverSubmenu != ""
 	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
+	plainHorizontal := key.Is(SpeccedDefaults.RichTextEdit.Bindings["left"]...) || key.Is(SpeccedDefaults.RichTextEdit.Bindings["right"]...)
 	if !submenuOpen && e.popoverFocusSet {
 		if index := e.popoverHotkeyIndex(key); index >= 0 {
 			if !e.popoverActionEnabled(index) {
@@ -73,10 +74,13 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 				return Handled(), true
 			}
 		}
-		if popoverArrow {
+		if popoverArrow && !plainHorizontal {
 			if e.PopoverDefaults.ArrowsCancelUnfocusedMenu {
 				e.cancelPopover()
 			}
+			return Ignored(), false
+		}
+		if plainHorizontal {
 			return Ignored(), false
 		}
 		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {

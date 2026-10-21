@@ -18,8 +18,8 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
 	content := strings.Join(view.plainLines(72), "\n")
-	if !strings.Contains(strings.Join(strings.Fields(content), " "), "opens focused at B") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down enters auto-shown bar") {
-		t.Error("F1 help omits Ctrl+Space focus and auto-shown toolbar entry")
+	if !strings.Contains(strings.Join(strings.Fields(content), " "), "opens focused at B") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down enters auto-shown bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "plain Left/Right collapse selection") {
+		t.Error("F1 help omits Ctrl+Space focus, auto-shown toolbar entry, or selection collapse")
 	}
 	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧⌃Left", "⇧⌃Right", "⌃Home", "⌃End", "⇧⌃Home", "⇧⌃End", "⇧PgUp", "⇧PgDn", "⌥A", "⌃⌥A", "⌘A", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
 		if !strings.Contains(content, binding) {

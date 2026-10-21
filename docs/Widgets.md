@@ -389,6 +389,9 @@ to each glyph changed by that stroke. With a selection and an unfocused toolbar,
 Tab/Ctrl+I toggles italics. The arrow towards the toolbar (Up above the selection,
 Down below it) focuses it; Up and Down both focus it regardless of placement.
 Left/Right dismiss it and move the editor cursor.
+With a selection, plain Left collapses to its start and plain Right to its end,
+closing the unfocused bar; the same editor behavior applies when the bar is
+hidden. Shift+Left/Right and Ctrl+Shift+Left/Right keep extending selections.
 Once focused on the main menu bar, pressing the arrow away from the toolbar back
 towards the text (Up when below, Down when above) cancels the popover; Left/Right
 navigate actions, and Enter or Space activates the focused action. In a submenu,

@@ -415,7 +415,7 @@ rich_text_edit:
         - {keys: ["ctrl-b"], label: "Bold"}
         - {keys: ["tab", "ctrl-i"], label: "Italic (selected text)"}
         - {keys: ["ctrl-u"], label: "Underline"}
-        - {keys: ["ctrl-space"], label: "Formatting popover (opens focused at B; Up/Down enters auto-shown bar; b/B, i/I, u/U, s/S; f/F Frame; l/L Link disabled; Enter applies; ≡ Select all; Esc closes)"}
+        - {keys: ["ctrl-space"], label: "Formatting popover (opens focused at B; Up/Down enters auto-shown bar; plain Left/Right collapse selection; b/B, i/I, u/U, s/S; f/F Frame; l/L Link disabled; Enter applies; ≡ Select all; Esc closes)"}
     - title: "Modes and boxes"
       entries:
         - {keys: ["f7"], label: "Toggle View/Edit"}
