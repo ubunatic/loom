@@ -1,6 +1,6 @@
 # 347 — ColorPicker redesign: just-pick-a-color picker without FG|BG switcher, optional preview, cursor markers
 
-**Status**: Open
+**Status**: Closed — One-row FG/BG mode picker (9d21eb3), Tab/b/right-click toggle (7c8c027), ▔▔ marker both modes on popover bg (77c089c); host make test-q1 green; live tmux check and user right-click check passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Design
