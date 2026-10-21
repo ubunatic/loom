@@ -320,9 +320,8 @@ Tab policy: Tab belongs to containers (Split, Form, FilePicker, the gallery's
 demo switch), which use it to move focus. A widget must not consume Tab unless
 Tab is its documented action: Dialog moves between buttons with left/right only,
 while Table uses Tab for sort and shows it as `[tab:…]` (open question in issue 277).
-The focused `ColorPicker` consumes Tab as a documented action to toggle between
-foreground and background modes; its parent only sees Tab when the picker is not
-active.
+`ColorPicker` leaves Tab to its containing Frame, Split, Tabs or other focus
+container. Up and Down move between its foreground and background rows.
 
 Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
 [Upgrading](Upgrading.md) for the mapping to `EventResult`.
@@ -430,9 +429,10 @@ clicking outside closes it. `Save` and `SaveAs` use
 `RichDocument.ToANSI` unless `SerializeDocument` supplies an application format.
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the
-selection formatting popover. While the embedded ColorPicker is open, Tab
-switches it to background mode; Enter or Esc closes the picker, while
-Ctrl+Space closes the entire formatting popover.
+selection formatting popover. While the embedded ColorPicker is open, Up and
+Down move between foreground and background rows; Tab follows the host's normal
+focus traversal. Enter applies both rows and closes the picker, while Esc closes
+without further application and Ctrl+Space closes the entire formatting popover.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
 selection, mouse selection and copy (`Ctrl+C`/`Ctrl+Insert`) work; typing, `Ctrl+B/I/U`,
@@ -575,13 +575,14 @@ drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 
 ### Color Picker (`loom.ColorPicker`)
 
-`ColorPicker` exposes its current `FG`, `BG`, active `Target` mode and `Selected`
-palette index. `ResetSelected` focuses the first, terminal-default/no-background
-cell while keeping `Selected` valid for `Palette`. `PreviewStyle()` returns both
-selected colors together. `OnChange` reports
-the channel and color after an assignment; `OnClose` runs for Enter, Esc or
-Ctrl+Space, with `DoneResult` so an embedded host keeps running. Palette, glyphs,
-preview visibility and key bindings come from `spec/defaults.yaml`.
+`ColorPicker` exposes its current `FG`, `BG`, active row as `Target`, and that
+row's `Selected` palette index. Foreground and background keep independent
+selections. `ResetSelected` focuses the terminal-default cell while keeping
+`Selected` valid for `Palette`. `PreviewStyle()` returns the chosen pair.
+`OnChange` reports each channel applied through Space, a swatch click or Enter;
+`OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
+host keeps running. Palette, edge glyphs, preview dimensions and key bindings
+come from `spec/defaults.yaml`.
 
 ```go
 picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
@@ -592,22 +593,24 @@ picker.OnClose = func() { /* finish the picker session */ }
 frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
 ```
 
-The picker opens in foreground mode with a first `∅ ` cell followed by 16
-contiguous `Aa` samples (34 columns total). The reset cell uses terminal default
-colors and previews the selected result channel with the other channel unchanged.
-Home focuses it; Left from the first palette sample also reaches it. The picker
-opens with this cell focused when the active channel has no explicit color.
-Each sample shows that foreground on the current background; in background mode
-the current foreground appears on each candidate background. `▔▔` below a
-sample marks the focus in both modes; the marker uses `color_picker.marker_fg`
-on the popover background. Swatches are not underlined or focus-filled.
-Down sets background mode and Up sets foreground mode without picking a color.
-Tab, `b`, and right-click toggle between the two modes, also without changing
-colors. Left/Right move through samples. Click or Space picks the focused sample
-for the current mode and leaves the picker open. Enter applies the focused
-sample and closes the picker; Esc closes without applying. Ctrl+Space closes
-its containing formatting popover. Set `color_picker.show_preview` to false to
-hide the preview row.
+The picker uses 35 columns by default. Row 0 is a `▂` lower edge with the FG
+selection highlighted. Row 1 starts with `∅ ` and shows all 16 `Aa` samples as
+foreground colors on the panel background; row 2 shows the reset cell and
+palette as background colors. Each row's swatches remain independent of the
+other selected color. Up/Down changes rows; Left/Right moves within a row, and
+Home selects reset. Space or a left click applies the active row and leaves the
+picker open. Enter applies both rows and closes it; Esc closes without further
+application. Tab follows the containing focus container, and right-click has no
+picker action.
+
+The `🮂` upper edge marks the BG selection beneath its swatch, including palette
+15 at columns 33–34 beyond the 9-column preview rug. The preview label sits on
+the selected FG/BG pair, with its 9-column rug and the bottom edge. Edge cells
+paint the panel background to clear text beneath the popup. Use `▁` and `▔` as
+the lower and upper edge glyphs in fonts without `🮂` (Symbols for Legacy
+Computing, Unicode 13). These glyphs and their padding come from
+`spec/defaults.yaml`. Set `color_picker.show_preview` to false to remove the
+preview rug.
 
 ### Standalone Form Controls
 
