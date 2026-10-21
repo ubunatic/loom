@@ -55,7 +55,19 @@ func TestAllDialogAndTableNavigationPTY(t *testing.T) {
 		t.Fatalf("build: %v\n%s", err, out)
 	}
 	s := ptytest.Start(t, 150, 64, bin, "widgets", "--show", "--theme", "plain", "-W", "144", "-H", "60", "All")
-	s.WaitFor("Keep edits?", 5*time.Second)
+	timeout := 5 * time.Second * ptytest.RaceFactor
+	contains := func(rows []string, want string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), want)
+	}
+	waitState := func(want string) {
+		t.Helper()
+		s.WaitForState(timeout, func(rows []string) bool { return contains(rows, want) })
+	}
+	waitUpdate := func(predicate func([]string) bool) {
+		t.Helper()
+		s.WaitForUpdateState(timeout, predicate)
+	}
+	waitState("Keep edits?")
 	point := func(text string) (int, int) {
 		t.Helper()
 		want := []rune(text)
@@ -72,48 +84,49 @@ func TestAllDialogAndTableNavigationPTY(t *testing.T) {
 	}
 	click := func(x, y int) { s.SendRaw([]byte(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, y+1, x+1, y+1))) }
 	x, y := point("Save?")
+	waitState("Keep edits?")
 	click(x, y) // Focus the dialog via its border, leaving it open.
+	waitUpdate(func(rows []string) bool { return contains(rows, "Keep edits?") })
+	waitState("Keep edits?")
 	s.Send("\x1b[C")
-	s.WaitFor("▶ Yes", 5*time.Second)
+	waitUpdate(func(rows []string) bool { return contains(rows, "▶ Yes") })
+	waitState("▶ Yes")
 	s.Send("\x1b[D")
-	s.WaitFor("▶ No", 5*time.Second)
+	waitUpdate(func(rows []string) bool { return contains(rows, "▶ No") })
 	// Confirm mouse activation closes only the child; Enter reopens its demo.
 	x, y = point("▶ No")
+	waitState("▶ No")
 	click(x+2, y)
-	deadline := time.Now().Add(5 * time.Second)
-	for strings.Contains(strings.Join(s.Screen(), "\n"), "Keep edits?") && time.Now().Before(deadline) {
-		time.Sleep(10 * time.Millisecond)
-	}
-	if strings.Contains(strings.Join(s.Screen(), "\n"), "Keep edits?") {
-		t.Fatal("mouse did not close dialog")
-	}
+	waitUpdate(func(rows []string) bool { return !contains(rows, "Keep edits?") })
+	waitState("Compile")
 	s.Send("\r")
-	s.WaitFor("Keep edits?", 5*time.Second)
+	waitUpdate(func(rows []string) bool { return contains(rows, "Keep edits?") })
 
 	x, y = point("Compile")
 	sx, sy := point("done")
-	click(x, y)
 	// The plain theme draws the cell cursor bold; wait for each cursor move
-	// instead of comparing against styles captured before the click lands.
-	wait := func(cursorOnCompile bool) {
+	// after the click lands and each navigation input is processed.
+	waitTableCursor := func(cursorOnCompile bool, afterInput bool) {
 		t.Helper()
-		check := func() bool {
+		check := func([]string) bool {
 			return s.Cell(x, y).Style.Bold == cursorOnCompile && s.Cell(sx, sy).Style.Bold == !cursorOnCompile
 		}
-		deadline := time.Now().Add(5 * time.Second)
-		for time.Now().Before(deadline) {
-			if check() {
-				return
-			}
-			time.Sleep(10 * time.Millisecond)
+		if afterInput {
+			waitUpdate(check)
+		} else {
+			s.WaitForState(timeout, check)
 		}
-		t.Fatalf("table cell cursor on Compile=%v not shown; Compile %+v, done %+v; screen:\n%s", cursorOnCompile, s.Cell(x, y).Style, s.Cell(sx, sy).Style, strings.Join(s.Screen(), "\n"))
 	}
-	wait(true)
+	waitState("Compile")
+	waitState("done")
+	click(x, y)
+	waitTableCursor(true, true)
+	waitTableCursor(true, false)
 	s.Send("\x1b[C")
-	wait(false)
+	waitTableCursor(false, true)
+	waitTableCursor(false, false)
 	s.Send("\x1b[D")
-	wait(true)
+	waitTableCursor(true, true)
 }
 
 func TestAllSharedControlsMatchStandalone(t *testing.T) {
