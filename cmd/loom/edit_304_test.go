@@ -50,26 +50,48 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	content := "first word\nsecond line\n"
 	s, path := startMouseEditPTY(t, content)
+	timeout := 3 * time.Second * ptytest.RaceFactor
+	s.WaitForState(timeout, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "Ln 1, Col 1")
+	})
 	s.Send("\x1b[C\x1b[C\x00") // Move inside a word, then Ctrl-Space.
-	s.WaitFor("🎨", 3*time.Second)
 	cursorPattern := regexp.MustCompile(`Ln [0-9]+, Col [0-9]+`)
-	cursor := cursorPattern.FindString(strings.Join(s.Screen(), "\n"))
-	if cursor == "" {
-		t.Fatal("missing cursor status")
-	}
+	cursor := "Ln 1, Col 6"
+	s.WaitForUpdateState(timeout, func(rows []string) bool {
+		text := strings.Join(rows, "\n")
+		return strings.Contains(text, "🎨") && cursorPattern.FindString(text) == cursor
+	})
 	selected := make([]ptytest.Style, len([]rune("first word")))
 	for x := range selected {
 		selected[x] = s.Cell(x+1, 1).Style
 	}
 	// Queue the full dismissal gesture together so Pane must isolate every
 	// report even when it redraws and releases modal ownership between them.
+	s.WaitForState(timeout, func(rows []string) bool {
+		text := strings.Join(rows, "\n")
+		return strings.Contains(text, "🎨") && cursorPattern.FindString(text) == cursor
+	})
 	s.Send("\x1b[<65;26;2M\x1b[<0;26;2M\x1b[<32;10;3M\x1b[<0;10;3m")
-	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "🎨") })
+	s.WaitForUpdateState(timeout, func(rows []string) bool {
+		text := strings.Join(rows, "\n")
+		return !strings.Contains(text, "🎨") && cursorPattern.FindString(text) == cursor
+	})
 	// Saving gives an observable acknowledgement after all queued reports.
+	s.WaitForState(timeout, func(rows []string) bool {
+		text := strings.Join(rows, "\n")
+		return !strings.Contains(text, "🎨") && cursorPattern.FindString(text) == cursor
+	})
 	s.Send("\x13\x1bOP")
-	s.WaitFor("RichTextEdit Help", 3*time.Second)
+	s.WaitForUpdateState(timeout, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "RichTextEdit Help")
+	})
+	s.WaitForState(timeout, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "RichTextEdit Help")
+	})
 	s.Send("\x1b")
-	waitEditPTY(t, s, func() bool { return !strings.Contains(strings.Join(s.Screen(), "\n"), "RichTextEdit Help") })
+	s.WaitForUpdateState(timeout, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "RichTextEdit Help")
+	})
 	if got := cursorPattern.FindString(strings.Join(s.Screen(), "\n")); got != cursor {
 		t.Fatalf("backdrop moved cursor: %q -> %q", cursor, got)
 	}
@@ -88,8 +110,11 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 	if raw := string(s.Raw()); !strings.Contains(raw, "\x1b[?1003h") {
 		t.Fatal("regression did not run with mousegrab enabled")
 	}
+	s.WaitForState(timeout, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "RichTextEdit Help")
+	})
 	s.Send("\x11")
-	if err := s.Wait(3 * time.Second); err != nil {
+	if err := s.Wait(timeout); err != nil {
 		t.Fatal(err)
 	}
 }
