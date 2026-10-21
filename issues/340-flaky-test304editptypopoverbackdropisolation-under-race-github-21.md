@@ -1,6 +1,6 @@
 # Flaky Test304EditPTYPopoverBackdropIsolation under -race (GitHub #21)
 
-Status: Open
+Status: Closed — Fixed in 916b3a6: Test304 waits on screen state before/after each input; 15/20 -> 20/20 under -race -count=20 on 2 CPUs (host rerun 20/20)
 Priority: P2
 Category: Bug
 
