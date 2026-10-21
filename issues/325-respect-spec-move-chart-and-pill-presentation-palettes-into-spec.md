@@ -1,6 +1,6 @@
 # 325 — respect spec: move chart and pill presentation palettes into spec
 
-**Status**: Open
+**Status**: Closed — Done in 514ad29: chart palette/label/axis and pill status colors are theme roles in spec/themes.yaml with schema; tests compare rendering to the spec; additive API (ThemeColors fields); q1 green after the final change
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
