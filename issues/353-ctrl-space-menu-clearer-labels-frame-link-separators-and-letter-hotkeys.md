@@ -28,10 +28,11 @@ stop and report when blocked on a user decision or denied permission.
   `loom measure`), no outer brackets; focus highlight as today.
 - Bold hotkey letter: rendered with the bold attribute on the first rune of Frame and Link; specced
   per item (e.g. a hotkey-index or marked label), not hardcoded.
-- Hotkeys work while the bar is open (focused or not, right after Ctrl+Space) and act like
-  activating the item (toggle style; F/L open their submenu/prompt). Both cases accepted (`b`/`B`,
-  `f`/`F`, ...). When the popover was not opened by Ctrl+Space and the bar is unfocused, letters must
-  keep typing into the text if the library auto-shows the bar on selection; the plan must check.
+- Focus model (user, 2026-10-21, supersedes the earlier host decision): Ctrl+Space opens the bar
+  **focused** (first item). A bar shown by selecting text is **not** focused; Up/Down (349) still
+  enter it. Letter hotkeys act **only while the bar is focused**, never on an unfocused bar, so
+  typing is never interrupted. They act like activating the item (toggle style; F opens its
+  submenu); both cases accepted (`b`/`B`, `f`/`F`, ...).
 - 345 rule holds: no new bar items.
 - Link (plan finding: disabled, no handler): stays disabled in this ticket; no URL prompt. `L` is
   wired to the same activation path and does nothing while Link is disabled (it must not type `L`
