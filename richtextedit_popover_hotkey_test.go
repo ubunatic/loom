@@ -212,8 +212,8 @@ func TestRichTextEditFocusedBarReturnsTypingAfterDismissal(t *testing.T) {
 		if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed {
 			t.Fatalf("b after %s was not typed", dismissal)
 		}
-		if got := doc.ToPlainText(); got != "b" {
-			t.Fatalf("text after %s and b = %q, want replacement text", dismissal, got)
+		if got := doc.ToPlainText(); got != "bword" {
+			t.Fatalf("text after %s and b = %q, want typing at the retained cursor", dismissal, got)
 		}
 	}
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "word"}}}}}
@@ -231,7 +231,7 @@ func TestRichTextEditFocusedBarReturnsTypingAfterDismissal(t *testing.T) {
 	if result := edit.ConsumeKey(KeyEvent{Key: away}); !result.Consumed || edit.popoverFocusSet {
 		t.Fatalf("arrow away %s did not dismiss focused toolbar: %+v focus=%v pointer=%q", away, result, edit.popoverFocusSet, pointer)
 	}
-	if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed || doc.ToPlainText() != "b" {
+	if result := edit.ConsumeKey(KeyEvent{Key: "b", Text: "b"}); !result.Consumed || doc.ToPlainText() != "bword" {
 		t.Fatalf("b after arrow-away was not typed: %+v text=%q", result, doc.ToPlainText())
 	}
 }

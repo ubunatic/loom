@@ -264,18 +264,19 @@ func TestRichTextEditPopoverGeometryAndFormatActions(t *testing.T) {
 	if downPointer.Text != SpeccedDefaults.RichTextEdit.PointerDownGlyph || downPointer.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PointerFG)) {
 		t.Fatal("popover did not draw a downward anchor between toolbar and selection")
 	}
-	selection := edit.SelectionFrom
+	selectionFrom, selectionTo := edit.SelectionFrom, edit.SelectionTo
 	bold := edit.popoverButtons[0].rect
 	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: bold.X + 1, Y: bold.Y}); !result.Consumed {
 		t.Fatal("bold button click was not consumed")
 	}
-	if len(doc.Lines[2].Spans) < 2 || !doc.Lines[2].Spans[1].Style.Bold || edit.SelectionFrom != selection || !edit.HasSelection {
+	if len(doc.Lines[2].Spans) < 2 || !doc.Lines[2].Spans[1].Style.Bold || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection {
 		t.Fatalf("bold action/selection = %#v, %+v..%+v active=%v", doc.Lines[2].Spans, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	if result := edit.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: bold.X + 1, Y: bold.Y}); !result.Consumed {
 		t.Fatal("popover button release was not consumed")
 	}
 	for _, label := range []string{"I", "U", "S"} {
+		edit.SetSelection(selectionFrom, selectionTo)
 		edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 		edit.Draw(canvas, Rect{X: 3, Y: 1, W: 42, H: 5})
 		for _, button := range edit.popoverButtons {
@@ -564,7 +565,7 @@ func TestRichTextEditRestylesSelectedBoxInPlaceAndUndoes(t *testing.T) {
 	if got := doc.ToPlainText(); got != "x╭─┬─╮y\nx│abc│y\nx╰─┴─╯y" {
 		t.Fatalf("rounded restyle = %q", got)
 	}
-	if !edit.HasSelection || edit.boxSelection == nil || len(edit.undoStack) != 1 {
+	if edit.HasSelection || edit.boxSelection != nil || len(edit.undoStack) != 1 {
 		t.Fatalf("restyle selection/undo = %v/%+v/%d", edit.HasSelection, edit.boxSelection, len(edit.undoStack))
 	}
 	if !doc.Lines[1].Spans[1].Style.Italic || !strings.Contains(doc.Lines[0].Spans[0].Text, "x") || !strings.Contains(doc.Lines[0].Spans[0].Text, "y") {
@@ -577,6 +578,9 @@ func TestRichTextEditRestylesSelectedBoxInPlaceAndUndoes(t *testing.T) {
 	edit.redo()
 	if got := doc.ToPlainText(); !strings.Contains(got, "╭─┬─╮") || !strings.Contains(got, "╰─┴─╯") {
 		t.Fatalf("redo restyle = %q", got)
+	}
+	if result := edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}); !result.Consumed || edit.boxSelection == nil {
+		t.Fatalf("reopen box selection for Plain restyle: %+v selection=%+v", result, edit.boxSelection)
 	}
 	edit.applyBoxStyleChoice("Plain")
 	if got := doc.ToPlainText(); got != before {
@@ -1044,9 +1048,6 @@ func TestRichTextEditCtrlSpaceClosesAndReopensPopover(t *testing.T) {
 			e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 			before := richLinesText(e.Document.Lines)
 			from, to := e.SelectionFrom, e.SelectionTo
-			if tc.focused {
-				e.ConsumeKey(KeyEvent{Key: "down"})
-			}
 			if tc.submenu {
 				e.Draw(NewCanvas(60, 6), Rect{W: 60, H: 6})
 				for _, button := range e.popoverButtons {
@@ -1785,7 +1786,6 @@ func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
 			if e.popoverSuppressed || e.SelectionTo.Offset != 5 {
 				t.Fatal("reopen lost selection")
 			}
-			e.ConsumeKey(KeyEvent{Key: "down"})
 			e.ConsumeKey(KeyEvent{Key: "right"})
 			if !e.popoverFocusSet || e.popoverFocus != 1 || e.Cursor.Offset != 5 {
 				t.Fatal("focused arrow did not navigate menu")
@@ -1932,7 +1932,7 @@ func Test317DirectionalPopoverFocus(t *testing.T) {
 				}
 				if entry || (key != "left" && key != "right") {
 					e.ConsumeKey(KeyEvent{Key: "ctrl-space"})
-					if !e.popoverOpen() || e.popoverSuppressed || !e.popoverFocusSet || e.popoverFocus != 0 || e.SelectionFrom != from || e.SelectionTo != to {
+					if !e.popoverOpen() || e.popoverSuppressed || !e.popoverFocusSet || e.popoverFocus != 0 || e.SelectionFrom != (RichPosition{Line: 2}) || e.SelectionTo != (RichPosition{Line: 2, Offset: 5}) || !e.HasSelection {
 						t.Fatal("reopening lost selection or focus state")
 					}
 				}

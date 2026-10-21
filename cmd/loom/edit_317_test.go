@@ -54,6 +54,10 @@ func Test317EditPTYFocusedPopoverHotkeyTogglesItalic(t *testing.T) {
 			s.WaitFor("🎨", 3*time.Second)
 			s.Send("i")
 			waitEditPTY(t, s, func() bool { return s.Cell(1, row).Style.Italic })
+			// Applying the first hotkey closes the popover and clears its
+			// selection. Select the word again and reopen before toggling off.
+			s.Send("\x1b[1;2D\x1b[1;2D\x1b[1;2D\x1b[1;2D\x1b[1;2D\x00")
+			s.WaitFor("🎨", 3*time.Second)
 			s.Send("i")
 			waitEditPTY(t, s, func() bool { return !s.Cell(1, row).Style.Italic })
 		})

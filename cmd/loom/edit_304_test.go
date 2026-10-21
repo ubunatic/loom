@@ -35,7 +35,7 @@ func Test304EditBackdropDoesNotChangeEditorOrHost(t *testing.T) {
 			}
 			v.Draw(c, c.Bounds())
 		}
-		if e.ModalOpen() || e.Cursor != cursor || e.SelectionFrom != from || e.SelectionTo != to || !e.HasSelection ||
+		if e.ModalOpen() || e.Cursor != cursor || e.SelectionFrom != from || e.SelectionTo != to || e.HasSelection ||
 			e.Document.ToANSI() != document || e.IsModified() || v.config != config || v.focused != focus {
 			t.Fatalf("mousegrab=%v backdrop changed editor or host", mouseGrab)
 		}
@@ -61,7 +61,7 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 		text := strings.Join(rows, "\n")
 		return strings.Contains(text, "🎨") && cursorPattern.FindString(text) == cursor
 	})
-	selected := make([]ptytest.Style, len([]rune("first word")))
+	selected := make([]ptytest.Style, len([]rune("first")))
 	for x := range selected {
 		selected[x] = s.Cell(x+1, 1).Style
 	}
@@ -96,8 +96,8 @@ func Test304EditPTYPopoverBackdropIsolation(t *testing.T) {
 		t.Fatalf("backdrop moved cursor: %q -> %q", cursor, got)
 	}
 	for x, style := range selected {
-		if got := s.Cell(x+1, 1).Style; got != style {
-			t.Fatalf("backdrop changed selection cell %d: %+v -> %+v", x, style, got)
+		if got := s.Cell(x+1, 1).Style; got == style {
+			t.Fatalf("selection highlight remained at cell %d after backdrop closed the popover: %+v", x, got)
 		}
 	}
 	// loom edit saves ANSI styling even for an input named doc.txt. Compare

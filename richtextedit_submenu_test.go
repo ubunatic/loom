@@ -24,12 +24,14 @@ func popoverFocusAction(t *testing.T, edit *RichTextEdit, action string) {
 	if !open {
 		t.Fatal("popover unavailable")
 	}
-	key := "down"
-	if pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph {
-		key = "up"
-	}
-	if got := edit.ConsumeKey(KeyEvent{Key: key}); !got.Consumed || !edit.popoverFocusSet {
-		t.Fatalf("initial popover focus = %+v", got)
+	if !edit.popoverFocusSet {
+		key := "down"
+		if pointer == SpeccedDefaults.RichTextEdit.PointerDownGlyph {
+			key = "up"
+		}
+		if got := edit.ConsumeKey(KeyEvent{Key: key}); !got.Consumed || !edit.popoverFocusSet {
+			t.Fatalf("initial popover focus = %+v", got)
+		}
 	}
 	for range len(richPopoverActions) {
 		if edit.popoverFocus >= 0 && edit.popoverFocus < len(richPopoverActions) && richPopoverActions[edit.popoverFocus] == action {
@@ -87,9 +89,10 @@ func TestRichTextEditHamburgerSubmenuKeyboardAndMouse(t *testing.T) {
 		t.Fatalf("Select all changed document: %q", got)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
-	if edit.popoverSubmenu != "" || edit.popoverFocusSet {
-		t.Fatalf("Ctrl+Space left menu open: submenu=%q focus=%v", edit.popoverSubmenu, edit.popoverFocusSet)
+	if edit.popoverSubmenu != "" || !edit.popoverFocusSet || !edit.HasSelection {
+		t.Fatalf("Ctrl+Space did not reopen for Select all selection: submenu=%q focus=%v selected=%v", edit.popoverSubmenu, edit.popoverFocusSet, edit.HasSelection)
 	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
 
 	mouseEdit, mouseCanvas := newEditor()
 	button := mouseEdit.popoverButtons[popoverActionIndex("Hamburger")]
@@ -345,11 +348,12 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	if !edit.popoverSuppressed || edit.popoverFocusSet {
 		t.Fatal("arrow away did not dismiss the focused toolbar")
 	}
-	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
+	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection {
 		t.Fatalf("bar arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
 	popoverFocusAction(t, edit, "ColorPicker")
+	cursor, selectionFrom, selectionTo, selection = edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection
 	assertMenuHandled(t, tabs.ConsumeKey(space))
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
 	if edit.popoverColorPicker != nil || edit.HasSelection != selection || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo {

@@ -46,7 +46,11 @@ func Test304PopoverMouseIsolation(t *testing.T) {
 				if got := e.ConsumeMouse(MouseEvent{X: 25, Y: 0, Action: action, Button: button}); got != Handled() {
 					t.Fatalf("backdrop result = %+v", got)
 				}
-				if after := modalEditorState(e); after != before || e.dragSelecting {
+				wantAfter := before
+				if action == MousePress && button == MouseLeft {
+					wantAfter.selected = false
+				}
+				if after := modalEditorState(e); after != wantAfter || e.dragSelecting {
 					t.Fatalf("backdrop changed editor: before=%+v after=%+v", before, after)
 				}
 				wantOpen := action != MousePress || button != MouseLeft
@@ -60,7 +64,7 @@ func Test304PopoverMouseIsolation(t *testing.T) {
 							t.Fatalf("trailing event = %+v", got)
 						}
 					}
-					if modalEditorState(e) != before {
+					if modalEditorState(e) != wantAfter {
 						t.Fatal("dismissal gesture changed cursor or selection")
 					}
 					// A new gesture must work normally after dismissal.
@@ -88,7 +92,9 @@ func Test304PopoverCancelsOldDragAndKeyboardDismisses(t *testing.T) {
 	if got := e.ConsumeKey(KeyEvent{Key: "esc"}); got != Handled() || e.ModalOpen() {
 		t.Fatalf("keyboard dismissal: %+v open=%v", got, e.ModalOpen())
 	}
-	if modalEditorState(e) != before {
+	wantAfter := before
+	wantAfter.selected = false
+	if modalEditorState(e) != wantAfter {
 		t.Fatal("keyboard dismissal changed document selection")
 	}
 }
