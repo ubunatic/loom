@@ -1,6 +1,6 @@
 # Flaky TestAllDialogAndTableNavigationPTY under -race: mouse did not close dialog (GitHub #22)
 
-Status: Open
+Status: Closed — Fixed in 5f1d8be: gallery dialog/table PTY test uses fresh-output screen waits instead of sleep loops; 19/20 -> 20/20 under -race -count=20 on 2 CPUs (host rerun 20/20)
 Priority: P2
 Category: Bug
 
