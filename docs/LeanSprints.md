@@ -102,8 +102,17 @@ Source: host `agy:flash38` as orchestrator, developer `codex:luna:high`. Details
 
 Source: host `agy:flash38` as orchestrator, searcher `codex:luna:low`, developer `codex:sol:low`. Details: [316 study](studies/2026-10-10-two-agent-lean-sprint-issue-316-popover-semantics.md), [317 study](studies/2026-10-10-two-agent-lean-sprint-issue-317-directional-popover-focus.md), [318 study](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md).
 - **Decoupled Focus from Legacy Tab Collisions**: In ASCII terminals, `Ctrl+I` sends `0x09` (`\t`). Freeing `<tab>` from being a mandatory popover focus key allowed binding `<tab>` / `Ctrl+I` on selected text to toggle italics directly, eliminating the need to wait for progressive keyboard enhancement (CSI-u) to support common italic formatting.
-- **Directional Geometry Consistency**: Using spatial arrows (arrow toward toolbar focuses, arrow away cancels) made navigation predictable regardless of whether the popover opens above or below the selection anchor.
+- **Directional Geometry Consistency**: Using spatial arrows (arrow toward toolbar focuses, arrow away cancels) made navigation predictable regardless of whether the popover opens above or below the selection anchor. Later user feedback: habit is Ctrl+Space, Down even when the bar is above; see [349](../issues/349-loom-edit-arrow-towards-the-popover-should-enter-it-also-when-it-opens-above-the-selection.md).
 - **PTY Test Assertion Stability**: PTY tests matching color/style cells across asynchronous render cycles can be brittle. Matching rendered text/labels while driving real terminal inputs (`\x1b[A`, `\x1b[B`) gave reliable, deterministic pass criteria in Quota-1.
 - **Commit Handoff Files Before Worker Runs**: Staging and committing orchestrator prompt files and initial study documents prior to dispatch ensures the developer's tree is completely clean, preventing Quota-1 stops due to untracked files.
+
+## Popover toggle, mousegrab default and ColorPicker sprints (2026-10-20/21, tickets 342, 346, 347)
+
+Source: host `claude:opus`, developers `codex:sol:med`, designer `claude:opus:med`. Details: [342](studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md), [346](studies/2026-10-21-two-agent-lean-sprint-issue-346-colorpicker.md), [347](studies/2026-10-21-two-agent-lean-sprint-issue-347-colorpicker-redesign.md) studies.
+- **Developer q1 runs fail, host reruns pass**: in all five milestones the developer's single `make test-q1` failed on stale assertions or the API snapshot (`testdata/api/loom.txt`), was fixed without rerun, and the host rerun was green. Ask developers to refresh the API snapshot and run the focused package tests before their one q1 run.
+- **Changing a default breaks PTY tests**: turning `editor.mousegrab` on by default broke three PTY tests that assumed it off. Tests that depend on a default should set it explicitly.
+- **Design by `.ansi` rounds with user screenshots**: three proposals, one feedback round (spacer cells look disturbing), a gapless second round, then a user-composed design. Two rounds were enough; the user's screenshots carried more than prose.
+- **Live tmux checks find spec gaps**: unit tests passed while one-way mode keys differed from the user's "switch between" intent (fixed as 347 M3), and a marker drawn with the focus fill showed as a solid block (M4). Wait for the editor to render before sending keys; the popover bar needs an arrow towards it before Left/Right move inside it.
+- **Follow-ups go in the open ticket**: user bug reports during a running sprint were recorded as the next milestone's pre-work instead of new tickets.
 
 
