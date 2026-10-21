@@ -32,3 +32,7 @@ Down focuses it, Down again closes it but keeps the selection, a third Down clea
   flip its default to true if it covers all cases above, otherwise extend it. Keep it configurable.
 - Bar above: Up on the focused bar closes it (mirror of Down on a bar below). Down on a focused bar
   above and Up on a focused bar below keep today's behavior.
+- Submenus (user, 2026-10-21): open only with Enter or Space, never with Up/Down. On the focused bar
+  the away-arrow closes it on every item, submenu items included (today Down on Frame/≡ does
+  nothing; that becomes "close"). Inside an open submenu Up/Down move between its items; Escape
+  leaves it.
