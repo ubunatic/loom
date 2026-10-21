@@ -40,3 +40,14 @@ started with a read-only plan turn (355 excepted: a narrow draw fix dispatched d
 - The "report, don't fix untouched failures" rule needs its scope in the prompt: it covers
   unrelated flakes, not tests whose expectation the ticket changes on purpose.
 - Tickets that change shared semantics (358) should name the Upgrading.md row in the prompt.
+
+## 359 ColorPicker two-row redesign b2 (d359, codex:sol:med, 2026-10-22)
+
+- Searcher skipped: the ticket cites the sketch and the 347/350/357 picker. Plan turn 1m02s; host added
+  that the BG marker must show right of the rug (tested at palette 15).
+- M1 a09c9f5 + fe6b21a (11m): behaviour right (live: FG 1 on BG 2 saved), host q1 green, but the panel
+  had no background and edges used the border FG. Reopened; M2 249c8d1 (4m) adds the palette-8 panel
+  BG, panel-coloured edges and the sketch's row-3 layout. Host q1 green (first host run hit the
+  1-minute harnez exec timeout; rerun with HTO=0). Live tmux confirms panel BG 8 and both markers.
+- Observation: green tests and passing `loom check-box` did not catch a missing panel colour; only
+  the live look against the sketch did.
