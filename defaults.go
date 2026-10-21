@@ -187,6 +187,10 @@ type EditorDefaults struct {
 	HotkeySearchLabel            string            `yaml:"hotkey_search_label"`
 	HotkeyBoxBinding             string            `yaml:"hotkey_box_binding"`
 	HotkeyBoxLabel               string            `yaml:"hotkey_box_label"`
+	HotkeyMouseGrabKey           string            `yaml:"hotkey_mousegrab_key"`
+	HotkeyMouseGrabBinding       string            `yaml:"hotkey_mousegrab_binding"`
+	HotkeyMouseGrabLabel         string            `yaml:"hotkey_mousegrab_label"`
+	MouseGrabDropPriority        int               `yaml:"mousegrab_drop_priority"`
 	SearchPrompt                 string            `yaml:"search_prompt"`
 	SearchPlaceholder            string            `yaml:"search_placeholder"`
 	HotkeyScreenshotBinding      string            `yaml:"hotkey_screenshot_binding"`

@@ -263,6 +263,7 @@ func helpSection() loom.HelpSection {
 		{Cap: d.HotkeySearchKey, Label: d.HotkeySearchLabel},
 		{Keys: []string{d.HotkeyBoxBinding}, Label: d.HotkeyBoxLabel},
 		{Keys: []string{d.HotkeyScreenshotBinding}, Label: d.HotkeyScreenshotLabel},
+		{Cap: d.HotkeyMouseGrabKey, Label: d.HotkeyMouseGrabLabel},
 	}}
 }
 
@@ -295,6 +296,7 @@ func (v *editView) hotkeyBar() *loom.HintBar {
 			v.reportError(v.captureScreenshot())
 			return loom.Handled()
 		}},
+		{Key: editorDefs.HotkeyMouseGrabKey, Binding: editorDefs.HotkeyMouseGrabBinding, Label: editorDefs.HotkeyMouseGrabLabel, DropPriority: editorDefs.MouseGrabDropPriority, Action: v.toggleMouseGrab},
 		// No Binding: the Pane owns the quit keys; this entry only serves the mouse.
 		{Key: loom.KeyCap(richDefs.HotkeyQuitBinding), Label: richDefs.HotkeyQuitLabel, Action: func() loom.EventResult {
 			if v.closeRequest(loom.CloseReasonQuitKey) == loom.CloseAllow {
@@ -597,6 +599,11 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 }
 
 func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
+	// This app-level binding stays available when a dialog or editor overlay owns
+	// input, so users can always restore mouse reporting from mouse-off mode.
+	if key.Is(loom.SpeccedDefaults.Editor.HotkeyMouseGrabBinding) {
+		return v.toggleMouseGrab()
+	}
 	if key.Is(loom.SpeccedDefaults.Editor.HotkeyScreenshotBinding) {
 		v.reportError(v.captureScreenshot())
 		return loom.Handled()
