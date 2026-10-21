@@ -1,6 +1,6 @@
 # 350 — ColorPicker: add default/no-color cell for FG and BG
 
-**Status**: Open
+**Status**: Closed — Done in 534843e: first cell ∅ resets FG to default or removes BG, previewing the result; additive ResetSelected (Selected stays a palette index); Home binding; key and mouse tests, save emits reset; host q1 green; live tmux pick red then ∅ restores default and saved file has no colour codes
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
