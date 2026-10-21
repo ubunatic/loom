@@ -1,6 +1,6 @@
 # 345 — loom edit: one hamburger submenu in the Ctrl+Space popover for nested actions (Select all)
 
-**Status**: Open
+**Status**: Closed — Done in df86d50: one specced ≡ entry after Box opens a submenu with Select all (reuses 344 select_all), keyboard and mouse, rule for new actions in docs/Widgets.md, F1 help, gallery/.ansi updated; q1 green; live tmux check
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
