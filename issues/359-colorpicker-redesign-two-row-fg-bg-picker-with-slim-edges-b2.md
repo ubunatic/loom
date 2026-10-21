@@ -1,6 +1,6 @@
 # 359 — ColorPicker redesign: two-row FG/BG picker with slim edges (b2)
 
-**Status**: Closed — Implemented and documented the two-row FG/BG ColorPicker redesign; focused tests and q1 pass, ANSI layout validates, and install succeeds.
+**Status**: Open — M1 (a09c9f5, fe6b21a) reopened by host review: panel background missing
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
@@ -38,3 +38,23 @@ Variant b2 in `docs/data/colorpicker-ideas-001.ansi`:
 
 - Check live code first (347/350/357 implementation) before planning.
 - Uncertain: width when the bar sits near the right terminal edge; reuse the popover clamping rules.
+
+## M1 review (host, 2026-10-22)
+
+Delivered a09c9f5 + fe6b21a: keys, Space/Enter, both channels, save work (live tmux: FG 1 on BG 2
+saved). Host q1 green. Reopened for the look, which misses the core of the sketch:
+
+### M2 pre-work
+
+- The panel has no background: swatch rows, padding and preview pads use the editor BG (237 here),
+  and the edge glyphs `▂`/`🮂` are drawn in the editor FG (250). In the sketch the panel has its own
+  BG (palette 8) and the edge glyphs use that panel BG as their FG, so they "extend" the panel by a
+  quarter cell and the popup stands out from the text. Add a spec'd panel BG (default palette 8, or
+  the bar BG if that reads better; decide and document) and draw edges in it. Selection markers keep
+  the marker colour.
+- Marker row (row 3): columns 0–8 are panel BG (with the BG marker if the pick is there), columns
+  9–34 are upper-edge glyphs, as in the sketch; today the whole row is `🮂`.
+- Swatches: the sketch uses one letter plus a space per cell (`a `); `Aa` is fine if it reads
+  better on the panel BG, but say which you kept.
+- Add a canvas test asserting the panel BG on rows 1, 2 and 4 and the edge glyph FG; re-run
+  `loom eval/measure/check-box`, regenerate docs/progress/ColorPicker.ansi, q1, install, close.
