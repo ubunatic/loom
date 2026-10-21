@@ -1,0 +1,14 @@
+
+[0m[39m[49m/issue improve C-space menu
+[0m[39m[49m1. better labels
+[0m[39m[49mcurrent: "[ B│ I│ U│ S│ Link│ 🎨│ Box│ ≡]"
+[0m[39m[49mbetter: " B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏[0m[1m[39m[49m≡[0m[39m[49m "
+[0m[39m[49malso:
+[0m[39m[49m- use bold **F**rame as label for Frame
+[0m[39m[49m- use bold **L**ink as label for link
+
+[0m[39m[49m2. more hotkeys:
+[0m[39m[49m- b,i,u,s for bold, italic, etc.
+[0m[39m[49m- F for frame, L for link
+
+[0m
