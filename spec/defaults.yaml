@@ -184,6 +184,7 @@ color_picker:
   glyphs:
     swatch: "Aa"
     mode_marker: "▔▔"
+    reset: "∅ "
   preview_text: "AaBb"
   bindings:
     select: ["space", " "]
@@ -193,6 +194,7 @@ color_picker:
     close: ["enter", "esc", "ctrl-space"]
     left: ["left"]
     right: ["right"]
+    home: ["home"]
 
 number_input:
   step: 1.0

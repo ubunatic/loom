@@ -161,6 +161,7 @@ func TestRichTextEditPopoverSubmenusDoNotCoverSelection(t *testing.T) {
 
 func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	edit, canvas := newSubmenuTestEditor()
+	edit.Document.Lines[0].Spans[0].Style = Style{FG: ColorIndex(7), BG: ColorIndex(4)}
 	popoverFocusAction(t, edit, "ColorPicker")
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	picker := edit.popoverColorPicker
@@ -195,6 +196,24 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "esc"}))
 	if edit.popoverColorPicker != nil {
 		t.Fatal("Escape did not close ColorPicker")
+	}
+}
+
+func TestRichTextEditColorPickerResetCellAppliesBothChannels(t *testing.T) {
+	edit, canvas := newSubmenuTestEditor()
+	edit.Document.Lines[0].Spans[0].Style = Style{FG: ColorIndex(7), BG: ColorIndex(4)}
+	popoverFocusAction(t, edit, "ColorPicker")
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "home"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorIndex(4) {
+		t.Fatalf("keyboard FG reset style = %+v", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	edit.Draw(canvas, canvas.Bounds())
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: edit.popoverColorRect.X, Y: edit.popoverColorRect.Y})
+	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorReset() {
+		t.Fatalf("mouse BG reset style = %+v", got)
 	}
 }
 

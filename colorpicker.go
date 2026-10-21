@@ -19,14 +19,17 @@ const (
 
 // ColorPicker selects a foreground or background color and previews the pair.
 type ColorPicker struct {
-	FG, BG     Color
-	Target     ColorPickerTarget
-	Selected   int
-	Palette    []Color
-	Style      Style
-	FocusStyle Style
-	OnChange   func(ColorPickerTarget, Color)
-	OnClose    func()
+	FG, BG   Color
+	Target   ColorPickerTarget
+	Selected int
+	// ResetSelected focuses the terminal-default/no-color cell. Selected remains
+	// a valid index into Palette for callers that use it to inspect the palette.
+	ResetSelected bool
+	Palette       []Color
+	Style         Style
+	FocusStyle    Style
+	OnChange      func(ColorPickerTarget, Color)
+	OnClose       func()
 
 	focused  bool
 	lastRect Rect
@@ -49,8 +52,13 @@ func NewColorPicker(fg, bg Color) *ColorPicker {
 	if defs.InitialTarget == "bg" {
 		target = ColorPickerBG
 	}
+	current := fg
+	if target == ColorPickerBG {
+		current = bg
+	}
+	selected, resetSelected := 0, current == ColorReset()
 	return &ColorPicker{
-		FG: fg, BG: bg, Target: target, Palette: palette,
+		FG: fg, BG: bg, Target: target, Selected: selected, ResetSelected: resetSelected, Palette: palette,
 		Style:      themeStyle.Normal,
 		FocusStyle: themeStyle.Selected,
 		focused:    true,
@@ -87,7 +95,7 @@ func (p *ColorPicker) PreviewStyle() Style {
 // Measure reports the one-row palette and its optional preview.
 func (p *ColorPicker) Measure(width int) measure.Size {
 	defs := SpeccedDefaults.ColorPicker
-	w := len(p.Palette) * defs.SwatchWidth
+	w := (len(p.Palette) + 1) * defs.SwatchWidth
 	if width > 0 && width < w {
 		w = width
 	}
@@ -106,8 +114,20 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	p.lastRect = r
 	c.PaintSurface(r, p.Style)
 	defs := SpeccedDefaults.ColorPicker
+	resetStyle := p.Style
+	if p.Target == ColorPickerBG {
+		resetStyle.FG = p.FG
+		resetStyle.BG = ColorReset()
+	} else {
+		resetStyle.FG = ColorReset()
+		resetStyle.BG = p.BG
+	}
+	writeColorPickerText(c, r, 0, 0, defs.Glyphs.Reset, resetStyle)
+	for pad := measure.StringWidth(defs.Glyphs.Reset); pad < defs.SwatchWidth && pad < r.W; pad++ {
+		c.Set(r.X+pad, r.Y, Cell{Text: " ", Style: resetStyle})
+	}
 	for i, color := range p.Palette {
-		x := i * defs.SwatchWidth
+		x := (i + 1) * defs.SwatchWidth
 		if x >= r.W {
 			break
 		}
@@ -122,8 +142,11 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			c.Set(r.X+x+pad, r.Y, Cell{Text: " ", Style: style})
 		}
 	}
-	if r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
-		markerX := p.Selected * defs.SwatchWidth
+	if r.H >= 2 && p.ResetSelected {
+		markerStyle := Style{FG: ColorIndex(uint8(defs.MarkerFG)), BG: p.Style.BG}
+		writeColorPickerText(c, r, 0, 1, defs.Glyphs.ModeMarker, markerStyle)
+	} else if r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
+		markerX := (p.Selected + 1) * defs.SwatchWidth
 		markerStyle := Style{FG: ColorIndex(uint8(defs.MarkerFG)), BG: p.Style.BG}
 		writeColorPickerText(c, r, markerX, 1, defs.Glyphs.ModeMarker, markerStyle)
 	}
@@ -166,6 +189,9 @@ func (p *ColorPicker) changeTarget(target ColorPickerTarget, assign bool) {
 		return
 	}
 	color := p.Palette[p.Selected]
+	if p.ResetSelected {
+		color = ColorReset()
+	}
 	if target == ColorPickerFG {
 		p.FG = color
 	} else {
@@ -199,13 +225,23 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	case p.matches(e, "select"):
 		p.changeTarget(p.Target, true)
 		return Handled()
+	case p.matches(e, "home"):
+		p.ResetSelected = true
+		return Handled()
 	case p.matches(e, "left"):
-		if p.Selected > 0 {
+		if p.ResetSelected {
+			return Handled()
+		}
+		if p.Selected == 0 {
+			p.ResetSelected = true
+		} else if p.Selected > 0 {
 			p.Selected--
 		}
 		return Handled()
 	case p.matches(e, "right"):
-		if p.Selected+1 < len(p.Palette) {
+		if p.ResetSelected {
+			p.ResetSelected = false
+		} else if p.Selected+1 < len(p.Palette) {
 			p.Selected++
 		}
 		return Handled()
@@ -235,11 +271,17 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 		return Ignored()
 	}
 	defs := SpeccedDefaults.ColorPicker
-	index := e.X / defs.SwatchWidth
+	index := e.X/defs.SwatchWidth - 1
+	if e.X < defs.SwatchWidth {
+		p.ResetSelected = true
+		p.changeTarget(p.Target, true)
+		return Handled()
+	}
 	if index < 0 || index >= len(p.Palette) {
 		return Ignored()
 	}
 	p.Selected = index
+	p.ResetSelected = false
 	p.changeTarget(p.Target, true)
 	return Handled()
 }

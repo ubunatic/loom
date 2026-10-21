@@ -1185,14 +1185,17 @@ func (c Color) RGB() (r, g, b uint8, ok bool)
     values).
 
 type ColorPicker struct {
-	FG, BG     Color
-	Target     ColorPickerTarget
-	Selected   int
-	Palette    []Color
-	Style      Style
-	FocusStyle Style
-	OnChange   func(ColorPickerTarget, Color)
-	OnClose    func()
+	FG, BG   Color
+	Target   ColorPickerTarget
+	Selected int
+	// ResetSelected focuses the terminal-default/no-color cell. Selected remains
+	// a valid index into Palette for callers that use it to inspect the palette.
+	ResetSelected bool
+	Palette       []Color
+	Style         Style
+	FocusStyle    Style
+	OnChange      func(ColorPickerTarget, Color)
+	OnClose       func()
 
 	// Has unexported fields.
 }
@@ -1243,6 +1246,7 @@ type ColorPickerDefaults struct {
 type ColorPickerGlyphs struct {
 	Swatch     string `yaml:"swatch"`
 	ModeMarker string `yaml:"mode_marker"`
+	Reset      string `yaml:"reset"`
 }
 
 type ColorPickerLabels struct {

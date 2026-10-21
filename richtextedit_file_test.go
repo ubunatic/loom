@@ -128,6 +128,30 @@ func TestRichTextEditSaveWritesAssociatedPath(t *testing.T) {
 	}
 }
 
+func TestRichTextEditSaveSerializesDefaultColorsAsResets(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "defaults.ansi")
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
+		{Text: "fg", Style: Style{FG: ColorReset(), BG: ColorIndex(4)}},
+		{Text: "bg", Style: Style{FG: ColorIndex(7), BG: ColorReset()}},
+	}}}}
+	edit := NewRichTextEdit(doc)
+	if err := edit.SaveAs(path); err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"\x1b[39m\x1b[48;5;4mfg", "\x1b[38;5;7m\x1b[49mbg"} {
+		if !strings.Contains(string(data), want) {
+			t.Errorf("saved ANSI %q missing reset sequence %q", data, want)
+		}
+	}
+	if strings.Contains(string(data), "38;5;256") || strings.Contains(string(data), "48;5;256") {
+		t.Fatalf("default colors serialized as palette entries: %q", data)
+	}
+}
+
 func TestRichTextEditSaveEndsWithNewlineAndRoundTrips(t *testing.T) {
 	dir := t.TempDir()
 	path := filepath.Join(dir, "doc.ansi")

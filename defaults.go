@@ -70,6 +70,7 @@ type ColorPickerLabels struct {
 type ColorPickerGlyphs struct {
 	Swatch     string `yaml:"swatch"`
 	ModeMarker string `yaml:"mode_marker"`
+	Reset      string `yaml:"reset"`
 }
 
 func (d ColorPickerDefaults) validate() error {
@@ -89,10 +90,10 @@ func (d ColorPickerDefaults) validate() error {
 	if d.ShowPreview && (d.Labels.Preview == "" || d.PreviewText == "") {
 		return fmt.Errorf("color_picker preview label and text must not be empty when preview is enabled")
 	}
-	if d.Glyphs.Swatch == "" || d.Glyphs.ModeMarker == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.ModeMarker) != d.SwatchWidth {
+	if d.Glyphs.Swatch == "" || d.Glyphs.ModeMarker == "" || d.Glyphs.Reset == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.ModeMarker) != d.SwatchWidth || measure.StringWidth(d.Glyphs.Reset) != d.SwatchWidth {
 		return fmt.Errorf("color_picker swatch and mode marker must match swatch_width display cells")
 	}
-	for _, name := range []string{"select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right"} {
+	for _, name := range []string{"select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right", "home"} {
 		if len(d.Bindings[name]) == 0 {
 			return fmt.Errorf("color_picker.bindings.%s must not be empty", name)
 		}

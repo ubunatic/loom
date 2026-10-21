@@ -48,8 +48,8 @@ func TestColorPickerModeAndKeyboardInput(t *testing.T) {
 	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || picker.Selected != selected {
 		t.Fatalf("Left result/selection = %+v/%d", got, picker.Selected)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || picker.Selected != 0 || picker.Target != ColorPickerFG {
-		t.Fatalf("left edge changed mode/selection: %+v selected=%d target=%v", got, picker.Selected, picker.Target)
+	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || !picker.ResetSelected || picker.Selected != 0 || picker.Target != ColorPickerFG {
+		t.Fatalf("left edge did not focus reset cell: %+v reset=%v selected=%d target=%v", got, picker.ResetSelected, picker.Selected, picker.Target)
 	}
 	for _, key := range []KeyEvent{{Text: "f"}, {Text: "x"}, {Key: "shift-space"}} {
 		if got := picker.ConsumeKey(key); got != Ignored() {
@@ -59,14 +59,51 @@ func TestColorPickerModeAndKeyboardInput(t *testing.T) {
 	if picker.FG != fg || picker.BG != bg || changed != 0 {
 		t.Fatalf("removed keys changed colors/callbacks: %v/%v callback=%d", picker.FG, picker.BG, changed)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.FG != picker.Palette[0] || changed != 1 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.FG != ColorReset() || changed != 1 {
 		t.Fatalf("Space pick result=%+v FG=%v callback=%d", got, picker.FG, changed)
+	}
+	picker.ConsumeKey(KeyEvent{Key: "right"})
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.FG != picker.Palette[0] || changed != 2 {
+		t.Fatalf("palette Space pick result=%+v FG=%v callback=%d", got, picker.FG, changed)
 	}
 	if got := picker.ConsumeKey(KeyEvent{Key: "down"}); got != Handled() || picker.Target != ColorPickerBG {
 		t.Fatalf("Down result/target = %+v/%v", got, picker.Target)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.BG != picker.Palette[0] || changed != 2 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.BG != picker.Palette[0] || changed != 3 {
 		t.Fatalf("BG Space pick result=%+v BG=%v callback=%d", got, picker.BG, changed)
+	}
+}
+
+func TestColorPickerResetCellKeyboardAndMouse(t *testing.T) {
+	if picker := NewColorPicker(ColorReset(), ColorIndex(4)); !picker.ResetSelected || picker.Selected < 0 || picker.Selected >= len(picker.Palette) {
+		t.Fatalf("default FG initial focus reset=%v selected=%d", picker.ResetSelected, picker.Selected)
+	}
+	for _, target := range []ColorPickerTarget{ColorPickerFG, ColorPickerBG} {
+		picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
+		picker.Target = target
+		picker.Draw(NewCanvas(40, 4), Rect{W: 34, H: 3})
+		var changed Color
+		picker.OnChange = func(gotTarget ColorPickerTarget, color Color) {
+			if gotTarget != target {
+				t.Errorf("callback target = %v, want %v", gotTarget, target)
+			}
+			changed = color
+		}
+		if got := picker.ConsumeKey(KeyEvent{Key: "home"}); got != Handled() || !picker.ResetSelected || picker.Selected < 0 || picker.Selected >= len(picker.Palette) {
+			t.Fatalf("Home target=%v result=%+v reset=%v selected=%d", target, got, picker.ResetSelected, picker.Selected)
+		}
+		if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || changed != ColorReset() {
+			t.Fatalf("Space target=%v result=%+v color=%v", target, got, changed)
+		}
+		if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 0, Y: 0}); got != Handled() || !picker.ResetSelected || changed != ColorReset() {
+			t.Fatalf("mouse target=%v result=%+v reset=%v color=%v", target, got, picker.ResetSelected, changed)
+		}
+		if target == ColorPickerFG && (picker.FG != ColorReset() || picker.BG != ColorIndex(4)) {
+			t.Fatalf("FG reset changed wrong channels: %+v/%+v", picker.FG, picker.BG)
+		}
+		if target == ColorPickerBG && (picker.BG != ColorReset() || picker.FG != ColorIndex(7)) {
+			t.Fatalf("BG reset changed wrong channels: %+v/%+v", picker.FG, picker.BG)
+		}
 	}
 }
 
@@ -81,17 +118,17 @@ func TestColorPickerMouseModesAndBounds(t *testing.T) {
 		{Action: MousePress, Button: MouseLeft, X: 2, Y: 1},
 		{Action: MousePress, Button: MouseLeft, X: 2, Y: 2},
 		{Action: MousePress, Button: MouseMiddle, X: 2, Y: 0},
-		{Action: MousePress, Button: MouseLeft, X: 2, Y: 0, Shift: true},
+		{Action: MousePress, Button: MouseLeft, X: 4, Y: 0, Shift: true},
 	} {
 		want := Ignored()
-		if mouse.Button == MouseLeft && mouse.X == 2 && mouse.Y == 0 {
+		if mouse.Button == MouseLeft && mouse.X == 4 && mouse.Y == 0 {
 			want = Handled()
 		}
 		if got := picker.ConsumeMouse(mouse); got != want {
 			t.Errorf("mouse %+v result = %+v, want %+v", mouse, got, want)
 		}
 	}
-	if picker.FG != picker.Palette[1] || picker.BG != bg || picker.Selected != 1 || changed != 1 {
+	if picker.FG != picker.Palette[1] || picker.BG != bg || picker.Selected != 1 || picker.ResetSelected || changed != 1 {
 		t.Fatalf("left-click/shift result FG=%v BG=%v selected=%d callbacks=%d", picker.FG, picker.BG, picker.Selected, changed)
 	}
 	picker.Target, picker.Selected = ColorPickerFG, selected
@@ -105,7 +142,7 @@ func TestColorPickerMouseModesAndBounds(t *testing.T) {
 		}
 	}
 	picker.Target = ColorPickerBG
-	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 6, Y: 0}); got != Handled() || picker.BG != picker.Palette[3] || changed != 2 {
+	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 8, Y: 0}); got != Handled() || picker.BG != picker.Palette[3] || changed != 2 {
 		t.Fatalf("BG left-click result=%+v BG=%v callbacks=%d", got, picker.BG, changed)
 	}
 	if got := picker.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 4, Y: 0}); got != Ignored() {
@@ -116,10 +153,10 @@ func TestColorPickerMouseModesAndBounds(t *testing.T) {
 func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(11), ColorIndex(4))
 	picker.Selected = 3
-	canvas := NewCanvas(36, 5)
-	picker.Draw(canvas, Rect{X: 2, Y: 1, W: 32, H: 3})
+	canvas := NewCanvas(40, 5)
+	picker.Draw(canvas, Rect{X: 2, Y: 1, W: 34, H: 3})
 	for i := range picker.Palette {
-		cell := canvas.Get(2+i*2, 1)
+		cell := canvas.Get(4+i*2, 1)
 		if cell.Text != "A" {
 			t.Errorf("FG swatch %d cell text = %q", i, cell.Text)
 		}
@@ -130,9 +167,9 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 			t.Errorf("FG swatch %d unexpectedly underlined", i)
 		}
 	}
-	for x := range 32 {
+	for x := range 34 {
 		cell := canvas.Get(2+x, 2)
-		if x == picker.Selected*2 || x == picker.Selected*2+1 {
+		if x == (picker.Selected+1)*2 || x == (picker.Selected+1)*2+1 {
 			if cell.Text != "▔" || cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || cell.Style.BG != picker.Style.BG {
 				t.Fatalf("FG marker cell = %+v", cell)
 			}
@@ -145,9 +182,9 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 		t.Fatalf("preview cell = %+v", preview)
 	}
 	picker.Target = ColorPickerBG
-	picker.Draw(canvas, Rect{X: 2, Y: 1, W: 32, H: 3})
+	picker.Draw(canvas, Rect{X: 2, Y: 1, W: 34, H: 3})
 	for i := range picker.Palette {
-		cell := canvas.Get(2+i*2, 1)
+		cell := canvas.Get(4+i*2, 1)
 		if cell.Style.FG != picker.FG || cell.Style.BG != picker.Palette[i] {
 			t.Errorf("BG swatch %d style = %+v", i, cell.Style)
 		}
@@ -155,16 +192,16 @@ func TestColorPickerDrawModesPreviewAndClose(t *testing.T) {
 			t.Errorf("BG swatch %d unexpectedly underlined", i)
 		}
 	}
-	if got := canvas.Get(8, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
+	if got := canvas.Get(10, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
 		t.Fatalf("BG marker = %+v", got)
 	}
-	if got := canvas.Get(9, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
+	if got := canvas.Get(11, 2); got.Text != "▔" || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) || got.Style.BG != picker.Style.BG {
 		t.Fatalf("BG marker second cell = %+v", got)
 	}
 	old := SpeccedDefaults.ColorPicker.ShowPreview
 	SpeccedDefaults.ColorPicker.ShowPreview = false
 	defer func() { SpeccedDefaults.ColorPicker.ShowPreview = old }()
-	if size := picker.Measure(0); size.Width != 32 || size.Height != 2 {
+	if size := picker.Measure(0); size.Width != 34 || size.Height != 2 {
 		t.Fatalf("no-preview measure = %+v", size)
 	}
 	closed := 0

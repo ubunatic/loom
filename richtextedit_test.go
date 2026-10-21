@@ -887,7 +887,7 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	}
 	edit.Draw(canvas, canvas.Bounds())
 	defs := SpeccedDefaults.ColorPicker
-	swatchX := edit.popoverColorRect.X + 3*defs.SwatchWidth
+	swatchX := edit.popoverColorRect.X + 4*defs.SwatchWidth
 	swatchY := edit.popoverColorRect.Y
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != edit.popoverColorPicker.Palette[3] {
@@ -910,7 +910,7 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	edit.Draw(canvas, canvas.Bounds())
 	clickPickerButton()
 	edit.Draw(canvas, canvas.Bounds())
-	swatchX = edit.popoverColorRect.X + 5*defs.SwatchWidth
+	swatchX = edit.popoverColorRect.X + 6*defs.SwatchWidth
 	swatchY = edit.popoverColorRect.Y
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	edit.ConsumeKey(KeyEvent{Key: "enter"})

@@ -99,10 +99,10 @@ func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
 	if len(got.Palette) != 16 || got.Palette[0] != 0 || got.Palette[15] != 15 {
 		t.Fatalf("picker palette = %v, want indexes 0 through 15", got.Palette)
 	}
-	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.ModeMarker == "" || got.MarkerFG != 51 {
+	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.ModeMarker == "" || got.Glyphs.Reset != "∅ " || got.MarkerFG != 51 {
 		t.Fatalf("picker preview/glyphs incomplete: %+v", got)
 	}
-	if got.Bindings["mode_bg"][0] != "down" || got.Bindings["mode_fg"][0] != "up" || got.Bindings["mode_toggle"][0] != "tab" || got.Bindings["close"][0] == "" {
+	if got.Bindings["mode_bg"][0] != "down" || got.Bindings["mode_fg"][0] != "up" || got.Bindings["mode_toggle"][0] != "tab" || got.Bindings["home"][0] != "home" || got.Bindings["close"][0] == "" {
 		t.Fatalf("picker bindings incomplete: %+v", got.Bindings)
 	}
 	for _, removed := range []string{"select_bg", "target_fg", "target_bg", "toggle_target"} {

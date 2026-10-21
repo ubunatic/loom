@@ -31,7 +31,7 @@ var demoEntries = map[string]demoEntry{
 var demos = map[string]constructor{
 	"HintBar": newHintBarDemo,
 	"ColorPicker": func() loom.Widget {
-		return loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
+		return loom.NewColorPicker(loom.ColorReset(), loom.ColorIndex(4))
 	},
 	"Chart": func() loom.Widget {
 		return &loom.Chart{Series: []loom.ChartSeries{

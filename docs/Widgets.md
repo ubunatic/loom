@@ -563,7 +563,9 @@ drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 ### Color Picker (`loom.ColorPicker`)
 
 `ColorPicker` exposes its current `FG`, `BG`, active `Target` mode and `Selected`
-swatch. `PreviewStyle()` returns both selected colors together. `OnChange` reports
+palette index. `ResetSelected` focuses the first, terminal-default/no-background
+cell while keeping `Selected` valid for `Palette`. `PreviewStyle()` returns both
+selected colors together. `OnChange` reports
 the channel and color after an assignment; `OnClose` runs for Enter, Esc or
 Ctrl+Space, with `DoneResult` so an embedded host keeps running. Palette, glyphs,
 preview visibility and key bindings come from `spec/defaults.yaml`.
@@ -577,7 +579,11 @@ picker.OnClose = func() { /* finish the picker session */ }
 frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
 ```
 
-The picker opens in foreground mode with one row of contiguous `Aa` samples.
+The picker opens in foreground mode with a first `∅ ` cell followed by 16
+contiguous `Aa` samples (34 columns total). The reset cell uses terminal default
+colors and previews the selected result channel with the other channel unchanged.
+Home focuses it; Left from the first palette sample also reaches it. The picker
+opens with this cell focused when the active channel has no explicit color.
 Each sample shows that foreground on the current background; in background mode
 the current foreground appears on each candidate background. `▔▔` below a
 sample marks the focus in both modes; the marker uses `color_picker.marker_fg`
