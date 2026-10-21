@@ -344,7 +344,7 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	}
 	edit.SetSelection(selectionFrom, selectionTo)
 	tabs.Draw(canvas, canvas.Bounds())
-	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "ctrl-space"}))
+	popoverFocusAction(t, edit, "B")
 	// Horizontal arrows move bar focus. The below-anchor toolbar consumes Up
 	// as dismissal without moving the document or Tabs focus.
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "right"}))
