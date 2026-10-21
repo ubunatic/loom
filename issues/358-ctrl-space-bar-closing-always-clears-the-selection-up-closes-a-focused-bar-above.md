@@ -1,6 +1,6 @@
 # 358 — Ctrl+Space bar: closing always clears the selection; Up closes a focused bar above
 
-**Status**: Open
+**Status**: Closed — Done in 3d75d0e, 0c249e4, 05c59f4, edf4c53: every bar close clears the selection (unselect_on_cancel default true; Select all keeps its selection); either vertical arrow closes a focused bar in both positions; submenus open only with Enter/Space; 14 old tests aligned; host q1 green; live tmux: bar below Down Down X and bar above Up Up X insert X without replacing text
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
