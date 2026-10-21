@@ -70,10 +70,21 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 	defs := SpeccedDefaults.RichTextEdit
 	barY := 0
 	pointer = defs.PointerUpGlyph
-	if anchorY >= 2 && (e.PopoverDefaults.PositionPreference != "below" || anchorY+2 >= r.H) {
-		barY, pointerY, pointer = anchorY-2, anchorY-1, defs.PointerDownGlyph
-	} else if anchorY+2 < r.H {
-		barY, pointerY = anchorY+2, anchorY+1
+	firstY, lastY := anchorY, anchorY
+	if e.HasSelection {
+		from, to := e.selectionBounds()
+		firstY, lastY = from.Line-e.ScrollY, to.Line-e.ScrollY
+		if to.Offset == 0 && lastY > firstY {
+			lastY--
+		}
+	}
+	preferAbove := e.PopoverDefaults.PositionPreference != "below" || lastY+2 >= r.H
+	if preferAbove && firstY >= 2 {
+		barY, pointerY, pointer = firstY-2, firstY-1, defs.PointerDownGlyph
+	} else if lastY+2 < r.H {
+		barY, pointerY = lastY+2, lastY+1
+	} else if firstY >= 2 {
+		barY, pointerY, pointer = firstY-2, firstY-1, defs.PointerDownGlyph
 	} else {
 		return
 	}
@@ -87,6 +98,7 @@ func (e *RichTextEdit) popoverGeometry(r Rect, lines []RichLine) (bar Rect, anch
 func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 	e.popoverButtons = nil
 	e.popoverBoxChoices = nil
+	e.popoverColorRect = Rect{}
 	if e.popoverSubmenu != "" && !e.popoverSubmenuCanShow() {
 		e.clearPopoverKeyboardState(true)
 	}
@@ -153,13 +165,14 @@ func (e *RichTextEdit) drawPopoverColorPicker(c *Canvas, r Rect, barX, barY int)
 	}
 	pickerSize := e.popoverColorPicker.Measure(r.W)
 	pickerW, pickerH := pickerSize.Width, pickerSize.Height
-	pickerY := min(max(0, barY+1), r.H-pickerH)
-	if pickerY < 0 || pickerY+pickerH > r.H || pickerW > r.W {
+	buttonX := min(max(0, button.X+button.W/2-pickerW/2), r.W-pickerW)
+	placement, ok := e.popoverSubmenuPlacement(r, buttonX, pickerW, pickerH, barY)
+	if !ok {
+		e.clearPopoverKeyboardState(true)
 		return
 	}
-	pickerX := min(max(0, button.X+button.W/2-pickerW/2), r.W-pickerW)
-	e.popoverColorRect = Rect{X: pickerX, Y: pickerY, W: pickerW, H: pickerH}
-	e.popoverColorPicker.Draw(c, Rect{X: r.X + pickerX, Y: r.Y + pickerY, W: pickerW, H: pickerH})
+	e.popoverColorRect = placement
+	e.popoverColorPicker.Draw(c, Rect{X: r.X + placement.X, Y: r.Y + placement.Y, W: placement.W, H: placement.H})
 }
 
 func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
@@ -182,14 +195,12 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 	for _, label := range labels {
 		width += len(label) + 2
 	}
-	y := barY + 1
-	if y >= r.H {
-		y = barY - 1
-	}
-	if y < 0 || y >= r.H || width > r.W {
+	placement, ok := e.popoverSubmenuPlacement(r, button.X+button.W/2-width/2, width, 1, barY)
+	if !ok {
+		e.clearPopoverKeyboardState(true)
 		return
 	}
-	x := min(max(0, button.X+button.W/2-width/2), r.W-width)
+	x, y := placement.X, placement.Y
 	style := Style{FG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarFG)), BG: ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG)), Bold: true}
 	for col := 0; col < width; col++ {
 		c.Set(r.X+x+col, r.Y+y, Cell{Text: " ", Style: style})
@@ -215,6 +226,71 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 			col++
 		}
 	}
+}
+
+func (e *RichTextEdit) popoverSubmenuPlacement(r Rect, x, width, height, barY int) (Rect, bool) {
+	if width <= 0 || height <= 0 || width > r.W || height > r.H {
+		return Rect{}, false
+	}
+	x = min(max(0, x), r.W-width)
+	first, last := 0, 0
+	if e.HasSelection {
+		from, to := e.selectionBounds()
+		first, last = from.Line-e.ScrollY, to.Line-e.ScrollY
+	} else {
+		line, _ := e.cursorCoordinates(e.documentLines())
+		first, last = line-e.ScrollY, line-e.ScrollY
+	}
+	preferredAbove := barY < first
+	aboveY := min(barY-height, first-height)
+	belowY := max(barY+1, last+1)
+	clamp := func(y int) int { return min(max(0, y), r.H-height) }
+	candidates := []int{}
+	if preferredAbove {
+		candidates = append(candidates, aboveY, clamp(aboveY), belowY, clamp(belowY))
+	} else {
+		candidates = append(candidates, belowY, clamp(belowY), aboveY, clamp(aboveY))
+	}
+	for _, y := range candidates {
+		if y < 0 || y+height > r.H {
+			continue
+		}
+		if y <= barY && barY < y+height {
+			continue
+		}
+		candidate := Rect{X: x, Y: y, W: width, H: height}
+		if !e.popoverRectCoversSelection(candidate) {
+			return candidate, true
+		}
+	}
+	return Rect{}, false
+}
+
+func (e *RichTextEdit) popoverRectCoversSelection(rect Rect) bool {
+	if !e.HasSelection {
+		return false
+	}
+	lines := e.documentLines()
+	from, to := e.selectionBounds()
+	for lineIndex := from.Line; lineIndex <= to.Line && lineIndex < len(lines); lineIndex++ {
+		y := lineIndex - e.ScrollY
+		if y < rect.Y || y >= rect.Y+rect.H {
+			continue
+		}
+		start, end := e.selectionLineBounds(lineIndex)
+		offset, col := 0, 0
+		for _, span := range lines[lineIndex].Spans {
+			for _, cluster := range measure.Clusters(span.Text) {
+				runeCount, cellWidth := len([]rune(cluster)), measure.StringWidth(cluster)
+				if offset < end && offset+runeCount > start && cellWidth > 0 && col-e.ScrollX < rect.X+rect.W && col+cellWidth-e.ScrollX > rect.X {
+					return true
+				}
+				offset += runeCount
+				col += cellWidth
+			}
+		}
+	}
+	return false
 }
 
 func (e *RichTextEdit) popoverHit(x, y int) bool {

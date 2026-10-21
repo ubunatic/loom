@@ -49,6 +49,43 @@ func assertMenuHandled(t *testing.T, got EventResult) {
 	}
 }
 
+func TestRichTextEditPopoverSubmenusDoNotCoverSelection(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		from, to int
+	}{
+		{name: "toolbar above selection", from: 5, to: 5},
+		{name: "toolbar below selection", from: 0, to: 0},
+		{name: "multiline toolbar below selection", from: 0, to: 1},
+	} {
+		for _, submenu := range []string{"ColorPicker", "Box"} {
+			t.Run(tc.name+"/"+submenu, func(t *testing.T) {
+				lines := make([]RichLine, 7)
+				for i := range lines {
+					lines[i] = RichLine{Spans: []RichSpan{{Text: "row"}}}
+				}
+				for line := tc.from; line <= tc.to; line++ {
+					lines[line] = RichLine{Spans: []RichSpan{{Text: "selected"}}}
+				}
+				edit := NewRichTextEdit(&RichDocument{Lines: lines})
+				edit.SetSelection(RichPosition{Line: tc.from}, RichPosition{Line: tc.to, Offset: 8})
+				canvas := NewCanvas(60, 8)
+				edit.Draw(canvas, canvas.Bounds())
+				popoverFocusAction(t, edit, submenu)
+				assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
+				edit.Draw(canvas, canvas.Bounds())
+				for line := tc.from; line <= tc.to; line++ {
+					for x, ch := range "selected" {
+						if got := canvas.Get(x, line).Text; got != string(ch) {
+							t.Fatalf("selected cell (%d,%d) = %q, want %q", x, line, got, string(ch))
+						}
+					}
+				}
+			})
+		}
+	}
+}
+
 func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	edit, canvas := newSubmenuTestEditor()
 	popoverFocusAction(t, edit, "ColorPicker")
