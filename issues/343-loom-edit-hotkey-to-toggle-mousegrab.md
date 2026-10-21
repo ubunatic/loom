@@ -1,6 +1,6 @@
 # 343 — loom edit: hotkey to toggle mousegrab
 
-**Status**: Open
+**Status**: Closed — Done in aaea9ee: specced Ctrl+G toggles mousegrab (also while grab is off and in help/dialogs), in F1 help and hotkey bar; tests incl. PTY; q1 green; live tmux check M->m->M with terminal mouse reporting off/on
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
