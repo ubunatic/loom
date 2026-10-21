@@ -178,6 +178,36 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		e.moveVertical(-1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_up"]...))
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["move_down"]...):
 		e.moveVertical(1, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_down"]...))
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_all"]...):
+		e.selectAll()
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["document_start"]...):
+		e.moveCursor(RichPosition{}, false)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["document_end"]...):
+		lines := e.documentLines()
+		last := len(lines) - 1
+		e.moveCursor(RichPosition{Line: last, Offset: richLineRuneCount(lines[last])}, false)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_document_start"]...):
+		e.moveCursor(RichPosition{}, true)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_document_end"]...):
+		lines := e.documentLines()
+		last := len(lines) - 1
+		e.moveCursor(RichPosition{Line: last, Offset: richLineRuneCount(lines[last])}, true)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_word_left"]...):
+		if !e.cursorInVoid {
+			e.moveCursor(e.wordPosition(-1), true)
+		}
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_word_right"]...):
+		if !e.cursorInVoid {
+			e.moveCursor(e.wordPosition(1), true)
+		}
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["page_up"]...):
+		e.movePage(-1, false)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["page_down"]...):
+		e.movePage(1, false)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_page_up"]...):
+		e.movePage(-1, true)
+	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_page_down"]...):
+		e.movePage(1, true)
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["line_start"]...):
 		e.moveCursor(RichPosition{Line: e.Cursor.Line}, key.Is(SpeccedDefaults.RichTextEdit.Bindings["select_start"]...))
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["line_end"]...):

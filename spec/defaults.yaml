@@ -8,6 +8,7 @@ keycaps:
     - {name: shift, glyph: "⇧"}
     - {name: ctrl, glyph: "⌃"}
     - {name: alt, glyph: "⌥"}
+    - {name: super, glyph: "⌘"}
 
 # Keys that close the app unless the widget consumes them or the pane opts out.
 quit_keys:
@@ -268,10 +269,19 @@ rich_text_edit:
     select_down: ["shift-down"]
     line_start: ["home", "shift-home", "ctrl-a", "ctrl-shift-a"]
     line_end: ["end", "shift-end", "ctrl-e", "ctrl-shift-e"]
+    document_start: ["ctrl-home"]
+    document_end: ["ctrl-end"]
     select_start: ["shift-home", "ctrl-shift-a"]
     select_end: ["shift-end", "ctrl-shift-e"]
+    select_document_start: ["ctrl-shift-home"]
+    select_document_end: ["ctrl-shift-end"]
     word_left: ["ctrl-left"]
     word_right: ["ctrl-right"]
+    select_word_left: ["ctrl-shift-left"]
+    select_word_right: ["ctrl-shift-right"]
+    select_all: ["ctrl-alt-a", "alt-a", "super-a"]
+    select_page_up: ["shift-pgup", "shift-pageup"]
+    select_page_down: ["shift-pgdown", "shift-pgdn", "shift-pagedown"]
     delete_before: ["backspace"]
     delete_after: ["delete"]
     arrows: ["left", "right", "up", "down"]
@@ -287,7 +297,7 @@ rich_text_edit:
     page_down: ["pgdn", "pgdown", "pagedown"]
     home: ["home"]
     end: ["end"]
-    view_navigation: ["ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up", "down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-a", "ctrl-shift-a", "ctrl-e", "ctrl-shift-e", "ctrl-left", "ctrl-right"]
+    view_navigation: ["ctrl-c", "ctrl-insert", "left", "shift-left", "right", "shift-right", "up", "shift-up", "down", "shift-down", "home", "shift-home", "end", "shift-end", "ctrl-a", "ctrl-shift-a", "ctrl-e", "ctrl-shift-e", "ctrl-left", "ctrl-right", "ctrl-shift-left", "ctrl-shift-right", "ctrl-home", "ctrl-end", "ctrl-shift-home", "ctrl-shift-end", "pgup", "pageup", "pgdown", "pgdn", "pagedown", "shift-pgup", "shift-pageup", "shift-pgdown", "shift-pgdn", "shift-pagedown", "ctrl-alt-a", "alt-a", "super-a"]
   undo_limit: 100
   multi_click_window: "400ms"
   show_cursor: true
@@ -371,11 +381,17 @@ rich_text_edit:
         - {keys: ["ctrl-left", "ctrl-right"], label: "Move by word"}
         - {keys: ["home", "ctrl-a"], label: "Line start"}
         - {keys: ["end", "ctrl-e"], label: "Line end"}
+        - {keys: ["ctrl-home", "ctrl-end"], label: "Document start/end"}
+        - {keys: ["pgup", "pgdown"], label: "Move by page"}
     - title: "Selection"
       entries:
         - {cap: "⇧←↑↓→", label: "Extend selection"}
+        - {keys: ["ctrl-shift-left", "ctrl-shift-right"], label: "Extend by word"}
         - {keys: ["shift-home", "shift-end"], label: "Select to line start/end"}
         - {keys: ["ctrl-shift-a", "ctrl-shift-e"], label: "Extend to line start/end"}
+        - {keys: ["ctrl-shift-home", "ctrl-shift-end"], label: "Extend to document start/end"}
+        - {keys: ["shift-pgup", "shift-pgdown"], label: "Extend by page"}
+        - {keys: ["ctrl-alt-a", "alt-a", "super-a"], label: "Select all"}
         - {cap: "Drag", label: "Select with the mouse; double-click word, triple-click line"}
     - title: "Editing"
       entries:

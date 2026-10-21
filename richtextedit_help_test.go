@@ -21,7 +21,7 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 	if !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down focuses toolbar") {
 		t.Error("F1 help omits bidirectional formatting popover focus")
 	}
-	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
+	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧⌃Left", "⇧⌃Right", "⌃Home", "⌃End", "⇧⌃Home", "⇧⌃End", "⇧PgUp", "⇧PgDn", "⌥A", "⌃⌥A", "⌘A", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
 		if !strings.Contains(content, binding) {
 			t.Errorf("help omits binding %q", binding)
 		}

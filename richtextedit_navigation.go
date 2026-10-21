@@ -230,6 +230,30 @@ func (e *RichTextEdit) moveVertical(direction int, extend bool) {
 	e.moveCursor(RichPosition{Line: targetLine, Offset: best}, extend)
 }
 
+func (e *RichTextEdit) movePage(direction int, extend bool) {
+	lines := e.documentLines()
+	step := max(1, e.lastRect.H)
+	targetLine := min(max(0, e.Cursor.Line+direction*step), len(lines)-1)
+	column := richLineColumn(lines[e.Cursor.Line], e.Cursor.Offset)
+	best, distance := 0, int(^uint(0)>>1)
+	for _, stop := range richLineStops(lines[targetLine]) {
+		d := richTextAbs(richLineColumn(lines[targetLine], stop) - column)
+		if d < distance {
+			best, distance = stop, d
+		}
+	}
+	e.moveCursor(RichPosition{Line: targetLine, Offset: best}, extend)
+}
+
+func (e *RichTextEdit) selectAll() {
+	e.cursorInVoid = false
+	lines := e.documentLines()
+	start := RichPosition{}
+	end := RichPosition{Line: len(lines) - 1, Offset: richLineRuneCount(lines[len(lines)-1])}
+	e.selectRange(start, end)
+	e.selectionExtending = true
+}
+
 func (e *RichTextEdit) wordPosition(direction int) RichPosition {
 	lines := e.documentLines()
 	line := lines[e.Cursor.Line]
