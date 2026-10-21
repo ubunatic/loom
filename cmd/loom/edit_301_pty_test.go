@@ -9,6 +9,7 @@ import (
 
 	"ubunatic.com/loom"
 	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/measure"
 )
 
 func clickEditPTY(t *testing.T, s *ptytest.Session, row int, label string) {
@@ -29,8 +30,10 @@ func clickEditPTY(t *testing.T, s *ptytest.Session, row int, label string) {
 	}
 	cells := []rune(screen[row])
 	needle := []rune(label)
-	for x := 0; x+len(needle) <= len(cells); x++ {
-		if string(cells[x:x+len(needle)]) == label {
+	for runeColumn := 0; runeColumn+len(needle) <= len(cells); runeColumn++ {
+		if string(cells[runeColumn:runeColumn+len(needle)]) == label {
+			// Mouse positions are terminal cells; account for earlier wide glyphs.
+			x := measure.StringWidth(string(cells[:runeColumn]))
 			s.Send(fmt.Sprintf("\x1b[<0;%d;%dM\x1b[<0;%d;%dm", x+1, row+1, x+1, row+1))
 			return
 		}
@@ -127,7 +130,8 @@ func TestEditPTYDrawKeyAndBoxSubmenu(t *testing.T) {
 			if strings.Contains(text, "Draw") {
 				t.Fatal("Draw is top-level")
 			}
-			clickEditPTY(t, s, row, "Box")
+			// The toolbar label changed to Frame; the underlying action remains Box.
+			clickEditPTY(t, s, row, "Frame")
 			break
 		}
 	}

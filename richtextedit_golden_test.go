@@ -68,7 +68,7 @@ func TestRichTextEditPopoverControlsMatchV2Mockup(t *testing.T) {
 	}
 	var rendered strings.Builder
 	first, last := edit.popoverButtons[0].rect, edit.popoverButtons[len(edit.popoverButtons)-1].rect
-	for x := first.X - 1; x <= last.X+last.W; x++ {
+	for x := first.X; x < last.X+last.W; x++ {
 		cell := canvas.Get(x, first.Y)
 		if cell.Text == "" {
 			rendered.WriteByte(' ')

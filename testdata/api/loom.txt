@@ -3671,6 +3671,8 @@ type RichTextEditDefaults struct {
 	PointerFG               int           `yaml:"pointer_fg"`
 	BoxDrawLabel            string        `yaml:"box_draw_label"`
 	PopoverLabels           []string      `yaml:"popover_labels"`
+	PopoverHotkeys          []string      `yaml:"popover_hotkeys"`
+	PopoverHotkeyIndices    []int         `yaml:"popover_hotkey_indices"`
 	PopoverHamburgerLabel   string        `yaml:"popover_hamburger_label"`
 	PopoverHamburgerItems   []string      `yaml:"popover_hamburger_items"`
 	PopoverHamburgerActions []string      `yaml:"popover_hamburger_actions"`

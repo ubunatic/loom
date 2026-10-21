@@ -136,7 +136,6 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 		e.clearPopoverKeyboardState(false)
 		e.popoverSuppressed = false
 		e.popoverAtCursor = false
-		e.popoverExplicit = true
 		if e.HasSelection {
 			e.ShowPopover = true
 		} else if !e.cursorInVoid && e.selectBoxAtCursor() {
@@ -148,6 +147,7 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 			e.popoverAtCursor = true
 			e.ShowPopover = true
 		}
+		e.popoverExplicit = true
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["copy"]...):
 		if e.cursorInVoid {
 			return Ignored()

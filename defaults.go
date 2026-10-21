@@ -257,6 +257,8 @@ type RichTextEditDefaults struct {
 	PointerFG               int           `yaml:"pointer_fg"`
 	BoxDrawLabel            string        `yaml:"box_draw_label"`
 	PopoverLabels           []string      `yaml:"popover_labels"`
+	PopoverHotkeys          []string      `yaml:"popover_hotkeys"`
+	PopoverHotkeyIndices    []int         `yaml:"popover_hotkey_indices"`
 	PopoverHamburgerLabel   string        `yaml:"popover_hamburger_label"`
 	PopoverHamburgerItems   []string      `yaml:"popover_hamburger_items"`
 	PopoverHamburgerActions []string      `yaml:"popover_hamburger_actions"`
@@ -370,6 +372,17 @@ func (d RichTextEditDefaults) validate() error {
 	}
 	if len(d.PopoverLabels) != 7 {
 		return fmt.Errorf("rich_text_edit.popover_labels must contain 7 labels")
+	}
+	if len(d.PopoverHotkeys) != len(d.PopoverLabels)+1 || len(d.PopoverHotkeyIndices) != len(d.PopoverHotkeys) {
+		return fmt.Errorf("rich_text_edit popover hotkeys and indices must match toolbar items")
+	}
+	for i, hotkey := range d.PopoverHotkeys {
+		if hotkey != "" && (len([]rune(hotkey)) != 1 || d.PopoverHotkeyIndices[i] < 0 || d.PopoverHotkeyIndices[i] >= len([]rune(append(append([]string(nil), d.PopoverLabels...), d.PopoverHamburgerLabel)[i]))) {
+			return fmt.Errorf("rich_text_edit.popover_hotkeys item %d has invalid key or rune index", i)
+		}
+		if hotkey == "" && d.PopoverHotkeyIndices[i] != -1 {
+			return fmt.Errorf("rich_text_edit.popover_hotkey_indices item %d must be -1 without a hotkey", i)
+		}
 	}
 	if d.PopoverHamburgerLabel == "" || len(d.PopoverHamburgerItems) == 0 || len(d.PopoverHamburgerItems) != len(d.PopoverHamburgerActions) {
 		return fmt.Errorf("rich_text_edit hamburger label and items must not be empty")

@@ -1,6 +1,7 @@
 package loom
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -59,10 +60,10 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.MenuFocusKey != "" || got.PopupOpenKey != "ctrl-space" {
 		t.Fatalf("popover key defaults = %q/%q", got.MenuFocusKey, got.PopupOpenKey)
 	}
-	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "│" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 || got.PopoverFocusBG != 24 {
+	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "▏" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 || got.PopoverFocusBG != 24 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
-	want := []string{"B", "I", "U", "S", "Link", "🎨", "Box"}
+	want := []string{"B", "I", "U", "S", "🎨", "Frame", "Link"}
 	if len(got.PopoverLabels) != len(want) {
 		t.Fatalf("popover labels = %q, want %q", got.PopoverLabels, want)
 	}
@@ -70,6 +71,12 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 		if got.PopoverLabels[i] != want[i] {
 			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
 		}
+	}
+	if want := []string{"b", "i", "u", "s", "", "f", "l", ""}; !reflect.DeepEqual(got.PopoverHotkeys, want) {
+		t.Fatalf("popover hotkeys = %q, want %q", got.PopoverHotkeys, want)
+	}
+	if want := []int{0, 0, 0, 0, -1, 0, 0, -1}; !reflect.DeepEqual(got.PopoverHotkeyIndices, want) {
+		t.Fatalf("popover hotkey indices = %v, want %v", got.PopoverHotkeyIndices, want)
 	}
 	if got.PopoverHamburgerLabel != "≡" || len(got.PopoverHamburgerItems) != 1 || got.PopoverHamburgerItems[0] != "Select all" || len(got.PopoverHamburgerActions) != 1 || got.PopoverHamburgerActions[0] != "select_all" {
 		t.Fatalf("hamburger defaults = %q/%q/%q", got.PopoverHamburgerLabel, got.PopoverHamburgerItems, got.PopoverHamburgerActions)

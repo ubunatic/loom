@@ -3,6 +3,8 @@
 
 package loom
 
+import "strings"
+
 func (e *RichTextEdit) clearPopoverKeyboardState(suppress bool) {
 	e.popoverFocusSet = false
 	e.popoverSubmenuFocusSet = false
@@ -53,6 +55,15 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 	}
 	submenuOpen := e.popoverSubmenu != ""
 	popoverArrow := key.Is(SpeccedDefaults.RichTextEdit.Bindings["arrows"]...)
+	if !submenuOpen && (e.popoverExplicit || e.popoverFocusSet) {
+		if index := e.popoverHotkeyIndex(key); index >= 0 {
+			if !e.popoverActionEnabled(index) {
+				return Handled(), true
+			}
+			e.activatePopoverAction(index)
+			return Handled(), true
+		}
+	}
 	if !e.popoverFocusSet && !submenuOpen {
 		if key.Is(SpeccedDefaults.RichTextEdit.Bindings["menu_entry"]...) {
 			_, _, _, _, open := e.popoverGeometry(e.lastRect, e.documentLines())
@@ -131,33 +142,49 @@ func (e *RichTextEdit) consumePopoverKey(key KeyEvent) (EventResult, bool) {
 		}
 		return Handled(), true
 	case key.Is(SpeccedDefaults.RichTextEdit.Bindings["activate"]...):
-		if e.popoverFocus < 0 || e.popoverFocus >= len(richPopoverActions) || !e.popoverActionEnabled(e.popoverFocus) {
-			return Handled(), true
-		}
-		action := richPopoverActions[e.popoverFocus]
-		if action == "Link" {
-			return Handled(), true
-		}
-		e.applyPopoverAction(action)
-		if action == "Box" {
-			e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
-			e.popoverSubmenuFocusSet = true
-			if !e.popoverSubmenuCanShow() {
-				e.clearPopoverKeyboardState(true)
-			}
-			return Handled(), true
-		}
-		if action == "Hamburger" {
-			e.popoverSubmenuFocus = 0
-			e.popoverSubmenuFocusSet = true
-			if !e.popoverSubmenuCanShow() {
-				e.clearPopoverKeyboardState(true)
-			}
-			return Handled(), true
-		}
+		e.activatePopoverAction(e.popoverFocus)
 		return Handled(), true
 	default:
 		return Ignored(), false
+	}
+}
+
+func (e *RichTextEdit) popoverHotkeyIndex(key KeyEvent) int {
+	value := key.Text
+	if value == "" {
+		value = key.Key
+	}
+	if len([]rune(value)) != 1 {
+		return -1
+	}
+	for i, hotkey := range SpeccedDefaults.RichTextEdit.PopoverHotkeys {
+		if hotkey != "" && strings.EqualFold(value, hotkey) {
+			return i
+		}
+	}
+	return -1
+}
+
+func (e *RichTextEdit) activatePopoverAction(index int) {
+	if index < 0 || index >= len(richPopoverActions) || !e.popoverActionEnabled(index) {
+		return
+	}
+	action := richPopoverActions[index]
+	if action == "Link" {
+		return
+	}
+	e.applyPopoverAction(action)
+	if action == "Box" {
+		e.popoverSubmenuFocus = e.initialPopoverSubmenuFocus()
+		e.popoverSubmenuFocusSet = true
+	} else if action == "Hamburger" {
+		e.popoverSubmenuFocus = 0
+		e.popoverSubmenuFocusSet = true
+	}
+	if action == "Box" || action == "Hamburger" {
+		if !e.popoverSubmenuCanShow() {
+			e.clearPopoverKeyboardState(true)
+		}
 	}
 }
 

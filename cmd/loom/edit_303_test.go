@@ -42,7 +42,8 @@ func Test303EditPTYTemporaryMouseGrab(t *testing.T) {
 	from := len(s.Raw())
 	s.Send("word\x1b[D\x00") // Select the word from inside it with Ctrl-Space.
 	waitMouseMode303(t, s, from, "\x1b[?1000h\x1b[?1006h")
-	s.WaitForUpdate("[ B", 3*time.Second)
+	// The new toolbar has no outer bracket and uses spaces plus the ▏ separator.
+	s.WaitForUpdate(" B ▏I", 3*time.Second)
 	clickEditPTY(t, s, 3, " B")
 	waitEditPTY(t, s, func() bool { return s.Cell(1, 1).Style.Bold })
 	s.WaitForUpdate("Untitled · Modified", 3*time.Second)
