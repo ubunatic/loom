@@ -19,7 +19,7 @@ func TestRichTextEditPopoverLabelsAndHotkeys(t *testing.T) {
 	for x := bar.X; x < edit.popoverButtons[len(edit.popoverButtons)-1].rect.X+edit.popoverButtons[len(edit.popoverButtons)-1].rect.W; x++ {
 		got.WriteString(canvas.Get(x, bar.Y).Text)
 	}
-	want := " B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏≡ "
+	want := " B ▏ I ▏ U ▏ S ▏ 🎨 ▏ Frame ▏ Link ▏ ≡ "
 	if got.String() != want {
 		t.Fatalf("toolbar = %q, want %q", got.String(), want)
 	}
@@ -27,7 +27,7 @@ func TestRichTextEditPopoverLabelsAndHotkeys(t *testing.T) {
 		label  string
 		button int
 		column int
-	}{{"Frame", 5, 0}, {"Link", 6, 0}} {
+	}{{"Frame", 5, 1}, {"Link", 6, 1}} {
 		cell := canvas.Get(edit.popoverButtons[tc.button].rect.X+tc.column, bar.Y)
 		if !cell.Style.Bold {
 			t.Errorf("hotkey rune for %s is not bold: %+v", tc.label, cell.Style)
@@ -38,6 +38,66 @@ func TestRichTextEditPopoverLabelsAndHotkeys(t *testing.T) {
 	}
 	if measure.StringWidth(SpeccedDefaults.RichTextEdit.SeparatorGlyph) != 1 {
 		t.Fatalf("separator width = %d, want one cell", measure.StringWidth(SpeccedDefaults.RichTextEdit.SeparatorGlyph))
+	}
+}
+
+func TestRichTextEditFocusedPopoverHighlightsWholeItemByDisplayColumn(t *testing.T) {
+	edit := NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}})
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 8})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+	canvas := NewCanvas(100, 5)
+	defs := SpeccedDefaults.RichTextEdit
+	focusBG := ColorIndex(uint8(defs.PopoverFocusBG))
+	separatorBG := ColorIndex(uint8(defs.SeparatorBG))
+
+	for focused := range richPopoverActions {
+		edit.popoverFocus, edit.popoverFocusSet = focused, true
+		edit.Draw(canvas, canvas.Bounds())
+		for i, button := range edit.popoverButtons {
+			column := button.rect.X
+			for column < button.rect.X+button.rect.W {
+				cell := canvas.Get(column, button.rect.Y)
+				wantFocused := i == focused
+				if (cell.Style.BG == focusBG) != wantFocused {
+					t.Errorf("focus %q column %d cell %+v, focused=%v", button.action, column-button.rect.X, cell, wantFocused)
+				}
+				column++
+			}
+			if i < len(edit.popoverButtons)-1 {
+				separatorX := button.rect.X + button.rect.W
+				cell := canvas.Get(separatorX, button.rect.Y)
+				if cell.Text != defs.SeparatorGlyph || cell.Style.BG != separatorBG || cell.Style.BG == focusBG {
+					t.Errorf("focus %q separator after %s = %+v", button.action, button.action, cell)
+				}
+			}
+		}
+	}
+
+	first, last := edit.popoverButtons[0].rect, edit.popoverButtons[len(edit.popoverButtons)-1].rect
+	if canvas.Get(first.X, first.Y).Text != " " {
+		t.Fatalf("first item leading edge pad = %+v", canvas.Get(first.X, first.Y))
+	}
+	if canvas.Get(last.X+last.W-1, last.Y).Text != " " {
+		t.Fatalf("last item trailing edge pad = %+v", canvas.Get(last.X+last.W-1, last.Y))
+	}
+	color := edit.popoverButtons[popoverActionIndex("ColorPicker")].rect
+	if color.W != measure.StringWidth("🎨")+2 {
+		t.Fatalf("color item width = %d, want display width %d plus two pads", color.W, measure.StringWidth("🎨")+2)
+	}
+}
+
+func TestRichTextEditPopoverLeadingPadMouseHitActivatesItem(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "selected"}}}}}
+	edit := NewRichTextEdit(doc)
+	edit.SetSelection(RichPosition{}, RichPosition{Offset: 8})
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
+	edit.Draw(NewCanvas(100, 5), Rect{W: 100, H: 5})
+	button := edit.popoverButtons[popoverActionIndex("S")]
+	if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y}); !result.Consumed {
+		t.Fatal("leading pad click was not consumed")
+	}
+	if !doc.Lines[0].Spans[0].Style.Strike {
+		t.Fatal("leading pad click did not activate the S item")
 	}
 }
 
