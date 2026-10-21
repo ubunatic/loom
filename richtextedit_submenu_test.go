@@ -13,7 +13,7 @@ func (*nestedRichTextEditWrapper) ConsumeMouse(MouseEvent) EventResult { return 
 func newSubmenuTestEditor() (*RichTextEdit, *Canvas) {
 	edit := richTestEditor(RichSpan{Text: "abc"})
 	edit.SetSelection(RichPosition{Offset: 0}, RichPosition{Offset: 3})
-	canvas := NewCanvas(60, 8)
+	canvas := NewCanvas(60, 14)
 	edit.Draw(canvas, canvas.Bounds())
 	return edit, canvas
 }
@@ -173,24 +173,30 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 		t.Fatal("Space did not open embedded ColorPicker")
 	}
 	before := edit.Document.Lines[0].Spans[0].Style
-	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "down"}))
 	if picker.Target != ColorPickerBG || edit.Document.Lines[0].Spans[0].Style != before {
-		t.Fatalf("Tab changed mode/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
+		t.Fatalf("Down changed row/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "right"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
-	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[1] {
-		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[1])
+	if edit.popoverColorPicker == nil {
+		t.Fatal("Space applied the FG pick but closed the color picker")
+	}
+	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[5] {
+		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[5])
 	}
 	edit.Draw(canvas, canvas.Bounds())
+	if edit.popoverColorPicker == nil {
+		t.Fatal("drawing the six-row picker removed its popup")
+	}
 	before = edit.Document.Lines[0].Spans[0].Style
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "up"}))
 	if picker.Target != ColorPickerFG || edit.Document.Lines[0].Spans[0].Style != before {
-		t.Fatalf("Up changed mode/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
+		t.Fatalf("Up changed row/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
-	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[1] {
-		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[1])
+	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[7] {
+		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[7])
 	}
 	for _, key := range []KeyEvent{{Text: "f"}, {Text: "x"}, {Key: "shift-space"}} {
 		if got := edit.ConsumeKey(key); got.Consumed {
@@ -214,15 +220,15 @@ func TestRichTextEditColorPickerResetCellAppliesBothChannels(t *testing.T) {
 	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorIndex(4) {
 		t.Fatalf("keyboard FG reset style = %+v", got)
 	}
-	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "down"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "home"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorReset() {
 		t.Fatalf("keyboard BG reset style = %+v", got)
 	}
-	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "tab"}))
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "down"}))
 	edit.Draw(canvas, canvas.Bounds())
-	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: edit.popoverColorRect.X, Y: edit.popoverColorRect.Y})
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: edit.popoverColorRect.X + SpeccedDefaults.ColorPicker.LeadingPadding, Y: edit.popoverColorRect.Y + 2})
 	if got := edit.Document.Lines[0].Spans[0].Style; got.FG != ColorReset() || got.BG != ColorReset() {
 		t.Fatalf("mouse BG reset style = %+v", got)
 	}
@@ -295,9 +301,8 @@ func TestRichTextEditSubmenuKeysStayConsumedByFrameAndSplit(t *testing.T) {
 	popoverFocusAction(t, splitEdit, "ColorPicker")
 	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "space"}))
 	focus = split.focus
-	assertMenuHandled(t, split.ConsumeKey(KeyEvent{Key: "tab"}))
-	if split.focus != focus || splitEdit.popoverColorPicker.Target != ColorPickerBG {
-		t.Fatalf("active picker Tab escaped to Split: focus=%d target=%v", split.focus, splitEdit.popoverColorPicker.Target)
+	if got := split.ConsumeKey(KeyEvent{Key: "tab"}); !got.Consumed || split.focus == focus {
+		t.Fatalf("active picker Tab did not traverse Split: result=%+v focus=%d", got, split.focus)
 	}
 }
 
@@ -308,6 +313,7 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	wrapper := &nestedRichTextEditWrapper{edit: edit}
 	other := richEditorLines("other")
 	tabs := NewTabs(Tab{Title: "RichTextEdit", Widget: wrapper}, Tab{Title: "Other", Widget: other})
+	tabs.SwitchKey = "tab"
 	canvas := NewCanvas(80, 10)
 	tabs.Draw(canvas, canvas.Bounds())
 
@@ -324,20 +330,17 @@ func TestRichTextEditPopoverSpaceAndArrowsStayInsideNestedGalleryWrapper(t *test
 	if edit.popoverColorPicker == nil {
 		t.Fatal("Space did not open embedded ColorPicker")
 	}
-	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "tab"}))
-	if edit.popoverColorPicker.Target != ColorPickerBG || tabs.Focus() != focus {
-		t.Fatalf("active picker Tab escaped to Tabs: target=%v focus=%d", edit.popoverColorPicker.Target, tabs.Focus())
+	if got := tabs.ConsumeKey(KeyEvent{Key: "tab"}); !got.Consumed || tabs.Focus() == focus {
+		t.Fatalf("active picker Tab did not traverse Tabs: result=%+v focus=%d", got, tabs.Focus())
 	}
-	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "tab"}))
-	if edit.popoverColorPicker.Target != ColorPickerFG || tabs.Focus() != focus {
-		t.Fatalf("second picker Tab escaped to Tabs or failed to toggle back: target=%v focus=%d", edit.popoverColorPicker.Target, tabs.Focus())
-	}
+	focusAfterTab := tabs.Focus()
 	for _, key := range []string{"left", "right"} {
 		assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: key}))
 	}
-	if tabs.Focus() != focus || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
+	if tabs.Focus() != focusAfterTab || edit.Cursor != cursor || edit.SelectionFrom != selectionFrom || edit.SelectionTo != selectionTo || edit.HasSelection != selection {
 		t.Fatalf("submenu arrows escaped wrapper: tabFocus=%d cursor=%+v selection=%+v..%+v active=%v", tabs.Focus(), edit.Cursor, edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
+	tabs.Select(focus)
 	assertMenuHandled(t, tabs.ConsumeKey(KeyEvent{Key: "esc"}))
 	if edit.popoverColorPicker != nil || edit.popoverFocusSet || edit.HasSelection {
 		t.Fatal("Escape did not close ColorPicker and clear the formatting session")

@@ -18,8 +18,9 @@ func TestRichTextEditF1HelpListsBindingsAndKeepsFormattingSeparate(t *testing.T)
 		t.Fatalf("help popup inner = %T, want scrollable View", edit.helpPopup.Inner)
 	}
 	content := strings.Join(view.plainLines(72), "\n")
-	if !strings.Contains(strings.Join(strings.Fields(content), " "), "opens focused at B") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Up/Down enters auto-shown bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "either arrow closes a focused bar") || !strings.Contains(strings.Join(strings.Fields(content), " "), "closing clears selection") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Select all keeps its selection") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Enter applies the highlighted color") || !strings.Contains(strings.Join(strings.Fields(content), " "), "Space applies without closing") {
-		t.Error("F1 help omits popover focus/close behavior, ColorPicker Enter/Space behavior, or Select all exception")
+	joined := strings.Join(strings.Fields(content), " ")
+	if !strings.Contains(joined, "opens focused at B") || !strings.Contains(joined, "Up/Down enters auto-shown bar") || !strings.Contains(joined, "either arrow closes a focused bar") || !strings.Contains(joined, "closing clears selection") || !strings.Contains(joined, "Select all keeps its selection") || !strings.Contains(joined, "Enter applies both rows and closes") || !strings.Contains(joined, "Space applies row and stays open") || !strings.Contains(joined, "Ctrl+Space closes picker and bar") || !strings.Contains(joined, "Tab moves focus") {
+		t.Errorf("F1 help omits popover focus/close behavior, ColorPicker Enter/Space behavior, or Select all exception: %s", joined)
 	}
 	for _, binding := range []string{"⌥F", "⌃S", "⌃B", "⌃I", "⌃U", "⌃Space", "⌃C", "⌃Insert", "⌃X", "⇧Delete", "⌃V", "⇧Insert", "⌃Z", "⌃Y", "⌃R", "⇧⌃Z", "⌃Left", "⌃Right", "⇧⌃Left", "⇧⌃Right", "⌃Home", "⌃End", "⇧⌃Home", "⇧⌃End", "⇧PgUp", "⇧PgDn", "⌥A", "⌃⌥A", "⌘A", "⇧Home", "⇧End", "⌃D", "F7", "F1", "Tab", "⇧Tab", "Esc"} {
 		if !strings.Contains(content, binding) {

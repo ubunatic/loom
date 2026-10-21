@@ -177,21 +177,23 @@ color_picker:
   palette: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
   initial_target: "fg"
   swatch_width: 2
+  leading_padding: 1
+  preview_padding: 1
+  preview_width: 9
   marker_fg: 51
   show_preview: true
   labels:
     preview: "Preview"
   glyphs:
     swatch: "Aa"
-    mode_marker: "▔▔"
     reset: "∅ "
-  preview_text: "AaBb"
+    edge_lower: "▂"
+    edge_upper: "🮂"
   bindings:
     apply: ["enter"]
     select: ["space", " "]
-    mode_bg: ["down"]
-    mode_fg: ["up"]
-    mode_toggle: ["tab", "b"]
+    row_bg: ["down"]
+    row_fg: ["up"]
     close: ["esc", "ctrl-space"]
     left: ["left"]
     right: ["right"]
@@ -410,7 +412,7 @@ rich_text_edit:
         - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
         - {keys: ["ctrl-z"], label: "Undo"}
         - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
-        - {keys: ["enter", "space", "left", "right", "down", "tab", "b", "up"], label: "Color picker: Enter applies the highlighted color and closes; Space applies without closing; Tab, b or right-click toggles FG/BG; Down/Up sets BG/FG; Esc closes"}
+        - {keys: ["enter", "space", "left", "right", "down", "up", "home", "esc", "ctrl-space"], label: "Color picker: Up/Down rows; Left/Right colors; Home resets; Space applies row and stays open; Enter applies both rows and closes; Esc closes; Ctrl+Space closes picker and bar; Tab moves focus"}
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}

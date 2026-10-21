@@ -857,7 +857,11 @@ func TestRichTextEditPopoverFGAndBGPalettesStyleSelectedSpans(t *testing.T) {
 		t.Fatal("FG palette erased existing attributes")
 	}
 
-	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "b"}))
+	if got := edit.ConsumeKey(KeyEvent{Key: "b"}); got.Consumed {
+		t.Fatalf("b should not toggle picker row: %+v", got)
+	}
+	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "down"}))
+	edit.popoverColorPicker.Selected = 10
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if got := styleAt(0).BG; got != ColorIndex(3) {
 		t.Fatalf("unselected prefix BG = %v, want 3", got)
@@ -876,7 +880,7 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	edit := richTestEditor(RichSpan{Text: "abc"})
 	edit.PopoverDefaults.ActionClosesMenu = false
 	edit.SetSelection(RichPosition{}, RichPosition{Offset: 2})
-	canvas := NewCanvas(60, 8)
+	canvas := NewCanvas(60, 14)
 	edit.Draw(canvas, canvas.Bounds())
 	clickPickerButton := func() {
 		t.Helper()
@@ -893,19 +897,23 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 		t.Fatal("toolbar click did not open ColorPicker")
 	}
 	edit.Draw(canvas, canvas.Bounds())
+	if edit.popoverColorPicker == nil {
+		t.Fatal("drawing the six-row picker removed its popup")
+	}
 	defs := SpeccedDefaults.ColorPicker
-	swatchX := edit.popoverColorRect.X + 4*defs.SwatchWidth
-	swatchY := edit.popoverColorRect.Y
+	swatchX := edit.popoverColorRect.X + defs.LeadingPadding + 4*defs.SwatchWidth
+	swatchY := edit.popoverColorRect.Y + 1
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != edit.popoverColorPicker.Palette[3] {
 		t.Fatalf("mouse FG = %v, want %v", got, edit.popoverColorPicker.Palette[3])
 	}
 	beforeBG := edit.Document.Lines[0].Spans[0].Style.BG
-	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseRight, X: swatchX + defs.SwatchWidth, Y: swatchY})
-	if edit.Document.Lines[0].Spans[0].Style.BG != beforeBG || edit.popoverColorPicker.Target != ColorPickerBG {
-		t.Fatal("right-click should switch to BG mode without picking")
+	bgX := edit.popoverColorRect.X + defs.LeadingPadding + 5*defs.SwatchWidth
+	bgY := edit.popoverColorRect.Y + 2
+	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: bgX, Y: bgY})
+	if edit.Document.Lines[0].Spans[0].Style.BG == beforeBG || edit.popoverColorPicker.Target != ColorPickerBG {
+		t.Fatal("BG row click should apply its color while keeping the picker open")
 	}
-	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX + defs.SwatchWidth, Y: swatchY})
 	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != edit.popoverColorPicker.Palette[4] {
 		t.Fatalf("mouse BG = %v, want %v", got, edit.popoverColorPicker.Palette[4])
 	}
@@ -917,8 +925,8 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	edit.Draw(canvas, canvas.Bounds())
 	clickPickerButton()
 	edit.Draw(canvas, canvas.Bounds())
-	swatchX = edit.popoverColorRect.X + 6*defs.SwatchWidth
-	swatchY = edit.popoverColorRect.Y
+	swatchX = edit.popoverColorRect.X + defs.LeadingPadding + 6*defs.SwatchWidth
+	swatchY = edit.popoverColorRect.Y + 1
 	edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: swatchX, Y: swatchY})
 	edit.ConsumeKey(KeyEvent{Key: "enter"})
 	edit.ConsumeKey(KeyEvent{Text: "z"})
@@ -1833,9 +1841,11 @@ func TestRichTextEditPopoverExtendedFlags(t *testing.T) {
 	}
 	e.popoverColorPicker = NewColorPicker(ColorIndex(7), ColorIndex(0))
 	e.popoverColorPicker.OnClose = func() { e.popoverColorPicker = nil }
+	e.popoverColorPicker.Selected = 0
+	e.popoverColorPicker.ResetSelected = false
 	e.ConsumeKey(KeyEvent{Key: "left"})
-	if e.popoverColorPicker.Selected != 0 {
-		t.Fatal("picker selection wrapped")
+	if !e.popoverColorPicker.ResetSelected || e.popoverColorPicker.Selected != 0 {
+		t.Fatal("picker Left from its first palette color did not select reset")
 	}
 	e.ConsumeKey(KeyEvent{Key: "esc"})
 	if e.popoverColorPicker != nil {

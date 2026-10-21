@@ -31,7 +31,6 @@ func (e *RichTextEdit) openPopoverColorPicker() {
 	picker := NewColorPicker(style.FG, style.BG)
 	picker.OnChange = func(target ColorPickerTarget, color Color) {
 		e.applyPopoverColor(target, color)
-		e.finishPopoverAction()
 	}
 	picker.OnClose = func() {
 		e.cancelPopover()

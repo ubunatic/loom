@@ -52,15 +52,17 @@ type LibDefaults struct {
 
 // ColorPickerDefaults defines the ColorPicker's palette, marker color, labels, glyphs and keys.
 type ColorPickerDefaults struct {
-	Palette       []int               `yaml:"palette"`
-	InitialTarget string              `yaml:"initial_target"`
-	SwatchWidth   int                 `yaml:"swatch_width"`
-	MarkerFG      int                 `yaml:"marker_fg"`
-	ShowPreview   bool                `yaml:"show_preview"`
-	Labels        ColorPickerLabels   `yaml:"labels"`
-	Glyphs        ColorPickerGlyphs   `yaml:"glyphs"`
-	PreviewText   string              `yaml:"preview_text"`
-	Bindings      map[string][]string `yaml:"bindings"`
+	Palette        []int               `yaml:"palette"`
+	InitialTarget  string              `yaml:"initial_target"`
+	SwatchWidth    int                 `yaml:"swatch_width"`
+	LeadingPadding int                 `yaml:"leading_padding"`
+	PreviewPadding int                 `yaml:"preview_padding"`
+	PreviewWidth   int                 `yaml:"preview_width"`
+	MarkerFG       int                 `yaml:"marker_fg"`
+	ShowPreview    bool                `yaml:"show_preview"`
+	Labels         ColorPickerLabels   `yaml:"labels"`
+	Glyphs         ColorPickerGlyphs   `yaml:"glyphs"`
+	Bindings       map[string][]string `yaml:"bindings"`
 }
 
 type ColorPickerLabels struct {
@@ -68,14 +70,15 @@ type ColorPickerLabels struct {
 }
 
 type ColorPickerGlyphs struct {
-	Swatch     string `yaml:"swatch"`
-	ModeMarker string `yaml:"mode_marker"`
-	Reset      string `yaml:"reset"`
+	Swatch    string `yaml:"swatch"`
+	Reset     string `yaml:"reset"`
+	EdgeLower string `yaml:"edge_lower"`
+	EdgeUpper string `yaml:"edge_upper"`
 }
 
 func (d ColorPickerDefaults) validate() error {
-	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.MarkerFG < 0 || d.MarkerFG > 255 {
-		return fmt.Errorf("color_picker palette, swatch_width and marker_fg must be valid")
+	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.LeadingPadding < 0 || d.PreviewPadding < 0 || d.PreviewWidth < 1 || d.MarkerFG < 0 || d.MarkerFG > 255 {
+		return fmt.Errorf("color_picker palette, widths, padding and marker_fg must be valid")
 	}
 	seen := make(map[int]bool, len(d.Palette))
 	for _, color := range d.Palette {
@@ -87,13 +90,16 @@ func (d ColorPickerDefaults) validate() error {
 	if d.InitialTarget != "fg" && d.InitialTarget != "bg" {
 		return fmt.Errorf("color_picker.initial_target must be fg or bg")
 	}
-	if d.ShowPreview && (d.Labels.Preview == "" || d.PreviewText == "") {
-		return fmt.Errorf("color_picker preview label and text must not be empty when preview is enabled")
+	if d.ShowPreview && d.Labels.Preview == "" {
+		return fmt.Errorf("color_picker preview label must not be empty when preview is enabled")
 	}
-	if d.Glyphs.Swatch == "" || d.Glyphs.ModeMarker == "" || d.Glyphs.Reset == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.ModeMarker) != d.SwatchWidth || measure.StringWidth(d.Glyphs.Reset) != d.SwatchWidth {
-		return fmt.Errorf("color_picker swatch and mode marker must match swatch_width display cells")
+	if d.ShowPreview && d.PreviewWidth < measure.StringWidth(d.Labels.Preview)+2*d.PreviewPadding {
+		return fmt.Errorf("color_picker preview_width must fit the label and its horizontal padding")
 	}
-	for _, name := range []string{"apply", "select", "mode_bg", "mode_fg", "mode_toggle", "close", "left", "right", "home"} {
+	if d.Glyphs.Swatch == "" || d.Glyphs.Reset == "" || d.Glyphs.EdgeLower == "" || d.Glyphs.EdgeUpper == "" || measure.StringWidth(d.Glyphs.Swatch) != d.SwatchWidth || measure.StringWidth(d.Glyphs.Reset) != d.SwatchWidth || measure.StringWidth(d.Glyphs.EdgeLower) != 1 || measure.StringWidth(d.Glyphs.EdgeUpper) != 1 {
+		return fmt.Errorf("color_picker swatches must match swatch_width and edge glyphs must be one display cell")
+	}
+	for _, name := range []string{"apply", "select", "row_bg", "row_fg", "close", "left", "right", "home"} {
 		if len(d.Bindings[name]) == 0 {
 			return fmt.Errorf("color_picker.bindings.%s must not be empty", name)
 		}

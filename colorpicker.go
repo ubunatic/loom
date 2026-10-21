@@ -17,7 +17,7 @@ const (
 	ColorPickerBG
 )
 
-// ColorPicker selects a foreground or background color and previews the pair.
+// ColorPicker selects foreground and background colors and previews their pair.
 type ColorPicker struct {
 	FG, BG   Color
 	Target   ColorPickerTarget
@@ -33,6 +33,10 @@ type ColorPicker struct {
 
 	focused  bool
 	lastRect Rect
+	fgIndex  int
+	bgIndex  int
+	fgReset  bool
+	bgReset  bool
 }
 
 var _ Widget = (*ColorPicker)(nil)
@@ -43,26 +47,48 @@ var _ Themeable = (*ColorPicker)(nil)
 // NewColorPicker creates a picker initialized with foreground and background colors.
 func NewColorPicker(fg, bg Color) *ColorPicker {
 	defs := SpeccedDefaults.ColorPicker
-	themeStyle := DefaultTheme().TableStyle()
 	palette := make([]Color, len(defs.Palette))
 	for i, index := range defs.Palette {
 		palette[i] = ColorIndex(uint8(index))
 	}
-	target := ColorPickerFG
+	themeStyle := DefaultTheme().TableStyle()
+	p := &ColorPicker{FG: fg, BG: bg, Palette: palette, Style: themeStyle.Normal, FocusStyle: themeStyle.Selected, focused: true}
+	p.fgIndex, p.fgReset = colorPickerIndex(palette, fg)
+	p.bgIndex, p.bgReset = colorPickerIndex(palette, bg)
+	p.Target = ColorPickerFG
 	if defs.InitialTarget == "bg" {
-		target = ColorPickerBG
+		p.Target = ColorPickerBG
 	}
-	current := fg
-	if target == ColorPickerBG {
-		current = bg
+	p.syncCursor()
+	return p
+}
+
+func colorPickerIndex(palette []Color, color Color) (int, bool) {
+	if color == ColorReset() {
+		return 0, true
 	}
-	selected, resetSelected := 0, current == ColorReset()
-	return &ColorPicker{
-		FG: fg, BG: bg, Target: target, Selected: selected, ResetSelected: resetSelected, Palette: palette,
-		Style:      themeStyle.Normal,
-		FocusStyle: themeStyle.Selected,
-		focused:    true,
+	for i, candidate := range palette {
+		if candidate == color {
+			return i, false
+		}
 	}
+	return 0, false
+}
+
+func (p *ColorPicker) syncCursor() {
+	if p.Target == ColorPickerBG {
+		p.Selected, p.ResetSelected = p.bgIndex, p.bgReset
+		return
+	}
+	p.Selected, p.ResetSelected = p.fgIndex, p.fgReset
+}
+
+func (p *ColorPicker) saveCursor() {
+	if p.Target == ColorPickerBG {
+		p.bgIndex, p.bgReset = p.Selected, p.ResetSelected
+		return
+	}
+	p.fgIndex, p.fgReset = p.Selected, p.ResetSelected
 }
 
 // Focused reports whether this picker owns keyboard focus.
@@ -92,67 +118,96 @@ func (p *ColorPicker) PreviewStyle() Style {
 	return Style{FG: p.FG, BG: p.BG}
 }
 
-// Measure reports the one-row palette and its optional preview.
+// Measure reports the two palette rows, slim edges and optional preview rug.
 func (p *ColorPicker) Measure(width int) measure.Size {
 	defs := SpeccedDefaults.ColorPicker
-	w := (len(p.Palette) + 1) * defs.SwatchWidth
+	w := defs.LeadingPadding + (len(p.Palette)+1)*defs.SwatchWidth
 	if width > 0 && width < w {
 		w = width
 	}
-	h := 2 // swatches and the mode marker row
+	h := 4
 	if defs.ShowPreview {
-		h++
+		h += 2
 	}
 	return measure.Size{Width: w, Height: h}
 }
 
-// Draw renders contiguous color samples, a focus marker and preview.
+// Draw renders independent foreground and background palettes and their preview.
 func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	if c == nil || p == nil || r.W <= 0 || r.H <= 0 {
 		return
 	}
 	p.lastRect = r
-	c.PaintSurface(r, p.Style)
+	panelHeight := min(r.H, 4)
+	c.PaintSurface(Rect{X: r.X, Y: r.Y, W: r.W, H: panelHeight}, p.Style)
 	defs := SpeccedDefaults.ColorPicker
-	resetStyle := p.Style
-	if p.Target == ColorPickerBG {
-		resetStyle.FG = p.FG
-		resetStyle.BG = ColorReset()
+	if defs.ShowPreview && r.H >= 6 {
+		c.PaintSurface(Rect{X: r.X, Y: r.Y + 4, W: min(r.W, defs.PreviewWidth), H: 2}, p.Style)
+	}
+	paletteX := defs.LeadingPadding
+	for row, target := range []ColorPickerTarget{ColorPickerFG, ColorPickerBG} {
+		y := row + 1
+		for cell := 0; cell < len(p.Palette)+1; cell++ {
+			x := paletteX + cell*defs.SwatchWidth
+			if x >= r.W {
+				break
+			}
+			style := p.Style
+			text := defs.Glyphs.Reset
+			if cell == 0 {
+				if target == ColorPickerFG {
+					style.FG = ColorReset()
+					style.BG = p.Style.BG
+				} else {
+					style.FG = p.Style.FG
+					style.BG = ColorReset()
+				}
+			} else if target == ColorPickerFG {
+				style.FG = p.Palette[cell-1]
+				text = defs.Glyphs.Swatch
+			} else {
+				style.BG = p.Palette[cell-1]
+				text = defs.Glyphs.Swatch
+			}
+			writeColorPickerText(c, r, x, y, text, style)
+			for pad := measure.StringWidth(text); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
+				c.Set(r.X+x+pad, r.Y+y, Cell{Text: " ", Style: style})
+			}
+		}
+	}
+	markerFG := ColorIndex(uint8(defs.MarkerFG))
+	fgX := paletteX + p.fgIndex*defs.SwatchWidth
+	if !p.fgReset {
+		fgX += defs.SwatchWidth
+	}
+	for x := 0; x < r.W; x++ {
+		style := Style{FG: p.Style.FG, BG: p.Style.BG}
+		if x >= fgX && x < fgX+defs.SwatchWidth {
+			style.FG = markerFG
+		}
+		writeColorPickerText(c, r, x, 0, defs.Glyphs.EdgeLower, style)
+	}
+	bgX := paletteX + p.bgIndex*defs.SwatchWidth
+	if !p.bgReset {
+		bgX += defs.SwatchWidth
+	}
+	if defs.ShowPreview && r.H >= 6 {
+		for x := 0; x < r.W; x++ {
+			style := Style{FG: p.Style.FG, BG: p.Style.BG}
+			if x >= bgX && x < bgX+defs.SwatchWidth {
+				style.FG = markerFG
+			}
+			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
+		}
+		previewX := defs.PreviewPadding
+		writeColorPickerText(c, r, previewX, 4, defs.Labels.Preview, p.PreviewStyle())
+		for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
+			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: p.Style.FG, BG: p.Style.BG})
+		}
 	} else {
-		resetStyle.FG = ColorReset()
-		resetStyle.BG = p.BG
-	}
-	writeColorPickerText(c, r, 0, 0, defs.Glyphs.Reset, resetStyle)
-	for pad := measure.StringWidth(defs.Glyphs.Reset); pad < defs.SwatchWidth && pad < r.W; pad++ {
-		c.Set(r.X+pad, r.Y, Cell{Text: " ", Style: resetStyle})
-	}
-	for i, color := range p.Palette {
-		x := (i + 1) * defs.SwatchWidth
-		if x >= r.W {
-			break
+		for x := 0; x < r.W; x++ {
+			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, Style{FG: p.Style.FG, BG: p.Style.BG})
 		}
-		style := p.Style
-		if p.Target == ColorPickerBG {
-			style.FG, style.BG = p.FG, color
-		} else {
-			style.FG, style.BG = color, p.BG
-		}
-		writeColorPickerText(c, r, x, 0, defs.Glyphs.Swatch, style)
-		for pad := measure.StringWidth(defs.Glyphs.Swatch); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
-			c.Set(r.X+x+pad, r.Y, Cell{Text: " ", Style: style})
-		}
-	}
-	if r.H >= 2 && p.ResetSelected {
-		markerStyle := Style{FG: ColorIndex(uint8(defs.MarkerFG)), BG: p.Style.BG}
-		writeColorPickerText(c, r, 0, 1, defs.Glyphs.ModeMarker, markerStyle)
-	} else if r.H >= 2 && p.Selected >= 0 && p.Selected < len(p.Palette) {
-		markerX := (p.Selected + 1) * defs.SwatchWidth
-		markerStyle := Style{FG: ColorIndex(uint8(defs.MarkerFG)), BG: p.Style.BG}
-		writeColorPickerText(c, r, markerX, 1, defs.Glyphs.ModeMarker, markerStyle)
-	}
-	if defs.ShowPreview && r.H >= 3 {
-		text := defs.Labels.Preview + " " + defs.PreviewText
-		writeColorPickerText(c, r, 0, 2, text, p.PreviewStyle())
 	}
 }
 
@@ -184,7 +239,12 @@ func (p *ColorPicker) matches(e KeyEvent, action string) bool {
 }
 
 func (p *ColorPicker) changeTarget(target ColorPickerTarget, assign bool) {
-	p.Target = target
+	if target != p.Target {
+		p.saveCursor()
+		p.Target = target
+		p.syncCursor()
+	}
+	p.saveCursor()
 	if !assign || p.Selected < 0 || p.Selected >= len(p.Palette) {
 		return
 	}
@@ -202,14 +262,21 @@ func (p *ColorPicker) changeTarget(target ColorPickerTarget, assign bool) {
 	}
 }
 
-// ConsumeKey handles palette navigation, mode changes and completion.
+func (p *ColorPicker) applyCursor() {
+	p.saveCursor()
+	p.changeTarget(ColorPickerFG, true)
+	p.changeTarget(ColorPickerBG, true)
+	p.changeTarget(p.Target, false)
+}
+
+// ConsumeKey handles row navigation, selection and completion.
 func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 	if p == nil {
 		return Ignored()
 	}
 	switch {
 	case p.matches(e, "apply"):
-		p.changeTarget(p.Target, true)
+		p.applyCursor()
 		if p.OnClose != nil {
 			p.OnClose()
 		}
@@ -219,20 +286,22 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 			p.OnClose()
 		}
 		return DoneResult()
-	case p.matches(e, "mode_bg"):
+	case p.matches(e, "row_bg"):
+		p.saveCursor()
 		p.Target = ColorPickerBG
+		p.syncCursor()
 		return Handled()
-	case p.matches(e, "mode_fg"):
+	case p.matches(e, "row_fg"):
+		p.saveCursor()
 		p.Target = ColorPickerFG
-		return Handled()
-	case p.matches(e, "mode_toggle"):
-		p.toggleTarget()
+		p.syncCursor()
 		return Handled()
 	case p.matches(e, "select"):
 		p.changeTarget(p.Target, true)
 		return Handled()
 	case p.matches(e, "home"):
 		p.ResetSelected = true
+		p.saveCursor()
 		return Handled()
 	case p.matches(e, "left"):
 		if p.ResetSelected {
@@ -243,6 +312,7 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		} else if p.Selected > 0 {
 			p.Selected--
 		}
+		p.saveCursor()
 		return Handled()
 	case p.matches(e, "right"):
 		if p.ResetSelected {
@@ -250,44 +320,40 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		} else if p.Selected+1 < len(p.Palette) {
 			p.Selected++
 		}
+		p.saveCursor()
 		return Handled()
 	default:
 		return Ignored()
 	}
 }
 
-func (p *ColorPicker) toggleTarget() {
-	if p.Target == ColorPickerFG {
-		p.Target = ColorPickerBG
-	} else {
-		p.Target = ColorPickerFG
-	}
-}
-
-// ConsumeMouse selects a swatch or toggles modes on right-click.
+// ConsumeMouse applies a left-clicked swatch in its row.
 func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	if p == nil || e.Action != MousePress || e.X < 0 || e.X >= p.lastRect.W || e.Y < 0 || e.Y >= p.lastRect.H {
 		return Ignored()
 	}
-	if e.Button == MouseRight {
-		p.toggleTarget()
-		return Handled()
-	}
-	if e.Button != MouseLeft || e.Y != 0 {
+	if e.Button != MouseLeft || e.Y < 1 || e.Y > 2 {
 		return Ignored()
 	}
 	defs := SpeccedDefaults.ColorPicker
-	index := e.X/defs.SwatchWidth - 1
-	if e.X < defs.SwatchWidth {
-		p.ResetSelected = true
-		p.changeTarget(p.Target, true)
-		return Handled()
-	}
-	if index < 0 || index >= len(p.Palette) {
+	x := e.X - defs.LeadingPadding
+	if x < 0 {
 		return Ignored()
 	}
-	p.Selected = index
-	p.ResetSelected = false
+	cell := x / defs.SwatchWidth
+	if cell == 0 {
+		p.Selected, p.ResetSelected = 0, true
+	} else if cell <= len(p.Palette) {
+		p.Selected, p.ResetSelected = cell-1, false
+	} else {
+		return Ignored()
+	}
+	if e.Y == 1 {
+		p.Target = ColorPickerFG
+	} else {
+		p.Target = ColorPickerBG
+	}
+	p.saveCursor()
 	p.changeTarget(p.Target, true)
 	return Handled()
 }
