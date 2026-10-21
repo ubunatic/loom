@@ -1,6 +1,6 @@
 # 353 — Ctrl+Space menu: clearer labels (Frame, Link, ▏ separators) and letter hotkeys
 
-**Status**: Open
+**Status**: Closed — Done in 3906319 + bcc267a: bar ' B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏≡ ' with bold F/L specced per item; Ctrl+Space focuses the bar, letter hotkeys (both cases) act only on a focused bar, selection-shown bar keeps typing; Link stays disabled; additive API; host q1 green; live tmux Ctrl+Space b bolds and saves, plain typing unaffected
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
