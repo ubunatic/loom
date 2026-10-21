@@ -1,6 +1,6 @@
 # 359 — ColorPicker redesign: two-row FG/BG picker with slim edges (b2)
 
-**Status**: Open — M1 (a09c9f5, fe6b21a) reopened by host review: panel background missing
+**Status**: Closed — M2 applies the palette-8 panel background, panel-colored edge glyphs, corrected row-3 layout and canvas coverage; design validation passed, q1 exited 0 with no FAIL markers, and make install succeeded.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
