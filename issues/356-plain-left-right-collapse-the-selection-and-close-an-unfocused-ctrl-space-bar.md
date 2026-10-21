@@ -1,6 +1,6 @@
 # 356 — Plain Left/Right collapse the selection and close an unfocused Ctrl+Space bar
 
-**Status**: Open
+**Status**: Closed — Done in e414ddd + 691eabd: plain Left/Right on an unfocused bar reach the editor, collapse the selection to its start/end and close the bar; focused-bar navigation, Up/Down entry and Shift selection unchanged; host q1 green; live tmux: Shift+Right x3, Right, X gives helXlo with bar closed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
