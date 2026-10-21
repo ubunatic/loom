@@ -1767,7 +1767,7 @@ func TestRichTextEditPopoverConfiguredFocus(t *testing.T) {
 				t.Fatal("automatic menu focused")
 			}
 			e.ConsumeKey(KeyEvent{Key: "up"})
-			if e.Cursor.Offset != 0 || e.popoverFocusSet || e.HasSelection == unselect {
+			if e.Cursor.Offset != 0 || e.popoverFocusSet || e.HasSelection == (cancel && unselect) {
 				t.Fatalf("arrow state: cursor=%v selected=%v", e.Cursor, e.HasSelection)
 			}
 			if e.popoverSuppressed != cancel {
