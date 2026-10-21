@@ -1,6 +1,6 @@
 # 349 — loom edit: Down should enter the Ctrl+Space popover also when it opens above the selection
 
-**Status**: Open
+**Status**: Closed — Done in c8d1d8d: specced menu_entry binding, Up and Down both focus the Ctrl+Space bar above or below the selection; Left/Right, mouse and focused arrow-away unchanged; unit+PTY tests; q1 green; live tmux check with the bar above
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
