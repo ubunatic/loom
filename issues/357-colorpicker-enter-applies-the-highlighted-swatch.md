@@ -21,3 +21,9 @@ On the color picker, Enter should apply the currently highlighted item, as Space
 - Check live code first: what Space does today (select/preview only?) and what Enter does alone.
 - Space keeps its current meaning unless it becomes redundant; the ∅ reset cell (350) and the FG/BG
   mode row (347) must behave the same way under Enter.
+
+## Pre-work (host, from 358 review)
+
+358 changed RichTextEdit semantics (`unselect_on_cancel` now defaults to true; any bar close clears
+the selection; either vertical arrow closes a focused bar) but added no row to the breaking-changes
+table in `docs/Upgrading.md`. Add that row in this ticket's commit.
