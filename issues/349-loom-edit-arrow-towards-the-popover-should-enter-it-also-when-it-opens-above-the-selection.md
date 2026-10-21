@@ -18,6 +18,10 @@ Users press Ctrl+Space, Down to enter the menu out of habit. Today only the arro
 the bar focuses it (F1 help: "arrow towards toolbar focuses"; `arrows_cancel_unfocused_menu: true`),
 so when the bar opens above the selection, Down cancels the menu instead.
 
+## Decision (user, 2026-10-21)
+
+Both Up and Down enter the bar, whether it opens above or below; Left/Right keep current behaviour.
+
 ## Notes
 
 - Decide with the user whether Up should still focus a bar above (both arrows enter), or only Down.
