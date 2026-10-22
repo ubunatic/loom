@@ -108,11 +108,9 @@ func NewImage(src image.Image, mode Mode) (*Widget, error) {
 	default:
 		return nil, fmt.Errorf("media: unsupported render mode %q", mode)
 	}
-	keys := loom.NewKeyMapWithLabels(map[string][]string{
-		"play": {"space", " "}, "zoom_in": {"+", "="}, "zoom_out": {"-", "_"}, "pan": {"←/→/↑/↓", "left", "right", "up", "down"}, "reset": {"0"},
-	}, map[string]string{"play": "Play/Pause", "zoom_in": "Zoom in", "zoom_out": "Zoom out", "pan": "Pan", "reset": "Reset"})
+	keys := loom.NewKeyMapWithLabels(loom.SpeccedDefaults.Media.Bindings, loom.SpeccedDefaults.Media.Labels)
 	bar := loom.NewProgressBar()
-	bar.Options.Width = 8
+	bar.Options.Width = loom.SpeccedDefaults.Media.LoadingBarWidth
 	bar.Indeterminate = true
 	return &Widget{image: src, mode: mode, theme: loom.DefaultTheme(), zoom: 1, keys: keys, progress: bar, help: loom.NewKeyHelp(keys)}, nil
 }
@@ -449,7 +447,11 @@ func (w *Widget) drawControls(c *loom.Canvas, playing bool, zoom float64) {
 		x += len(label) + 1
 	}
 	if w.progress != nil && playing && controls.H > 1 && x < controls.X+controls.W {
-		w.progress.Draw(c, loom.Rect{X: x, Y: controls.Y + controls.H - 1, W: min(8, controls.X+controls.W-x), H: 1})
+		barWidth := loom.SpeccedDefaults.Media.LoadingBarWidth
+		if w.progress.Options.Width > 0 {
+			barWidth = w.progress.Options.Width
+		}
+		w.progress.Draw(c, loom.Rect{X: x, Y: controls.Y + controls.H - 1, W: min(barWidth, controls.X+controls.W-x), H: 1})
 	}
 }
 
@@ -730,19 +732,20 @@ func (w *Widget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 			w.Play()
 		}
 	case "zoom_in":
-		w.setZoom(1.25)
+		w.setZoom(loom.SpeccedDefaults.Media.ZoomFactor)
 	case "zoom_out":
-		w.setZoom(1 / 1.25)
+		w.setZoom(1 / loom.SpeccedDefaults.Media.ZoomFactor)
 	case "pan":
+		step := loom.SpeccedDefaults.Media.PanStep
 		switch e.Name() {
 		case "left":
-			w.pan(-.12, 0)
+			w.pan(-step, 0)
 		case "right":
-			w.pan(.12, 0)
+			w.pan(step, 0)
 		case "up":
-			w.pan(0, -.12)
+			w.pan(0, -step)
 		case "down":
-			w.pan(0, .12)
+			w.pan(0, step)
 		default:
 			return loom.Ignored()
 		}
@@ -875,11 +878,11 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 			return loom.Handled()
 		case w.zoomOut.Contains(e.X, e.Y):
 			w.mu.Unlock()
-			w.setZoom(1 / 1.25)
+			w.setZoom(1 / loom.SpeccedDefaults.Media.ZoomFactor)
 			return loom.Handled()
 		case w.zoomIn.Contains(e.X, e.Y):
 			w.mu.Unlock()
-			w.setZoom(1.25)
+			w.setZoom(loom.SpeccedDefaults.Media.ZoomFactor)
 			return loom.Handled()
 		case e.X >= 0 && e.X < w.lastRect.W && e.Y >= 0 && e.Y < w.imageHeightLocked() && w.canPanLocked():
 			w.dragging = true
@@ -906,11 +909,11 @@ func (w *Widget) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	}
 	w.mu.Unlock()
 	if e.Action == loom.MouseScrollUp {
-		w.setZoomAt(1.25, e.X, e.Y)
+		w.setZoomAt(loom.SpeccedDefaults.Media.ZoomFactor, e.X, e.Y)
 		return loom.Handled()
 	}
 	if e.Action == loom.MouseScrollDown {
-		w.setZoomAt(1/1.25, e.X, e.Y)
+		w.setZoomAt(1/loom.SpeccedDefaults.Media.ZoomFactor, e.X, e.Y)
 		return loom.Handled()
 	}
 	return loom.Ignored()

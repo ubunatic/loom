@@ -637,11 +637,47 @@
     "media": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["loading_label", "render_error_label", "loading_threshold"],
+      "required": [
+        "loading_label",
+        "render_error_label",
+        "loading_threshold",
+        "loading_bar_width",
+        "zoom_factor",
+        "pan_step",
+        "bindings",
+        "labels"
+      ],
       "properties": {
         "loading_label": { "type": "string", "minLength": 1 },
         "render_error_label": { "type": "string", "minLength": 1 },
-        "loading_threshold": { "type": "string", "pattern": "^[0-9]+(ms|s)$" }
+        "loading_threshold": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
+        "loading_bar_width": { "type": "integer", "minimum": 1 },
+        "zoom_factor": { "type": "number", "exclusiveMinimum": 1.0 },
+        "pan_step": { "type": "number", "exclusiveMinimum": 0.0 },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["play", "zoom_in", "zoom_out", "pan", "reset"],
+          "properties": {
+            "play": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "zoom_in": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "zoom_out": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "pan": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+            "reset": { "type": "array", "minItems": 1, "items": { "type": "string" } }
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["play", "zoom_in", "zoom_out", "pan", "reset"],
+          "properties": {
+            "play": { "type": "string", "minLength": 1 },
+            "zoom_in": { "type": "string", "minLength": 1 },
+            "zoom_out": { "type": "string", "minLength": 1 },
+            "pan": { "type": "string", "minLength": 1 },
+            "reset": { "type": "string", "minLength": 1 }
+          }
+        }
       }
     },
     "tabs": {

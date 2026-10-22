@@ -121,6 +121,21 @@ media:
   loading_label: "loading"
   render_error_label: "render error"
   loading_threshold: 50ms
+  loading_bar_width: 8
+  zoom_factor: 1.25
+  pan_step: 0.12
+  bindings:
+    play: ["space", " "]
+    zoom_in: ["+", "="]
+    zoom_out: ["-", "_"]
+    pan: ["←/→/↑/↓", "left", "right", "up", "down"]
+    reset: ["0"]
+  labels:
+    play: "Play/Pause"
+    zoom_in: "Zoom in"
+    zoom_out: "Zoom out"
+    pan: "Pan"
+    reset: "Reset"
 
 editor:
   search_regex: false

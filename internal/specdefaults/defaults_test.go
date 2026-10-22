@@ -114,7 +114,7 @@ func TestChangedEmbeddedKeyDefaults(t *testing.T) {
 	dir := t.TempDir()
 	for _, pattern := range []string{
 		"go.mod", "go.sum", "*.go",
-		"collector/*.go", "graph/*.go", "layout/*.go", "measure/*.go", "spec/*.go", "spec/*.yaml", "spec/schemas/*.json", "syntax/*.go",
+		"collector/*.go", "graph/*.go", "layout/*.go", "measure/*.go", "media/*.go", "spec/*.go", "spec/*.yaml", "spec/schemas/*.json", "syntax/*.go",
 	} {
 		files, err := filepath.Glob(filepath.Join(root, pattern))
 		if err != nil {
@@ -162,6 +162,25 @@ func TestChangedEmbeddedKeyDefaults(t *testing.T) {
 				settings := doc["settings"].(map[string]any)["bindings"].(map[string]any)
 				settings["quit"] = []any{"x"}
 
+				mediaDoc := doc["media"].(map[string]any)
+				mediaDoc["bindings"] = map[string]any{
+					"play":     []any{"p"},
+					"zoom_in":  []any{"z"},
+					"zoom_out": []any{"-", "_"},
+					"pan":      []any{"←/→/↑/↓", "left", "right", "up", "down"},
+					"reset":    []any{"0"},
+				}
+				mediaDoc["labels"] = map[string]any{
+					"play":     "Start/Stop",
+					"zoom_in":  "Zoom in",
+					"zoom_out": "Zoom out",
+					"pan":      "Pan",
+					"reset":    "Reset",
+				}
+				mediaDoc["zoom_factor"] = 2.0
+				mediaDoc["pan_step"] = 0.25
+				mediaDoc["loading_bar_width"] = 16
+
 				data, err = yaml.Marshal(doc)
 				if err != nil {
 					t.Fatal(err)
@@ -178,7 +197,10 @@ func TestChangedEmbeddedKeyDefaults(t *testing.T) {
 	}
 	const probe = `package main
 import (
+	"image"
+	"strings"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/media"
 )
 func main() {
 	tabs := loom.DefaultTabsKeys()
@@ -224,6 +246,57 @@ func main() {
 	settings := loom.NewSettings(nil)
 	if !settings.ConsumeKey(loom.KeyEvent{Key: "x"}).Quit {
 		panic("settings quit key did not follow YAML")
+	}
+	img := image.NewRGBA(image.Rect(0, 0, 10, 10))
+	mediaWidget, err := media.NewImage(img, media.ModeHalfblock)
+	if err != nil {
+		panic(err)
+	}
+	if !mediaWidget.ConsumeKey(loom.KeyEvent{Key: "z"}).Consumed {
+		panic("media zoom_in key did not follow YAML")
+	}
+	if mediaWidget.ConsumeKey(loom.KeyEvent{Key: "+"}).Consumed {
+		panic("media original zoom_in key should not have triggered")
+	}
+	mediaCanvas := loom.NewCanvas(40, 10)
+	mediaWidget.Draw(mediaCanvas, loom.Rect{W: 40, H: 10})
+	foundHelp := false
+	for y := 0; y < 10; y++ {
+		if strings.Contains(mediaCanvas.Row(y), "Start/Stop") {
+			foundHelp = true
+			break
+		}
+	}
+	if !foundHelp {
+		panic("media help label did not follow YAML")
+	}
+	if loom.SpeccedDefaults.Media.ZoomFactor != 2.0 || loom.SpeccedDefaults.Media.PanStep != 0.25 || loom.SpeccedDefaults.Media.LoadingBarWidth != 16 {
+		panic("media numeric defaults did not follow YAML")
+	}
+	foundZoom := false
+	for y := 0; y < 10; y++ {
+		if strings.Contains(mediaCanvas.Row(y), "2.00x") {
+			foundZoom = true
+			break
+		}
+	}
+	if !foundZoom {
+		panic("media zoom factor did not follow YAML")
+	}
+	if !mediaWidget.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 5, Y: 5}).Consumed {
+		panic("media mouse scroll zoom did not trigger")
+	}
+	mediaCanvas = loom.NewCanvas(40, 10)
+	mediaWidget.Draw(mediaCanvas, loom.Rect{W: 40, H: 10})
+	foundZoom = false
+	for y := 0; y < 10; y++ {
+		if strings.Contains(mediaCanvas.Row(y), "4.00x") {
+			foundZoom = true
+			break
+		}
+	}
+	if !foundZoom {
+		panic("media mouse scroll zoom factor did not follow YAML")
 	}
 }
 `

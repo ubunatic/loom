@@ -663,9 +663,41 @@ type ClockDefaults struct {
 
 // MediaDefaults defines user-facing media status and rendering timing defaults.
 type MediaDefaults struct {
-	LoadingLabel     string        `yaml:"loading_label"`
-	RenderErrorLabel string        `yaml:"render_error_label"`
-	LoadingThreshold time.Duration `yaml:"loading_threshold"`
+	LoadingLabel     string              `yaml:"loading_label"`
+	RenderErrorLabel string              `yaml:"render_error_label"`
+	LoadingThreshold time.Duration       `yaml:"loading_threshold"`
+	LoadingBarWidth  int                 `yaml:"loading_bar_width"`
+	ZoomFactor       float64             `yaml:"zoom_factor"`
+	PanStep          float64             `yaml:"pan_step"`
+	Bindings         map[string][]string `yaml:"bindings"`
+	Labels           map[string]string   `yaml:"labels"`
+}
+
+func (d MediaDefaults) validate() error {
+	if d.LoadingLabel == "" || d.RenderErrorLabel == "" {
+		return fmt.Errorf("media labels must not be empty")
+	}
+	if d.LoadingThreshold <= 0 {
+		return fmt.Errorf("media.loading_threshold must be positive")
+	}
+	if d.LoadingBarWidth <= 0 {
+		return fmt.Errorf("media.loading_bar_width must be positive")
+	}
+	if d.ZoomFactor <= 1.0 {
+		return fmt.Errorf("media.zoom_factor must be greater than 1")
+	}
+	if d.PanStep <= 0 {
+		return fmt.Errorf("media.pan_step must be positive")
+	}
+	for _, action := range []string{"play", "zoom_in", "zoom_out", "pan", "reset"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("media.bindings.%s must not be empty", action)
+		}
+		if d.Labels[action] == "" {
+			return fmt.Errorf("media.labels.%s must not be empty", action)
+		}
+	}
+	return nil
 }
 
 // MouseDefaults defines specced defaults for mouse gestures.
@@ -790,6 +822,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Settings.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Media.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if len(defs.KeyConventions) == 0 {

@@ -1028,3 +1028,74 @@ func TestMixedAxesPanDelta(t *testing.T) {
 		t.Fatalf("panY = %v, want positive after dragging down on slack axis", w.panY)
 	}
 }
+
+func TestMediaSpeccedBindingsAndControls(t *testing.T) {
+	img := solidImage(40, 20, color.RGBA{R: 200, G: 100, B: 50, A: 255})
+	w, err := NewImage(img, ModeHalfblock)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify key zoom uses spec zoom factor
+	zoomKey := loom.SpeccedDefaults.Media.Bindings["zoom_in"][0]
+	res := w.ConsumeKey(loom.KeyEvent{Key: zoomKey, Text: zoomKey})
+	if !res.Consumed {
+		t.Fatalf("zoom key %q not consumed", zoomKey)
+	}
+	expectedZoom := loom.SpeccedDefaults.Media.ZoomFactor
+	if math.Abs(w.zoom-expectedZoom) > 1e-9 {
+		t.Fatalf("zoom = %v, want %v", w.zoom, expectedZoom)
+	}
+
+	// Verify mouse scroll zoom
+	res = w.ConsumeMouse(loom.MouseEvent{Action: loom.MouseScrollUp, X: 5, Y: 5})
+	if !res.Consumed {
+		t.Fatal("mouse scroll up not consumed")
+	}
+	expectedZoom *= loom.SpeccedDefaults.Media.ZoomFactor
+	if math.Abs(w.zoom-expectedZoom) > 1e-9 {
+		t.Fatalf("zoom after scroll = %v, want %v", w.zoom, expectedZoom)
+	}
+
+	// Verify key pan uses spec pan step
+	panKey := loom.SpeccedDefaults.Media.Bindings["pan"][1] // "left"
+	beforePanX := w.panX
+	res = w.ConsumeKey(loom.KeyEvent{Key: panKey})
+	if !res.Consumed {
+		t.Fatalf("pan key %q not consumed", panKey)
+	}
+	expectedPan := beforePanX - loom.SpeccedDefaults.Media.PanStep
+	if math.Abs(w.panX-expectedPan) > 1e-9 {
+		t.Fatalf("panX = %v, want %v", w.panX, expectedPan)
+	}
+
+	// Verify reset key
+	resetKey := loom.SpeccedDefaults.Media.Bindings["reset"][0]
+	res = w.ConsumeKey(loom.KeyEvent{Key: resetKey, Text: resetKey})
+	if !res.Consumed {
+		t.Fatalf("reset key %q not consumed", resetKey)
+	}
+	if w.zoom != 1 || w.panX != 0 || w.panY != 0 {
+		t.Fatalf("reset failed: zoom=%v, panX=%v, panY=%v", w.zoom, w.panX, w.panY)
+	}
+
+	// Verify progress bar width matches spec
+	if w.progress.Options.Width != loom.SpeccedDefaults.Media.LoadingBarWidth {
+		t.Fatalf("progress bar width = %d, want %d", w.progress.Options.Width, loom.SpeccedDefaults.Media.LoadingBarWidth)
+	}
+
+	// Verify help rendering contains spec labels
+	canvas := loom.NewCanvas(80, 10)
+	w.Draw(canvas, loom.Rect{W: 80, H: 10})
+	foundPlayLabel := false
+	playLabel := loom.SpeccedDefaults.Media.Labels["play"]
+	for y := 0; y < 10; y++ {
+		if strings.Contains(canvas.Row(y), playLabel) {
+			foundPlayLabel = true
+			break
+		}
+	}
+	if !foundPlayLabel {
+		t.Fatalf("rendered controls missing play label %q", playLabel)
+	}
+}

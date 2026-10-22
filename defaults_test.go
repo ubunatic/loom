@@ -48,10 +48,94 @@ func TestScrollbarModeDefaultsAndOverrides(t *testing.T) {
 	}
 }
 
+func TestMediaDefaultsValidation(t *testing.T) {
+	valid := SpeccedDefaults.Media
+	if err := valid.validate(); err != nil {
+		t.Fatalf("valid defaults failed validation: %v", err)
+	}
+
+	invalidThreshold := valid
+	invalidThreshold.LoadingThreshold = 0
+	if err := invalidThreshold.validate(); err == nil {
+		t.Fatal("accepted zero loading threshold")
+	}
+
+	invalidWidth := valid
+	invalidWidth.LoadingBarWidth = 0
+	if err := invalidWidth.validate(); err == nil {
+		t.Fatal("accepted zero loading bar width")
+	}
+
+	invalidZoom := valid
+	invalidZoom.ZoomFactor = 1.0
+	if err := invalidZoom.validate(); err == nil {
+		t.Fatal("accepted zoom factor <= 1.0")
+	}
+
+	invalidPan := valid
+	invalidPan.PanStep = 0
+	if err := invalidPan.validate(); err == nil {
+		t.Fatal("accepted pan step <= 0")
+	}
+
+	missingBinding := valid
+	missingBinding.Bindings = make(map[string][]string)
+	for k, v := range valid.Bindings {
+		missingBinding.Bindings[k] = v
+	}
+	delete(missingBinding.Bindings, "play")
+	if err := missingBinding.validate(); err == nil {
+		t.Fatal("accepted missing binding")
+	}
+
+	missingLabel := valid
+	missingLabel.Labels = make(map[string]string)
+	for k, v := range valid.Labels {
+		missingLabel.Labels[k] = v
+	}
+	delete(missingLabel.Labels, "play")
+	if err := missingLabel.validate(); err == nil {
+		t.Fatal("accepted missing label")
+	}
+}
+
 func TestMediaDefaultsLoadFromSpec(t *testing.T) {
 	got := SpeccedDefaults.Media
 	if got.LoadingLabel != "loading" || got.RenderErrorLabel != "render error" || got.LoadingThreshold != 50*time.Millisecond {
 		t.Fatalf("media defaults = %+v, want loading/render error/50ms", got)
+	}
+	if got.LoadingBarWidth != 8 || got.ZoomFactor != 1.25 || got.PanStep != 0.12 {
+		t.Fatalf("media numeric defaults = width:%d zoom:%f pan:%f, want 8/1.25/0.12", got.LoadingBarWidth, got.ZoomFactor, got.PanStep)
+	}
+	wantBindings := map[string][]string{
+		"play":     {"space", " "},
+		"zoom_in":  {"+", "="},
+		"zoom_out": {"-", "_"},
+		"pan":      {"←/→/↑/↓", "left", "right", "up", "down"},
+		"reset":    {"0"},
+	}
+	for action, wantKeys := range wantBindings {
+		keys := got.Bindings[action]
+		if len(keys) != len(wantKeys) {
+			t.Fatalf("media.bindings.%s = %v, want %v", action, keys, wantKeys)
+		}
+		for i, k := range wantKeys {
+			if keys[i] != k {
+				t.Fatalf("media.bindings.%s[%d] = %q, want %q", action, i, keys[i], k)
+			}
+		}
+	}
+	wantLabels := map[string]string{
+		"play":     "Play/Pause",
+		"zoom_in":  "Zoom in",
+		"zoom_out": "Zoom out",
+		"pan":      "Pan",
+		"reset":    "Reset",
+	}
+	for action, wantLabel := range wantLabels {
+		if got.Labels[action] != wantLabel {
+			t.Fatalf("media.labels.%s = %q, want %q", action, got.Labels[action], wantLabel)
+		}
 	}
 }
 

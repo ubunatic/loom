@@ -137,6 +137,9 @@ var SpeccedDefaults = func() LibDefaults {
 	if err := defs.Settings.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
+	if err := defs.Media.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
 	if len(defs.KeyConventions) == 0 {
 		panic("loom: spec/defaults.yaml: key_conventions must not be empty")
 	}
@@ -184,7 +187,7 @@ var SpeccedThemes = func() map[string]ThemeColors {
     SpeccedThemes holds all themes loaded from spec/themes.yaml at init time.
     Keys are theme names ("plain", "mc", …).
 
-var Version = "0.3.11"
+var Version = "0.4.0"
 
 FUNCTIONS
 
@@ -2423,9 +2426,14 @@ type Measurer interface {
     Measurer reports a preferred size at an optional parent-supplied width.
 
 type MediaDefaults struct {
-	LoadingLabel     string        `yaml:"loading_label"`
-	RenderErrorLabel string        `yaml:"render_error_label"`
-	LoadingThreshold time.Duration `yaml:"loading_threshold"`
+	LoadingLabel     string              `yaml:"loading_label"`
+	RenderErrorLabel string              `yaml:"render_error_label"`
+	LoadingThreshold time.Duration       `yaml:"loading_threshold"`
+	LoadingBarWidth  int                 `yaml:"loading_bar_width"`
+	ZoomFactor       float64             `yaml:"zoom_factor"`
+	PanStep          float64             `yaml:"pan_step"`
+	Bindings         map[string][]string `yaml:"bindings"`
+	Labels           map[string]string   `yaml:"labels"`
 }
     MediaDefaults defines user-facing media status and rendering timing
     defaults.
