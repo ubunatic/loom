@@ -132,12 +132,17 @@ func findDiffText(buf *loom.AnsiBuffer, text string, width, height int) (diffReg
 	matches := 0
 	for y := 0; y < buf.Rows(); y++ {
 		for x := 0; x < buf.Cols(); x++ {
+			if x+measure.StringWidth(text) > buf.Cols() {
+				continue
+			}
 			ok := true
-			for i, r := range needle {
-				if x+i >= buf.Cols() || buf.Get(x+i, y).Rune != r {
+			cellX := x
+			for _, r := range needle {
+				if buf.Get(cellX, y).Rune != r {
 					ok = false
 					break
 				}
+				cellX += max(1, measure.RuneWidth(r))
 			}
 			if ok {
 				found.row, found.col = y, x

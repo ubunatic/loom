@@ -117,6 +117,15 @@ func TestCropWritesSelectedRegion(t *testing.T) {
 	}
 }
 
+func TestCropRejectsWideCharacterSplit(t *testing.T) {
+	input := writeFixture(t, "界x")
+	var out bytes.Buffer
+	err := execute([]string{"crop", input, "--region", "1,2,1,1"}, &out)
+	if errorExitCode(err) != 2 {
+		t.Fatalf("crop split-wide-character error=%v, want status 2", err)
+	}
+}
+
 func TestDiffFindCropsGotCapture(t *testing.T) {
 	wantPath := writeFixture(t, "abc\ndef")
 	gotPath := writeFixture(t, "header\n  abc\n  def")

@@ -13,9 +13,14 @@ import (
 
 var updateReference = flag.Bool("update", false, "update ANSI references from rendered widgets")
 
+// CompareOptions controls which cell fields CompareANSI checks.
+type CompareOptions struct {
+	IgnoreColour bool
+}
+
 // CompareANSI calls render and compares its ANSI cells to reference. Run the
 // test binary with -update to deliberately rewrite the reference.
-func CompareANSI(t testing.TB, reference string, width, height int, render func() string) {
+func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions) {
 	t.Helper()
 	got := render()
 	if *updateReference {
@@ -31,14 +36,18 @@ func CompareANSI(t testing.TB, reference string, width, height int, render func(
 	if string(want) == got {
 		return
 	}
-	report := compareANSIReport(string(want), got, width, height)
+	option := CompareOptions{}
+	if len(options) > 0 {
+		option = options[0]
+	}
+	report := compareANSIReport(string(want), got, width, height, option.IgnoreColour)
 	if strings.Contains(report, "differences: 0\n") {
 		return
 	}
 	t.Errorf("reference %s differs; run go test with -update to accept it\n%s", reference, report)
 }
 
-func compareANSIReport(wantText, gotText string, width, height int) string {
+func compareANSIReport(wantText, gotText string, width, height int, ignoreColour bool) string {
 	want := parseComparisonScreen(wantText, width, height)
 	got := parseComparisonScreen(gotText, width, height)
 	var report strings.Builder
@@ -48,7 +57,7 @@ func compareANSIReport(wantText, gotText string, width, height int) string {
 			w, g := want.Cell(x, y), got.Cell(x, y)
 			wfg, wbg := w.Style.Effective()
 			gfg, gbg := g.Style.Effective()
-			if w.Rune == g.Rune && wfg == gfg && wbg == gbg {
+			if w.Rune == g.Rune && (ignoreColour || (wfg == gfg && wbg == gbg)) {
 				continue
 			}
 			differences++

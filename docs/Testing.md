@@ -54,6 +54,8 @@ by a callback with a checked-in `.ansi` reference. Run the package test with
 design sketch with `loom crop sketch.ansi --region row,col,width,height` before
 using it as a reference; keep later design updates in a separate reference file
 when the sketch records an earlier variant.
+Pass `loomtest.CompareOptions{IgnoreColour: true}` as an optional final argument
+for layout-only comparisons.
 
 New concurrency tests should use channels, barriers or fake clocks instead of
 wall-clock sleeps. Scale unavoidable timeout budgets for race builds. Use
