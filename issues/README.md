@@ -49,4 +49,5 @@ upkeep.
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
+| 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
 <!-- harnez:end issues-active-index -->
