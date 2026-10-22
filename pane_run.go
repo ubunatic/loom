@@ -302,6 +302,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	escKeyTimeout := SpeccedDefaults.Pane.EscKeyTimeout
 	var pending []byte
 	var pendingC <-chan time.Time
+	var pendingDeadline time.Time
 
 	var guardTimer *time.Timer
 	var guardTimerC <-chan time.Time
@@ -521,6 +522,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			ke := DecodeKey(pending)
 			pending = nil
 			pendingC = nil
+			pendingDeadline = time.Time{}
 			dirty = true
 			p.triggerCursorPulse(time.Now())
 			if quit, handled := p.handleHelpKey(ke); handled {
@@ -542,11 +544,29 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			dirty = true
 			raw := rr.data
 			if len(pending) > 0 {
-				pending = append(pending, raw...)
-				raw = pending
+				if !pendingDeadline.IsZero() && !time.Now().Before(pendingDeadline) {
+					// The input and timeout cases can both be ready in select.
+					// Expired bytes are a completed key boundary even when the
+					// read case wins, so later input must not turn ESC into Alt.
+					ke := DecodeKey(pending)
+					pending = nil
+					pendingC = nil
+					pendingDeadline = time.Time{}
+					if quit, handled := p.handleHelpKey(ke); handled {
+						if quit {
+							return nil
+						}
+					} else if p.dispatchKey(root, ke) {
+						return nil
+					}
+				} else {
+					pending = append(pending, raw...)
+					raw = pending
+				}
 			}
 			pending = nil
 			pendingC = nil
+			pendingDeadline = time.Time{}
 
 			// Try mouse first (SGR: \x1b[<…M/m). A single read may carry several
 			// reports (1003 any-motion tracking floods them), so drain the whole
@@ -587,6 +607,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 						}
 						pending = raw
 						pendingC = nil
+						pendingDeadline = time.Time{}
 						dirty = false
 						break
 					}
@@ -602,6 +623,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 				if !ok {
 					pending = append([]byte(nil), raw...)
 					pendingC = time.After(escKeyTimeout)
+					pendingDeadline = time.Now().Add(escKeyTimeout)
 					raw = nil
 					break
 				}
