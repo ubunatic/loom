@@ -544,7 +544,24 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			dirty = true
 			raw := rr.data
 			if len(pending) > 0 {
-				if !pendingDeadline.IsZero() && !time.Now().Before(pendingDeadline) {
+				// The byte stream has no boundary marker for a lone ESC. A
+				// following read that starts with an ordinary key is a second
+				// keypress; legacy Alt+key remains unambiguous when both bytes
+				// arrive in the same read. CSI/SS3 continuations still join.
+				if len(pending) == 1 && pending[0] == 27 && raw[0] != '[' && raw[0] != 'O' {
+					ke := DecodeKey(pending)
+					pending = nil
+					pendingC = nil
+					pendingDeadline = time.Time{}
+					p.triggerCursorPulse(time.Now())
+					if quit, handled := p.handleHelpKey(ke); handled {
+						if quit {
+							return nil
+						}
+					} else if p.dispatchKey(root, ke) {
+						return nil
+					}
+				} else if !pendingDeadline.IsZero() && !time.Now().Before(pendingDeadline) {
 					// The input and timeout cases can both be ready in select.
 					// Expired bytes are a completed key boundary even when the
 					// read case wins, so later input must not turn ESC into Alt.
@@ -552,6 +569,7 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 					pending = nil
 					pendingC = nil
 					pendingDeadline = time.Time{}
+					p.triggerCursorPulse(time.Now())
 					if quit, handled := p.handleHelpKey(ke); handled {
 						if quit {
 							return nil

@@ -57,8 +57,11 @@ During input handling, when an incomplete byte sequence or lone `ESC` arrives at
 read boundary, `Pane` buffers the pending bytes and arms a timer governed by
 `esc_key_timeout` from `spec/defaults.yaml` (default 50 ms). This ensures a
 standalone `ESC` resolves promptly into an escape event without blocking on further
-bytes. Similarly, width-guard intervals fall back to `guard_duration` from
-`spec/defaults.yaml` (default 1 s) when unset on the pane.
+bytes. If an `ESC` was held from a previous read and the next read starts with an
+ordinary key byte, the pane dispatches Escape first and then handles that key. A
+legacy Alt+key chord is decoded as Alt when both bytes arrive in one read; CSI and
+SS3 sequences may continue across reads. Width-guard intervals similarly fall back
+to `guard_duration` from `spec/defaults.yaml` (default 1 s) when unset on the pane.
 
 ## 3. Key decoding and shell compatibility
 

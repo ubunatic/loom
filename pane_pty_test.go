@@ -912,6 +912,47 @@ func TestPaneRunStandaloneEscTimesOut(t *testing.T) {
 	}
 }
 
+func TestPaneRunEscapeThenMouseReadDispatchesBothEvents(t *testing.T) {
+	master, slave := openPTY(t)
+	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 3, cols: 20}
+	p.EnableMouse()
+	w := newCursorEffectsPTYWidget()
+	done := make(chan error, 1)
+	go func() { done <- p.Run(w) }()
+	t.Cleanup(func() {
+		_, _ = master.Write([]byte("q"))
+		select {
+		case <-done:
+		case <-time.After(3 * time.Second):
+			t.Error("Pane.Run did not stop")
+		}
+	})
+
+	if _, err := master.Write([]byte{27}); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Millisecond)
+	if _, err := master.Write([]byte("\x1b[<0;2;2M")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case event := <-w.keyEvents:
+		if event.Key != "esc" {
+			t.Fatalf("key after Escape = %+v, want Escape", event)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for Escape event")
+	}
+	select {
+	case event := <-w.mouseEvents:
+		if event.Action != MousePress {
+			t.Fatalf("mouse after Escape = %+v, want press", event)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for mouse event after Escape")
+	}
+}
+
 func setPTYSize(t *testing.T, master *os.File, cols, rows int) {
 	t.Helper()
 	ws := &unix.Winsize{Row: uint16(rows), Col: uint16(cols)}
