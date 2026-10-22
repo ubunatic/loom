@@ -1,6 +1,6 @@
 # 365 — Check widgets against design references: loom crop, a loomtest compare helper, live crop for loom diff
 
-**Status**: Open
+**Status**: Closed — loom crop + loom fmt (encoding-only, idempotent, screen unchanged), loomtest.CompareWidget with -update, ColorPicker split into three testdata assets verified by user; 25b0180, 224c13d, 56920d8; host q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
