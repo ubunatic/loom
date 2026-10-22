@@ -1,47 +1,34 @@
-# 365 — loom diff: compare named parts of a design sketch with named widget parts of a running app
+# 365 — Check widgets against design references: loom crop, a loomtest compare helper, live crop for loom diff
 
 **Status**: Open
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
-**Related**: 362 (`loom diff`), 351 (live-check `diff` step), 133 (pane debug ruler overlay)
+**Related**: 362 (`loom diff`), 351 (live-check script), 359–361 (ColorPicker look bugs)
 
 ---
 
-/goal A TUI designed in an `.ansi` sketch can be checked part by part against the running app:
-`loom diff` takes a named part of the sketch and a named widget part of a capture (or explicit crop windows
-for either side) and compares them cell by cell; the ColorPicker variant b2 in
-docs/data/colorpicker-ideas-001.ansi passes against a live `loom edit` capture; tests and docs/CLI.md; or stop
-and report when blocked on a user decision.
+/goal A widget's look is checked cell by cell against a reference `.ansi` file in normal Go tests, the
+reference can be cut from a design sketch and deliberately updated when the design changes, and a live
+capture can be compared against the same reference; shown for the ColorPicker; or stop and report when
+blocked on a user decision.
 
-## Request (user, 2026-10-22)
+## Flow (agreed with user, 2026-10-22)
 
-The user will design TUIs in `.ansi` files (as with the ColorPicker). `loom diff` must extract parts of the
-design doc and compare them with parts of an app, either by crop geometry or by tagging diffable parts in
-docs and marking widget parts in the tested apps.
+1. **Sketch:** free-form design doc (prose, variants), e.g. docs/data/colorpicker-ideas-001.ansi. It stays
+   as history and is not the final truth.
+2. **Reference:** `loom crop <file> --region row,col,width,height` cuts the chosen variant into its own
+   file (e.g. `docs/data/ColorPicker-b2.ansi`). This is the first reference.
+3. **Test:** a `loomtest` helper renders the widget alone at a fixed size and state and compares it with
+   the reference cell by cell (same report format as `loom diff`). A `-update` flag rewrites the reference
+   from the current render.
+4. **Deliberate changes:** when the design changes on purpose (e.g. 360: picker BG changed to the Ctrl+Space
+   bar colour), update the reference with `-update` in the same commit and say why in the ticket. The
+   reference diff in that commit is what the reviewer checks. Unintended changes fail the test.
+5. **Live (when needed):** `loom diff --got-region …` or `--find <text>` locates the widget in a tmux
+   capture and compares that part with the reference.
 
-## Findings (host, loom at db59497)
+## Notes
 
-- Already robust: trailing spaces and empty rows compare equal; `--ignore-colour` is the plain-text pass,
-  `--ignore-glyph` the colour-only pass.
-- Gap: `--region` applies one window to both files; sketches hold prose and several variants, and the
-  widget sits elsewhere in the capture.
-
-## Decisions (host)
-
-- **M1, crop geometry:** `--want-region` and `--got-region` (same width/height); `--region` stays as the
-  shorthand for both. This is the fallback that always works.
-- **M2, parts in the sketch:** mark a part with invisible start/end markers (a private OSC sequence, e.g.
-  `ESC ] loom;part=b2 BEL` … `ESC ] loom;part-end BEL`). Terminals ignore unknown OSC, so `cat` and
-  `loom eval` still show the sketch as drawn, and the marker moves with the content when the sketch is
-  edited, unlike row/column numbers in a sidecar file. `loom diff --want-part b2`; `loom parts <file>` lists
-  parts with their windows. Verify that loom's parser and RichTextEdit keep (not strip) these markers.
-- **M3, parts in the app:** widgets get an optional part name; with an env var (e.g. `LOOMPARTS=<file>`)
-  the running app writes the current screen rect of each named widget, so `--got-part ColorPicker`
-  crops the capture to it. The live-check script (351) passes the file through.
-- No comment syntax or visible frontmatter in `.ansi` files.
-
-## Open questions for the plan turn
-
-- Whether a sketch part can be smaller than the widget (e.g. only the marker rows), and how to anchor it.
-- Name collisions when the same widget appears twice on screen.
+- `--ignore-colour` covers sketches whose colours are not final yet (layout-only check).
+- Out of scope: invisible part markers in sketches and part names emitted by the running app.
