@@ -50,5 +50,4 @@ upkeep.
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 323 | [323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md](323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md) | respect spec: move widget navigation and action keybindings into spec | Open |
-| 352 | [352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md](352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md) | Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A " | Open |
 <!-- harnez:end issues-active-index -->

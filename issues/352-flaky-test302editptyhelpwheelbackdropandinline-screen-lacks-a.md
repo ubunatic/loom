@@ -1,6 +1,6 @@
 # 352 — Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A "
 
-**Status**: Open
+**Status**: Closed — Test waited for help dismissal but accepted the cleared screen before the status bar's " A " returned; now waits for that click target plus fresh-output waits around each input, raceFactor timeouts (b3eef58). VT replay of that redraw fails with the old check; original flake not reproduced by stress; host -race -count=20 on 2 CPUs and q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
