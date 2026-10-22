@@ -1,3 +1,4 @@
+<!-- managed by harnez index: only the studies table is generated; evergreen documentation and other tables are hand-written -->
 # Loom Documentation
 
 - [Roadmap](Roadmap.md): assessed stages and implementation tickets.
@@ -28,6 +29,7 @@
 
 **`docs/studies/`** — case studies, indexed by `harnez index`.
 
+<!-- harnez:begin docs-studies-index -->
 | File | Topic |
 |------|-------|
 | [studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md](studies/2026-09-09-from-monitor-screenshots-to-a-declarative-ui-backlog.md) | From Monitor Screenshots to a Declarative UI Backlog |
@@ -64,5 +66,12 @@
 | [studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md](studies/2026-10-10-two-agent-lean-sprint-issue-318-cancel-focused-popover.md) | 2026-10-10 Lean Sprint Study: Cancel Focused Popover on Arrow Away from Menu Bar (Issue 318) |
 | [studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md](studies/2026-10-20-two-agent-lean-sprint-issue-342-popover-toggle-mousegrab.md) | Two-Agent Lean Sprint: Issue 342 (Ctrl+Space popover toggle, mousegrab default) |
 | [studies/2026-10-21-two-agent-lean-sprint-issue-346-colorpicker.md](studies/2026-10-21-two-agent-lean-sprint-issue-346-colorpicker.md) | Two-Agent Lean Sprint: Issue 346 (ColorPicker widget, 🎨 popover item) |
+| [studies/2026-10-21-two-agent-lean-sprint-issue-347-colorpicker-redesign.md](studies/2026-10-21-two-agent-lean-sprint-issue-347-colorpicker-redesign.md) | Two-Agent Lean Sprint: Issue 347 (ColorPicker redesign) |
+| [studies/2026-10-21-two-agent-lean-sprint-issue-353-cspace-menu.md](studies/2026-10-21-two-agent-lean-sprint-issue-353-cspace-menu.md) | Two-Agent Lean Sprint: Issue 353 (Ctrl+Space menu labels and hotkeys) |
+| [studies/2026-10-21-two-agent-lean-sprint-issues-348-325-340-341-343.md](studies/2026-10-21-two-agent-lean-sprint-issues-348-325-340-341-343.md) | Two-Agent Lean Sprint: Issues 348, 325, 340, 341, 343 |
+| [studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md](studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md) | Two-Agent Lean Sprint: Issues 349, 344, 345, 350 |
+| [studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md](studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md) | Two-Agent Lean Sprint: Issues 355, 356, 358, 357 |
+<!-- harnez:end docs-studies-index -->
+
 
 Study files are the source of truth for this table.
