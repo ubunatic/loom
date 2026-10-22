@@ -223,7 +223,7 @@ editor:
   mousegrab_drop_priority: 1
   search_prompt: "Find: "
   search_placeholder: "type query..."
-  hotkey_screenshot_binding: "ctrl-p"
+  hotkey_screenshot_binding: &hotkey_screenshot_binding "ctrl-p"
   hotkey_screenshot_label: "Screenshot"
 
 search_bar:
@@ -575,3 +575,14 @@ rich_text_edit:
     - title: "Help"
       entries:
         - {ref: "HotkeyHelp"}
+
+session:
+  prefix: "ctrl-]"
+  bindings:
+    screenshot: [*hotkey_screenshot_binding]
+    quit: ["ctrl-q"]
+  prefix_bindings:
+    screenshot: ["s"]
+    quit: ["q"]
+    send_prefix: ["ctrl-]"]
+

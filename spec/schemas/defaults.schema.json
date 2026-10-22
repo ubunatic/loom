@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "form", "settings", "key_conventions", "collector"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "form", "settings", "key_conventions", "collector", "session"],
   "properties": {
     "collector": {
       "type": "object",
@@ -795,6 +795,33 @@
           "keys": { "type": "string", "minLength": 1 },
           "applies": { "type": "string", "minLength": 1 },
           "conflict": { "type": "string" }
+        }
+      }
+    },
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prefix", "bindings", "prefix_bindings"],
+      "properties": {
+        "prefix": { "type": "string", "minLength": 1 },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["screenshot", "quit"],
+          "properties": {
+            "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "prefix_bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["screenshot", "quit", "send_prefix"],
+          "properties": {
+            "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "send_prefix": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
         }
       }
     }

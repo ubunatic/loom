@@ -140,6 +140,9 @@ var SpeccedDefaults = func() LibDefaults {
 	if err := defs.Media.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
+	if err := defs.Session.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
 	if len(defs.KeyConventions) == 0 {
 		panic("loom: spec/defaults.yaml: key_conventions must not be empty")
 	}
@@ -2390,6 +2393,7 @@ type LibDefaults struct {
 	Menu           MenuDefaults         `yaml:"menu"`
 	Form           FormDefaults         `yaml:"form"`
 	Settings       SettingsDefaults     `yaml:"settings"`
+	Session        SessionDefaults      `yaml:"session"`
 	KeyConventions []KeyConvention      `yaml:"key_conventions"`
 }
     LibDefaults represents specced runtime defaults loaded from
@@ -3972,6 +3976,24 @@ type SearchBarStyle struct {
 
 func DefaultSearchBarStyle() SearchBarStyle
     DefaultSearchBarStyle returns styles derived from the specced default theme.
+
+type SessionBindings struct {
+	Screenshot []string `yaml:"screenshot"`
+	Quit       []string `yaml:"quit"`
+}
+
+type SessionDefaults struct {
+	Prefix         string                `yaml:"prefix"`
+	Bindings       SessionBindings       `yaml:"bindings"`
+	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
+}
+    SessionDefaults defines specced defaults for the Loom session command.
+
+type SessionPrefixBindings struct {
+	Screenshot []string `yaml:"screenshot"`
+	Quit       []string `yaml:"quit"`
+	SendPrefix []string `yaml:"send_prefix"`
+}
 
 type Setting struct {
 	Label   string

@@ -53,6 +53,7 @@ type LibDefaults struct {
 	Menu           MenuDefaults         `yaml:"menu"`
 	Form           FormDefaults         `yaml:"form"`
 	Settings       SettingsDefaults     `yaml:"settings"`
+	Session        SessionDefaults      `yaml:"session"`
 	KeyConventions []KeyConvention      `yaml:"key_conventions"`
 }
 
@@ -633,6 +634,37 @@ func (d SettingsDefaults) validate() error {
 	return nil
 }
 
+// SessionDefaults defines specced defaults for the Loom session command.
+type SessionDefaults struct {
+	Prefix         string                `yaml:"prefix"`
+	Bindings       SessionBindings       `yaml:"bindings"`
+	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
+}
+
+type SessionBindings struct {
+	Screenshot []string `yaml:"screenshot"`
+	Quit       []string `yaml:"quit"`
+}
+
+type SessionPrefixBindings struct {
+	Screenshot []string `yaml:"screenshot"`
+	Quit       []string `yaml:"quit"`
+	SendPrefix []string `yaml:"send_prefix"`
+}
+
+func (d SessionDefaults) validate() error {
+	if d.Prefix == "" {
+		return fmt.Errorf("session.prefix must not be empty")
+	}
+	if len(d.Bindings.Screenshot) == 0 || len(d.Bindings.Quit) == 0 {
+		return fmt.Errorf("session.bindings must configure screenshot and quit")
+	}
+	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 {
+		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, and send_prefix")
+	}
+	return nil
+}
+
 // KeyConvention documents a default key convention across library widgets.
 type KeyConvention struct {
 	Action   string `yaml:"action"`
@@ -825,6 +857,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Media.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Session.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if len(defs.KeyConventions) == 0 {

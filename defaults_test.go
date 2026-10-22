@@ -2,6 +2,7 @@ package loom
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 	"time"
 
@@ -296,5 +297,36 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	}
 	if err := ch.validate(); err != nil {
 		t.Fatalf("Choice validation failed: %v", err)
+	}
+}
+
+func TestSessionDefaultsLoadFromSpec(t *testing.T) {
+	s := SpeccedDefaults.Session
+	if s.Prefix != "ctrl-]" {
+		t.Fatalf("session.prefix = %q, want ctrl-]", s.Prefix)
+	}
+	if len(s.Bindings.Screenshot) == 0 || s.Bindings.Screenshot[0] != SpeccedDefaults.Editor.HotkeyScreenshotBinding {
+		t.Fatalf("session.bindings.screenshot = %v, want editor binding %q", s.Bindings.Screenshot, SpeccedDefaults.Editor.HotkeyScreenshotBinding)
+	}
+	if !slices.Equal(s.Bindings.Quit, []string{"ctrl-q"}) {
+		t.Fatalf("session.bindings.quit = %v, want [ctrl-q]", s.Bindings.Quit)
+	}
+	if !slices.Equal(s.PrefixBindings.Screenshot, []string{"s"}) {
+		t.Fatalf("session.prefix_bindings.screenshot = %v, want [s]", s.PrefixBindings.Screenshot)
+	}
+	if !slices.Equal(s.PrefixBindings.Quit, []string{"q"}) {
+		t.Fatalf("session.prefix_bindings.quit = %v, want [q]", s.PrefixBindings.Quit)
+	}
+	if !slices.Equal(s.PrefixBindings.SendPrefix, []string{"ctrl-]"}) {
+		t.Fatalf("session.prefix_bindings.send_prefix = %v, want [ctrl-]]", s.PrefixBindings.SendPrefix)
+	}
+	if err := s.validate(); err != nil {
+		t.Fatalf("session.validate() failed: %v", err)
+	}
+
+	invalid := s
+	invalid.Prefix = ""
+	if err := invalid.validate(); err == nil {
+		t.Fatal("expected error on empty session prefix")
 	}
 }
