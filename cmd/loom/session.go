@@ -85,13 +85,19 @@ func setPTYSize(f *os.File, cols, rows int) {
 
 func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, command string, args ...string) error {
 	cols, rows := 80, 24
+	var oldState *term.State
 	if inFile, ok := in.(*os.File); ok && term.IsTerminal(int(inFile.Fd())) {
 		if w, h, err := term.GetSize(int(inFile.Fd())); err == nil && w > 0 && h > 0 {
 			cols, rows = w, h
 		}
-		oldState, err := term.MakeRaw(int(inFile.Fd()))
+		state, err := term.MakeRaw(int(inFile.Fd()))
 		if err == nil {
-			defer term.Restore(int(inFile.Fd()), oldState) //nolint:errcheck
+			oldState = state
+			defer func() {
+				if oldState != nil {
+					_ = term.Restore(int(inFile.Fd()), oldState)
+				}
+			}()
 		}
 	} else if outFile, ok := out.(*os.File); ok && term.IsTerminal(int(outFile.Fd())) {
 		if w, h, err := term.GetSize(int(outFile.Fd())); err == nil && w > 0 && h > 0 {
@@ -136,6 +142,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	}()
 
 	var savedShots []string
+	var shotErrors []error
 	var shotMu sync.Mutex
 	saveScreenshot := func() error {
 		vtMu.Lock()
@@ -212,6 +219,15 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				pending = append(pending, buf[:n]...)
 
 				for len(pending) > 0 {
+					// A lone Esc (0x1b with no following byte in the same read) must reach
+					// the child at once rather than waiting for more input.
+					if len(pending) == 1 && pending[0] == 0x1b {
+						prefixMode = false
+						master.Write(pending) //nolint:errcheck
+						pending = nil
+						break
+					}
+
 					// Check for bracketed paste first so pasted control characters are never split
 					if paste, used, ok := loom.DecodePaste(pending); ok {
 						_ = paste
@@ -230,7 +246,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					if prefixMode {
 						switch {
 						case key.Is(sessionDefs.PrefixBindings.Screenshot...):
-							_ = saveScreenshot()
+							if err := saveScreenshot(); err != nil {
+								shotMu.Lock()
+								shotErrors = append(shotErrors, err)
+								shotMu.Unlock()
+							}
 							prefixMode = false
 						case key.Is(sessionDefs.PrefixBindings.Quit...):
 							killProcessGroup(child.Process.Pid)
@@ -250,7 +270,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					// Direct hotkey matching
 					switch {
 					case key.Is(sessionDefs.Bindings.Screenshot...):
-						_ = saveScreenshot()
+						if err := saveScreenshot(); err != nil {
+							shotMu.Lock()
+							shotErrors = append(shotErrors, err)
+							shotMu.Unlock()
+						}
 					case key.Is(sessionDefs.Bindings.Quit...):
 						killProcessGroup(child.Process.Pid)
 						return
@@ -270,9 +294,19 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 	waitErr := child.Wait()
 
+	// Restore outer terminal to cooked mode before printing status to errOut so lines
+	// start cleanly at column 0 and do not staircase.
+	if inFile, ok := in.(*os.File); ok && oldState != nil {
+		_ = term.Restore(int(inFile.Fd()), oldState)
+		oldState = nil
+	}
+
 	shotMu.Lock()
 	for _, p := range savedShots {
 		fmt.Fprintf(errOut, "Saved screenshot: %s\n", p)
+	}
+	for _, err := range shotErrors {
+		fmt.Fprintf(errOut, "Error saving screenshot: %v\n", err)
 	}
 	shotMu.Unlock()
 

@@ -92,8 +92,8 @@ func NewVT(cols, rows int) *VT
 
 func (v *VT) ANSI() string
     ANSI serializes the visible screen cells to ANSI SGR escape sequences and
-    text. Trailing blanks on each row are trimmed. Each row is terminated by a
-    newline.
+    text. Trailing blanks on each row and trailing blank rows on the screen are
+    trimmed. Each row is terminated by a newline.
 
 func (v *VT) AltScreen() bool
     AltScreen reports whether DEC mode 1049 is active.

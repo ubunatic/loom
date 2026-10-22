@@ -127,10 +127,29 @@ func (v *VT) Screen() []string {
 func (v *VT) Text() string { return strings.Join(v.Screen(), "\n") }
 
 // ANSI serializes the visible screen cells to ANSI SGR escape sequences and text.
-// Trailing blanks on each row are trimmed. Each row is terminated by a newline.
+// Trailing blanks on each row and trailing blank rows on the screen are trimmed.
+// Each row is terminated by a newline.
 func (v *VT) ANSI() string {
+	lastRow := -1
+	for y := len(v.cells) - 1; y >= 0; y-- {
+		row := v.cells[y]
+		for x := 0; x < len(row); x++ {
+			if !isTrailingBlank(row[x]) {
+				lastRow = y
+				break
+			}
+		}
+		if lastRow >= 0 {
+			break
+		}
+	}
+	if lastRow < 0 {
+		return ""
+	}
+
 	var b strings.Builder
-	for _, row := range v.cells {
+	for y := 0; y <= lastRow; y++ {
+		row := v.cells[y]
 		last := -1
 		for x := len(row) - 1; x >= 0; x-- {
 			if !isTrailingBlank(row[x]) {

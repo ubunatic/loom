@@ -83,7 +83,7 @@ func TestVTANSIPlainAndTrimmed(t *testing.T) {
 	v := NewVT(10, 3)
 	v.Write([]byte("hello     \r\nworld")) //nolint:errcheck
 	got := v.ANSI()
-	want := "hello\nworld\n\n"
+	want := "hello\nworld\n"
 	if got != want {
 		t.Fatalf("VT.ANSI() = %q, want %q", got, want)
 	}
@@ -144,5 +144,19 @@ func TestVTANSIKeepsStyledTrailingSpace(t *testing.T) {
 	ansi := v.ANSI()
 	if !strings.Contains(ansi, "A\x1b[0;7m \x1b[0m\n") {
 		t.Fatalf("VT.ANSI() did not preserve styled space: %q", ansi)
+	}
+}
+
+func TestVTANSITrimsTrailingBlankRows(t *testing.T) {
+	v := NewVT(80, 24)
+	v.Write([]byte("Line 1\r\nLine 2\r\nLine 3")) //nolint:errcheck
+	ansi := v.ANSI()
+	lines := strings.Split(strings.TrimSuffix(ansi, "\n"), "\n")
+	if len(lines) != 3 {
+		t.Fatalf("VT.ANSI() row count = %d, want 3; lines:\n%q", len(lines), lines)
+	}
+	want := "Line 1\nLine 2\nLine 3\n"
+	if ansi != want {
+		t.Fatalf("VT.ANSI() = %q, want %q", ansi, want)
 	}
 }
