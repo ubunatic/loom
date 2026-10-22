@@ -169,8 +169,9 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 // ConsumeKey navigates settings and edits values.
 func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 	n := len(s.Items)
+	bindings := SpeccedDefaults.Settings.Bindings
 	if n == 0 {
-		if e.Key == "esc" || e.Key == "ctrl-c" {
+		if e.Is(bindings["quit"]...) {
 			return QuitResult()
 		}
 		return Ignored()
@@ -181,22 +182,22 @@ func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 		}
 		return Ignored()
 	}
-	switch e.Key {
-	case "esc", "ctrl-c":
+	switch {
+	case e.Is(bindings["quit"]...):
 		return QuitResult()
-	case "up":
+	case e.Is(bindings["up"]...):
 		if s.sel > 0 {
 			s.sel--
 		} else {
 			s.sel = n - 1
 		}
-	case "down":
+	case e.Is(bindings["down"]...):
 		if s.sel < n-1 {
 			s.sel++
 		} else {
 			s.sel = 0
 		}
-	case "enter", "right":
+	case e.Is(bindings["activate"]...):
 		if s.Items[s.sel].Kind == KindNumber && e.Key == "right" {
 			s.Items[s.sel].stepNumber(1)
 		} else if s.Items[s.sel].Kind == KindString {
@@ -206,17 +207,17 @@ func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 		} else {
 			s.Items[s.sel].activate()
 		}
-	case "left":
+	case e.Is(bindings["previous"]...):
 		if s.Items[s.sel].Kind == KindNumber {
 			s.Items[s.sel].stepNumber(-1)
 		} else {
 			s.Items[s.sel].prev()
 		}
-	case "-", "minus":
+	case e.Is(bindings["step_minus"]...):
 		if s.Items[s.sel].Kind == KindNumber {
 			s.Items[s.sel].stepNumber(-1)
 		}
-	case "+", "plus":
+	case e.Is(bindings["step_plus"]...):
 		if s.Items[s.sel].Kind == KindNumber {
 			s.Items[s.sel].stepNumber(1)
 		}

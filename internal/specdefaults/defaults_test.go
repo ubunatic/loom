@@ -108,3 +108,136 @@ func changedDefaults(t *testing.T, path string, data []byte) []byte {
 	}
 	return data
 }
+
+func TestChangedEmbeddedKeyDefaults(t *testing.T) {
+	root := filepath.Join("..", "..")
+	dir := t.TempDir()
+	for _, pattern := range []string{
+		"go.mod", "go.sum", "*.go",
+		"collector/*.go", "graph/*.go", "layout/*.go", "measure/*.go", "spec/*.go", "spec/*.yaml", "spec/schemas/*.json", "syntax/*.go",
+	} {
+		files, err := filepath.Glob(filepath.Join(root, pattern))
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, source := range files {
+			if strings.HasSuffix(source, "_test.go") {
+				continue
+			}
+			rel, err := filepath.Rel(root, source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			data, err := os.ReadFile(source)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if rel == "spec/defaults.yaml" {
+				var doc map[string]any
+				if err := yaml.Unmarshal(data, &doc); err != nil {
+					t.Fatal(err)
+				}
+				tabs := doc["tabs"].(map[string]any)["keys"].(map[string]any)
+				tabs["previous"] = "h"
+				tabs["next"] = "l"
+
+				view := doc["view"].(map[string]any)["bindings"].(map[string]any)
+				view["quit"] = []any{"x"}
+
+				split := doc["split"].(map[string]any)["bindings"].(map[string]any)
+				split["shrink"] = []any{"-"}
+
+				choice := doc["choice"].(map[string]any)["bindings"].(map[string]any)
+				choice["down"] = []any{"d"}
+
+				tree := doc["tree"].(map[string]any)["bindings"].(map[string]any)
+				tree["expand_or_enter"] = []any{"e"}
+
+				menu := doc["menu"].(map[string]any)["bindings"].(map[string]any)
+				menu["open_bar"] = []any{"f12"}
+
+				form := doc["form"].(map[string]any)["bindings"].(map[string]any)
+				form["cancel"] = []any{"q"}
+
+				settings := doc["settings"].(map[string]any)["bindings"].(map[string]any)
+				settings["quit"] = []any{"x"}
+
+				data, err = yaml.Marshal(doc)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			target := filepath.Join(dir, rel)
+			if err := os.MkdirAll(filepath.Dir(target), 0700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(target, data, 0600); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	const probe = `package main
+import (
+	"ubunatic.com/loom"
+)
+func main() {
+	tabs := loom.DefaultTabsKeys()
+	if tabs.Previous != "h" || tabs.Next != "l" {
+		panic("tabs default keys did not follow YAML: got previous=" + tabs.Previous + " next=" + tabs.Next)
+	}
+	v := loom.NewView([]string{"one", "two"})
+	if !v.ConsumeKey(loom.KeyEvent{Key: "x"}).Quit {
+		panic("view quit key did not follow YAML")
+	}
+	if v.ConsumeKey(loom.KeyEvent{Key: "q"}).Quit {
+		panic("view original quit key should not have triggered")
+	}
+	split := loom.NewSplit(nil, nil)
+	origRatio := split.Ratio
+	split.ConsumeKey(loom.KeyEvent{Key: "-"})
+	if split.Ratio >= origRatio {
+		panic("split shrink key did not follow YAML")
+	}
+	choice := loom.NewChoice([]loom.Item{{Name: "one"}, {Name: "two"}})
+	choice.ConsumeKey(loom.KeyEvent{Key: "d"})
+	item, ok := choice.Selected()
+	if !ok || item.Name != "two" {
+		panic("choice down key did not follow YAML")
+	}
+	tree := loom.NewTree([]*loom.TreeNode{{ID: "root", Label: "root", Children: []*loom.TreeNode{{ID: "child", Label: "child"}}}})
+	tree.ConsumeKey(loom.KeyEvent{Key: "e"})
+	if !tree.VisibleNodes()[0].Expanded {
+		panic("tree expand key did not follow YAML")
+	}
+	menu := loom.NewMenuBar(loom.Menu{Title: "File", Items: []loom.MenuItem{{Label: "Exit"}}})
+	menu.ConsumeKey(loom.KeyEvent{Key: "f12"})
+	if !menu.Open {
+		panic("menu open_bar key did not follow YAML")
+	}
+	formCancelled := false
+	form := loom.NewForm(nil)
+	form.OnCancel = func() { formCancelled = true }
+	form.ConsumeKey(loom.KeyEvent{Key: "q"})
+	if !formCancelled {
+		panic("form cancel key did not follow YAML")
+	}
+	settings := loom.NewSettings(nil)
+	if !settings.ConsumeKey(loom.KeyEvent{Key: "x"}).Quit {
+		panic("settings quit key did not follow YAML")
+	}
+}
+`
+	if err := os.MkdirAll(filepath.Join(dir, "probe"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "probe", "main.go"), []byte(probe), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("go", "run", "./probe")
+	cmd.Dir = dir
+	cmd.Env = append(os.Environ(), "GOWORK=off")
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("changed embedded key defaults: %v\n%s", err, output)
+	}
+}
+

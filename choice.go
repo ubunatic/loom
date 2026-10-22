@@ -458,12 +458,13 @@ func (c *Choice) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return Handled()
 	}
-	switch e.Key {
-	case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
+	bindings := SpeccedDefaults.Choice.Bindings
+	switch {
+	case e.Is(bindings["quit"]...):
 		c.aborted = true
 		c.done = true
 		return QuitResult()
-	case "enter":
+	case e.Is(bindings["select"]...):
 		if c.MultiSelect {
 			// Confirm the whole checked set; OnSelect/single-select rules don't apply.
 			c.done = true
@@ -475,42 +476,42 @@ func (c *Choice) ConsumeKey(e KeyEvent) EventResult {
 		}
 		c.done = true
 		return DoneResult()
-	case "up":
+	case e.Is(bindings["up"]...):
 		if c.sel > 0 {
 			c.sel--
 		} else {
 			c.sel = max(0, len(c.filtered)-1)
 		}
-	case "down":
+	case e.Is(bindings["down"]...):
 		if c.sel < len(c.filtered)-1 {
 			c.sel++
 		} else {
 			c.sel = 0
 		}
-	case "pgup", "pageup":
+	case e.Is(bindings["page_up"]...):
 		step := max(1, c.itemRows-1)
 		c.sel -= step
 		if c.sel < 0 {
 			c.sel = 0
 		}
-	case "pgdown", "pgdn", "pagedown":
+	case e.Is(bindings["page_down"]...):
 		step := max(1, c.itemRows-1)
 		c.sel += step
 		if c.sel >= len(c.filtered) {
 			c.sel = max(0, len(c.filtered)-1)
 		}
-	case "home":
+	case e.Is(bindings["home"]...):
 		c.sel = 0
-	case "end":
+	case e.Is(bindings["end"]...):
 		c.sel = max(0, len(c.filtered)-1)
-	case "backspace":
+	case e.Is(bindings["backspace"]...):
 		if len(c.query) > 0 {
 			runes := []rune(c.query)
 			c.query = string(runes[:len(runes)-1])
 			c.refilter()
 		}
 	default:
-		if c.MultiSelect && e.Text == " " {
+		if c.MultiSelect && (e.Is(bindings["toggle"]...) || e.Text == " ") {
 			c.toggleChecked() // Space toggles the checkbox instead of filtering
 			return Handled()
 		}

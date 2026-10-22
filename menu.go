@@ -426,10 +426,11 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 		m.keyActions[action]()
 		return Consumed()
 	}
+	bindings := SpeccedDefaults.Menu.Bindings
 	if len(m.Menus) == 0 {
 		return Ignored()
 	}
-	if e.Key == "f10" {
+	if e.Is(bindings["open_bar"]...) {
 		m.focused, m.Open = true, true
 		m.ActiveMenu = clampMenu(m.ActiveMenu, len(m.Menus))
 		m.selectFirst()
@@ -456,8 +457,8 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 	if !m.focused && !m.Open {
 		return Ignored()
 	}
-	switch e.Key {
-	case "esc":
+	switch {
+	case e.Is(bindings["cancel"]...):
 		if len(m.submenus) > 0 {
 			m.submenus = m.submenus[:len(m.submenus)-1]
 		} else if m.Open {
@@ -465,14 +466,14 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 		} else {
 			m.focused = false
 		}
-	case "left":
+	case e.Is(bindings["left"]...):
 		if len(m.submenus) > 0 {
 			m.submenus = m.submenus[:len(m.submenus)-1]
 		} else if m.Open {
 			m.ActiveMenu = (clampMenu(m.ActiveMenu, len(m.Menus)) - 1 + len(m.Menus)) % len(m.Menus)
 			m.selectFirst()
 		}
-	case "right":
+	case e.Is(bindings["right"]...):
 		if m.Open && m.openSelectedSubmenu() {
 			return Consumed()
 		}
@@ -484,14 +485,14 @@ func (m *MenuBar) ConsumeKey(e KeyEvent) EventResult {
 			m.submenus = nil
 			m.selectFirst()
 		}
-	case "down":
+	case e.Is(bindings["down"]...):
 		m.focused, m.Open = true, true
 		m.moveCurrent(1)
-	case "up":
+	case e.Is(bindings["up"]...):
 		if m.Open {
 			m.moveCurrent(-1)
 		}
-	case "enter", " ":
+	case e.Is(bindings["activate"]...):
 		if !m.Open {
 			m.focused, m.Open = true, true
 			m.selectFirst()
@@ -779,14 +780,15 @@ func (m *Menu) ConsumeKey(e KeyEvent) EventResult {
 	if !m.Open {
 		return Ignored()
 	}
-	switch e.Key {
-	case "esc":
+	bindings := SpeccedDefaults.Menu.Bindings
+	switch {
+	case e.Is(bindings["cancel"]...):
 		m.Open = false
-	case "up":
+	case e.Is(bindings["up"]...):
 		m.move(-1)
-	case "down":
+	case e.Is(bindings["down"]...):
 		m.move(1)
-	case "enter", " ":
+	case e.Is(bindings["activate"]...):
 		m.activate()
 	default:
 		return Ignored()

@@ -163,25 +163,25 @@ func (t *Tree) nodeInfo(want *TreeNode) (depth int, parent *TreeNode) {
 }
 
 func (t *Tree) ConsumeKey(e KeyEvent) EventResult {
-	key := e.Name()
 	nodes := t.VisibleNodes()
 	if len(nodes) == 0 {
 		return Ignored()
 	}
 	t.selected = min(max(0, t.selected), len(nodes)-1)
 	node := nodes[t.selected]
-	switch key {
-	case "up", "k":
+	bindings := SpeccedDefaults.Tree.Bindings
+	switch {
+	case e.Is(bindings["up"]...):
 		t.selected = max(0, t.selected-1)
-	case "down", "j":
+	case e.Is(bindings["down"]...):
 		t.selected = min(len(nodes)-1, t.selected+1)
-	case "right", "l":
+	case e.Is(bindings["expand_or_enter"]...):
 		if len(node.Children) > 0 && !node.Expanded {
 			node.Expanded = true
 		} else if node.Expanded && len(node.Children) > 0 {
 			t.selected++
 		}
-	case "left", "h":
+	case e.Is(bindings["collapse_or_parent"]...):
 		if node.Expanded {
 			node.Expanded = false
 		} else if _, parent := t.nodeInfo(node); parent != nil {
@@ -192,19 +192,19 @@ func (t *Tree) ConsumeKey(e KeyEvent) EventResult {
 				}
 			}
 		}
-	case "enter", " ":
+	case e.Is(bindings["toggle_or_activate"]...):
 		if len(node.Children) > 0 {
 			node.Expanded = !node.Expanded
 		} else if t.OnActivate != nil {
 			t.OnActivate(node)
 		}
-	case "pgdown", "pgdn", "pagedown":
+	case e.Is(bindings["page_down"]...):
 		t.selected = min(len(nodes)-1, t.selected+max(1, t.lastRect.H))
-	case "pgup", "pageup":
+	case e.Is(bindings["page_up"]...):
 		t.selected = max(0, t.selected-max(1, t.lastRect.H))
-	case "home":
+	case e.Is(bindings["home"]...):
 		t.selected = 0
-	case "end":
+	case e.Is(bindings["end"]...):
 		t.selected = len(nodes) - 1
 	default:
 		return Ignored()

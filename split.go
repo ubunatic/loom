@@ -145,21 +145,22 @@ func (s *Split) ConsumeKey(e KeyEvent) EventResult {
 			return result
 		}
 	}
-	switch key {
-	case "tab":
+	bindings := SpeccedDefaults.Split.Bindings
+	switch {
+	case e.Is(bindings["next"]...):
 		if !s.FocusNext() {
 			return Ignored()
 		}
 		return Handled()
-	case "shift-tab":
+	case e.Is(bindings["previous"]...):
 		if !s.FocusPrevious() {
 			return Ignored()
 		}
 		return Handled()
-	case "[":
+	case e.Is(bindings["shrink"]...):
 		s.SetRatio(s.Ratio - 0.05)
 		return Handled()
-	case "]":
+	case e.Is(bindings["grow"]...):
 		s.SetRatio(s.Ratio + 0.05)
 		return Handled()
 	}

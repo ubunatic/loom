@@ -190,48 +190,49 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 	}
 	page := max(1, v.lastH)
 	halfPage := max(1, page/2)
-	switch key {
-	case "up", "k":
+	bindings := SpeccedDefaults.View.Bindings
+	switch {
+	case e.Is(bindings["up"]...):
 		if v.Scroll <= 0 {
 			return Ignored()
 		}
 		v.Scroll--
 		v.OffsetY = v.Scroll
-	case "down", "j":
+	case e.Is(bindings["down"]...):
 		if v.Scroll >= maxScroll {
 			return Ignored()
 		}
 		v.Scroll++
 		v.OffsetY = v.Scroll
-	case "left", "h":
+	case e.Is(bindings["left"]...):
 		if v.OffsetX <= 0 {
 			return Ignored()
 		}
 		v.OffsetX--
-	case "right", "l":
+	case e.Is(bindings["right"]...):
 		if v.OffsetX >= v.maxOffsetX() {
 			return Ignored()
 		}
 		v.OffsetX++
-	case "pgdown", "pgdn", "pagedown", "ctrl-f", " ":
+	case e.Is(bindings["page_down"]...):
 		v.Scroll = min(maxScroll, v.Scroll+page)
 		v.OffsetY = v.Scroll
-	case "pgup", "pageup", "ctrl-b", "b":
+	case e.Is(bindings["page_up"]...):
 		v.Scroll = max(0, v.Scroll-page)
 		v.OffsetY = v.Scroll
-	case "ctrl-d":
+	case e.Is(bindings["half_page_down"]...):
 		v.Scroll = min(maxScroll, v.Scroll+halfPage)
 		v.OffsetY = v.Scroll
-	case "ctrl-u":
+	case e.Is(bindings["half_page_up"]...):
 		v.Scroll = max(0, v.Scroll-halfPage)
 		v.OffsetY = v.Scroll
-	case "home", "g":
+	case e.Is(bindings["home"]...):
 		v.Scroll = 0
 		v.OffsetY = v.Scroll
-	case "end", "G":
+	case e.Is(bindings["end"]...):
 		v.Scroll = maxScroll
 		v.OffsetY = v.Scroll
-	case "esc", "ctrl-c", "q":
+	case e.Is(bindings["quit"]...):
 		if v.drag.active {
 			v.Scroll = v.drag.start
 			v.OffsetY = v.Scroll

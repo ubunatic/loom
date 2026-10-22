@@ -38,7 +38,7 @@ type TabsKeys struct {
 
 // DefaultTabsKeys returns the historical left/right arrow navigation.
 func DefaultTabsKeys() TabsKeys {
-	return TabsKeys{Previous: "left", Next: "right"}
+	return SpeccedDefaults.Tabs.Keys
 }
 
 // DefaultTabsStyle returns styles derived from the specced default theme.

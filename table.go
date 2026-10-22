@@ -130,10 +130,7 @@ func NewTable(cols []Column, rows []Row) *Table {
 		t.query = q
 		t.refilter()
 	}
-	t.keys = NewKeyMap(map[string][]string{
-		"page-up":   {"pgup", "pageup"},
-		"page-down": {"pgdown", "pgdn", "pagedown"},
-	})
+	t.keys = NewKeyMap(SpeccedDefaults.Table.Bindings)
 	t.refilter()
 	return t
 }
@@ -482,18 +479,32 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 	if t.keys != nil {
 		action = t.keys.Action(e)
 	}
-	if action != "" {
+	bindings := SpeccedDefaults.Table.Bindings
+	switch {
+	case action == "page_up" || action == "page-up" || (t.keys == nil && e.Is(bindings["page_up"]...)):
 		previous := t.sel
 		count := t.pageRows
 		if count < 1 {
 			count = 10
 		}
 		for i := 0; i < count; i++ {
-			if action == "page-up" {
-				if t.sel > 0 {
-					t.sel--
-				}
-			} else if t.sel < len(t.filtered)-1 {
+			if t.sel > 0 {
+				t.sel--
+			}
+		}
+		if t.sel != previous {
+			t.cellSelectionChanged()
+			return Handled()
+		}
+		return Ignored()
+	case action == "page_down" || action == "page-down" || (t.keys == nil && e.Is(bindings["page_down"]...)):
+		previous := t.sel
+		count := t.pageRows
+		if count < 1 {
+			count = 10
+		}
+		for i := 0; i < count; i++ {
+			if t.sel < len(t.filtered)-1 {
 				t.sel++
 			}
 		}
@@ -502,20 +513,18 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			return Handled()
 		}
 		return Ignored()
-	}
-	switch e.Key {
-	case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
+	case action == "quit" || (t.keys == nil && e.Is(bindings["quit"]...)):
 		t.aborted = true
 		t.done = true
 		return QuitResult()
-	case "enter":
+	case action == "select" || (t.keys == nil && e.Is(bindings["select"]...)):
 		if t.OnSelect != nil && len(t.filtered) > 0 {
 			t.OnSelect(t.filtered[t.sel])
 			return Handled()
 		}
 		t.done = true
 		return DoneResult()
-	case "up":
+	case action == "up" || (t.keys == nil && e.Is(bindings["up"]...)):
 		if len(t.filtered) < 2 {
 			return Ignored()
 		}
@@ -526,7 +535,7 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 		}
 		t.cellSelectionChanged()
 		return Handled()
-	case "down":
+	case action == "down" || (t.keys == nil && e.Is(bindings["down"]...)):
 		if len(t.filtered) < 2 {
 			return Ignored()
 		}
@@ -537,25 +546,31 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 		}
 		t.cellSelectionChanged()
 		return Handled()
-	case "left":
+	case action == "left" || (t.keys == nil && e.Is(bindings["left"]...)):
 		if t.CellCursor && t.cellCol > 0 {
 			t.cellCol--
 			t.cellSelectionChanged()
 			return Handled()
 		}
-	case "right":
+	case action == "right" || (t.keys == nil && e.Is(bindings["right"]...)):
 		if t.CellCursor && t.cellCol < len(t.Columns)-1 {
 			t.cellCol++
 			t.cellSelectionChanged()
 			return Handled()
 		}
-	case "tab":
+	case action == "sort_cycle" || (t.keys == nil && e.Is(bindings["sort_cycle"]...)):
 		if len(t.Columns) == 0 {
 			return Ignored()
 		}
 		t.cycleSortNext()
 		return Handled()
-	case "backspace":
+	case action == "sort_flip" || (t.keys == nil && (e.Is(bindings["sort_flip"]...) || e.Text == "!")):
+		t.SortDesc = !t.SortDesc
+		if t.OnSort != nil && t.SortCol >= 0 {
+			t.OnSort(t.SortCol, t.SortDesc)
+		}
+		return Handled()
+	case action == "backspace" || (t.keys == nil && e.Is(bindings["backspace"]...)):
 		if len(t.query) > 0 {
 			runes := []rune(t.query)
 			t.query = string(runes[:len(runes)-1])
@@ -563,13 +578,7 @@ func (t *Table) ConsumeKey(e KeyEvent) (quit EventResult) {
 			return Handled()
 		}
 	default:
-		if e.Text == "!" {
-			t.SortDesc = !t.SortDesc
-			if t.OnSort != nil && t.SortCol >= 0 {
-				t.OnSort(t.SortCol, t.SortDesc)
-			}
-			return Handled()
-		} else if e.Text != "" {
+		if e.Text != "" {
 			t.query += e.Text
 			t.refilter()
 			return Handled()

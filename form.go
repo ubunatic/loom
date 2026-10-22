@@ -272,27 +272,22 @@ func (f *Form) ConsumeKey(e KeyEvent) EventResult {
 	if f == nil {
 		return Ignored()
 	}
-	switch e.Key {
-	case "tab":
-		f.FocusNext()
-		return Handled()
-	case "shift-tab":
-		f.FocusPrevious()
-		return Handled()
-	case "down", "pgdown", "pgdn", "pagedown":
+	bindings := SpeccedDefaults.Form.Bindings
+	switch {
+	case e.Is(bindings["next"]...):
 		if f.FocusNext() {
 			return Handled()
 		}
-	case "up", "pgup", "pageup":
+	case e.Is(bindings["previous"]...):
 		if f.FocusPrevious() {
 			return Handled()
 		}
-	case "esc":
+	case e.Is(bindings["cancel"]...):
 		if f.OnCancel != nil {
 			f.OnCancel()
 		}
 		return Handled()
-	case "enter":
+	case e.Is(bindings["submit"]...):
 		if f.AdvanceOnEnter && f.focused < len(f.Fields) {
 			if _, ok := f.Fields[f.focused].Widget.(*TextInput); ok && f.FocusNext() {
 				return Handled()
