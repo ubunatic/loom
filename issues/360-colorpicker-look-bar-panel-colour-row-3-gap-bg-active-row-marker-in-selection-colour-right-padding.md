@@ -1,6 +1,6 @@
 # 360 — ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding
 
-**Status**: Open — M2 3adbbe6 reopened by user: BG marker inside the rug columns has the wrong BG
+**Status**: Closed — M3 fixed BG pick cells inside preview rug to use panel BG while outside-rug marker cells retain editor BG; per-cell canvas coverage tests palette-0 markers in active and inactive states. ANSI validation and q1 passed; make install succeeded.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
