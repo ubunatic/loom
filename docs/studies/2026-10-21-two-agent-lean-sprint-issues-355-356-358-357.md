@@ -51,3 +51,13 @@ started with a read-only plan turn (355 excepted: a narrow draw fix dispatched d
   1-minute harnez exec timeout; rerun with HTO=0). Live tmux confirms panel BG 8 and both markers.
 - Observation: green tests and passing `loom check-box` did not catch a missing panel colour; only
   the live look against the sketch did.
+
+## 360 ColorPicker look fixes (d360, codex:sol:med)
+
+- Plan 1m01s: no shared selection colour existed; added theme role `selection: 24`, panel BG from the
+  bar, inactive marker from `separator_fg`, trailing padding (36 columns).
+- M1 0a60961 (8m): host q1 green, but live tmux showed edges as solid panel blocks (BG 239) and the
+  selection colour leaking over the whole row-3 edge. M2 3adbbe6 (2m) fixed both with per-cell canvas
+  tests. Host q1 green; live: edges fg 239 on editor BG, marker 24 only on the pick, inactive marker 8.
+- Observation: for the second ticket in a row, only the host's per-cell ANSI capture found the look
+  bugs; developer canvas tests asserted what was drawn, not what the sketch shows.
