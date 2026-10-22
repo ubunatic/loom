@@ -26,3 +26,15 @@ reported capabilities follow the same detection rules as Loom rendering.
 `loom markup <file>` converts a `.tui` markup file to ANSI, or any other file
 (read as ANSI) to `.tui` markup, and prints the result. See
 [.tui markup](TuiMarkup.md).
+
+`loom diff <want.ansi> <got.ansi>` compares every terminal cell, including the
+glyph and foreground/background colours. It accepts ANSI sketches and output
+from `tmux capture-pane -pe`. Differences are printed in row-major order with
+1-based row and display-column coordinates; reset, indexed, and truecolour
+values are shown distinctly. Different screen sizes compare as though the
+smaller screen were padded with default blank cells. Exit status is 0 when the
+screens match, 1 when cells differ, and 2 when an input or option is invalid.
+
+Use `--region row,col,width,height` to compare a 1-based cell rectangle in
+both screens. `--ignore-glyph` and `--ignore-colour` omit those fields from the
+comparison.

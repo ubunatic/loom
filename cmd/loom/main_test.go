@@ -125,7 +125,7 @@ func TestCheckBox(t *testing.T) {
 }
 
 func TestCLIArityErrors(t *testing.T) {
-	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"view"}, {"edit", "a", "b"}, {"check-box"}, {"widgets", "a", "b"}} {
+	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"diff"}, {"diff", "a"}, {"diff", "a", "b", "c"}, {"view"}, {"edit", "a", "b"}, {"check-box"}, {"widgets", "a", "b"}} {
 		var out bytes.Buffer
 		if err := execute(args, &out); err == nil {
 			t.Errorf("execute(%q) succeeded, want arity error", args)

@@ -5,6 +5,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,7 +21,7 @@ import (
 func main() {
 	if err := execute(os.Args[1:], os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		os.Exit(errorExitCode(err))
 	}
 }
 
@@ -30,9 +31,16 @@ func execute(args []string, out io.Writer) error {
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand())
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), diffCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand())
 	root.SetArgs(args)
-	return root.Execute()
+	err := root.Execute()
+	if err != nil && len(args) > 0 && args[0] == "diff" {
+		var exit diffExitError
+		if !errors.As(err, &exit) {
+			return diffExitError{2, err}
+		}
+	}
+	return err
 }
 
 func measureCommand() *cobra.Command {
