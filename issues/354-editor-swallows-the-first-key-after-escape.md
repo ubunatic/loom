@@ -1,6 +1,6 @@
 # 354 — Editor swallows the first key after Escape
 
-**Status**: Open
+**Status**: Closed — Escape followed by a key in a later read now dispatches the lone Escape first (da30f65), plus the expired-Escape race (783bd30); repro had no real pause, the host wait helper 'timeout 0.1 true' does not wait. Host live check with a real 0.8 s pause and the no-pause repro both save on the first Ctrl+S; q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
