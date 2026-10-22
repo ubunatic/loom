@@ -54,4 +54,5 @@ upkeep.
 | 352 | [352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md](352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md) | Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A " | Open |
 | 354 | [354-editor-swallows-the-first-key-after-escape.md](354-editor-swallows-the-first-key-after-escape.md) | Editor swallows the first key after Escape | Open |
 | 362 | [362-loom-diff-compare-two-ansi-screens-cell-by-cell-glyph-fg-bg.md](362-loom-diff-compare-two-ansi-screens-cell-by-cell-glyph-fg-bg.md) | loom diff: compare two ANSI screens cell by cell (glyph, FG, BG) | Open |
+| 363 | [363-loom-man-pages-from-cobra-loom-man-man-install.md](363-loom-man-pages-from-cobra-loom-man-man-install.md) | loom man pages from cobra (loom man, man --install) | Open |
 <!-- harnez:end issues-active-index -->
