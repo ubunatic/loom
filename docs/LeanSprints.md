@@ -116,3 +116,21 @@ Source: host `claude:opus`, developers `codex:sol:med`, designer `claude:opus:me
 - **Follow-ups go in the open ticket**: user bug reports during a running sprint were recorded as the next milestone's pre-work instead of new tickets.
 
 
+
+## Ctrl+Space bar and two-row ColorPicker (2026-10-21/22, tickets 353-361)
+
+- **Host q1 reruns are not optional**: in 355-358 the host rerun was red after three of four "done"
+  reports (compile stop, edits after the last q1, stale tests).
+- **Scope "don't fix untouched tests"**: it covers unrelated flakes only. Tests whose expectation the
+  ticket changes on purpose are the developer's to update (358: 14 stale tests left red).
+- **Look bugs need a per-cell colour dump against the sketch**: in 359 and 360 green tests and clean
+  `loom check-box` hid a missing panel BG, solid edge blocks, a marker colour leak and a wrong marker
+  BG. Dump `tmux capture-pane -pe` with escapes made visible and compare FG/BG per cell with the
+  `.ansi` sketch; test picks at the start, inside and past every layout boundary.
+- **Shift+arrow selection does not reach `loom edit` via tmux send-keys** here; coloured-selection
+  cases stay test-only until 351 finds an encoding.
+- **`harnez agent send` to a running Codex worker only queues** for the next resume; mid-turn user
+  additions need a resume after the turn ends.
+- **A one-line semantics change can break an earlier decision**: carrying the cursor column (361)
+  made 359's "Enter applies both rows" unsafe; the host re-decided Enter before dispatch.
+- **Host harness timeout**: run host q1 with `HTO=0`, otherwise harnez kills it after 1 minute.

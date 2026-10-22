@@ -50,6 +50,7 @@ physical color seen by the user.
 | Status | `Frame` status row |
 | Border | `Box` border/title and `Frame` title, `Tabs` bar rule |
 | Focus background | `Grid` focus highlighting |
+| Selection (`selection`) | `RichTextEdit` text selection, focused Ctrl+Space bar item, active ColorPicker row marker (361); distinct from `selected_bg` list rows |
 
 Roles carry the attributes needed for their semantics, such as selected/header
 bold, placeholder/track/status dim, and scrollbar-thumb bold. Applications

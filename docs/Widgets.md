@@ -585,8 +585,10 @@ with the cursor cell on the active row.
 `OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
 host keeps running. Palette, edge glyphs, preview dimensions and key bindings
 come from `spec/defaults.yaml`. The panel uses the rich text toolbar background
-(`rich_text_edit.toolbar_bg`); its edge glyphs use that color as their
-foreground and background so they extend the panel against the editor. Swatches remain `Aa`
+(`rich_text_edit.toolbar_bg`); its edge glyphs (`▂` top, `🮂` bottom by
+default; eighths `▁`/`▔` as fallback for fonts without `🮂`) use that color as
+their foreground on the editor background, so they extend the panel by a
+quarter cell and clear the text under it. Swatches remain `Aa`
 cells with one letter and one padding space per palette position. Row 3 stays
 panel background through columns 0–8, then draws upper-edge glyphs from column
 9; this closes the gap between the preview rug and the BG marker. Both rows always show a dim marker at their current applied color. When the
