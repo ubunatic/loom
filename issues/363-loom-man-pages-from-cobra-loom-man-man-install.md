@@ -1,6 +1,6 @@
 # 363 — loom man pages from cobra (loom man, man --install)
 
-**Status**: Open
+**Status**: Closed — loom man prints loom(1); loom man --install writes 18 cobra/doc pages to ~/.local/share/man/man1 (--dir for a custom dir); host q1 green, man loom-diff renders (ab6866c)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
