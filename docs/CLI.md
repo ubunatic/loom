@@ -38,3 +38,10 @@ screens match, 1 when cells differ, and 2 when an input or option is invalid.
 Use `--region row,col,width,height` to compare a 1-based cell rectangle in
 both screens. `--ignore-glyph` and `--ignore-colour` omit those fields from the
 comparison.
+
+`loom man` prints the generated `loom(1)` roff page. Pipe it to `man -l -` to
+view it or redirect it to a file. `loom man --install` generates and installs
+the full Cobra command page tree in the standard man directory: under
+`$XDG_DATA_HOME/man/man1` (or `~/.local/share/man/man1`) for regular users and
+`/usr/local/share/man/man1` for root. `loom man --dir <path>` installs to a
+custom directory.
