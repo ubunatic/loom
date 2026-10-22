@@ -56,3 +56,20 @@ four milestone commits (vt, spec, event, session). Pre-work:
 - Hotkey matching must not split multi-byte input: an escape sequence or pasted text containing 0x10,
   0x11 or 0x1d inside it is forwarded unchanged; test it.
 - The screenshot also works while the child uses the alternate screen (test with `?1049h`).
+
+## M1–M4 delivered (host review, 2026-10-22)
+
+Commits 6784784 (vt package), 2067152 (spec), cecf3f7 (ctrl-] decode), 5e2400a (session). Host q1 green
+(0 `--- FAIL`), validate-spec ok. Live: `loom session -- harnez usage -w --minimal`, ctrl-p, ctrl-q:
+screenshot saved with colors, exit 0.
+
+### M5 pre-work (required)
+
+- "Saved screenshot: ..." is printed while the outer tty is still raw: the shell output after exit
+  staircases (EXIT=0 at column 52). Restore the terminal before printing; test that stderr lines end in
+  a clean line start.
+- Screenshot keeps the trailing empty rows (30 lines for 9 lines of content): trim trailing blank rows
+  as well as trailing blank cells; golden test.
+- A lone Esc (0x1b with no following byte in the same read) must reach the child at once, not wait for
+  more input; test it.
+- A failed screenshot write must not be silent: report it on stderr after exit.
