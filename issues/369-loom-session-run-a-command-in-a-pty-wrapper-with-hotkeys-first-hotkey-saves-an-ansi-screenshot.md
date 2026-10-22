@@ -43,3 +43,16 @@ offer more actions on the same screen model (crop, copy, diff).
   child, exit code passes through.
 - Screenshot of a known fixture screen equals a golden `.ansi`; `loom measure`/`loom eval` accept it.
 - Host live check: `loom session -- harnez usage`, take a screenshot, open it with `loom view`.
+
+## Approved plan (host, 2026-10-22)
+
+d369 plan approved: promote `loomtest.VT` to package `vt` (loomtest keeps aliases, no API break), add
+`VT.ANSI()`, decode `ctrl-]` (0x1d), `cmd/loom/session.go` with raw mode, PTY, SIGWINCH, exit code,
+four milestone commits (vt, spec, event, session). Pre-work:
+
+- Spec keys follow the existing layout: `session.bindings.{screenshot,quit}` and
+  `session.prefix_bindings.{screenshot,quit,send_prefix}` as key lists, `session.prefix: ctrl-]`; reuse
+  `ctrl-p` via a YAML anchor on `editor.hotkey_screenshot_binding`. Match with `KeyMap`/`KeyEvent.Is`.
+- Hotkey matching must not split multi-byte input: an escape sequence or pasted text containing 0x10,
+  0x11 or 0x1d inside it is forwarded unchanged; test it.
+- The screenshot also works while the child uses the alternate screen (test with `?1049h`).
