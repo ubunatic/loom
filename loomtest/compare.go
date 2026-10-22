@@ -13,14 +13,14 @@ import (
 
 var updateReference = flag.Bool("update", false, "update ANSI references from rendered widgets")
 
-// CompareOptions controls which cell fields CompareANSI checks.
+// CompareOptions controls which cell fields CompareWidget checks.
 type CompareOptions struct {
 	IgnoreColour bool
 }
 
-// CompareANSI calls render and compares its ANSI cells to reference. Run the
+// CompareWidget calls render and compares its ANSI cells to reference. Run the
 // test binary with -update to deliberately rewrite the reference.
-func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions) {
+func CompareWidget(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions) {
 	t.Helper()
 	got := render()
 	if *updateReference {
@@ -47,6 +47,13 @@ func CompareANSI(t testing.TB, reference string, width, height int, render func(
 	t.Errorf("reference %s differs; run go test with -update to accept it\n%s", reference, report)
 }
 
+// CompareANSI is the original name for CompareWidget.
+//
+// Deprecated: use CompareWidget.
+func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions) {
+	CompareWidget(t, reference, width, height, render, options...)
+}
+
 func compareANSIReport(wantText, gotText string, width, height int, ignoreColour bool) string {
 	want := parseComparisonScreen(wantText, width, height)
 	got := parseComparisonScreen(gotText, width, height)
@@ -70,6 +77,11 @@ func compareANSIReport(wantText, gotText string, width, height int, ignoreColour
 
 func parseComparisonScreen(text string, width, height int) *VT {
 	screen := NewVT(width, height)
+	// Reference files use LF as a row separator. A terminal LF advances the
+	// row without returning to column zero, so normalize row breaks to CRLF
+	// before feeding the terminal emulator.
+	text = strings.ReplaceAll(text, "\r\n", "\n")
+	text = strings.ReplaceAll(text, "\n", "\r\n")
 	screen.Write([]byte(text)) //nolint:errcheck
 	return screen
 }

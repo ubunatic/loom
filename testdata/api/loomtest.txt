@@ -21,8 +21,13 @@ emoji independently of the caller's terminal configuration.
 FUNCTIONS
 
 func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions)
-    CompareANSI calls render and compares its ANSI cells to reference. Run the
-    test binary with -update to deliberately rewrite the reference.
+    CompareANSI is the original name for CompareWidget.
+
+    Deprecated: use CompareWidget.
+
+func CompareWidget(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions)
+    CompareWidget calls render and compares its ANSI cells to reference.
+    Run the test binary with -update to deliberately rewrite the reference.
 
 
 TYPES
@@ -74,7 +79,7 @@ const (
 type CompareOptions struct {
 	IgnoreColour bool
 }
-    CompareOptions controls which cell fields CompareANSI checks.
+    CompareOptions controls which cell fields CompareWidget checks.
 
 type Style struct {
 	FG        Color

@@ -48,14 +48,19 @@ independent snapshots. `Screen()` trims trailing spaces; use `Cells()` when blan
 or wide-character continuation cells matter. Coordinates are zero-based. The
 package docs list the supported terminal sequences and limitations.
 
-`loomtest.CompareANSI(t, reference, width, height, render)` compares every ANSI cell rendered
-by a callback with a checked-in `.ansi` reference. Run the package test with
-`-update` to deliberately rewrite references. Crop a
-design sketch with `loom crop sketch.ansi --region row,col,width,height` before
-using it as a reference; keep later design updates in a separate reference file
-when the sketch records an earlier variant.
-Pass `loomtest.CompareOptions{IgnoreColour: true}` as an optional final argument
-for layout-only comparisons.
+`loomtest.CompareWidget(t, reference, width, height, render)` compares every ANSI
+cell rendered by a callback with a checked-in `.ansi` reference. Keep references
+under `testdata/` next to the test, with one file for each meaningful widget
+state. Set the widget theme explicitly before rendering. Run the package test
+with `-update` to deliberately rewrite references and include the reason in the
+same change.
+
+Extract a state from a sketch with `loom crop sketch.ansi --region
+row,col,width,height`, then use `loom fmt` to normalize SGR encoding. `loom fmt`
+is idempotent and preserves the shown cells; it does not fix a design. Inspect
+the output and validate it with `loom eval`, `loom measure`, and `loom check-box`
+when it contains a box. Pass `loomtest.CompareOptions{IgnoreColour: true}` as an
+optional final argument for layout-only comparisons.
 
 New concurrency tests should use channels, barriers or fake clocks instead of
 wall-clock sleeps. Scale unavoidable timeout budgets for race builds. Use

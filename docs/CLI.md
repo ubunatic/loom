@@ -44,6 +44,15 @@ rectangle to stdout; add `--output <file>` to save it. `loom diff` also accepts
 `--got-region` to crop only the capture, or `--find <text>` to locate a unique
 anchor in the capture and compare a reference-sized area from that point.
 
+`loom fmt <file.ansi>` rewrites equivalent SGR sequences into Loom's canonical
+ANSI encoding without changing the displayed cells. Add `--write` to replace
+the file. This is separate from `loom format`, which changes row width or box
+alignment.
+
+For widget references, crop a state from a sketch, run `loom fmt`, and keep the
+asset under `testdata/` beside its test. Compare each meaningful widget state
+with `loomtest.CompareWidget`; use `-update` only for deliberate design changes.
+
 `loom man` prints the generated `loom(1)` roff page. Pipe it to `man -l -` to
 view it or redirect it to a file. `loom man --install` generates and installs
 the full Cobra command page tree in the standard man directory: under
