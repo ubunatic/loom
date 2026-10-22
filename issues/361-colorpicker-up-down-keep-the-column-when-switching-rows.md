@@ -1,6 +1,6 @@
 # 361 — ColorPicker: Up/Down keep the column when switching rows
 
-**Status**: Open — M2 0ebabb1 reopened: dim markers must sit on the current colour when nothing is applied
+**Status**: Closed — Dim markers always show existing FG/BG or reset; canvas and styled PTY tests pass in q1.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
