@@ -8,6 +8,19 @@
 
 ---
 
+/goal Default key bindings of the core widgets come from the embedded spec and drive key handling, with no
+mirrored Go table, and the help/key-convention text is generated from the same data; tests prove a YAML
+change alters behaviour; or stop and report when blocked on a user decision.
+
+## Update (spec audit, 2026-10-22)
+
+- Also covers `table.go:133` (navigation and paging) and the bindings of Choice, Tree, Menu, Form and
+  Settings; check live code for each.
+- Decide in a plan-only first turn whether bindings fit `spec/defaults.yaml` or need a new `spec/keys.yaml`
+  (per-widget bindings with action IDs); the host reviews that before writes.
+- The media widget's bindings are ticket 367.
+- Key aliases (`pgdn`, `pagedown`, `pageup`) remain accepted.
+
 ## 1. Problem & Motivation
 
 Under `docs/Spec.md` and the `/respect` practice, default keybindings and aliases that describe standard application behavior belong in the embedded YAML specification (`spec/defaults.yaml`) rather than hardcoded in Go switch-cases or package helper functions.
