@@ -1,6 +1,6 @@
 # 362 — loom diff: compare two ANSI screens cell by cell (glyph, FG, BG)
 
-**Status**: Open
+**Status**: Closed — loom diff compares glyph/FG/BG per display cell, --region, --ignore-glyph/--ignore-colour, accepts tmux captures, exit 0/1/2; host q1 green and live tmux capture check passed (1892000, 2fe0148)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
