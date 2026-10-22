@@ -12,6 +12,7 @@ Mouse events reaching widgets are 0-based and child-local; never subtract 1. Mou
 In tests, locate screen text by rune column or display width, never byte offset.
 For visual changes, assert FG and BG per cell against the design sketch (e.g. docs/data/*.ansi), including picks at the start, inside and past every layout boundary.
 Tests must not depend on the caller's color env (pin LOOMCOLOR=truecolor in TestMain when asserting colours).
+A regression test must fail before the fix; report that it did. If it passes on unfixed code, keep looking for the cause.
 Never change a test expectation just to make it pass without stating why the old one was wrong.
 Finish all code first, run `go vet ./...` and fix what it reports. If exported API or its doc comments changed, refresh the snapshot last (`go test ./internal/apitest -run '^TestPublicAPI$' -update`, see docs/APIStability.md). Run `go test` on the changed packages and fix failures; this does not use the q1 quota. Then run make test-q1 exactly once as the last step, writing output to a file, and grep it for '--- FAIL'; never interrupt it; if it fails, report instead of rerunning. If it stopped at vet, no tests ran: say so in your report.
 Commit only your code changes with a conventional commit ending in: <commit trailers>. Do not edit the issue file. Run make install. Report the commit hash.
