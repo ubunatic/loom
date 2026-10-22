@@ -97,20 +97,29 @@ func (d *RichDocument) FromANSI(input string) {
 	}
 }
 
-// ToANSI serializes visible text and SGR styling, ending with a full reset.
+// ToANSI serializes visible text and SGR styling, ending with a full reset when
+// the document contains styled text.
 // Pill labels are serialized as text; semantic metadata remains in the document.
 func (d RichDocument) ToANSI() string {
 	var out strings.Builder
+	currentStyle := Style{}
+	styled := false
 	for lineIndex, line := range d.Lines {
 		for _, span := range line.Spans {
-			out.WriteString(span.Style.ANSI())
+			if span.Style != currentStyle {
+				out.WriteString(span.Style.ANSI())
+				currentStyle = span.Style
+				styled = true
+			}
 			out.WriteString(span.Text)
 		}
 		if lineIndex+1 < len(d.Lines) {
 			out.WriteByte('\n')
 		}
 	}
-	out.WriteString("\x1b[0m")
+	if styled {
+		out.WriteString("\x1b[0m")
+	}
 	return out.String()
 }
 

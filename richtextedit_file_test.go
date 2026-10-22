@@ -128,6 +128,27 @@ func TestRichTextEditSaveWritesAssociatedPath(t *testing.T) {
 	}
 }
 
+func TestRichTextEditSavePlainTextRoundTripsWithoutSGR(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "document.txt")
+	const input = "qx\n"
+	var doc RichDocument
+	doc.FromANSI(input)
+	edit := NewRichTextEdit(&doc)
+	if err := edit.SaveAs(path); err != nil {
+		t.Fatalf("SaveAs: %v", err)
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(data); got != input {
+		t.Fatalf("saved plain bytes = %q, want exact input %q", got, input)
+	}
+	if strings.ContainsRune(string(data), '\x1b') {
+		t.Fatalf("plain-text save contains an escape sequence: %q", data)
+	}
+}
+
 func TestRichTextEditSaveSerializesDefaultColorsAsResets(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "defaults.ansi")
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{
@@ -167,8 +188,8 @@ func TestRichTextEditSaveEndsWithNewlineAndRoundTrips(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(string(data1), "\x1b[0m\n") {
-		t.Fatalf("saved output %q does not end with \\x1b[0m\\n", string(data1))
+	if got, want := string(data1), "first line\n"; got != want {
+		t.Fatalf("unstyled save = %q, want plain text %q", got, want)
 	}
 
 	// Load->Save roundtrip
@@ -192,8 +213,8 @@ func TestRichTextEditSaveEndsWithNewlineAndRoundTrips(t *testing.T) {
 		t.Fatalf("Save doc ending in empty line: %v", err)
 	}
 	data2, _ := os.ReadFile(path)
-	if !strings.HasSuffix(string(data2), "\x1b[0m\n") {
-		t.Fatalf("saved empty-line output %q does not end with \\x1b[0m\\n", string(data2))
+	if got, want := string(data2), "line 1\n\n"; got != want {
+		t.Fatalf("unstyled empty-line save = %q, want %q", got, want)
 	}
 
 	var doc2Loaded RichDocument

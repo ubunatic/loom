@@ -28,6 +28,12 @@ func TestRichDocumentFromANSIAndPlainText(t *testing.T) {
 }
 
 func TestRichDocumentANSIStyleRoundTrip(t *testing.T) {
+	var plain RichDocument
+	plain.FromANSI("plain text\n")
+	if got, want := plain.ToANSI(), "plain text"; got != want {
+		t.Fatalf("unstyled ANSI serialization = %q, want plain text %q", got, want)
+	}
+
 	input := "plain \x1b[1;2;3;4;7;9;38;2;12;34;56;48;5;23mrich\x1b[0m\nlast"
 	var original, parsed RichDocument
 	original.FromANSI(input)

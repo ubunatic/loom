@@ -829,9 +829,9 @@ func TestRichTextEditDemoFileLoadingAndSave(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// A loaded document opens with the cursor at its start.
-	if !strings.Contains(string(saved), "!Loaded content") || !strings.HasSuffix(string(saved), "\x1b[0m\n") {
-		t.Fatalf("saved content = %q, want the edit and a final reset plus newline", string(saved))
+	// A loaded unstyled document opens with the cursor at its start and saves as plain text.
+	if got, want := string(saved), "!Loaded content\n"; got != want {
+		t.Fatalf("saved content = %q, want plain text %q", got, want)
 	}
 
 	// 2. Non-existent file starts empty and binds path

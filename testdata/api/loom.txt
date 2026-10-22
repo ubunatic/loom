@@ -3434,9 +3434,9 @@ func (d *RichDocument) FromANSI(input string)
     commands. CRLF and bare CR line endings are normalized to LF.
 
 func (d RichDocument) ToANSI() string
-    ToANSI serializes visible text and SGR styling, ending with a full reset.
-    Pill labels are serialized as text; semantic metadata remains in the
-    document.
+    ToANSI serializes visible text and SGR styling, ending with a full reset
+    when the document contains styled text. Pill labels are serialized as text;
+    semantic metadata remains in the document.
 
 func (d RichDocument) ToMarkup() string
     ToMarkup serializes d as .tui bracket markup. Each styled span becomes one

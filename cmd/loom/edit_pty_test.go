@@ -208,6 +208,25 @@ func TestEditPTYCtrlSFlipsHeaderToSaved(t *testing.T) {
 	}
 }
 
+func TestEditPTYPlainTextSaveWritesExactBytes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY, media or subprocess integration test")
+	}
+
+	s, path := startEditPTY(t, "x\n")
+	s.Send("q")
+	s.WaitFor("qx", 3*time.Second)
+	s.Send("\x13") // ^S
+	s.WaitFor("· Saved", 3*time.Second)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, want := string(data), "qx\n"; got != want {
+		t.Fatalf("loom edit saved %q, want plain bytes %q", got, want)
+	}
+}
+
 func TestEditPTYBrowserSingleClickBeyondTextSelectsRow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")
