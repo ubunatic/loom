@@ -29,6 +29,10 @@ func errorExitCode(err error) int {
 	if errors.As(err, &exit) {
 		return exit.code
 	}
+	var sExit sessionExitError
+	if errors.As(err, &sExit) {
+		return sExit.code
+	}
 	return 1
 }
 

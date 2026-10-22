@@ -20,7 +20,9 @@ import (
 
 func main() {
 	if err := execute(os.Args[1:], os.Stdout); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+		if msg := err.Error(); msg != "" {
+			fmt.Fprintln(os.Stderr, err)
+		}
 		os.Exit(errorExitCode(err))
 	}
 }
@@ -31,7 +33,7 @@ func execute(args []string, out io.Writer) error {
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), diffCommand(), cropCommand(), fmtCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand(), manCommand(root))
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), diffCommand(), cropCommand(), fmtCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand(), sessionCommand(), manCommand(root))
 	root.SetArgs(args)
 	err := root.Execute()
 	if err != nil && len(args) > 0 && args[0] == "diff" {

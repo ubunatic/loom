@@ -308,6 +308,14 @@ func RuneWidth(r rune) int
 func SaveAnsiBuffer(buf *AnsiBuffer, path string) error
     SaveAnsiBuffer writes an AnsiBuffer to path.
 
+func ScanKey(b []byte) (KeyEvent, int, bool)
+    scanKey extracts the leading key event from b, the non-mouse counterpart
+    to scanMouse: a single tty read (or several coalesced reads) can carry more
+    than one complete key sequence, and a fast terminal can split one escape
+    sequence across two reads. ok is false when b ends with bytes that could
+    still be the unfinished prefix of a UTF-8 rune or longer escape sequence
+    ScanKey scans the next key event and consumed byte count from b.
+
 func ScreenshotScript(rows []string, comment string) string
     ScreenshotScript turns rendered ANSI rows into a minimal, self-printing bash
     script: running it replays the captured frame with its original colors.

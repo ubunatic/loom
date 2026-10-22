@@ -559,7 +559,13 @@ func scanMouse(b []byte) (MouseEvent, int, bool) {
 // than one complete key sequence, and a fast terminal can split one escape
 // sequence across two reads. ok is false when b ends with bytes that could
 // still be the unfinished prefix of a UTF-8 rune or longer escape sequence
-// (e.g. a lone "\x1b" or "\x1b[1") — the caller should hold those bytes as pending and
+// ScanKey scans the next key event and consumed byte count from b.
+func ScanKey(b []byte) (KeyEvent, int, bool) {
+	return scanKey(b)
+}
+
+// scanKey returns the next KeyEvent and the number of bytes consumed from b.
+// When b begins with an escape sequence that is valid but incomplete
 // wait for more data (or time out and treat a standalone ESC as a plain
 // "esc" keypress; see Pane.run) instead of dispatching a wrong decode. When
 // ok is true, used is the number of bytes consumed for the returned event.
