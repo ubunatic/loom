@@ -1,6 +1,6 @@
 # 366 — Spec shadows: collector, graph and emoji measure defaults duplicate YAML values
 
-**Status**: Open
+**Status**: Closed — Collector retention, graph background/max width and emoji measure defaults now read from embedded YAML; constants became vars (Upgrading row, API snapshot); regression test changing YAML failed before (init panic) and passes (985e7ee); host q1 green
 **Priority**: P2 (Medium) — editing the YAML panics at init
 **Severity**: Minor
 **Category**: Bug
