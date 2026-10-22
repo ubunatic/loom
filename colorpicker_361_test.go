@@ -18,6 +18,8 @@ func Test361ColorPickerMarkerStatesAndPreview(t *testing.T) {
 		applied  Style
 	}{
 		{"initial", ColorIndex(4), ColorIndex(15), nil, ColorPickerFG, 5, 16, Style{FG: ColorIndex(4), BG: ColorIndex(15)}, Style{FG: ColorIndex(4), BG: ColorIndex(15)}},
+		{"uncoloured text markers use reset", ColorReset(), ColorReset(), nil, ColorPickerFG, 0, 0, Style{FG: ColorReset(), BG: ColorReset()}, Style{FG: ColorReset(), BG: ColorReset()}},
+		{"existing red on green", ColorIndex(1), ColorIndex(2), []string{"down"}, ColorPickerBG, 2, 2, Style{FG: ColorIndex(1), BG: ColorIndex(1)}, Style{FG: ColorIndex(1), BG: ColorIndex(2)}},
 		{"FG cursor moves", ColorIndex(4), ColorIndex(15), []string{"right"}, ColorPickerFG, 6, 16, Style{FG: ColorIndex(5), BG: ColorIndex(15)}, Style{FG: ColorIndex(4), BG: ColorIndex(15)}},
 		{"Down without pick", ColorIndex(4), ColorIndex(15), []string{"right", "down"}, ColorPickerBG, 5, 6, Style{FG: ColorIndex(4), BG: ColorIndex(5)}, Style{FG: ColorIndex(4), BG: ColorIndex(15)}},
 		{"Down after FG Space", ColorIndex(4), ColorIndex(15), []string{"right", "space", "right", "down"}, ColorPickerBG, 6, 7, Style{FG: ColorIndex(5), BG: ColorIndex(6)}, Style{FG: ColorIndex(5), BG: ColorIndex(15)}},
