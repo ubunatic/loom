@@ -61,3 +61,13 @@ started with a read-only plan turn (355 excepted: a narrow draw fix dispatched d
   tests. Host q1 green; live: edges fg 239 on editor BG, marker 24 only on the pick, inactive marker 8.
 - Observation: for the second ticket in a row, only the host's per-cell ANSI capture found the look
   bugs; developer canvas tests asserted what was drawn, not what the sketch shows.
+
+## 361 Picker rows share the cursor column (d361, codex:sol:med)
+
+- Host decision: shared cursor, per-row applied value; Enter applies only the active row (359's
+  "Enter applies both" would apply passed-over colours). Plan and write in one turn.
+- 942aeae (column kept; q1 red in one reset-preview test, fixed but not rerun), 0ebabb1 (user addendum:
+  dim markers for applied colours), aa67c35 (user correction: dim markers always visible, starting on
+  the text's existing FG/BG or `∅`). Host q1 green; live: both dim markers on `∅` for plain text.
+- `harnez agent send` to a running codex worker only queues for its next resume; mid-turn user
+  additions reach it only via resume.
