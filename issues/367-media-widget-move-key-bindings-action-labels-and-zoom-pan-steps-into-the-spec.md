@@ -1,6 +1,6 @@
 # 367 — Media widget: move key bindings, action labels and zoom/pan steps into the spec
 
-**Status**: Open
+**Status**: Closed — Media bindings, labels, zoom factor 1.25, pan step 0.12 and loading-bar width 8 now come from spec/defaults.yaml media + schema, same layout as 323, values unchanged (5c5adc9); YAML-change probe failed before and passes; host q1 green, validate-spec ok
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
