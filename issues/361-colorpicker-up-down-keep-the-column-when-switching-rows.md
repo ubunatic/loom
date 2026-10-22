@@ -1,6 +1,6 @@
 # 361 — ColorPicker: Up/Down keep the column when switching rows
 
-**Status**: Open
+**Status**: Closed — Both rows show dim applied markers; active cursor wins on overlap. Canvas coverage and q1 pass.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
