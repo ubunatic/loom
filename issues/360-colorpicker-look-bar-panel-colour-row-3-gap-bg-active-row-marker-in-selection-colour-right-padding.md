@@ -1,6 +1,6 @@
 # 360 — ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding
 
-**Status**: Closed — M2 fixed edge glyph backgrounds to use editor BG and limited selection/dim marker colors to the two picked cells; per-cell canvas tests cover edges and picks inside and beyond the preview rug. ANSI checks and q1 passed; make install succeeded.
+**Status**: Open — M2 3adbbe6 reopened by user: BG marker inside the rug columns has the wrong BG
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
@@ -53,3 +53,12 @@ regenerated; or stop and report when blocked on a user decision or denied permis
   other edge cell stays fg panel. Same rule for row 0.
 - Canvas tests must assert per cell: edge glyph FG and BG on rows 0, 3, 5, and that only the pick's
   two cells carry the marker colour (pick inside and right of the rug, active and inactive row).
+
+## M2 review (user screenshot, 2026-10-22)
+
+### M3 pre-work
+
+- With the BG pick inside the rug columns (0–8, e.g. palette 0 at columns 3–4), the marker `🮂` is
+  drawn on the editor BG. Inside the rug columns the marker cell is `fg marker on bg panel` (sketch:
+  `[fg6 bg8]🮂🮂`); only right of the rug does the edge/marker use the editor BG. Add a per-cell test
+  for a pick at palette 0 (active and inactive row).
