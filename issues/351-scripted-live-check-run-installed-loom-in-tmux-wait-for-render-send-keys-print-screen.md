@@ -45,3 +45,5 @@ within the timeout and leaves no tmux server (`tmux -L <socket> ls` fails).
   coloured-selection cases could not be checked live; find a working key encoding or a mouse drag.
 - The useful assertion form was a per-cell dump of FG/BG codes (`capture-pane -pe` with escapes made
   visible) compared with the design sketch; plain-text captures hid every look bug in 359/360.
+- (2026-10-22, 354) `timeout 0.1 true` does not wait; waits must really pause (e.g.
+  `timeout 0.8 tail -f /dev/null`) or poll the pane. Compare screens with `loom diff` (362).

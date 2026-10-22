@@ -134,3 +134,18 @@ Source: host `claude:opus`, developers `codex:sol:med`, designer `claude:opus:me
 - **A one-line semantics change can break an earlier decision**: carrying the cursor column (361)
   made 359's "Enter applies both rows" unsafe; the host re-decided Enter before dispatch.
 - **Host harness timeout**: run host q1 with `HTO=0`, otherwise harnez kills it after 1 minute.
+
+## loom diff, loom man, Escape and plain-text save (2026-10-22, tickets 362, 363, 354, 364)
+
+- **Check the test harness before trusting a repro**: the host's tmux wait helper
+  `timeout 0.1 true` returns at once, so "Escape, wait 0.8 s, Ctrl+S" (354) had no pause and the
+  developer's first fix (a real but different race) could not match it. Wait with
+  `timeout 0.8 tail -f /dev/null` and measure the pause once.
+- **A green regression test that passes before the fix proves nothing**: 354's first PTY test passed
+  on unfixed code; the host's live repro sent it back. Require "failed before the fix" in the report.
+- **Live checks find neighbouring bugs**: 354's check showed that saving a plain `.txt` wrote SGR
+  resets (364, Major); file such finds at once instead of widening the running ticket.
+- **Release bumps leave the API snapshot stale**: e1bf36f bumped the version without refreshing
+  `testdata/api`, so the next q1 was red for an unrelated reason (fixed in 362).
+- **New tools for the host**: `loom diff want got` compares sketch and tmux capture per cell
+  (glyph/FG/BG, exit 0/1/2); `loom man --install` installs the man pages.
