@@ -12,16 +12,7 @@ import (
 
 // DefaultBackgroundANSI is the default SGR background code used when ANSI is
 // true and the caller leaves BackgroundANSI empty.
-const DefaultBackgroundANSI = "100"
-
-func init() {
-	if graphDefaults.DefaultBackgroundANSI != DefaultBackgroundANSI {
-		panic("graph: spec default_background_ansi differs from exported constant")
-	}
-	if graphDefaults.Bar.MaxWidth != MaxWidth {
-		panic("graph: spec graph.bar.max_width differs from exported constant")
-	}
-}
+var DefaultBackgroundANSI = graphDefaults.DefaultBackgroundANSI
 
 func resolveBackgroundANSI(code string) string {
 	switch code {

@@ -8,17 +8,9 @@ The rendering primitives are adapted from Harnez's internal/rograph package
 
 CONSTANTS
 
-const DefaultBackgroundANSI = "100"
-    DefaultBackgroundANSI is the default SGR background code used when ANSI is
-    true and the caller leaves BackgroundANSI empty.
-
 const MaxTreemapNodes = 100
     MaxTreemapNodes is a sensible default node budget for AggregateTreemap, e.g.
     when reducing a full process tree to a glanceable treemap.
-
-const MaxWidth = 10
-    MaxWidth is the default maximum render width, in characters/glyphs,
-    for single-row graph bars and sparklines.
 
 
 VARIABLES
@@ -28,12 +20,20 @@ var BrailleSubCharacterGlyphs = []rune{'⡇'}
     half-cell width. Left column (4 dots): ⡇ (U+2847). Full cell (8 dots):
     ⣿ (U+28FF).
 
+var DefaultBackgroundANSI = graphDefaults.DefaultBackgroundANSI
+    DefaultBackgroundANSI is the default SGR background code used when ANSI is
+    true and the caller leaves BackgroundANSI empty.
+
 var DefaultSpinnerFrames = []rune(graphDefaults.Spinner.Frames)
     DefaultSpinnerFrames are the standard spec-loaded braille spinner glyphs.
 
 var HarnezSpinnerFrames = []rune(graphDefaults.Spinner.HarnezFrames)
     HarnezSpinnerFrames is an alternative spec-loaded sequence matching the
     Harnez reference target.
+
+var MaxWidth = graphDefaults.Bar.MaxWidth
+    MaxWidth is the default maximum render width, in characters/glyphs,
+    for single-row graph bars and sparklines.
 
 
 FUNCTIONS
@@ -217,15 +217,15 @@ type BarOptions struct {
 	// contexts.
 	ANSI bool
 	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
-	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// DefaultBackgroundANSI. Passing "none" suppresses the background
 	// code while allowing ForegroundANSI to be applied.
 	BackgroundANSI string
 	// ForegroundANSI is an optional SGR foreground code applied to the graph
 	// glyphs only. Callers retain control of any nearby labels.
 	ForegroundANSI string
 }
-    BarOptions configures RenderBar. The zero value renders a 10-character 0-100
-    bar with the package's standard filled and empty glyphs.
+    BarOptions configures RenderBar. The zero value renders a MaxWidth-character
+    0-100 bar with the package's standard filled and empty glyphs.
 
 type BracketedBarOptions struct {
 	// Width is the inner character width of the bar (excluding brackets).
@@ -284,7 +284,7 @@ type SparklineOptions struct {
 	// the default so callers can opt in only for terminal contexts.
 	ANSI bool
 	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
-	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// DefaultBackgroundANSI. Passing "none" suppresses the background
 	// code while allowing ForegroundANSI to be applied.
 	BackgroundANSI string
 	// ForegroundANSI returns the SGR foreground code for a rendered cell's

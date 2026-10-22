@@ -11,6 +11,8 @@ import (
 	"sync/atomic"
 
 	"gopkg.in/yaml.v3"
+
+	"ubunatic.com/loom/spec"
 )
 
 // Package measure defines and loads emoji/sequence specifications.
@@ -63,6 +65,21 @@ type emojiRuntime struct {
 var currentEmojiRuntime atomic.Pointer[emojiRuntime]
 var currentRenderPath atomic.Pointer[RenderPath]
 
+var embeddedEmojiSpec = func() EmojiSpec {
+	data, err := spec.EmojiYAML()
+	if err != nil {
+		panic(fmt.Sprintf("measure: read spec/emoji.yaml: %v", err))
+	}
+	var defaults EmojiSpec
+	if err := yaml.Unmarshal(data, &defaults); err != nil {
+		panic(fmt.Sprintf("measure: parse spec/emoji.yaml: %v", err))
+	}
+	if defaults.VS16DefaultWidth <= 0 || defaults.ZWJDefaultWidth <= 0 || defaults.FlagDefaultWidth <= 0 || defaults.VS16VTEMode == "" || defaults.VS16NonVTEMode == "" {
+		panic("measure: spec/emoji.yaml requires positive widths and nonempty VS16 modes")
+	}
+	return defaults
+}()
+
 func init() {
 	def := defaultEmojiSpec()
 	currentEmojiRuntime.Store(&emojiRuntime{
@@ -77,13 +94,7 @@ func init() {
 }
 
 func defaultEmojiSpec() EmojiSpec {
-	return EmojiSpec{
-		VS16DefaultWidth: 2,
-		VS16VTEMode:      "pad-1",
-		VS16NonVTEMode:   "default",
-		ZWJDefaultWidth:  2,
-		FlagDefaultWidth: 2,
-	}
+	return embeddedEmojiSpec
 }
 
 func buildRuneOverrides(overrides []EmojiOverride) map[rune]int {
@@ -139,20 +150,21 @@ func LoadEmojiSpecYAML(data []byte) error {
 
 // LoadEmojiSpec installs a validated EmojiSpec into the measurement runtime.
 func LoadEmojiSpec(spec EmojiSpec) {
+	defaults := defaultEmojiSpec()
 	if spec.VS16DefaultWidth <= 0 {
-		spec.VS16DefaultWidth = 2
+		spec.VS16DefaultWidth = defaults.VS16DefaultWidth
 	}
 	if spec.VS16VTEMode == "" {
-		spec.VS16VTEMode = "pad-1"
+		spec.VS16VTEMode = defaults.VS16VTEMode
 	}
 	if spec.VS16NonVTEMode == "" {
-		spec.VS16NonVTEMode = "default"
+		spec.VS16NonVTEMode = defaults.VS16NonVTEMode
 	}
 	if spec.ZWJDefaultWidth <= 0 {
-		spec.ZWJDefaultWidth = 2
+		spec.ZWJDefaultWidth = defaults.ZWJDefaultWidth
 	}
 	if spec.FlagDefaultWidth <= 0 {
-		spec.FlagDefaultWidth = 2
+		spec.FlagDefaultWidth = defaults.FlagDefaultWidth
 	}
 	currentEmojiRuntime.Store(&emojiRuntime{
 		spec:           spec,
@@ -234,10 +246,7 @@ func VTEMode(glyph string) string {
 		return mode
 	}
 	if strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') {
-		if rt.vs16VTEMode != "" {
-			return rt.vs16VTEMode
-		}
-		return "pad-1"
+		return rt.vs16VTEMode
 	}
 	return "default"
 }
@@ -255,10 +264,7 @@ func NonVTEMode(glyph string) string {
 		return mode
 	}
 	if strings.ContainsRune(glyph, '\uFE0F') && !strings.ContainsRune(glyph, '\u200D') {
-		if rt.vs16NonVTEMode != "" {
-			return rt.vs16NonVTEMode
-		}
-		return "default"
+		return rt.vs16NonVTEMode
 	}
 	return "default"
 }

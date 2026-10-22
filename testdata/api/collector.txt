@@ -7,9 +7,9 @@ snapshots and widgets.
 Package collector is experimental; its API may change between releases.
 See docs/APIStability.md for the package stability policy.
 
-CONSTANTS
+VARIABLES
 
-const DefaultRetention = 15 * time.Minute
+var DefaultRetention = loadDefaultRetention()
     DefaultRetention is the in-memory history window used when a spec omits one.
 
 

@@ -80,7 +80,7 @@ type SparklineOptions struct {
 	// the default so callers can opt in only for terminal contexts.
 	ANSI bool
 	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
-	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// DefaultBackgroundANSI. Passing "none" suppresses the background
 	// code while allowing ForegroundANSI to be applied.
 	BackgroundANSI string
 	// ForegroundANSI returns the SGR foreground code for a rendered cell's

@@ -28,9 +28,9 @@ const (
 )
 
 // DefaultRetention is the in-memory history window used when a spec omits one.
-const DefaultRetention = 15 * time.Minute
+var DefaultRetention = loadDefaultRetention()
 
-func init() {
+func loadDefaultRetention() time.Duration {
 	data, err := spec.DefaultsYAML()
 	if err != nil {
 		panic(fmt.Sprintf("collector: read spec/defaults.yaml: %v", err))
@@ -46,9 +46,7 @@ func init() {
 	if defaults.Collector.DefaultRetention <= 0 {
 		panic("collector: collector.default_retention must be positive")
 	}
-	if defaults.Collector.DefaultRetention != DefaultRetention {
-		panic("collector: spec collector.default_retention differs from exported constant")
-	}
+	return defaults.Collector.DefaultRetention
 }
 
 // Record is one immutable collection result. Data is owned by the record and

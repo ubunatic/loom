@@ -10,6 +10,9 @@ FUNCTIONS
 func DefaultsYAML() ([]byte, error)
     DefaultsYAML returns the authoritative runtime defaults document.
 
+func EmojiYAML() ([]byte, error)
+    EmojiYAML returns the authoritative emoji width policy document.
+
 func WidgetsYAML() ([]byte, error)
     WidgetsYAML returns the authoritative widget catalog document.
 

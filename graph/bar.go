@@ -14,7 +14,7 @@ import (
 
 // MaxWidth is the default maximum render width, in characters/glyphs, for
 // single-row graph bars and sparklines.
-const MaxWidth = 10
+var MaxWidth = graphDefaults.Bar.MaxWidth
 
 // RenderProgressBar generates an ANSI/Unicode progress bar of the given
 // character width: a "[filled empty]" bar using '█' for the filled portion
@@ -31,7 +31,7 @@ func RenderProgressBar(usedPercent float64, width int) string {
 	return RenderBar(usedPercent, BarOptions{Width: width, SubChar: true})
 }
 
-// BarOptions configures RenderBar. The zero value renders a 10-character
+// BarOptions configures RenderBar. The zero value renders a MaxWidth-character
 // 0-100 bar with the package's standard filled and empty glyphs.
 type BarOptions struct {
 	// Width is the number of graph glyphs inside the optional wrappers.
@@ -68,7 +68,7 @@ type BarOptions struct {
 	// contexts.
 	ANSI bool
 	// BackgroundANSI is the SGR code used when ANSI is true. Empty uses
-	// DefaultBackgroundANSI ("100"). Passing "none" suppresses the background
+	// DefaultBackgroundANSI. Passing "none" suppresses the background
 	// code while allowing ForegroundANSI to be applied.
 	BackgroundANSI string
 	// ForegroundANSI is an optional SGR foreground code applied to the graph

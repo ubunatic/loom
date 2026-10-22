@@ -16,9 +16,6 @@ import (
 
 func TestMain(m *testing.M) {
 	_ = os.Setenv("LOOM_ZWJ", "join")
-	if data, err := os.ReadFile("../spec/emoji.yaml"); err == nil {
-		_ = LoadEmojiSpecYAML(data)
-	}
 	os.Exit(m.Run())
 }
 

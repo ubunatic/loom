@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-//go:embed widgets.yaml defaults.yaml
+//go:embed widgets.yaml defaults.yaml emoji.yaml
 var widgetFiles embed.FS
 
 // WidgetsYAML returns the authoritative widget catalog document.
@@ -19,6 +19,9 @@ func WidgetsYAML() ([]byte, error) { return widgetFiles.ReadFile("widgets.yaml")
 
 // DefaultsYAML returns the authoritative runtime defaults document.
 func DefaultsYAML() ([]byte, error) { return widgetFiles.ReadFile("defaults.yaml") }
+
+// EmojiYAML returns the authoritative emoji width policy document.
+func EmojiYAML() ([]byte, error) { return widgetFiles.ReadFile("emoji.yaml") }
 
 // GraphDefaults describes the graph renderer defaults in defaults.yaml.
 type GraphDefaults struct {
