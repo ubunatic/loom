@@ -53,4 +53,5 @@ upkeep.
 | 351 | [351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md](351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md) | Scripted live check: run installed loom in tmux, wait for render, send keys, print screen | Open |
 | 352 | [352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md](352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md) | Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A " | Open |
 | 354 | [354-editor-swallows-the-first-key-after-escape.md](354-editor-swallows-the-first-key-after-escape.md) | Editor swallows the first key after Escape | Open |
+| 364 | [364-loom-edit-writes-sgr-reset-codes-into-unstyled-plain-text-files-on-save.md](364-loom-edit-writes-sgr-reset-codes-into-unstyled-plain-text-files-on-save.md) | loom edit writes SGR reset codes into unstyled plain-text files on save | Open |
 <!-- harnez:end issues-active-index -->
