@@ -8,6 +8,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| Unreleased | `RichDocument.ToANSI` (and `RichTextEdit` saves) no longer emit SGR codes for a document without styled text; the final `\x1b[0m` reset appears only when styles were used (issue 364) | Do not expect a trailing reset on unstyled output; plain-text files now save byte-exact |
 | Unreleased | `ColorPicker` Up/Down preserves one shared cursor column; Enter applies only the active row and closes, replacing the two-row application from issue 359 (issue 361). Inactive markers show applied values and the preview overlays the active cursor on those values | Use Space or a swatch click to apply each row you want to retain before closing. Cursor movement alone leaves `FG`/`BG` unchanged; FG 1, Space, Down, Right, Enter yields FG 1 on BG 2 |
 | Unreleased | `RichTextEdit` popover closes now clear the selection by default; either vertical arrow closes a focused bar, including when the bar is above the text (issue 358) | Set `UnselectOnCancel` to `false` to retain selections on close; update integrations that expected the focused bar to remain open after a vertical arrow |
 | Unreleased | `ColorPicker` Enter applies the highlighted swatch and closes; Enter was removed from `color_picker.bindings.close` and added to `apply` (issue 357) | Move custom Enter close bindings to another key; use Space to apply while keeping the picker open |
