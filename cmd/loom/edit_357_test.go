@@ -8,7 +8,7 @@ import (
 	"ubunatic.com/loom/internal/ptytest"
 )
 
-func Test359EditPTYAppliesBothColorPickerRows(t *testing.T) {
+func Test361EditPTYSpaceFGThenEnterBGPreservesFG(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
@@ -18,7 +18,7 @@ func Test359EditPTYAppliesBothColorPickerRows(t *testing.T) {
 	s.WaitFor("Preview", 3*time.Second)
 	s.Send("\x1b[C\x1b[C ") // Choose FG palette index 1 with Space; the picker stays open.
 	s.WaitFor("Preview", 3*time.Second)
-	s.Send("\x1b[B\x1b[C\x1b[C\x1b[C\rX") // Choose BG palette index 2, apply both rows, then type.
+	s.Send("\x1b[B\x1b[C\rX") // Keep column 1 on Down, move to BG 2, apply only BG, then type.
 	waitEditPTY(t, s, func() bool {
 		text := strings.Join(s.Screen(), "\n")
 		return strings.Contains(text, "X") && !strings.Contains(text, "Preview")

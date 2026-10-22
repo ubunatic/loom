@@ -34,10 +34,6 @@ type ColorPicker struct {
 	focused   bool
 	lastRect  Rect
 	selection Color
-	fgIndex   int
-	bgIndex   int
-	fgReset   bool
-	bgReset   bool
 }
 
 var _ Widget = (*ColorPicker)(nil)
@@ -54,13 +50,16 @@ func NewColorPicker(fg, bg Color) *ColorPicker {
 	}
 	themeStyle := DefaultTheme().TableStyle()
 	p := &ColorPicker{FG: fg, BG: bg, Palette: palette, Style: themeStyle.Normal, FocusStyle: themeStyle.Selected, selection: DefaultTheme().Selection.Color(), focused: true}
-	p.fgIndex, p.fgReset = colorPickerIndex(palette, fg)
-	p.bgIndex, p.bgReset = colorPickerIndex(palette, bg)
 	p.Target = ColorPickerFG
 	if defs.InitialTarget == "bg" {
 		p.Target = ColorPickerBG
 	}
-	p.syncCursor()
+	color := fg
+	if p.Target == ColorPickerBG {
+		color = bg
+	}
+	p.Selected, p.ResetSelected = colorPickerIndex(palette, color)
+	p.Selected = max(0, p.Selected)
 	return p
 }
 
@@ -73,23 +72,38 @@ func colorPickerIndex(palette []Color, color Color) (int, bool) {
 			return i, false
 		}
 	}
-	return 0, false
+	return -1, false
 }
 
-func (p *ColorPicker) syncCursor() {
-	if p.Target == ColorPickerBG {
-		p.Selected, p.ResetSelected = p.bgIndex, p.bgReset
-		return
+// markerColumn uses the shared cursor for the active row and the applied color
+// for the inactive row. Colors outside the palette have no inactive marker.
+func (p *ColorPicker) markerColumn(target ColorPickerTarget) int {
+	index, reset := p.Selected, p.ResetSelected
+	if target != p.Target {
+		color := p.FG
+		if target == ColorPickerBG {
+			color = p.BG
+		}
+		index, reset = colorPickerIndex(p.Palette, color)
 	}
-	p.Selected, p.ResetSelected = p.fgIndex, p.fgReset
+	if index < 0 || index >= len(p.Palette) {
+		return -1
+	}
+	cell := index + 1
+	if reset {
+		cell = 0
+	}
+	return SpeccedDefaults.ColorPicker.LeadingPadding + cell*SpeccedDefaults.ColorPicker.SwatchWidth
 }
 
-func (p *ColorPicker) saveCursor() {
-	if p.Target == ColorPickerBG {
-		p.bgIndex, p.bgReset = p.Selected, p.ResetSelected
-		return
+func (p *ColorPicker) cursorColor() (Color, bool) {
+	if p.ResetSelected {
+		return ColorReset(), true
 	}
-	p.fgIndex, p.fgReset = p.Selected, p.ResetSelected
+	if p.Selected < 0 || p.Selected >= len(p.Palette) {
+		return Color{}, false
+	}
+	return p.Palette[p.Selected], true
 }
 
 // Focused reports whether this picker owns keyboard focus.
@@ -117,7 +131,15 @@ func (p *ColorPicker) PreviewStyle() Style {
 	if p == nil {
 		return Style{}
 	}
-	return Style{FG: p.FG, BG: p.BG}
+	style := Style{FG: p.FG, BG: p.BG}
+	if color, ok := p.cursorColor(); ok {
+		if p.Target == ColorPickerFG {
+			style.FG = color
+		} else {
+			style.BG = color
+		}
+	}
+	return style
 }
 
 // Measure reports the two palette rows, slim edges and optional preview rug.
@@ -179,13 +201,10 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 		}
 	}
-	fgX := paletteX + p.fgIndex*defs.SwatchWidth
-	if !p.fgReset {
-		fgX += defs.SwatchWidth
-	}
+	fgX := p.markerColumn(ColorPickerFG)
 	for x := 0; x < r.W; x++ {
 		style := Style{FG: panelBG, BG: p.Style.BG}
-		if x >= fgX && x < fgX+defs.SwatchWidth {
+		if fgX >= 0 && x >= fgX && x < fgX+defs.SwatchWidth {
 			style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
 			if p.Target == ColorPickerFG {
 				style.FG = p.selection
@@ -193,18 +212,15 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 		}
 		writeColorPickerText(c, r, x, 0, defs.Glyphs.EdgeLower, style)
 	}
-	bgX := paletteX + p.bgIndex*defs.SwatchWidth
-	if !p.bgReset {
-		bgX += defs.SwatchWidth
-	}
+	bgX := p.markerColumn(ColorPickerBG)
 	if defs.ShowPreview && r.H >= 6 {
 		for x := 0; x < r.W; x++ {
-			if x < defs.PreviewWidth && (x < bgX || x >= bgX+defs.SwatchWidth) {
+			if x < defs.PreviewWidth && (bgX < 0 || x < bgX || x >= bgX+defs.SwatchWidth) {
 				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
 				continue
 			}
 			style := Style{FG: panelBG, BG: p.Style.BG}
-			if x >= bgX && x < bgX+defs.SwatchWidth {
+			if bgX >= 0 && x >= bgX && x < bgX+defs.SwatchWidth {
 				if x < defs.PreviewWidth {
 					style.BG = panelBG
 				}
@@ -216,18 +232,19 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
 		}
 		previewX := defs.PreviewPadding
-		writeColorPickerText(c, r, previewX, 4, defs.Labels.Preview, p.PreviewStyle())
+		// The sample must keep a terminal-default BG rather than inherit the panel.
+		writeColorPickerCells(c, r, previewX, 4, defs.Labels.Preview, Cell{Style: p.PreviewStyle(), Claim: true})
 		for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
 			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: p.Style.BG})
 		}
 	} else {
 		for x := 0; x < r.W; x++ {
-			if x < defs.PreviewWidth && (x < bgX || x >= bgX+defs.SwatchWidth) {
+			if x < defs.PreviewWidth && (bgX < 0 || x < bgX || x >= bgX+defs.SwatchWidth) {
 				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
 				continue
 			}
 			style := Style{FG: panelBG, BG: p.Style.BG}
-			if x >= bgX && x < bgX+defs.SwatchWidth {
+			if bgX >= 0 && x >= bgX && x < bgX+defs.SwatchWidth {
 				if x < defs.PreviewWidth {
 					style.BG = panelBG
 				}
@@ -242,6 +259,10 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 }
 
 func writeColorPickerText(c *Canvas, r Rect, x, y int, text string, style Style) {
+	writeColorPickerCells(c, r, x, y, text, Cell{Style: style})
+}
+
+func writeColorPickerCells(c *Canvas, r Rect, x, y int, text string, cell Cell) {
 	if y < 0 || y >= r.H || x < 0 || x >= r.W {
 		return
 	}
@@ -255,7 +276,11 @@ func writeColorPickerText(c *Canvas, r Rect, x, y int, text string, style Style)
 		clipped.WriteRune(char)
 		width += charWidth
 	}
-	c.Write(r.X+x, r.Y+y, clipped.String(), style)
+	for _, cluster := range textClusters(clipped.String()) {
+		cell.Text = cluster
+		c.Set(r.X+x, r.Y+y, cell)
+		x += measure.StringWidth(cluster)
+	}
 }
 
 func (p *ColorPicker) matches(e KeyEvent, action string) bool {
@@ -268,35 +293,19 @@ func (p *ColorPicker) matches(e KeyEvent, action string) bool {
 	return false
 }
 
-func (p *ColorPicker) changeTarget(target ColorPickerTarget, assign bool) {
-	if target != p.Target {
-		p.saveCursor()
-		p.Target = target
-		p.syncCursor()
-	}
-	p.saveCursor()
-	if !assign || p.Selected < 0 || p.Selected >= len(p.Palette) {
+func (p *ColorPicker) applyCursor() {
+	color, ok := p.cursorColor()
+	if !ok {
 		return
 	}
-	color := p.Palette[p.Selected]
-	if p.ResetSelected {
-		color = ColorReset()
-	}
-	if target == ColorPickerFG {
+	if p.Target == ColorPickerFG {
 		p.FG = color
 	} else {
 		p.BG = color
 	}
 	if p.OnChange != nil {
-		p.OnChange(target, color)
+		p.OnChange(p.Target, color)
 	}
-}
-
-func (p *ColorPicker) applyCursor() {
-	p.saveCursor()
-	p.changeTarget(ColorPickerFG, true)
-	p.changeTarget(ColorPickerBG, true)
-	p.changeTarget(p.Target, false)
 }
 
 // ConsumeKey handles row navigation, selection and completion.
@@ -317,21 +326,16 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return DoneResult()
 	case p.matches(e, "row_bg"):
-		p.saveCursor()
 		p.Target = ColorPickerBG
-		p.syncCursor()
 		return Handled()
 	case p.matches(e, "row_fg"):
-		p.saveCursor()
 		p.Target = ColorPickerFG
-		p.syncCursor()
 		return Handled()
 	case p.matches(e, "select"):
-		p.changeTarget(p.Target, true)
+		p.applyCursor()
 		return Handled()
 	case p.matches(e, "home"):
-		p.ResetSelected = true
-		p.saveCursor()
+		p.Selected, p.ResetSelected = 0, true
 		return Handled()
 	case p.matches(e, "left"):
 		if p.ResetSelected {
@@ -342,7 +346,6 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		} else if p.Selected > 0 {
 			p.Selected--
 		}
-		p.saveCursor()
 		return Handled()
 	case p.matches(e, "right"):
 		if p.ResetSelected {
@@ -350,7 +353,6 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		} else if p.Selected+1 < len(p.Palette) {
 			p.Selected++
 		}
-		p.saveCursor()
 		return Handled()
 	default:
 		return Ignored()
@@ -383,7 +385,6 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	} else {
 		p.Target = ColorPickerBG
 	}
-	p.saveCursor()
-	p.changeTarget(p.Target, true)
+	p.applyCursor()
 	return Handled()
 }

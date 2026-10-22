@@ -53,7 +53,7 @@ widgets:
     source: choice.go
   - name: loom.ColorPicker
     package: loom
-    purpose: Choose terminal-default/reset or palette foreground and background colors with one row and a style preview.
+    purpose: Choose terminal-default/reset or palette foreground and background colors with two rows, a shared cursor column and a style preview.
     category: input
     example: |-
       picker := loom.NewColorPicker(loom.ColorReset(), loom.ColorIndex(4))

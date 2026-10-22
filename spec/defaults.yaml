@@ -411,7 +411,7 @@ rich_text_edit:
         - {keys: ["ctrl-v", "shift-insert"], label: "Paste"}
         - {keys: ["ctrl-z"], label: "Undo"}
         - {keys: ["ctrl-y", "ctrl-r", "ctrl-shift-z"], label: "Redo"}
-        - {keys: ["enter", "space", "left", "right", "down", "up", "home", "esc", "ctrl-space"], label: "Color picker: Up/Down rows; Left/Right colors; Home resets; Space applies row and stays open; Enter applies both rows and closes; Esc closes; Ctrl+Space closes picker and bar; Tab moves focus"}
+        - {keys: ["enter", "space", "left", "right", "down", "up", "home", "esc", "ctrl-space"], label: "Color picker: Up/Down rows keep column; Left/Right colors; Home resets; Space applies row and stays open; Enter applies active row and closes; other row keeps applied color; Esc closes; Ctrl+Space closes picker and bar; Tab moves focus"}
     - title: "Formatting"
       entries:
         - {keys: ["ctrl-b"], label: "Bold"}

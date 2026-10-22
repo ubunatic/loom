@@ -180,10 +180,10 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "right"}))
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
 	if edit.popoverColorPicker == nil {
-		t.Fatal("Space applied the FG pick but closed the color picker")
+		t.Fatal("Space applied the BG pick but closed the color picker")
 	}
-	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[5] {
-		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[5])
+	if got := edit.Document.Lines[0].Spans[0].Style.BG; got != picker.Palette[8] {
+		t.Fatalf("selected BG = %v, want %v", got, picker.Palette[8])
 	}
 	edit.Draw(canvas, canvas.Bounds())
 	if edit.popoverColorPicker == nil {
@@ -195,8 +195,8 @@ func TestRichTextEditColorPickerAppliesBothChannels(t *testing.T) {
 		t.Fatalf("Up changed row/style unexpectedly: target=%v style=%+v", picker.Target, edit.Document.Lines[0].Spans[0].Style)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "space"}))
-	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[7] {
-		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[7])
+	if got := edit.Document.Lines[0].Spans[0].Style.FG; got != picker.Palette[8] {
+		t.Fatalf("selected FG = %v, want %v", got, picker.Palette[8])
 	}
 	for _, key := range []KeyEvent{{Text: "f"}, {Text: "x"}, {Key: "shift-space"}} {
 		if got := edit.ConsumeKey(key); got.Consumed {

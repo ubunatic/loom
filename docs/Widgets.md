@@ -430,8 +430,8 @@ clicking outside closes it. `Save` and `SaveAs` use
 Save errors remain available in `LastSaveError` and appear in the file bar.
 The File menu contains document actions only; Ctrl+Space continues to open the
 selection formatting popover. While the embedded ColorPicker is open, Up and
-Down move between foreground and background rows; Tab follows the host's normal
-focus traversal. Enter applies both rows and closes the picker, while Esc closes
+Down move between foreground and background rows at the same column; Tab follows the host's normal
+focus traversal. Enter applies the active row and closes the picker, while Esc closes
 without further application and Ctrl+Space closes the entire formatting popover.
 
 View mode: `ViewMode` (or `NewRichTextView`) makes the editor read-only. Movement,
@@ -575,10 +575,12 @@ drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 
 ### Color Picker (`loom.ColorPicker`)
 
-`ColorPicker` exposes its current `FG`, `BG`, active row as `Target`, and that
-row's `Selected` palette index. Foreground and background keep independent
-selections. `ResetSelected` focuses the terminal-default cell while keeping
-`Selected` valid for `Palette`. `PreviewStyle()` returns the chosen pair.
+`ColorPicker` exposes its current `FG`, `BG`, active row as `Target`, and the
+shared cursor's `Selected` palette index. `FG` and `BG` hold the applied
+values independently of cursor movement. `ResetSelected` focuses the
+terminal-default cell while keeping
+`Selected` valid for `Palette`. `PreviewStyle()` combines the applied values
+with the cursor cell on the active row.
 `OnChange` reports each channel applied through Space, a swatch click or Enter;
 `OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
 host keeps running. Palette, edge glyphs, preview dimensions and key bindings
@@ -588,8 +590,9 @@ foreground and background so they extend the panel against the editor. Swatches 
 cells with one letter and one padding space per palette position. Row 3 stays
 panel background through columns 0–8, then draws upper-edge glyphs from column
 9; this closes the gap between the preview rug and the BG marker. The active
-row's marker uses the theme's `selection` role and the inactive row uses the
-specced dim marker colour. `selection` is the editor selection and focused bar
+row's marker follows the cursor in the theme's `selection` colour. The inactive
+row marks its applied value in the specced dim colour; a value outside the
+palette has no marker. `selection` is the editor selection and focused bar
 item colour; `selected_bg` remains the list-row selection colour.
 
 ```go
@@ -606,16 +609,17 @@ column after the final swatch. Row 0 is a `▂` lower edge with the FG
 selection highlighted. Row 1 starts with `∅ ` and shows all 16 `Aa` samples as
 foreground colors on the panel background; row 2 shows the reset cell and
 palette as background colors. Each row's swatches remain independent of the
-other selected color. Up/Down changes rows; Left/Right moves within a row, and
-Home selects reset. Space or a left click applies the active row and leaves the
-picker open. Enter applies both rows and closes it; Esc closes without further
-application. Tab follows the containing focus container, and right-click has no
-picker action.
+other selected color. Up/Down changes rows while keeping the same cursor
+column, including reset; Left/Right moves within a row, and Home selects reset. Space or a left click applies the active row and leaves the
+picker open. Enter applies only the active row and closes it; the other row
+keeps its applied value. For example, FG 1, Space, Down, Right, Enter produces
+FG 1 on BG 2. Esc closes without further application. Tab follows the
+containing focus container, and right-click has no picker action.
 
 The `🮂` upper edge marks the BG selection beneath its swatch, including palette
 15 at columns 33–34 beyond the 9-column preview rug, with panel padding at
 column 35. The preview label sits on
-the selected FG/BG pair, with its 9-column rug and the bottom edge. Edge cells
+the preview FG/BG pair, with its 9-column rug and the bottom edge. Edge cells
 paint the panel background to clear text beneath the popup. Use `▁` and `▔` as
 the lower and upper edge glyphs in fonts without `🮂` (Symbols for Legacy
 Computing, Unicode 13). These glyphs and their padding come from

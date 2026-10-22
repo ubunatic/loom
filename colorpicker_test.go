@@ -5,7 +5,7 @@ package loom
 
 import "testing"
 
-func TestColorPickerRowsKeepIndependentCursorsAndApply(t *testing.T) {
+func TestColorPickerRowsShareCursorAndApplyOnlyActiveRow(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
 	if !picker.Focused() || picker.Target != ColorPickerFG || picker.Selected != 7 {
 		t.Fatalf("new picker focused=%v target=%v selection=%d", picker.Focused(), picker.Target, picker.Selected)
@@ -15,24 +15,24 @@ func TestColorPickerRowsKeepIndependentCursorsAndApply(t *testing.T) {
 	if got := picker.ConsumeKey(KeyEvent{Key: "right"}); got != Handled() || picker.Selected != 8 {
 		t.Fatalf("FG Right result/selection=%+v/%d", got, picker.Selected)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "down"}); got != Handled() || picker.Target != ColorPickerBG || picker.Selected != 4 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "down"}); got != Handled() || picker.Target != ColorPickerBG || picker.Selected != 8 {
 		t.Fatalf("Down result/target/selection=%+v/%v/%d", got, picker.Target, picker.Selected)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || picker.Selected != 3 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || picker.Selected != 7 {
 		t.Fatalf("BG Left result/selection=%+v/%d", got, picker.Selected)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.BG != picker.Palette[3] || picker.FG != ColorIndex(7) {
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.BG != picker.Palette[7] || picker.FG != ColorIndex(7) {
 		t.Fatalf("BG Space result/colors=%+v/%v/%v", got, picker.FG, picker.BG)
 	}
-	if got := picker.ConsumeKey(KeyEvent{Key: "up"}); got != Handled() || picker.Target != ColorPickerFG || picker.Selected != 8 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "up"}); got != Handled() || picker.Target != ColorPickerFG || picker.Selected != 7 {
 		t.Fatalf("Up result/target/selection=%+v/%v/%d", got, picker.Target, picker.Selected)
 	}
 	closed := 0
 	picker.OnClose = func() { closed++ }
-	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || picker.FG != picker.Palette[8] || picker.BG != picker.Palette[3] || closed != 1 {
+	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || picker.FG != picker.Palette[7] || picker.BG != picker.Palette[7] || closed != 1 {
 		t.Fatalf("Enter result/colors/close=%+v/%v/%v/%d", got, picker.FG, picker.BG, closed)
 	}
-	if changes[ColorPickerFG] != picker.Palette[8] || changes[ColorPickerBG] != picker.Palette[3] {
+	if changes[ColorPickerFG] != picker.Palette[7] || changes[ColorPickerBG] != picker.Palette[7] {
 		t.Fatalf("Enter changes=%v", changes)
 	}
 	if got := picker.ConsumeKey(KeyEvent{Key: "tab"}); got != Ignored() {
@@ -109,13 +109,20 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 		t.Helper()
 		inactive := ColorIndex(uint8(SpeccedDefaults.ColorPicker.InactiveMarkerFG))
 		editorBG := p.Style.BG
-		fgX := SpeccedDefaults.ColorPicker.LeadingPadding + p.fgIndex*SpeccedDefaults.ColorPicker.SwatchWidth
-		if !p.fgReset {
-			fgX += SpeccedDefaults.ColorPicker.SwatchWidth
+		fgIndex, fgReset := colorPickerIndex(p.Palette, p.FG)
+		bgIndex, bgReset := colorPickerIndex(p.Palette, p.BG)
+		if p.Target == ColorPickerFG {
+			fgIndex, fgReset = p.Selected, p.ResetSelected
+		} else {
+			bgIndex, bgReset = p.Selected, p.ResetSelected
 		}
-		bgX := SpeccedDefaults.ColorPicker.LeadingPadding + p.bgIndex*SpeccedDefaults.ColorPicker.SwatchWidth
-		if !p.bgReset {
-			bgX += SpeccedDefaults.ColorPicker.SwatchWidth
+		fgX := SpeccedDefaults.ColorPicker.LeadingPadding + (fgIndex+1)*SpeccedDefaults.ColorPicker.SwatchWidth
+		if fgReset {
+			fgX = SpeccedDefaults.ColorPicker.LeadingPadding
+		}
+		bgX := SpeccedDefaults.ColorPicker.LeadingPadding + (bgIndex+1)*SpeccedDefaults.ColorPicker.SwatchWidth
+		if bgReset {
+			bgX = SpeccedDefaults.ColorPicker.LeadingPadding
 		}
 		for x := 0; x < 36; x++ {
 			wantFG := panelBG
