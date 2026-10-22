@@ -582,12 +582,15 @@ selections. `ResetSelected` focuses the terminal-default cell while keeping
 `OnChange` reports each channel applied through Space, a swatch click or Enter;
 `OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
 host keeps running. Palette, edge glyphs, preview dimensions and key bindings
-come from `spec/defaults.yaml`. The panel uses `color_picker.panel_bg` (default
-palette 8); its edge glyphs use that color as their foreground so they extend
-the panel against the surrounding editor background. Swatches remain `Aa`
+come from `spec/defaults.yaml`. The panel uses the rich text toolbar background
+(`rich_text_edit.toolbar_bg`); its edge glyphs use that color as their
+foreground and background so they extend the panel against the editor. Swatches remain `Aa`
 cells with one letter and one padding space per palette position. Row 3 stays
 panel background through columns 0–8, then draws upper-edge glyphs from column
-9; the BG marker overlays its selected cell, including palette index 15.
+9; this closes the gap between the preview rug and the BG marker. The active
+row's marker uses the theme's `selection` role and the inactive row uses the
+specced dim marker colour. `selection` is the editor selection and focused bar
+item colour; `selected_bg` remains the list-row selection colour.
 
 ```go
 picker := loom.NewColorPicker(loom.ColorIndex(7), loom.ColorIndex(0))
@@ -598,7 +601,8 @@ picker.OnClose = func() { /* finish the picker session */ }
 frame := &loom.Frame{Boxes: []loom.Box{{Child: picker}}}
 ```
 
-The picker uses 35 columns by default. Row 0 is a `▂` lower edge with the FG
+The picker uses 36 columns by default, including one panel-background padding
+column after the final swatch. Row 0 is a `▂` lower edge with the FG
 selection highlighted. Row 1 starts with `∅ ` and shows all 16 `Aa` samples as
 foreground colors on the panel background; row 2 shows the reset cell and
 palette as background colors. Each row's swatches remain independent of the
@@ -609,7 +613,8 @@ application. Tab follows the containing focus container, and right-click has no
 picker action.
 
 The `🮂` upper edge marks the BG selection beneath its swatch, including palette
-15 at columns 33–34 beyond the 9-column preview rug. The preview label sits on
+15 at columns 33–34 beyond the 9-column preview rug, with panel padding at
+column 35. The preview label sits on
 the selected FG/BG pair, with its 9-column rug and the bottom edge. Edge cells
 paint the panel background to clear text beneath the popup. Use `▁` and `▔` as
 the lower and upper edge glyphs in fonts without `🮂` (Symbols for Legacy

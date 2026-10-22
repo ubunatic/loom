@@ -108,7 +108,7 @@ func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex i
 					from, to := highlight.From, highlight.To
 					if (lineIndex > from.Line || lineIndex == from.Line && offset+runeCount > from.Offset) &&
 						(lineIndex < to.Line || lineIndex == to.Line && offset < to.Offset) {
-						style = richOverlayStyle(style, highlight.Style)
+						style = richOverlayStyle(style, highlight.Style, e.toolbarTheme().Selection.Color())
 					}
 				}
 				if selected {
@@ -138,12 +138,12 @@ func (e *RichTextEdit) spanStyle(span RichSpan) Style {
 }
 
 func (e *RichTextEdit) selectionStyle(base Style) Style {
-	return richOverlayStyle(base, e.SelectionStyle)
+	return richOverlayStyle(base, e.SelectionStyle, e.toolbarTheme().Selection.Color())
 }
 
-func richOverlayStyle(base, selection Style) Style {
+func richOverlayStyle(base, selection Style, selectionBG Color) Style {
 	if selection == (Style{}) {
-		base.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG))
+		base.BG = selectionBG
 		return base
 	}
 	if selection.FG != ColorReset() {

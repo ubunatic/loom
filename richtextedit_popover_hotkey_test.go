@@ -47,7 +47,7 @@ func TestRichTextEditFocusedPopoverHighlightsWholeItemByDisplayColumn(t *testing
 	edit.ConsumeKey(KeyEvent{Key: "ctrl-space"})
 	canvas := NewCanvas(100, 5)
 	defs := SpeccedDefaults.RichTextEdit
-	focusBG := ColorIndex(uint8(defs.PopoverFocusBG))
+	focusBG := DefaultTheme().Selection.Color()
 	focusFG := ColorIndex(uint8(defs.PopoverFocusFG))
 	separatorFG := ColorIndex(uint8(defs.SeparatorFG))
 	separatorBG := ColorIndex(uint8(defs.SeparatorBG))

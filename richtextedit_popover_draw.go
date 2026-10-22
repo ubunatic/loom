@@ -144,7 +144,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		}
 		if e.popoverFocusSet && i == e.popoverFocus {
 			style.FG = ColorIndex(uint8(defs.PopoverFocusFG))
-			style.BG = ColorIndex(uint8(defs.PopoverFocusBG))
+			style.BG = e.toolbarTheme().Selection.Color()
 			style.Dim = false
 		}
 		runeIndex := SpeccedDefaults.RichTextEdit.PopoverHotkeyIndices[i]
@@ -165,7 +165,7 @@ func (e *RichTextEdit) drawPopover(c *Canvas, r Rect, lines []RichLine) {
 		if i < len(labels)-1 {
 			separatorStyle := Style{FG: ColorIndex(uint8(defs.SeparatorFG)), BG: ColorIndex(uint8(defs.SeparatorBG))}
 			if e.popoverFocusSet && i+1 == e.popoverFocus {
-				separatorStyle.BG = ColorIndex(uint8(defs.PopoverFocusBG))
+				separatorStyle.BG = e.toolbarTheme().Selection.Color()
 			}
 			c.Set(r.X+x, r.Y+barY, Cell{Text: defs.SeparatorGlyph, Style: separatorStyle})
 			x++
@@ -265,7 +265,7 @@ func (e *RichTextEdit) drawPopoverBoxStyles(c *Canvas, r Rect, barY int) {
 		choiceStyle := style
 		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
 			choiceStyle.FG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG))
-			choiceStyle.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG))
+			choiceStyle.BG = e.toolbarTheme().Selection.Color()
 		}
 		for j, ch := range " " + label + " " {
 			c.Set(r.X+col+j, r.Y+y, Cell{Text: string(ch), Style: choiceStyle})
@@ -321,7 +321,7 @@ func (e *RichTextEdit) drawPopoverHamburger(c *Canvas, r Rect, barY int) {
 		choiceStyle := style
 		if e.popoverSubmenuFocusSet && i == e.popoverSubmenuFocus {
 			choiceStyle.FG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG))
-			choiceStyle.BG = ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG))
+			choiceStyle.BG = e.toolbarTheme().Selection.Color()
 		}
 		c.Write(r.X+x, r.Y+placement.Y, " "+label+" ", choiceStyle)
 		x += choiceWidth

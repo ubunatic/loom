@@ -35,6 +35,13 @@ func TestThemeDefaultTableStyleMatchesDefault(t *testing.T) {
 	}
 }
 
+func TestJulia256SelectionRoleIsDistinctFromListSelection(t *testing.T) {
+	theme := loom.Theme("julia256")
+	if theme.Selection.Color() == theme.SelectedBG.Color() {
+		t.Fatalf("julia256 editor selection and list-row selection should have distinct colors: %v", theme.Selection.Color())
+	}
+}
+
 // TestThemeUnknownFallsBackToPlain verifies that an unknown theme name returns
 // the plain theme without panicking.
 func TestThemeUnknownFallsBackToPlain(t *testing.T) {

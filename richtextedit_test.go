@@ -43,7 +43,7 @@ func TestRichTextEditPaintsSelectionAcrossSpans(t *testing.T) {
 		t.Fatalf("unselected background = %v, want reset", got)
 	}
 	for _, x := range []int{1, 2, 3, 4} {
-		if got := canvas.Get(x, 0).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
+		if got := canvas.Get(x, 0).Style.BG; got != DefaultTheme().Selection.Color() {
 			t.Errorf("selected cell %d background = %v", x, got)
 		}
 	}
@@ -223,7 +223,7 @@ func TestRichTextEditMouseClickAndDragSelection(t *testing.T) {
 		t.Fatalf("drag selection = %+v..%+v active=%v", edit.SelectionFrom, edit.SelectionTo, edit.HasSelection)
 	}
 	edit.Draw(canvas, Rect{X: 3, Y: 1, W: 8, H: 2})
-	if canvas.Get(5, 1).Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) || canvas.Get(3, 2).Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
+	if canvas.Get(5, 1).Style.BG != DefaultTheme().Selection.Color() || canvas.Get(3, 2).Style.BG != DefaultTheme().Selection.Color() {
 		t.Fatal("mouse selection was not painted across lines")
 	}
 }
@@ -307,7 +307,7 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	edit.Draw(canvas, Rect{W: 60, H: 4})
 	button := edit.popoverButtons[edit.popoverFocus]
 	cell := canvas.Get(button.rect.X+1, button.rect.Y)
-	if cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG)) || cell.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG)) {
+	if cell.Style.FG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusFG)) || cell.Style.BG != DefaultTheme().Selection.Color() {
 		t.Fatalf("focused Draw style = %+v", cell.Style)
 	}
 	if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || richPopoverActions[edit.popoverFocus] != "Hamburger" {
@@ -1180,7 +1180,7 @@ func TestRichTextEditCtrlSpaceSelectsSharpAndRoundedBoxRectangle(t *testing.T) {
 			canvas := NewCanvas(5, 3)
 			e.Draw(canvas, Rect{W: 5, H: 3})
 			for _, pos := range [][2]int{{0, 0}, {4, 0}, {0, 1}, {4, 1}, {0, 2}, {4, 2}} {
-				if got := canvas.Get(pos[0], pos[1]).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.SelectionBG)) {
+				if got := canvas.Get(pos[0], pos[1]).Style.BG; got != DefaultTheme().Selection.Color() {
 					t.Errorf("perimeter cell (%d,%d) not selected: bg=%v", pos[0], pos[1], got)
 				}
 			}

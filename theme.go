@@ -83,6 +83,7 @@ type ThemeColors struct {
 	NormalBG           ThemeColor    `yaml:"normal_bg"`
 	SelectedFG         ThemeColor    `yaml:"selected_fg"`
 	SelectedBG         ThemeColor    `yaml:"selected_bg"`
+	Selection          ThemeColor    `yaml:"selection"`
 	SelectedBold       bool          `yaml:"selected_bold"`
 	HeaderFG           ThemeColor    `yaml:"header_fg"`
 	HeaderBG           ThemeColor    `yaml:"header_bg"`

@@ -27,6 +27,7 @@ themes:
     selected_fg:      default # bold carries the highlight
     selected_bg:      default
     selected_bold:    true
+    selection:        default
     header_fg:        default
     header_bg:        default
     header_bold:      true
@@ -76,6 +77,7 @@ themes:
     selected_fg:      16  # fixed black (#000000)
     selected_bg:      75  # bright sky blue (#5fafff)
     selected_bold:    false
+    selection:        75
     header_fg:        186 # muted yellow (#d7d787)
     header_bg:        69  # medium steel blue
     header_bold:      true
@@ -121,6 +123,7 @@ themes:
     selected_fg:      16  # black (#000000)
     selected_bg:      51  # cyan (#00ffff)
     selected_bold:    false
+    selection:        24
     header_fg:        226 # yellow (#ffff00)
     header_bg:        27
     header_bold:      true
@@ -166,6 +169,7 @@ themes:
     selected_fg:      16
     selected_bg:      37  # dark cyan (#00afaf)
     selected_bold:    false
+    selection:        24
     header_fg:        186
     header_bg:        19
     header_bold:      true
@@ -219,6 +223,7 @@ themes:
     selected_fg:      16  # fixed black (#000000)
     selected_bg:      51  # cyan (#00ffff)
     selected_bold:    false
+    selection:        24 # editor selection and focused bar item
     header_fg:        226 # yellow (#ffff00)
     header_bg:        237
     header_bold:      true

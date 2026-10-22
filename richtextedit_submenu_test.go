@@ -251,7 +251,7 @@ func TestRichTextEditKeyboardBoxSubmenuWrapAndApply(t *testing.T) {
 		t.Fatalf("box choices = %d, want three", len(edit.popoverBoxChoices))
 	}
 	choice := edit.popoverBoxChoices[1]
-	if got := canvas.Get(choice.rect.X+1, choice.rect.Y).Style.BG; got != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.PopoverFocusBG)) {
+	if got := canvas.Get(choice.rect.X+1, choice.rect.Y).Style.BG; got != DefaultTheme().Selection.Color() {
 		t.Fatalf("focused box choice background = %v", got)
 	}
 	assertMenuHandled(t, edit.ConsumeKey(KeyEvent{Key: "enter"}))

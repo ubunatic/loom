@@ -27,7 +27,7 @@
       "additionalProperties": false,
       "required": [
         "normal_fg",   "normal_bg",
-        "selected_fg", "selected_bg", "selected_bold",
+        "selected_fg", "selected_bg", "selected_bold", "selection",
         "header_fg",   "header_bg",   "header_bold",
         "prompt_fg",   "prompt_bg",
         "placeholder_fg", "placeholder_bg", "placeholder_dim",
@@ -45,6 +45,7 @@
         "normal_bg":     { "$ref": "#/definitions/themeColor" },
         "selected_fg":   { "$ref": "#/definitions/themeColor" },
         "selected_bg":   { "$ref": "#/definitions/themeColor" },
+        "selection":     { "$ref": "#/definitions/themeColor" },
         "selected_bold": { "type": "boolean" },
         "header_fg":     { "$ref": "#/definitions/themeColor" },
         "header_bg":     { "$ref": "#/definitions/themeColor" },

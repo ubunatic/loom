@@ -1232,18 +1232,18 @@ func (p *ColorPicker) SetFocus(focused bool)
     SetFocus updates keyboard focus rendering.
 
 type ColorPickerDefaults struct {
-	Palette        []int               `yaml:"palette"`
-	InitialTarget  string              `yaml:"initial_target"`
-	SwatchWidth    int                 `yaml:"swatch_width"`
-	LeadingPadding int                 `yaml:"leading_padding"`
-	PreviewPadding int                 `yaml:"preview_padding"`
-	PreviewWidth   int                 `yaml:"preview_width"`
-	PanelBG        int                 `yaml:"panel_bg"`
-	MarkerFG       int                 `yaml:"marker_fg"`
-	ShowPreview    bool                `yaml:"show_preview"`
-	Labels         ColorPickerLabels   `yaml:"labels"`
-	Glyphs         ColorPickerGlyphs   `yaml:"glyphs"`
-	Bindings       map[string][]string `yaml:"bindings"`
+	Palette          []int               `yaml:"palette"`
+	InitialTarget    string              `yaml:"initial_target"`
+	SwatchWidth      int                 `yaml:"swatch_width"`
+	LeadingPadding   int                 `yaml:"leading_padding"`
+	PreviewPadding   int                 `yaml:"preview_padding"`
+	PreviewWidth     int                 `yaml:"preview_width"`
+	TrailingPadding  int                 `yaml:"trailing_padding"`
+	InactiveMarkerFG int                 `yaml:"inactive_marker_fg"`
+	ShowPreview      bool                `yaml:"show_preview"`
+	Labels           ColorPickerLabels   `yaml:"labels"`
+	Glyphs           ColorPickerGlyphs   `yaml:"glyphs"`
+	Bindings         map[string][]string `yaml:"bindings"`
 }
     ColorPickerDefaults defines the ColorPicker's palette, marker color, labels,
     glyphs and keys.
@@ -3666,7 +3666,6 @@ type RichTextEditDefaults struct {
 	DismissOnScroll           bool   `yaml:"dismiss_on_scroll"`
 	MouseHoverFocus           bool   `yaml:"mouse_hover_focus"`
 
-	SelectionBG             int           `yaml:"selection_bg"`
 	ToolbarFG               int           `yaml:"toolbar_fg"`
 	ToolbarBG               int           `yaml:"toolbar_bg"`
 	SeparatorGlyph          string        `yaml:"separator_glyph"`
@@ -3686,7 +3685,6 @@ type RichTextEditDefaults struct {
 	BoxStyleDefault         string        `yaml:"box_style_default"`
 	GhostCursorEnabled      bool          `yaml:"ghost_cursor_enabled"`
 	PopoverFocusFG          int           `yaml:"popover_focus_fg"`
-	PopoverFocusBG          int           `yaml:"popover_focus_bg"`
 	LinkFG                  int           `yaml:"link_fg"`
 	LinkUnderline           bool          `yaml:"link_underline"`
 	SavePopupMaxWidth       int           `yaml:"save_popup_max_width"`
@@ -4812,6 +4810,7 @@ type ThemeColors struct {
 	NormalBG           ThemeColor    `yaml:"normal_bg"`
 	SelectedFG         ThemeColor    `yaml:"selected_fg"`
 	SelectedBG         ThemeColor    `yaml:"selected_bg"`
+	Selection          ThemeColor    `yaml:"selection"`
 	SelectedBold       bool          `yaml:"selected_bold"`
 	HeaderFG           ThemeColor    `yaml:"header_fg"`
 	HeaderBG           ThemeColor    `yaml:"header_bg"`

@@ -52,18 +52,18 @@ type LibDefaults struct {
 
 // ColorPickerDefaults defines the ColorPicker's palette, marker color, labels, glyphs and keys.
 type ColorPickerDefaults struct {
-	Palette        []int               `yaml:"palette"`
-	InitialTarget  string              `yaml:"initial_target"`
-	SwatchWidth    int                 `yaml:"swatch_width"`
-	LeadingPadding int                 `yaml:"leading_padding"`
-	PreviewPadding int                 `yaml:"preview_padding"`
-	PreviewWidth   int                 `yaml:"preview_width"`
-	PanelBG        int                 `yaml:"panel_bg"`
-	MarkerFG       int                 `yaml:"marker_fg"`
-	ShowPreview    bool                `yaml:"show_preview"`
-	Labels         ColorPickerLabels   `yaml:"labels"`
-	Glyphs         ColorPickerGlyphs   `yaml:"glyphs"`
-	Bindings       map[string][]string `yaml:"bindings"`
+	Palette          []int               `yaml:"palette"`
+	InitialTarget    string              `yaml:"initial_target"`
+	SwatchWidth      int                 `yaml:"swatch_width"`
+	LeadingPadding   int                 `yaml:"leading_padding"`
+	PreviewPadding   int                 `yaml:"preview_padding"`
+	PreviewWidth     int                 `yaml:"preview_width"`
+	TrailingPadding  int                 `yaml:"trailing_padding"`
+	InactiveMarkerFG int                 `yaml:"inactive_marker_fg"`
+	ShowPreview      bool                `yaml:"show_preview"`
+	Labels           ColorPickerLabels   `yaml:"labels"`
+	Glyphs           ColorPickerGlyphs   `yaml:"glyphs"`
+	Bindings         map[string][]string `yaml:"bindings"`
 }
 
 type ColorPickerLabels struct {
@@ -78,8 +78,8 @@ type ColorPickerGlyphs struct {
 }
 
 func (d ColorPickerDefaults) validate() error {
-	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.LeadingPadding < 0 || d.PreviewPadding < 0 || d.PreviewWidth < 1 || d.PanelBG < 0 || d.PanelBG > 255 || d.MarkerFG < 0 || d.MarkerFG > 255 {
-		return fmt.Errorf("color_picker palette, widths, padding, panel_bg and marker_fg must be valid")
+	if len(d.Palette) == 0 || len(d.Palette) > 256 || d.SwatchWidth < 1 || d.LeadingPadding < 0 || d.TrailingPadding < 0 || d.PreviewPadding < 0 || d.PreviewWidth < 1 || d.InactiveMarkerFG < 0 || d.InactiveMarkerFG > 255 {
+		return fmt.Errorf("color_picker palette, widths and padding must be valid")
 	}
 	seen := make(map[int]bool, len(d.Palette))
 	for _, color := range d.Palette {
@@ -253,7 +253,6 @@ type RichTextEditDefaults struct {
 	DismissOnScroll           bool   `yaml:"dismiss_on_scroll"`
 	MouseHoverFocus           bool   `yaml:"mouse_hover_focus"`
 
-	SelectionBG             int           `yaml:"selection_bg"`
 	ToolbarFG               int           `yaml:"toolbar_fg"`
 	ToolbarBG               int           `yaml:"toolbar_bg"`
 	SeparatorGlyph          string        `yaml:"separator_glyph"`
@@ -273,7 +272,6 @@ type RichTextEditDefaults struct {
 	BoxStyleDefault         string        `yaml:"box_style_default"`
 	GhostCursorEnabled      bool          `yaml:"ghost_cursor_enabled"`
 	PopoverFocusFG          int           `yaml:"popover_focus_fg"`
-	PopoverFocusBG          int           `yaml:"popover_focus_bg"`
 	LinkFG                  int           `yaml:"link_fg"`
 	LinkUnderline           bool          `yaml:"link_underline"`
 	SavePopupMaxWidth       int           `yaml:"save_popup_max_width"`
@@ -367,8 +365,8 @@ func (d RichTextEditDefaults) validate() error {
 		name  string
 		value int
 	}{
-		{"selection_bg", d.SelectionBG}, {"toolbar_fg", d.ToolbarFG}, {"toolbar_bg", d.ToolbarBG},
-		{"separator_fg", d.SeparatorFG}, {"separator_bg", d.SeparatorBG}, {"pointer_fg", d.PointerFG}, {"popover_focus_fg", d.PopoverFocusFG}, {"popover_focus_bg", d.PopoverFocusBG}, {"link_fg", d.LinkFG},
+		{"toolbar_fg", d.ToolbarFG}, {"toolbar_bg", d.ToolbarBG},
+		{"separator_fg", d.SeparatorFG}, {"separator_bg", d.SeparatorBG}, {"pointer_fg", d.PointerFG}, {"popover_focus_fg", d.PopoverFocusFG}, {"link_fg", d.LinkFG},
 	} {
 		if color.value < 0 || color.value > 255 {
 			return fmt.Errorf("rich_text_edit.%s must be between 0 and 255", color.name)

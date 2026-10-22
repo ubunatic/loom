@@ -60,7 +60,7 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.MenuFocusKey != "" || got.PopupOpenKey != "ctrl-space" {
 		t.Fatalf("popover key defaults = %q/%q", got.MenuFocusKey, got.PopupOpenKey)
 	}
-	if got.SelectionBG != 24 || got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "▏" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 || got.PopoverFocusBG != 24 {
+	if got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "▏" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
 	want := []string{"B", "I", "U", "S", "🎨", "Frame", "Link"}
@@ -106,7 +106,7 @@ func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
 	if len(got.Palette) != 16 || got.Palette[0] != 0 || got.Palette[15] != 15 {
 		t.Fatalf("picker palette = %v, want indexes 0 through 15", got.Palette)
 	}
-	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.Reset != "∅ " || got.Glyphs.EdgeLower != "▂" || got.Glyphs.EdgeUpper != "🮂" || got.MarkerFG != 51 || got.LeadingPadding != 1 || got.PreviewPadding != 1 || got.PreviewWidth != 9 {
+	if !got.ShowPreview || got.Labels.Preview == "" || got.Glyphs.Swatch == "" || got.Glyphs.Reset != "∅ " || got.Glyphs.EdgeLower != "▂" || got.Glyphs.EdgeUpper != "🮂" || got.InactiveMarkerFG < 0 || got.InactiveMarkerFG > 255 || got.LeadingPadding != 1 || got.TrailingPadding != 1 || got.PreviewPadding != 1 || got.PreviewWidth != 9 {
 		t.Fatalf("picker preview/glyphs incomplete: %+v", got)
 	}
 	if got.Bindings["apply"][0] != "enter" || got.Bindings["select"][0] != "space" || got.Bindings["row_bg"][0] != "down" || got.Bindings["row_fg"][0] != "up" || got.Bindings["home"][0] != "home" || got.Bindings["close"][0] != "esc" {

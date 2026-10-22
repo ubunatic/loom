@@ -22,7 +22,9 @@ func editPTYPopoverBFocused(s *ptytest.Session) bool {
 			continue
 		}
 		for _, cell := range row {
-			if cell.Text == "B" && cell.Style.BG.Type == ptytest.ColorIndexed && cell.Style.BG.Index == uint8(loom.SpeccedDefaults.RichTextEdit.PopoverFocusBG) {
+			wantR, wantG, wantB, wantOK := loom.Theme("julia256").Selection.Color().RGB()
+			gotR, gotG, gotB, gotOK := cell.Style.BG.RGB()
+			if cell.Text == "B" && wantOK && gotOK && gotR == wantR && gotG == wantG && gotB == wantB {
 				return true
 			}
 		}

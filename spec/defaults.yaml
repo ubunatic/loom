@@ -180,8 +180,8 @@ color_picker:
   leading_padding: 1
   preview_padding: 1
   preview_width: 9
-  panel_bg: 8
-  marker_fg: 51
+  trailing_padding: 1
+  inactive_marker_fg: 8
   show_preview: true
   labels:
     preview: "Preview"
@@ -336,7 +336,6 @@ rich_text_edit:
   position_preference: "smart"
   dismiss_on_scroll: true
   mouse_hover_focus: false
-  selection_bg: 24
   toolbar_fg: 15
   toolbar_bg: 239
   separator_glyph: "▏"
@@ -356,7 +355,6 @@ rich_text_edit:
   box_style_default: "plain"
   ghost_cursor_enabled: false
   popover_focus_fg: 15
-  popover_focus_bg: 24
   link_fg: 39
   link_underline: true
   save_popup_max_width: 72

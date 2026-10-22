@@ -145,16 +145,16 @@
     "color_picker": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["palette", "initial_target", "swatch_width", "leading_padding", "preview_padding", "preview_width", "panel_bg", "marker_fg", "show_preview", "labels", "glyphs", "bindings"],
+      "required": ["palette", "initial_target", "swatch_width", "leading_padding", "trailing_padding", "preview_padding", "preview_width", "inactive_marker_fg", "show_preview", "labels", "glyphs", "bindings"],
       "properties": {
         "palette": {"type": "array", "minItems": 1, "maxItems": 256, "uniqueItems": true, "items": {"type": "integer", "minimum": 0, "maximum": 255}},
         "initial_target": {"type": "string", "enum": ["fg", "bg"]},
         "swatch_width": {"type": "integer", "minimum": 1},
         "leading_padding": {"type": "integer", "minimum": 0},
+        "trailing_padding": {"type": "integer", "minimum": 0},
         "preview_padding": {"type": "integer", "minimum": 0},
         "preview_width": {"type": "integer", "minimum": 1},
-        "panel_bg": {"type": "integer", "minimum": 0, "maximum": 255},
-        "marker_fg": {"type": "integer", "minimum": 0, "maximum": 255},
+        "inactive_marker_fg": {"type": "integer", "minimum": 0, "maximum": 255},
         "show_preview": {"type": "boolean"},
         "labels": {
           "type": "object", "additionalProperties": false,
@@ -267,7 +267,7 @@
     "rich_text_edit": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["action_closes_menu", "menu_focus_key", "arrows_cancel_unfocused_menu", "unselect_after_action", "unselect_on_cancel", "popup_open_key", "auto_popup_on_selection", "popup_open_delay_ms", "cycle_navigation", "position_preference", "dismiss_on_scroll", "mouse_hover_focus", "box_draw_label", "selection_bg", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "popover_hotkeys", "popover_hotkey_indices", "popover_hamburger_label", "popover_hamburger_items", "popover_hamburger_actions", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "popover_focus_bg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height", "state_untitled_label", "state_saved_label", "state_modified_label", "state_error_label", "file_menu_title", "file_menu_mnemonic", "hotkey_help_binding", "hotkey_help_label", "hotkey_save_binding", "hotkey_save_label", "hotkey_save_as_label", "hotkey_open_binding", "hotkey_open_label", "hotkey_close_binding", "hotkey_close_label", "hotkey_view_edit_binding", "hotkey_quit_binding", "hotkey_quit_label", "help_sections", "undo_limit", "multi_click_window", "show_cursor", "show_popover", "help_title", "help_max_width", "help_max_height", "help_page_step", "help_footer", "save_title", "file_mode", "final_newline", "create_missing_file", "view_label", "edit_label", "untitled_name", "box_hint", "status_separator", "status_truncation", "popover_min_width", "bindings"],
+      "required": ["action_closes_menu", "menu_focus_key", "arrows_cancel_unfocused_menu", "unselect_after_action", "unselect_on_cancel", "popup_open_key", "auto_popup_on_selection", "popup_open_delay_ms", "cycle_navigation", "position_preference", "dismiss_on_scroll", "mouse_hover_focus", "box_draw_label", "toolbar_fg", "toolbar_bg", "separator_glyph", "separator_fg", "separator_bg", "pointer_up_glyph", "pointer_down_glyph", "pointer_fg", "popover_labels", "popover_hotkeys", "popover_hotkey_indices", "popover_hamburger_label", "popover_hamburger_items", "popover_hamburger_actions", "box_style_labels", "box_style_default", "ghost_cursor_enabled", "popover_focus_fg", "link_fg", "link_underline", "save_popup_max_width", "save_popup_max_height", "state_untitled_label", "state_saved_label", "state_modified_label", "state_error_label", "file_menu_title", "file_menu_mnemonic", "hotkey_help_binding", "hotkey_help_label", "hotkey_save_binding", "hotkey_save_label", "hotkey_save_as_label", "hotkey_open_binding", "hotkey_open_label", "hotkey_close_binding", "hotkey_close_label", "hotkey_view_edit_binding", "hotkey_quit_binding", "hotkey_quit_label", "help_sections", "undo_limit", "multi_click_window", "show_cursor", "show_popover", "help_title", "help_max_width", "help_max_height", "help_page_step", "help_footer", "save_title", "file_mode", "final_newline", "create_missing_file", "view_label", "edit_label", "untitled_name", "box_hint", "status_separator", "status_truncation", "popover_min_width", "bindings"],
       "properties": {
         "undo_limit": {"type": "integer", "minimum": 1},
         "multi_click_window": {"type": "string", "pattern": "^[1-9][0-9]*(ns|us|ms|s|m|h)$"},
@@ -370,7 +370,6 @@
         "position_preference": {"type": "string", "default": "smart", "enum": ["above", "below", "smart"], "minLength": 1},
         "dismiss_on_scroll": {"type": "boolean", "default": true},
         "mouse_hover_focus": {"type": "boolean", "default": false},
-        "selection_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "toolbar_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "toolbar_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "separator_glyph": { "type": "string", "minLength": 1 },
@@ -390,7 +389,6 @@
         "box_style_default": { "type": "string", "enum": ["plain", "rounded"] },
         "ghost_cursor_enabled": { "type": "boolean" },
         "popover_focus_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
-        "popover_focus_bg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "link_fg": { "type": "integer", "minimum": 0, "maximum": 255 },
         "link_underline": { "type": "boolean" },
         "save_popup_max_width": { "type": "integer", "minimum": 8 },

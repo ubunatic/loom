@@ -46,8 +46,8 @@ func TestColorPickerRowsKeepIndependentCursorsAndApply(t *testing.T) {
 func TestColorPickerResetAndMouseRows(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
 	size := picker.Measure(0)
-	if size.Width != 35 || size.Height != 6 {
-		t.Fatalf("picker measure=%+v, want 35x6", size)
+	if size.Width != 36 || size.Height != 6 {
+		t.Fatalf("picker measure=%+v, want 36x6", size)
 	}
 	picker.Draw(NewCanvas(40, 8), Rect{W: size.Width, H: size.Height})
 	var changed []ColorPickerTarget
@@ -58,7 +58,7 @@ func TestColorPickerResetAndMouseRows(t *testing.T) {
 	canvas := NewCanvas(40, 8)
 	picker.Draw(canvas, Rect{W: size.Width, H: size.Height})
 	marker := canvas.Get(33, 3)
-	if marker.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || marker.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) {
+	if marker.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || marker.Style.FG != DefaultTheme().Selection.Color() {
 		t.Fatalf("BG marker at palette 15=%+v", marker)
 	}
 	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 1}); got != Handled() || picker.FG != ColorReset() || !picker.ResetSelected {
@@ -82,8 +82,8 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(11), ColorIndex(4))
 	canvas := NewCanvas(40, 8)
 	canvas.Write(20, 5, "Z", Style{FG: ColorIndex(2), BG: ColorIndex(3)})
-	picker.Draw(canvas, Rect{W: 35, H: 6})
-	panelBG := ColorIndex(uint8(SpeccedDefaults.ColorPicker.PanelBG))
+	picker.Draw(canvas, Rect{W: 36, H: 6})
+	panelBG := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
 	for i, color := range picker.Palette {
 		fg := canvas.Get(3+(i*2), 1)
 		bg := canvas.Get(3+(i*2), 2)
@@ -105,10 +105,10 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 			t.Errorf("panel padding at (%d,%d) style=%+v, want panel BG %v", pos[0], pos[1], got.Style, panelBG)
 		}
 	}
-	for x := 0; x < 35; x++ {
+	for x := 0; x < 36; x++ {
 		wantFG := panelBG
 		if x >= 25 && x < 27 {
-			wantFG = ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG))
+			wantFG = DefaultTheme().Selection.Color()
 		}
 		if got := canvas.Get(x, 0); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeLower || got.Style.FG != wantFG {
 			t.Errorf("lower edge column %d=%+v", x, got)
@@ -124,8 +124,8 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	if got := canvas.Get(20, 5); got.Text != "Z" || got.Style.FG != ColorIndex(2) || got.Style.BG != ColorIndex(3) {
 		t.Fatalf("preview rug cleared content outside its 9 columns: %+v", got)
 	}
-	if got := canvas.Get(9, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != panelBG {
-		t.Fatalf("upper edge begins at column 9 with panel color: %+v", got)
+	if got := canvas.Get(9, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.BG != panelBG {
+		t.Fatalf("upper edge begins at column 9 with panel background: %+v", got)
 	}
 	for x := 0; x < 9; x++ {
 		if got := canvas.Get(x, 3); got.Text != " " || got.Style.BG != panelBG {
@@ -133,10 +133,27 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 		}
 	}
 	markerPicker := NewColorPicker(ColorIndex(1), ColorIndex(15))
-	markerCanvas := NewCanvas(35, 6)
-	markerPicker.Draw(markerCanvas, Rect{W: 35, H: 6})
-	if got := markerCanvas.Get(33, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.MarkerFG)) {
+	markerCanvas := NewCanvas(36, 6)
+	markerPicker.Draw(markerCanvas, Rect{W: 36, H: 6})
+	if got := markerCanvas.Get(33, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.InactiveMarkerFG)) {
 		t.Fatalf("palette 15 marker should overlay upper edge: %+v", got)
+	}
+	if got := canvas.Get(35, 2); got.Text != " " || got.Style.BG != panelBG {
+		t.Fatalf("right padding should use panel background: %+v", got)
+	}
+	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 35, Y: 2}); got != Ignored() {
+		t.Fatalf("right padding click result=%+v, want ignored", got)
+	}
+	if picker.ConsumeKey(KeyEvent{Key: "down"}) != Handled() {
+		t.Fatal("Down should activate the BG row")
+	}
+	activeBGCanvas := NewCanvas(36, 6)
+	picker.Draw(activeBGCanvas, Rect{W: 36, H: 6})
+	if got := activeBGCanvas.Get(11, 3); got.Style.FG != DefaultTheme().Selection.Color() {
+		t.Fatalf("active BG marker=%+v, want selection role", got)
+	}
+	if got := activeBGCanvas.Get(25, 0); got.Style.FG != ColorIndex(uint8(SpeccedDefaults.ColorPicker.InactiveMarkerFG)) {
+		t.Fatalf("inactive FG marker=%+v, want dim role", got)
 	}
 	defs := SpeccedDefaults.ColorPicker
 	old := defs.ShowPreview

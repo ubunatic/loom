@@ -31,12 +31,13 @@ type ColorPicker struct {
 	OnChange      func(ColorPickerTarget, Color)
 	OnClose       func()
 
-	focused  bool
-	lastRect Rect
-	fgIndex  int
-	bgIndex  int
-	fgReset  bool
-	bgReset  bool
+	focused   bool
+	lastRect  Rect
+	selection Color
+	fgIndex   int
+	bgIndex   int
+	fgReset   bool
+	bgReset   bool
 }
 
 var _ Widget = (*ColorPicker)(nil)
@@ -52,7 +53,7 @@ func NewColorPicker(fg, bg Color) *ColorPicker {
 		palette[i] = ColorIndex(uint8(index))
 	}
 	themeStyle := DefaultTheme().TableStyle()
-	p := &ColorPicker{FG: fg, BG: bg, Palette: palette, Style: themeStyle.Normal, FocusStyle: themeStyle.Selected, focused: true}
+	p := &ColorPicker{FG: fg, BG: bg, Palette: palette, Style: themeStyle.Normal, FocusStyle: themeStyle.Selected, selection: DefaultTheme().Selection.Color(), focused: true}
 	p.fgIndex, p.fgReset = colorPickerIndex(palette, fg)
 	p.bgIndex, p.bgReset = colorPickerIndex(palette, bg)
 	p.Target = ColorPickerFG
@@ -108,6 +109,7 @@ func (p *ColorPicker) ApplyTheme(theme ThemeColors) {
 	}
 	style := theme.TableStyle()
 	p.Style, p.FocusStyle = style.Normal, style.Selected
+	p.selection = theme.Selection.Color()
 }
 
 // PreviewStyle returns the selected foreground and background as one style.
@@ -121,7 +123,7 @@ func (p *ColorPicker) PreviewStyle() Style {
 // Measure reports the two palette rows, slim edges and optional preview rug.
 func (p *ColorPicker) Measure(width int) measure.Size {
 	defs := SpeccedDefaults.ColorPicker
-	w := defs.LeadingPadding + (len(p.Palette)+1)*defs.SwatchWidth
+	w := defs.LeadingPadding + (len(p.Palette)+1)*defs.SwatchWidth + defs.TrailingPadding
 	if width > 0 && width < w {
 		w = width
 	}
@@ -140,7 +142,7 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	p.lastRect = r
 	panelHeight := min(r.H, 4)
 	defs := SpeccedDefaults.ColorPicker
-	panelBG := ColorIndex(uint8(defs.PanelBG))
+	panelBG := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
 	panelStyle := Style{FG: p.Style.FG, BG: panelBG}
 	c.PaintSurface(Rect{X: r.X, Y: r.Y, W: r.W, H: panelHeight}, panelStyle)
 	if defs.ShowPreview && r.H >= 6 {
@@ -177,13 +179,16 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 		}
 	}
-	markerFG := ColorIndex(uint8(defs.MarkerFG))
+	markerFG := ColorIndex(uint8(defs.InactiveMarkerFG))
+	if p.Target == ColorPickerFG {
+		markerFG = p.selection
+	}
 	fgX := paletteX + p.fgIndex*defs.SwatchWidth
 	if !p.fgReset {
 		fgX += defs.SwatchWidth
 	}
 	for x := 0; x < r.W; x++ {
-		style := Style{FG: panelBG, BG: p.Style.BG}
+		style := Style{FG: panelBG, BG: panelBG}
 		if x >= fgX && x < fgX+defs.SwatchWidth {
 			style.FG = markerFG
 		}
@@ -195,28 +200,39 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	}
 	if defs.ShowPreview && r.H >= 6 {
 		for x := 0; x < r.W; x++ {
-			if x < 9 && (x < bgX || x >= bgX+defs.SwatchWidth) {
+			if x < defs.PreviewWidth && (x < bgX || x >= bgX+defs.SwatchWidth) {
+				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
 				continue
 			}
-			style := Style{FG: panelBG, BG: p.Style.BG}
+			style := Style{FG: panelBG, BG: panelBG}
+			if p.Target == ColorPickerBG {
+				style.FG = p.selection
+			}
 			if x >= bgX && x < bgX+defs.SwatchWidth {
-				style.FG = markerFG
+				style.FG = p.selection
+				if p.Target != ColorPickerBG {
+					style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
+				}
 			}
 			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
 		}
 		previewX := defs.PreviewPadding
 		writeColorPickerText(c, r, previewX, 4, defs.Labels.Preview, p.PreviewStyle())
 		for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
-			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: p.Style.BG})
+			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: panelBG})
 		}
 	} else {
 		for x := 0; x < r.W; x++ {
-			if x < 9 && (x < bgX || x >= bgX+defs.SwatchWidth) {
+			if x < defs.PreviewWidth && (x < bgX || x >= bgX+defs.SwatchWidth) {
+				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
 				continue
 			}
-			style := Style{FG: panelBG, BG: p.Style.BG}
+			style := Style{FG: panelBG, BG: panelBG}
 			if x >= bgX && x < bgX+defs.SwatchWidth {
-				style.FG = markerFG
+				style.FG = p.selection
+				if p.Target != ColorPickerBG {
+					style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
+				}
 			}
 			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
 		}
