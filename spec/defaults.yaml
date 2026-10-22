@@ -17,6 +17,48 @@ quit_keys:
 # Opt-in: an unhandled Esc closes the app.
 escape_quits: false
 
+key_conventions:
+  - action: "quit/close"
+    keys: "q, Q, ctrl-c"
+    applies: "View, Choice, Frame actions"
+    conflict: "Popup intentionally closes on esc"
+  - action: "activate/select"
+    keys: "enter, space"
+    applies: "Choice, View"
+    conflict: "space pages View"
+  - action: "navigation"
+    keys: "up, down, left, right"
+    applies: "Choice, View, Tabs, TextInput"
+    conflict: "WASD remains opt-in/historical View only"
+  - action: "page navigation"
+    keys: "pgup, pgdown"
+    applies: "Choice, View"
+    conflict: "Choice also accepts pageup/pagedown aliases"
+  - action: "editing"
+    keys: "backspace, delete, home, end"
+    applies: "TextInput, TextArea"
+    conflict: "undo/redo are not provided by these widgets"
+  - action: "quit/close function"
+    keys: "F10"
+    applies: "Frame actions"
+    conflict: "not provided as a universal widget default; applications may bind it"
+  - action: "view"
+    keys: "F3, v"
+    applies: "View"
+    conflict: "not provided as a universal default; v is historical/example-specific"
+  - action: "edit"
+    keys: "F4, e"
+    applies: "TextInput, TextArea"
+    conflict: "not provided as a universal host action"
+  - action: "undo/redo"
+    keys: "u, U, ctrl-z, ctrl-r"
+    applies: "TextInput, TextArea"
+    conflict: "not provided: editors have no undo stack"
+  - action: "activate/toggle"
+    keys: "insert"
+    applies: "Frame actions"
+    conflict: "not provided as a universal default; action specs decide conflicts"
+
 pane:
   max_cols: 50
   esc_key_timeout: 50ms
@@ -221,12 +263,27 @@ tree:
   collapsed_marker: "▶ "
   expanded_marker: "▼ "
   leaf_marker: "  "
+  bindings:
+    up: ["up", "k"]
+    down: ["down", "j"]
+    expand_or_enter: ["right", "l"]
+    collapse_or_parent: ["left", "h"]
+    toggle_or_activate: ["enter", " "]
+    page_down: ["pgdown", "pgdn", "pagedown"]
+    page_up: ["pgup", "pageup"]
+    home: ["home"]
+    end: ["end"]
 
 split:
   vertical_divider: "─"
   horizontal_divider: "│"
   default_ratio: 0.5
   default_gap: 1
+  bindings:
+    next: ["tab"]
+    previous: ["shift-tab"]
+    shrink: ["["]
+    grow: ["]"]
 
 choice:
   default_placeholder: "type to filter"
@@ -234,11 +291,82 @@ choice:
   unselected_marker: "  "
   checked_marker: "[✓] "
   unchecked_marker: "[ ] "
+  bindings:
+    up: ["up"]
+    down: ["down"]
+    page_up: ["pgup", "pageup"]
+    page_down: ["pgdown", "pgdn", "pagedown"]
+    home: ["home"]
+    end: ["end"]
+    select: ["enter"]
+    toggle: [" "]
+    quit: ["esc", "ctrl-c", "ctrl-d", "ctrl-q"]
+    backspace: ["backspace"]
 
 table:
   sort_asc_glyph: "▲"
   sort_desc_glyph: "▼"
   controls_hint_fmt: "[tab:%s%s !:flip]"
+  bindings:
+    page_up: ["pgup", "pageup"]
+    page_down: ["pgdown", "pgdn", "pagedown"]
+    up: ["up"]
+    down: ["down"]
+    left: ["left"]
+    right: ["right"]
+    select: ["enter"]
+    sort_cycle: ["tab"]
+    sort_flip: ["!"]
+    quit: ["esc", "ctrl-c", "ctrl-d", "ctrl-q"]
+    backspace: ["backspace"]
+
+tabs:
+  keys:
+    previous: "left"
+    next: "right"
+    cycle: ""
+    select: []
+
+view:
+  bindings:
+    up: ["up", "k"]
+    down: ["down", "j"]
+    left: ["left", "h"]
+    right: ["right", "l"]
+    page_down: ["pgdown", "pgdn", "pagedown", "ctrl-f", " "]
+    page_up: ["pgup", "pageup", "ctrl-b", "b"]
+    half_page_down: ["ctrl-d"]
+    half_page_up: ["ctrl-u"]
+    home: ["home", "g"]
+    end: ["end", "G"]
+    quit: ["esc", "ctrl-c", "q"]
+
+menu:
+  bindings:
+    open_bar: ["f10"]
+    cancel: ["esc"]
+    up: ["up"]
+    down: ["down"]
+    left: ["left"]
+    right: ["right"]
+    activate: ["enter", " "]
+
+form:
+  bindings:
+    next: ["tab", "down", "pgdown", "pgdn", "pagedown"]
+    previous: ["shift-tab", "up", "pgup", "pageup"]
+    cancel: ["esc"]
+    submit: ["enter"]
+
+settings:
+  bindings:
+    quit: ["esc", "ctrl-c"]
+    up: ["up"]
+    down: ["down"]
+    activate: ["enter", "right"]
+    previous: ["left"]
+    step_minus: ["-", "minus"]
+    step_plus: ["+", "plus"]
 
 rich_text_edit:
   bindings:

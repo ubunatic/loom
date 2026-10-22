@@ -152,7 +152,7 @@ func validatePair(root string, pair specPair) error {
 	}
 
 	view, ok := document["view"].(map[string]any)
-	if !ok {
+	if !ok || view["frame"] == nil {
 		return nil
 	}
 	for _, change := range []string{"negative_width", "unknown_box_field", "missing_id", "ambiguous_root"} {
