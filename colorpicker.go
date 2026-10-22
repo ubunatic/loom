@@ -205,6 +205,9 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 			style := Style{FG: panelBG, BG: p.Style.BG}
 			if x >= bgX && x < bgX+defs.SwatchWidth {
+				if x < defs.PreviewWidth {
+					style.BG = panelBG
+				}
 				style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
 				if p.Target == ColorPickerBG {
 					style.FG = p.selection
@@ -225,6 +228,9 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 			style := Style{FG: panelBG, BG: p.Style.BG}
 			if x >= bgX && x < bgX+defs.SwatchWidth {
+				if x < defs.PreviewWidth {
+					style.BG = panelBG
+				}
 				style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
 				if p.Target == ColorPickerBG {
 					style.FG = p.selection

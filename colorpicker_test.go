@@ -135,14 +135,18 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 				continue
 			}
 			wantFG = panelBG
+			wantBG := editorBG
 			if x >= bgX && x < bgX+2 {
 				wantFG = inactive
+				if x < SpeccedDefaults.ColorPicker.PreviewWidth {
+					wantBG = panelBG
+				}
 				if p.Target == ColorPickerBG {
 					wantFG = p.selection
 				}
 			}
-			if got := frame.Get(x, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != wantFG || got.Style.BG != editorBG {
-				t.Errorf("upper edge cell (%d,3)=%+v, want FG %v BG %v", x, got, wantFG, editorBG)
+			if got := frame.Get(x, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != wantFG || got.Style.BG != wantBG {
+				t.Errorf("upper edge cell (%d,3)=%+v, want FG %v BG %v", x, got, wantFG, wantBG)
 			}
 		}
 		for x := 0; x < SpeccedDefaults.ColorPicker.PreviewWidth; x++ {
@@ -165,6 +169,10 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	markerCanvas := NewCanvas(36, 6)
 	markerPicker.Draw(markerCanvas, Rect{W: 36, H: 6})
 	assertEdges(markerPicker, markerCanvas)
+	markerInsidePicker := NewColorPicker(ColorIndex(1), ColorIndex(0))
+	markerInsideCanvas := NewCanvas(36, 6)
+	markerInsidePicker.Draw(markerInsideCanvas, Rect{W: 36, H: 6})
+	assertEdges(markerInsidePicker, markerInsideCanvas)
 	if got := canvas.Get(35, 2); got.Text != " " || got.Style.BG != panelBG {
 		t.Fatalf("right padding should use panel background: %+v", got)
 	}
@@ -183,6 +191,12 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	activeBGRightCanvas := NewCanvas(36, 6)
 	markerPicker.Draw(activeBGRightCanvas, Rect{W: 36, H: 6})
 	assertEdges(markerPicker, activeBGRightCanvas)
+	if markerInsidePicker.ConsumeKey(KeyEvent{Key: "down"}) != Handled() {
+		t.Fatal("Down should activate BG row for marker inside preview rug")
+	}
+	activeBGInsideCanvas := NewCanvas(36, 6)
+	markerInsidePicker.Draw(activeBGInsideCanvas, Rect{W: 36, H: 6})
+	assertEdges(markerInsidePicker, activeBGInsideCanvas)
 	defs := SpeccedDefaults.ColorPicker
 	old := defs.ShowPreview
 	SpeccedDefaults.ColorPicker.ShowPreview = false
