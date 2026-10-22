@@ -38,3 +38,10 @@ for every check in 342/346/347. Pitfalls hit on the way:
 
 Run the docs example against the installed binary; a deliberate wrong wait text exits nonzero
 within the timeout and leaves no tmux server (`tmux -L <socket> ls` fails).
+
+## Findings from 359–361 live checks (host, 2026-10-22)
+
+- `tmux send-keys S-Right` did not select text in `loom edit` (bar never showed a selection), so
+  coloured-selection cases could not be checked live; find a working key encoding or a mouse drag.
+- The useful assertion form was a per-cell dump of FG/BG codes (`capture-pane -pe` with escapes made
+  visible) compared with the design sketch; plain-text captures hid every look bug in 359/360.
