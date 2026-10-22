@@ -54,7 +54,7 @@ func diffCommand() *cobra.Command {
 				return diffExitError{2, err}
 			}
 			if count > 0 {
-				return diffExitError{1, fmt.Errorf("%d differing cells", count)}
+				return diffExitError{1, fmt.Errorf("screens differ")}
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), "screens match")
 			return nil

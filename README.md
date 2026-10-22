@@ -47,7 +47,13 @@ make install                 # installs loom and its command-line tools
 loom-demo --list              # list all examples
 loom-demo filebrowser         # run one directly
 loom-bench                    # smoke-test every example, report PASS/FAIL
+loom diff want.ansi got.ansi  # compare ANSI screens by cell
 ```
+
+`loom diff` compares ANSI sketches or `tmux capture-pane -pe` output, reports
+glyph and foreground/background colour differences, and supports a cell region
+with `--region row,col,width,height`. See [Loom CLI](docs/CLI.md) for options
+and exit statuses.
 
 `loom-repaint-probe` is a standalone raw-terminal benchmark for comparing full
 and incremental screen repaint strategies. Run it with `loom-repaint-probe`
