@@ -10,6 +10,7 @@ Keep spec/widgets.yaml in strict name order and list every exported widget there
 The key decoder emits `pgdown`/`pgup`; also accept `pgdn`, `pagedown`, `pageup` in bindings.
 Mouse events reaching widgets are 0-based and child-local; never subtract 1. Mouse handlers must return loom.EventResult (ConsumeMouse or ConsumeMouseEvent); a (quit, consumed bool) mouse handler is never called.
 In tests, locate screen text by rune column or display width, never byte offset.
+For visual changes, assert FG and BG per cell against the design sketch (e.g. docs/data/*.ansi), including picks at the start, inside and past every layout boundary.
 Tests must not depend on the caller's color env (pin LOOMCOLOR=truecolor in TestMain when asserting colours).
 Never change a test expectation just to make it pass without stating why the old one was wrong.
 Finish all code first, run `go vet ./...` and fix what it reports. If exported API or its doc comments changed, refresh the snapshot last (`go test ./internal/apitest -run '^TestPublicAPI$' -update`, see docs/APIStability.md). Run `go test` on the changed packages and fix failures; this does not use the q1 quota. Then run make test-q1 exactly once as the last step, writing output to a file, and grep it for '--- FAIL'; never interrupt it; if it fails, report instead of rerunning. If it stopped at vet, no tests ran: say so in your report.
