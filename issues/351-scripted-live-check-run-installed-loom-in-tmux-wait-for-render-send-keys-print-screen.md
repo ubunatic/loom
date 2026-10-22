@@ -1,6 +1,6 @@
 # 351 — Scripted live check: run installed loom in tmux, wait for render, send keys, print screen
 
-**Status**: Open
+**Status**: Closed — scripts/live-tmux.sh + make live-check: isolated tmux (-f /dev/null, escape-time 0), polled waits, real pauses (timed in a test), keys/hex/wait/pause/snap/diff steps, full-pane capture, snapshots in a temp dir (46905a3, 1978064, 4d4762c); host live run and q1 green. Open: Shift+Right via hex moved the cursor but selection was seen in one of two probes only
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Tooling
