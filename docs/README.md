@@ -71,6 +71,7 @@
 | [studies/2026-10-21-two-agent-lean-sprint-issues-348-325-340-341-343.md](studies/2026-10-21-two-agent-lean-sprint-issues-348-325-340-341-343.md) | Two-Agent Lean Sprint: Issues 348, 325, 340, 341, 343 |
 | [studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md](studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md) | Two-Agent Lean Sprint: Issues 349, 344, 345, 350 |
 | [studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md](studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md) | Two-Agent Lean Sprint: Issues 355, 356, 358, 357 |
+| [studies/2026-10-22-lean-sprints-spec-shadows-keybindings-v040.md](studies/2026-10-22-lean-sprints-spec-shadows-keybindings-v040.md) | Lean sprints 2026-10-22 (second half): reference crops, PTY flake, spec shadows, key bindings, v0.4.0 |
 <!-- harnez:end docs-studies-index -->
 
 

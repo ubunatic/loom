@@ -15,7 +15,7 @@ Tests must not depend on the caller's color env (pin LOOMCOLOR=truecolor in Test
 A regression test must fail before the fix; report that it did. If it passes on unfixed code, keep looking for the cause.
 Never change a test expectation just to make it pass without stating why the old one was wrong.
 Finish all code first, run `go vet ./...` and fix what it reports. If exported API or its doc comments changed, refresh the snapshot last (`go test ./internal/apitest -run '^TestPublicAPI$' -update`, see docs/APIStability.md). Run `go test` on the changed packages and fix failures; this does not use the q1 quota. Then run make test-q1 exactly once as the last step, writing output to a file, and grep it for '--- FAIL'; never interrupt it; if it fails, report instead of rerunning. If it stopped at vet, no tests ran: say so in your report.
-Commit only your code changes with a conventional commit ending in: <commit trailers>. Do not edit the issue file. Run make install. Report the commit hash.
+Commit only your code changes with a conventional commit whose subject ends in "(issue N)" and whose body ends in: <commit trailers>. Do not edit the issue file. Run make install. Report the commit hash.
 
 - Avoid hacks: fix the library, not the caller. Change interfaces or the event approach only when needed, and then follow a proven key/mouse model.
 - Keyboard and mouse fixes must cover both the key and the mouse path, with a test for each.
