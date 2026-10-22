@@ -53,5 +53,4 @@ upkeep.
 | 351 | [351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md](351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md) | Scripted live check: run installed loom in tmux, wait for render, send keys, print screen | Open |
 | 352 | [352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md](352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md) | Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A " | Open |
 | 354 | [354-editor-swallows-the-first-key-after-escape.md](354-editor-swallows-the-first-key-after-escape.md) | Editor swallows the first key after Escape | Open |
-| 360 | [360-colorpicker-look-bar-panel-colour-row-3-gap-bg-active-row-marker-in-selection-colour-right-padding.md](360-colorpicker-look-bar-panel-colour-row-3-gap-bg-active-row-marker-in-selection-colour-right-padding.md) | ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding | Open |
 <!-- harnez:end issues-active-index -->

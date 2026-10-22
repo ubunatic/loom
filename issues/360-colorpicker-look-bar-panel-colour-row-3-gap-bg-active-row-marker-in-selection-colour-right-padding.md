@@ -1,6 +1,6 @@
 # 360 — ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding
 
-**Status**: Open
+**Status**: Closed — Implemented shared selection theme role, toolbar-colored 36-column picker panel, panel-filled marker gap, active/inactive row markers and canvas coverage; ANSI validation and q1 passed, vet/spec validation passed, and make install succeeded.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
