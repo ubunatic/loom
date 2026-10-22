@@ -50,3 +50,16 @@ Currently, default navigation key sets (such as Tabs default keys, View navigati
 - Go constructors (such as `DefaultTabsKeys`) and widget dispatch logic read directly from `SpeccedDefaults`.
 - No mirrored hardcoded fallback tables exist in Go code.
 - Unit tests assert all defined keybinding fields exist, are unmarshaled properly from the embedded YAML, and drive key handling behavior.
+
+## Plan (d323, approved by host 2026-10-22)
+
+Bindings go into `spec/defaults.yaml` + schema, loaded into `SpeccedDefaults` with validation (missing
+action panics at init); widgets read via `KeyMap` or `key.Is` on specced slices; `libraryKeyDefaults` is
+built from spec `key_conventions`, checked against docs/KeyDefaults.md. Milestones: M1 spec+schema,
+M2 loader + regression probe, M3 widget migration, M4 API snapshot, docs, q1.
+
+Pre-Work / Required Refinements:
+- Do not commit a failing test: show the probe failing on unfixed code, then commit it with M3.
+- Existing aliases and current default keys stay identical (no behaviour change); tests cover key and
+  mouse paths unaffected.
+- Upgrading.md row only if an exported symbol changes; additions just go into the API snapshot.
