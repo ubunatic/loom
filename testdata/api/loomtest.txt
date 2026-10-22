@@ -18,6 +18,14 @@ regions, insert/delete operations and terminal queries are unsupported).
 Width follows loom/measure's cell policy; pin LOOM_ZWJ=join when testing joined
 emoji independently of the caller's terminal configuration.
 
+CONSTANTS
+
+const (
+	ColorDefault = vt.ColorDefault
+	ColorIndexed = vt.ColorIndexed
+	ColorDirect  = vt.ColorDirect
+)
+
 FUNCTIONS
 
 func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions)
@@ -32,22 +40,11 @@ func CompareWidget(t testing.TB, reference string, width, height int, render fun
 
 TYPES
 
-type Cell struct {
-	Rune  rune
-	Text  string // complete grapheme cluster; empty for ordinary single-rune cells
-	Style Style
-}
+type Cell = vt.Cell
     Cell represents a single terminal cell containing a rune and its visual
-    style. Wide characters occupy two consecutive cells: the left cell stores
-    the rune, while the right cell stores Rune=0 with the same Style.
+    style.
 
-func (c Cell) String() string
-
-type Color struct {
-	Type    ColorType
-	Index   uint8
-	R, G, B uint8
-}
+type Color = vt.Color
     Color represents a terminal foreground or background color: default,
     256-color palette index (0-255), or 24-bit truecolor RGB.
 
@@ -61,92 +58,21 @@ func ColorRGB(r, g, b uint8) Color
 func ColorReset() Color
     ColorReset returns the default terminal color.
 
-func (c Color) RGB() (r, g, b uint8, ok bool)
-    RGB returns the approximate 24-bit RGB value for c and whether one could be
-    resolved. ColorDefault returns ok=false. Indexed colors are resolved using
-    the standard xterm 256 palette.
-
-func (c Color) String() string
-
-type ColorType uint8
+type ColorType = vt.ColorType
     ColorType specifies the color encoding mode.
 
-const (
-	ColorDefault ColorType = iota
-	ColorIndexed
-	ColorDirect
-)
 type CompareOptions struct {
 	IgnoreColour bool
 }
     CompareOptions controls which cell fields CompareWidget checks.
 
-type Style struct {
-	FG        Color
-	BG        Color
-	Bold      bool
-	Dim       bool
-	Italic    bool
-	Underline bool
-	Blink     bool
-	Reverse   bool
-	Hidden    bool
-	Strike    bool
-}
+type Style = vt.Style
     Style describes the visual appearance (colors and SGR text attributes) of a
     VT cell.
 
-func (s Style) Effective() (fg, bg Color)
-    Effective returns the rendered foreground and background colors, swapping
-    them when Reverse is active.
-
-func (s Style) String() string
-
-type VT struct {
-	Cols, Rows int
-	// CursorVisible reflects the last ?25 mode.
-	CursorVisible bool
-	// Frames holds a screen snapshot for every completed ?2026 frame.
-	Frames [][]string
-	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
-	CellFrames [][][]Cell
-
-	// Has unexported fields.
-}
+type VT = vt.VT
     VT is a minimal terminal emulator. It is not safe for concurrent use.
 
 func NewVT(cols, rows int) *VT
     NewVT returns a blank VT of the given size with auto-wrap enabled.
-
-func (v *VT) AltScreen() bool
-    AltScreen reports whether DEC mode 1049 is active.
-
-func (v *VT) Cell(x, y int) Cell
-    Cell returns the cell at (x, y), or a zero Cell if out of bounds.
-
-func (v *VT) Cells() [][]Cell
-    Cells returns a snapshot of the current cell grid.
-
-func (v *VT) Cursor() (x, y int)
-    Cursor returns the zero-based cursor position.
-
-func (v *VT) FrameCells() [][][]Cell
-    FrameCells returns a copy of the cell snapshots taken at each ?2026 frame
-    end.
-
-func (v *VT) Pen() Style
-    Pen returns the current SGR pen style.
-
-func (v *VT) Resize(cols, rows int)
-    Resize changes the grid size, keeping the top-left content, like a terminal
-    that does not reflow.
-
-func (v *VT) Screen() []string
-    Screen returns the visible rows with trailing blanks trimmed.
-
-func (v *VT) Text() string
-    Text returns Screen joined by newlines.
-
-func (v *VT) Write(p []byte) (int, error)
-    Write feeds terminal output into the VT.
 
