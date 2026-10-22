@@ -1,6 +1,6 @@
 # 369 — loom session: run a command in a PTY wrapper with hotkeys, first hotkey saves an ANSI screenshot
 
-**Status**: Open
+**Status**: Closed — loom session -- <cmd> wraps a PTY with spec hotkeys: ctrl-p screenshot (shared with loom edit via YAML anchor), ctrl-q quit, prefix ctrl-] s/q/send. Commits 6784784 2067152 cecf3f7 5e2400a 3075d15. Host q1 green twice, validate-spec ok; live: harnez usage -w --minimal, ctrl-p saved a 10-line colored .ansi that loom view renders, ctrl-q exit 0, clean shell line after exit
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
