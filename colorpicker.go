@@ -75,18 +75,23 @@ func colorPickerIndex(palette []Color, color Color) (int, bool) {
 	return -1, false
 }
 
-// markerColumn uses the shared cursor for the active row and the applied color
-// for the inactive row. Colors outside the palette have no inactive marker.
-func (p *ColorPicker) markerColumn(target ColorPickerTarget) int {
-	index, reset := p.Selected, p.ResetSelected
-	if target != p.Target {
-		color := p.FG
-		if target == ColorPickerBG {
-			color = p.BG
-		}
-		index, reset = colorPickerIndex(p.Palette, color)
+// appliedMarkerColumn returns the cell for a channel's applied color, or -1
+// when that value has no matching palette or reset cell.
+func (p *ColorPicker) appliedMarkerColumn(target ColorPickerTarget) int {
+	color := p.FG
+	if target == ColorPickerBG {
+		color = p.BG
 	}
-	if index < 0 || index >= len(p.Palette) {
+	index, reset := colorPickerIndex(p.Palette, color)
+	return colorPickerCellColumn(index, reset, len(p.Palette))
+}
+
+func (p *ColorPicker) cursorMarkerColumn() int {
+	return colorPickerCellColumn(p.Selected, p.ResetSelected, len(p.Palette))
+}
+
+func colorPickerCellColumn(index int, reset bool, paletteSize int) int {
+	if index < 0 || index >= paletteSize {
 		return -1
 	}
 	cell := index + 1
@@ -94,6 +99,10 @@ func (p *ColorPicker) markerColumn(target ColorPickerTarget) int {
 		cell = 0
 	}
 	return SpeccedDefaults.ColorPicker.LeadingPadding + cell*SpeccedDefaults.ColorPicker.SwatchWidth
+}
+
+func colorPickerMarkerAt(x, column, width int) bool {
+	return column >= 0 && x >= column && x < column+width
 }
 
 func (p *ColorPicker) cursorColor() (Color, bool) {
@@ -201,59 +210,52 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 		}
 	}
-	fgX := p.markerColumn(ColorPickerFG)
+	fgAppliedX := p.appliedMarkerColumn(ColorPickerFG)
+	bgAppliedX := p.appliedMarkerColumn(ColorPickerBG)
+	cursorX := p.cursorMarkerColumn()
+	dimMarker := ColorIndex(uint8(defs.InactiveMarkerFG))
 	for x := 0; x < r.W; x++ {
 		style := Style{FG: panelBG, BG: p.Style.BG}
-		if fgX >= 0 && x >= fgX && x < fgX+defs.SwatchWidth {
-			style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
-			if p.Target == ColorPickerFG {
-				style.FG = p.selection
-			}
+		if colorPickerMarkerAt(x, fgAppliedX, defs.SwatchWidth) {
+			style.FG = dimMarker
+		}
+		if p.Target == ColorPickerFG && colorPickerMarkerAt(x, cursorX, defs.SwatchWidth) {
+			style.FG = p.selection
 		}
 		writeColorPickerText(c, r, x, 0, defs.Glyphs.EdgeLower, style)
 	}
-	bgX := p.markerColumn(ColorPickerBG)
-	if defs.ShowPreview && r.H >= 6 {
-		for x := 0; x < r.W; x++ {
-			if x < defs.PreviewWidth && (bgX < 0 || x < bgX || x >= bgX+defs.SwatchWidth) {
-				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
-				continue
-			}
-			style := Style{FG: panelBG, BG: p.Style.BG}
-			if bgX >= 0 && x >= bgX && x < bgX+defs.SwatchWidth {
-				if x < defs.PreviewWidth {
-					style.BG = panelBG
-				}
-				style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
-				if p.Target == ColorPickerBG {
-					style.FG = p.selection
-				}
-			}
-			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
+	bgCursorX := -1
+	if p.Target == ColorPickerBG {
+		bgCursorX = cursorX
+	}
+	for x := 0; x < r.W; x++ {
+		bgAppliedMarker := colorPickerMarkerAt(x, bgAppliedX, defs.SwatchWidth)
+		bgCursorMarker := colorPickerMarkerAt(x, bgCursorX, defs.SwatchWidth)
+		if x < defs.PreviewWidth && !bgAppliedMarker && !bgCursorMarker {
+			c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
+			continue
 		}
+		style := Style{FG: panelBG, BG: p.Style.BG}
+		if bgAppliedMarker {
+			style.FG = dimMarker
+			if x < defs.PreviewWidth {
+				style.BG = panelBG
+			}
+		}
+		if bgCursorMarker {
+			style.FG = p.selection
+			if x < defs.PreviewWidth {
+				style.BG = panelBG
+			}
+		}
+		writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
+	}
+	if defs.ShowPreview && r.H >= 6 {
 		previewX := defs.PreviewPadding
 		// The sample must keep a terminal-default BG rather than inherit the panel.
 		writeColorPickerCells(c, r, previewX, 4, defs.Labels.Preview, Cell{Style: p.PreviewStyle(), Claim: true})
 		for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
 			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: p.Style.BG})
-		}
-	} else {
-		for x := 0; x < r.W; x++ {
-			if x < defs.PreviewWidth && (bgX < 0 || x < bgX || x >= bgX+defs.SwatchWidth) {
-				c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
-				continue
-			}
-			style := Style{FG: panelBG, BG: p.Style.BG}
-			if bgX >= 0 && x >= bgX && x < bgX+defs.SwatchWidth {
-				if x < defs.PreviewWidth {
-					style.BG = panelBG
-				}
-				style.FG = ColorIndex(uint8(defs.InactiveMarkerFG))
-				if p.Target == ColorPickerBG {
-					style.FG = p.selection
-				}
-			}
-			writeColorPickerText(c, r, x, 3, defs.Glyphs.EdgeUpper, style)
 		}
 	}
 }

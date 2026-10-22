@@ -589,10 +589,9 @@ come from `spec/defaults.yaml`. The panel uses the rich text toolbar background
 foreground and background so they extend the panel against the editor. Swatches remain `Aa`
 cells with one letter and one padding space per palette position. Row 3 stays
 panel background through columns 0–8, then draws upper-edge glyphs from column
-9; this closes the gap between the preview rug and the BG marker. The active
-row's marker follows the cursor in the theme's `selection` colour. The inactive
-row marks its applied value in the specced dim colour; a value outside the
-palette has no marker. `selection` is the editor selection and focused bar
+9; this closes the gap between the preview rug and the BG marker. Both rows show a dim marker at their applied values. The active row also marks
+the cursor in the theme's `selection` colour, which takes priority when it
+overlaps its applied marker. A value outside the palette has no marker. `selection` is the editor selection and focused bar
 item colour; `selected_bg` remains the list-row selection colour.
 
 ```go

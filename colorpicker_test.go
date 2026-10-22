@@ -111,31 +111,28 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 		editorBG := p.Style.BG
 		fgIndex, fgReset := colorPickerIndex(p.Palette, p.FG)
 		bgIndex, bgReset := colorPickerIndex(p.Palette, p.BG)
+		fgX := colorPickerCellColumn(fgIndex, fgReset, len(p.Palette))
+		bgX := colorPickerCellColumn(bgIndex, bgReset, len(p.Palette))
+		fgCursorX, bgCursorX := -1, -1
 		if p.Target == ColorPickerFG {
-			fgIndex, fgReset = p.Selected, p.ResetSelected
+			fgCursorX = p.cursorMarkerColumn()
 		} else {
-			bgIndex, bgReset = p.Selected, p.ResetSelected
-		}
-		fgX := SpeccedDefaults.ColorPicker.LeadingPadding + (fgIndex+1)*SpeccedDefaults.ColorPicker.SwatchWidth
-		if fgReset {
-			fgX = SpeccedDefaults.ColorPicker.LeadingPadding
-		}
-		bgX := SpeccedDefaults.ColorPicker.LeadingPadding + (bgIndex+1)*SpeccedDefaults.ColorPicker.SwatchWidth
-		if bgReset {
-			bgX = SpeccedDefaults.ColorPicker.LeadingPadding
+			bgCursorX = p.cursorMarkerColumn()
 		}
 		for x := 0; x < 36; x++ {
 			wantFG := panelBG
-			if x >= fgX && x < fgX+2 {
+			if colorPickerMarkerAt(x, fgX, 2) {
 				wantFG = inactive
-				if p.Target == ColorPickerFG {
-					wantFG = p.selection
-				}
+			}
+			if colorPickerMarkerAt(x, fgCursorX, 2) {
+				wantFG = p.selection
 			}
 			if got := frame.Get(x, 0); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeLower || got.Style.FG != wantFG || got.Style.BG != editorBG {
 				t.Errorf("lower edge cell (%d,0)=%+v, want FG %v BG %v", x, got, wantFG, editorBG)
 			}
-			if x < SpeccedDefaults.ColorPicker.PreviewWidth && (x < bgX || x >= bgX+2) {
+			bgApplied := colorPickerMarkerAt(x, bgX, 2)
+			bgCursor := colorPickerMarkerAt(x, bgCursorX, 2)
+			if x < SpeccedDefaults.ColorPicker.PreviewWidth && !bgApplied && !bgCursor {
 				if got := frame.Get(x, 3); got.Text != " " || got.Style.BG != panelBG {
 					t.Errorf("upper-edge gap cell (%d,3)=%+v, want panel BG %v", x, got, panelBG)
 				}
@@ -143,13 +140,16 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 			}
 			wantFG = panelBG
 			wantBG := editorBG
-			if x >= bgX && x < bgX+2 {
+			if bgApplied {
 				wantFG = inactive
 				if x < SpeccedDefaults.ColorPicker.PreviewWidth {
 					wantBG = panelBG
 				}
-				if p.Target == ColorPickerBG {
-					wantFG = p.selection
+			}
+			if bgCursor {
+				wantFG = p.selection
+				if x < SpeccedDefaults.ColorPicker.PreviewWidth {
+					wantBG = panelBG
 				}
 			}
 			if got := frame.Get(x, 3); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != wantFG || got.Style.BG != wantBG {

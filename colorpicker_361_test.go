@@ -40,19 +40,52 @@ func Test361ColorPickerMarkerStatesAndPreview(t *testing.T) {
 			}
 			canvas := NewCanvas(36, 6)
 			p.Draw(canvas, canvas.Bounds())
-			for row, cell := range []int{tc.fgMarker, tc.bgMarker} {
+			dimColor := ColorIndex(uint8(SpeccedDefaults.ColorPicker.InactiveMarkerFG))
+			for row, values := range []struct {
+				target     ColorPickerTarget
+				applied    Color
+				cursorCell int
+			}{
+				{ColorPickerFG, tc.applied.FG, tc.fgMarker},
+				{ColorPickerBG, tc.applied.BG, tc.bgMarker},
+			} {
 				y := row * 3
-				markerColor := ColorIndex(uint8(SpeccedDefaults.ColorPicker.InactiveMarkerFG))
-				if ColorPickerTarget(row) == tc.target {
-					markerColor = DefaultTheme().Selection.Color()
+				appliedIndex, reset := colorPickerIndex(p.Palette, values.applied)
+				appliedCell := -1
+				if appliedIndex >= 0 {
+					appliedCell = appliedIndex + 1
+					if reset {
+						appliedCell = 0
+					}
 				}
 				for x := 0; x < 36; x++ {
-					wantMarker := cell >= 0 && x >= 1+cell*2 && x < 3+cell*2
-					if got := canvas.Get(x, y); (got.Style.FG == markerColor) != wantMarker {
-						t.Errorf("row %d column %d=%+v, marker=%v", row, x, got, wantMarker)
+					fg := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
+					if row == 1 && x < SpeccedDefaults.ColorPicker.PreviewWidth {
+						fg = p.Style.FG
+					}
+					if appliedCell >= 0 && x >= 1+appliedCell*2 && x < 3+appliedCell*2 {
+						fg = dimColor
+					}
+					if values.target == tc.target && values.cursorCell >= 0 && x >= 1+values.cursorCell*2 && x < 3+values.cursorCell*2 {
+						fg = DefaultTheme().Selection.Color()
+					}
+					got := canvas.Get(x, y)
+					if got.Style.FG != fg {
+						t.Errorf("row %d column %d FG=%v, want %v", row, x, got.Style.FG, fg)
+					}
+					if row == 1 {
+						marked := (appliedCell >= 0 && x >= 1+appliedCell*2 && x < 3+appliedCell*2) || (values.target == tc.target && values.cursorCell >= 0 && x >= 1+values.cursorCell*2 && x < 3+values.cursorCell*2)
+						if x < SpeccedDefaults.ColorPicker.PreviewWidth && !marked {
+							if got.Text != " " || got.Style.BG != ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG)) {
+								t.Errorf("BG marker gap column %d=%+v", x, got)
+							}
+						} else if got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper {
+							t.Errorf("BG marker edge column %d=%+v", x, got)
+						}
 					}
 				}
 			}
+
 			if got := canvas.Get(1, 4); got.Text != "P" || got.Style != tc.preview {
 				t.Errorf("rendered preview=%+v, want %+v", got, tc.preview)
 			}
