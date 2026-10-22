@@ -149,6 +149,8 @@ func DecodeKey(b []byte) KeyEvent {
 		return KeyEvent{Key: "ctrl-u"}
 	case b[0] == 23:
 		return KeyEvent{Key: "ctrl-w"}
+	case b[0] == 29:
+		return KeyEvent{Key: "ctrl-]"}
 	case b[0] == 127 || b[0] == 8:
 		return KeyEvent{Key: "backspace"}
 	case b[0] == 27:
@@ -566,7 +568,7 @@ func scanKey(b []byte) (KeyEvent, int, bool) {
 		return KeyEvent{}, 0, true
 	}
 	switch b[0] {
-	case 3, 2, 4, 6, 9, 10, 13, 17, 21, 23, 127, 8:
+	case 3, 2, 4, 6, 9, 10, 13, 17, 21, 23, 29, 127, 8:
 		return DecodeKey(b[:1]), 1, true
 	case 27:
 		return scanEscapeKey(b)

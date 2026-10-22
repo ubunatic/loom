@@ -59,6 +59,8 @@ func TestDecodeKey(t *testing.T) {
 		{"ctrl-b", []byte{2}, KeyEvent{Key: "ctrl-b"}},
 		{"ctrl-f", []byte{6}, KeyEvent{Key: "ctrl-f"}},
 		{"ctrl-u", []byte{21}, KeyEvent{Key: "ctrl-u"}},
+		{"ctrl-]", []byte{29}, KeyEvent{Key: "ctrl-]"}},
+		{"csi-u ctrl-]", []byte("\x1b[93;5u"), KeyEvent{Key: "ctrl-]"}},
 		{"shift-tab", []byte{27, '[', 'Z'}, KeyEvent{Key: "shift-tab"}},
 		{"enter", []byte{13}, KeyEvent{Key: "enter"}},
 		{"esc", []byte{27}, KeyEvent{Key: "esc"}},
