@@ -1,6 +1,6 @@
 # 360 — ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding
 
-**Status**: Closed — Implemented shared selection theme role, toolbar-colored 36-column picker panel, panel-filled marker gap, active/inactive row markers and canvas coverage; ANSI validation and q1 passed, vet/spec validation passed, and make install succeeded.
+**Status**: Open — M1 0a60961 reopened by host live review: edge glyph BG and marker colour leak
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
@@ -36,3 +36,20 @@ regenerated; or stop and report when blocked on a user decision or denied permis
   `color_picker.panel_bg` or make it default to the bar colour. Add an Upgrading.md row if a public
   key goes away.
 - Live check by the host in tmux against the sketch `docs/data/colorpicker-ideas-001.ansi` (b2).
+
+## M1 review (host, 2026-10-22)
+
+0a60961: host q1 green. Live tmux (80x20, BG pick at palette 9, active row BG) shows:
+
+### M2 pre-work
+
+- **Edge rows use the panel colour as BG.** Rows 0 (`▂`), 3 right part (`🮂`) and 5 (`🮂`) are drawn
+  `fg 239 on bg 239`, i.e. solid panel blocks; the slim look is gone. In the sketch the edge glyph
+  is `fg panel` on the **editor/default BG** (the glyph itself extends the panel by a quarter cell;
+  its BG clears the text under it). Only cells inside the panel (row 3 columns 0–8, rows 1, 2, 4) get
+  panel BG.
+- **Marker colour leaks along row 3.** The whole upper-edge run from column 9 to 35 is fg 24 (the
+  selection colour), not only the two cells under the BG pick (columns 21–22 for palette 9). Every
+  other edge cell stays fg panel. Same rule for row 0.
+- Canvas tests must assert per cell: edge glyph FG and BG on rows 0, 3, 5, and that only the pick's
+  two cells carry the marker colour (pick inside and right of the rug, active and inactive row).
