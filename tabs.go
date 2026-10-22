@@ -30,10 +30,10 @@ type TabsStyle struct {
 // and Cycle each name one key. Select maps keys to tab indexes by position.
 // Bindings match either KeyEvent.Key or KeyEvent.Text.
 type TabsKeys struct {
-	Previous string
-	Next     string
-	Cycle    string
-	Select   []string
+	Previous string   `yaml:"previous"`
+	Next     string   `yaml:"next"`
+	Cycle    string   `yaml:"cycle"`
+	Select   []string `yaml:"select"`
 }
 
 // DefaultTabsKeys returns the historical left/right arrow navigation.

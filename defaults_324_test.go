@@ -10,8 +10,8 @@ import (
 
 func TestTableAndChoiceChromeFromSpec(t *testing.T) {
 	var raw struct {
-		Table  map[string]string `yaml:"table"`
-		Choice map[string]string `yaml:"choice"`
+		Table  map[string]any `yaml:"table"`
+		Choice map[string]any `yaml:"choice"`
 	}
 	if err := yaml.Unmarshal(defaultsYAML, &raw); err != nil {
 		t.Fatal(err)
@@ -21,11 +21,11 @@ func TestTableAndChoiceChromeFromSpec(t *testing.T) {
 		"sort_asc_glyph": defs.SortAscGlyph, "sort_desc_glyph": defs.SortDescGlyph,
 		"controls_hint_fmt": defs.ControlsHintFmt,
 	} {
-		if got == "" || raw.Table[key] != got {
+		if got == "" || fmt.Sprint(raw.Table[key]) != got {
 			t.Fatalf("table.%s = %q, YAML = %v", key, got, raw.Table[key])
 		}
 	}
-	placeholder := raw.Choice["default_placeholder"]
+	placeholder, _ := raw.Choice["default_placeholder"].(string)
 	if placeholder == "" || DefaultPlaceholder != placeholder || NewChoice(nil).Placeholder != placeholder {
 		t.Fatal("Choice placeholder did not load from spec")
 	}

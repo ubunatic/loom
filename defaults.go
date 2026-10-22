@@ -44,10 +44,16 @@ type LibDefaults struct {
 	NumberInput  NumberInputDefaults  `yaml:"number_input"`
 	Toggle       ToggleDefaults       `yaml:"toggle"`
 	Paginator    PaginatorDefaults    `yaml:"paginator"`
-	Tree         TreeDefaults         `yaml:"tree"`
-	Split        SplitDefaults        `yaml:"split"`
-	Choice       ChoiceDefaults       `yaml:"choice"`
-	Table        TableDefaults        `yaml:"table"`
+	Tree           TreeDefaults         `yaml:"tree"`
+	Split          SplitDefaults        `yaml:"split"`
+	Choice         ChoiceDefaults       `yaml:"choice"`
+	Table          TableDefaults        `yaml:"table"`
+	Tabs           TabsDefaults         `yaml:"tabs"`
+	View           ViewDefaults         `yaml:"view"`
+	Menu           MenuDefaults         `yaml:"menu"`
+	Form           FormDefaults         `yaml:"form"`
+	Settings       SettingsDefaults     `yaml:"settings"`
+	KeyConventions []KeyConvention      `yaml:"key_conventions"`
 }
 
 // ColorPickerDefaults defines the ColorPicker's palette, marker color, labels, glyphs and keys.
@@ -472,24 +478,31 @@ func (d PaginatorDefaults) validate() error {
 
 // TreeDefaults defines specced defaults for Tree.
 type TreeDefaults struct {
-	CollapsedMarker string `yaml:"collapsed_marker"`
-	ExpandedMarker  string `yaml:"expanded_marker"`
-	LeafMarker      string `yaml:"leaf_marker"`
+	CollapsedMarker string              `yaml:"collapsed_marker"`
+	ExpandedMarker  string              `yaml:"expanded_marker"`
+	LeafMarker      string              `yaml:"leaf_marker"`
+	Bindings        map[string][]string `yaml:"bindings"`
 }
 
 func (d TreeDefaults) validate() error {
 	if d.CollapsedMarker == "" || d.ExpandedMarker == "" {
 		return fmt.Errorf("tree markers must not be empty")
 	}
+	for _, action := range []string{"up", "down", "expand_or_enter", "collapse_or_parent", "toggle_or_activate", "page_down", "page_up", "home", "end"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("tree.bindings.%s must not be empty", action)
+		}
+	}
 	return nil
 }
 
 // SplitDefaults defines specced defaults for Split.
 type SplitDefaults struct {
-	VerticalDivider   string  `yaml:"vertical_divider"`
-	HorizontalDivider string  `yaml:"horizontal_divider"`
-	DefaultRatio      float64 `yaml:"default_ratio"`
-	DefaultGap        int     `yaml:"default_gap"`
+	VerticalDivider   string              `yaml:"vertical_divider"`
+	HorizontalDivider string              `yaml:"horizontal_divider"`
+	DefaultRatio      float64             `yaml:"default_ratio"`
+	DefaultGap        int                 `yaml:"default_gap"`
+	Bindings          map[string][]string `yaml:"bindings"`
 }
 
 func (d SplitDefaults) validate() error {
@@ -502,30 +515,130 @@ func (d SplitDefaults) validate() error {
 	if d.DefaultGap < 0 {
 		return fmt.Errorf("split.default_gap must not be negative")
 	}
+	for _, action := range []string{"next", "previous", "shrink", "grow"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("split.bindings.%s must not be empty", action)
+		}
+	}
 	return nil
 }
 
 // ChoiceDefaults defines specced defaults for Choice.
 type ChoiceDefaults struct {
-	DefaultPlaceholder string `yaml:"default_placeholder"`
-	SelectionMarker    string `yaml:"selection_marker"`
-	UnselectedMarker   string `yaml:"unselected_marker"`
-	CheckedMarker      string `yaml:"checked_marker"`
-	UncheckedMarker    string `yaml:"unchecked_marker"`
+	DefaultPlaceholder string              `yaml:"default_placeholder"`
+	SelectionMarker    string              `yaml:"selection_marker"`
+	UnselectedMarker   string              `yaml:"unselected_marker"`
+	CheckedMarker      string              `yaml:"checked_marker"`
+	UncheckedMarker    string              `yaml:"unchecked_marker"`
+	Bindings           map[string][]string `yaml:"bindings"`
 }
 
 // TableDefaults defines sort chrome for Table.
 type TableDefaults struct {
-	SortAscGlyph    string `yaml:"sort_asc_glyph"`
-	SortDescGlyph   string `yaml:"sort_desc_glyph"`
-	ControlsHintFmt string `yaml:"controls_hint_fmt"`
+	SortAscGlyph    string              `yaml:"sort_asc_glyph"`
+	SortDescGlyph   string              `yaml:"sort_desc_glyph"`
+	ControlsHintFmt string              `yaml:"controls_hint_fmt"`
+	Bindings        map[string][]string `yaml:"bindings"`
 }
 
 func (d ChoiceDefaults) validate() error {
 	if d.SelectionMarker == "" || d.CheckedMarker == "" || d.UncheckedMarker == "" {
 		return fmt.Errorf("choice markers must not be empty")
 	}
+	for _, action := range []string{"up", "down", "page_up", "page_down", "home", "end", "select", "toggle", "quit", "backspace"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("choice.bindings.%s must not be empty", action)
+		}
+	}
 	return nil
+}
+
+func (d TableDefaults) validate() error {
+	if d.SortAscGlyph == "" || d.SortDescGlyph == "" || d.ControlsHintFmt == "" {
+		return fmt.Errorf("table sort glyphs and controls hint format must not be empty")
+	}
+	for _, action := range []string{"page_up", "page_down", "up", "down", "left", "right", "select", "sort_cycle", "sort_flip", "quit", "backspace"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("table.bindings.%s must not be empty", action)
+		}
+	}
+	return nil
+}
+
+// TabsDefaults defines specced navigation defaults for Tabs.
+type TabsDefaults struct {
+	Keys TabsKeys `yaml:"keys"`
+}
+
+func (d TabsDefaults) validate() error {
+	if d.Keys.Previous == "" || d.Keys.Next == "" {
+		return fmt.Errorf("tabs.keys.previous and tabs.keys.next must not be empty")
+	}
+	return nil
+}
+
+// ViewDefaults defines specced navigation defaults for View.
+type ViewDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+
+func (d ViewDefaults) validate() error {
+	for _, action := range []string{"up", "down", "left", "right", "page_down", "page_up", "half_page_down", "half_page_up", "home", "end", "quit"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("view.bindings.%s must not be empty", action)
+		}
+	}
+	return nil
+}
+
+// MenuDefaults defines specced navigation and accelerator defaults for Menu and MenuBar.
+type MenuDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+
+func (d MenuDefaults) validate() error {
+	for _, action := range []string{"open_bar", "cancel", "up", "down", "left", "right", "activate"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("menu.bindings.%s must not be empty", action)
+		}
+	}
+	return nil
+}
+
+// FormDefaults defines specced navigation defaults for Form.
+type FormDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+
+func (d FormDefaults) validate() error {
+	for _, action := range []string{"next", "previous", "cancel", "submit"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("form.bindings.%s must not be empty", action)
+		}
+	}
+	return nil
+}
+
+// SettingsDefaults defines specced navigation and editing defaults for Settings.
+type SettingsDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+
+func (d SettingsDefaults) validate() error {
+	for _, action := range []string{"quit", "up", "down", "activate", "previous", "step_minus", "step_plus"} {
+		if len(d.Bindings[action]) == 0 {
+			return fmt.Errorf("settings.bindings.%s must not be empty", action)
+		}
+	}
+	return nil
+}
+
+// KeyConvention documents a default key convention across library widgets.
+type KeyConvention struct {
+	Action   string `yaml:"action"`
+	Keys     string `yaml:"keys"`
+	Applies  string `yaml:"applies"`
+	Conflict string `yaml:"conflict"`
 }
 
 // SearchBarDefaults defines specced defaults for the SearchBar widget.
@@ -660,6 +773,32 @@ var SpeccedDefaults = func() LibDefaults {
 	}
 	if err := defs.Choice.validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Table.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Tabs.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.View.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Menu.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Form.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Settings.validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if len(defs.KeyConventions) == 0 {
+		panic("loom: spec/defaults.yaml: key_conventions must not be empty")
+	}
+	for _, conv := range defs.KeyConventions {
+		if conv.Action == "" || conv.Keys == "" || conv.Applies == "" {
+			panic("loom: spec/defaults.yaml: key_conventions entries must have action, keys, and applies")
+		}
 	}
 	return defs
 }()
