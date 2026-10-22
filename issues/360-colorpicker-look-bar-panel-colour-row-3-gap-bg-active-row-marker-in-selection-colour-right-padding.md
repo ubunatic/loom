@@ -1,6 +1,6 @@
 # 360 — ColorPicker look: bar panel colour, row-3 gap BG, active-row marker in selection colour, right padding
 
-**Status**: Open — M1 0a60961 reopened by host live review: edge glyph BG and marker colour leak
+**Status**: Closed — M2 fixed edge glyph backgrounds to use editor BG and limited selection/dim marker colors to the two picked cells; per-cell canvas tests cover edges and picks inside and beyond the preview rug. ANSI checks and q1 passed; make install succeeded.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
