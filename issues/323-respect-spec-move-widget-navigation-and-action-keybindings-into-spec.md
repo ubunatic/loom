@@ -1,6 +1,6 @@
 # 323 — respect spec: move widget navigation and action keybindings into spec
 
-**Status**: Open
+**Status**: Closed — Bindings of Tabs, Split, View, Table, Choice, Tree, Menu, Form, Settings and the key-convention table now come from spec/defaults.yaml + schema (1e48bcb, 9550a25, 0758526, 333e0be); YAML-change probe failed before and passes; no default key changed (live View j/q same as pre-change binary); host q1 green, validate-spec ok
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

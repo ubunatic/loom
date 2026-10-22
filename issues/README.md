@@ -49,6 +49,5 @@ upkeep.
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
-| 323 | [323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md](323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md) | respect spec: move widget navigation and action keybindings into spec | Open |
 | 367 | [367-media-widget-move-key-bindings-action-labels-and-zoom-pan-steps-into-the-spec.md](367-media-widget-move-key-bindings-action-labels-and-zoom-pan-steps-into-the-spec.md) | Media widget: move key bindings, action labels and zoom/pan steps into the spec | Open |
 <!-- harnez:end issues-active-index -->
