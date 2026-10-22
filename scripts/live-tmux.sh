@@ -96,7 +96,7 @@ socket="loom-live-$$"
 session="live-$$"
 temp_dir=$(mktemp -d)
 cleanup() {
-   tmux -L "$socket" kill-server >/dev/null 2>&1 || true
+   tmux -f /dev/null -L "$socket" kill-server >/dev/null 2>&1 || true
    rm -rf "$temp_dir"
 }
 trap cleanup EXIT
@@ -105,14 +105,16 @@ then mkdir -p "$output_dir"
 else output_dir="$PWD"
 fi
 
-tmux -L "$socket" new-session -d -s "$session" -x "$width" -y "$height" -- "$@"
+printf -v command_line '%q ' "$@"
+tmux -f /dev/null -L "$socket" new-session -d -s "$session" -x "$width" -y "$height" "$command_line"
+tmux -f /dev/null -L "$socket" set-option -s escape-time 0
 printf 'tmux socket: %s\n' "$socket"
 
 capture() {
    local mode="$1"
    if test "$mode" = sgr
-   then tmux -L "$socket" capture-pane -p -e -t "$session" -S 0 -E -1
-   else tmux -L "$socket" capture-pane -p -t "$session" -S 0 -E -1
+   then tmux -f /dev/null -L "$socket" capture-pane -p -e -t "$session"
+   else tmux -f /dev/null -L "$socket" capture-pane -p -t "$session"
    fi
 }
 
@@ -128,7 +130,7 @@ wait_for_text() {
    deadline=$((started + timeout_ns))
    while ! contains_wait_text
    do
-      if ! tmux -L "$socket" has-session -t "$session" 2>/dev/null
+      if ! tmux -f /dev/null -L "$socket" has-session -t "$session" 2>/dev/null
       then fail "command exited before rendering: $wait_text"
       fi
       now=$(date +%s%N)
@@ -168,7 +170,7 @@ do
       keys)
          test -n "${rest:-}" || fail "step $step: keys requires tmux key names"
          read -r -a key_args <<< "$rest"
-         tmux -L "$socket" send-keys -t "$session" "${key_args[@]}"
+         tmux -f /dev/null -L "$socket" send-keys -t "$session" "${key_args[@]}"
          ;;
       hex)
          test -n "${rest:-}" || fail "step $step: hex requires byte pairs"
@@ -177,7 +179,7 @@ do
          do
             printf '%s\n' "$byte" | grep -Eq '^[[:xdigit:]]{2}$' || fail "step $step: invalid hex byte $byte"
          done
-         tmux -L "$socket" send-keys -H -t "$session" "${bytes[@]}"
+         tmux -f /dev/null -L "$socket" send-keys -H -t "$session" "${bytes[@]}"
          ;;
       wait)
          test -n "${rest:-}" || fail "step $step: wait requires text"

@@ -31,7 +31,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 	}
 	started := time.Now()
 	outputDir := t.TempDir()
-	cmd := exec.Command("bash", script, "-y", "1", "--wait", "ready", "--timeout", "2", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
+	cmd := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
 	cmd.Env = append(os.Environ(), "PATH="+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
 	cmd.Stdin = strings.NewReader("pause 0.12\nsnap before\ndiff " + want + "\nkeys Enter\nwait done\nsnap after\n")
 	output, err := cmd.CombinedOutput()
@@ -56,11 +56,19 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 	if err := os.WriteFile(wrong, []byte("wrong\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	diff := exec.Command("bash", script, "-y", "1", "--wait", "ready", "--timeout", "2", "--", "bash", "-c", "printf 'ready\\n'; read -r line")
+	diff := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--", "bash", "-c", "printf 'ready\\n'; read -r line")
 	diff.Stdin = strings.NewReader("diff " + wrong + "\n")
 	diffOutput, err := diff.CombinedOutput()
 	if err == nil || !strings.Contains(string(diffOutput), "screens differ") {
 		t.Fatalf("diff accepted a mismatched pane: err=%v output=%s", err, diffOutput)
+	}
+
+	lastRowDir := t.TempDir()
+	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--output-dir", lastRowDir, "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
+	lastRow.Stdin = strings.NewReader("snap last-row\n")
+	lastRowOutput, err := lastRow.CombinedOutput()
+	if err != nil || !strings.Contains(string(lastRowOutput), "bottom") {
+		t.Fatalf("wait missed text on the last visible pane row: err=%v output=%s", err, lastRowOutput)
 	}
 }
 
