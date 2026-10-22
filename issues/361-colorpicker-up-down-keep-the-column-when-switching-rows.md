@@ -29,3 +29,9 @@ whether or not anything was applied. Moving the cursor is not a pick, so this is
 - Preview shows the applied values plus the cursor's cell on the active row.
 - Mouse click on a cell: unchanged (applies that cell to its row, moves the cursor there).
 - Update docs/Upgrading.md (Enter semantics from 359 change).
+
+## Addendum (user, 2026-10-22)
+
+- Both rows show a dim marker at their applied ("locked-in") colour; the active row additionally shows
+  the cursor marker in the selection colour. When cursor and applied value are on the same cell, the
+  selection-colour marker wins. With nothing applied, a row shows no dim marker.
