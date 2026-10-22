@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 
@@ -34,13 +35,16 @@ func errorExitCode(err error) int {
 type diffRegion struct{ row, col, width, height int }
 
 func diffCommand() *cobra.Command {
-	var regionText string
+	var regionText, gotRegionText, findText string
 	var ignoreGlyph, ignoreColour bool
 	cmd := &cobra.Command{
 		Use: "diff <want.ansi> <got.ansi>", Short: "Compare ANSI screens cell by cell",
 		Long: "Compare glyphs and foreground/background colours. Rows and columns use 1-based terminal cells (columns by display width). --region is row,col,width,height, also 1-based.",
 		Args: cobra.ExactArgs(2), SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if gotRegionText != "" && findText != "" {
+				return diffExitError{2, fmt.Errorf("--got-region and --find cannot be used together")}
+			}
 			var region *diffRegion
 			if regionText != "" {
 				parsed, err := parseDiffRegion(regionText)
@@ -48,6 +52,57 @@ func diffCommand() *cobra.Command {
 					return diffExitError{2, err}
 				}
 				region = &parsed
+			}
+			if gotRegionText != "" || findText != "" {
+				gotData, err := readAsset(args[1])
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				got, err := parseDiffScreen(gotData)
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				wantData, err := readAsset(args[0])
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				want, err := parseDiffScreen(wantData)
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				var crop diffRegion
+				if gotRegionText != "" {
+					crop, err = parseDiffRegion(gotRegionText)
+				} else {
+					crop, err = findDiffText(got, findText, want.Cols(), want.Rows())
+				}
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				if crop.row+crop.height > got.Rows() || crop.col+crop.width > got.Cols() {
+					return diffExitError{2, fmt.Errorf("got region exceeds capture bounds")}
+				}
+				cropped := loom.NewAnsiBuffer(crop.width, crop.height)
+				for y := 0; y < crop.height; y++ {
+					for x := 0; x < crop.width; x++ {
+						cropped.Set(x, y, got.Get(crop.col+x, crop.row+y))
+					}
+				}
+				args[1] = ""
+				gotData = []byte(cropped.Serialize())
+				tmp, err := os.CreateTemp("", "loom-diff-crop-*.ansi")
+				if err != nil {
+					return diffExitError{2, err}
+				}
+				defer os.Remove(tmp.Name())
+				if _, err = tmp.Write(gotData); err != nil {
+					tmp.Close()
+					return diffExitError{2, err}
+				}
+				if err = tmp.Close(); err != nil {
+					return diffExitError{2, err}
+				}
+				args[1] = tmp.Name()
 			}
 			count, err := compareAnsiFiles(cmd.OutOrStdout(), args[0], args[1], region, ignoreGlyph, ignoreColour)
 			if err != nil {
@@ -61,9 +116,39 @@ func diffCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&regionText, "region", "", "compare row,col,width,height (1-based terminal cells)")
+	cmd.Flags().StringVar(&gotRegionText, "got-region", "", "crop got screen at row,col,width,height (1-based cells)")
+	cmd.Flags().StringVar(&findText, "find", "", "find text in got screen and compare the reference-sized region there")
 	cmd.Flags().BoolVar(&ignoreGlyph, "ignore-glyph", false, "ignore glyph differences")
 	cmd.Flags().BoolVar(&ignoreColour, "ignore-colour", false, "ignore foreground and background colour differences")
 	return cmd
+}
+
+func findDiffText(buf *loom.AnsiBuffer, text string, width, height int) (diffRegion, error) {
+	needle := []rune(text)
+	if len(needle) == 0 {
+		return diffRegion{}, fmt.Errorf("--find text must not be empty")
+	}
+	found := diffRegion{width: width, height: height}
+	matches := 0
+	for y := 0; y < buf.Rows(); y++ {
+		for x := 0; x < buf.Cols(); x++ {
+			ok := true
+			for i, r := range needle {
+				if x+i >= buf.Cols() || buf.Get(x+i, y).Rune != r {
+					ok = false
+					break
+				}
+			}
+			if ok {
+				found.row, found.col = y, x
+				matches++
+			}
+		}
+	}
+	if matches != 1 {
+		return diffRegion{}, fmt.Errorf("--find %q matched %d locations", text, matches)
+	}
+	return found, nil
 }
 
 func parseDiffRegion(text string) (diffRegion, error) {

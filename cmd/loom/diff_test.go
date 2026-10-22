@@ -105,3 +105,42 @@ func TestDiffErrorStatusAndMissingInput(t *testing.T) {
 		t.Fatal("wrapped input error should use status 2")
 	}
 }
+
+func TestCropWritesSelectedRegion(t *testing.T) {
+	input := writeFixture(t, "ab\ncd")
+	var out bytes.Buffer
+	if err := execute([]string{"crop", input, "--region", "2,2,1,1"}, &out); err != nil {
+		t.Fatalf("crop: %v", err)
+	}
+	if got := parseDiffText(out.String()); got != "d" {
+		t.Fatalf("crop output=%q, want d", got)
+	}
+}
+
+func TestDiffFindCropsGotCapture(t *testing.T) {
+	wantPath := writeFixture(t, "abc\ndef")
+	gotPath := writeFixture(t, "header\n  abc\n  def")
+	var out bytes.Buffer
+	err := execute([]string{"diff", wantPath, gotPath, "--find", "abc"}, &out)
+	if err != nil || out.String() != "screens match\n" {
+		t.Fatalf("diff output=%q err=%v", out.String(), err)
+	}
+}
+
+func TestDiffGotRegionCropsOnlyCapture(t *testing.T) {
+	wantPath := writeFixture(t, "abc\ndef")
+	gotPath := writeFixture(t, "header\n  abc\n  def")
+	var out bytes.Buffer
+	err := execute([]string{"diff", wantPath, gotPath, "--got-region", "2,3,3,2"}, &out)
+	if err != nil || out.String() != "screens match\n" {
+		t.Fatalf("diff output=%q err=%v", out.String(), err)
+	}
+}
+
+func parseDiffText(text string) string {
+	buf, err := parseDiffScreen([]byte(text))
+	if err != nil {
+		return "<parse error>"
+	}
+	return buf.PlainText()
+}

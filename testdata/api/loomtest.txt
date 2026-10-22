@@ -18,6 +18,13 @@ regions, insert/delete operations and terminal queries are unsupported).
 Width follows loom/measure's cell policy; pin LOOM_ZWJ=join when testing joined
 emoji independently of the caller's terminal configuration.
 
+FUNCTIONS
+
+func CompareANSI(t testing.TB, reference string, width, height int, render func() string, options ...CompareOptions)
+    CompareANSI calls render and compares its ANSI cells to reference. Run the
+    test binary with -update to deliberately rewrite the reference.
+
+
 TYPES
 
 type Cell struct {
@@ -64,6 +71,11 @@ const (
 	ColorIndexed
 	ColorDirect
 )
+type CompareOptions struct {
+	IgnoreColour bool
+}
+    CompareOptions controls which cell fields CompareANSI checks.
+
 type Style struct {
 	FG        Color
 	BG        Color

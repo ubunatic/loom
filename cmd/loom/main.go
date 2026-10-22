@@ -31,7 +31,7 @@ func execute(args []string, out io.Writer) error {
 		SilenceUsage: true, SilenceErrors: true,
 	}
 	root.SetOut(out)
-	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), diffCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand(), manCommand(root))
+	root.AddCommand(infoCommand(), measureCommand(), evalCommand(), diffCommand(), cropCommand(), checkBoxCommand(), viewCommand(), editCommand(), formatCommand(), markupCommand(), frameCommand(), widgetsCommand(), manCommand(root))
 	root.SetArgs(args)
 	err := root.Execute()
 	if err != nil && len(args) > 0 && args[0] == "diff" {

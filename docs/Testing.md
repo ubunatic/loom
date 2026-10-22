@@ -48,6 +48,13 @@ independent snapshots. `Screen()` trims trailing spaces; use `Cells()` when blan
 or wide-character continuation cells matter. Coordinates are zero-based. The
 package docs list the supported terminal sequences and limitations.
 
+`loomtest.CompareANSI(t, reference, width, height, render)` compares every ANSI cell rendered
+by a callback with a checked-in `.ansi` reference. Run the package test with
+`-update` to deliberately rewrite references. Crop a
+design sketch with `loom crop sketch.ansi --region row,col,width,height` before
+using it as a reference; keep later design updates in a separate reference file
+when the sketch records an earlier variant.
+
 New concurrency tests should use channels, barriers or fake clocks instead of
 wall-clock sleeps. Scale unavoidable timeout budgets for race builds. Use
 `LOOM_ZWJ=join` for deterministic joined emoji, and `LOOMCOLOR=truecolor` when a test

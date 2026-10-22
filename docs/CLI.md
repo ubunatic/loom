@@ -39,6 +39,11 @@ Use `--region row,col,width,height` to compare a 1-based cell rectangle in
 both screens. `--ignore-glyph` and `--ignore-colour` omit those fields from the
 comparison.
 
+`loom crop <file.ansi> --region row,col,width,height` writes a selected ANSI
+rectangle to stdout; add `--output <file>` to save it. `loom diff` also accepts
+`--got-region` to crop only the capture, or `--find <text>` to locate a unique
+anchor in the capture and compare a reference-sized area from that point.
+
 `loom man` prints the generated `loom(1)` roff page. Pipe it to `man -l -` to
 view it or redirect it to a file. `loom man --install` generates and installs
 the full Cobra command page tree in the standard man directory: under
