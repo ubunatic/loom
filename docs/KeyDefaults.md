@@ -20,6 +20,15 @@ bindings remain unchanged; conflicts are intentional and listed here.
 | undo/redo | `u`, `U`, `ctrl-z`, `ctrl-r` | TextInput, TextArea | not provided: editors have no undo stack |
 | activate/toggle | `insert` | Frame actions | not provided as a universal default; action specs decide conflicts |
 
+## Where bindings live
+
+Widget default bindings are spec data: `spec/defaults.yaml` (`<widget>.bindings`, `tabs.keys`,
+`media.bindings` + `labels`) and the table above (`key_conventions`), validated by
+`spec/schemas/defaults.schema.json` and loaded once into `SpeccedDefaults`. A missing action panics at
+init. Widgets match keys via `KeyMap` or `KeyEvent.Is` on those slices; do not add Go key tables or
+`case "key":` defaults (issues 323, 367). `key_088_test.go` keeps this table equal to the spec; the
+`internal/specdefaults` probes prove a YAML edit changes key handling.
+
 Terminal limitations: Ctrl-I is delivered as Tab, and Ctrl-M as Enter; terminals
 cannot distinguish those pairs at the byte-input layer unless the pane opts in to
 the kitty keyboard protocol (`Pane.KittyKeyboard`, see TuiInput.md). Function-key and modified

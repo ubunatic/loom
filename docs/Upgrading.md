@@ -32,7 +32,10 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 | v0.2.15 | `Widget` lost the bool `HandleKey`/`HandleMouse`; only `ConsumeKey`/`ConsumeMouse` returning `EventResult` remain (9dd183b) | Map results as below |
 | v0.2.6 | `EventResult` introduced (issue 126) | — |
 
-Add a row here with every release that breaks callers.
+Add a row here with every release that breaks callers. New rows start as `Unreleased`; before
+`harnez release`, relabel them with the new version (a break makes it a minor bump while on 0.x). At
+v0.4.0, 20 rows from v0.2.22–v0.3.11 were still `Unreleased` and were relabelled from
+`git tag --contains` of the commit that added each row.
 
 ## Module path
 
