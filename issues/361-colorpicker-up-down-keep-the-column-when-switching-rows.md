@@ -35,3 +35,6 @@ whether or not anything was applied. Moving the cursor is not a pick, so this is
 - Both rows show a dim marker at their applied ("locked-in") colour; the active row additionally shows
   the cursor marker in the selection colour. When cursor and applied value are on the same cell, the
   selection-colour marker wins. With nothing applied, a row shows no dim marker.
+- Correction (user): dim markers are always visible on both rows. With nothing applied, a row's dim
+  marker sits on its current colour (the selected text's existing FG/BG, or `∅` when it has none).
+  Only the cursor marker overlays it on the same cell.
