@@ -102,7 +102,8 @@ cleanup() {
 trap cleanup EXIT
 if test -n "$output_dir"
 then mkdir -p "$output_dir"
-else output_dir="$PWD"
+else output_dir=$(mktemp -d)
+   printf 'snapshot directory: %s\n' "$output_dir"
 fi
 
 printf -v command_line '%q ' "$@"

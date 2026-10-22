@@ -64,11 +64,24 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 	}
 
 	lastRowDir := t.TempDir()
-	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--output-dir", lastRowDir, "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
+	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
+	lastRow.Env = append(os.Environ(), "TMPDIR="+lastRowDir)
 	lastRow.Stdin = strings.NewReader("snap last-row\n")
 	lastRowOutput, err := lastRow.CombinedOutput()
 	if err != nil || !strings.Contains(string(lastRowOutput), "bottom") {
 		t.Fatalf("wait missed text on the last visible pane row: err=%v output=%s", err, lastRowOutput)
+	}
+	var snapshotDir string
+	for _, line := range strings.Split(string(lastRowOutput), "\n") {
+		if strings.HasPrefix(line, "snapshot directory: ") {
+			snapshotDir = strings.TrimPrefix(line, "snapshot directory: ")
+		}
+	}
+	if snapshotDir == "" || filepath.Dir(snapshotDir) != lastRowDir {
+		t.Fatalf("default snapshot directory was not reported under TMPDIR %q: %s", lastRowDir, lastRowOutput)
+	}
+	if _, err := os.Stat(filepath.Join(snapshotDir, "001-last-row.ansi")); err != nil {
+		t.Fatalf("default snapshot missing from reported directory %q: %v", snapshotDir, err)
 	}
 }
 

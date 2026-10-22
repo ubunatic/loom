@@ -68,8 +68,9 @@ make live-check ARGS='--wait "Ln 1, Col 1" --output-dir /tmp/loom-live -- loom e
 
 Steps are one per line: `keys <tmux key names>`, `hex <two-digit bytes...>`
 (for terminal sequences such as Shift+Right), `wait <pane text>`, `pause <seconds>`,
-`snap [label]`, or `diff <want.ansi>`. A `snap` writes the current SGR capture in
-the output directory. `diff` runs installed `loom diff` against the current SGR
+`snap [label]`, or `diff <want.ansi>`. By default, `snap` writes the current SGR
+capture into a fresh temporary directory and prints its path. Use `--output-dir`
+to choose a persistent output directory. `diff` runs installed `loom diff` against the current SGR
 capture and stops on a mismatch. For example, open the action bar, move to 🎨 and
 open the color picker, then save and compare its screen:
 
