@@ -1,6 +1,6 @@
 # 361 — ColorPicker: Up/Down keep the column when switching rows
 
-**Status**: Closed — Both rows show dim applied markers; active cursor wins on overlap. Canvas coverage and q1 pass.
+**Status**: Open — M2 0ebabb1 reopened: dim markers must sit on the current colour when nothing is applied
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: UX
