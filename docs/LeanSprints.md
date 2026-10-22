@@ -149,3 +149,16 @@ Source: host `claude:opus`, developers `codex:sol:med`, designer `claude:opus:me
   `testdata/api`, so the next q1 was red for an unrelated reason (fixed in 362).
 - **New tools for the host**: `loom diff want got` compares sketch and tmux capture per cell
   (glyph/FG/BG, exit 0/1/2); `loom man --install` installs the man pages.
+
+### Scripted installed-binary checks (issue 351)
+
+Use `make live-check ARGS='...'` or `scripts/live-tmux.sh` to run the installed
+`loom` inside a detached tmux server with a unique socket. The script waits for
+visible pane text before reading stdin steps (`keys`, raw-byte `hex`, `wait`,
+`pause`, `snap`, `diff`), prints the pane after each step and removes the server
+on exit. Real pauses use a bounded `timeout` around a process that stays alive;
+`timeout 0.1 true` exits immediately and cannot pace input. Use `loom diff` on
+the generated SGR snapshot to compare glyph, FG and BG cells against the sketch.
+For the editor picker, open Ctrl+Space, send four Rights to focus 🎨, then Enter.
+The full Go test tier includes a real tmux script check when tmux is installed;
+the short tier skips it.

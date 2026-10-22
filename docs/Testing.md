@@ -11,6 +11,7 @@ version for the lint gate; CI and the container image use the same target.
 | `make test` | Specs, saved geometry replay, vet, and all package tests |
 | `make test-q1` | Full tests with the agent Quota-1 guard |
 | `make container-test` | Lint, specs, geometry replay, build, and full race tests under Podman or Docker |
+| `make live-check ARGS='...'` | Run installed `loom` in an isolated tmux server; interactive live check, outside test tiers |
 
 The short tier retains in-memory image and widget unit tests. PTY entry points,
 binary-building helpers and external media tests check `testing.Short()` before
@@ -53,3 +54,30 @@ wall-clock sleeps. Scale unavoidable timeout budgets for race builds. Use
 asserts colors rather than terminal profile detection.
 
 See [APIStability.md](APIStability.md) for the exported API review/update workflow.
+
+## Installed CLI live checks
+
+Use `make live-check` for a reproducible check of the installed `loom` binary. It
+starts a detached tmux server on a unique socket, waits for the initial text,
+executes stdin steps, prints the pane after each step, and always kills its server.
+Requires `tmux` and the installed `loom` on `PATH`.
+
+```bash
+make live-check ARGS='--wait "Ln 1, Col 1" --output-dir /tmp/loom-live -- loom edit --mousegrab=false'
+```
+
+Steps are one per line: `keys <tmux key names>`, `hex <two-digit bytes...>`
+(for terminal sequences such as Shift+Right), `wait <pane text>`, `pause <seconds>`,
+`snap [label]`, or `diff <want.ansi>`. A `snap` writes the current SGR capture in
+the output directory. `diff` runs installed `loom diff` against the current SGR
+capture and stops on a mismatch. For example, open the action bar, move to 🎨 and
+open the color picker, then save and compare its screen:
+
+```bash
+printf 'keys C-Space\nkeys Right Right Right Right Enter\nsnap picker\ndiff docs/data/colorpicker-redesign-b.ansi\n' |
+  scripts/live-tmux.sh -x 100 -y 24 --wait 'Ln 1, Col 1' -- loom edit --mousegrab=false
+```
+
+Use `-e` to print SGR in step output and `--rows 4:7` to restrict printed rows.
+`--timeout` and `--interval` set bounded text polling. The script is a manual
+live check and does not run as part of `make test`.
