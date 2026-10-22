@@ -1,6 +1,6 @@
 # 364 — loom edit writes SGR reset codes into unstyled plain-text files on save
 
-**Status**: Open
+**Status**: Closed — Unstyled documents serialize and save as plain text, styled ones keep SGR and the final reset (e1f00b8); Upgrading row added; host live save of a .txt is byte-exact 'qx\n', q1 green
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug

@@ -52,5 +52,4 @@ upkeep.
 | 323 | [323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md](323-respect-spec-move-widget-navigation-and-action-keybindings-into-spec.md) | respect spec: move widget navigation and action keybindings into spec | Open |
 | 351 | [351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md](351-scripted-live-check-run-installed-loom-in-tmux-wait-for-render-send-keys-print-screen.md) | Scripted live check: run installed loom in tmux, wait for render, send keys, print screen | Open |
 | 352 | [352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md](352-flaky-test302editptyhelpwheelbackdropandinline-screen-lacks-a.md) | Flaky Test302EditPTYHelpWheelBackdropAndInline: screen lacks " A " | Open |
-| 364 | [364-loom-edit-writes-sgr-reset-codes-into-unstyled-plain-text-files-on-save.md](364-loom-edit-writes-sgr-reset-codes-into-unstyled-plain-text-files-on-save.md) | loom edit writes SGR reset codes into unstyled plain-text files on save | Open |
 <!-- harnez:end issues-active-index -->
