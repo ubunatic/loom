@@ -27,8 +27,11 @@ offer more actions on the same screen model (crop, copy, diff).
 - Screen model: promote/reuse `loomtest.VT` (cells, styles, wide runes, alt screen) into a non-test
   package instead of a second emulator. Missing sequences found with real apps get tests.
 - Hotkeys and the prefix live in `spec/defaults.yaml` + schema (no Go key tables, see
-  docs/KeyDefaults.md). Proposed default: prefix `ctrl-]` then `s` = screenshot; prefix twice sends the
-  prefix to the child.
+  docs/KeyDefaults.md). User decision: screenshot is `ctrl-p`, the same key as in `loom edit` (reuse
+  that binding's spec value or name, do not copy it); `ctrl-q` quits (kills the child, loom exits).
+  Direct hotkeys are swallowed and never reach the child. Plain `q` would break typing in the child, so
+  it quits only after the prefix `ctrl-]` (prefix then `q` = quit, prefix then `s` = screenshot,
+  prefix twice sends `ctrl-]` to the child).
 - Screenshot: the visible screen as SGR + text, trailing blanks trimmed, written to
   `./loom-<cmd>-<timestamp>.ansi`; a one-line status flash names the file without corrupting the child's
   screen (or the file name goes to stderr after exit if a flash is not clean).
