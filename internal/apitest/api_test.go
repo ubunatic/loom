@@ -67,6 +67,7 @@ func TestPublicAPI(t *testing.T) {
 			if err != nil {
 				t.Fatalf("go doc: %v", err)
 			}
+			got = normalizeAPI(pkg.ImportPath, got)
 			path := filepath.Join(dir, name)
 			if *update {
 				if err := os.WriteFile(path, got, 0644); err != nil {
@@ -78,6 +79,7 @@ func TestPublicAPI(t *testing.T) {
 			if err != nil {
 				t.Fatalf("missing API snapshot %s: %v; see docs/APIStability.md", name, err)
 			}
+			want = normalizeAPI(pkg.ImportPath, want)
 			if string(got) != string(want) {
 				t.Errorf("exported API differs from testdata/api/%s; review the API diff, then run go test ./internal/apitest -update", name)
 				gotLines, wantLines := strings.Split(string(got), "\n"), strings.Split(string(want), "\n")
@@ -105,5 +107,41 @@ func TestPublicAPI(t *testing.T) {
 		} else {
 			t.Errorf("stale API snapshot %s: package removed or made internal; review before -update", entry.Name())
 		}
+	}
+}
+
+// normalizeAPI excludes release metadata while preserving exported API changes.
+func normalizeAPI(importPath string, doc []byte) []byte {
+	if importPath != "ubunatic.com/loom" {
+		return doc
+	}
+	lines := strings.Split(string(doc), "\n")
+	kept := lines[:0]
+	for _, line := range lines {
+		if !strings.HasPrefix(line, "var Version = ") {
+			kept = append(kept, line)
+		}
+	}
+	return []byte(strings.Join(kept, "\n"))
+}
+
+func TestNormalizeAPI(t *testing.T) {
+	const api = "func Existing()\n"
+	for _, tc := range []struct {
+		name, pkg, doc, want string
+	}{
+		{"release", "ubunatic.com/loom", "var Version = \"0.5.1\"\n" + api, api},
+		{"next release", "ubunatic.com/loom", "var Version = \"0.6.0\"\n" + api, api},
+		{"already filtered", "ubunatic.com/loom", api, api},
+		{"added function", "ubunatic.com/loom", api + "func Added()\n", api + "func Added()\n"},
+		{"changed signature", "ubunatic.com/loom", "func Existing(arg int)\n", "func Existing(arg int)\n"},
+		{"other variable", "ubunatic.com/loom", "var VersionInfo = 1\n", "var VersionInfo = 1\n"},
+		{"other package", "ubunatic.com/loom/widgets", "var Version = 1\n", "var Version = 1\n"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := string(normalizeAPI(tc.pkg, []byte(tc.doc))); got != tc.want {
+				t.Errorf("normalizeAPI() = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }
