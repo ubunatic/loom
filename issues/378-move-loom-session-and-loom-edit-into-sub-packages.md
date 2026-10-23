@@ -1,6 +1,6 @@
 # 378 — move loom session and loom edit into sub-packages
 
-**Status**: Open
+**Status**: Closed — session and editor moved to internal/session, internal/editor, internal/clitest; cmd/loom thin commands (990a30a, ea9ce6b). Build, vet, package tests of the moved packages and cmd/loom green, install ok; full-suite run and cache probe parked in 377
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
