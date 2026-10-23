@@ -1016,13 +1016,17 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	capCol := displayColumnOf(bar, "⌃B…")
 	labelCol := displayColumnOf(bar, "Tools")
 	iconCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.MouseIcon)
-	if capCol < 0 || labelCol <= capCol || iconCol < 0 {
+	searchCapCol := displayColumnOf(bar, "⌃B F")
+	searchLabelCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.Search)
+	if capCol < 0 || labelCol <= capCol || iconCol < 0 || searchCapCol < 0 || searchLabelCol <= searchCapCol {
 		t.Fatalf("bar boundaries missing: %q", bar)
 	}
 	hintStyle := loom.DefaultTheme().HintBarStyle()
 	assertSessionBarCellStyle(t, session, capCol, barY, hintStyle.Cap)
 	assertSessionBarCellStyle(t, session, capCol+1, barY, hintStyle.Cap)
 	assertSessionBarCellStyle(t, session, labelCol, barY, hintStyle.Label)
+	assertSessionBarCellStyle(t, session, searchCapCol, barY, hintStyle.Cap)
+	assertSessionBarCellStyle(t, session, searchLabelCol, barY, hintStyle.Label)
 	assertSessionBarCellStyle(t, session, iconCol, barY, hintStyle.Label)
 	session.SendRaw([]byte{17})
 	_ = session.Wait(time.Second * 5)
@@ -1192,4 +1196,133 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 	if session.VT().AltScreen() {
 		t.Fatalf("outer VT left in alternate screen after SIGTERM with alt-screen child")
 	}
+}
+
+func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	fixture := "printf 'old needle\\n'; for i in $(seq 1 20); do printf 'filler-%s\\n' \"$i\"; done; printf 'new needle\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("new needle", time.Second*5)
+
+	session.SendRaw([]byte{2, 'f'})
+	session.WaitFor("Find:", time.Second*5)
+	session.Send("needle")
+	session.WaitFor("2/2", time.Second*5)
+	newY := sessionRowContaining(session.Screen(), "new needle")
+	if newY < 0 || !session.Cell(4, newY).Style.Reverse {
+		t.Fatalf("newest match cell was not highlighted at row %d: %+v screen=%q", newY, session.Cell(4, newY), session.Text())
+	}
+	if strings.Contains(session.Text(), "old needle") {
+		t.Fatalf("old scrollback match visible before navigation: %q", session.Text())
+	}
+
+	session.Send("\n")
+	session.WaitForUpdate("1/2", time.Second*5)
+	oldY := sessionRowContaining(session.Screen(), "old needle")
+	if oldY < 0 || strings.Contains(session.Text(), "new needle") || !session.Cell(4, oldY).Style.Reverse {
+		t.Fatalf("enter did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
+	}
+	session.SendRaw([]byte("\x1b[A"))
+	session.WaitForUpdate("2/2", time.Second*5)
+	newY = sessionRowContaining(session.Screen(), "new needle")
+	if newY < 0 || strings.Contains(session.Text(), "old needle") || !session.Cell(4, newY).Style.Reverse {
+		t.Fatalf("up did not select newer match at row %d: %+v", newY, session.Cell(4, newY))
+	}
+
+	session.SendRaw([]byte{14, 16, 2, 'f'})
+	session.SendRaw([]byte("\x1b1"))
+	session.SendRaw([]byte("\x1b[<0;2;1M\n"))
+	session.Send("missing")
+	session.WaitFor("No matches", time.Second*5)
+	for _, row := range session.Cells() {
+		for _, cell := range row {
+			if cell.Style.Reverse {
+				t.Fatal("no-match query left a match highlighted")
+			}
+		}
+	}
+
+	session.SendRaw([]byte{0x1b})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		for _, row := range rows {
+			if strings.Contains(row, "Find:") {
+				return false
+			}
+		}
+		return true
+	})
+	session.Send("restored-input\n")
+	session.WaitFor("CHILD:restored-input", time.Second*5)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func sessionRowContaining(rows []string, text string) int {
+	for y, row := range rows {
+		if strings.Contains(row, text) {
+			return y
+		}
+	}
+	return -1
+}
+
+func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	fixture := "printf 'HISTORY_NEEDLE\\n'; printf '\\033[?1049hALT_NEEDLE'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("ALT_NEEDLE", time.Second*5)
+
+	session.SendRaw([]byte{2, 'f'})
+	session.WaitFor("Find:", time.Second*5)
+	session.Send("HISTORY_NEEDLE")
+	session.WaitFor("No matches", time.Second*5)
+	session.SendRaw([]byte{0x1b})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		for _, row := range rows {
+			if strings.Contains(row, "Find:") {
+				return false
+			}
+		}
+		return true
+	})
+	session.SendRaw([]byte{2, 'f'})
+	session.WaitFor("Find:", time.Second*5)
+	session.Send("ALT_NEEDLE")
+	session.WaitFor("1/1", time.Second*5)
+	if !strings.Contains(session.Text(), "ALT_NEEDLE") {
+		t.Fatalf("visible alternate-screen text was not searchable: %q", session.Text())
+	}
+	session.SendRaw([]byte{0x1b})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		for _, row := range rows {
+			if strings.Contains(row, "Find:") {
+				return false
+			}
+		}
+		return true
+	})
+	if !session.VT().AltScreen() {
+		t.Fatal("closing search left the child alternate screen")
+	}
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionSearchKeepsGlobalQuitBinding(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
+	session.WaitFor("Search", time.Second*5)
+	session.SendRaw([]byte{2, 'f'})
+	session.WaitFor("Find:", time.Second*5)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
 }
