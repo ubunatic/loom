@@ -43,3 +43,10 @@ must reset them itself.
   `loom session` is quit with `ctrl-q`; the outer VT/terminal shows all those modes off.
 - Same for the child exiting by itself, the last tab closed with prefix `x`, and SIGTERM to loom.
 - Host live check: `loom session -- mc`, `ctrl-q`, click in the shell: no output.
+
+## Also (host, 2026-10-23, from 371 live check)
+
+- With tabs, a non-active tab's main-screen text (zsh line "➜ live369 mc") stays on the outer main
+  screen after `ctrl-q`, and the shell's next output overwrites it mid-line ("EXIT=0e369 mc"). The
+  restore must leave the outer screen as the session found it (e.g. run tabs on the outer alt screen
+  once more than one tab exists, or clear what loom drew) with the cursor at a clean line start.
