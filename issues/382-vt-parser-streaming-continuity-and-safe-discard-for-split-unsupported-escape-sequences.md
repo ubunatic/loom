@@ -1,6 +1,6 @@
 # 382 — VT parser streaming continuity and safe discard for split/unsupported escape sequences
 
-**Status**: Open
+**Status**: Closed — VT parser streaming continuity across chunk boundaries, safe discard for malformed/unsupported controls, and session output framing verified with split-byte unit and PTY tests
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug

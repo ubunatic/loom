@@ -50,5 +50,4 @@ upkeep.
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
 | 381 | [381-add-session-debug-mode-detect-ansi-leakage-rotating-diagnostics-auto-sigwinch-repair-and-status-indicator.md](381-add-session-debug-mode-detect-ansi-leakage-rotating-diagnostics-auto-sigwinch-repair-and-status-indicator.md) | Add session debug mode: detect ANSI leakage, rotating diagnostics, auto-SIGWINCH repair, and status indicator | Open |
-| 382 | [382-vt-parser-streaming-continuity-and-safe-discard-for-split-unsupported-escape-sequences.md](382-vt-parser-streaming-continuity-and-safe-discard-for-split-unsupported-escape-sequences.md) | VT parser streaming continuity and safe discard for split/unsupported escape sequences | Open |
 <!-- harnez:end issues-active-index -->
