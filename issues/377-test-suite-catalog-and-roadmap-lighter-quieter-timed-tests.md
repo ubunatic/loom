@@ -53,3 +53,25 @@ A host `make test-q1` run (right after a developer's own run) took the machine's
 ## Rule until this lands (host)
 
 Before any full test run the host tells the user and waits for a go.
+
+## Incremental testing and modularization (user + host, 2026-10-23)
+
+Go caches test results per package; a package re-runs only when its code or a dependency changes. Last
+host run: 11 of 39 packages cached, 28 re-ran, because 373/374 touched the root package (`keycap.go`,
+`defaults.go`), which almost every package imports.
+
+- Root package `loom`: 118 files / 29,170 lines plus 131 test files / 28,456 lines. The real monolith.
+- `cmd/loom`: 13 files / 4,453 lines plus 30 test files / 6,331 lines; `session.go` 1,266 and `edit.go`
+  998 lines. Agents keep adding files to `cmd/loom` and the root package instead of sub-packages.
+
+Roadmap step 0 (before step 2):
+
+- Measure cache hits per typical change (one widget file, spec, `cmd/loom/session.go`) with
+  `go test ./...` twice, and list which packages re-run.
+- Propose a package split by an advisor (read-only), host + user review before any move:
+  `session` (PTY tabs, bar, search) and `editor` out of `cmd/loom` with thin commands left there;
+  in the root package, candidates are widget groups, spec defaults and terminal I/O, kept inside the
+  API compatibility rules (docs/Upgrading.md breaking-changes table if exports move).
+- Add a rule to AGENTS.md/docs: new features go in a sub-package, not `cmd/loom` or the root package,
+  unless they are root widgets.
+- Each split is its own milestone with before/after cache-hit and run-time numbers.
