@@ -162,3 +162,22 @@ the generated SGR snapshot to compare glyph, FG and BG cells against the sketch.
 For the editor picker, open Ctrl+Space, send four Rights to focus 🎨, then Enter.
 The full Go test tier includes a real tmux script check when tmux is installed;
 the short tier skips it.
+
+## loom session arc (2026-10-23, tickets 369-378)
+
+- **Model choice**: codex:sol:med planned in ~1 min and delivered 373/374 in ~18 min each, rated 4-5.
+  agy:gemini-3.8-flash was stopped after 3 min as "stuck" but was working: agy prints no progress to
+  the harnez job log, Codex does (harnez 872, opt-in liveness). Read the provider's own log before
+  judging a silent agent.
+- **Host reruns cost the user's machine**: a full `make test-q1` right after the developer's own run
+  maxed CPU and swap (377). Host review now runs only touched packages; full runs need the user's go.
+- **Long chained host commands are opaque**: the user sees only an abbreviated line. One step per
+  command, or a script shown first.
+- **Pre-work in the ticket beats verbal fixes**: live checks found a stale bar, alt screen left on,
+  SIGTERM exit 0, doubled key names and swapped search direction; each went into the ticket as
+  required pre-work and came back fixed in one round.
+- **Host proposals must be flagged as such**: prefix `f` for search was a host idea the user accepted
+  in a list and later reversed (376). Name trade-offs as choices when asking.
+- **Modularize early**: `cmd/loom` and the root package grew because agents add files there. Moving
+  session/editor to `internal/` (378) was a quick pure move; the root package (29k lines) still makes
+  most packages re-run on any change (377).

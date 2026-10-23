@@ -12,6 +12,7 @@
 - [Lean sprints](LeanSprints.md): loom field notes for lean sprints with cheap developer agents (escalation ladder, fake-test review, evidence convention).
 - [Editor](Editor.md): approved editor decisions, ANSI validation, widget composition, input safety, and PR review lessons.
 - [.tui markup](TuiMarkup.md): bracket markup grammar, colors, escapes, strict errors, `loom edit`/`loom markup` support.
+- [loom session](Session.md): PTY wrapper with tabs, bar, help, mouse modes, terminal restore and scrollback search.
 - [Terminal safety](TerminalSafety.md): the auto-wrap corruption trap, `loom.RawScreen`/`WriteRows`/`ClipRow`, and `x/term` coverage rules for any raw-ANSI terminal writer.
 - [Terminal repaint probe](TerminalRepaintProbe.md): standalone `loom-repaint-probe` benchmark modes, tuning, and timing semantics.
 - [Terminal colors](TerminalColors.md): authoritative theme colors, shade glyphs, terminal dimming, and scrollbar experiments.
