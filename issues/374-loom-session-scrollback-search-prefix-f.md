@@ -33,3 +33,16 @@ Search is scrollback search, on prefix `f` (not `ctrl-f`, which shells and `less
   scrolls to the match like tmux copy mode; next/previous and close keys from the spec; Esc closes and
   repaints the child's current screen unchanged. Child output during search updates its VT only.
 - Copy of the match is out of scope. The bar's search hint (373, hidden) becomes visible.
+
+## Approved plan (host, 2026-10-23)
+
+d374 plan approved (opt-in VT ring, snapshot on entry, SearchBar in the bar row, local routing during
+search, milestones VT / spec+UI+routing / PTY+visual). Pre-work:
+
+- Previous match: `shift-enter` is not distinguishable in most terminals; use `up` (older) and `down`
+  (newer) plus `enter` = older; keep keys in the spec.
+- Smart case: case-insensitive unless the query has an uppercase letter.
+- Global keys (`ctrl-q` quit) still work during search; `ctrl-n`, `ctrl-p`, alt digits and the prefix are
+  swallowed while searching.
+- When done with 374, also fix issue 375 (help cut off on short terminals) in its own commit
+  `(issue 375)` with a PTY test at 12 rows; the footer stays visible.
