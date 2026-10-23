@@ -25,7 +25,7 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
 
 ## 2. Sprint Milestones
 - **M1**: Harden `vt.VT` Escape & Control String Parser (`vt/vt.go`) — Delivered in commit `7703a90`.
-- **M2**: Harden `internal/session` Output Stream Framing (`internal/session/session.go`)
+- **M2**: Harden `internal/session` Output Stream Framing (`internal/session/session.go`) — Delivered in commit `f8a9d37`.
 - **M3**: Adversarial Split-Byte, Malformed Sequence & PTY Verification (`vt/vt_test.go`, `internal/session/session_pty_test.go`)
 
 ---
@@ -36,3 +36,4 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
 - [01:19] Dispatched developer `sol:med` for plan-first inspection.
 - [01:20] Developer submitted concrete implementation plan. Authorized M1.
 - [01:22] M1 completed and committed (`7703a90`). Host review verified diff and unit tests; identified API snapshot update needed for new exports. Embedded pre-work in ticket.
+- [01:24] M2 completed and committed (`f8a9d37`). Updated API snapshot and switched `runSession` to `WriteFramed`.
