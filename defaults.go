@@ -24,26 +24,26 @@ var defaultsYAML = func() []byte {
 
 // LibDefaults represents specced runtime defaults loaded from spec/defaults.yaml.
 type LibDefaults struct {
-	KeyCaps      KeyCapDefaults       `yaml:"keycaps"`
-	QuitKeys     []string             `yaml:"quit_keys"`
-	EscapeQuits  bool                 `yaml:"escape_quits"`
-	Pane         PaneDefaults         `yaml:"pane"`
-	Scrollbar    ScrollbarDefaults    `yaml:"scrollbar"`
-	Mouse        MouseDefaults        `yaml:"mouse"`
-	Splash       SplashDefaults       `yaml:"splash"`
-	Spinner      SpinnerDefaults      `yaml:"spinner"`
-	Graph        spec.GraphDefaults   `yaml:"graph"`
-	ProgressBar  ProgressBarDefaults  `yaml:"progress_bar"`
-	Media        MediaDefaults        `yaml:"media"`
-	Clock        ClockDefaults        `yaml:"clock"`
-	PaintCanvas  PaintCanvasDefaults  `yaml:"paint_canvas"`
-	Editor       EditorDefaults       `yaml:"editor"`
-	SearchBar    SearchBarDefaults    `yaml:"search_bar"`
-	ColorPicker  ColorPickerDefaults  `yaml:"color_picker"`
-	RichTextEdit RichTextEditDefaults `yaml:"rich_text_edit"`
-	NumberInput  NumberInputDefaults  `yaml:"number_input"`
-	Toggle       ToggleDefaults       `yaml:"toggle"`
-	Paginator    PaginatorDefaults    `yaml:"paginator"`
+	KeyCaps        KeyCapDefaults       `yaml:"keycaps"`
+	QuitKeys       []string             `yaml:"quit_keys"`
+	EscapeQuits    bool                 `yaml:"escape_quits"`
+	Pane           PaneDefaults         `yaml:"pane"`
+	Scrollbar      ScrollbarDefaults    `yaml:"scrollbar"`
+	Mouse          MouseDefaults        `yaml:"mouse"`
+	Splash         SplashDefaults       `yaml:"splash"`
+	Spinner        SpinnerDefaults      `yaml:"spinner"`
+	Graph          spec.GraphDefaults   `yaml:"graph"`
+	ProgressBar    ProgressBarDefaults  `yaml:"progress_bar"`
+	Media          MediaDefaults        `yaml:"media"`
+	Clock          ClockDefaults        `yaml:"clock"`
+	PaintCanvas    PaintCanvasDefaults  `yaml:"paint_canvas"`
+	Editor         EditorDefaults       `yaml:"editor"`
+	SearchBar      SearchBarDefaults    `yaml:"search_bar"`
+	ColorPicker    ColorPickerDefaults  `yaml:"color_picker"`
+	RichTextEdit   RichTextEditDefaults `yaml:"rich_text_edit"`
+	NumberInput    NumberInputDefaults  `yaml:"number_input"`
+	Toggle         ToggleDefaults       `yaml:"toggle"`
+	Paginator      PaginatorDefaults    `yaml:"paginator"`
 	Tree           TreeDefaults         `yaml:"tree"`
 	Split          SplitDefaults        `yaml:"split"`
 	Choice         ChoiceDefaults       `yaml:"choice"`
@@ -637,9 +637,28 @@ func (d SettingsDefaults) validate() error {
 // SessionDefaults defines specced defaults for the Loom session command.
 type SessionDefaults struct {
 	Mouse          string                `yaml:"mouse"`
+	Bar            string                `yaml:"bar"`
+	BarLabels      SessionBarLabels      `yaml:"bar_labels"`
 	Prefix         string                `yaml:"prefix"`
 	Bindings       SessionBindings       `yaml:"bindings"`
 	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
+}
+
+// SessionBarLabels defines the text and glyphs shown in the Loom session bar.
+type SessionBarLabels struct {
+	Tools       string   `yaml:"tools"`
+	Help        string   `yaml:"help"`
+	Quit        string   `yaml:"quit"`
+	Screenshot  string   `yaml:"screenshot"`
+	MouseIcon   string   `yaml:"mouse_icon"`
+	Separator   string   `yaml:"separator"`
+	NewTab      string   `yaml:"new_tab"`
+	NextTab     string   `yaml:"next_tab"`
+	PreviousTab string   `yaml:"previous_tab"`
+	CloseTab    string   `yaml:"close_tab"`
+	SendPrefix  string   `yaml:"send_prefix"`
+	ToggleMouse string   `yaml:"toggle_mouse"`
+	DropOrder   []string `yaml:"drop_order"`
 }
 
 type SessionBindings struct {
@@ -658,11 +677,26 @@ type SessionPrefixBindings struct {
 	PreviousTab []string `yaml:"previous_tab"`
 	CloseTab    []string `yaml:"close_tab"`
 	SelectTab   []string `yaml:"select_tab"`
+	Help        []string `yaml:"help"`
+	ToggleMouse []string `yaml:"toggle_mouse"`
 }
 
 func (d SessionDefaults) validate() error {
 	if d.Mouse != "safe" {
 		return fmt.Errorf("session.mouse must be 'safe'")
+	}
+	if d.Bar != "always" && d.Bar != "tabs" {
+		return fmt.Errorf("session.bar must be 'always' or 'tabs'")
+	}
+	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIcon == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || len(d.BarLabels.DropOrder) != 4 {
+		return fmt.Errorf("session.bar_labels must configure all labels, glyphs, and four hint drop priorities")
+	}
+	dropNames := map[string]bool{"tools": true, "help": true, "screenshot": true, "quit": true}
+	for _, name := range d.BarLabels.DropOrder {
+		if !dropNames[name] {
+			return fmt.Errorf("session.bar_labels.drop_order contains unknown or duplicate hint %q", name)
+		}
+		delete(dropNames, name)
 	}
 	if d.Prefix == "" {
 		return fmt.Errorf("session.prefix must not be empty")
@@ -672,8 +706,8 @@ func (d SessionDefaults) validate() error {
 	}
 	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 ||
 		len(d.PrefixBindings.NewTab) == 0 || len(d.PrefixBindings.NextTab) == 0 || len(d.PrefixBindings.PreviousTab) == 0 ||
-		len(d.PrefixBindings.CloseTab) == 0 || len(d.PrefixBindings.SelectTab) == 0 {
-		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, send_prefix, new_tab, next_tab, previous_tab, close_tab, and select_tab")
+		len(d.PrefixBindings.CloseTab) == 0 || len(d.PrefixBindings.SelectTab) == 0 || len(d.PrefixBindings.Help) == 0 || len(d.PrefixBindings.ToggleMouse) == 0 {
+		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, send_prefix, new_tab, next_tab, previous_tab, close_tab, select_tab, help, and toggle_mouse")
 	}
 	return nil
 }

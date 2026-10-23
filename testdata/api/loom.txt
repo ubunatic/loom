@@ -3988,6 +3988,23 @@ type SearchBarStyle struct {
 func DefaultSearchBarStyle() SearchBarStyle
     DefaultSearchBarStyle returns styles derived from the specced default theme.
 
+type SessionBarLabels struct {
+	Tools       string   `yaml:"tools"`
+	Help        string   `yaml:"help"`
+	Quit        string   `yaml:"quit"`
+	Screenshot  string   `yaml:"screenshot"`
+	MouseIcon   string   `yaml:"mouse_icon"`
+	Separator   string   `yaml:"separator"`
+	NewTab      string   `yaml:"new_tab"`
+	NextTab     string   `yaml:"next_tab"`
+	PreviousTab string   `yaml:"previous_tab"`
+	CloseTab    string   `yaml:"close_tab"`
+	SendPrefix  string   `yaml:"send_prefix"`
+	ToggleMouse string   `yaml:"toggle_mouse"`
+	DropOrder   []string `yaml:"drop_order"`
+}
+    SessionBarLabels defines the text and glyphs shown in the Loom session bar.
+
 type SessionBindings struct {
 	Screenshot []string `yaml:"screenshot"`
 	Quit       []string `yaml:"quit"`
@@ -3997,6 +4014,8 @@ type SessionBindings struct {
 
 type SessionDefaults struct {
 	Mouse          string                `yaml:"mouse"`
+	Bar            string                `yaml:"bar"`
+	BarLabels      SessionBarLabels      `yaml:"bar_labels"`
 	Prefix         string                `yaml:"prefix"`
 	Bindings       SessionBindings       `yaml:"bindings"`
 	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
@@ -4012,6 +4031,8 @@ type SessionPrefixBindings struct {
 	PreviousTab []string `yaml:"previous_tab"`
 	CloseTab    []string `yaml:"close_tab"`
 	SelectTab   []string `yaml:"select_tab"`
+	Help        []string `yaml:"help"`
+	ToggleMouse []string `yaml:"toggle_mouse"`
 }
 
 type Setting struct {

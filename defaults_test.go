@@ -302,6 +302,9 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 
 func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	s := SpeccedDefaults.Session
+	if s.Bar != "always" || !slices.Equal(s.PrefixBindings.Help, []string{"?"}) || !slices.Equal(s.PrefixBindings.ToggleMouse, []string{"m"}) {
+		t.Fatalf("session bar bindings = %q/%v/%v, want always/?/m", s.Bar, s.PrefixBindings.Help, s.PrefixBindings.ToggleMouse)
+	}
 	if s.Prefix != "ctrl-b" {
 		t.Fatalf("session.prefix = %q, want ctrl-b", s.Prefix)
 	}

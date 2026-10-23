@@ -578,6 +578,21 @@ rich_text_edit:
 
 session:
   mouse: "safe"
+  bar: "always"
+  bar_labels:
+    tools: "Tools"
+    help: "Help"
+    quit: "Quit"
+    screenshot: "📷"
+    mouse_icon: "🖱︎"
+    separator: "▏"
+    new_tab: "New tab"
+    next_tab: "Next tab"
+    previous_tab: "Previous tab"
+    close_tab: "Close tab"
+    send_prefix: "Send prefix"
+    toggle_mouse: "Toggle mouse"
+    drop_order: ["quit", "screenshot", "help", "tools"]
   prefix: "ctrl-b"
   bindings:
     screenshot: [*hotkey_screenshot_binding]
@@ -593,4 +608,6 @@ session:
     previous_tab: ["p"]
     close_tab: ["x"]
     select_tab: ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+    help: ["?"]
+    toggle_mouse: ["m"]
 
