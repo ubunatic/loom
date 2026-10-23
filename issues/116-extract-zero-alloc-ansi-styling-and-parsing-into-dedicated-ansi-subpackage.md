@@ -1,6 +1,6 @@
 # 116 — Extract zero-alloc ANSI styling and parsing into dedicated ansi subpackage
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
