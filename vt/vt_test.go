@@ -79,6 +79,56 @@ func TestVTResizeKeepsTopLeft(t *testing.T) {
 	}
 }
 
+func TestVTScrollbackRingAndResize(t *testing.T) {
+	v := NewVT(4, 2)
+	v.SetScrollbackLimit(2)
+	v.Write([]byte("one\r\ntwo\r\ntri\r\nfor\r\nfiv")) //nolint:errcheck
+	rows := v.ScrollbackCells()
+	if len(rows) != 4 {
+		t.Fatalf("history plus screen rows = %d, want 4", len(rows))
+	}
+	for i, want := range []string{"two", "tri", "for", "fiv"} {
+		if got := rowText(rows[i]); got != want {
+			t.Fatalf("row %d = %q, want %q", i, got, want)
+		}
+	}
+	v.Resize(2, 2)
+	rows = v.ScrollbackCells()
+	if got := len(rows); got != 4 {
+		t.Fatalf("resized rows = %d, want 4", got)
+	}
+	if got := len(rows[0]); got != 2 {
+		t.Fatalf("resized history width = %d, want 2", got)
+	}
+}
+
+func TestVTScrollbackDisabledAndAltScreen(t *testing.T) {
+	v := NewVT(5, 2)
+	v.SetScrollbackLimit(2)
+	v.Write([]byte("main\r\nnext\r\nlast"))    //nolint:errcheck
+	v.Write([]byte("\x1b[?1049h\x1b[1;1Halt")) //nolint:errcheck
+	if got := len(v.ScrollbackCells()); got != 2 {
+		t.Fatalf("alternate screen rows = %d, want visible 2", got)
+	}
+	v.Write([]byte("\x1b[?1049l")) //nolint:errcheck
+	v.SetScrollbackLimit(0)
+	if got := len(v.ScrollbackCells()); got != 2 {
+		t.Fatalf("disabled history rows = %d, want visible 2", got)
+	}
+}
+
+func rowText(row []Cell) string {
+	var b strings.Builder
+	for _, cell := range row {
+		if cell.Text != "" {
+			b.WriteString(cell.Text)
+		} else if cell.Rune != 0 {
+			b.WriteRune(cell.Rune)
+		}
+	}
+	return strings.TrimRight(b.String(), " ")
+}
+
 func TestVTANSIPlainAndTrimmed(t *testing.T) {
 	v := NewVT(10, 3)
 	v.Write([]byte("hello     \r\nworld")) //nolint:errcheck
@@ -188,7 +238,7 @@ func TestVTRepaintRoundTripPlain(t *testing.T) {
 func TestVTRepaintRoundTripSGR(t *testing.T) {
 	v := NewVT(25, 4)
 	v.Write([]byte("\x1b[1;1H\x1b[1;31mBoldRed\x1b[0m \x1b[48;5;46mGreenBG\x1b[0m\r\n")) //nolint:errcheck
-	v.Write([]byte("\x1b[38;2;10;20;30mRGB\x1b[0m \x1b[4;7mUnderRev\x1b[0m"))             //nolint:errcheck
+	v.Write([]byte("\x1b[38;2;10;20;30mRGB\x1b[0m \x1b[4;7mUnderRev\x1b[0m"))            //nolint:errcheck
 
 	repaint := v.Repaint()
 	v2 := NewVT(25, 4)
@@ -283,4 +333,3 @@ func TestVTRepaintCursorVisibility(t *testing.T) {
 		t.Fatal("expected v2 cursor to be hidden after repaint")
 	}
 }
-

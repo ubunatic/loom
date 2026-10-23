@@ -41,13 +41,16 @@ type VT struct {
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
 	CellFrames [][][]Cell
 
-	cells    [][]Cell // Rune=0 marks the trailing half of a wide rune
-	pen      Style
-	x, y     int
-	autoWrap bool
-	pending  []byte // incomplete escape or UTF-8 tail carried between Write calls
-	main     *terminalState
-	saved    cursorState
+	cells           [][]Cell // Rune=0 marks the trailing half of a wide rune
+	scrollback      [][]Cell
+	scrollbackLimit int
+	scrollbackStart int
+	pen             Style
+	x, y            int
+	autoWrap        bool
+	pending         []byte // incomplete escape or UTF-8 tail carried between Write calls
+	main            *terminalState
+	saved           cursorState
 }
 
 type cursorState struct {
@@ -114,6 +117,11 @@ func (v *VT) Resize(cols, rows int) {
 		return grid
 	}
 	v.cells = resize(v.cells)
+	for i, row := range v.scrollback {
+		resized := v.blankRow(cols, Style{})
+		copy(resized, row[:min(cols, len(row))])
+		v.scrollback[i] = resized
+	}
 	if v.main != nil {
 		v.main.cells = resize(v.main.cells)
 		v.main.x, v.main.y = min(v.main.x, cols-1), min(v.main.y, rows-1)
@@ -121,6 +129,57 @@ func (v *VT) Resize(cols, rows int) {
 	v.Cols, v.Rows = cols, rows
 	v.x, v.y = min(v.x, cols-1), min(v.y, rows-1)
 	v.saved.x, v.saved.y = min(v.saved.x, cols-1), min(v.saved.y, rows-1)
+}
+
+// SetScrollbackLimit enables a bounded main-screen history. Setting zero
+// disables history and clears rows already collected.
+func (v *VT) SetScrollbackLimit(limit int) {
+	limit = max(0, limit)
+	if limit != v.scrollbackLimit && limit > 0 && len(v.scrollback) > 0 {
+		rows := v.orderedScrollback()
+		if len(rows) > limit {
+			rows = rows[len(rows)-limit:]
+		}
+		v.scrollback = cloneRows(rows)
+		v.scrollbackStart = 0
+	}
+	v.scrollbackLimit = limit
+	if limit == 0 {
+		v.scrollback = nil
+		v.scrollbackStart = 0
+		return
+	}
+}
+
+// ScrollbackCells returns a copy of the main-screen history followed by the
+// visible screen. While the alternate screen is active, it returns only that
+// visible screen because alternate-screen rows are not part of history.
+func (v *VT) ScrollbackCells() [][]Cell {
+	if v.AltScreen() {
+		return cloneRows(v.cells)
+	}
+	combined := make([][]Cell, 0, len(v.scrollback)+len(v.cells))
+	combined = append(combined, v.orderedScrollback()...)
+	combined = append(combined, v.cells...)
+	return cloneRows(combined)
+}
+
+func (v *VT) orderedScrollback() [][]Cell {
+	if v.scrollbackStart == 0 {
+		return v.scrollback
+	}
+	rows := make([][]Cell, 0, len(v.scrollback))
+	rows = append(rows, v.scrollback[v.scrollbackStart:]...)
+	rows = append(rows, v.scrollback[:v.scrollbackStart]...)
+	return rows
+}
+
+func cloneRows(rows [][]Cell) [][]Cell {
+	cloned := make([][]Cell, len(rows))
+	for i, row := range rows {
+		cloned[i] = append([]Cell(nil), row...)
+	}
+	return cloned
 }
 
 // Screen returns the visible rows with trailing blanks trimmed.
@@ -425,6 +484,15 @@ func (v *VT) lineFeed() {
 	if v.y < v.Rows-1 {
 		v.y++
 		return
+	}
+	if !v.AltScreen() && v.scrollbackLimit > 0 {
+		oldest := append([]Cell(nil), v.cells[0]...)
+		if len(v.scrollback) < v.scrollbackLimit {
+			v.scrollback = append(v.scrollback, oldest)
+		} else {
+			v.scrollback[v.scrollbackStart] = oldest
+			v.scrollbackStart = (v.scrollbackStart + 1) % v.scrollbackLimit
+		}
 	}
 	v.cells = append(v.cells[1:], v.blankRow(v.Cols, Style{BG: v.pen.BG}))
 }
