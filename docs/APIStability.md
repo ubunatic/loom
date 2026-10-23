@@ -1,7 +1,7 @@
 # Public API stability
 
 Loom is a public library. Stable packages are `ubunatic.com/loom`,
-`graph`, `layout`, `measure` and `loomtest`. Preserve their exported signatures and documented
+`ansi`, `graph`, `layout`, `measure`, `specdefaults` and `loomtest`. Preserve their exported signatures and documented
 behavior between compatible releases. Additions require review too. An intentional
 breaking release must record migration instructions in `docs/Upgrading.md`.
 
@@ -10,6 +10,9 @@ breaking release must record migration instructions in `docs/Upgrading.md`.
 between releases. `internal/` packages and `cmd/` executables are implementation
 details rather than supported Go imports. Experimental does not authorize accidental
 breakage: snapshots cover every importable package outside `internal/`.
+
+Release versions (`var Version = ...`) in `ubunatic.com/loom` are normalized in snapshot
+comparisons so that routine release version bumps do not cause spurious golden file failures.
 
 ## Reviewing API changes
 
