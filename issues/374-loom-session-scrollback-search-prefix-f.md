@@ -1,6 +1,6 @@
 # 374 — loom session: scrollback search (prefix f)
 
-**Status**: Open
+**Status**: Closed — Prefix f scrollback search: bounded VT scrollback (spec scrollback_lines 5000), SearchBar in bar row, smart case, Enter/↑ older ↓ newer Esc close, alt-screen visible only (df7c630, 6571f76, 5f0d0e5, 3eb6afa, 5f2ad8a). Host q1 green 2x; live tmux: line1 11/11, ↑ 10/11, ↓ back, Esc restores
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
