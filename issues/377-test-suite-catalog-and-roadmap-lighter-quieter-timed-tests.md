@@ -1,6 +1,6 @@
 # 377 — test suite catalog and roadmap: lighter, quieter, timed tests
 
-**Status**: Open
+**Status**: Closed — M1 load bounded via Makefile TEST_PARALLEL and clitest binary caching (072e4e8); M2 session sleeps eliminated (88ce120); full architecture roadmap proposed by advisor
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Testing
