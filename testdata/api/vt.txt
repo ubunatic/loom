@@ -114,6 +114,11 @@ func (v *VT) FrameCells() [][][]Cell
 func (v *VT) Pen() Style
     Pen returns the current SGR pen style.
 
+func (v *VT) Repaint() string
+    Repaint returns an ANSI escape sequence string that completely redraws
+    the visible terminal screen, including alt-screen mode, screen erasure,
+    cell runes and SGR styles, cursor position, and cursor visibility.
+
 func (v *VT) Resize(cols, rows int)
     Resize changes the grid size, keeping the top-left content, like a terminal
     that does not reflow.

@@ -4,6 +4,7 @@
 package vt
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"unicode"
@@ -183,6 +184,77 @@ func (v *VT) ANSI() string {
 		}
 		b.WriteByte('\n')
 	}
+	return b.String()
+}
+
+// Repaint returns an ANSI escape sequence string that completely redraws the
+// visible terminal screen, including alt-screen mode, screen erasure, cell runes
+// and SGR styles, cursor position, and cursor visibility.
+func (v *VT) Repaint() string {
+	var b strings.Builder
+
+	if v.AltScreen() {
+		b.WriteString("\x1b[?1049h")
+	} else {
+		b.WriteString("\x1b[?1049l")
+	}
+
+	if v.autoWrap {
+		b.WriteString("\x1b[?7h")
+	} else {
+		b.WriteString("\x1b[?7l")
+	}
+
+	b.WriteString("\x1b[0m\x1b[H\x1b[2J")
+
+	for y := 0; y < v.Rows; y++ {
+		row := v.cells[y]
+		last := -1
+		for x := len(row) - 1; x >= 0; x-- {
+			if !isTrailingBlank(row[x]) {
+				last = x
+				break
+			}
+		}
+		if last >= 0 {
+			fmt.Fprintf(&b, "\x1b[%d;1H", y+1)
+			curStyle := Style{}
+			for x := 0; x <= last; x++ {
+				cell := row[x]
+				if cell.Rune == 0 && cell.Text == "" {
+					// Trailing half of wide character, already output
+					continue
+				}
+				if cell.Style != curStyle {
+					b.WriteString(cell.Style.SGR())
+					curStyle = cell.Style
+				}
+				if cell.Text != "" {
+					b.WriteString(cell.Text)
+				} else if cell.Rune != 0 {
+					b.WriteRune(cell.Rune)
+				} else {
+					b.WriteByte(' ')
+				}
+			}
+			if curStyle != (Style{}) {
+				b.WriteString("\x1b[0m")
+			}
+		}
+	}
+
+	fmt.Fprintf(&b, "\x1b[%d;%dH", v.y+1, v.x+1)
+
+	if v.CursorVisible {
+		b.WriteString("\x1b[?25h")
+	} else {
+		b.WriteString("\x1b[?25l")
+	}
+
+	if v.pen != (Style{}) {
+		b.WriteString(v.pen.SGR())
+	}
+
 	return b.String()
 }
 

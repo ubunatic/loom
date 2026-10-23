@@ -160,3 +160,127 @@ func TestVTANSITrimsTrailingBlankRows(t *testing.T) {
 		t.Fatalf("VT.ANSI() = %q, want %q", ansi, want)
 	}
 }
+
+func TestVTRepaintRoundTripPlain(t *testing.T) {
+	v := NewVT(20, 5)
+	v.Write([]byte("\x1b[1;1HHello\x1b[3;5HWorld\x1b[5;2HEnd\x1b[2;7H")) //nolint:errcheck
+
+	repaint := v.Repaint()
+	v2 := NewVT(20, 5)
+	v2.Write([]byte(repaint)) //nolint:errcheck
+
+	if got, want := v2.Screen(), v.Screen(); !slices.Equal(got, want) {
+		t.Fatalf("v2.Screen() = %q, want %q", got, want)
+	}
+	x1, y1 := v.Cursor()
+	x2, y2 := v2.Cursor()
+	if x1 != x2 || y1 != y2 {
+		t.Fatalf("v2 cursor = (%d,%d), want (%d,%d)", x2, y2, x1, y1)
+	}
+	if v2.CursorVisible != v.CursorVisible {
+		t.Fatalf("v2 cursorVisible = %v, want %v", v2.CursorVisible, v.CursorVisible)
+	}
+	if v2.AltScreen() != v.AltScreen() {
+		t.Fatalf("v2 altScreen = %v, want %v", v2.AltScreen(), v.AltScreen())
+	}
+}
+
+func TestVTRepaintRoundTripSGR(t *testing.T) {
+	v := NewVT(25, 4)
+	v.Write([]byte("\x1b[1;1H\x1b[1;31mBoldRed\x1b[0m \x1b[48;5;46mGreenBG\x1b[0m\r\n")) //nolint:errcheck
+	v.Write([]byte("\x1b[38;2;10;20;30mRGB\x1b[0m \x1b[4;7mUnderRev\x1b[0m"))             //nolint:errcheck
+
+	repaint := v.Repaint()
+	v2 := NewVT(25, 4)
+	v2.Write([]byte(repaint)) //nolint:errcheck
+
+	for y := 0; y < 4; y++ {
+		for x := 0; x < 25; x++ {
+			c1 := v.Cell(x, y)
+			c2 := v2.Cell(x, y)
+			if c1 != c2 {
+				t.Fatalf("cell mismatch at (%d,%d): want %+v, got %+v", x, y, c1, c2)
+			}
+		}
+	}
+}
+
+func cellsMatch(c1, c2 Cell) bool {
+	if c1.Style != c2.Style {
+		return false
+	}
+	t1 := c1.Text
+	if t1 == "" && c1.Rune == ' ' {
+		t1 = " "
+	}
+	t2 := c2.Text
+	if t2 == "" && c2.Rune == ' ' {
+		t2 = " "
+	}
+	return c1.Rune == c2.Rune && t1 == t2
+}
+
+func TestVTRepaintRoundTripWideRunesAndZWJ(t *testing.T) {
+	const family = "👨\u200d👩\u200d👧"
+	v := NewVT(20, 3)
+	v.Write([]byte("z中 " + family + " end\x1b[2;3H\x1b[7m \x1b[0m")) //nolint:errcheck
+
+	repaint := v.Repaint()
+	v2 := NewVT(20, 3)
+	v2.Write([]byte(repaint)) //nolint:errcheck
+
+	for y := 0; y < 3; y++ {
+		for x := 0; x < 20; x++ {
+			c1 := v.Cell(x, y)
+			c2 := v2.Cell(x, y)
+			if !cellsMatch(c1, c2) {
+				t.Fatalf("cell mismatch at (%d,%d): want %+v, got %+v", x, y, c1, c2)
+			}
+		}
+	}
+}
+
+func TestVTRepaintAltScreenSwitchDirections(t *testing.T) {
+	vAlt := NewVT(20, 3)
+	vAlt.Write([]byte("\x1b[?1049h\x1b[1;1HALT SCREEN CONTENT")) //nolint:errcheck
+
+	vMain := NewVT(20, 3)
+	vMain.Write([]byte("\x1b[1;1HMAIN SCREEN CONTENT")) //nolint:errcheck
+
+	vOuter := NewVT(20, 3)
+
+	// Switch to alt tab
+	vOuter.Write([]byte(vAlt.Repaint())) //nolint:errcheck
+	if !vOuter.AltScreen() {
+		t.Fatal("expected vOuter to enter alt screen")
+	}
+	if got := vOuter.Screen()[0]; got != "ALT SCREEN CONTENT" {
+		t.Fatalf("vOuter alt content = %q, want ALT SCREEN CONTENT", got)
+	}
+
+	// Switch to main tab
+	vOuter.Write([]byte(vMain.Repaint())) //nolint:errcheck
+	if vOuter.AltScreen() {
+		t.Fatal("expected vOuter to return to main screen")
+	}
+	if got := vOuter.Screen()[0]; got != "MAIN SCREEN CONTENT" {
+		t.Fatalf("vOuter main content = %q, want MAIN SCREEN CONTENT", got)
+	}
+}
+
+func TestVTRepaintCursorVisibility(t *testing.T) {
+	v := NewVT(10, 2)
+	v.Write([]byte("\x1b[?25l\x1b[1;1HHiddenCursor")) //nolint:errcheck
+	if v.CursorVisible {
+		t.Fatal("expected cursor to be hidden")
+	}
+
+	repaint := v.Repaint()
+	v2 := NewVT(10, 2)
+	v2.Write([]byte(repaint)) //nolint:errcheck
+
+	if v2.CursorVisible {
+		t.Fatal("expected v2 cursor to be hidden after repaint")
+	}
+}
+
