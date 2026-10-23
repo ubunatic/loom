@@ -4,6 +4,8 @@
 package vt
 
 import (
+	"fmt"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -94,6 +96,34 @@ func TestVTEscapeStreamingAndDiscard(t *testing.T) {
 				wx, wy := want.Cursor()
 				if !slices.Equal(got.Screen(), want.Screen()) || gx != wx || gy != wy {
 					t.Fatalf("split %d changed parser result", split)
+				}
+			}
+		})
+	}
+}
+
+func TestVTComplexStreamChunkBoundaries(t *testing.T) {
+	input := []byte("A中🙂\x1b(BZ\x1b[38:2::10:20:30mR\x1b[31\x18C\x1b[32\x1b[1mD\x1b]discard\x1b[1mE\x1bPdiscard\x18F")
+	want := NewVT(80, 2)
+	_, _ = want.Write(input)
+	for _, size := range []int{1, 2, 3, 5, 7} {
+		t.Run(fmt.Sprintf("chunk_%d", size), func(t *testing.T) {
+			got := NewVT(80, 2)
+			for offset := 0; offset < len(input); offset += size {
+				end := min(offset+size, len(input))
+				_, _ = got.Write(input[offset:end])
+			}
+			if !slices.Equal(got.Screen(), want.Screen()) || !reflect.DeepEqual(got.Cells(), want.Cells()) {
+				t.Fatalf("chunk size %d changed screen or cells: got %q, want %q", size, got.Screen(), want.Screen())
+			}
+			gx, gy := got.Cursor()
+			wx, wy := want.Cursor()
+			if gx != wx || gy != wy || got.Pen() != want.Pen() {
+				t.Fatalf("chunk size %d changed terminal state", size)
+			}
+			for _, row := range got.Screen() {
+				if strings.ContainsAny(row, "\x1b\x07\x18\x1a\x9c") {
+					t.Fatalf("control character leaked into screen: %q", row)
 				}
 			}
 		})

@@ -463,6 +463,46 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 	}
 }
 
+func TestSessionSplitEscapeAcrossTabBarRedraw(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	t.Setenv("SHELL", "/bin/sh")
+	bin := clitest.BuildLoomBinary(t)
+	child := "stty -echo; printf 'FRAME_PREFIX_READY\\n'; printf '\\033[38;2;10;'; IFS= read -r release; printf '20;30mFRAME_SAFE\\n'"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", child)
+	session.WaitFor("FRAME_PREFIX_READY", 5*time.Second)
+
+	// Opening another tab redraws the bar while tab one holds a partial truecolor CSI.
+	session.SendRaw([]byte{14})
+	session.WaitFor("2: ", 5*time.Second)
+	session.SendRaw([]byte{2, 'p'})
+	session.WaitForUpdate("FRAME_PREFIX_READY", 5*time.Second)
+	session.Send("release\n")
+	session.WaitFor("FRAME_SAFE", 5*time.Second)
+
+	for row, text := range session.Screen() {
+		if strings.Contains(text, "20;30m") {
+			t.Fatalf("split CSI leaked into screen row %d: %q", row, text)
+		}
+	}
+	for y, cells := range session.Cells() {
+		var rendered strings.Builder
+		for _, cell := range cells {
+			if cell.Text != "" {
+				rendered.WriteString(cell.Text)
+			} else if cell.Rune != 0 {
+				rendered.WriteRune(cell.Rune)
+			}
+		}
+		if strings.Contains(rendered.String(), "20;30m") {
+			t.Fatalf("split CSI leaked into rendered cells on row %d: %q", y, rendered.String())
+		}
+	}
+	session.SendRaw([]byte{17})
+	_ = session.Wait(5 * time.Second)
+}
+
 func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
