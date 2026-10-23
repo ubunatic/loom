@@ -3989,6 +3989,7 @@ type SessionBindings struct {
 	Screenshot []string `yaml:"screenshot"`
 	Quit       []string `yaml:"quit"`
 	NewTab     []string `yaml:"new_tab"`
+	SelectTab  []string `yaml:"select_tab"`
 }
 
 type SessionDefaults struct {

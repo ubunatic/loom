@@ -74,6 +74,7 @@ func TestDecodeKey(t *testing.T) {
 		{"ctrl-down xterm", []byte{27, '[', '1', ';', '5', 'B'}, KeyEvent{Key: "ctrl-down"}},
 		{"alt-up xterm", []byte{27, '[', '1', ';', '3', 'A'}, KeyEvent{Key: "alt-up"}},
 		{"alt-down xterm", []byte{27, '[', '1', ';', '3', 'B'}, KeyEvent{Key: "alt-down"}},
+		{"alt-1", []byte{27, '1'}, KeyEvent{Key: "alt-1"}},
 		{"shift-up rxvt", []byte{27, '[', 'a'}, KeyEvent{Key: "shift-up"}},
 		{"shift-down rxvt", []byte{27, '[', 'b'}, KeyEvent{Key: "shift-down"}},
 		{"f1 SS3", []byte{27, 'O', 'P'}, KeyEvent{Key: "f1"}},

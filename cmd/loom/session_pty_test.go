@@ -806,6 +806,130 @@ func TestSessionSafeRestoreOnSIGTERM(t *testing.T) {
 	}
 }
 
+func TestSessionPerTabModes(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	// Tab 1 enables SGR mouse mode and stays alive
+	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("TAB1_READY", time.Second*5)
+
+	// Tab 1 turned mouse on in outer VT
+	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+		t.Fatalf("Tab 1 expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+
+	// Open Tab 2 with ctrl-n (14)
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// In Tab 2, mouse tracking in outer VT must be OFF
+	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
+		t.Fatalf("Tab 2 expected mouse off, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+
+	// Switch back to Tab 1 using prefix 1 (ctrl-b 1) or alt-1 (\x1b1)
+	session.SendRaw([]byte{2, '1'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return session.VT().MouseMode == 1000
+	})
+
+	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+		t.Fatalf("Tab 1 switch-back expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+
+	// Quit with ctrl-q
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionDirectTabSelectAltDigits(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'ORIGINAL_TAB1\\n'; while true; do sleep 1; done")
+	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+
+	// Open Tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Send alt-1 (\x1b1) to switch to Tab 1
+	session.SendRaw([]byte{27, '1'})
+	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+
+	// Send alt-2 (\x1b2) to switch back to Tab 2
+	session.SendRaw([]byte{27, '2'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "ORIGINAL_TAB1")
+	})
+
+	// Close Tab 2 with prefix x (ctrl-b x) so only Tab 1 remains
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+
+	// With 1 tab, send alt-2 (\x1b2): must be swallowed and NOT printed to shell
+	session.SendRaw([]byte{27, '2'})
+	time.Sleep(200 * time.Millisecond)
+
+	for _, row := range session.Screen() {
+		if strings.Contains(row, "2") && !strings.Contains(row, "1: bash") {
+			t.Fatalf("alt-2 was not swallowed: screen row = %q", row)
+		}
+	}
+
+	session.SendRaw([]byte{17}) // ctrl-q
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'INITIAL_SHELL_TEXT\\n'; while true; do sleep 1; done")
+	session.WaitFor("INITIAL_SHELL_TEXT", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Print unique text in Tab 2
+	session.Send("printf 'TAB2_ISOLATED\\n'\n")
+	session.WaitFor("TAB2_ISOLATED", time.Second*5)
+
+	// Switch back to Tab 1 with alt-1 (\x1b1)
+	session.SendRaw([]byte{27, '1'})
+	session.WaitFor("INITIAL_SHELL_TEXT", time.Second*5)
+
+	// Quit session with ctrl-q (17)
+	session.SendRaw([]byte{17})
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	// Verify that the outer terminal after exit does NOT contain TAB2_ISOLATED
+	// or the tab bar, and does not have corrupted screen text
+	for y, row := range session.Screen() {
+		if strings.Contains(row, "TAB2_ISOLATED") {
+			t.Fatalf("stale Tab 2 text found on outer screen at row %d: %q", y, row)
+		}
+		if strings.Contains(row, "1: bash") || strings.Contains(row, "2: ") {
+			t.Fatalf("stale tab bar found on outer screen at row %d: %q", y, row)
+		}
+	}
+}
+
+
 
 
 

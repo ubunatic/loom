@@ -146,12 +146,120 @@ func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, row
 	_, _ = out.Write([]byte(b.String()))
 }
 
-func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
+func applyTabModes(out io.Writer, oldTab, newTab *sessionTab) {
+	if out == nil || newTab == nil {
+		return
+	}
+	var b strings.Builder
+
+	oldMouse := 0
+	oldSGR := false
+	oldUTF8 := false
+	oldURXVT := false
+	if oldTab != nil {
+		oldMouse = oldTab.vt.MouseMode
+		oldSGR = oldTab.vt.MouseSGR
+		oldUTF8 = oldTab.vt.MouseUTF8
+		oldURXVT = oldTab.vt.MouseURXVT
+	}
+	newMouse := newTab.vt.MouseMode
+	newSGR := newTab.vt.MouseSGR
+	newUTF8 := newTab.vt.MouseUTF8
+	newURXVT := newTab.vt.MouseURXVT
+
+	if oldMouse != newMouse || oldSGR != newSGR || oldUTF8 != newUTF8 || oldURXVT != newURXVT {
+		if oldMouse != 0 || oldSGR || oldUTF8 || oldURXVT {
+			b.WriteString("\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l")
+		}
+		if newMouse != 0 {
+			fmt.Fprintf(&b, "\x1b[?%dh", newMouse)
+			if newSGR {
+				b.WriteString("\x1b[?1006h")
+			}
+			if newUTF8 {
+				b.WriteString("\x1b[?1005h")
+			}
+			if newURXVT {
+				b.WriteString("\x1b[?1015h")
+			}
+		}
+	}
+
+	oldFocus := false
+	if oldTab != nil {
+		oldFocus = oldTab.vt.FocusEvents
+	}
+	if oldFocus != newTab.vt.FocusEvents {
+		if newTab.vt.FocusEvents {
+			b.WriteString("\x1b[?1004h")
+		} else {
+			b.WriteString("\x1b[?1004l")
+		}
+	}
+
+	oldPaste := false
+	if oldTab != nil {
+		oldPaste = oldTab.vt.BracketedPaste
+	}
+	if oldPaste != newTab.vt.BracketedPaste {
+		if newTab.vt.BracketedPaste {
+			b.WriteString("\x1b[?2004h")
+		} else {
+			b.WriteString("\x1b[?2004l")
+		}
+	}
+
+	oldCK := false
+	if oldTab != nil {
+		oldCK = oldTab.vt.CursorKeysApp
+	}
+	if oldCK != newTab.vt.CursorKeysApp {
+		if newTab.vt.CursorKeysApp {
+			b.WriteString("\x1b[?1h")
+		} else {
+			b.WriteString("\x1b[?1l")
+		}
+	}
+
+	oldKeypad := false
+	if oldTab != nil {
+		oldKeypad = oldTab.vt.KeypadApp
+	}
+	if oldKeypad != newTab.vt.KeypadApp {
+		if newTab.vt.KeypadApp {
+			b.WriteString("\x1b=")
+		} else {
+			b.WriteString("\x1b>")
+		}
+	}
+
+	oldKitty := false
+	if oldTab != nil {
+		oldKitty = oldTab.vt.KittyKeyboard
+	}
+	if oldKitty != newTab.vt.KittyKeyboard {
+		if newTab.vt.KittyKeyboard {
+			b.WriteString("\x1b[>1u")
+		} else {
+			b.WriteString("\x1b[<u")
+		}
+	}
+
+	if b.Len() > 0 {
+		_, _ = out.Write([]byte(b.String()))
+	}
+}
+
+func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int, outerAlt bool) {
 	if activeIndex < 0 || activeIndex >= len(tabs) {
 		return
 	}
 	tab := tabs[activeIndex]
 	repaint := tab.vt.Repaint()
+	if outerAlt {
+		// When outer alternate screen is active, keep the terminal in alternate screen
+		repaint = strings.ReplaceAll(repaint, "\x1b[?1049l", "")
+	}
 	_, _ = out.Write([]byte(repaint))
 
 	if len(tabs) > 1 {
@@ -167,6 +275,11 @@ func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows
 	} else {
 		_, _ = out.Write([]byte("\x1b[r"))
 	}
+}
+
+func switchActiveTab(out io.Writer, oldTab, newTab *sessionTab, tabs []*sessionTab, activeIndex, cols, rows int, outerAlt bool) {
+	applyTabModes(out, oldTab, newTab)
+	repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAlt)
 }
 
 func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, command string, args ...string) error {
@@ -211,6 +324,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		_, _ = out.Write([]byte("\x1b[r" + eraseBar))
 	})
 
+	outerAltActive := false
 	var sessionMu sync.Mutex
 	var tabs []*sessionTab
 	activeIndex := 0
@@ -316,7 +430,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						setPTYSize(t.master, cols, childRows)
 						t.vt.Resize(cols, childRows)
 					}
-					repaintActiveTab(out, tabs, activeIndex, cols, rows)
+					repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
 				}
 			}
 			sessionMu.Unlock()
@@ -445,28 +559,38 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 								shell = "/bin/sh"
 							}
 							if len(tabs) == 1 {
+								if !outerAltActive {
+									outerAltActive = true
+									restorer.SetAltScreen(true)
+									_, _ = out.Write([]byte("\x1b[?1049h\x1b[2J\x1b[H"))
+								}
 								setPTYSize(tabs[0].master, cols, rows-1)
 								tabs[0].vt.Resize(cols, rows-1)
 							}
+							oldTab := tabs[activeIndex]
 							newTab, err := spawnTab(shell)
 							if err == nil {
 								tabs = append(tabs, newTab)
 								activeIndex = len(tabs) - 1
-								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+								switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 							}
 							prefixMode = false
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.NextTab...):
 							if len(tabs) > 1 {
+								oldTab := tabs[activeIndex]
 								activeIndex = (activeIndex + 1) % len(tabs)
-								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+								newTab := tabs[activeIndex]
+								switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 							}
 							prefixMode = false
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.PreviousTab...):
 							if len(tabs) > 1 {
+								oldTab := tabs[activeIndex]
 								activeIndex = (activeIndex - 1 + len(tabs)) % len(tabs)
-								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+								newTab := tabs[activeIndex]
+								switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 							}
 							prefixMode = false
 							sessionMu.Unlock()
@@ -488,9 +612,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 								}
 							}
 							if selected >= 0 {
-								if selected < len(tabs) {
+								if selected < len(tabs) && selected != activeIndex {
+									oldTab := tabs[activeIndex]
 									activeIndex = selected
-									repaintActiveTab(out, tabs, activeIndex, cols, rows)
+									newTab := tabs[activeIndex]
+									switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 								}
 							} else {
 								_, _ = activeMaster.Write(pending[:used])
@@ -503,6 +629,25 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					}
 
 					// Direct hotkey matching
+					selectIdx := -1
+					for idx, binding := range sessionDefs.Bindings.SelectTab {
+						if key.Is(binding) {
+							selectIdx = idx
+							break
+						}
+					}
+					if selectIdx >= 0 {
+						if selectIdx < len(tabs) && selectIdx != activeIndex {
+							oldTab := tabs[activeIndex]
+							activeIndex = selectIdx
+							newTab := tabs[activeIndex]
+							switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+						}
+						sessionMu.Unlock()
+						pending = pending[used:]
+						continue
+					}
+
 					switch {
 					case key.Is(sessionDefs.Bindings.Screenshot...):
 						sessionMu.Unlock()
@@ -521,14 +666,20 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							shell = "/bin/sh"
 						}
 						if len(tabs) == 1 {
+							if !outerAltActive {
+								outerAltActive = true
+								restorer.SetAltScreen(true)
+								_, _ = out.Write([]byte("\x1b[?1049h\x1b[2J\x1b[H"))
+							}
 							setPTYSize(tabs[0].master, cols, rows-1)
 							tabs[0].vt.Resize(cols, rows-1)
 						}
+						oldTab := tabs[activeIndex]
 						newTab, err := spawnTab(shell)
 						if err == nil {
 							tabs = append(tabs, newTab)
 							activeIndex = len(tabs) - 1
-							repaintActiveTab(out, tabs, activeIndex, cols, rows)
+							switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 						}
 						sessionMu.Unlock()
 					case key.Is(sessionDefs.Prefix):
@@ -600,7 +751,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
 					_, _ = out.Write([]byte("\x1b[r" + eraseBar))
 				}
-				repaintActiveTab(out, tabs, activeIndex, cols, rows)
+				newTab := tabs[activeIndex]
+				switchActiveTab(out, exitedTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 			}
 			sessionMu.Unlock()
 		}

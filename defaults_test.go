@@ -338,6 +338,10 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.PrefixBindings.SelectTab, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}) {
 		t.Fatalf("session.prefix_bindings.select_tab = %v, want 1..9", s.PrefixBindings.SelectTab)
 	}
+	wantSelectTab := []string{"alt-1", "alt-2", "alt-3", "alt-4", "alt-5", "alt-6", "alt-7", "alt-8", "alt-9"}
+	if !slices.Equal(s.Bindings.SelectTab, wantSelectTab) {
+		t.Fatalf("session.bindings.select_tab = %v, want %v", s.Bindings.SelectTab, wantSelectTab)
+	}
 	if err := s.validate(); err != nil {
 		t.Fatalf("session.validate() failed: %v", err)
 	}

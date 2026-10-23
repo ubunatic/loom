@@ -645,6 +645,7 @@ type SessionBindings struct {
 	Screenshot []string `yaml:"screenshot"`
 	Quit       []string `yaml:"quit"`
 	NewTab     []string `yaml:"new_tab"`
+	SelectTab  []string `yaml:"select_tab"`
 }
 
 type SessionPrefixBindings struct {
@@ -662,8 +663,8 @@ func (d SessionDefaults) validate() error {
 	if d.Prefix == "" {
 		return fmt.Errorf("session.prefix must not be empty")
 	}
-	if len(d.Bindings.Screenshot) == 0 || len(d.Bindings.Quit) == 0 || len(d.Bindings.NewTab) == 0 {
-		return fmt.Errorf("session.bindings must configure screenshot, quit, and new_tab")
+	if len(d.Bindings.Screenshot) == 0 || len(d.Bindings.Quit) == 0 || len(d.Bindings.NewTab) == 0 || len(d.Bindings.SelectTab) == 0 {
+		return fmt.Errorf("session.bindings must configure screenshot, quit, new_tab, and select_tab")
 	}
 	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 ||
 		len(d.PrefixBindings.NewTab) == 0 || len(d.PrefixBindings.NextTab) == 0 || len(d.PrefixBindings.PreviousTab) == 0 ||
