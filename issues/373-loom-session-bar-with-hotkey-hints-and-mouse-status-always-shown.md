@@ -81,3 +81,7 @@ blocked on a user decision.
 - Click hit targets vs child mouse event forwarding: When mouse mode is active, clicks on row `rows` belong to the session bar (tab switching, mouse toggle click), while clicks in rows `1..rows-1` must be passed to the child if the child requested mouse tracking. When mouse mode is toggled off (prefix `m` or click on icon), loom stops consuming mouse events and enters safe/off mode.
 - Help screen overlay lifecycle: Prefix `?` needs to display session bindings cleanly without disrupting the running child PTY screen. Must cleanly redraw child screen (or use alt screen / save & restore VT buffer) when exiting help on any key.
 - Narrow terminal degradation (40 columns): Right-hand hints must be dropped in priority order (e.g. spacer shrinks, search/screenshot/quit drop before tabs are clipped) to prevent ANSI wrap-around and line corruption.
+
+## Approved plan (host, 2026-10-23)
+
+d373s plan approved: spec keys (bar, help, toggle_mouse, labels/glyphs/drop priorities) + schema; session bar composed from HintBar/KeyCap/Tabs styles with layout shared by hit testing; one geometry function for child rows; help overlay from spec, child VT keeps updating, repaint on dismiss; per-tab mouse override shared by prefix `m` and icon click. Milestones: M1 spec/bar/geometry, M2 help, M3 mouse. Pre-work: the mouse icon stays visible at 40 columns (drop hints first); icon click only exists while loom's mouse is on (in safe mode with a plain shell no tracking is enabled); the bar must never wrap at any width ≥ 10.
