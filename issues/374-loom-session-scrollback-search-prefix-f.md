@@ -46,3 +46,15 @@ search, milestones VT / spec+UI+routing / PTY+visual). Pre-work:
   swallowed while searching.
 - When done with 374, also fix issue 375 (help cut off on short terminals) in its own commit
   `(issue 375)` with a PTY test at 12 rows; the footer stays visible.
+
+## M1–M3 delivered (host review, 2026-10-23)
+
+df7c630, 6571f76, 5f0d0e5, 3eb6afa; 375 in 896787b. Host q1 green. Live tmux 80x12: prefix f, "line7"
+scrolls to the match, Esc restores, 12-row help fits in two columns.
+
+### M4 pre-work (required)
+
+- Search hint renders raw names next to keycaps: `enter/down Enter/↓ older  up ↑ newer  esc Esc close`.
+  Show keycaps only (`Enter/↓ older  ↑ newer  Esc close` style, via KeyCap); PTY test asserts the bar text.
+- Direction is swapped against the approved plan: `up` must go to older matches (upwards in history),
+  `down` to newer; `enter` = older. Fix spec and test.
