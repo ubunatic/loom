@@ -1,6 +1,6 @@
 # 370 — loom session: prefix ctrl-b, no hardcoded prefix bytes
 
-**Status**: Open
+**Status**: Closed — Prefix is ctrl-b from spec only; scanSessionKey byte table and 0x1d write removed, send_prefix forwards the pressed bytes, help built from spec (39a120e, 083347a). Host q1 green after test fix; live harnez usage: ctrl-b s saved screenshot, ctrl-b q exit 0
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
