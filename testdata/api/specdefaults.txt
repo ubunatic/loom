@@ -1,0 +1,669 @@
+package specdefaults // import "ubunatic.com/loom/specdefaults"
+
+Package specdefaults loads and validates Loom's runtime configuration
+independently of the root package.
+
+VARIABLES
+
+var SpeccedDefaults = func() LibDefaults {
+	var defs LibDefaults
+	if err := yaml.Unmarshal(defaultsYAML, &defs); err != nil {
+		panic(fmt.Sprintf("loom: parse spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Scrollbar.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Mouse.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.ColorPicker.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.RichTextEdit.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.NumberInput.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Toggle.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Paginator.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Tree.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Split.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Choice.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Table.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Tabs.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.View.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Menu.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Form.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Settings.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Media.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Session.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if len(defs.KeyConventions) == 0 {
+		panic("loom: spec/defaults.yaml: key_conventions must not be empty")
+	}
+	for _, conv := range defs.KeyConventions {
+		if conv.Action == "" || conv.Keys == "" || conv.Applies == "" {
+			panic("loom: spec/defaults.yaml: key_conventions entries must have action, keys, and applies")
+		}
+	}
+	return defs
+}()
+    SpeccedDefaults holds the loaded immutable defaults from spec/defaults.yaml.
+
+
+TYPES
+
+type ChoiceDefaults struct {
+	DefaultPlaceholder string              `yaml:"default_placeholder"`
+	SelectionMarker    string              `yaml:"selection_marker"`
+	UnselectedMarker   string              `yaml:"unselected_marker"`
+	CheckedMarker      string              `yaml:"checked_marker"`
+	UncheckedMarker    string              `yaml:"unchecked_marker"`
+	Bindings           map[string][]string `yaml:"bindings"`
+}
+    ChoiceDefaults defines specced defaults for Choice.
+
+func (d ChoiceDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type ClockDefaults struct {
+	Start string `yaml:"start"`
+	Stop  string `yaml:"stop"`
+	Reset string `yaml:"reset"`
+}
+    ClockDefaults defines the labels for timer and stopwatch controls.
+
+type ColorPickerDefaults struct {
+	Palette          []int               `yaml:"palette"`
+	InitialTarget    string              `yaml:"initial_target"`
+	SwatchWidth      int                 `yaml:"swatch_width"`
+	LeadingPadding   int                 `yaml:"leading_padding"`
+	PreviewPadding   int                 `yaml:"preview_padding"`
+	PreviewWidth     int                 `yaml:"preview_width"`
+	TrailingPadding  int                 `yaml:"trailing_padding"`
+	InactiveMarkerFG int                 `yaml:"inactive_marker_fg"`
+	ShowPreview      bool                `yaml:"show_preview"`
+	Labels           ColorPickerLabels   `yaml:"labels"`
+	Glyphs           ColorPickerGlyphs   `yaml:"glyphs"`
+	Bindings         map[string][]string `yaml:"bindings"`
+}
+    ColorPickerDefaults defines the ColorPicker's palette, marker color, labels,
+    glyphs and keys.
+
+func (d ColorPickerDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type ColorPickerGlyphs struct {
+	Swatch    string `yaml:"swatch"`
+	Reset     string `yaml:"reset"`
+	EdgeLower string `yaml:"edge_lower"`
+	EdgeUpper string `yaml:"edge_upper"`
+}
+
+type ColorPickerLabels struct {
+	Preview string `yaml:"preview"`
+}
+
+type EditorDefaults struct {
+	SearchRegex              bool   `yaml:"search_regex"`
+	SearchCaseInsensitive    bool   `yaml:"search_case_insensitive"`
+	ScreenshotFirstNumber    int    `yaml:"screenshot_first_number"`
+	ScreenshotSafeCharacters string `yaml:"screenshot_safe_characters"`
+	ScreenshotReplacement    string `yaml:"screenshot_replacement"`
+	ConfigDirectory          string `yaml:"config_directory"`
+	ConfigFile               string `yaml:"config_file"`
+	ConfigFallbackDirectory  string `yaml:"config_fallback_directory"`
+
+	Title                   string   `yaml:"title"`
+	InitialHeight           int      `yaml:"initial_height"`
+	MaxCols                 int      `yaml:"max_cols"`
+	Resizeable              bool     `yaml:"resizeable"`
+	ShowFileBar             bool     `yaml:"show_file_bar"`
+	ShowSidePanel           bool     `yaml:"show_side_panel"`
+	BrowserMaxWidth         int      `yaml:"browser_max_width"`
+	BrowserWidthDivisor     int      `yaml:"browser_width_divisor"`
+	BrowserMinWidth         int      `yaml:"browser_min_width"`
+	BrowserNarrowDivisor    int      `yaml:"browser_narrow_divisor"`
+	SearchMaxWidth          int      `yaml:"search_max_width"`
+	SearchMaxHeight         int      `yaml:"search_max_height"`
+	FooterMinHeight         int      `yaml:"footer_min_height"`
+	ShowStatusBar           bool     `yaml:"show_status_bar"`
+	ShowHints               bool     `yaml:"show_hints"`
+	TitlePrefix             string   `yaml:"title_prefix"`
+	TitleSuffix             string   `yaml:"title_suffix"`
+	DividerGlyph            string   `yaml:"divider_glyph"`
+	BrowserDividerGlyph     string   `yaml:"browser_divider_glyph"`
+	PositionFormat          string   `yaml:"position_format"`
+	Truncation              string   `yaml:"truncation"`
+	SavedPrefix             string   `yaml:"saved_prefix"`
+	UnsavedTitle            string   `yaml:"unsaved_title"`
+	UnsavedMessage          string   `yaml:"unsaved_message"`
+	SaveLabel               string   `yaml:"save_label"`
+	DiscardLabel            string   `yaml:"discard_label"`
+	CancelLabel             string   `yaml:"cancel_label"`
+	SearchTitle             string   `yaml:"search_title"`
+	InvalidRegex            string   `yaml:"invalid_regex"`
+	NoMatches               string   `yaml:"no_matches"`
+	MatchFormat             string   `yaml:"match_format"`
+	SearchNavigationHint    string   `yaml:"search_navigation_hint"`
+	NormalLabel             string   `yaml:"normal_label"`
+	RegexLabel              string   `yaml:"regex_label"`
+	ModeMarker              string   `yaml:"mode_marker"`
+	RegexKeyCap             string   `yaml:"regex_key_cap"`
+	ScreenshotDirectory     []string `yaml:"screenshot_directory"`
+	ScreenshotMarker        string   `yaml:"screenshot_marker"`
+	ScreenshotNumberWidth   int      `yaml:"screenshot_number_width"`
+	ScreenshotExtension     string   `yaml:"screenshot_extension"`
+	ScreenshotUntitled      string   `yaml:"screenshot_untitled"`
+	ScreenshotWidth         int      `yaml:"screenshot_width"`
+	ScreenshotHeight        int      `yaml:"screenshot_height"`
+	ScreenshotDirectoryMode uint32   `yaml:"screenshot_directory_mode"`
+	ScreenshotFileMode      uint32   `yaml:"screenshot_file_mode"`
+	ScreenshotSavedPrefix   string   `yaml:"screenshot_saved_prefix"`
+	BoxDropPriority         int      `yaml:"box_drop_priority"`
+	ScreenshotDropPriority  int      `yaml:"screenshot_drop_priority"`
+
+	StatusIcons                  EditorStatusIcons `yaml:"status_icons"`
+	Theme                        string            `yaml:"theme"`
+	MouseGrab                    bool              `yaml:"mousegrab"`
+	AltScreen                    bool              `yaml:"altscreen"`
+	HotkeySaveKey                string            `yaml:"hotkey_save_key"`
+	HotkeyFilesKey               string            `yaml:"hotkey_files_key"`
+	HotkeyFilesSecondaryBinding  string            `yaml:"hotkey_files_secondary_binding"`
+	HotkeySearchSecondaryBinding string            `yaml:"hotkey_search_secondary_binding"`
+	HotkeyBoxKey                 string            `yaml:"hotkey_box_key"`
+	HotkeyFilesBinding           string            `yaml:"hotkey_files_binding"`
+	HotkeyFilesLabel             string            `yaml:"hotkey_files_label"`
+	HotkeySearchKey              string            `yaml:"hotkey_search_key"`
+	HotkeySearchBinding          string            `yaml:"hotkey_search_binding"`
+	HotkeySearchLabel            string            `yaml:"hotkey_search_label"`
+	HotkeyBoxBinding             string            `yaml:"hotkey_box_binding"`
+	HotkeyBoxLabel               string            `yaml:"hotkey_box_label"`
+	HotkeyMouseGrabKey           string            `yaml:"hotkey_mousegrab_key"`
+	HotkeyMouseGrabBinding       string            `yaml:"hotkey_mousegrab_binding"`
+	HotkeyMouseGrabLabel         string            `yaml:"hotkey_mousegrab_label"`
+	MouseGrabDropPriority        int               `yaml:"mousegrab_drop_priority"`
+	SearchPrompt                 string            `yaml:"search_prompt"`
+	SearchPlaceholder            string            `yaml:"search_placeholder"`
+	HotkeyScreenshotBinding      string            `yaml:"hotkey_screenshot_binding"`
+	HotkeyScreenshotLabel        string            `yaml:"hotkey_screenshot_label"`
+}
+    EditorDefaults defines specced defaults for the Loom editor.
+
+type EditorStatusIcons struct {
+	Theme    string `yaml:"theme"`
+	MouseOn  string `yaml:"mouse_on"`
+	MouseOff string `yaml:"mouse_off"`
+	AltOn    string `yaml:"alt_on"`
+	AltOff   string `yaml:"alt_off"`
+	FG       int    `yaml:"fg"`
+	BG       int    `yaml:"bg"`
+}
+    EditorStatusIcons defines compact editor status caps and their colors.
+
+type FormDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+    FormDefaults defines specced navigation defaults for Form.
+
+func (d FormDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type HelpEntry struct {
+	Keys  []string `yaml:"keys"`
+	Cap   string   `yaml:"cap"`
+	Ref   string   `yaml:"ref"`
+	Label string   `yaml:"label"`
+}
+    HelpEntry is one row of a help section. Keys are bindings rendered
+    with KeyCap; Cap overrides the rendered keycap text; Ref names a
+    RichTextEditDefaults hotkey (e.g. "HotkeySave") whose binding and label fill
+    the row.
+
+type HelpSection struct {
+	Title   string      `yaml:"title"`
+	Entries []HelpEntry `yaml:"entries"`
+}
+    HelpSection is a titled group of help entries.
+
+type KeyCapDefaults struct {
+	Modifiers []KeyCapModifier `yaml:"modifiers"`
+}
+    KeyCapDefaults defines the modifier glyphs KeyCap renders, in display order.
+
+type KeyCapModifier struct {
+	Name  string `yaml:"name"`
+	Glyph string `yaml:"glyph"`
+}
+    KeyCapModifier maps a binding modifier name (shift, ctrl, alt) to its glyph.
+
+type KeyConvention struct {
+	Action   string `yaml:"action"`
+	Keys     string `yaml:"keys"`
+	Applies  string `yaml:"applies"`
+	Conflict string `yaml:"conflict"`
+}
+    KeyConvention documents a default key convention across library widgets.
+
+type LibDefaults struct {
+	KeyCaps        KeyCapDefaults       `yaml:"keycaps"`
+	QuitKeys       []string             `yaml:"quit_keys"`
+	EscapeQuits    bool                 `yaml:"escape_quits"`
+	Pane           PaneDefaults         `yaml:"pane"`
+	Scrollbar      ScrollbarDefaults    `yaml:"scrollbar"`
+	Mouse          MouseDefaults        `yaml:"mouse"`
+	Splash         SplashDefaults       `yaml:"splash"`
+	Spinner        SpinnerDefaults      `yaml:"spinner"`
+	Graph          spec.GraphDefaults   `yaml:"graph"`
+	ProgressBar    ProgressBarDefaults  `yaml:"progress_bar"`
+	Media          MediaDefaults        `yaml:"media"`
+	Clock          ClockDefaults        `yaml:"clock"`
+	PaintCanvas    PaintCanvasDefaults  `yaml:"paint_canvas"`
+	Editor         EditorDefaults       `yaml:"editor"`
+	SearchBar      SearchBarDefaults    `yaml:"search_bar"`
+	ColorPicker    ColorPickerDefaults  `yaml:"color_picker"`
+	RichTextEdit   RichTextEditDefaults `yaml:"rich_text_edit"`
+	NumberInput    NumberInputDefaults  `yaml:"number_input"`
+	Toggle         ToggleDefaults       `yaml:"toggle"`
+	Paginator      PaginatorDefaults    `yaml:"paginator"`
+	Tree           TreeDefaults         `yaml:"tree"`
+	Split          SplitDefaults        `yaml:"split"`
+	Choice         ChoiceDefaults       `yaml:"choice"`
+	Table          TableDefaults        `yaml:"table"`
+	Tabs           TabsDefaults         `yaml:"tabs"`
+	View           ViewDefaults         `yaml:"view"`
+	Menu           MenuDefaults         `yaml:"menu"`
+	Form           FormDefaults         `yaml:"form"`
+	Settings       SettingsDefaults     `yaml:"settings"`
+	Session        SessionDefaults      `yaml:"session"`
+	KeyConventions []KeyConvention      `yaml:"key_conventions"`
+}
+    LibDefaults represents specced runtime defaults loaded from
+    spec/defaults.yaml.
+
+type MediaDefaults struct {
+	LoadingLabel     string              `yaml:"loading_label"`
+	RenderErrorLabel string              `yaml:"render_error_label"`
+	LoadingThreshold time.Duration       `yaml:"loading_threshold"`
+	LoadingBarWidth  int                 `yaml:"loading_bar_width"`
+	ZoomFactor       float64             `yaml:"zoom_factor"`
+	PanStep          float64             `yaml:"pan_step"`
+	Bindings         map[string][]string `yaml:"bindings"`
+	Labels           map[string]string   `yaml:"labels"`
+}
+    MediaDefaults defines user-facing media status and rendering timing
+    defaults.
+
+func (d MediaDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type MenuDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+    MenuDefaults defines specced navigation and accelerator defaults for Menu
+    and MenuBar.
+
+func (d MenuDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type MouseDefaults struct {
+	DoubleClickInterval time.Duration `yaml:"double_click_interval"`
+	MovementTolerance   int           `yaml:"movement_tolerance"`
+}
+    MouseDefaults defines specced defaults for mouse gestures.
+
+func (d MouseDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type NumberInputDefaults struct {
+	Step         float64 `yaml:"step"`
+	LeftGlyph    string  `yaml:"left_glyph"`
+	RightGlyph   string  `yaml:"right_glyph"`
+	InvalidError string  `yaml:"invalid_error"`
+	BelowMinFmt  string  `yaml:"below_min_fmt"`
+	AboveMaxFmt  string  `yaml:"above_max_fmt"`
+}
+    NumberInputDefaults defines specced defaults for NumberInput.
+
+func (d NumberInputDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type PaginatorDefaults struct {
+	ActiveDot     string `yaml:"active_dot"`
+	InactiveDot   string `yaml:"inactive_dot"`
+	NumericFormat string `yaml:"numeric_format"`
+}
+    PaginatorDefaults defines specced defaults for Paginator.
+
+func (d PaginatorDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type PaintCanvasDefaults struct {
+	TuneLabel       string `yaml:"tune_label"`
+	SmoothingLabel  string `yaml:"smoothing_label"`
+	SmoothingLevels []int  `yaml:"smoothing_levels"`
+}
+    PaintCanvasDefaults defines stroke tuning controls.
+
+type PaneDefaults struct {
+	MaxCols       int           `yaml:"max_cols"`
+	EscKeyTimeout time.Duration `yaml:"esc_key_timeout"`
+	GuardDuration time.Duration `yaml:"guard_duration"`
+	ViewPanStep   int           `yaml:"view_pan_step"`
+	KittyKeyboard bool          `yaml:"kitty_keyboard"`
+}
+    PaneDefaults defines specced defaults for Pane.
+
+type ProgressBarDefaults struct {
+	Width        int           `yaml:"width"`
+	DonePattern  string        `yaml:"done_pattern"`
+	DemoInterval time.Duration `yaml:"demo_interval"`
+	DemoStep     float64       `yaml:"demo_step"`
+}
+    ProgressBarDefaults defines specced defaults for the ProgressBar widget.
+
+type RichTextEditDefaults struct {
+	Bindings          map[string][]string `yaml:"bindings"`
+	UndoLimit         int                 `yaml:"undo_limit"`
+	MultiClickWindow  time.Duration       `yaml:"multi_click_window"`
+	ShowCursor        bool                `yaml:"show_cursor"`
+	ShowPopover       bool                `yaml:"show_popover"`
+	HelpTitle         string              `yaml:"help_title"`
+	HelpMaxWidth      int                 `yaml:"help_max_width"`
+	HelpMaxHeight     int                 `yaml:"help_max_height"`
+	HelpPageStep      int                 `yaml:"help_page_step"`
+	HelpFooter        string              `yaml:"help_footer"`
+	SaveTitle         string              `yaml:"save_title"`
+	FileMode          uint32              `yaml:"file_mode"`
+	FinalNewline      bool                `yaml:"final_newline"`
+	CreateMissingFile bool                `yaml:"create_missing_file"`
+	ViewLabel         string              `yaml:"view_label"`
+	EditLabel         string              `yaml:"edit_label"`
+	UntitledName      string              `yaml:"untitled_name"`
+	BoxHint           string              `yaml:"box_hint"`
+	StatusSeparator   string              `yaml:"status_separator"`
+	StatusTruncation  string              `yaml:"status_truncation"`
+	PopoverMinWidth   int                 `yaml:"popover_min_width"`
+
+	ActionClosesMenu          bool   `yaml:"action_closes_menu"`
+	MenuFocusKey              string `yaml:"menu_focus_key"`
+	ArrowsCancelUnfocusedMenu bool   `yaml:"arrows_cancel_unfocused_menu"`
+	UnselectAfterAction       bool   `yaml:"unselect_after_action"`
+	UnselectOnCancel          bool   `yaml:"unselect_on_cancel"`
+	PopupOpenKey              string `yaml:"popup_open_key"`
+	AutoPopupOnSelection      bool   `yaml:"auto_popup_on_selection"`
+	PopupOpenDelayMS          int    `yaml:"popup_open_delay_ms"`
+	CycleNavigation           bool   `yaml:"cycle_navigation"`
+	PositionPreference        string `yaml:"position_preference"`
+	DismissOnScroll           bool   `yaml:"dismiss_on_scroll"`
+	MouseHoverFocus           bool   `yaml:"mouse_hover_focus"`
+
+	ToolbarFG               int           `yaml:"toolbar_fg"`
+	ToolbarBG               int           `yaml:"toolbar_bg"`
+	SeparatorGlyph          string        `yaml:"separator_glyph"`
+	SeparatorFG             int           `yaml:"separator_fg"`
+	SeparatorBG             int           `yaml:"separator_bg"`
+	PointerUpGlyph          string        `yaml:"pointer_up_glyph"`
+	PointerDownGlyph        string        `yaml:"pointer_down_glyph"`
+	PointerFG               int           `yaml:"pointer_fg"`
+	BoxDrawLabel            string        `yaml:"box_draw_label"`
+	PopoverLabels           []string      `yaml:"popover_labels"`
+	PopoverHotkeys          []string      `yaml:"popover_hotkeys"`
+	PopoverHotkeyIndices    []int         `yaml:"popover_hotkey_indices"`
+	PopoverHamburgerLabel   string        `yaml:"popover_hamburger_label"`
+	PopoverHamburgerItems   []string      `yaml:"popover_hamburger_items"`
+	PopoverHamburgerActions []string      `yaml:"popover_hamburger_actions"`
+	BoxStyleLabels          []string      `yaml:"box_style_labels"`
+	BoxStyleDefault         string        `yaml:"box_style_default"`
+	GhostCursorEnabled      bool          `yaml:"ghost_cursor_enabled"`
+	PopoverFocusFG          int           `yaml:"popover_focus_fg"`
+	LinkFG                  int           `yaml:"link_fg"`
+	LinkUnderline           bool          `yaml:"link_underline"`
+	SavePopupMaxWidth       int           `yaml:"save_popup_max_width"`
+	SavePopupMaxHeight      int           `yaml:"save_popup_max_height"`
+	StateUntitledLabel      string        `yaml:"state_untitled_label"`
+	StateSavedLabel         string        `yaml:"state_saved_label"`
+	StateModifiedLabel      string        `yaml:"state_modified_label"`
+	StateErrorLabel         string        `yaml:"state_error_label"`
+	FileMenuTitle           string        `yaml:"file_menu_title"`
+	FileMenuMnemonic        string        `yaml:"file_menu_mnemonic"`
+	HotkeyHelpBinding       string        `yaml:"hotkey_help_binding"`
+	HotkeyHelpLabel         string        `yaml:"hotkey_help_label"`
+	HotkeySaveBinding       string        `yaml:"hotkey_save_binding"`
+	HotkeySaveLabel         string        `yaml:"hotkey_save_label"`
+	HotkeySaveAsLabel       string        `yaml:"hotkey_save_as_label"`
+	HotkeyOpenBinding       string        `yaml:"hotkey_open_binding"`
+	HotkeyOpenLabel         string        `yaml:"hotkey_open_label"`
+	HotkeyCloseBinding      string        `yaml:"hotkey_close_binding"`
+	HotkeyCloseLabel        string        `yaml:"hotkey_close_label"`
+	HotkeyViewEditBinding   string        `yaml:"hotkey_view_edit_binding"`
+	HotkeyQuitBinding       string        `yaml:"hotkey_quit_binding"`
+	HotkeyQuitLabel         string        `yaml:"hotkey_quit_label"`
+	HelpSections            []HelpSection `yaml:"help_sections"`
+}
+    RichTextEditDefaults defines selection and popover presentation defaults.
+
+func (d RichTextEditDefaults) HelpRef(ref string) (binding, label string, ok bool)
+    HelpRef resolves a HelpEntry.Ref such as "HotkeySave" to its binding and
+    label.
+
+func (d RichTextEditDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type ScrollbarDefaults struct {
+	Mode           ScrollbarMode `yaml:"mode"`
+	ForegroundChar string        `yaml:"foreground_char"`
+	BackgroundChar string        `yaml:"background_char"`
+}
+    ScrollbarDefaults defines scrollbar visibility and its one-cell glyphs.
+
+func (d ScrollbarDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type ScrollbarMode string
+    ScrollbarMode controls when a widget displays its scrollbar.
+
+const (
+	// ScrollbarAuto displays a scrollbar only when content overflows.
+	ScrollbarAuto ScrollbarMode = "auto"
+	// ScrollbarAlways displays a scrollbar regardless of overflow.
+	ScrollbarAlways ScrollbarMode = "always"
+	// ScrollbarNever hides the scrollbar and does not reserve its column.
+	ScrollbarNever ScrollbarMode = "never"
+)
+type SearchBarDefaults struct {
+	Prompt      string `yaml:"prompt"`
+	Placeholder string `yaml:"placeholder"`
+}
+    SearchBarDefaults defines specced defaults for the SearchBar widget.
+
+type SessionBarLabels struct {
+	Tools       string   `yaml:"tools"`
+	Help        string   `yaml:"help"`
+	Quit        string   `yaml:"quit"`
+	Screenshot  string   `yaml:"screenshot"`
+	MouseIcon   string   `yaml:"mouse_icon"`
+	Separator   string   `yaml:"separator"`
+	NewTab      string   `yaml:"new_tab"`
+	NextTab     string   `yaml:"next_tab"`
+	PreviousTab string   `yaml:"previous_tab"`
+	CloseTab    string   `yaml:"close_tab"`
+	SendPrefix  string   `yaml:"send_prefix"`
+	ToggleMouse string   `yaml:"toggle_mouse"`
+	Search      string   `yaml:"search"`
+	DropOrder   []string `yaml:"drop_order"`
+}
+    SessionBarLabels defines the text and glyphs shown in the Loom session bar.
+
+type SessionBindings struct {
+	Screenshot []string `yaml:"screenshot"`
+	Quit       []string `yaml:"quit"`
+	NewTab     []string `yaml:"new_tab"`
+	SelectTab  []string `yaml:"select_tab"`
+	Search     []string `yaml:"search"`
+}
+
+type SessionDefaults struct {
+	Mouse           string                `yaml:"mouse"`
+	Bar             string                `yaml:"bar"`
+	ScrollbackLines int                   `yaml:"scrollback_lines"`
+	BarLabels       SessionBarLabels      `yaml:"bar_labels"`
+	Prefix          string                `yaml:"prefix"`
+	Bindings        SessionBindings       `yaml:"bindings"`
+	PrefixBindings  SessionPrefixBindings `yaml:"prefix_bindings"`
+	Search          SessionSearchDefaults `yaml:"search"`
+}
+    SessionDefaults defines specced defaults for the Loom session command.
+
+func (d SessionDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type SessionPrefixBindings struct {
+	Screenshot  []string `yaml:"screenshot"`
+	Quit        []string `yaml:"quit"`
+	SendPrefix  []string `yaml:"send_prefix"`
+	NewTab      []string `yaml:"new_tab"`
+	NextTab     []string `yaml:"next_tab"`
+	PreviousTab []string `yaml:"previous_tab"`
+	CloseTab    []string `yaml:"close_tab"`
+	SelectTab   []string `yaml:"select_tab"`
+	Help        []string `yaml:"help"`
+	ToggleMouse []string `yaml:"toggle_mouse"`
+	Search      []string `yaml:"search"`
+}
+
+type SessionSearchBindings struct {
+	Next     []string `yaml:"next"`
+	Previous []string `yaml:"previous"`
+	Close    []string `yaml:"close"`
+}
+
+type SessionSearchDefaults struct {
+	Prompt       string                `yaml:"prompt"`
+	Placeholder  string                `yaml:"placeholder"`
+	NoMatch      string                `yaml:"no_match"`
+	NextHint     string                `yaml:"next_hint"`
+	PreviousHint string                `yaml:"previous_hint"`
+	CloseHint    string                `yaml:"close_hint"`
+	Bindings     SessionSearchBindings `yaml:"bindings"`
+}
+
+type SettingsDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+    SettingsDefaults defines specced navigation and editing defaults for
+    Settings.
+
+func (d SettingsDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type SpinnerDefaults struct {
+	TickInterval time.Duration `yaml:"tick_interval"`
+}
+    SpinnerDefaults defines specced animation timing for Spinner.
+
+type SplashDefaults struct {
+	BracketWidth int           `yaml:"bracket_width"`
+	PillGap      int           `yaml:"pill_gap"`
+	FooterText   string        `yaml:"footer_text"`
+	StepText     string        `yaml:"step_text"`
+	TickInterval time.Duration `yaml:"tick_interval"`
+	HoldDuration time.Duration `yaml:"hold_duration"`
+}
+    SplashDefaults defines specced defaults for splash lifecycle and widgets.
+
+type SplitDefaults struct {
+	VerticalDivider   string              `yaml:"vertical_divider"`
+	HorizontalDivider string              `yaml:"horizontal_divider"`
+	DefaultRatio      float64             `yaml:"default_ratio"`
+	DefaultGap        int                 `yaml:"default_gap"`
+	Bindings          map[string][]string `yaml:"bindings"`
+}
+    SplitDefaults defines specced defaults for Split.
+
+func (d SplitDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type TableDefaults struct {
+	SortAscGlyph    string              `yaml:"sort_asc_glyph"`
+	SortDescGlyph   string              `yaml:"sort_desc_glyph"`
+	ControlsHintFmt string              `yaml:"controls_hint_fmt"`
+	Bindings        map[string][]string `yaml:"bindings"`
+}
+    TableDefaults defines sort chrome for Table.
+
+func (d TableDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type TabsDefaults struct {
+	Keys TabsKeys `yaml:"keys"`
+}
+    TabsDefaults defines specced navigation defaults for Tabs.
+
+func (d TabsDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type TabsKeys struct {
+	Previous string   `yaml:"previous"`
+	Next     string   `yaml:"next"`
+	Cycle    string   `yaml:"cycle"`
+	Select   []string `yaml:"select"`
+}
+    TabsKeys configures keyboard navigation for a Tabs widget. Previous, Next,
+    and Cycle each name one key. Select maps keys to tab indexes by position.
+    Bindings match either KeyEvent.Key or KeyEvent.Text.
+
+type ToggleDefaults struct {
+	OnMark  string `yaml:"on_mark"`
+	OffMark string `yaml:"off_mark"`
+}
+    ToggleDefaults defines specced defaults for Toggle.
+
+func (d ToggleDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type TreeDefaults struct {
+	CollapsedMarker string              `yaml:"collapsed_marker"`
+	ExpandedMarker  string              `yaml:"expanded_marker"`
+	LeafMarker      string              `yaml:"leaf_marker"`
+	Bindings        map[string][]string `yaml:"bindings"`
+}
+    TreeDefaults defines specced defaults for Tree.
+
+func (d TreeDefaults) Validate() error
+    Validate checks the configured defaults.
+
+type ViewDefaults struct {
+	Bindings map[string][]string `yaml:"bindings"`
+}
+    ViewDefaults defines specced navigation defaults for View.
+
+func (d ViewDefaults) Validate() error
+    Validate checks the configured defaults.
+

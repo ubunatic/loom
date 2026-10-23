@@ -3,18 +3,22 @@
 
 package loom
 
-import "strings"
+import (
+	"strings"
+
+	"ubunatic.com/loom/specdefaults"
+)
 
 // ScrollbarMode controls when a widget displays its scrollbar.
-type ScrollbarMode string
+type ScrollbarMode = specdefaults.ScrollbarMode
 
 const (
 	// ScrollbarAuto displays a scrollbar only when content overflows.
-	ScrollbarAuto ScrollbarMode = "auto"
+	ScrollbarAuto ScrollbarMode = specdefaults.ScrollbarAuto
 	// ScrollbarAlways displays a scrollbar regardless of overflow.
-	ScrollbarAlways ScrollbarMode = "always"
+	ScrollbarAlways ScrollbarMode = specdefaults.ScrollbarAlways
 	// ScrollbarNever hides the scrollbar and does not reserve its column.
-	ScrollbarNever ScrollbarMode = "never"
+	ScrollbarNever ScrollbarMode = specdefaults.ScrollbarNever
 )
 
 func scrollbarVisible(mode ScrollbarMode, overflow bool) bool {

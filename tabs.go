@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom/specdefaults"
 )
 
 // Tab pairs a title with the widget shown while that tab is active.
@@ -29,12 +30,7 @@ type TabsStyle struct {
 // TabsKeys configures keyboard navigation for a Tabs widget. Previous, Next,
 // and Cycle each name one key. Select maps keys to tab indexes by position.
 // Bindings match either KeyEvent.Key or KeyEvent.Text.
-type TabsKeys struct {
-	Previous string   `yaml:"previous"`
-	Next     string   `yaml:"next"`
-	Cycle    string   `yaml:"cycle"`
-	Select   []string `yaml:"select"`
-}
+type TabsKeys = specdefaults.TabsKeys
 
 // DefaultTabsKeys returns the historical left/right arrow navigation.
 func DefaultTabsKeys() TabsKeys {

@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"gopkg.in/yaml.v3"
+	"ubunatic.com/loom/spec"
 )
 
 func TestTableAndChoiceChromeFromSpec(t *testing.T) {
@@ -13,7 +14,11 @@ func TestTableAndChoiceChromeFromSpec(t *testing.T) {
 		Table  map[string]any `yaml:"table"`
 		Choice map[string]any `yaml:"choice"`
 	}
-	if err := yaml.Unmarshal(defaultsYAML, &raw); err != nil {
+	data, err := spec.DefaultsYAML()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := yaml.Unmarshal(data, &raw); err != nil {
 		t.Fatal(err)
 	}
 	defs := SpeccedDefaults.Table

@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"ubunatic.com/loom/spec"
+	"ubunatic.com/loom/specdefaults"
 )
 
 func TestScrollbarSpecGlyphsFitOneCell(t *testing.T) {
-	if err := SpeccedDefaults.Scrollbar.validate(); err != nil {
+	if err := SpeccedDefaults.Scrollbar.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	for _, glyph := range []string{"", " ", "AB", "界", "\x1b"} {
 		defs := ScrollbarDefaults{Mode: ScrollbarAuto, ForegroundChar: glyph, BackgroundChar: "░"}
-		if err := defs.validate(); err == nil {
+		if err := defs.Validate(); err == nil {
 			t.Fatalf("accepted invalid scrollbar glyph %q", glyph)
 		}
 	}
@@ -44,38 +45,38 @@ func TestScrollbarModeDefaultsAndOverrides(t *testing.T) {
 	if scrollbarVisible(ScrollbarNever, true) {
 		t.Fatal("never mode showed scrollbar during overflow")
 	}
-	if err := (ScrollbarDefaults{Mode: "invalid", ForegroundChar: "▓", BackgroundChar: "░"}).validate(); err == nil {
+	if err := (ScrollbarDefaults{Mode: "invalid", ForegroundChar: "▓", BackgroundChar: "░"}).Validate(); err == nil {
 		t.Fatal("accepted invalid scrollbar mode")
 	}
 }
 
 func TestMediaDefaultsValidation(t *testing.T) {
 	valid := SpeccedDefaults.Media
-	if err := valid.validate(); err != nil {
+	if err := valid.Validate(); err != nil {
 		t.Fatalf("valid defaults failed validation: %v", err)
 	}
 
 	invalidThreshold := valid
 	invalidThreshold.LoadingThreshold = 0
-	if err := invalidThreshold.validate(); err == nil {
+	if err := invalidThreshold.Validate(); err == nil {
 		t.Fatal("accepted zero loading threshold")
 	}
 
 	invalidWidth := valid
 	invalidWidth.LoadingBarWidth = 0
-	if err := invalidWidth.validate(); err == nil {
+	if err := invalidWidth.Validate(); err == nil {
 		t.Fatal("accepted zero loading bar width")
 	}
 
 	invalidZoom := valid
 	invalidZoom.ZoomFactor = 1.0
-	if err := invalidZoom.validate(); err == nil {
+	if err := invalidZoom.Validate(); err == nil {
 		t.Fatal("accepted zoom factor <= 1.0")
 	}
 
 	invalidPan := valid
 	invalidPan.PanStep = 0
-	if err := invalidPan.validate(); err == nil {
+	if err := invalidPan.Validate(); err == nil {
 		t.Fatal("accepted pan step <= 0")
 	}
 
@@ -85,7 +86,7 @@ func TestMediaDefaultsValidation(t *testing.T) {
 		missingBinding.Bindings[k] = v
 	}
 	delete(missingBinding.Bindings, "play")
-	if err := missingBinding.validate(); err == nil {
+	if err := missingBinding.Validate(); err == nil {
 		t.Fatal("accepted missing binding")
 	}
 
@@ -95,7 +96,7 @@ func TestMediaDefaultsValidation(t *testing.T) {
 		missingLabel.Labels[k] = v
 	}
 	delete(missingLabel.Labels, "play")
-	if err := missingLabel.validate(); err == nil {
+	if err := missingLabel.Validate(); err == nil {
 		t.Fatal("accepted missing label")
 	}
 }
@@ -178,14 +179,14 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.SavePopupMaxWidth != 72 || got.SavePopupMaxHeight != 18 {
 		t.Fatalf("save popup max dimensions = %dx%d, want 72x18", got.SavePopupMaxWidth, got.SavePopupMaxHeight)
 	}
-	if err := got.validate(); err != nil {
+	if err := got.Validate(); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestColorPickerDefaultsLoadAndValidate(t *testing.T) {
 	got := SpeccedDefaults.ColorPicker
-	if err := got.validate(); err != nil {
+	if err := got.Validate(); err != nil {
 		t.Fatal(err)
 	}
 	if len(got.Palette) != 16 || got.Palette[0] != 0 || got.Palette[15] != 15 {
@@ -255,7 +256,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if ni.Step != 1.0 || ni.LeftGlyph != "◂" || ni.RightGlyph != "▸" || ni.InvalidError != "invalid number" {
 		t.Fatalf("unexpected NumberInput defaults: %+v", ni)
 	}
-	if err := ni.validate(); err != nil {
+	if err := ni.Validate(); err != nil {
 		t.Fatalf("NumberInput validation failed: %v", err)
 	}
 
@@ -263,7 +264,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if tog.OnMark != "[✓]" || tog.OffMark != "[ ]" {
 		t.Fatalf("unexpected Toggle defaults: %+v", tog)
 	}
-	if err := tog.validate(); err != nil {
+	if err := tog.Validate(); err != nil {
 		t.Fatalf("Toggle validation failed: %v", err)
 	}
 
@@ -271,7 +272,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if pag.ActiveDot != "●" || pag.InactiveDot != "○" || pag.NumericFormat != "%d/%d" {
 		t.Fatalf("unexpected Paginator defaults: %+v", pag)
 	}
-	if err := pag.validate(); err != nil {
+	if err := pag.Validate(); err != nil {
 		t.Fatalf("Paginator validation failed: %v", err)
 	}
 
@@ -279,7 +280,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if tr.CollapsedMarker != "▶ " || tr.ExpandedMarker != "▼ " || tr.LeafMarker != "  " {
 		t.Fatalf("unexpected Tree defaults: %+v", tr)
 	}
-	if err := tr.validate(); err != nil {
+	if err := tr.Validate(); err != nil {
 		t.Fatalf("Tree validation failed: %v", err)
 	}
 
@@ -287,7 +288,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if sp.VerticalDivider != "─" || sp.HorizontalDivider != "│" || sp.DefaultRatio != 0.5 || sp.DefaultGap != 1 {
 		t.Fatalf("unexpected Split defaults: %+v", sp)
 	}
-	if err := sp.validate(); err != nil {
+	if err := sp.Validate(); err != nil {
 		t.Fatalf("Split validation failed: %v", err)
 	}
 
@@ -295,7 +296,7 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 	if ch.SelectionMarker != "▶ " || ch.UnselectedMarker != "  " || ch.CheckedMarker != "[✓] " || ch.UncheckedMarker != "[ ] " {
 		t.Fatalf("unexpected Choice defaults: %+v", ch)
 	}
-	if err := ch.validate(); err != nil {
+	if err := ch.Validate(); err != nil {
 		t.Fatalf("Choice validation failed: %v", err)
 	}
 }
@@ -357,18 +358,32 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.Bindings.SelectTab, wantSelectTab) {
 		t.Fatalf("session.bindings.select_tab = %v, want %v", s.Bindings.SelectTab, wantSelectTab)
 	}
-	if err := s.validate(); err != nil {
-		t.Fatalf("session.validate() failed: %v", err)
+	if err := s.Validate(); err != nil {
+		t.Fatalf("session.Validate() failed: %v", err)
 	}
 
 	invalid := s
 	invalid.Bindings.Search = nil
-	if err := invalid.validate(); err == nil {
+	if err := invalid.Validate(); err == nil {
 		t.Fatal("expected error on missing session search binding")
 	}
 	invalid = s
 	invalid.Prefix = ""
-	if err := invalid.validate(); err == nil {
+	if err := invalid.Validate(); err == nil {
 		t.Fatal("expected error on empty session prefix")
+	}
+}
+
+// Assignments in both directions verify that the root configuration is an alias.
+func TestDefaultsPackageCompatibility(t *testing.T) {
+	var root LibDefaults = specdefaults.SpeccedDefaults
+	var standalone specdefaults.LibDefaults = SpeccedDefaults
+	if !reflect.DeepEqual(root, standalone) {
+		t.Fatal("root defaults differ from the standalone configuration")
+	}
+	var mode ScrollbarMode = specdefaults.ScrollbarAuto
+	var standaloneMode specdefaults.ScrollbarMode = ScrollbarAuto
+	if mode != standaloneMode {
+		t.Fatal("scrollbar modes differ between packages")
 	}
 }

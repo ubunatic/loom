@@ -114,6 +114,7 @@ func TestChangedEmbeddedKeyDefaults(t *testing.T) {
 	dir := t.TempDir()
 	for _, pattern := range []string{
 		"go.mod", "go.sum", "*.go", "ansi/*.go",
+		"specdefaults/*.go",
 		"collector/*.go", "graph/*.go", "layout/*.go", "measure/*.go", "media/*.go", "spec/*.go", "spec/*.yaml", "spec/schemas/*.json", "syntax/*.go", "terminal/*.go",
 	} {
 		files, err := filepath.Glob(filepath.Join(root, pattern))

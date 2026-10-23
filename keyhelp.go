@@ -90,7 +90,7 @@ func helpEntryCap(entry HelpEntry) (string, string) {
 	label := entry.Label
 	keys := entry.Keys
 	if entry.Ref != "" {
-		binding, refLabel, _ := SpeccedDefaults.RichTextEdit.helpRef(entry.Ref)
+		binding, refLabel, _ := SpeccedDefaults.RichTextEdit.HelpRef(entry.Ref)
 		keys = []string{binding}
 		if label == "" {
 			label = refLabel

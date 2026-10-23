@@ -121,10 +121,10 @@ func TestRichTextEditHelpIsSectionedAndTakesHostSections(t *testing.T) {
 }
 
 func TestSpeccedHelpRefsResolve(t *testing.T) {
-	if b, l, ok := SpeccedDefaults.RichTextEdit.helpRef("HotkeySave"); !ok || b != "ctrl-s" || l != "Save" {
+	if b, l, ok := SpeccedDefaults.RichTextEdit.HelpRef("HotkeySave"); !ok || b != "ctrl-s" || l != "Save" {
 		t.Fatalf("HotkeySave ref = %q %q %v", b, l, ok)
 	}
-	if _, _, ok := SpeccedDefaults.RichTextEdit.helpRef("Nope"); ok {
+	if _, _, ok := SpeccedDefaults.RichTextEdit.HelpRef("Nope"); ok {
 		t.Fatal("unknown ref resolved")
 	}
 }
