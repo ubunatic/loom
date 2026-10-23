@@ -1,6 +1,6 @@
 # 374 — loom session: scrollback search (prefix f)
 
-**Status**: Draft
+**Status**: Open
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
