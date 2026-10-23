@@ -81,3 +81,16 @@ d372 plan approved (package `terminal`, `Restorer` with sync.Once, signals + rec
 while >1 tab, alt-1..9). Pre-work: the plan predates the per-tab modes and bar-click sections above;
 both are required. Reset sequences are protocol constants and may stay in Go; the kitty pop must only
 be sent if a push happened (track it), or be harmless when nothing was pushed (verify).
+
+## M1–M3 delivered (host review, 2026-10-23)
+
+2748aa1 (terminal package, restore on all paths), 0d55230 (outer alt screen for >1 tab, per-tab modes,
+alt-1..9), fa70712 (bar clicks safe mode). Host q1 green. Live (tmux flags): mc tab mouse on, new shell
+tab mouse off, alt-1 back on, ctrl-q with 2 tabs: mouse off, alt off, clean prompt.
+
+### M4 pre-work (required)
+
+- Single tab, child on the alt screen (mc): after `ctrl-q` and after SIGTERM the outer terminal stays on
+  the alt screen (tmux alternate_on=1). Restore must leave the alt screen when any tab's VT is in it,
+  not only when loom entered it. PTY test for ctrl-q and SIGTERM with a `?1049h` child.
+- SIGTERM to loom ends with exit code 0; use 128+signal (143). Test it.
