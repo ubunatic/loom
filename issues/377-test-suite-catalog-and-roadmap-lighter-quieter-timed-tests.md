@@ -79,8 +79,13 @@ Roadmap step 0 (before step 2):
 ## Parked from 378 (host, 2026-10-23)
 
 - 378 moved session/editor to `internal/session`, `internal/editor`, `internal/clitest` (990a30a,
-  ea9ce6b). Tested: build, vet, `go test -p 2` of those three packages and `cmd/loom`. Not yet run: the
-  full suite after the move; do it as the first bounded run of this ticket.
+  ea9ce6b). Tested: build, vet, `go test -p 2` of those three packages and `cmd/loom`.
+  Full suite after the move, done by the user (2026-10-23, repo at v0.5.0 plus the apitest golden fix,
+  ca386ef). Both runs pass, all packages `ok` or no test files:
+  - `go test ./...` (warm cache): 24.3 s wall, 76.4 s user, 15.7 s system, 378% CPU. Packages that
+    re-ran included `internal/apitest` (3.4 s) and `internal/specdefaults` (3.4 s); the rest were cached.
+  - `go test -count=1 ./...` (no cache): 49.1 s wall, 174.5 s user, 59.5 s system, 476% CPU.
+  - Not measured: peak RSS and swap. Those need `/usr/bin/time -v` (roadmap step 1).
 - 378 cache probe re-ran 23 packages, not 2. Assumption: the probe ran on a cold cache (other packages
   last ran before the move, and some tests read source files that the move changed). Redo: one warm
   `go test -p 2 ./...`, then add a comment in `internal/session`, run again, list re-runs. If the root
