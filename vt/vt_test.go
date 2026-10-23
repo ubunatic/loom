@@ -62,6 +62,102 @@ func TestVTScreenPreservesZWJCluster(t *testing.T) {
 	}
 }
 
+func TestVTEscapeStreamingAndDiscard(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"escape intermediate", "\x1b(Bok", "ok"},
+		{"CSI cancellation", "\x1b[31\x18ok", "ok"},
+		{"CSI substitution", "\x1b[31\x1aok", "ok"},
+		{"embedded escape", "\x1b[31\x1b[1mok", "ok"},
+		{"OSC BEL", "\x1b]title\x07ok", "ok"},
+		{"DCS ST", "\x1bPdata\x1b\\ok", "ok"},
+		{"APC C1 ST", "\x1b_payload\x9cok", "ok"},
+		{"PM", "\x1b^payload\x07ok", "ok"},
+		{"SOS", "\x1bXpayload\x9cok", "ok"},
+		{"string embedded escape", "\x1b]old\x1b[1mok", "ok"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			want := NewVT(20, 1)
+			_, _ = want.Write([]byte(tt.input))
+			for split := 0; split <= len(tt.input); split++ {
+				got := NewVT(20, 1)
+				_, _ = got.Write([]byte(tt.input[:split]))
+				_, _ = got.Write([]byte(tt.input[split:]))
+				if screen := got.Screen()[0]; screen != tt.want {
+					t.Fatalf("split %d screen = %q, want %q", split, screen, tt.want)
+				}
+				gx, gy := got.Cursor()
+				wx, wy := want.Cursor()
+				if !slices.Equal(got.Screen(), want.Screen()) || gx != wx || gy != wy {
+					t.Fatalf("split %d changed parser result", split)
+				}
+			}
+		})
+	}
+}
+
+func TestVTParserSafetyCapAndReset(t *testing.T) {
+	v := NewVT(30, 1)
+	_, _ = v.Write([]byte("\x1b]" + strings.Repeat("x", maxPendingBytes+1)))
+	if len(v.pending) > maxPendingBytes {
+		t.Fatalf("pending bytes = %d, cap %d", len(v.pending), maxPendingBytes)
+	}
+	_, _ = v.Write([]byte("discarded\x1b\\ok"))
+	if got := v.Screen()[0]; got != "ok" {
+		t.Fatalf("screen after oversized OSC = %q", got)
+	}
+	_, _ = v.Write([]byte("\x1b[31"))
+	v.ResetParser()
+	_, _ = v.Write([]byte("!"))
+	if got := v.Screen()[0]; got != "ok!" {
+		t.Fatalf("screen after reset = %q", got)
+	}
+}
+
+func TestVTSGRColonSubparametersAndTruncatedColor(t *testing.T) {
+	v := NewVT(20, 1)
+	_, _ = v.Write([]byte("\x1b[38:2::10:20:30mA\x1b[48:5:42mB\x1b[4:3mC"))
+	if got, want := v.Cell(0, 0).Style.FG, ColorRGB(10, 20, 30); got != want {
+		t.Fatalf("colon foreground = %+v, want %+v", got, want)
+	}
+	if got, want := v.Cell(1, 0).Style.BG, ColorIndex(42); got != want {
+		t.Fatalf("colon background = %+v, want %+v", got, want)
+	}
+	_, _ = v.Write([]byte("\x1b[0m\x1b[38;2;10;20;1mX"))
+	if v.Cell(3, 0).Style.Bold {
+		t.Fatal("truncated truecolor tail was parsed as bold")
+	}
+}
+
+func TestVTWriteFramedWithholdsIncompleteSuffix(t *testing.T) {
+	v := NewVT(20, 1)
+	first, _ := v.WriteFramed([]byte("hello\x1b[38;2;1;"))
+	if string(first) != "hello" {
+		t.Fatalf("first frame = %q, want hello", first)
+	}
+	second, _ := v.WriteFramed([]byte("2;3mworld"))
+	if string(second) != "\x1b[38;2;1;2;3mworld" {
+		t.Fatalf("second frame = %q", second)
+	}
+}
+
+func TestVTWriteFramedDiscardsOverlongControl(t *testing.T) {
+	v := NewVT(20, 1)
+	frame, _ := v.WriteFramed([]byte("\x1b]" + strings.Repeat("x", maxPendingBytes+1)))
+	if len(frame) != 0 {
+		t.Fatalf("overlong control frame leaked %d bytes", len(frame))
+	}
+	_, _ = v.WriteFramed([]byte("still discarded\x1b\\"))
+	frame, _ = v.WriteFramed([]byte("ok"))
+	if string(frame) != "ok" {
+		t.Fatalf("post-discard frame = %q, want ok", frame)
+	}
+}
+
 func TestVTFrameSnapshotsAtSynchronizedEnd(t *testing.T) {
 	v := NewVT(5, 1)
 	v.Write([]byte("\x1b[?2026h\x1b[1;1Hone\x1b[?2026l\x1b[?2026h\x1b[1;1Htwo\x1b[K\x1b[?2026l")) //nolint:errcheck

@@ -13,6 +13,8 @@ import (
 	"ubunatic.com/loom/measure"
 )
 
+const maxPendingBytes = 1024
+
 // VT is a minimal terminal emulator. It is not safe for concurrent use.
 type VT struct {
 	Cols, Rows int
@@ -49,6 +51,7 @@ type VT struct {
 	x, y            int
 	autoWrap        bool
 	pending         []byte // incomplete escape or UTF-8 tail carried between Write calls
+	discardControl  byte   // unterminated control type discarded after the safety cap
 	main            *terminalState
 	saved           cursorState
 }
@@ -203,6 +206,30 @@ func (v *VT) Screen() []string {
 
 // Text returns Screen joined by newlines.
 func (v *VT) Text() string { return strings.Join(v.Screen(), "\n") }
+
+// ResetParser discards incomplete input without changing terminal state.
+func (v *VT) ResetParser() {
+	v.pending = nil
+	v.discardControl = 0
+}
+
+// WriteFramed feeds p to the VT and returns bytes ending at the last complete
+// parser boundary. An incomplete escape or UTF-8 tail remains buffered.
+func (v *VT) WriteFramed(p []byte) ([]byte, error) {
+	data := append(append([]byte(nil), v.pending...), p...)
+	discarding := v.discardControl != 0
+	if _, err := v.Write(p); err != nil {
+		return nil, err
+	}
+	if discarding || v.discardControl != 0 {
+		return nil, nil
+	}
+	complete := len(data) - len(v.pending)
+	if complete < 0 {
+		complete = 0
+	}
+	return append([]byte(nil), data[:complete]...), nil
+}
 
 // ANSI serializes the visible screen cells to ANSI SGR escape sequences and text.
 // Trailing blanks on each row and trailing blank rows on the screen are trimmed.
@@ -398,11 +425,45 @@ func (v *VT) Write(p []byte) (int, error) {
 	v.pending = nil
 	for i := 0; i < len(data); {
 		b := data[i]
+		if v.discardControl != 0 {
+			if b == 0x18 || b == 0x1a || b == 0x9c || b == 7 {
+				v.discardControl = 0
+				i++
+				continue
+			}
+			if b == 0x1b {
+				if i+1 == len(data) {
+					v.pending = []byte{b}
+					return len(p), nil
+				}
+				if data[i+1] == '\\' {
+					v.discardControl = 0
+					i += 2
+					continue
+				}
+				v.discardControl = 0
+				continue
+			}
+			if v.discardControl == '[' && b >= 0x40 && b <= 0x7e {
+				v.discardControl = 0
+			}
+			if v.discardControl == 'e' && b >= 0x30 && b <= 0x7e {
+				v.discardControl = 0
+			}
+			i++
+			continue
+		}
 		switch {
+		case b == 0x18 || b == 0x1a || b == 0x9c:
+			i++
 		case b == 0x1b:
 			n, ok := v.escape(data[i:])
 			if !ok {
 				v.pending = append([]byte(nil), data[i:]...)
+				if len(v.pending) > maxPendingBytes {
+					v.discardControl = controlType(v.pending)
+					v.pending = nil
+				}
 				return len(p), nil
 			}
 			i += n
@@ -423,6 +484,9 @@ func (v *VT) Write(p []byte) (int, error) {
 		default:
 			if !utf8.FullRune(data[i:]) {
 				v.pending = append([]byte(nil), data[i:]...)
+				if len(v.pending) > maxPendingBytes {
+					v.pending = nil
+				}
 				return len(p), nil
 			}
 			r, n := utf8.DecodeRune(data[i:])
@@ -431,6 +495,9 @@ func (v *VT) Write(p []byte) (int, error) {
 				if j < len(data) {
 					if !utf8.FullRune(data[j:]) {
 						v.pending = append([]byte(nil), data[i:]...)
+						if len(v.pending) > maxPendingBytes {
+							v.pending = nil
+						}
 						return len(p), nil
 					}
 					r2, n2 := utf8.DecodeRune(data[j:])
@@ -445,6 +512,9 @@ func (v *VT) Write(p []byte) (int, error) {
 					}
 					if !utf8.FullRune(data[j:]) {
 						v.pending = append([]byte(nil), data[i:]...)
+						if len(v.pending) > maxPendingBytes {
+							v.pending = nil
+						}
 						return len(p), nil
 					}
 					nr, nsz := utf8.DecodeRune(data[j:])
@@ -453,6 +523,9 @@ func (v *VT) Write(p []byte) (int, error) {
 						if j < len(data) {
 							if !utf8.FullRune(data[j:]) {
 								v.pending = append([]byte(nil), data[i:]...)
+								if len(v.pending) > maxPendingBytes {
+									v.pending = nil
+								}
 								return len(p), nil
 							}
 							if jr, jsz := utf8.DecodeRune(data[j:]); measure.JoinsAfterZWJ(jr) {
@@ -533,13 +606,22 @@ func (v *VT) escape(data []byte) (n int, ok bool) {
 		return 0, false
 	}
 	switch data[1] {
-	case ']', 'P', '^', '_':
+	case ']', 'P', '^', '_', 'X':
 		for i := 2; i < len(data); i++ {
-			if data[i] == 7 && data[1] == ']' {
+			if data[i] == 0x18 || data[i] == 0x1a || data[i] == 0x9c {
 				return i + 1, true
 			}
-			if data[i] == 0x1b && i+1 < len(data) && data[i+1] == '\\' {
-				return i + 2, true
+			if data[i] == 7 {
+				return i + 1, true
+			}
+			if data[i] == 0x1b {
+				if i+1 == len(data) {
+					return 0, false
+				}
+				if data[i+1] == '\\' {
+					return i + 2, true
+				}
+				return i, true
 			}
 		}
 		return 0, false
@@ -558,9 +640,32 @@ func (v *VT) escape(data []byte) (n int, ok bool) {
 	case '[':
 		// Parse CSI below.
 	default:
+		if data[1] >= 0x20 && data[1] <= 0x2f {
+			for i := 2; i < len(data); i++ {
+				if data[i] == 0x1b {
+					return i, true
+				}
+				if data[i] == 0x18 || data[i] == 0x1a {
+					return i + 1, true
+				}
+				if data[i] >= 0x30 && data[i] <= 0x7e {
+					return i + 1, true
+				}
+				if data[i] < 0x20 || data[i] > 0x2f {
+					return i + 1, true
+				}
+			}
+			return 0, false
+		}
 		return 2, true
 	}
 	for i := 2; i < len(data); i++ {
+		if data[i] == 0x18 || data[i] == 0x1a {
+			return i + 1, true
+		}
+		if data[i] == 0x1b {
+			return i, true
+		}
 		if data[i] >= 0x40 && data[i] <= 0x7e {
 			v.csi(string(data[2:i]), data[i])
 			return i + 1, true
@@ -569,9 +674,24 @@ func (v *VT) escape(data []byte) (n int, ok bool) {
 	return 0, false
 }
 
+func controlType(data []byte) byte {
+	if len(data) > 1 && data[1] == '[' {
+		return '['
+	}
+	if len(data) > 1 {
+		switch data[1] {
+		case ']', 'P', '^', '_', 'X':
+			return data[1]
+		default:
+			return 'e'
+		}
+	}
+	return 0
+}
+
 func csiParams(s string) []int {
 	s = strings.TrimPrefix(s, "?")
-	fields := strings.Split(strings.ReplaceAll(s, ":", ";"), ";")
+	fields := strings.Split(s, ";")
 	out := make([]int, len(fields))
 	for i, field := range fields {
 		out[i], _ = strconv.Atoi(field)
@@ -685,8 +805,35 @@ func (v *VT) csi(params string, final byte) {
 }
 
 func (v *VT) sgr(params string) {
-	p := csiParams(params)
+	fields := strings.Split(params, ";")
+	p := make([]int, len(fields))
+	for i, field := range fields {
+		p[i], _ = strconv.Atoi(field)
+	}
 	for i := 0; i < len(p); i++ {
+		if strings.Contains(fields[i], ":") {
+			parts := strings.Split(fields[i], ":")
+			code, _ := strconv.Atoi(parts[0])
+			if (code == 38 || code == 48) && len(parts) >= 3 {
+				mode, _ := strconv.Atoi(parts[1])
+				color := []int{}
+				for _, part := range parts[2:] {
+					if part == "" {
+						continue
+					}
+					value, err := strconv.Atoi(part)
+					if err == nil {
+						color = append(color, value)
+					}
+				}
+				if mode == 5 && len(color) >= 1 {
+					setSGRColor(v, code, ColorIndex(uint8(color[0])))
+				} else if mode == 2 && len(color) >= 3 {
+					setSGRColor(v, code, ColorRGB(uint8(color[0]), uint8(color[1]), uint8(color[2])))
+				}
+			}
+			continue
+		}
 		code := p[i]
 		switch {
 		case code == 0:
@@ -733,13 +880,21 @@ func (v *VT) sgr(params string) {
 					if i+2 < len(p) {
 						v.pen.FG = ColorIndex(uint8(p[i+2]))
 						i += 2
+					} else {
+						i = len(p)
 					}
 				case 2: // 38;2;r;g;b
 					if i+4 < len(p) {
 						v.pen.FG = ColorRGB(uint8(p[i+2]), uint8(p[i+3]), uint8(p[i+4]))
 						i += 4
+					} else {
+						i = len(p)
 					}
+				default:
+					i = len(p)
 				}
+			} else {
+				i = len(p)
 			}
 		case code == 39:
 			v.pen.FG = ColorReset()
@@ -752,13 +907,21 @@ func (v *VT) sgr(params string) {
 					if i+2 < len(p) {
 						v.pen.BG = ColorIndex(uint8(p[i+2]))
 						i += 2
+					} else {
+						i = len(p)
 					}
 				case 2: // 48;2;r;g;b
 					if i+4 < len(p) {
 						v.pen.BG = ColorRGB(uint8(p[i+2]), uint8(p[i+3]), uint8(p[i+4]))
 						i += 4
+					} else {
+						i = len(p)
 					}
+				default:
+					i = len(p)
 				}
+			} else {
+				i = len(p)
 			}
 		case code == 49:
 			v.pen.BG = ColorReset()
@@ -767,6 +930,14 @@ func (v *VT) sgr(params string) {
 		case code >= 100 && code <= 107:
 			v.pen.BG = ColorIndex(uint8(code - 100 + 8))
 		}
+	}
+}
+
+func setSGRColor(v *VT, code int, color Color) {
+	if code == 38 {
+		v.pen.FG = color
+	} else if code == 48 {
+		v.pen.BG = color
 	}
 }
 
