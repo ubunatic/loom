@@ -929,6 +929,70 @@ func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
 	}
 }
 
+func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	// Tab 1 enables mouse SGR tracking
+	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("TAB1_READY", time.Second*5)
+
+	// Open Tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Switch back to Tab 1 so active tab has mouse tracking on
+	session.SendRaw([]byte{27, '1'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return session.VT().MouseMode == 1000
+	})
+
+	// Click on row 24 (the tab bar) in the region of Tab 2: col 14, row 24
+	// SGR mouse left press: \x1b[<0;14;24M
+	session.SendRaw([]byte("\x1b[<0;14;24M"))
+	session.SendRaw([]byte("\x1b[<0;14;24m"))
+
+	// Verify that active tab switched to Tab 2 (where mouse mode is 0)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return session.VT().MouseMode == 0
+	})
+
+	if session.VT().MouseMode != 0 {
+		t.Fatalf("expected active tab to switch to Tab 2 (MouseMode=0), got %d", session.VT().MouseMode)
+	}
+
+	session.SendRaw([]byte{17}) // ctrl-q
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	// Both tabs are plain shells (no child enables mouse)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PLAIN_SHELL\\n'; while true; do sleep 1; done")
+	session.WaitFor("PLAIN_SHELL", time.Second*5)
+
+	// Open Tab 2 with ctrl-n so tab bar appears
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// In safe mode, plain shells must NOT cause mouse tracking to be enabled on the outer VT
+	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
+		t.Fatalf("expected outer VT mouse tracking to stay OFF in safe mode for plain shells, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+
+	session.SendRaw([]byte{17}) // ctrl-q
+	_ = session.Wait(time.Second * 5)
+}
+
 
 
 

@@ -636,6 +636,7 @@ func (d SettingsDefaults) validate() error {
 
 // SessionDefaults defines specced defaults for the Loom session command.
 type SessionDefaults struct {
+	Mouse          string                `yaml:"mouse"`
 	Prefix         string                `yaml:"prefix"`
 	Bindings       SessionBindings       `yaml:"bindings"`
 	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
@@ -660,6 +661,9 @@ type SessionPrefixBindings struct {
 }
 
 func (d SessionDefaults) validate() error {
+	if d.Mouse != "safe" {
+		return fmt.Errorf("session.mouse must be 'safe'")
+	}
 	if d.Prefix == "" {
 		return fmt.Errorf("session.prefix must not be empty")
 	}

@@ -577,6 +577,7 @@ rich_text_edit:
         - {ref: "HotkeyHelp"}
 
 session:
+  mouse: "safe"
   prefix: "ctrl-b"
   bindings:
     screenshot: [*hotkey_screenshot_binding]

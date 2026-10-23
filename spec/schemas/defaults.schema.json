@@ -801,8 +801,9 @@
     "session": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["prefix", "bindings", "prefix_bindings"],
+      "required": ["mouse", "prefix", "bindings", "prefix_bindings"],
       "properties": {
+        "mouse": { "type": "string", "enum": ["safe"] },
         "prefix": { "type": "string", "minLength": 1 },
         "bindings": {
           "type": "object",

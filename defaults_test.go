@@ -317,6 +317,9 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.PrefixBindings.Screenshot, []string{"s"}) {
 		t.Fatalf("session.prefix_bindings.screenshot = %v, want [s]", s.PrefixBindings.Screenshot)
 	}
+	if s.Mouse != "safe" {
+		t.Fatalf("session.mouse = %q, want 'safe'", s.Mouse)
+	}
 	if !slices.Equal(s.PrefixBindings.Quit, []string{"q"}) {
 		t.Fatalf("session.prefix_bindings.quit = %v, want [q]", s.PrefixBindings.Quit)
 	}

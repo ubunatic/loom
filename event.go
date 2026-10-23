@@ -554,6 +554,11 @@ func scanMouse(b []byte) (MouseEvent, int, bool) {
 	return ev, end + 1, true
 }
 
+// ScanMouse scans the next SGR mouse event and consumed byte count from b.
+func ScanMouse(b []byte) (MouseEvent, int, bool) {
+	return scanMouse(b)
+}
+
 // scanKey extracts the leading key event from b, the non-mouse counterpart to
 // scanMouse: a single tty read (or several coalesced reads) can carry more
 // than one complete key sequence, and a fast terminal can split one escape

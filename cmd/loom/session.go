@@ -146,6 +146,19 @@ func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, row
 	_, _ = out.Write([]byte(b.String()))
 }
 
+func tabIndexAtCol(tabs []*sessionTab, col int) int {
+	used := 1
+	for i, t := range tabs {
+		title := fmt.Sprintf(" %d: %s ", i+1, t.title)
+		width := loom.StringWidth(title)
+		if col >= used && col < used+width {
+			return i
+		}
+		used += width
+	}
+	return -1
+}
+
 func applyTabModes(out io.Writer, oldTab, newTab *sessionTab) {
 	if out == nil || newTab == nil {
 		return
@@ -524,6 +537,57 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						_ = paste
 						_, _ = activeMaster.Write(pending[:used])
 						pending = pending[used:]
+						prefixMode = false
+						sessionMu.Unlock()
+						continue
+					}
+
+					// SGR Mouse event (\x1b[<...M or \x1b[<...m)
+					if ev, used, ok := loom.ScanMouse(pending); ok {
+						if len(tabs) > 1 && ev.Y == rows {
+							if ev.Action == loom.MousePress && ev.Button == loom.MouseLeft {
+								target := tabIndexAtCol(tabs, ev.X)
+								if target >= 0 && target < len(tabs) && target != activeIndex {
+									oldTab := tabs[activeIndex]
+									activeIndex = target
+									newTab := tabs[activeIndex]
+									switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+								}
+							}
+							pending = pending[used:]
+							prefixMode = false
+							sessionMu.Unlock()
+							continue
+						}
+						_, _ = activeMaster.Write(pending[:used])
+						pending = pending[used:]
+						prefixMode = false
+						sessionMu.Unlock()
+						continue
+					}
+
+					// Standard X10 mouse event (\x1b[M + 3 bytes)
+					if len(pending) >= 6 && pending[0] == 0x1b && pending[1] == '[' && pending[2] == 'M' {
+						col := int(pending[4]) - 32
+						row := int(pending[5]) - 32
+						btn := int(pending[3]) - 32
+						if len(tabs) > 1 && row == rows {
+							if btn&3 == 0 {
+								target := tabIndexAtCol(tabs, col)
+								if target >= 0 && target < len(tabs) && target != activeIndex {
+									oldTab := tabs[activeIndex]
+									activeIndex = target
+									newTab := tabs[activeIndex]
+									switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+								}
+							}
+							pending = pending[6:]
+							prefixMode = false
+							sessionMu.Unlock()
+							continue
+						}
+						_, _ = activeMaster.Write(pending[:6])
+						pending = pending[6:]
 						prefixMode = false
 						sessionMu.Unlock()
 						continue
