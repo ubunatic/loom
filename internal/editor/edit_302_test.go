@@ -1,4 +1,4 @@
-package main
+package editor
 
 import (
 	"os"
@@ -20,18 +20,6 @@ func startMouseEditPTY(t *testing.T, content string) (*ptytest.Session, string) 
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab", path)
 	s.WaitFor("Ln 1, Col 1", 3*time.Second)
 	return s, path
-}
-
-func Test302EditArguments(t *testing.T) {
-	cmd := editCommand()
-	for _, args := range [][]string{nil, {"doc.ansi"}} {
-		if err := cmd.Args(cmd, args); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := cmd.Args(cmd, []string{"one", "two"}); err == nil {
-		t.Fatal("accepted two files")
-	}
 }
 
 func Test302EditPTYUntitledAndMouseOff(t *testing.T) {

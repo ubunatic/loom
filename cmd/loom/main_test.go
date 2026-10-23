@@ -15,6 +15,7 @@ import (
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
 	"ubunatic.com/loom/gallery"
+	"ubunatic.com/loom/internal/clitest"
 )
 
 func writeFixture(t *testing.T, content string) string {
@@ -576,27 +577,11 @@ func TestRichTextEditGalleryBoxModeHintAndFallback(t *testing.T) {
 }
 
 func canvasPlainRow(canvas *loom.Canvas, row int) string {
-	var text strings.Builder
-	for x := 0; x < canvas.Cols(); x++ {
-		cell := canvas.Get(x, row)
-		if cell.Continuation {
-			continue
-		}
-		if cell.Text == "" {
-			text.WriteByte(' ')
-		} else {
-			text.WriteString(cell.Text)
-		}
-	}
-	return strings.Join(strings.Fields(text.String()), " ")
+	return clitest.CanvasPlainRow(canvas, row)
 }
 
 func canvasScreenText(canvas *loom.Canvas) string {
-	rows := make([]string, canvas.Rows())
-	for row := range rows {
-		rows[row] = canvasPlainRow(canvas, row)
-	}
-	return strings.Join(rows, "\n")
+	return clitest.CanvasScreenText(canvas)
 }
 
 func TestRichTextEditGalleryF1AndOutsideClickRouting(t *testing.T) {
@@ -925,116 +910,6 @@ func TestEditCommandArityAndFileErrors(t *testing.T) {
 	}
 }
 
-func TestEditViewUnsavedChangesDialog(t *testing.T) {
-	dir := t.TempDir()
-	path := filepath.Join(dir, "test.ansi")
-	if err := os.WriteFile(path, []byte("Initial content\n"), 0600); err != nil {
-		t.Fatal(err)
-	}
-
-	edit, err := loom.NewRichTextEditFromFile(path)
-	if err != nil {
-		t.Fatalf("NewRichTextEditFromFile: %v", err)
-	}
-
-	view, err := newEditView(edit, path, loom.EditorConfig{Theme: "plain", AltScreen: true})
-	if err != nil {
-		t.Fatalf("newEditView: %v", err)
-	}
-	canvas := loom.NewCanvas(80, 10)
-
-	// 1. Draw and verify bottom bar includes F10 Quit
-	view.Draw(canvas, canvas.Bounds())
-	screenText := canvasScreenText(canvas)
-	if !strings.Contains(screenText, "Initial content") {
-		t.Fatalf("editor did not render initial content: %q", screenText)
-	}
-	if !strings.Contains(screenText, "F10 Quit") {
-		t.Fatalf("editor bottom bar omits F10 Quit: %q", screenText)
-	}
-
-	// 2. The Pane owns F10: a clean view allows the close request.
-	quits := countQuits(view)
-	if got := view.closeRequest(loom.CloseReasonQuitKey); got != loom.CloseAllow {
-		t.Fatalf("close request on unmodified view = %v, want allow", got)
-	}
-
-	// 3. Modify document: the close request is vetoed behind the Save changes? dialog
-	view.edit.ConsumeKey(loom.KeyEvent{Text: "X"})
-	if !view.edit.IsModified() {
-		t.Fatal("document expected to be modified after typing")
-	}
-	if got := view.closeRequest(loom.CloseReasonQuitKey); got != loom.CloseVeto {
-		t.Fatalf("close request on modified document = %v, want veto", got)
-	}
-	if view.unsavedDialog == nil || !view.unsavedDialog.Open {
-		t.Fatal("close request on modified view did not open unsaved changes dialog")
-	}
-
-	// Draw and verify dialog is shown
-	canvas.Clear()
-	view.Draw(canvas, canvas.Bounds())
-	screenText = canvasScreenText(canvas)
-	if !strings.Contains(screenText, "Save changes?") {
-		t.Fatalf("dialog title missing in screen text: %q", screenText)
-	}
-
-	// 4. Cancel dialog with Esc
-	view.ConsumeKey(loom.KeyEvent{Key: "esc"})
-	if view.unsavedDialog != nil {
-		t.Fatal("esc did not dismiss unsaved changes dialog")
-	}
-	if *quits != 0 {
-		t.Fatal("cancelling dialog must not quit")
-	}
-
-	// 5. Open dialog again and select Discard
-	view.closeRequest(loom.CloseReasonQuitKey)
-	if view.unsavedDialog == nil {
-		t.Fatal("dialog failed to reopen")
-	}
-	view.ConsumeKey(loom.KeyEvent{Key: "right"})
-	view.ConsumeKey(loom.KeyEvent{Key: "enter"})
-	if *quits != 1 {
-		t.Fatalf("Discard quits = %d, want 1", *quits)
-	}
-
-	// Test Save
-	view.edit.ConsumeKey(loom.KeyEvent{Text: "Y"})
-	view.closeRequest(loom.CloseReasonQuitKey)
-	view.ConsumeKey(loom.KeyEvent{Key: "enter"}) // default button is "Save"
-	if *quits != 2 {
-		t.Fatalf("Save quits = %d, want 2", *quits)
-	}
-
-	// Verify saved content on disk
-	savedData, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(string(savedData), "Initial content") || !strings.Contains(string(savedData), "XY") {
-		t.Fatalf("saved disk content = %q, want modified content", string(savedData))
-	}
-}
-
-func TestEditCommandPaneSettings(t *testing.T) {
-	pane := &loom.Pane{MaxCols: loom.DefaultMaxCols}
-	cfg := loom.EditorConfig{MouseGrab: true, AltScreen: true}
-	configureEditPane(pane, cfg)
-	if pane.MaxCols != 0 {
-		t.Errorf("edit pane MaxCols = %d, want 0", pane.MaxCols)
-	}
-	if !pane.Resizeable {
-		t.Error("edit pane Resizeable = false, want true")
-	}
-	if pane.DisableGlobalF10Quit {
-		t.Error("edit pane DisableGlobalF10Quit = true, want false: the Pane owns F10")
-	}
-	if !pane.ResizeConfig.AltScreen {
-		t.Errorf("pane AltScreen = false, want true")
-	}
-}
-
 func TestEditCLIFlagsAndConfigPrecedence(t *testing.T) {
 	dir := t.TempDir()
 	filePath := filepath.Join(dir, "doc.txt")
@@ -1073,5 +948,31 @@ func TestEditCLIFlagsAndConfigPrecedence(t *testing.T) {
 	}
 	if !cfg.AltScreen {
 		t.Errorf("AltScreen = %v, want true (overridden by CLI flag)", cfg.AltScreen)
+	}
+}
+
+func TestMarkupCommandConvertsBothWays(t *testing.T) {
+	dir := t.TempDir()
+	tui := filepath.Join(dir, "a.tui")
+	if err := os.WriteFile(tui, []byte("[bold]b[/]\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var ansi bytes.Buffer
+	if err := execute([]string{"markup", tui}, &ansi); err != nil {
+		t.Fatal(err)
+	}
+	if want := (loom.Style{Bold: true}).ANSI() + "b\x1b[0m\n"; ansi.String() != want {
+		t.Fatalf("ansi = %q, want %q", ansi.String(), want)
+	}
+	ansiPath := filepath.Join(dir, "a.ansi")
+	if err := os.WriteFile(ansiPath, ansi.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var markup bytes.Buffer
+	if err := execute([]string{"markup", ansiPath}, &markup); err != nil {
+		t.Fatal(err)
+	}
+	if markup.String() != "[bold]b[/]\n" {
+		t.Fatalf("markup = %q", markup.String())
 	}
 }

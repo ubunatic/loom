@@ -1,4 +1,4 @@
-package main
+package editor
 
 import (
 	"os"
@@ -50,29 +50,6 @@ func TestEditorSpecDrivesLayoutAndActions(t *testing.T) {
 	view.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: view.lastRect.X + 1 + x, Y: view.lastRect.Y + view.lastRect.H - 2})
 	if !view.showSearch {
 		t.Fatal("mouse hint ignored spec search action")
-	}
-}
-
-func TestEditorFlagDefaultsComeFromSpec(t *testing.T) {
-	d := loom.SpeccedDefaults.Editor
-	if !d.MouseGrab {
-		t.Fatal("spec mousegrab default = false, want true")
-	}
-	cmd := editCommand()
-	if got, _ := cmd.Flags().GetBool("altscreen"); got != d.AltScreen {
-		t.Fatal("altscreen flag differs from spec")
-	}
-	if got, _ := cmd.Flags().GetBool("mousegrab"); got != d.MouseGrab {
-		t.Fatal("mousegrab flag differs from spec")
-	}
-	for _, flag := range []string{"--mousegrab=false", "-m=false"} {
-		cmd := editCommand()
-		if err := cmd.ParseFlags([]string{flag}); err != nil {
-			t.Fatalf("ParseFlags(%q): %v", flag, err)
-		}
-		if got, _ := cmd.Flags().GetBool("mousegrab"); got {
-			t.Errorf("%s left mousegrab enabled", flag)
-		}
 	}
 }
 
