@@ -4,7 +4,7 @@
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
-**Related**: `internal/session`, `internal/editor`, 377, 374, 382, `docs/studies/2026-10-24-multiplexer-ansi-leakage-and-diagnostic-recovery.md`
+**Related**: `internal/session`, `cmd/loom`, 382, `docs/studies/2026-10-24-multiplexer-ansi-leakage-and-diagnostic-recovery.md`
 
 ---
 
@@ -15,35 +15,50 @@ When running complex, high-frequency terminal applications like `btop` inside `l
 
 While issue #382 addresses parser streaming continuity and safe discard at the root, `loom session` requires a robust diagnostic, observability, and self-healing subsystem to catch, report, and recover from any unexpected terminal corruption:
 1. Detect when escape sequences leak into the visible buffer or fail to parse.
-2. Capture rich diagnostic information (context log, raw bytes, before-repair `.ansi` screenshot).
-3. Automatically attempt to self-repair the display using a two-tier recovery: reset wrapper VT parser state to ground, followed by an auto-SIGWINCH resize toggle (forcing child applications like `btop` to re-query terminal dimensions and redraw cleanly).
+2. Capture rich diagnostic information (context log, raw bytes from a 64 KB ring buffer, before-repair `.ansi` screenshot).
+3. Automatically attempt to self-repair the display using a two-tier recovery: reset wrapper VT parser state to ground (`t.vt.ResetParser()`), followed by an auto-SIGWINCH resize toggle (forcing child applications like `btop` to re-query terminal dimensions and redraw cleanly).
 4. Capture an after-repair `.ansi` screenshot to verify whether the redraw restored clean rendering.
-5. Provide a circuit breaker and bounded rotation to prevent disk exhaustion and runaway loops.
-6. Display an indicator in the status bar while leakage is observed or being recorded.
+5. Provide a circuit breaker (10s cooldown) and bounded rotation (max 5 rotating capture bundles) to prevent disk exhaustion and runaway loops.
+6. Display a distinct warning indicator `[!]` in the status bar while leakage is observed or being recorded.
 
-## 2. Technical Specification & Architecture
-Informed by research into `tmux`, `Ghostty`, and `wezterm` (`docs/studies/2026-10-24-multiplexer-ansi-leakage-and-diagnostic-recovery.md`):
+## 2. Technical Architecture & Constraints
+1. **Activation & Entrypoint**:
+   - CLI flags in `cmd/loom/session.go`: `--debug` (`bool`) and `--debug-dir` (`string`).
+   - Environment variables: `LOOM_SESSION_DEBUG=1` and `LOOM_DEBUG_DIR=<path>` for headless testing.
+   - Entrypoint in `internal/session`: `Options` and `RunWithOptions(...)`, keeping `Run(...)` backward-compatible.
+2. **In-Memory Ring Buffer**:
+   - Fixed 64 KB circular byte buffer per tab in `internal/session/debug.go` recording raw chunks read from `t.master`.
+3. **Leakage & Anomaly Detector**:
+   - VT safety-cap discard detection (`v.discardControl != 0` or discard hook).
+   - Stalled incomplete escape sequences (`StallTimeout`, default 1s).
+   - Stray control character / orphaned CSI parameter fragments (e.g. `38;2;...m`) in newly rendered screen cells.
+4. **Two-Tier Auto-Repair**:
+   - Tier 1: Reset parser state to Ground via `t.vt.ResetParser()`.
+   - Tier 2: Momentary child PTY dimension toggle (`setPTYSize(t.master, cols, toggleRows)` then restore to `childRows`) to trigger `SIGWINCH`.
+5. **Rotating Diagnostics & Circuit Breaker**:
+   - Directory: `--debug-dir` or `$XDG_STATE_HOME/loom/debug` / `~/.local/state/loom/debug`.
+   - Captured bundle per incident: `<prefix>.log`, `<prefix>-before.ansi`, `<prefix>-after.ansi`.
+   - Bounded retention: FIFO rotation keeping at most 5 capture bundles.
+   - Circuit breaker: 10s cooldown (`RepairCooldown`) between repair cycles and disk writes.
+6. **Status Bar Indicator & Golden Compatibility**:
+   - Render `[!]` in `sessionBarContent` when alert is active.
+   - When no alert is active, bar output is 100% byte-identical to maintain existing golden tests (`TestSessionBarGoldens`).
 
-### Diagnostic & Recovery Workflow
-1. **Leakage Detection**:
-   - Detect orphaned ESC sequences (`\x1b[...`, partial CSI/OSC strings) appearing as printable cell contents in the screen buffer or unconsumed in the VT parser buffer.
-2. **Rotating Diagnostic Logging**:
-   - Maintain an in-memory ring buffer (e.g. last 64 KB of raw I/O stream).
-   - When an anomaly is detected, flush timestamped diagnostic entries, sequence details, and raw stream chunks into a dedicated rotating log file.
-   - Capture a "before" `.ansi` screenshot of the corrupt screen state.
-3. **Two-Tier Auto-Repair via Parser Reset + SIGWINCH**:
-   - Step 1: Force reset the internal VT parser state machine back to Ground.
-   - Step 2: Nudge child PTY geometry via `TIOCSWINSZ` (momentary dimension toggle) to deliver `SIGWINCH`. Full-screen TUI apps (e.g. `btop`, `htop`, `tmux`) handle `SIGWINCH` by clearing and repainting the entire viewport.
-4. **Post-Repair Verification**:
-   - Capture an "after" `.ansi` screenshot once the repaint arrives and return the session to normal processing.
-5. **Circuit Breaker & Bounded Retention**:
-   - Implement a rate-limiting cooldown (minimum 10s cooldown per session/process before triggering another repair cycle).
-   - Maintain a bounded FIFO ring buffer of captures/screenshots per application (e.g. max 5 before/after snapshots and rotated log chunks) so disk space cannot be exhausted even during sustained misbehavior.
-6. **Status Bar Indicator**:
-   - Render a distinct warning indicator in the `loom session` status bar (e.g. `[!]` or alert glyph) whenever leakage is actively observed, logged, or recovering.
+## 3. Milestones
 
-## 3. Implementation & Verification Plan
-- **M1 (Advisor Design)**: Audit `internal/session` PTY event loop, `vt.Terminal`, and signal dispatch mechanism against findings in `docs/studies/2026-10-24-multiplexer-ansi-leakage-and-diagnostic-recovery.md`.
-- **M2 (Detection, Ring-Buffer Logging & Screenshots)**: Implement detector, rotating capture directory, and before/after `.ansi` captures with bounded retention.
-- **M3 (Two-Tier Repair & Circuit Breaker)**: Implement parser reset + SIGWINCH toggle, enforce cooldown timer, and add the status bar warning indicator.
-- **M4 (PTY Verification)**: Create automated PTY integration tests using a canary process that emits deliberately malformed/leaked escape sequences to verify detection, logging, SIGWINCH dispatch, and status bar display.
+### M1: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests
+- Add `Options` and `RunWithOptions` to `internal/session/session.go`.
+- Add `--debug` and `--debug-dir` flags to `cmd/loom/session.go` (and env `LOOM_SESSION_DEBUG`).
+- Implement `internal/session/debug.go` with 64 KB ring buffer and leakage detector.
+- Add unit tests in `internal/session/debug_test.go`.
+
+### M2: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
+- Implement diagnostic bundle writer (`.log`, `-before.ansi`, `-after.ansi`) with max-5 FIFO rotation.
+- Implement two-tier auto-repair (`ResetParser` + `TIOCSWINSZ` toggle) with 10s circuit breaker in `runSession`.
+- Update `drawSessionTabBar` / `sessionBarContent` to render `[!]` warning indicator while alert is active.
+
+### M3: Automated PTY Canary Integration Tests & Evergreen Docs
+- Automated PTY test in `internal/session/session_pty_test.go` with canary child verifying detection, `.ansi` captures, `SIGWINCH` redraw, and `[!]` indicator.
+- PTY test verifying cooldown rate-limiting and max-5 bundle rotation.
+- Update `docs/Session.md`.
+- Run full verification (`HTO=0 make test-q1`).
