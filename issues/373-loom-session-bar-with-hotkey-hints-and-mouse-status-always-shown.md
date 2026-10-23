@@ -36,3 +36,48 @@ blocked on a user decision.
 - Narrow terminal (40 columns): hints drop from the right before tabs are cut; no wrap.
 - PTY: prefix `?` shows help and any key closes it; prefix `m` flips the icon and the outer mouse mode;
   clicking the icon turns it off.
+
+## Handoff (d373, 2026-10-23)
+
+### Relevant Files and Line Ranges
+- `cmd/loom/session.go`:
+  - `drawSessionTabBar` (L121–145): Currently checks `if len(tabs) <= 1 { return }` and renders a basic contiguous tab bar with DEC cursor save/restore (`\x1b7` / `\x1b8`). Needs refactoring to draw spaced tabs, hotkey hints in `loom edit` style, dynamic spacer, and mouse status icon; must support `session.bar: always` (always drawing even with 1 tab).
+  - `tabIndexAtCol` and bar hit detection (L147–159, L390–445): Needs updating for spaces between tabs and right-hand clicks on the mouse toggle icon (`🖱︎`).
+  - Terminal rows & child PTY sizing (L250–270, L330–360, L832–838): Child terminal must get `rows - 1` whenever the bar is displayed (`session.bar: always` default means child gets `rows - 1` even with 1 tab; `session.bar: tabs` means child gets `rows - 1` only when `len(tabs) > 1`). Erase bar logic on tab close must align.
+  - Prefix state machine and key dispatch (L490–650): Handle prefix `?` (session help) and prefix `m` (toggle mouse mode between safe/off and active).
+  - Help overlay / display: Implement prefix `?` help view rendering all specced session bindings, dismissing on any keypress and cleanly redrawing the child screen.
+- `spec/defaults.yaml` (L715–735): Add `session.bar`, prefix bindings for `help` and `toggle_mouse`, and bar labels/glyphs.
+- `defaults.go` (L56, L637–680): Update `SessionDefaults`, `SessionPrefixBindings`, and `SessionDefaults.validate()` to parse and validate new spec keys.
+- `spec/schemas/defaults.schema.json`: Update JSON schema to define new session keys and prefix bindings.
+- `hintbar.go` (L12–80), `keycap.go` (L18–50), `theme.go` (L127–133): Reusable helpers and styling primitives (`KeyCap`, `HintBarStyle`, `fit`, `DropPriority`).
+- `cmd/loom/session_pty_test.go`: PTY tests covering single-tab and multi-tab bar rendering, narrow terminal (40-column) drop behavior, prefix `?` help popup, prefix `m` mouse toggle, and mouse click toggle.
+
+### Loom Edit Bar Helpers and Spec Colors
+- Keycaps: `loom.KeyCap(binding)` converts bindings (e.g. `ctrl-p` -> `⌃P`, `ctrl-q` -> `^Q` or `⌃Q`) according to `SpeccedDefaults.KeyCaps.Modifiers`.
+- Hint bar layout & drop priority: `loom.HintBar` and `loom.HintEntry` in `hintbar.go` provide responsive layout (`fit`), hit detection, and drop prioritization (`DropPriority`).
+- Spec colors:
+  - `theme.HintBarStyle()`:
+    - Keycaps: `Cap: Style{FG: t.KeyCapFG.Color(), BG: t.KeyCapBG.Color(), Bold: true}`
+    - Labels: `Label: Style{FG: t.NormalFG.Color(), BG: t.NormalBG.Color()}` (dim text relative to bold keycaps).
+  - Tabs: `loom.DefaultTabsStyle()` (`TabsStyle{Active, Inactive}`) with 1 space separator between tabs.
+  - Mouse icon: Text-presentation `🖱︎` (VS15 `\U0001F5B1\uFE0E`), bright style when mouse mode is on, dim style when off, preceded by separator `▏` (`\u258f`).
+
+### Proposed Spec Keys
+- `session.bar`: String enum, `"always"` (default) or `"tabs"`.
+- `session.prefix_bindings`:
+  - `help`: `["?"]`
+  - `toggle_mouse`: `["m"]`
+- `session.bar_labels` / `session.bar_glyphs` (or corresponding `session` spec fields):
+  - `tools_label`: `"Tools"`
+  - `help_label`: `"Help"`
+  - `quit_label`: `"Quit"`
+  - `screenshot_glyph`: `"📷"`
+  - `mouse_icon`: `"🖱︎"`
+  - `separator`: `"▏"`
+
+### Open Risks
+- Emoji display width & VS15 portability across terminals: `🖱︎` (`\U0001F5B1\uFE0E`) and `📷` (`\U0001F4F7`) cell measurements. Must conform to `docs/EmojiWidth.md` rules and pass `loom measure` / `loom eval` without ragged rows or cursor/click-target desynchronization.
+- Child PTY geometry & SIGWINCH: When `session.bar: always`, child rows must be `rows - 1` from the start, even with only 1 tab. Existing single-tab behavior gave the child all `rows`. Any mismatch between child terminal window size and terminal erase/scroll margins (`DECSTBM`) will cause flicker or line overwrite on row `rows`.
+- Click hit targets vs child mouse event forwarding: When mouse mode is active, clicks on row `rows` belong to the session bar (tab switching, mouse toggle click), while clicks in rows `1..rows-1` must be passed to the child if the child requested mouse tracking. When mouse mode is toggled off (prefix `m` or click on icon), loom stops consuming mouse events and enters safe/off mode.
+- Help screen overlay lifecycle: Prefix `?` needs to display session bindings cleanly without disrupting the running child PTY screen. Must cleanly redraw child screen (or use alt screen / save & restore VT buffer) when exiting help on any key.
+- Narrow terminal degradation (40 columns): Right-hand hints must be dropped in priority order (e.g. spacer shrinks, search/screenshot/quit drop before tabs are clipped) to prevent ANSI wrap-around and line corruption.
