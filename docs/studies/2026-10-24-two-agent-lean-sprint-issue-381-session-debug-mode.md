@@ -20,7 +20,7 @@ Architect refinement completed in 2m45s (1.2M tokens processed). Key architectur
 
 ## 2. Sprint Milestones
 - **M1**: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests — Delivered in commit `9bda066`.
-- **M2**: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
+- **M2**: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator — Delivered in commit `b14fd1d`.
 - **M3**: Automated PTY Canary Integration Tests & Evergreen Docs
 
 ---
@@ -31,3 +31,4 @@ Architect refinement completed in 2m45s (1.2M tokens processed). Key architectur
 - [01:37] Dispatched developer `sol:med` for plan-first inspection.
 - [01:38] Developer submitted concrete implementation plan. Authorized M1.
 - [01:40] M1 completed and committed (`9bda066`). Host review verified diff, unit tests, and API snapshots. Embedded M2 pre-work in ticket (`6075b74`).
+- [01:43] M2 completed and committed (`b14fd1d`). Verified bundle rotation, repair toggle, and bar goldens. Updated ticket (`c1dfdee`).
