@@ -46,6 +46,7 @@ func sessionCommand() *cobra.Command {
 	shotKey := strings.Join(sessionDefs.Bindings.Screenshot, ", ")
 	quitKey := strings.Join(sessionDefs.Bindings.Quit, ", ")
 	newTabKey := strings.Join(sessionDefs.Bindings.NewTab, ", ")
+	searchKey := strings.Join(sessionDefs.Bindings.Search, ", ")
 	prefixShot := strings.Join(sessionDefs.PrefixBindings.Screenshot, ", ")
 	prefixQuit := strings.Join(sessionDefs.PrefixBindings.Quit, ", ")
 	sendPrefix := strings.Join(sessionDefs.PrefixBindings.SendPrefix, ", ")
@@ -54,8 +55,8 @@ func sessionCommand() *cobra.Command {
 	prevTab := strings.Join(sessionDefs.PrefixBindings.PreviousTab, ", ")
 	closeTab := strings.Join(sessionDefs.PrefixBindings.CloseTab, ", ")
 	longHelp := fmt.Sprintf(
-		"Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: %s saves an ANSI screenshot, %s quits, %s opens a new tab. Prefix %s followed by %s saves a screenshot, %s quits, and %s forwards %s to the child. Prefix %s opens a new tab, %s/%s switches tabs, %s closes a tab.",
-		shotKey, quitKey, newTabKey, sessionDefs.Prefix, prefixShot, prefixQuit, sendPrefix, sessionDefs.Prefix, prefixNewTab, nextTab, prevTab, closeTab,
+		"Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: %s saves an ANSI screenshot, %s quits, %s opens a new tab, %s opens scrollback search. Prefix %s followed by %s saves a screenshot, %s quits, and %s forwards %s to the child. Prefix %s opens a new tab, %s/%s switches tabs, %s closes a tab.",
+		shotKey, quitKey, newTabKey, searchKey, sessionDefs.Prefix, prefixShot, prefixQuit, sendPrefix, sessionDefs.Prefix, prefixNewTab, nextTab, prevTab, closeTab,
 	)
 	cmd := &cobra.Command{
 		Use:          "session [-- <cmd> [args...]]",
@@ -166,7 +167,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	}
 	icon := labels.Separator + labels.MouseIcon
 	iconWidth := loom.StringWidth(icon)
-	searchKey := loom.KeyCap(defs.Prefix) + " " + loom.KeyCap(defs.PrefixBindings.Search[0])
+	searchKey := loom.KeyCap(defs.Bindings.Search[0])
 	widths := []int{loom.StringWidth(loom.KeyCap(defs.Prefix)+"…") + 4 + loom.StringWidth(labels.Tools), loom.StringWidth(loom.KeyCap(defs.PrefixBindings.Help[0])) + 4 + loom.StringWidth(labels.Help), loom.StringWidth(loom.KeyCap(defs.Bindings.Screenshot[0])) + 4 + loom.StringWidth(labels.Screenshot), loom.StringWidth(loom.KeyCap(defs.Bindings.Quit[0])) + 4 + loom.StringWidth(labels.Quit), loom.StringWidth(searchKey) + 4 + loom.StringWidth(labels.Search)}
 	hints := []string{sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Prefix)+"…", labels.Tools), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.PrefixBindings.Help[0]), labels.Help), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Screenshot[0]), labels.Screenshot), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Quit[0]), labels.Quit), sessionHint(capStyle, labelStyle, searchKey, labels.Search)}
 	visible := []bool{true, true, true, true, true}
@@ -283,6 +284,7 @@ func drawSessionHelp(out io.Writer, cols, rows, page int) int {
 		label string
 	}{
 		{d.Bindings.Screenshot, d.BarLabels.Screenshot}, {d.Bindings.Quit, d.BarLabels.Quit}, {d.Bindings.NewTab, d.BarLabels.NewTab},
+		{d.Bindings.Search, d.BarLabels.Search},
 		{d.PrefixBindings.Help, d.BarLabels.Help}, {d.PrefixBindings.ToggleMouse, d.BarLabels.ToggleMouse}, {d.PrefixBindings.Screenshot, d.BarLabels.Screenshot},
 		{d.PrefixBindings.Quit, d.BarLabels.Quit}, {d.PrefixBindings.SendPrefix, d.BarLabels.SendPrefix}, {d.PrefixBindings.NewTab, d.BarLabels.NewTab},
 		{d.PrefixBindings.NextTab, d.BarLabels.NextTab}, {d.PrefixBindings.PreviousTab, d.BarLabels.PreviousTab}, {d.PrefixBindings.CloseTab, d.BarLabels.CloseTab},
@@ -779,6 +781,16 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		drawSearch()
 	}
 
+	openSearch := func() {
+		searchActive = true
+		searchBar.Clear()
+		searchBar.SetFocused(true)
+		searchRows = tabs[activeIndex].vt.ScrollbackCells()
+		searchMatches = nil
+		searchMatchIndex = -1
+		drawSearch()
+	}
+
 	stdinDone := make(chan struct{})
 	go func() {
 		defer close(stdinDone)
@@ -957,13 +969,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.Search...):
 							prefixMode = false
-							searchActive = true
-							searchBar.Clear()
-							searchBar.SetFocused(true)
-							searchRows = tabs[activeIndex].vt.ScrollbackCells()
-							searchMatches = nil
-							searchMatchIndex = -1
-							drawSearch()
+							openSearch()
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.Help...):
 							helpActive = true
@@ -1100,6 +1106,9 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					}
 
 					switch {
+					case key.Is(sessionDefs.Bindings.Search...):
+						openSearch()
+						sessionMu.Unlock()
 					case key.Is(sessionDefs.Bindings.Screenshot...):
 						sessionMu.Unlock()
 						if err := saveScreenshot(); err != nil {

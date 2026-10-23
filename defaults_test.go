@@ -323,6 +323,9 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.Bindings.NewTab, []string{"ctrl-n"}) {
 		t.Fatalf("session.bindings.new_tab = %v, want [ctrl-n]", s.Bindings.NewTab)
 	}
+	if !slices.Equal(s.Bindings.Search, []string{"ctrl-f"}) {
+		t.Fatalf("session.bindings.search = %v, want [ctrl-f]", s.Bindings.Search)
+	}
 	if !slices.Equal(s.PrefixBindings.Screenshot, []string{"s"}) {
 		t.Fatalf("session.prefix_bindings.screenshot = %v, want [s]", s.PrefixBindings.Screenshot)
 	}
@@ -359,6 +362,11 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	}
 
 	invalid := s
+	invalid.Bindings.Search = nil
+	if err := invalid.validate(); err == nil {
+		t.Fatal("expected error on missing session search binding")
+	}
+	invalid = s
 	invalid.Prefix = ""
 	if err := invalid.validate(); err == nil {
 		t.Fatal("expected error on empty session prefix")

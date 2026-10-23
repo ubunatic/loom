@@ -4011,6 +4011,7 @@ type SessionBindings struct {
 	Quit       []string `yaml:"quit"`
 	NewTab     []string `yaml:"new_tab"`
 	SelectTab  []string `yaml:"select_tab"`
+	Search     []string `yaml:"search"`
 }
 
 type SessionDefaults struct {

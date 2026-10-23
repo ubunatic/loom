@@ -600,6 +600,7 @@ session:
     screenshot: [*hotkey_screenshot_binding]
     quit: ["ctrl-q"]
     new_tab: ["ctrl-n"]
+    search: ["ctrl-f"]
     select_tab: ["alt-1", "alt-2", "alt-3", "alt-4", "alt-5", "alt-6", "alt-7", "alt-8", "alt-9"]
   prefix_bindings:
     screenshot: ["s"]

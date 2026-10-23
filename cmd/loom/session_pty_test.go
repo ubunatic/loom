@@ -229,6 +229,9 @@ func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
 
 func TestSessionHelpText(t *testing.T) {
 	cmd := sessionCommand()
+	if !strings.Contains(cmd.Long, "ctrl-f opens scrollback search") {
+		t.Fatalf("Long help missing direct search binding: %q", cmd.Long)
+	}
 	if !strings.Contains(cmd.Long, "Prefix ctrl-b followed by s saves a screenshot, q quits, and ctrl-b forwards ctrl-b to the child.") {
 		t.Fatalf("unexpected Long help text: %q", cmd.Long)
 	}
@@ -1016,7 +1019,8 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	capCol := displayColumnOf(bar, "⌃B…")
 	labelCol := displayColumnOf(bar, "Tools")
 	iconCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.MouseIcon)
-	searchCapCol := displayColumnOf(bar, "⌃B F")
+	// The hint now advertises the direct binding instead of the prefix sequence.
+	searchCapCol := displayColumnOf(bar, "⌃F")
 	searchLabelCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.Search)
 	if capCol < 0 || labelCol <= capCol || iconCol < 0 || searchCapCol < 0 || searchLabelCol <= searchCapCol {
 		t.Fatalf("bar boundaries missing: %q", bar)
@@ -1026,7 +1030,12 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	assertSessionBarCellStyle(t, session, capCol+1, barY, hintStyle.Cap)
 	assertSessionBarCellStyle(t, session, labelCol, barY, hintStyle.Label)
 	assertSessionBarCellStyle(t, session, searchCapCol, barY, hintStyle.Cap)
-	assertSessionBarCellStyle(t, session, searchLabelCol, barY, hintStyle.Label)
+	assertSessionBarCellStyle(t, session, searchCapCol+1, barY, hintStyle.Cap)
+	assertSessionBarCellStyle(t, session, searchCapCol-1, barY, hintStyle.Cap)
+	assertSessionBarCellStyle(t, session, searchCapCol+2, barY, hintStyle.Cap)
+	for x := searchLabelCol - 1; x <= searchLabelCol+loom.StringWidth("Search"); x++ {
+		assertSessionBarCellStyle(t, session, x, barY, hintStyle.Label)
+	}
 	assertSessionBarCellStyle(t, session, iconCol, barY, hintStyle.Label)
 	session.SendRaw([]byte{17})
 	_ = session.Wait(time.Second * 5)
@@ -1148,7 +1157,7 @@ func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
 	session.WaitFor("return", time.Second*5)
 	rows := session.Screen()
 	text := strings.Join(rows, "\n")
-	for _, want := range []string{"Search", "Close tab", "Press any key to return"} {
+	for _, want := range []string{"⌃F Search", "F Search", "Close tab", "Press any key to return"} {
 		if !strings.Contains(text, want) {
 			t.Fatalf("short-terminal help missing %q: %q", want, rows)
 		}
@@ -1220,6 +1229,32 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 	if session.VT().AltScreen() {
 		t.Fatalf("outer VT left in alternate screen after SIGTERM with alt-screen child")
 	}
+}
+
+func TestSessionCtrlFSearchOpenAndClose(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", "printf 'SEARCH_READY\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; read -r line")
+	session.WaitFor("SEARCH_READY", time.Second*5)
+	session.SendRaw([]byte{6}) // ctrl-f is a session binding, never child input.
+	session.WaitFor("Find:", time.Second*5)
+	session.Send("SEARCH_READY")
+	session.WaitFor("1/1", time.Second*5)
+	// Global bindings and mouse input must not restart or leave active search.
+	session.SendRaw([]byte{6})
+	session.SendRaw([]byte("\x1b[<0;2;1M"))
+	session.Send("x")
+	session.WaitFor("SEARCH_READYx", time.Second*5)
+	session.SendRaw([]byte{0x1b})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "Find:")
+	})
+	session.Send("restored-input\n")
+	session.WaitFor("CHILD:restored-input", time.Second*5)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
 }
 
 func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
