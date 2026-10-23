@@ -6,7 +6,11 @@ package session
 
 import (
 	"bytes"
+	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
+	"sort"
 	"time"
 	"unicode/utf8"
 )
@@ -14,6 +18,9 @@ import (
 const debugRingSize = 64 * 1024
 const debugControlLimit = 1024
 const debugStallTimeout = time.Second
+const debugRepairCooldown = 10 * time.Second
+const debugBundleLimit = 5
+const debugCaptureDelay = 150 * time.Millisecond
 
 // debugChunk records a raw PTY read in the rolling stream.
 type debugChunk struct {
@@ -86,6 +93,11 @@ func (r *debugRing) Chunks() []debugChunk {
 		out[i] = debugChunk{Offset: read.Offset, Data: append([]byte(nil), read.Data...)}
 	}
 	return out
+}
+
+func (r *debugRing) Snapshot() *debugRing {
+	copyRing := &debugRing{data: r.Bytes(), size: r.size, base: r.base, end: r.end, reads: r.Chunks()}
+	return copyRing
 }
 
 type debugAnomaly string
@@ -210,4 +222,85 @@ func suspiciousDebugText(text string) bool {
 		}
 	}
 	return false
+}
+
+// writeDebugBundle writes the stream log and before/after VT captures, then
+// removes oldest complete bundles until at most five remain.
+func writeDebugBundle(dir string, tabID int, reason string, ring *debugRing, before, after string, at time.Time) error {
+	if dir == "" {
+		return fmt.Errorf("empty debug directory")
+	}
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	prefix := filepath.Join(dir, fmt.Sprintf("loom-session-%s-tab%d", at.Format("20060102-150405.000000000"), tabID))
+	logPath := prefix + ".log"
+	files := []struct{ path, content string }{
+		{logPath, fmt.Sprintf("time: %s\ntab: %d\nanomaly: %s\nraw stream chunks (offset: quoted bytes):\n", at.Format(time.RFC3339Nano), tabID, reason)},
+		{prefix + "-before.ansi", before},
+		{prefix + "-after.ansi", after},
+	}
+	if ring != nil {
+		var b bytes.Buffer
+		for _, chunk := range ring.Chunks() {
+			fmt.Fprintf(&b, "%d: %q\n", chunk.Offset, chunk.Data)
+		}
+		files[0].content += b.String()
+	}
+	created := make([]string, 0, len(files))
+	for _, file := range files {
+		f, err := os.OpenFile(file.path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
+		if err != nil {
+			for _, path := range created {
+				_ = os.Remove(path)
+			}
+			return err
+		}
+		created = append(created, file.path)
+		_, writeErr := f.WriteString(file.content)
+		closeErr := f.Close()
+		if writeErr != nil || closeErr != nil {
+			for _, path := range created {
+				_ = os.Remove(path)
+			}
+			if writeErr != nil {
+				return writeErr
+			}
+			return closeErr
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return err
+	}
+	var logs []os.DirEntry
+	for _, entry := range entries {
+		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".log" && len(entry.Name()) >= len("loom-session-") && entry.Name()[:len("loom-session-")] == "loom-session-" {
+			logs = append(logs, entry)
+		}
+	}
+	sort.Slice(logs, func(i, j int) bool { return logs[i].Name() < logs[j].Name() })
+	for len(logs) > debugBundleLimit {
+		name := logs[0].Name()
+		base := filepath.Join(dir, name[:len(name)-len(".log")])
+		for _, suffix := range []string{".log", "-before.ansi", "-after.ansi"} {
+			_ = os.Remove(base + suffix)
+		}
+		logs = logs[1:]
+	}
+	return nil
+}
+
+func sessionDebugDirectory(configured string) (string, error) {
+	if configured != "" {
+		return configured, nil
+	}
+	if stateHome := os.Getenv("XDG_STATE_HOME"); stateHome != "" {
+		return filepath.Join(stateHome, "loom", "debug"), nil
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(home, ".local", "state", "loom", "debug"), nil
 }

@@ -124,6 +124,7 @@ type sessionTab struct {
 	done          chan struct{}
 	debugRing     *debugRing
 	debugDetector *debugDetector
+	debugAlert    bool
 }
 
 func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
@@ -173,6 +174,11 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	}
 	icon := labels.Separator + labels.MouseIcon
 	iconWidth := loom.StringWidth(icon)
+	alert := activeIndex >= 0 && activeIndex < len(tabs) && tabs[activeIndex].debugAlert
+	alertWidth := 0
+	if alert {
+		alertWidth = loom.StringWidth("[!] ")
+	}
 	searchKey := loom.KeyCap(defs.Bindings.Search[0])
 	widths := []int{loom.StringWidth(loom.KeyCap(defs.Prefix)+"…") + 4 + loom.StringWidth(labels.Tools), loom.StringWidth(loom.KeyCap(defs.PrefixBindings.Help[0])) + 4 + loom.StringWidth(labels.Help), loom.StringWidth(loom.KeyCap(defs.Bindings.Screenshot[0])) + 4 + loom.StringWidth(labels.Screenshot), loom.StringWidth(loom.KeyCap(defs.Bindings.Quit[0])) + 4 + loom.StringWidth(labels.Quit), loom.StringWidth(searchKey) + 4 + loom.StringWidth(labels.Search)}
 	hints := []string{sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Prefix)+"…", labels.Tools), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.PrefixBindings.Help[0]), labels.Help), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Screenshot[0]), labels.Screenshot), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Quit[0]), labels.Quit), sessionHint(capStyle, labelStyle, searchKey, labels.Search)}
@@ -188,7 +194,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	dropIndices := map[string]int{"tools": 0, "help": 1, "screenshot": 2, "quit": 3, "search": 4}
 	for _, name := range labels.DropOrder {
 		i := dropIndices[name]
-		need := iconWidth
+		need := iconWidth + alertWidth
 		for j, w := range widths {
 			if visible[j] {
 				need += w
@@ -208,7 +214,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	if usedHints > 0 {
 		usedHints += 1
 	}
-	remainingTabs := cols - iconWidth - usedHints
+	remainingTabs := cols - iconWidth - alertWidth - usedHints
 	var b strings.Builder
 	style := loom.DefaultTabsStyle()
 	hits := []sessionBarTabHit{}
@@ -248,9 +254,13 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 			b.WriteString(hint)
 		}
 	}
+	if alert {
+		b.WriteString(capStyle)
+		b.WriteString("[!] ")
+	}
 	b.WriteString(mouseStyle)
 	b.WriteString(icon)
-	width := x + usedHints + iconWidth
+	width := x + usedHints + iconWidth + alertWidth
 	if width < cols {
 		b.WriteString(labelStyle)
 		b.WriteString(strings.Repeat(" ", cols-width))
@@ -571,10 +581,54 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	activeIndex := 0
 	barDrawn := false
 	barMouseState := false
+	barAlertState := false
 	nextTabID := 1
+	lastDebugAction := time.Time{}
 
 	tabExitChan := make(chan *sessionTab, 16)
 	sessionQuitChan := make(chan struct{})
+
+	triggerDebugRepair := func(t *sessionTab, anomaly debugAnomaly) {
+		if !options.Debug || t == nil || t.debugRing == nil || t.debugDetector == nil {
+			return
+		}
+		now := time.Now()
+		if !lastDebugAction.IsZero() && now.Sub(lastDebugAction) < debugRepairCooldown {
+			return
+		}
+		lastDebugAction = now
+		before := t.vt.ANSI()
+		t.vt.ResetParser()
+		t.debugDetector.pending = nil
+		t.debugDetector.pendingAt = time.Time{}
+		t.debugAlert = true
+		childRows := t.vt.Rows
+		toggleRows := childRows + 1
+		if childRows > 1 {
+			toggleRows = childRows - 1
+		}
+		setPTYSize(t.master, cols, toggleRows)
+		setPTYSize(t.master, cols, childRows)
+		if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+			drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+			barDrawn = true
+			barAlertState = true
+		}
+		go func(tab *sessionTab, reason debugAnomaly, captured string, started time.Time) {
+			time.Sleep(debugCaptureDelay)
+			sessionMu.Lock()
+			after := tab.vt.ANSI()
+			ring := tab.debugRing.Snapshot()
+			sessionMu.Unlock()
+			dir, dirErr := sessionDebugDirectory(options.DebugDir)
+			if dirErr == nil {
+				dirErr = writeDebugBundle(dir, tab.id, string(reason), ring, captured, after, started)
+			}
+			if dirErr != nil {
+				fmt.Fprintf(errOut, "session debug: %v\n", dirErr)
+			}
+		}(t, anomaly, before, now)
+	}
 
 	restorer.OnRestore(func() {
 		sessionMu.Lock()
@@ -632,11 +686,18 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				n, readErr := t.master.Read(buf)
 				if n > 0 {
 					sessionMu.Lock()
+					var anomaly debugAnomaly
 					if t.debugRing != nil {
 						t.debugRing.Write(buf[:n])
-						t.debugDetector.Observe(buf[:n], time.Now())
+						anomaly = t.debugDetector.Observe(buf[:n], time.Now())
 					}
 					frame, _ := t.vt.WriteFramed(buf[:n])
+					if anomaly == "" && t.debugDetector != nil && suspiciousDebugText(t.vt.Text()) {
+						anomaly = debugLeak
+					}
+					if anomaly != "" {
+						triggerDebugRepair(t, anomaly)
+					}
 					if t.vt.KittyKeyboard {
 						restorer.SetKittyKeyboard(true)
 					}
@@ -648,10 +709,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						syncSessionMouse(out, t)
 						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 							mouseState := sessionTabMouseOn(t)
-							if len(tabs) > 1 || !barDrawn || mouseState != barMouseState {
+							if len(tabs) > 1 || !barDrawn || mouseState != barMouseState || t.debugAlert != barAlertState {
 								drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 								barDrawn = true
 								barMouseState = mouseState
+								barAlertState = t.debugAlert
 							}
 						}
 					}
@@ -1173,6 +1235,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}()
 
+	debugTick := time.NewTicker(100 * time.Millisecond)
+	defer debugTick.Stop()
 	var finalExitCode int
 	var finalWaitErr error
 
@@ -1192,6 +1256,24 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			}
 			sessionMu.Unlock()
 			goto done
+		case now := <-debugTick.C:
+			sessionMu.Lock()
+			for _, tab := range tabs {
+				if tab.debugDetector == nil {
+					continue
+				}
+				if anomaly := tab.debugDetector.Stalled(now); anomaly != "" {
+					triggerDebugRepair(tab, anomaly)
+				}
+				if tab.debugAlert && !lastDebugAction.IsZero() && now.Sub(lastDebugAction) >= debugRepairCooldown {
+					tab.debugAlert = false
+					if len(tabs) > 0 && tabs[activeIndex] == tab && sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+						drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+						barAlertState = false
+					}
+				}
+			}
+			sessionMu.Unlock()
 		case sig := <-sigTerm:
 			sessionMu.Lock()
 			for _, t := range tabs {

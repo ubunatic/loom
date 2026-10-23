@@ -6,9 +6,13 @@ package session
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"ubunatic.com/loom/vt"
 )
 
 func TestDebugRingWrapAndChunkReconstruction(t *testing.T) {
@@ -29,6 +33,60 @@ func TestDebugRingWrapAndChunkReconstruction(t *testing.T) {
 	}
 	if len(ring.Chunks()) != 1 || ring.Chunks()[0].Offset != int64(12+3) {
 		t.Fatalf("chunks after wrap: %#v", ring.Chunks())
+	}
+}
+
+func TestDebugBundleRotationAndContents(t *testing.T) {
+	dir := t.TempDir()
+	ring := newDebugRing()
+	ring.Write([]byte("raw-chunk"))
+	base := time.Unix(300, 0)
+	for i := 0; i < debugBundleLimit+1; i++ {
+		if err := writeDebugBundle(dir, 2, string(debugLeak), ring, "before", "after", base.Add(time.Duration(i)*time.Second)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != debugBundleLimit*3 {
+		t.Fatalf("files = %d, want %d", len(entries), debugBundleLimit*3)
+	}
+	var logs []string
+	for _, entry := range entries {
+		if filepath.Ext(entry.Name()) == ".log" {
+			logs = append(logs, entry.Name())
+		}
+	}
+	if len(logs) != debugBundleLimit || strings.Contains(logs[0], "000500") {
+		t.Fatalf("unexpected retained logs: %v", logs)
+	}
+	logPath := filepath.Join(dir, logs[0])
+	logBytes, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(logBytes, []byte("raw-chunk")) || !bytes.Contains(logBytes, []byte(string(debugLeak))) {
+		t.Fatalf("log missing diagnostics: %s", logBytes)
+	}
+}
+
+func TestDebugBundleDirectoryErrors(t *testing.T) {
+	file := filepath.Join(t.TempDir(), "not-a-directory")
+	if err := os.WriteFile(file, []byte("file"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := writeDebugBundle(file, 1, string(debugLeak), newDebugRing(), "", "", time.Now()); err == nil {
+		t.Fatal("expected directory creation error")
+	}
+}
+
+func TestDebugStatusBarIndicator(t *testing.T) {
+	tab := &sessionTab{title: "bash", vt: vt.NewVT(80, 23), debugAlert: true}
+	bar, _, _ := sessionBarContent([]*sessionTab{tab}, 0, 99, false)
+	if !strings.Contains(bar, "[!]") {
+		t.Fatalf("warning indicator missing from bar: %q", bar)
 	}
 }
 
