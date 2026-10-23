@@ -603,3 +603,95 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 	}
 }
 
+func TestSessionQuitErasesTabBarOnOuterScreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'RUNNING\\n'; while true; do sleep 1; done")
+	session.WaitFor("RUNNING", time.Second*5)
+
+	// Open tab 2 with ctrl-n so tab bar appears
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Send ctrl-q (17) to quit session while bar is shown
+	session.SendRaw([]byte{17})
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	// The outer VT screen after exit must hold no tab bar text
+	for y, row := range session.Screen() {
+		if strings.Contains(row, "1: bash") || strings.Contains(row, "2: ") {
+			t.Fatalf("stale tab bar found at row %d after exit: %q", y, row)
+		}
+	}
+}
+
+func TestSessionQuitInAltScreenErasesTabBarOnOuterScreen(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'MAIN\\n'; while true; do sleep 1; done")
+	session.WaitFor("MAIN", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Enter alt screen in tab 2
+	session.Send("printf '\\033[?1049h\\033[1;1HALT\\033[0m\\n'\n")
+	session.WaitFor("ALT", time.Second*5)
+
+	// Quit while in alt screen with ctrl-q (17)
+	session.SendRaw([]byte{17})
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	// The outer VT screen after exit must hold no tab bar text
+	for y, row := range session.Screen() {
+		if strings.Contains(row, "1: bash") || strings.Contains(row, "2: ") {
+			t.Fatalf("stale tab bar found at row %d after exit: %q", y, row)
+		}
+	}
+}
+
+func TestSessionHideBarErasesBottomRow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PERSIST\\n'; while true; do sleep 1; done")
+	session.WaitFor("PERSIST", time.Second*5)
+
+	// Open tab 2 with ctrl-n so tab bar appears
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Close tab 2 with ctrl-b x so bar hides
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+
+	// The outer VT bottom row must have no bar text
+	for y, row := range session.Screen() {
+		if strings.Contains(row, "1: bash") || strings.Contains(row, "2: ") {
+			t.Fatalf("stale tab bar found at row %d after hiding bar: %q", y, row)
+		}
+	}
+
+	session.SendRaw([]byte{17}) // ctrl-q
+	_ = session.Wait(time.Second * 5)
+}
+
+

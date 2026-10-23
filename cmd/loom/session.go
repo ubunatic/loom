@@ -193,7 +193,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	}
 
 	defer func() {
-		_, _ = out.Write([]byte("\x1b[r\x1b[?1049l\x1b[?25h"))
+		eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
+		_, _ = out.Write([]byte("\x1b[r" + eraseBar + "\x1b[?1049l\x1b[r" + eraseBar + "\x1b[?25h"))
 		if inFile, ok := in.(*os.File); ok && oldState != nil {
 			_ = term.Restore(int(inFile.Fd()), oldState)
 			oldState = nil
@@ -575,7 +576,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				if len(tabs) == 1 {
 					setPTYSize(tabs[0].master, cols, rows)
 					tabs[0].vt.Resize(cols, rows)
-					_, _ = out.Write([]byte("\x1b[r"))
+					eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
+					_, _ = out.Write([]byte("\x1b[r" + eraseBar))
 				}
 				repaintActiveTab(out, tabs, activeIndex, cols, rows)
 			}
