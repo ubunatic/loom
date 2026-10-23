@@ -1,6 +1,6 @@
 # 375 — loom session: help overlay cut off on short terminals
 
-**Status**: Open
+**Status**: Closed — Help fits short terminals in columns with footer visible, PTY test at 12 rows (896787b). Host q1 green; live 80x12 help shows all bindings
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
