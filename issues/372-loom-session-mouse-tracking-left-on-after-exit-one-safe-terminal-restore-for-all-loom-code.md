@@ -50,3 +50,9 @@ must reset them itself.
   screen after `ctrl-q`, and the shell's next output overwrites it mid-line ("EXIT=0e369 mc"). The
   restore must leave the outer screen as the session found it (e.g. run tabs on the outer alt screen
   once more than one tab exists, or clear what loom drew) with the cursor at a clean line start.
+
+## Also: direct tab select on alt digits (user, 2026-10-23)
+
+- Add `session.bindings.select_tab: [alt-1 … alt-9]` (index in list = tab), swallowed like ctrl-n.
+  Ctrl+digit is not usable (legacy encodings collide with NUL, Esc, ^\ … backspace). Check that
+  `ESC 1` decodes as `alt-1`; PTY test: alt-2 switches to tab 2, alt-2 with one tab is swallowed.
