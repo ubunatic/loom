@@ -12,6 +12,7 @@ var keyCapNames = map[string]string{
 	"pgdown": "PgDn", "pgdn": "PgDn", "pagedown": "PgDn",
 	"pgup": "PgUp", "pageup": "PgUp",
 	"backspace": "Backspace", "esc": "Esc", "escape": "Esc",
+	"down": "↓", "up": "↑",
 }
 
 // KeyCap renders a binding such as ctrl-alt-s as a keycap label such as ⌃⌥S.

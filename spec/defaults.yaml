@@ -617,11 +617,11 @@ session:
     prompt: "Find: "
     placeholder: "type to search"
     no_match: "No matches"
-    next_hint: "Enter/↓ older"
-    previous_hint: "↑ newer"
-    close_hint: "Esc close"
+    next_hint: "older"
+    previous_hint: "newer"
+    close_hint: "close"
     bindings:
-      next: ["enter", "down"]
-      previous: ["up"]
+      next: ["enter", "up"]
+      previous: ["down"]
       close: ["esc"]
 

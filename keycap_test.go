@@ -15,6 +15,8 @@ func TestKeyCap(t *testing.T) {
 		"ctrl-s":              "⌃S",
 		"f10":                 "F10",
 		"f1":                  "F1",
+		"up":                  "↑",
+		"down":                "↓",
 		"pgdown":              "PgDn",
 		"ctrl-space":          "⌃Space",
 		"ctrl--":              "⌃-",

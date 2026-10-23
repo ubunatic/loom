@@ -308,7 +308,7 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if s.ScrollbackLines != 5000 || !slices.Equal(s.PrefixBindings.Search, []string{"f"}) {
 		t.Fatalf("session scrollback/search = %d/%v, want 5000/[f]", s.ScrollbackLines, s.PrefixBindings.Search)
 	}
-	if !slices.Equal(s.Search.Bindings.Next, []string{"enter", "down"}) || !slices.Equal(s.Search.Bindings.Previous, []string{"up"}) || !slices.Equal(s.Search.Bindings.Close, []string{"esc"}) {
+	if !slices.Equal(s.Search.Bindings.Next, []string{"enter", "up"}) || !slices.Equal(s.Search.Bindings.Previous, []string{"down"}) || !slices.Equal(s.Search.Bindings.Close, []string{"esc"}) {
 		t.Fatalf("session search bindings = %+v", s.Search.Bindings)
 	}
 	if s.Prefix != "ctrl-b" {

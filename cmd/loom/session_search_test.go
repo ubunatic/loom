@@ -6,10 +6,26 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
+	"ubunatic.com/loom"
 	"ubunatic.com/loom/vt"
 )
+
+func TestSessionSearchControlsUseKeycaps(t *testing.T) {
+	defs := loom.SpeccedDefaults.Session
+	got := sessionSearchControls(defs, "needle", 1, 2)
+	want := "2/2  Enter/↑ older  ↓ newer  Esc close"
+	if got != want {
+		t.Fatalf("sessionSearchControls() = %q, want %q", got, want)
+	}
+	for _, raw := range []string{"enter", "down", "up", "esc"} {
+		if strings.Contains(got, raw) {
+			t.Fatalf("search controls expose raw binding %q: %q", raw, got)
+		}
+	}
+}
 
 func TestFindSessionMatchesSmartCaseAndDisplayColumns(t *testing.T) {
 	term := vt.NewVT(20, 2)

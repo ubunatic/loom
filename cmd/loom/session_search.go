@@ -78,7 +78,14 @@ func sessionSearchControls(defs loom.SessionDefaults, query string, matchIndex, 
 	} else if query != "" {
 		status = search.NoMatch
 	}
-	controls := []string{strings.Join(search.Bindings.Next, "/") + " " + search.NextHint, strings.Join(search.Bindings.Previous, "/") + " " + search.PreviousHint, strings.Join(search.Bindings.Close, "/") + " " + search.CloseHint}
+	keyCaps := func(bindings []string) string {
+		caps := make([]string, len(bindings))
+		for i, binding := range bindings {
+			caps[i] = loom.KeyCap(binding)
+		}
+		return strings.Join(caps, "/")
+	}
+	controls := []string{keyCaps(search.Bindings.Next) + " " + search.NextHint, keyCaps(search.Bindings.Previous) + " " + search.PreviousHint, keyCaps(search.Bindings.Close) + " " + search.CloseHint}
 	if status != "" {
 		controls = append([]string{status}, controls...)
 	}

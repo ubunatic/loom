@@ -1235,6 +1235,10 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	session.WaitFor("Find:", time.Second*5)
 	session.Send("needle")
 	session.WaitFor("2/2", time.Second*5)
+	searchBar := session.Screen()[len(session.Screen())-1]
+	if !strings.Contains(searchBar, "Enter/↑ older") || strings.Contains(searchBar, "enter/up") {
+		t.Fatalf("search bar hint has raw or missing key names: %q", searchBar)
+	}
 	newY := sessionRowContaining(session.Screen(), "new needle")
 	if newY < 0 || !session.Cell(4, newY).Style.Reverse {
 		t.Fatalf("newest match cell was not highlighted at row %d: %+v screen=%q", newY, session.Cell(4, newY), session.Text())
@@ -1243,17 +1247,23 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 		t.Fatalf("old scrollback match visible before navigation: %q", session.Text())
 	}
 
-	session.Send("\n")
+	session.SendRaw([]byte("\x1b[A"))
 	session.WaitForUpdate("1/2", time.Second*5)
 	oldY := sessionRowContaining(session.Screen(), "old needle")
 	if oldY < 0 || strings.Contains(session.Text(), "new needle") || !session.Cell(4, oldY).Style.Reverse {
-		t.Fatalf("enter did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
+		t.Fatalf("up did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
 	}
-	session.SendRaw([]byte("\x1b[A"))
+	session.SendRaw([]byte("\x1b[B"))
 	session.WaitForUpdate("2/2", time.Second*5)
 	newY = sessionRowContaining(session.Screen(), "new needle")
 	if newY < 0 || strings.Contains(session.Text(), "old needle") || !session.Cell(4, newY).Style.Reverse {
-		t.Fatalf("up did not select newer match at row %d: %+v", newY, session.Cell(4, newY))
+		t.Fatalf("down did not select newer match at row %d: %+v", newY, session.Cell(4, newY))
+	}
+	session.Send("\n")
+	session.WaitForUpdate("1/2", time.Second*5)
+	oldY = sessionRowContaining(session.Screen(), "old needle")
+	if oldY < 0 || strings.Contains(session.Text(), "new needle") || !session.Cell(4, oldY).Style.Reverse {
+		t.Fatalf("enter did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
 	}
 
 	session.SendRaw([]byte{14, 16, 2, 'f'})
