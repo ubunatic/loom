@@ -1,6 +1,6 @@
 # 379 — Release bump breaks apitest golden file: update it in the release step or drop the version line
 
-**Status**: Open
+**Status**: Closed — normalized Version from api snapshots in internal/apitest (commit 0f81580)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
