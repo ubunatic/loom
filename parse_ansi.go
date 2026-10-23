@@ -5,10 +5,10 @@ package loom
 
 import (
 	"os"
-	"strconv"
 	"strings"
 	"unicode"
 
+	"ubunatic.com/loom/ansi"
 	"ubunatic.com/loom/measure"
 )
 
@@ -196,135 +196,5 @@ func ParseANSIOld(s string) []Cell {
 
 // applySGRSequence applies SGR parameters to a style.
 func applySGRSequence(style Style, params string) Style {
-	// Empty parameter list (bare ESC[m) counts as code 0 (reset)
-	if params == "" {
-		return Style{}
-	}
-
-	// Split by semicolon; an empty part (e.g. ESC[;1m or ESC[1;m) counts as 0
-	parts := strings.Split(params, ";")
-	for i := 0; i < len(parts); i++ {
-		p := parts[i]
-		code := 0
-		if p != "" {
-			var err error
-			code, err = strconv.Atoi(p)
-			if err != nil {
-				continue
-			}
-		}
-
-		switch {
-		case code == 0:
-			// Reset all attributes
-			style = Style{}
-
-		case code == 1:
-			// Bold
-			style.Bold = true
-
-		case code == 2:
-			// Dim
-			style.Dim = true
-
-		case code == 3:
-			style.Italic = true
-
-		case code == 4:
-			// Underline
-			style.Underline = true
-
-		case code == 7:
-			style.Invert = true
-
-		case code == 9:
-			style.Strike = true
-
-		case code == 22:
-			// Bold and dim off
-			style.Bold = false
-			style.Dim = false
-
-		case code == 23:
-			style.Italic = false
-
-		case code == 24:
-			// Underline off
-			style.Underline = false
-
-		case code == 27:
-			style.Invert = false
-
-		case code == 29:
-			style.Strike = false
-
-		case code >= 30 && code <= 37:
-			// 16-color foreground (30-37)
-			style.FG = ColorIndex(uint8(code - 30))
-
-		case code >= 90 && code <= 97:
-			// Bright 16-color foreground (90-97)
-			style.FG = ColorIndex(uint8(code - 90 + 8))
-
-		case code >= 40 && code <= 47:
-			// 16-color background (40-47)
-			style.BG = ColorIndex(uint8(code - 40))
-
-		case code >= 100 && code <= 107:
-			// Bright 16-color background (100-107)
-			style.BG = ColorIndex(uint8(code - 100 + 8))
-
-		case code == 39:
-			// Reset foreground to default
-			style.FG = ColorReset()
-
-		case code == 49:
-			// Reset background to default
-			style.BG = ColorReset()
-
-		case code == 38 && i+2 < len(parts) && parts[i+1] == "5":
-			// 256-color foreground: 38;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
-			if err == nil && v >= 0 && v <= 255 {
-				style.FG = ColorIndex(uint8(v))
-			}
-			i += 2
-
-		case code == 48 && i+2 < len(parts) && parts[i+1] == "5":
-			// 256-color background: 48;5;n
-			v, err := strconv.Atoi(parts[i+2])
-			// Ignore out-of-range values (0-255 only)
-			if err == nil && v >= 0 && v <= 255 {
-				style.BG = ColorIndex(uint8(v))
-			}
-			i += 2
-
-		case code == 38 && i+4 < len(parts) && parts[i+1] == "2":
-			// 24-bit RGB foreground: 38;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
-			if errR == nil && errG == nil && errB == nil &&
-				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
-				style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
-			}
-			i += 4
-
-		case code == 48 && i+4 < len(parts) && parts[i+1] == "2":
-			// 24-bit RGB background: 48;2;r;g;b
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
-			// Ignore if any value is out of range (0-255 only)
-			if errR == nil && errG == nil && errB == nil &&
-				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
-				style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))
-			}
-			i += 4
-		}
-	}
-
-	return style
+	return ansi.ParseSGR(style, params)
 }

@@ -29,6 +29,12 @@ const (
 )
     Aliases for convenience and compatibility.
 
+const (
+	ColorProfileNone      = ansi.ColorProfileNone
+	ColorProfile16        = ansi.ColorProfile16
+	ColorProfile256       = ansi.ColorProfile256
+	ColorProfileTrueColor = ansi.ColorProfileTrueColor
+)
 
 VARIABLES
 
@@ -47,7 +53,7 @@ var DefaultMaxCols = SpeccedDefaults.Pane.MaxCols
 var DefaultPlaceholder = SpeccedDefaults.Choice.DefaultPlaceholder
     DefaultPlaceholder is the search-bar hint of Choice and Table.
 
-var Reset = Style{}
+var Reset = ansi.Reset
     Reset is a zero Style — default terminal colors, no attributes.
 
 var SpeccedBackground = loadBackgroundDefaults()
@@ -1206,9 +1212,7 @@ type Cmd struct {
     Cmd is a command reachable from any widget's prompt by typing `:name` or
     `/name`.
 
-type Color struct {
-	// Has unexported fields.
-}
+type Color = ansi.Color
     Color is a terminal color: reset, 256-color index, or 24-bit RGB.
 
 func ColorIndex(n uint8) Color
@@ -1219,13 +1223,6 @@ func ColorRGB(r, g, b uint8) Color
 
 func ColorReset() Color
     ColorReset is the default terminal foreground or background color.
-
-func (c Color) RGB() (r, g, b uint8, ok bool)
-    RGB returns an approximate 24-bit value for c and whether one could be
-    resolved. colorReset has no fixed RGB value (terminal-defined) and returns
-    ok=false. Indexed colors are approximated using the standard xterm 256
-    palette (6x6x6 color cube and grayscale ramp; 0-15 use common ANSI RGB
-    values).
 
 type ColorPicker struct {
 	FG, BG   Color
@@ -1309,15 +1306,9 @@ const (
 	ColorPickerFG ColorPickerTarget = iota
 	ColorPickerBG
 )
-type ColorProfile uint8
+type ColorProfile = ansi.ColorProfile
     ColorProfile is the color capability available at an ANSI output boundary.
 
-const (
-	ColorProfileNone ColorProfile = iota
-	ColorProfile16
-	ColorProfile256
-	ColorProfileTrueColor
-)
 func DetectColorProfile() ColorProfile
     DetectColorProfile reports the profile selected by LOOMCOLOR, NO_COLOR,
     COLORTERM, and TERM. LOOMCOLOR accepts truecolor, 256, 16, or none.
@@ -4509,28 +4500,12 @@ func (s *Stopwatch) Tick(now time.Time)
 
 func (s *Stopwatch) TickInterval() time.Duration
 
-type Style struct {
-	FG        Color
-	BG        Color
-	Bold      bool
-	Underline bool
-	Dim       bool
-	Italic    bool
-	Strike    bool
-	Invert    bool
-}
+type Style = ansi.Style
     Style describes the visual appearance of a Canvas cell.
 
 func StyleForProviderState(state ProviderState) Style
     StyleForProviderState returns the visual style corresponding to a provider
     state.
-
-func (s Style) ANSI() string
-    ANSI returns the escape sequence that applies this style. Always starts with
-    a full reset to avoid state bleed from previous cells.
-
-func (s Style) ANSIFor(profile ColorProfile) string
-    ANSIFor returns the style escape sequence downsampled for profile.
 
 type StyledRows struct {
 	Lines []string

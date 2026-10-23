@@ -1,0 +1,93 @@
+package ansi // import "ubunatic.com/loom/ansi"
+
+Package ansi provides ANSI colors, styles, and SGR parsing.
+
+VARIABLES
+
+var Reset = Style{}
+    Reset is a zero Style — default terminal colors, no attributes.
+
+
+TYPES
+
+type Color struct {
+	// Has unexported fields.
+}
+    Color is a terminal color: reset, 256-color index, or 24-bit RGB.
+
+func ColorIndex(n uint8) Color
+    ColorIndex returns a 256-color palette entry (0–255).
+
+func ColorRGB(r, g, b uint8) Color
+    ColorRGB returns a 24-bit true-color value.
+
+func ColorReset() Color
+    ColorReset is the default terminal foreground or background color.
+
+func (c Color) AppendBG(b []byte, profile ColorProfile) []byte
+    AppendBG appends the background SGR sequence for profile. It allocates only
+    when b has insufficient capacity.
+
+func (c Color) AppendFG(b []byte, profile ColorProfile) []byte
+    AppendFG appends the foreground SGR sequence for profile. It allocates only
+    when b has insufficient capacity.
+
+func (c Color) Index() (uint8, bool)
+    Index returns the palette index and whether c is an indexed color.
+
+func (c Color) RGB() (r, g, b uint8, ok bool)
+    RGB returns an approximate 24-bit value for c and whether one could be
+    resolved. colorReset has no fixed RGB value (terminal-defined) and returns
+    ok=false. Indexed colors are approximated using the standard xterm 256
+    palette (6x6x6 color cube and grayscale ramp; 0-15 use common ANSI RGB
+    values).
+
+type ColorProfile uint8
+    ColorProfile is the color capability available at an ANSI output boundary.
+
+const (
+	ColorProfileNone ColorProfile = iota
+	ColorProfile16
+	ColorProfile256
+	ColorProfileTrueColor
+)
+func DetectColorProfile() ColorProfile
+    DetectColorProfile reports the profile selected by LOOMCOLOR, NO_COLOR,
+    COLORTERM, and TERM. LOOMCOLOR accepts truecolor, 256, 16, or none.
+
+func DetectColorProfileFrom(override, noColor, colorTerm, term string) ColorProfile
+    DetectColorProfileFrom applies the environment profile rules to supplied
+    values.
+
+type Style struct {
+	FG        Color
+	BG        Color
+	Bold      bool
+	Underline bool
+	Dim       bool
+	Italic    bool
+	Strike    bool
+	Invert    bool
+}
+    Style describes the visual appearance of a Canvas cell.
+
+func ParseSGR(style Style, params string) Style
+    ParseSGR applies semicolon-separated SGR parameters (without ESC[ and m) to
+    style. Empty parameters reset the style; unsupported and invalid codes are
+    ignored.
+
+func (s Style) ANSI() string
+    ANSI returns the escape sequence that applies this style. Always starts with
+    a full reset to avoid state bleed from previous cells.
+
+func (s Style) ANSIFor(profile ColorProfile) string
+    ANSIFor returns the style escape sequence downsampled for profile.
+
+func (s Style) AppendANSI(b []byte) []byte
+    AppendANSI appends this style using true color, starting with a full reset.
+    It allocates only when b has insufficient capacity.
+
+func (s Style) AppendANSIFor(b []byte, profile ColorProfile) []byte
+    AppendANSIFor appends this style downsampled for profile, starting with a
+    full reset. It allocates only when b has insufficient capacity.
+

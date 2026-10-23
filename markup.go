@@ -392,13 +392,16 @@ func markupTag(style Style) string {
 }
 
 func markupColor(c Color) string {
-	if c.mode == colorRGB {
-		return fmt.Sprintf("#%02x%02x%02x", c.r, c.g, c.b)
+	if index, ok := c.Index(); ok {
+		if name, ok := markupColorName[index]; ok {
+			return name
+		}
+		return fmt.Sprintf("color(%d)", index)
 	}
-	if name, ok := markupColorName[c.index]; ok {
-		return name
+	if r, g, b, ok := c.RGB(); ok {
+		return fmt.Sprintf("#%02x%02x%02x", r, g, b)
 	}
-	return fmt.Sprintf("color(%d)", c.index)
+	return markupColorName[0]
 }
 
 var markupEscaper = strings.NewReplacer(`\`, `\\`, `[`, `\[`, `]`, `\]`)

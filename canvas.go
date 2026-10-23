@@ -523,6 +523,7 @@ func (c *Canvas) Row(y int) string {
 		return ""
 	}
 	var b strings.Builder
+	var styleBuf [80]byte
 	var cur Style
 	vteNeedPad := false
 	isVTE := measure.ActiveRenderPath() == measure.RenderPathVTE
@@ -530,7 +531,7 @@ func (c *Canvas) Row(y int) string {
 		if cell.Continuation {
 			if vteNeedPad {
 				if cell.Style != cur {
-					b.WriteString(cell.Style.ANSIFor(c.ColorProfile))
+					b.Write(cell.Style.AppendANSIFor(styleBuf[:0], c.ColorProfile))
 					cur = cell.Style
 				}
 				b.WriteByte(' ')
@@ -543,7 +544,7 @@ func (c *Canvas) Row(y int) string {
 			vteNeedPad = true
 		}
 		if cell.Style != cur {
-			b.WriteString(cell.Style.ANSIFor(c.ColorProfile))
+			b.Write(cell.Style.AppendANSIFor(styleBuf[:0], c.ColorProfile))
 			cur = cell.Style
 		}
 		if text := safeCellText(cell.Text); text == "" {
