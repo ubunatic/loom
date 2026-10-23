@@ -53,21 +53,15 @@ While issue #382 addresses parser streaming continuity and safe discard at the r
 - Implemented 64 KB circular raw byte buffer and anomaly detector in `internal/session/debug.go`.
 - Added unit tests in `internal/session/debug_test.go` covering ring wrapping, control parsing, stall timeouts, and false positive checks.
 
-### M2: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
-- **Pre-Work / Required Refinements**:
-  - Implement bundle creation (`.log`, `-before.ansi`, `-after.ansi`) using `t.vt.ANSI()` and raw chunks, with exclusive filenames and FIFO rotation capped at 5 bundles.
-  - Test directory creation failure gracefully without crashing the session.
-- **Scope**:
-  - Integrate detector and two-tier repair into `runSession`:
-    1. Capture before-state `.ansi`.
-    2. Reset parser state: `t.vt.ResetParser()`.
-    3. Momentary `TIOCSWINSZ` toggle (`setPTYSize(t.master, cols, toggleRows)` then restore to `childRows`).
-    4. Delayed after-state `.ansi` capture (150ms).
-    5. 10-second circuit breaker cooldown (`RepairCooldown`).
-  - Render `[!]` in `sessionBarContent` during active alert window, keeping non-alert output byte-identical to pass `TestSessionBarGoldens`.
+### M2 Delivered: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
+- **Status**: Delivered & verified in commit `b14fd1d`.
+- Implemented `writeDebugBundle` writing `.log` with raw stream chunks and `-before.ansi` / `-after.ansi` screen captures, with FIFO rotation keeping at most 5 bundles.
+- Implemented two-tier auto-repair in `runSession`: `t.vt.ResetParser()` followed by momentary `TIOCSWINSZ` toggle to trigger child `SIGWINCH`, with 10s circuit breaker cooldown.
+- Implemented status bar warning indicator `[!]` in `sessionBarContent`, maintaining 100% byte-identity when no alert is active (`TestSessionBarGoldens` passes).
 
 ### M3: Automated PTY Canary Integration Tests & Evergreen Docs
-- Automated PTY test in `internal/session/session_pty_test.go` with canary child verifying detection, `.ansi` captures, `SIGWINCH` redraw, and `[!]` indicator.
-- PTY test verifying cooldown rate-limiting and max-5 bundle rotation.
-- Update `docs/Session.md`.
-- Run full verification (`HTO=0 make test-q1`).
+- **Scope**:
+  - Automated PTY test in `internal/session/session_pty_test.go` with canary child verifying detection, `.ansi` captures, `SIGWINCH` redraw, and `[!]` indicator.
+  - PTY test verifying cooldown rate-limiting and max-5 bundle rotation.
+  - Update `docs/Session.md`.
+  - Run full verification (`HTO=0 make test-q1`).
