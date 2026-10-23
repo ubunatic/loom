@@ -39,6 +39,11 @@ A host `make test-q1` run (right after a developer's own run) took the machine's
 1. **Report:** a script or make target that runs one package at a time with `-p 1`, records wall time,
    CPU time and peak RSS (`/usr/bin/time -v`) per package, and the 20 slowest tests (`go test -json`),
    into a short table under `docs/progress/377/`. No full parallel run.
+   **Done (2026-10-23):** the report is now the `gotester report` verb in the new repo
+   `~/projects/gotester` (commit c8c699b, installed to `~/go/bin/gotester`). Saved numbers live in
+   `~/.cache/gotester/ubunatic.com_loom/`, not in the loom repo. Baseline run (one package at a time):
+   about 196 s wall, 218 s CPU, 899 MiB peak RSS for the largest package, all packages passing.
+   Next: the 2nd-step bounded run and the rest of the roadmap, using `gotester report`.
 2. **Bound the load:** `make test` uses a spec'd `-p` limit (e.g. half the cores) and PTY tests use
    `t.Parallel` limits; measure peak RSS and swap before/after.
 3. **Session PTY tests:** cut the 42 tests to the key behaviours (bar, tabs, restore, mouse, help,
