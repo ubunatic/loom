@@ -23,10 +23,18 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
 5. **SGR Colon Subparameters**:
    Colon flattening disrupted ITU T.416 format (`38:2::R:G:B`), and truncated `38;2;...` sequences fell through to attribute parsing.
 
-## 2. Sprint Milestones
-- **M1**: Harden `vt.VT` Escape & Control String Parser (`vt/vt.go`) — Delivered in commit `7703a90`.
-- **M2**: Harden `internal/session` Output Stream Framing (`internal/session/session.go`) — Delivered in commit `f8a9d37`.
-- **M3**: Adversarial Split-Byte, Malformed Sequence & PTY Verification (`vt/vt_test.go`, `internal/session/session_pty_test.go`)
+---
+
+## 2. Sprint Milestones & Verification
+- **M1 (VT parser streaming continuity & safe discard)**: Delivered in commit [`7703a90`](file:///home/uwe/projects/loom/vt/vt.go).
+  - Implemented intermediate byte parsing in `VT.escape`, cancellation via `CAN`/`SUB`, embedded `ESC` restart, string control dispatch (OSC/DCS/APC/PM/SOS) with `BEL`, `ST`, and `0x9C`, ITU T.416 colon SGR, 1024-byte safety cap, `ResetParser()`, and `WriteFramed()`.
+- **M2 (Session output framing)**: Delivered in commit [`f8a9d37`](file:///home/uwe/projects/loom/internal/session/session.go).
+  - Updated API golden snapshot `testdata/api/vt.txt`.
+  - Switched `runSession` to use `t.vt.WriteFramed(buf[:n])`, withholding incomplete escape/UTF-8 tails so outer terminal UI writes (`syncSessionMouse`, `drawSessionTabBar`) never interleave inside split child sequences.
+- **M3 (Adversarial split-byte & PTY integration tests)**: Delivered in commit [`4d84758`](file:///home/uwe/projects/loom/internal/session/session_pty_test.go).
+  - Added table-driven VT chunking tests (`TestVTComplexStreamChunkBoundaries`) verifying 1, 2, 3, 5, and 7-byte chunk splits across complex composite streams.
+  - Added PTY integration test (`TestSessionSplitEscapeAcrossTabBarRedraw`) asserting zero leakage when opening/switching tabs while a child holds a partial truecolor CSI sequence.
+  - Verified with full repository Quota-1 test suite (`HTO=0 make test-q1`).
 
 ---
 
@@ -35,5 +43,7 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
 - [01:18] Architect refinement completed with concrete findings; updated and committed Issue #382 ticket (`9195930`).
 - [01:19] Dispatched developer `sol:med` for plan-first inspection.
 - [01:20] Developer submitted concrete implementation plan. Authorized M1.
-- [01:22] M1 completed and committed (`7703a90`). Host review verified diff and unit tests; identified API snapshot update needed for new exports. Embedded pre-work in ticket.
-- [01:24] M2 completed and committed (`f8a9d37`). Updated API snapshot and switched `runSession` to `WriteFramed`.
+- [01:22] M1 completed and committed (`7703a90`). Host review verified diff and unit tests; identified API snapshot update needed for new exports. Embedded pre-work in ticket (`8ca8bd2`).
+- [01:24] M2 completed and committed (`f8a9d37`). Updated API snapshot and switched `runSession` to `WriteFramed`. Committed ticket update (`7911ce0`).
+- [01:25] Dispatched developer for M3.
+- [01:29] M3 completed and committed (`4d84758`). All tests passed in Quota-1 run. Ran `make install`. Closed Issue #382 (`d892c60`).
