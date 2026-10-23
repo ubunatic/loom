@@ -51,4 +51,5 @@ upkeep.
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
 | 374 | [374-loom-session-scrollback-search-prefix-f.md](374-loom-session-scrollback-search-prefix-f.md) | loom session: scrollback search (prefix f) | Draft |
+| 375 | [375-loom-session-help-overlay-cut-off-on-short-terminals.md](375-loom-session-help-overlay-cut-off-on-short-terminals.md) | loom session: help overlay cut off on short terminals | Open |
 <!-- harnez:end issues-active-index -->
