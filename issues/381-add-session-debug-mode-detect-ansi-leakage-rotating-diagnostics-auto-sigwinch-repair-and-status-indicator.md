@@ -1,6 +1,6 @@
 # 381 — Add session debug mode: detect ANSI leakage, rotating diagnostics, auto-SIGWINCH repair, and status indicator
 
-**Status**: Open
+**Status**: Closed — Session debug mode with 64KB ring buffer, leakage detector, rotating diagnostics, two-tier auto-repair via SIGWINCH, and status indicator verified with PTY tests
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
