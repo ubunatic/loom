@@ -1,6 +1,6 @@
 # 372 — loom session: mouse tracking left on after exit, one safe terminal restore for all loom code
 
-**Status**: Open
+**Status**: Closed — New terminal package with idempotent restore (mouse 9/1000-1015, focus, paste, kitty, DECSTBM, SGR, cursor, wrap, alt screen) on all exit paths incl. signals and panic, used by session, Pane.close and probes; outer alt screen for >1 tab; per-tab modes on switch; alt-1..9; bar clicks safe mode (2748aa1, 0d55230, fa70712, bece2bb). Host q1 green 2x; live tmux flags: mc tab mouse on, new shell tab off, alt-1 back on; ctrl-q and SIGTERM leave mouse off, alt off; SIGTERM exit 143
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
