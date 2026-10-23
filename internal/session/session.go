@@ -67,7 +67,18 @@ func LongHelp() string {
 
 // Run runs a command in a pseudo-terminal, forwarding input, output and hotkeys.
 func Run(ctx context.Context, in io.Reader, out, errOut io.Writer, command string, args ...string) error {
-	return runSession(ctx, in, out, errOut, command, args...)
+	return RunWithOptions(ctx, in, out, errOut, Options{}, command, args...)
+}
+
+// Options configures optional session behavior.
+type Options struct {
+	Debug    bool
+	DebugDir string
+}
+
+// RunWithOptions runs a command in a pseudo-terminal with optional features.
+func RunWithOptions(ctx context.Context, in io.Reader, out, errOut io.Writer, options Options, command string, args ...string) error {
+	return runSession(ctx, in, out, errOut, options, command, args...)
 }
 
 func openSessionPTY(cols, rows int) (master, slave *os.File, err error) {
@@ -111,6 +122,8 @@ type sessionTab struct {
 	waitErr       error
 	mouseOverride int // -1 disabled, 0 follows child, 1 enabled
 	done          chan struct{}
+	debugRing     *debugRing
+	debugDetector *debugDetector
 }
 
 func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
@@ -504,7 +517,7 @@ func switchActiveTab(out io.Writer, oldTab, newTab *sessionTab, tabs []*sessionT
 	repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAlt)
 }
 
-func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, command string, args ...string) error {
+func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, options Options, command string, args ...string) error {
 	if command == "" {
 		command = os.Getenv("SHELL")
 		if command == "" {
@@ -605,6 +618,10 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			vt:      vt.NewVT(cols, childRows),
 			done:    make(chan struct{}),
 		}
+		if options.Debug {
+			tab.debugRing = newDebugRing()
+			tab.debugDetector = &debugDetector{}
+		}
 		tab.vt.SetScrollbackLimit(loom.SpeccedDefaults.Session.ScrollbackLines)
 		nextTabID++
 
@@ -615,6 +632,10 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				n, readErr := t.master.Read(buf)
 				if n > 0 {
 					sessionMu.Lock()
+					if t.debugRing != nil {
+						t.debugRing.Write(buf[:n])
+						t.debugDetector.Observe(buf[:n], time.Now())
+					}
 					frame, _ := t.vt.WriteFramed(buf[:n])
 					if t.vt.KittyKeyboard {
 						restorer.SetKittyKeyboard(true)

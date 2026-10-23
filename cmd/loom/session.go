@@ -13,7 +13,11 @@ import (
 )
 
 func sessionCommand() *cobra.Command {
-	return &cobra.Command{
+	debugDefault := os.Getenv("LOOM_SESSION_DEBUG") == "1"
+	debugDirDefault := os.Getenv("LOOM_DEBUG_DIR")
+	var debug bool
+	var debugDir string
+	command := &cobra.Command{
 		Use:          "session [-- <cmd> [args...]]",
 		Short:        "Run a command in a PTY wrapper with screenshot and quit hotkeys",
 		Long:         session.LongHelp(),
@@ -25,7 +29,16 @@ func sessionCommand() *cobra.Command {
 				command = args[0]
 				args = args[1:]
 			}
-			return session.Run(cmd.Context(), os.Stdin, cmd.OutOrStdout(), cmd.ErrOrStderr(), command, args...)
+			if cmd.Flags().Changed("debug") {
+				debugDefault = debug
+			}
+			if cmd.Flags().Changed("debug-dir") {
+				debugDirDefault = debugDir
+			}
+			return session.RunWithOptions(cmd.Context(), os.Stdin, cmd.OutOrStdout(), cmd.ErrOrStderr(), session.Options{Debug: debugDefault, DebugDir: debugDirDefault}, command, args...)
 		},
 	}
+	command.Flags().BoolVar(&debug, "debug", debugDefault, "enable session stream diagnostics")
+	command.Flags().StringVar(&debugDir, "debug-dir", debugDirDefault, "directory for session diagnostics")
+	return command
 }
