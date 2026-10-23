@@ -78,6 +78,24 @@ type VT struct {
 	Cols, Rows int
 	// CursorVisible reflects the last ?25 mode.
 	CursorVisible bool
+	// MouseMode reflects the active mouse tracking mode (9, 1000, 1002, 1003, or 0 if off).
+	MouseMode int
+	// MouseSGR reports whether SGR mouse encoding (1006) is active.
+	MouseSGR bool
+	// MouseUTF8 reports whether UTF-8 mouse encoding (1005) is active.
+	MouseUTF8 bool
+	// MouseURXVT reports whether URXVT mouse encoding (1015) is active.
+	MouseURXVT bool
+	// FocusEvents reports whether focus event reporting (1004) is active.
+	FocusEvents bool
+	// BracketedPaste reports whether bracketed paste mode (2004) is active.
+	BracketedPaste bool
+	// CursorKeysApp reports whether application cursor keys (DECCKM ?1) is active.
+	CursorKeysApp bool
+	// KeypadApp reports whether keypad application mode (DECKPAM \x1b=) is active.
+	KeypadApp bool
+	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
+	KittyKeyboard bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.

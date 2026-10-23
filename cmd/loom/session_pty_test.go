@@ -694,4 +694,118 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 	_ = session.Wait(time.Second * 5)
 }
 
+func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, and waits
+	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("READY", time.Second*5)
+
+	// Child turned tracking on; verify it was active
+	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+		t.Fatalf("expected child to enable mouse, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+
+	// Quit with ctrl-q (17)
+	session.SendRaw([]byte{17})
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	// The outer VT must have all modes off
+	vt := session.VT()
+	if vt.MouseMode != 0 || vt.MouseSGR {
+		t.Fatalf("outer VT mouse mode left on after ctrl-q: mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+	if vt.FocusEvents {
+		t.Fatalf("outer VT focus events left on after ctrl-q")
+	}
+	if vt.BracketedPaste {
+		t.Fatalf("outer VT bracketed paste left on after ctrl-q")
+	}
+}
+
+func TestSessionSafeRestoreOnChildExit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, then exits directly
+	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hEXITING\\n'; exit 0"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	vt := session.VT()
+	if vt.MouseMode != 0 || vt.MouseSGR {
+		t.Fatalf("outer VT mouse mode left on after child exit: mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+	if vt.FocusEvents {
+		t.Fatalf("outer VT focus events left on after child exit")
+	}
+	if vt.BracketedPaste {
+		t.Fatalf("outer VT bracketed paste left on after child exit")
+	}
+}
+
+func TestSessionSafeRestoreOnLastTabClosed(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("READY", time.Second*5)
+
+	// Close the only tab with prefix x (ctrl-b x)
+	session.SendRaw([]byte{2, 'x'})
+	_ = session.Wait(time.Second * 5)
+
+	vt := session.VT()
+	if vt.MouseMode != 0 || vt.MouseSGR {
+		t.Fatalf("outer VT mouse mode left on after prefix x: mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+	if vt.FocusEvents {
+		t.Fatalf("outer VT focus events left on after prefix x")
+	}
+	if vt.BracketedPaste {
+		t.Fatalf("outer VT bracketed paste left on after prefix x")
+	}
+}
+
+func TestSessionSafeRestoreOnSIGTERM(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("READY", time.Second*5)
+
+	// Send SIGTERM to loom session
+	_ = session.Signal(os.Interrupt) // or syscall.SIGTERM
+	_ = session.Wait(time.Second * 5)
+
+	vt := session.VT()
+	if vt.MouseMode != 0 || vt.MouseSGR {
+		t.Fatalf("outer VT mouse mode left on after SIGTERM: mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+	if vt.FocusEvents {
+		t.Fatalf("outer VT focus events left on after SIGTERM")
+	}
+	if vt.BracketedPaste {
+		t.Fatalf("outer VT bracketed paste left on after SIGTERM")
+	}
+}
+
+
+
 

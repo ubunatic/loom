@@ -1,0 +1,90 @@
+package terminal // import "ubunatic.com/loom/terminal"
+
+Package terminal provides safe, unified, idempotent terminal mode restoration
+for loom commands, panes, and external tools that enter raw mode.
+
+CONSTANTS
+
+const ResetAltScreen = "\x1b[?1049l"
+    ResetAltScreen is the ANSI sequence to exit the alternate screen buffer.
+
+const ResetKittyKeyboard = "\x1b[<u"
+    ResetKittyKeyboard is the ANSI sequence to pop the Kitty keyboard protocol
+    state.
+
+const ResetSequences = "\x1b[?9l" +
+	"\x1b[?1000l" +
+	"\x1b[?1002l" +
+	"\x1b[?1003l" +
+	"\x1b[?1005l" +
+	"\x1b[?1006l" +
+	"\x1b[?1015l" +
+	"\x1b[?1004l" +
+	"\x1b[?2004l" +
+	"\x1b[r" +
+	"\x1b[0m" +
+	"\x1b[?25h" +
+	"\x1b[0 q" +
+	"\x1b[?7h"
+    ResetSequences contains the ANSI escape sequence string that resets every
+    terminal mode a child or loom process may set: mouse tracking (9, 1000,
+    1002, 1003, 1005, 1006, 1015 off), focus events (1004 off), bracketed
+    paste (2004 off), DECSTBM scroll region reset (r), SGR reset (0m), cursor
+    visibility (25h), default cursor shape (0 q), and auto-wrap on (7h).
+
+
+FUNCTIONS
+
+func DrainInput(fd int)
+    DrainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
+    do not bleed into the outer shell or subsequent terminal readers.
+
+func Reset(altScreen bool, kittyPop ...bool) string
+    Reset returns ResetSequences, plus ResetKittyKeyboard if kittyPop is true,
+    and ResetAltScreen if altScreen is true.
+
+func Restore(fd int, state *term.State, out io.Writer, altScreen bool, kittyPop ...bool) error
+    Restore writes the full reset sequence set to out, drains unread input
+    on fd, and restores state using term.Restore. It is safe to call with an
+    invalid or non-terminal fd (such as in tests).
+
+
+TYPES
+
+type Restorer struct {
+	// Has unexported fields.
+}
+    Restorer manages terminal cleanup hooks, alternate screen state, and
+    signals. It ensures that terminal restoration is thread-safe and strictly
+    idempotent.
+
+func NewRestorer(fd int, state *term.State, out io.Writer) *Restorer
+    NewRestorer constructs a Restorer for the given terminal file descriptor and
+    output writer.
+
+func (r *Restorer) AltScreen() bool
+    AltScreen reports whether the alternate screen buffer exit is enabled.
+
+func (r *Restorer) CatchSignals(onSignal func(os.Signal), sigs ...os.Signal)
+    CatchSignals configures the Restorer to listen for the provided signals.
+    If any received signal is caught, onSignal is invoked (if non-nil),
+    Restore() is executed, and r exits or hands control back.
+
+func (r *Restorer) OnRestore(fn func())
+    OnRestore registers a hook to be run during restoration before mode reset.
+
+func (r *Restorer) Restore()
+    Restore runs all registered cleanup hooks, writes reset sequences, drains
+    input, and restores terminal cooked state. Restore is idempotent.
+
+func (r *Restorer) SetAltScreen(on bool)
+    SetAltScreen configures whether Restore will exit the alternate screen
+    buffer.
+
+func (r *Restorer) SetKittyKeyboard(on bool)
+    SetKittyKeyboard configures whether Restore will pop the Kitty keyboard
+    protocol.
+
+func (r *Restorer) StopSignals()
+    StopSignals unregisters the signal handler.
+

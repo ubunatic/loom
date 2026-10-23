@@ -143,6 +143,23 @@ func (s *Session) markSend() {
 	s.mu.Unlock()
 }
 
+// VT returns the underlying virtual terminal model.
+func (s *Session) VT() *VT {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt
+}
+
+// Signal sends an OS signal to the child command process.
+func (s *Session) Signal(sig os.Signal) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.cmd != nil && s.cmd.Process != nil {
+		return s.cmd.Process.Signal(sig)
+	}
+	return nil
+}
+
 // Screen returns the current screen rows.
 func (s *Session) Screen() []string {
 	s.mu.Lock()

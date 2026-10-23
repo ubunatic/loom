@@ -18,6 +18,24 @@ type VT struct {
 	Cols, Rows int
 	// CursorVisible reflects the last ?25 mode.
 	CursorVisible bool
+	// MouseMode reflects the active mouse tracking mode (9, 1000, 1002, 1003, or 0 if off).
+	MouseMode int
+	// MouseSGR reports whether SGR mouse encoding (1006) is active.
+	MouseSGR bool
+	// MouseUTF8 reports whether UTF-8 mouse encoding (1005) is active.
+	MouseUTF8 bool
+	// MouseURXVT reports whether URXVT mouse encoding (1015) is active.
+	MouseURXVT bool
+	// FocusEvents reports whether focus event reporting (1004) is active.
+	FocusEvents bool
+	// BracketedPaste reports whether bracketed paste mode (2004) is active.
+	BracketedPaste bool
+	// CursorKeysApp reports whether application cursor keys (DECCKM ?1) is active.
+	CursorKeysApp bool
+	// KeypadApp reports whether keypad application mode (DECKPAM \x1b=) is active.
+	KeypadApp bool
+	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
+	KittyKeyboard bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
@@ -463,6 +481,12 @@ func (v *VT) escape(data []byte) (n int, ok bool) {
 	case '8':
 		v.x, v.y, v.pen = v.saved.x, v.saved.y, v.saved.pen
 		return 2, true
+	case '=':
+		v.KeypadApp = true
+		return 2, true
+	case '>':
+		v.KeypadApp = false
+		return 2, true
 	case '[':
 		// Parse CSI below.
 	default:
@@ -520,6 +544,14 @@ func (v *VT) csi(params string, final byte) {
 	case 's':
 		v.saved = cursorState{v.x, v.y, v.pen}
 	case 'u':
+		if strings.HasPrefix(params, ">") {
+			v.KittyKeyboard = true
+			return
+		}
+		if strings.HasPrefix(params, "<") {
+			v.KittyKeyboard = false
+			return
+		}
 		v.x, v.y, v.pen = v.saved.x, v.saved.y, v.saved.pen
 	case 'K':
 		v.eraseLine(p[0])
@@ -532,12 +564,48 @@ func (v *VT) csi(params string, final byte) {
 		}
 		for _, mode := range p {
 			switch mode {
+			case 1:
+				v.CursorKeysApp = on
 			case 7:
 				v.autoWrap = on
+			case 9:
+				if on {
+					v.MouseMode = 9
+				} else if v.MouseMode == 9 {
+					v.MouseMode = 0
+				}
 			case 25:
 				v.CursorVisible = on
+			case 1000:
+				if on {
+					v.MouseMode = 1000
+				} else if v.MouseMode == 1000 {
+					v.MouseMode = 0
+				}
+			case 1002:
+				if on {
+					v.MouseMode = 1002
+				} else if v.MouseMode == 1002 {
+					v.MouseMode = 0
+				}
+			case 1003:
+				if on {
+					v.MouseMode = 1003
+				} else if v.MouseMode == 1003 {
+					v.MouseMode = 0
+				}
+			case 1004:
+				v.FocusEvents = on
+			case 1005:
+				v.MouseUTF8 = on
+			case 1006:
+				v.MouseSGR = on
+			case 1015:
+				v.MouseURXVT = on
 			case 1049:
 				v.alternate(on)
+			case 2004:
+				v.BracketedPaste = on
 			case 2026:
 				if !on {
 					v.Frames = append(v.Frames, v.Screen())

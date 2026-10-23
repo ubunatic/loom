@@ -10,6 +10,8 @@ import (
 	"os/signal"
 	"strings"
 	"time"
+
+	"ubunatic.com/loom/terminal"
 )
 
 // New opens /dev/tty, enters raw mode, and reserves height rows below the
@@ -225,36 +227,25 @@ func (p *Pane) close() {
 	p.setBracketedPaste(false)
 	p.setKittyKeyboard(false) // pop on the current screen, before leaving alt
 
-	var b strings.Builder
-	_ = p.cursorShape.restore(&b)
-	if p.altActive {
-		// Leaving the alternate screen restores the shell's screen and cursor.
-		b.WriteString("\x1b[?1049l")
-		p.altActive = false
-	} else {
-		// Clear reserved region.
+	if !p.altActive {
+		// Clear reserved inline region.
+		var b strings.Builder
 		for i := 0; i < p.rows; i++ {
 			b.WriteString(fmt.Sprintf("\x1b[%d;1H\x1b[2K", p.startRow+i))
 		}
 		b.WriteString(fmt.Sprintf("\x1b[%d;%dH", p.startRow+p.cursorRowOffset, max(1, p.cursorCol)))
+		p.tty.WriteString(b.String()) //nolint:errcheck
 	}
-	b.WriteString("\x1b[?25h")    // restore cursor visibility (a prompt-less frame may have hidden it)
-	b.WriteString("\x1b[?7h")     // restore auto-wrap
-	p.tty.WriteString(b.String()) //nolint:errcheck
 
-	// Discard any unread input before leaving raw mode: keys pressed during the
-	// session (the closing Enter, leftover mouse/DSR reports) otherwise sit in the
-	// tty queue and leak into the shell or the next cooked reader as a stray line.
-	p.drainInput()
-
-	_ = term.Restore(p.fd, p.oldState)
+	_ = terminal.Restore(p.fd, p.oldState, p.tty, p.altActive, p.kittyKeys)
+	p.altActive = false
 	_ = p.tty.Close()
 }
 
 // drainInput flushes the terminal input queue (TCIFLUSH) so raw-mode leftovers
 // don't bleed into whatever reads the terminal next.
 func (p *Pane) drainInput() {
-	drainTerminalInput(p.fd)
+	terminal.DrainInput(p.fd)
 }
 
 func (p *Pane) installSignalHandler() {

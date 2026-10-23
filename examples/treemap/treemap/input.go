@@ -12,6 +12,7 @@ import (
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/terminal"
 )
 
 // This raw-terminal adapter keeps the live demo responsive to Loom's quit
@@ -79,7 +80,7 @@ func watchForQuitKey(cancel context.CancelFunc) (cleanup func()) {
 	}()
 	return func() {
 		close(done)
-		_ = term.Restore(int(tty.Fd()), oldState)
+		_ = terminal.Restore(int(tty.Fd()), oldState, tty, false)
 		_ = tty.Close()
 	}
 }

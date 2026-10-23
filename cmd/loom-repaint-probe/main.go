@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"golang.org/x/term"
+	"ubunatic.com/loom/terminal"
 )
 
 const (
@@ -57,17 +58,18 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("enable raw input: %w", err)
 	}
+	app := newDemo(options.fps)
+	options.apply(app)
+
 	rawMode := true
 	restoreRaw := func() {
 		if rawMode {
-			_ = term.Restore(int(os.Stdin.Fd()), original)
+			_ = terminal.Restore(int(os.Stdin.Fd()), original, os.Stdout, app.alternate)
 			rawMode = false
 		}
 	}
 	defer restoreRaw()
 
-	app := newDemo(options.fps)
-	options.apply(app)
 	if err := app.resize(); err != nil {
 		return err
 	}

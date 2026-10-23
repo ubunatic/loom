@@ -23,6 +23,7 @@ import (
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/terminal"
 	"ubunatic.com/loom/vt"
 )
 
@@ -192,14 +193,23 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}
 
+	inFD := -1
+	if inFile, ok := in.(*os.File); ok {
+		inFD = int(inFile.Fd())
+	}
+	restorer := terminal.NewRestorer(inFD, oldState, out)
+	defer restorer.Restore()
 	defer func() {
-		eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
-		_, _ = out.Write([]byte("\x1b[r" + eraseBar + "\x1b[?1049l\x1b[r" + eraseBar + "\x1b[?25h"))
-		if inFile, ok := in.(*os.File); ok && oldState != nil {
-			_ = term.Restore(int(inFile.Fd()), oldState)
-			oldState = nil
+		if r := recover(); r != nil {
+			restorer.Restore()
+			panic(r)
 		}
 	}()
+
+	restorer.OnRestore(func() {
+		eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
+		_, _ = out.Write([]byte("\x1b[r" + eraseBar))
+	})
 
 	var sessionMu sync.Mutex
 	var tabs []*sessionTab
@@ -288,6 +298,10 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	sigWinch := make(chan os.Signal, 1)
 	signal.Notify(sigWinch, syscall.SIGWINCH)
 	defer signal.Stop(sigWinch)
+
+	sigTerm := make(chan os.Signal, 2)
+	signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	defer signal.Stop(sigTerm)
 	go func() {
 		for range sigWinch {
 			sessionMu.Lock()
@@ -552,6 +566,13 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			}
 			sessionMu.Unlock()
 			goto done
+		case <-sigTerm:
+			sessionMu.Lock()
+			for _, t := range tabs {
+				killProcessGroup(t.child.Process.Pid)
+			}
+			sessionMu.Unlock()
+			goto done
 		case exitedTab := <-tabExitChan:
 			sessionMu.Lock()
 			idx := -1
@@ -587,9 +608,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 done:
 	// Restore outer terminal cooked mode before printing status messages to errOut
-	if inFile, ok := in.(*os.File); ok && oldState != nil {
-		_ = term.Restore(int(inFile.Fd()), oldState)
-		oldState = nil
+	if inFD >= 0 && oldState != nil {
+		_ = term.Restore(inFD, oldState)
 	}
 
 	shotMu.Lock()

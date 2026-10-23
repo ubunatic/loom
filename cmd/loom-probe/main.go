@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"golang.org/x/term"
+	"ubunatic.com/loom/terminal"
 )
 
 type sample struct {
@@ -46,13 +47,14 @@ func run(input *os.File, output io.Writer) error {
 		return fmt.Errorf("enable raw terminal input: %w", err)
 	}
 	raw := true
+	inAlternateScreen := false
 	defer func() {
 		if raw {
-			term.Restore(inFD, oldState) //nolint:errcheck
+			_ = terminal.Restore(inFD, oldState, output, inAlternateScreen)
+			raw = false
 		}
 	}()
 
-	inAlternateScreen := false
 	defer func() {
 		if inAlternateScreen {
 			io.WriteString(output, "\x1b[?1049l") //nolint:errcheck
@@ -85,7 +87,7 @@ func run(input *os.File, output io.Writer) error {
 		return fmt.Errorf("leave alternate screen: %w", err)
 	}
 	inAlternateScreen = false
-	if err := term.Restore(inFD, oldState); err != nil {
+	if err := terminal.Restore(inFD, oldState, output, false); err != nil {
 		return fmt.Errorf("restore terminal: %w", err)
 	}
 	raw = false
