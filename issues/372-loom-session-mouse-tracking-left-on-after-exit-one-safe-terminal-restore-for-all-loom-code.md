@@ -56,3 +56,12 @@ must reset them itself.
 - Add `session.bindings.select_tab: [alt-1 … alt-9]` (index in list = tab), swallowed like ctrl-n.
   Ctrl+digit is not usable (legacy encodings collide with NUL, Esc, ^\ … backspace). Check that
   `ESC 1` decodes as `alt-1`; PTY test: alt-2 switches to tab 2, alt-2 with one tab is swallowed.
+
+## Also: terminal modes per tab (user, 2026-10-23)
+
+- Clicking in a new tab's shell prints mouse reports: tab 1 (`harnez usage`) turned mouse tracking on
+  in the outer terminal and switching tabs keeps it. Each tab's VT must track the modes its child set
+  (mouse 9/1000/1002/1003/1006/1015, focus 1004, bracketed paste 2004, cursor keys ?1, keypad, cursor
+  visibility, kitty keyboard); on switch, loom resets the outer modes and applies the new tab's. PTY
+  test: tab 1 enables SGR mouse, ctrl-n, a click in tab 2 reaches the shell as nothing (no report),
+  switching back to tab 1 re-enables it.
