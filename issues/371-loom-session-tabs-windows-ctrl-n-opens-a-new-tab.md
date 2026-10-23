@@ -44,3 +44,17 @@ stop and report when blocked on a user decision.
   screen state) with unit tests.
 - M2: session holds tabs; `ctrl-n`, prefix `c`/`n`/`p`/`1`-`9`/`x`, all keys in spec; tab bar; last-tab
   exit code; PTY tests for open, switch (screen shows the other tab's content), close, last exit.
+
+## Approved plan (host, 2026-10-23)
+
+d371 plan approved: spec `session.bindings.new_tab`, `prefix_bindings.{new_tab,next_tab,previous_tab,
+close_tab,select_tab}`; `VT.Repaint()` with replay round-trip test; one reader goroutine per PTY, only
+the active tab writes out, one stdin dispatcher; rows-1 with the bar; last-tab exit code. Pre-work:
+
+- The child can clear or scroll the whole outer screen (`ESC[2J`, `ESC[3J`, scroll past the last row):
+  while the bar shows, set the outer scroll region to rows 1..rows-1 (DECSTBM) and redraw the bar
+  (cursor save/restore) after each active write chunk; reset the region when the bar hides and on exit.
+- Switching to a tab whose child uses the alt screen and back to one that does not must leave the outer
+  terminal in the right screen; test both directions.
+- `select_tab` uses the key's index in the list; no digit parsing in Go.
+- On exit, restore the outer terminal: scroll region, alt screen off if loom turned it on, cursor visible.
