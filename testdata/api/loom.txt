@@ -190,7 +190,7 @@ var SpeccedThemes = func() map[string]ThemeColors {
     SpeccedThemes holds all themes loaded from spec/themes.yaml at init time.
     Keys are theme names ("plain", "mc", …).
 
-var Version = "0.5.0"
+var Version = "0.5.1"
 
 FUNCTIONS
 
