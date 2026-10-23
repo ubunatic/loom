@@ -1,6 +1,6 @@
 # 380 — Extract specdefaults configuration layer from root package
 
-**Status**: In Progress
+**Status**: Closed — extracted standalone specdefaults configuration layer with root aliases and SpeccedDefaults forwarding (commit 239c62b)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
