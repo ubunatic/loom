@@ -1,6 +1,6 @@
 # 376 — loom session: ctrl-f opens scrollback search directly
 
-**Status**: Open
+**Status**: Closed — ctrl-f opens scrollback search directly, swallowed; prefix f kept; bar ⌃F Search (commit 4c7130c). Developer q1 green; user confirmed ctrl-f works live
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

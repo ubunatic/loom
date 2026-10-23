@@ -50,6 +50,5 @@ upkeep.
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
-| 376 | [376-loom-session-ctrl-f-opens-scrollback-search-directly.md](376-loom-session-ctrl-f-opens-scrollback-search-directly.md) | loom session: ctrl-f opens scrollback search directly | Open |
 | 377 | [377-test-suite-catalog-and-roadmap-lighter-quieter-timed-tests.md](377-test-suite-catalog-and-roadmap-lighter-quieter-timed-tests.md) | test suite catalog and roadmap: lighter, quieter, timed tests | Open |
 <!-- harnez:end issues-active-index -->
