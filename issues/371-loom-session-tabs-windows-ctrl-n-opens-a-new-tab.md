@@ -58,3 +58,16 @@ the active tab writes out, one stdin dispatcher; rows-1 with the bar; last-tab e
   terminal in the right screen; test both directions.
 - `select_tab` uses the key's index in the list; no digit parsing in Go.
 - On exit, restore the outer terminal: scroll region, alt screen off if loom turned it on, cursor visible.
+
+## M1–M2 delivered (host review, 2026-10-23)
+
+1124380 (VT.Repaint), dddb36a (tabs). Host q1 green, live in tmux 100x20: ctrl-n opens zsh tab, bar
+shows, prefix n/1/2 switch, `clear` keeps the bar, mc in tab 2 survives switching, prefix x closes and
+hides the bar, ctrl-q exit 0.
+
+### M3 pre-work (required)
+
+- After quit, a stale tab bar line (" 1: harnez  2: zsh") remains on the outer main screen below the
+  shell prompt. The bar was drawn on the main screen while a child used the alt screen (or not erased
+  on hide/exit). Erase the bar row when it hides and on exit, on the screen it was drawn on; PTY test:
+  after exit the outer VT holds no bar text.
