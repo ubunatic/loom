@@ -6,6 +6,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -13,7 +14,9 @@ import (
 	"testing"
 	"time"
 
+	"ubunatic.com/loom"
 	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/vt"
 )
 
 func TestSessionPassThroughIO(t *testing.T) {
@@ -64,7 +67,7 @@ func TestSessionWindowResize(t *testing.T) {
 	session.WaitFor("READY", time.Second*5)
 
 	session.Resize(50, 15)
-	session.WaitFor("WINCH:15 50", time.Second*5)
+	session.WaitFor("WINCH:14 50", time.Second*5)
 	session.SendRaw([]byte{17}) // ctrl-q
 	_ = session.Wait(time.Second * 5)
 }
@@ -411,7 +414,7 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 	session.SendRaw([]byte{14})
 
 	// Wait for tab bar to appear
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// In new tab, print TAB2_RUNNING
 	session.Send("printf 'TAB2_RUNNING\\n'\n")
@@ -444,7 +447,7 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	session.Send("printf 'SCREEN2_CONTENT\\n'\n")
 	session.WaitFor("SCREEN2_CONTENT", time.Second*5)
@@ -480,7 +483,7 @@ func TestSessionTabSwitchPrefixSelect(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	session.Send("printf 'TAB_TWO_MARKER\\n'\n")
 	session.WaitFor("TAB_TWO_MARKER", time.Second*5)
@@ -516,7 +519,7 @@ func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
 
 	// Open tab 2 with prefix c (2, 'c')
 	session.SendRaw([]byte{2, 'c'})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	session.Send("printf 'TAB_TO_CLOSE\\n'\n")
 	session.WaitFor("TAB_TO_CLOSE", time.Second*5)
@@ -546,7 +549,7 @@ func TestSessionLastTabExitCode(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Exit tab 2 with code 0
 	session.Send("exit 0\n")
@@ -577,7 +580,7 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// In tab 2, enter alt screen and print text
 	session.Send("printf '\\033[?1049h\\033[1;1HALT_SCREEN_TAB\\033[0m\\n'\n")
@@ -616,7 +619,7 @@ func TestSessionQuitErasesTabBarOnOuterScreen(t *testing.T) {
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Send ctrl-q (17) to quit session while bar is shown
 	session.SendRaw([]byte{17})
@@ -644,7 +647,7 @@ func TestSessionQuitInAltScreenErasesTabBarOnOuterScreen(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Enter alt screen in tab 2
 	session.Send("printf '\\033[?1049h\\033[1;1HALT\\033[0m\\n'\n")
@@ -676,19 +679,16 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
-	// Close tab 2 with ctrl-b x so bar hides
+	// Close tab 2 with ctrl-b x; the configured bar remains with one tab.
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ") && strings.Contains(strings.Join(rows, "\n"), "1: bash")
 	})
 
-	// The outer VT bottom row must have no bar text
-	for y, row := range session.Screen() {
-		if strings.Contains(row, "1: bash") || strings.Contains(row, "2: ") {
-			t.Fatalf("stale tab bar found at row %d after hiding bar: %q", y, row)
-		}
+	if !strings.Contains(session.Screen()[len(session.Screen())-1], "1: bash") {
+		t.Fatalf("single-tab bar missing after closing tab: %q", session.Screen()[len(session.Screen())-1])
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
@@ -826,7 +826,7 @@ func TestSessionPerTabModes(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n (14)
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// In Tab 2, mouse tracking in outer VT must be OFF
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -860,7 +860,7 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Send alt-1 (\x1b1) to switch to Tab 1
 	session.SendRaw([]byte{27, '1'})
@@ -902,7 +902,7 @@ func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Print unique text in Tab 2
 	session.Send("printf 'TAB2_ISOLATED\\n'\n")
@@ -944,7 +944,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// Switch back to Tab 1 so active tab has mouse tracking on
 	session.SendRaw([]byte{27, '1'})
@@ -983,7 +983,7 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("1: bash", time.Second*5)
+	session.WaitFor("2: ", time.Second*5)
 
 	// In safe mode, plain shells must NOT cause mouse tracking to be enabled on the outer VT
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -991,6 +991,145 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 40, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
+	session.WaitFor("Tools", time.Second*5)
+	rows := session.Screen()
+	bar := rows[len(rows)-1]
+	for _, want := range []string{"Tools", "🖱"} {
+		if !strings.Contains(bar, want) {
+			t.Fatalf("single-tab bar missing %q: %q; screen=%q", want, bar, rows)
+		}
+	}
+	if strings.Contains(rows[len(rows)-2], "🖱") {
+		t.Fatalf("mouse icon wrapped: %q", rows[len(rows)-2])
+	}
+	barY := len(rows) - 1
+	assertSessionBarCellStyle(t, session, 0, barY, loom.DefaultTabsStyle().Active)
+	capCol := displayColumnOf(bar, "⌃B…")
+	labelCol := displayColumnOf(bar, "Tools")
+	iconCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.MouseIcon)
+	if capCol < 0 || labelCol <= capCol || iconCol < 0 {
+		t.Fatalf("bar boundaries missing: %q", bar)
+	}
+	hintStyle := loom.DefaultTheme().HintBarStyle()
+	assertSessionBarCellStyle(t, session, capCol, barY, hintStyle.Cap)
+	assertSessionBarCellStyle(t, session, capCol+1, barY, hintStyle.Cap)
+	assertSessionBarCellStyle(t, session, labelCol, barY, hintStyle.Label)
+	assertSessionBarCellStyle(t, session, iconCol, barY, hintStyle.Label)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func displayColumnOf(line, text string) int {
+	runes := []rune(line)
+	for i := 0; i+len([]rune(text)) <= len(runes); i++ {
+		if string(runes[i:i+len([]rune(text))]) == text {
+			return loom.StringWidth(string(runes[:i]))
+		}
+	}
+	return -1
+}
+
+func assertSessionBarCellStyle(t *testing.T, session *ptytest.Session, x, y int, want loom.Style) {
+	t.Helper()
+	got := session.Cell(x, y).Style
+	wantFR, wantFG, wantFB, wantFGOK := want.FG.RGB()
+	gotFR, gotFG, gotFB, gotFGOK := got.FG.RGB()
+	wantBR, wantBG, wantBB, wantBGOK := want.BG.RGB()
+	gotBR, gotBG, gotBB, gotBGOK := got.BG.RGB()
+	if wantFGOK != gotFGOK || wantBGOK != gotBGOK || (wantFGOK && (wantFR != gotFR || wantFG != gotFG || wantFB != gotFB)) || (wantBGOK && (wantBR != gotBR || wantBG != gotBG || wantBB != gotBB)) {
+		t.Fatalf("cell (%d,%d) FG/BG = %v/%v, want %v/%v", x, y, got.FG, got.BG, want.FG, want.BG)
+	}
+}
+
+func TestSessionBarFitAndHitBoundaries(t *testing.T) {
+	tabs := []*sessionTab{{title: "bash"}, {title: "zsh"}, {title: "fish"}}
+	for _, cols := range []int{10, 40, 100} {
+		bar, mouseStart, hits := sessionBarContent(tabs, 1, cols, true)
+		if width := loom.StringWidth(bar); width > cols {
+			t.Fatalf("bar width at %d columns = %d", cols, width)
+		}
+		if mouseStart < 0 || mouseStart >= cols {
+			t.Fatalf("mouse icon start at %d columns = %d", cols, mouseStart)
+		}
+		for _, hit := range hits {
+			if hit.start < 0 || hit.end > cols || tabIndexAtCol(tabs, hit.start, cols+1) != hit.index || tabIndexAtCol(tabs, hit.end-1, cols+1) != hit.index {
+				t.Fatalf("tab hit boundary at %d columns: %+v", cols, hit)
+			}
+		}
+	}
+}
+
+func TestSessionBarGoldens(t *testing.T) {
+	for _, fixture := range []struct {
+		name   string
+		titles []string
+	}{
+		{"session-bar-one.ansi", []string{"bash"}},
+		{"session-bar-three.ansi", []string{"bash", "vim", "shell"}},
+	} {
+		tabs := make([]*sessionTab, len(fixture.titles))
+		for i, title := range fixture.titles {
+			tabs[i] = &sessionTab{title: title, vt: vt.NewVT(100, 23)}
+		}
+		var output bytes.Buffer
+		drawSessionTabBar(&output, tabs, 0, 100, 24)
+		path := filepath.Join("..", "..", "docs", "progress", "373", fixture.name)
+		if os.Getenv("UPDATE_SESSION_BAR_GOLDENS") == "1" {
+			if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(path, output.Bytes(), 0o644); err != nil {
+				t.Fatal(err)
+			}
+		}
+		golden, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !bytes.Equal(golden, output.Bytes()) {
+			t.Fatalf("%s differs from rendered session bar", fixture.name)
+		}
+	}
+}
+
+func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'HELP_READY\\n'; while true; do sleep 1; done")
+	session.WaitFor("HELP_READY", time.Second*5)
+	session.SendRaw([]byte{2, '?'})
+	session.WaitFor("Session tools", time.Second*5)
+	session.SendRaw([]byte{'z'})
+	session.WaitFor("HELP_READY", time.Second*5)
+	session.SendRaw([]byte{2, 'm'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.VT().MouseMode, session.VT().MouseSGR)
+	}
+	session.SendRaw([]byte{2, 'm'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
+	if session.VT().MouseMode != 0 {
+		t.Fatalf("mouse mode = %d, want disabled", session.VT().MouseMode)
+	}
+	session.SendRaw([]byte{2, 'm'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+	session.SendRaw([]byte("\x1b[<0;78;24M"))
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
+	if session.VT().MouseMode != 0 {
+		t.Fatalf("mouse click left mode %d enabled", session.VT().MouseMode)
+	}
+	session.SendRaw([]byte{17})
 	_ = session.Wait(time.Second * 5)
 }
 
@@ -1054,8 +1193,3 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 		t.Fatalf("outer VT left in alternate screen after SIGTERM with alt-screen child")
 	}
 }
-
-
-
-
-
