@@ -44,18 +44,27 @@ While issue #382 addresses parser streaming continuity and safe discard at the r
    - Render `[!]` in `sessionBarContent` when alert is active.
    - When no alert is active, bar output is 100% byte-identical to maintain existing golden tests (`TestSessionBarGoldens`).
 
-## 3. Milestones
+## 3. Milestones & Delivery
 
-### M1: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests
-- Add `Options` and `RunWithOptions` to `internal/session/session.go`.
-- Add `--debug` and `--debug-dir` flags to `cmd/loom/session.go` (and env `LOOM_SESSION_DEBUG`).
-- Implement `internal/session/debug.go` with 64 KB ring buffer and leakage detector.
-- Add unit tests in `internal/session/debug_test.go`.
+### M1 Delivered: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests
+- **Status**: Delivered & verified in commit `9bda066`.
+- Added `Options` struct and `RunWithOptions(...)` to `internal/session/session.go`, maintaining `Run` compatibility.
+- Added `--debug` and `--debug-dir` flags to `cmd/loom/session.go` with `LOOM_SESSION_DEBUG` / `LOOM_DEBUG_DIR` environment precedence.
+- Implemented 64 KB circular raw byte buffer and anomaly detector in `internal/session/debug.go`.
+- Added unit tests in `internal/session/debug_test.go` covering ring wrapping, control parsing, stall timeouts, and false positive checks.
 
 ### M2: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
-- Implement diagnostic bundle writer (`.log`, `-before.ansi`, `-after.ansi`) with max-5 FIFO rotation.
-- Implement two-tier auto-repair (`ResetParser` + `TIOCSWINSZ` toggle) with 10s circuit breaker in `runSession`.
-- Update `drawSessionTabBar` / `sessionBarContent` to render `[!]` warning indicator while alert is active.
+- **Pre-Work / Required Refinements**:
+  - Implement bundle creation (`.log`, `-before.ansi`, `-after.ansi`) using `t.vt.ANSI()` and raw chunks, with exclusive filenames and FIFO rotation capped at 5 bundles.
+  - Test directory creation failure gracefully without crashing the session.
+- **Scope**:
+  - Integrate detector and two-tier repair into `runSession`:
+    1. Capture before-state `.ansi`.
+    2. Reset parser state: `t.vt.ResetParser()`.
+    3. Momentary `TIOCSWINSZ` toggle (`setPTYSize(t.master, cols, toggleRows)` then restore to `childRows`).
+    4. Delayed after-state `.ansi` capture (150ms).
+    5. 10-second circuit breaker cooldown (`RepairCooldown`).
+  - Render `[!]` in `sessionBarContent` during active alert window, keeping non-alert output byte-identical to pass `TestSessionBarGoldens`.
 
 ### M3: Automated PTY Canary Integration Tests & Evergreen Docs
 - Automated PTY test in `internal/session/session_pty_test.go` with canary child verifying detection, `.ansi` captures, `SIGWINCH` redraw, and `[!]` indicator.
