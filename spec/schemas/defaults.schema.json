@@ -801,14 +801,15 @@
     "session": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mouse", "bar", "bar_labels", "prefix", "bindings", "prefix_bindings"],
+      "required": ["mouse", "bar", "scrollback_lines", "bar_labels", "prefix", "bindings", "prefix_bindings", "search"],
       "properties": {
         "mouse": { "type": "string", "enum": ["safe"] },
         "bar": { "type": "string", "enum": ["always", "tabs"] },
+        "scrollback_lines": { "type": "integer", "minimum": 0 },
         "bar_labels": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["tools", "help", "quit", "screenshot", "mouse_icon", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "drop_order"],
+          "required": ["tools", "help", "quit", "screenshot", "mouse_icon", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "search", "drop_order"],
           "properties": {
             "tools": { "type": "string", "minLength": 1 },
             "help": { "type": "string", "minLength": 1 },
@@ -822,7 +823,8 @@
             "close_tab": { "type": "string", "minLength": 1 },
             "send_prefix": { "type": "string", "minLength": 1 },
             "toggle_mouse": { "type": "string", "minLength": 1 },
-            "drop_order": { "type": "array", "minItems": 4, "maxItems": 4, "items": { "type": "string", "enum": ["quit", "screenshot", "help", "tools"] } }
+            "search": { "type": "string", "minLength": 1 },
+            "drop_order": { "type": "array", "minItems": 5, "maxItems": 5, "items": { "type": "string", "enum": ["quit", "screenshot", "help", "tools", "search"] } }
           }
         },
         "prefix": { "type": "string", "minLength": 1 },
@@ -840,7 +842,7 @@
         "prefix_bindings": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["screenshot", "quit", "send_prefix", "new_tab", "next_tab", "previous_tab", "close_tab", "select_tab", "help", "toggle_mouse"],
+          "required": ["screenshot", "quit", "send_prefix", "new_tab", "next_tab", "previous_tab", "close_tab", "select_tab", "help", "toggle_mouse", "search"],
           "properties": {
             "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
@@ -851,7 +853,31 @@
             "close_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "select_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "help": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-            "toggle_mouse": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+            "toggle_mouse": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "search": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+          }
+        },
+        "search": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["prompt", "placeholder", "no_match", "next_hint", "previous_hint", "close_hint", "bindings"],
+          "properties": {
+            "prompt": { "type": "string", "minLength": 1 },
+            "placeholder": { "type": "string", "minLength": 1 },
+            "no_match": { "type": "string", "minLength": 1 },
+            "next_hint": { "type": "string", "minLength": 1 },
+            "previous_hint": { "type": "string", "minLength": 1 },
+            "close_hint": { "type": "string", "minLength": 1 },
+            "bindings": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["next", "previous", "close"],
+              "properties": {
+                "next": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                "previous": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+                "close": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+              }
+            }
           }
         }
       }

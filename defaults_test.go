@@ -305,6 +305,12 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if s.Bar != "always" || !slices.Equal(s.PrefixBindings.Help, []string{"?"}) || !slices.Equal(s.PrefixBindings.ToggleMouse, []string{"m"}) {
 		t.Fatalf("session bar bindings = %q/%v/%v, want always/?/m", s.Bar, s.PrefixBindings.Help, s.PrefixBindings.ToggleMouse)
 	}
+	if s.ScrollbackLines != 5000 || !slices.Equal(s.PrefixBindings.Search, []string{"f"}) {
+		t.Fatalf("session scrollback/search = %d/%v, want 5000/[f]", s.ScrollbackLines, s.PrefixBindings.Search)
+	}
+	if !slices.Equal(s.Search.Bindings.Next, []string{"enter", "down"}) || !slices.Equal(s.Search.Bindings.Previous, []string{"up"}) || !slices.Equal(s.Search.Bindings.Close, []string{"esc"}) {
+		t.Fatalf("session search bindings = %+v", s.Search.Bindings)
+	}
 	if s.Prefix != "ctrl-b" {
 		t.Fatalf("session.prefix = %q, want ctrl-b", s.Prefix)
 	}

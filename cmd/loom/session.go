@@ -166,9 +166,10 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	}
 	icon := labels.Separator + labels.MouseIcon
 	iconWidth := loom.StringWidth(icon)
-	widths := []int{loom.StringWidth(loom.KeyCap(defs.Prefix)+"…") + 4 + loom.StringWidth(labels.Tools), loom.StringWidth(loom.KeyCap(defs.PrefixBindings.Help[0])) + 4 + loom.StringWidth(labels.Help), loom.StringWidth(loom.KeyCap(defs.Bindings.Screenshot[0])) + 4 + loom.StringWidth(labels.Screenshot), loom.StringWidth(loom.KeyCap(defs.Bindings.Quit[0])) + 4 + loom.StringWidth(labels.Quit)}
-	hints := []string{sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Prefix)+"…", labels.Tools), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.PrefixBindings.Help[0]), labels.Help), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Screenshot[0]), labels.Screenshot), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Quit[0]), labels.Quit)}
-	visible := []bool{true, true, true, true}
+	searchKey := loom.KeyCap(defs.Prefix) + " " + loom.KeyCap(defs.PrefixBindings.Search[0])
+	widths := []int{loom.StringWidth(loom.KeyCap(defs.Prefix)+"…") + 4 + loom.StringWidth(labels.Tools), loom.StringWidth(loom.KeyCap(defs.PrefixBindings.Help[0])) + 4 + loom.StringWidth(labels.Help), loom.StringWidth(loom.KeyCap(defs.Bindings.Screenshot[0])) + 4 + loom.StringWidth(labels.Screenshot), loom.StringWidth(loom.KeyCap(defs.Bindings.Quit[0])) + 4 + loom.StringWidth(labels.Quit), loom.StringWidth(searchKey) + 4 + loom.StringWidth(labels.Search)}
+	hints := []string{sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Prefix)+"…", labels.Tools), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.PrefixBindings.Help[0]), labels.Help), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Screenshot[0]), labels.Screenshot), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Quit[0]), labels.Quit), sessionHint(capStyle, labelStyle, searchKey, labels.Search)}
+	visible := []bool{true, true, true, true, true}
 	tabWidth := 0
 	for i, tab := range tabs {
 		sep := 0
@@ -177,7 +178,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 		}
 		tabWidth += sep + loom.StringWidth(fmt.Sprintf(" %d: %s ", i+1, tab.title))
 	}
-	dropIndices := map[string]int{"tools": 0, "help": 1, "screenshot": 2, "quit": 3}
+	dropIndices := map[string]int{"tools": 0, "help": 1, "screenshot": 2, "quit": 3, "search": 4}
 	for _, name := range labels.DropOrder {
 		i := dropIndices[name]
 		need := iconWidth
@@ -285,6 +286,7 @@ func drawSessionHelp(out io.Writer) {
 		{d.PrefixBindings.Help, d.BarLabels.Help}, {d.PrefixBindings.ToggleMouse, d.BarLabels.ToggleMouse}, {d.PrefixBindings.Screenshot, d.BarLabels.Screenshot},
 		{d.PrefixBindings.Quit, d.BarLabels.Quit}, {d.PrefixBindings.SendPrefix, d.BarLabels.SendPrefix}, {d.PrefixBindings.NewTab, d.BarLabels.NewTab},
 		{d.PrefixBindings.NextTab, d.BarLabels.NextTab}, {d.PrefixBindings.PreviousTab, d.BarLabels.PreviousTab}, {d.PrefixBindings.CloseTab, d.BarLabels.CloseTab},
+		{d.PrefixBindings.Search, d.BarLabels.Search},
 	}
 	var b strings.Builder
 	b.WriteString("\x1b[0m\x1b[2J\x1b[H")
@@ -487,6 +489,14 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 	outerAltActive := false
 	helpActive := false
+	searchActive := false
+	searchBar := loom.NewSearchBar()
+	searchBar.Prompt = loom.SpeccedDefaults.Session.Search.Prompt
+	searchBar.Placeholder = loom.SpeccedDefaults.Session.Search.Placeholder
+	searchBar.SetFocused(true)
+	var searchRows [][]vt.Cell
+	var searchMatches []sessionMatch
+	searchMatchIndex := -1
 	var sessionMu sync.Mutex
 	var tabs []*sessionTab
 	activeIndex := 0
@@ -539,6 +549,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			vt:      vt.NewVT(cols, childRows),
 			done:    make(chan struct{}),
 		}
+		tab.vt.SetScrollbackLimit(loom.SpeccedDefaults.Session.ScrollbackLines)
 		nextTabID++
 
 		go func(t *sessionTab) {
@@ -555,7 +566,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					if t.vt.AltScreen() {
 						restorer.SetAltScreen(true)
 					}
-					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && !helpActive {
+					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && !helpActive && !searchActive {
 						_, _ = out.Write(buf[:n])
 						syncSessionMouse(out, t)
 						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
@@ -617,7 +628,16 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						setPTYSize(t.master, cols, childRows)
 						t.vt.Resize(cols, childRows)
 					}
-					repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+					if searchActive && activeIndex >= 0 && activeIndex < len(tabs) {
+						var selected *sessionMatch
+						if searchMatchIndex >= 0 && searchMatchIndex < len(searchMatches) {
+							selected = &searchMatches[searchMatchIndex]
+						}
+						drawSessionSearchView(out, searchRows, tabs[activeIndex].vt.Rows, cols, selected)
+						drawSessionSearchBar(out, cols, rows, searchBar, sessionSearchControls(loom.SpeccedDefaults.Session, searchBar.Query, searchMatchIndex, len(searchMatches)))
+					} else {
+						repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+					}
 				}
 			}
 			sessionMu.Unlock()
@@ -675,6 +695,27 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}
 
+	drawSearch := func() {
+		if activeIndex < 0 || activeIndex >= len(tabs) {
+			return
+		}
+		var selected *sessionMatch
+		if searchMatchIndex >= 0 && searchMatchIndex < len(searchMatches) {
+			selected = &searchMatches[searchMatchIndex]
+		}
+		drawSessionSearchView(out, searchRows, tabs[activeIndex].vt.Rows, cols, selected)
+		drawSessionSearchBar(out, cols, rows, searchBar, sessionSearchControls(loom.SpeccedDefaults.Session, searchBar.Query, searchMatchIndex, len(searchMatches)))
+	}
+
+	updateSearch := func() {
+		searchMatches = findSessionMatches(searchRows, searchBar.Query)
+		searchMatchIndex = -1
+		if len(searchMatches) > 0 {
+			searchMatchIndex = len(searchMatches) - 1
+		}
+		drawSearch()
+	}
+
 	stdinDone := make(chan struct{})
 	go func() {
 		defer close(stdinDone)
@@ -700,7 +741,13 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					// Lone Esc
 					if len(pending) == 1 && pending[0] == 0x1b {
 						prefixMode = false
-						_, _ = activeMaster.Write(pending)
+						if searchActive {
+							searchActive = false
+							searchBar.SetFocused(false)
+							repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						} else {
+							_, _ = activeMaster.Write(pending)
+						}
 						pending = nil
 						sessionMu.Unlock()
 						break
@@ -708,8 +755,12 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 					// Bracketed paste
 					if paste, used, ok := loom.DecodePaste(pending); ok {
-						_ = paste
-						_, _ = activeMaster.Write(pending[:used])
+						if searchActive {
+							searchBar.SetQuery(searchBar.Query + paste.Text)
+							updateSearch()
+						} else {
+							_, _ = activeMaster.Write(pending[:used])
+						}
 						pending = pending[used:]
 						prefixMode = false
 						sessionMu.Unlock()
@@ -718,6 +769,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 					// SGR Mouse event (\x1b[<...M or \x1b[<...m)
 					if ev, used, ok := loom.ScanMouse(pending); ok {
+						if searchActive {
+							pending = pending[used:]
+							sessionMu.Unlock()
+							continue
+						}
 						if sessionBarVisible(sessionDefs, len(tabs)) && ev.Y == rows {
 							if ev.Action == loom.MousePress && ev.Button == loom.MouseLeft {
 								iconStart, iconEnd := sessionMouseIconRange(cols)
@@ -749,6 +805,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 					// Standard X10 mouse event (\x1b[M + 3 bytes)
 					if len(pending) >= 6 && pending[0] == 0x1b && pending[1] == '[' && pending[2] == 'M' {
+						if searchActive {
+							pending = pending[6:]
+							sessionMu.Unlock()
+							continue
+						}
 						col := int(pending[4]) - 32
 						row := int(pending[5]) - 32
 						btn := int(pending[3]) - 32
@@ -787,6 +848,37 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						break
 					}
 
+					if searchActive {
+						if key.Is(sessionDefs.Bindings.Quit...) {
+							sessionMu.Unlock()
+							close(sessionQuitChan)
+							return
+						}
+						switch {
+						case key.Is(sessionDefs.Search.Bindings.Close...):
+							searchActive = false
+							searchBar.SetFocused(false)
+							repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						case key.Is(sessionDefs.Search.Bindings.Next...):
+							if len(searchMatches) > 0 {
+								searchMatchIndex = (searchMatchIndex - 1 + len(searchMatches)) % len(searchMatches)
+							}
+							drawSearch()
+						case key.Is(sessionDefs.Search.Bindings.Previous...):
+							if len(searchMatches) > 0 {
+								searchMatchIndex = (searchMatchIndex + 1) % len(searchMatches)
+							}
+							drawSearch()
+						default:
+							searchBar.ConsumeKey(key)
+							updateSearch()
+						}
+						prefixMode = false
+						sessionMu.Unlock()
+						pending = pending[used:]
+						continue
+					}
+
 					if prefixMode {
 						switch {
 						case key.Is(sessionDefs.PrefixBindings.ToggleMouse...):
@@ -799,6 +891,16 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							syncSessionMouse(out, tab)
 							drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.Search...):
+							prefixMode = false
+							searchActive = true
+							searchBar.Clear()
+							searchBar.SetFocused(true)
+							searchRows = tabs[activeIndex].vt.ScrollbackCells()
+							searchMatches = nil
+							searchMatchIndex = -1
+							drawSearch()
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.Help...):
 							helpActive = true
