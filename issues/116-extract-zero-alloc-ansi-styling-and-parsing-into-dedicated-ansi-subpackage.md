@@ -1,6 +1,6 @@
 # 116 — Extract zero-alloc ANSI styling and parsing into dedicated ansi subpackage
 
-**Status**: In Progress
+**Status**: Closed — extracted zero-alloc ANSI styling and SGR parsing into ansi subpackage with backwards-compatible root aliases (commit 0c111b9)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
