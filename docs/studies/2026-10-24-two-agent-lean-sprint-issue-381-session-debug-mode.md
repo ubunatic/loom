@@ -19,7 +19,7 @@ Architect refinement completed in 2m45s (1.2M tokens processed). Key architectur
 6. **Status Bar Indicator**: Warning glyph `[!]` in `sessionBarContent` during active alerts, preserving 100% byte-identity when no alert is active.
 
 ## 2. Sprint Milestones
-- **M1**: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests
+- **M1**: Debug Mode Options, CLI Flags, Ring Buffer & Detector Unit Tests — Delivered in commit `9bda066`.
 - **M2**: Rotating Diagnostics, Two-Tier Auto-Repair & Status Indicator
 - **M3**: Automated PTY Canary Integration Tests & Evergreen Docs
 
@@ -28,3 +28,6 @@ Architect refinement completed in 2m45s (1.2M tokens processed). Key architectur
 ## 3. Execution Log
 - [01:33] Launched architect refinement with `argon:low`.
 - [01:36] Architect refinement completed with concrete specifications; updated and committed Issue #381 ticket (`8ecd21f`).
+- [01:37] Dispatched developer `sol:med` for plan-first inspection.
+- [01:38] Developer submitted concrete implementation plan. Authorized M1.
+- [01:40] M1 completed and committed (`9bda066`). Host review verified diff, unit tests, and API snapshots. Embedded M2 pre-work in ticket (`6075b74`).
