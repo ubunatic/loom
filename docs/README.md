@@ -73,6 +73,7 @@
 | [studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md](studies/2026-10-21-two-agent-lean-sprint-issues-349-344-345-350.md) | Two-Agent Lean Sprint: Issues 349, 344, 345, 350 |
 | [studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md](studies/2026-10-21-two-agent-lean-sprint-issues-355-356-358-357.md) | Two-Agent Lean Sprint: Issues 355, 356, 358, 357 |
 | [studies/2026-10-22-lean-sprints-spec-shadows-keybindings-v040.md](studies/2026-10-22-lean-sprints-spec-shadows-keybindings-v040.md) | Lean sprints 2026-10-22 (second half): reference crops, PTY flake, spec shadows, key bindings, v0.4.0 |
+| [studies/2026-10-23-honing-test-tooling-for-fast-feedback.md](studies/2026-10-23-honing-test-tooling-for-fast-feedback.md) | Honing Test Tooling for Fast Feedback |
 | [studies/2026-10-23-loom-session-tabs-search-and-modularization-v050.md](studies/2026-10-23-loom-session-tabs-search-and-modularization-v050.md) | loom session: tabs, search and modularization (v0.5.0) |
 | [studies/2026-10-23-session-retro-editor-colorpicker-session.md](studies/2026-10-23-session-retro-editor-colorpicker-session.md) | Session retro: editor bar, color picker, loom session (2026-10-20 to 2026-10-23) |
 <!-- harnez:end docs-studies-index -->
