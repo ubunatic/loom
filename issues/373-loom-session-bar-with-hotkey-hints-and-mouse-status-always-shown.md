@@ -1,6 +1,6 @@
 # 373 — loom session: bar with hotkey hints and mouse status, always shown
 
-**Status**: Open
+**Status**: Closed — Session bar always shown (spec session.bar), spaced tabs, ⌃B… Tools, ? Help, ⌃P 📷, ⌃Q Quit, ▏🖱︎ icon; prefix ? help from spec, prefix m per-tab mouse toggle, icon click off; narrow widths drop hints keep icon (a1b5be6, 85d150a, b4ae530). Host q1 green; live tmux 100 and 40 cols bar correct, help shows, m sets mouse flags on
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
