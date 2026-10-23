@@ -65,3 +65,19 @@ must reset them itself.
   visibility, kitty keyboard); on switch, loom resets the outer modes and applies the new tab's. PTY
   test: tab 1 enables SGR mouse, ctrl-n, a click in tab 2 reaches the shell as nothing (no report),
   switching back to tab 1 re-enables it.
+
+## Also: tab bar clicks, "safe" mode (user, 2026-10-23)
+
+- When the active tab's child has mouse tracking on, loom handles clicks on the bar row (switch tab)
+  and forwards all other mouse events unchanged in the encoding and event set the child requested
+  (SGR 1006 vs X10/1005/1015; clicks 1000, drag 1002, motion 1003).
+- When the child has mouse off (plain shell), loom does not enable tracking: the bar is not clickable
+  and native selection keeps working. Spec `session.mouse` = `safe` (default); the toggle and status
+  icon come with 373.
+
+## Approved plan (host, 2026-10-23)
+
+d372 plan approved (package `terminal`, `Restorer` with sync.Once, signals + recover, outer alt screen
+while >1 tab, alt-1..9). Pre-work: the plan predates the per-tab modes and bar-click sections above;
+both are required. Reset sequences are protocol constants and may stay in Go; the kitty pop must only
+be sent if a push happened (track it), or be harmless when nothing was pushed (verify).
