@@ -51,4 +51,5 @@ upkeep.
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
 | 371 | [371-loom-session-tabs-windows-ctrl-n-opens-a-new-tab.md](371-loom-session-tabs-windows-ctrl-n-opens-a-new-tab.md) | loom session: tabs (windows), ctrl-n opens a new tab | Open |
+| 372 | [372-loom-session-mouse-tracking-left-on-after-exit-one-safe-terminal-restore-for-all-loom-code.md](372-loom-session-mouse-tracking-left-on-after-exit-one-safe-terminal-restore-for-all-loom-code.md) | loom session: mouse tracking left on after exit, one safe terminal restore for all loom code | Open |
 <!-- harnez:end issues-active-index -->
