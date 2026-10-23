@@ -615,7 +615,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				n, readErr := t.master.Read(buf)
 				if n > 0 {
 					sessionMu.Lock()
-					_, _ = t.vt.Write(buf[:n])
+					frame, _ := t.vt.WriteFramed(buf[:n])
 					if t.vt.KittyKeyboard {
 						restorer.SetKittyKeyboard(true)
 					}
@@ -623,7 +623,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						restorer.SetAltScreen(true)
 					}
 					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && !helpActive && !searchActive {
-						_, _ = out.Write(buf[:n])
+						_, _ = out.Write(frame)
 						syncSessionMouse(out, t)
 						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 							mouseState := sessionTabMouseOn(t)
