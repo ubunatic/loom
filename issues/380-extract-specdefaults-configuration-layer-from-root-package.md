@@ -1,6 +1,6 @@
 # 380 — Extract specdefaults configuration layer from root package
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Refactor
