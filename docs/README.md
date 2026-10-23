@@ -76,6 +76,7 @@
 | [studies/2026-10-23-honing-test-tooling-for-fast-feedback.md](studies/2026-10-23-honing-test-tooling-for-fast-feedback.md) | Honing Test Tooling for Fast Feedback |
 | [studies/2026-10-23-loom-session-tabs-search-and-modularization-v050.md](studies/2026-10-23-loom-session-tabs-search-and-modularization-v050.md) | loom session: tabs, search and modularization (v0.5.0) |
 | [studies/2026-10-23-session-retro-editor-colorpicker-session.md](studies/2026-10-23-session-retro-editor-colorpicker-session.md) | Session retro: editor bar, color picker, loom session (2026-10-20 to 2026-10-23) |
+| [studies/2026-10-23-test-optimization-and-root-modularization.md](studies/2026-10-23-test-optimization-and-root-modularization.md) | Loom Test Suite Optimization & Modularization Sprint |
 <!-- harnez:end docs-studies-index -->
 
 
