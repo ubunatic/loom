@@ -41,10 +41,20 @@ func (e sessionExitError) Error() string {
 func (e sessionExitError) Unwrap() error { return e.err }
 
 func sessionCommand() *cobra.Command {
+	sessionDefs := loom.SpeccedDefaults.Session
+	shotKey := strings.Join(sessionDefs.Bindings.Screenshot, ", ")
+	quitKey := strings.Join(sessionDefs.Bindings.Quit, ", ")
+	prefixShot := strings.Join(sessionDefs.PrefixBindings.Screenshot, ", ")
+	prefixQuit := strings.Join(sessionDefs.PrefixBindings.Quit, ", ")
+	sendPrefix := strings.Join(sessionDefs.PrefixBindings.SendPrefix, ", ")
+	longHelp := fmt.Sprintf(
+		"Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: %s saves an ANSI screenshot, %s quits. Prefix %s followed by %s saves a screenshot, %s quits, and %s forwards %s to the child.",
+		shotKey, quitKey, sessionDefs.Prefix, prefixShot, prefixQuit, sendPrefix, sessionDefs.Prefix,
+	)
 	cmd := &cobra.Command{
 		Use:   "session -- <cmd> [args...]",
 		Short: "Run a command in a PTY wrapper with screenshot and quit hotkeys",
-		Long:  "Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: ctrl-p saves an ANSI screenshot, ctrl-q quits. Prefix ctrl-] followed by s saves a screenshot, q quits, and ctrl-] forwards ctrl-] to the child.",
+		Long:  longHelp,
 		Args:  cobra.MinimumNArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -237,7 +247,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						continue
 					}
 
-					key, used, ok := scanSessionKey(pending)
+					key, used, ok := loom.ScanKey(pending)
 					if !ok {
 						// Incomplete sequence; wait for more data
 						break
@@ -256,7 +266,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							killProcessGroup(child.Process.Pid)
 							return
 						case key.Is(sessionDefs.PrefixBindings.SendPrefix...):
-							master.Write([]byte{0x1d}) //nolint:errcheck
+							master.Write(pending[:used]) //nolint:errcheck
 							prefixMode = false
 						default:
 							// Any other key cancels prefix mode and forwards the key
@@ -329,20 +339,4 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 func killProcessGroup(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGTERM)
 	_ = syscall.Kill(pid, syscall.SIGTERM)
-}
-
-// scanSessionKey scans the next key event and consumed byte count from b.
-// Multi-byte escape sequences are consumed in full so intermediate control
-// characters never trigger hotkeys.
-func scanSessionKey(b []byte) (loom.KeyEvent, int, bool) {
-	if len(b) == 0 {
-		return loom.KeyEvent{}, 0, true
-	}
-	switch b[0] {
-	case 16, 17, 29:
-		// ctrl-p (16), ctrl-q (17), ctrl-] (29)
-		return loom.DecodeKey(b[:1]), 1, true
-	default:
-		return loom.ScanKey(b)
-	}
 }

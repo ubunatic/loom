@@ -577,12 +577,12 @@ rich_text_edit:
         - {ref: "HotkeyHelp"}
 
 session:
-  prefix: "ctrl-]"
+  prefix: "ctrl-b"
   bindings:
     screenshot: [*hotkey_screenshot_binding]
     quit: ["ctrl-q"]
   prefix_bindings:
     screenshot: ["s"]
     quit: ["q"]
-    send_prefix: ["ctrl-]"]
+    send_prefix: ["ctrl-b"]
 

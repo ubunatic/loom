@@ -177,8 +177,8 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PREFIX TEST\\n'; read -r line; exit 0")
 	session.WaitFor("PREFIX TEST", time.Second*5)
 
-	// Send ctrl-] (29) followed by 's'
-	session.SendRaw([]byte{29, 's'})
+	// Send ctrl-b (2) followed by 's'
+	session.SendRaw([]byte{2, 's'})
 	time.Sleep(200 * time.Millisecond)
 
 	// Exit child
@@ -200,15 +200,34 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 	// Test prefix then 'q' (quit)
 	sessionQ := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PREFIX Q\\n'; while true; do sleep 1; done")
 	sessionQ.WaitFor("PREFIX Q", time.Second*5)
-	// Send ctrl-] followed by 'q'
-	sessionQ.SendRaw([]byte{29, 'q'})
+	// Send ctrl-b followed by 'q'
+	sessionQ.SendRaw([]byte{2, 'q'})
 	_ = sessionQ.Wait(time.Second * 5)
 
-	// Test prefix twice sends ctrl-] to child
+	// Test prefix twice sends ctrl-b to child
 	sessionSend := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
-	// Send ctrl-] twice
-	sessionSend.SendRaw([]byte{29, 29})
-	sessionSend.WaitFor("RECEIVED:29", time.Second*5)
+	// Send ctrl-b twice
+	sessionSend.SendRaw([]byte{2, 2})
+	sessionSend.WaitFor("RECEIVED:2", time.Second*5)
+}
+
+func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
+	// Send ctrl-] (29) once; it must reach the child directly without prefix interception
+	session.SendRaw([]byte{29})
+	session.WaitFor("RECEIVED:29", time.Second*5)
+}
+
+func TestSessionHelpText(t *testing.T) {
+	cmd := sessionCommand()
+	if !strings.Contains(cmd.Long, "Prefix ctrl-b followed by s saves a screenshot, q quits, and ctrl-b forwards ctrl-b to the child.") {
+		t.Fatalf("unexpected Long help text: %q", cmd.Long)
+	}
 }
 
 func TestSessionMultiByteInputNotSplit(t *testing.T) {
@@ -227,11 +246,11 @@ func TestSessionMultiByteInputNotSplit(t *testing.T) {
 	session.SendRaw([]byte("\x1b[16~"))
 	session.WaitFor("HEX:1b5b31367e", time.Second*5)
 
-	// Test bracketed paste containing ctrl-p (16), ctrl-q (17), ctrl-] (29)
-	sessionPaste := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "stty -ixon 2>/dev/null; printf 'PASTE_PROMPT\\n'; IFS= read -r line; printf 'PASTE:%s\\n' \"$(printf '%s' \"$line\" | tr '\\020\\021\\035' 'PQD')\"")
+	// Test bracketed paste containing ctrl-b (2), ctrl-p (16), ctrl-q (17), ctrl-] (29)
+	sessionPaste := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "stty -ixon 2>/dev/null; printf 'PASTE_PROMPT\\n'; IFS= read -r line; printf 'PASTE:%s\\n' \"$(printf '%s' \"$line\" | tr '\\002\\020\\021\\035' 'BPQD')\"")
 	sessionPaste.WaitFor("PASTE_PROMPT", time.Second*5)
-	sessionPaste.SendRaw([]byte("\x1b[200~a\x10b\x11c\x1dd\x1b[201~\n"))
-	sessionPaste.WaitFor("PASTE:aPbQcDd", time.Second*5)
+	sessionPaste.SendRaw([]byte("\x1b[200~a\x02b\x10c\x11d\x1de\x1b[201~\n"))
+	sessionPaste.WaitFor("PASTE:aBbPcQdDe", time.Second*5)
 }
 
 func TestSessionAlternateScreenScreenshot(t *testing.T) {
