@@ -3,7 +3,7 @@
 
 //go:build !windows
 
-package main
+package session
 
 import (
 	"fmt"

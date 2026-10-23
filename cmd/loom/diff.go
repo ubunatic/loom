@@ -13,6 +13,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/session"
 	"ubunatic.com/loom/measure"
 )
 
@@ -29,9 +30,9 @@ func errorExitCode(err error) int {
 	if errors.As(err, &exit) {
 		return exit.code
 	}
-	var sExit sessionExitError
+	var sExit session.ExitError
 	if errors.As(err, &sExit) {
-		return sExit.code
+		return sExit.ExitCode()
 	}
 	return 1
 }

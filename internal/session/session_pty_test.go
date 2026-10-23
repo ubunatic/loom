@@ -3,7 +3,7 @@
 
 //go:build !windows
 
-package main
+package session
 
 import (
 	"bytes"
@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/clitest"
 	"ubunatic.com/loom/internal/ptytest"
 	"ubunatic.com/loom/vt"
 )
@@ -24,7 +25,7 @@ func TestSessionPassThroughIO(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Run bash echoing a prompt and waiting for input
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'READY\\n'; read -r line; printf 'ECHO:%s\\n' \"$line\"")
 	session.WaitFor("READY", time.Second*5)
@@ -38,7 +39,7 @@ func TestSessionExitCodePassThrough(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 
 	// Exit code 0
 	s0 := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "exit 0")
@@ -62,7 +63,7 @@ func TestSessionWindowResize(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "trap 'printf \"WINCH:%s\\n\" \"$(stty size 2>/dev/null)\"' WINCH; printf 'READY\\n'; while true; do sleep 1; done")
 	session.WaitFor("READY", time.Second*5)
 
@@ -77,7 +78,7 @@ func TestSessionDirectHotkeyScreenshot(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 
 	// Run session inside temporary directory so screenshot is created there
@@ -136,10 +137,10 @@ func TestSessionDirectHotkeyScreenshot(t *testing.T) {
 	}
 
 	// Verify loom measure and loom eval accept the screenshot
-	if err := execute([]string{"measure", shotFile}, os.Stdout); err != nil {
+	if _, err := clitest.ExecuteLoom(t, "measure", shotFile); err != nil {
 		t.Fatalf("loom measure failed on screenshot: %v", err)
 	}
-	if err := execute([]string{"eval", shotFile}, os.Stdout); err != nil {
+	if _, err := clitest.ExecuteLoom(t, "eval", shotFile); err != nil {
 		t.Fatalf("loom eval failed on screenshot: %v", err)
 	}
 }
@@ -149,7 +150,7 @@ func TestSessionDirectHotkeyQuit(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'RUNNING\\n'; while true; do sleep 1; done")
 	session.WaitFor("RUNNING", time.Second*5)
 
@@ -165,7 +166,7 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 
 	origDir, err := os.Getwd()
@@ -220,7 +221,7 @@ func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
 	// Send ctrl-] (29) once; it must reach the child directly without prefix interception
 	session.SendRaw([]byte{29})
@@ -228,12 +229,12 @@ func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
 }
 
 func TestSessionHelpText(t *testing.T) {
-	cmd := sessionCommand()
-	if !strings.Contains(cmd.Long, "ctrl-f opens scrollback search") {
-		t.Fatalf("Long help missing direct search binding: %q", cmd.Long)
+	longHelp := LongHelp()
+	if !strings.Contains(longHelp, "ctrl-f opens scrollback search") {
+		t.Fatalf("Long help missing direct search binding: %q", longHelp)
 	}
-	if !strings.Contains(cmd.Long, "Prefix ctrl-b followed by s saves a screenshot, q quits, and ctrl-b forwards ctrl-b to the child.") {
-		t.Fatalf("unexpected Long help text: %q", cmd.Long)
+	if !strings.Contains(longHelp, "Prefix ctrl-b followed by s saves a screenshot, q quits, and ctrl-b forwards ctrl-b to the child.") {
+		t.Fatalf("unexpected Long help text: %q", longHelp)
 	}
 }
 
@@ -242,7 +243,7 @@ func TestSessionMultiByteInputNotSplit(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 
 	// Child reads 5 bytes and prints hex
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PROMPT\\n'; IFS= read -r -d '' -n 5 input; printf 'HEX:%s\\n' \"$(printf '%s' \"$input\" | od -An -tx1 | tr -d ' \\n')\"")
@@ -265,7 +266,7 @@ func TestSessionAlternateScreenScreenshot(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 
 	origDir, err := os.Getwd()
@@ -314,7 +315,7 @@ func TestSessionLoneEscReachesChildAtOnce(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Child reads a single byte and prints its ASCII code
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'READY\\n'; IFS= read -r -d '' -n 1 key; printf 'KEY:%d\\n' \"$(printf '%d' \"'$key'\")\"")
 	session.WaitFor("READY", time.Second*5)
@@ -331,7 +332,7 @@ func TestSessionFailedScreenshotReportedOnStderr(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 
 	origDir, err := os.Getwd()
@@ -371,7 +372,7 @@ func TestSessionStderrCleanLineStart(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 
 	origDir, err := os.Getwd()
@@ -409,7 +410,7 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 0")
 	session.WaitFor("TAB1_READY", time.Second*5)
 
@@ -444,7 +445,7 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'SCREEN1_CONTENT\\n'; read -r line; exit 0")
 	session.WaitFor("SCREEN1_CONTENT", time.Second*5)
 
@@ -480,7 +481,7 @@ func TestSessionTabSwitchPrefixSelect(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB_ONE_MARKER\\n'; read -r line; exit 0")
 	session.WaitFor("TAB_ONE_MARKER", time.Second*5)
 
@@ -516,7 +517,7 @@ func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB_KEEP\\n'; read -r line; exit 0")
 	session.WaitFor("TAB_KEEP", time.Second*5)
 
@@ -546,7 +547,7 @@ func TestSessionLastTabExitCode(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 42")
 	session.WaitFor("TAB1_READY", time.Second*5)
 
@@ -577,7 +578,7 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'MAIN_SCREEN_TAB\\n'; read -r line; exit 0")
 	session.WaitFor("MAIN_SCREEN_TAB", time.Second*5)
 
@@ -616,7 +617,7 @@ func TestSessionQuitErasesTabBarOnOuterScreen(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'RUNNING\\n'; while true; do sleep 1; done")
 	session.WaitFor("RUNNING", time.Second*5)
 
@@ -644,7 +645,7 @@ func TestSessionQuitInAltScreenErasesTabBarOnOuterScreen(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'MAIN\\n'; while true; do sleep 1; done")
 	session.WaitFor("MAIN", time.Second*5)
 
@@ -676,7 +677,7 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PERSIST\\n'; while true; do sleep 1; done")
 	session.WaitFor("PERSIST", time.Second*5)
 
@@ -703,7 +704,7 @@ func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, and waits
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -738,7 +739,7 @@ func TestSessionSafeRestoreOnChildExit(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, then exits directly
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hEXITING\\n'; exit 0"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -763,7 +764,7 @@ func TestSessionSafeRestoreOnLastTabClosed(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
 	session.WaitFor("READY", time.Second*5)
@@ -789,7 +790,7 @@ func TestSessionSafeRestoreOnSIGTERM(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
 	session.WaitFor("READY", time.Second*5)
@@ -816,7 +817,7 @@ func TestSessionPerTabModes(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Tab 1 enables SGR mouse mode and stays alive
 	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -857,7 +858,7 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'ORIGINAL_TAB1\\n'; while true; do sleep 1; done")
 	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
 
@@ -899,7 +900,7 @@ func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'INITIAL_SHELL_TEXT\\n'; while true; do sleep 1; done")
 	session.WaitFor("INITIAL_SHELL_TEXT", time.Second*5)
 
@@ -939,7 +940,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Tab 1 enables mouse SGR tracking
 	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -979,7 +980,7 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 	}
 
 	t.Setenv("SHELL", "/bin/sh")
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Both tabs are plain shells (no child enables mouse)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'PLAIN_SHELL\\n'; while true; do sleep 1; done")
 	session.WaitFor("PLAIN_SHELL", time.Second*5)
@@ -1001,7 +1002,7 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 40, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
 	session.WaitFor("Tools", time.Second*5)
 	rows := session.Screen()
@@ -1118,7 +1119,7 @@ func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'HELP_READY\\n'; while true; do sleep 1; done")
 	session.WaitFor("HELP_READY", time.Second*5)
 	session.SendRaw([]byte{2, '?'})
@@ -1150,7 +1151,7 @@ func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 100, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
 	session.SendRaw([]byte{2, '?'})
 	session.WaitFor("Session tools", time.Second*5)
@@ -1175,7 +1176,7 @@ func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Single-tab child enters alternate screen (?1049h)
 	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -1202,7 +1203,7 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 		t.Skip("PTY integration test")
 	}
 
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	// Single-tab child enters alternate screen (?1049h)
 	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
@@ -1235,7 +1236,7 @@ func TestSessionCtrlFSearchOpenAndClose(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", "printf 'SEARCH_READY\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; read -r line")
 	session.WaitFor("SEARCH_READY", time.Second*5)
 	session.SendRaw([]byte{6}) // ctrl-f is a session binding, never child input.
@@ -1261,7 +1262,7 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf 'old needle\\n'; for i in $(seq 1 20); do printf 'filler-%s\\n' \"$i\"; done; printf 'new needle\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", fixture)
 	session.WaitFor("new needle", time.Second*5)
@@ -1342,7 +1343,7 @@ func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf 'HISTORY_NEEDLE\\n'; printf '\\033[?1049hALT_NEEDLE'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", fixture)
 	session.WaitFor("ALT_NEEDLE", time.Second*5)
@@ -1387,7 +1388,7 @@ func TestSessionSearchKeepsGlobalQuitBinding(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
 	}
-	bin := buildLoomBinary(t)
+	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
 	session.WaitFor("Search", time.Second*5)
 	session.SendRaw([]byte{2, 'f'})
