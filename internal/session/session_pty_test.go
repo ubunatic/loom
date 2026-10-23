@@ -20,6 +20,28 @@ import (
 	"ubunatic.com/loom/vt"
 )
 
+func waitForSessionScreenshot(t *testing.T, dir string) {
+	t.Helper()
+	timeout := time.NewTimer(5 * time.Second * ptytest.RaceFactor)
+	defer timeout.Stop()
+	poll := time.NewTicker(10 * time.Millisecond)
+	defer poll.Stop()
+	for {
+		files, err := filepath.Glob(filepath.Join(dir, "loom-bash-*.ansi"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(files) > 0 {
+			return
+		}
+		select {
+		case <-poll.C:
+		case <-timeout.C:
+			t.Fatalf("timed out waiting for screenshot in %s", dir)
+		}
+	}
+}
+
 func TestSessionPassThroughIO(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
@@ -97,8 +119,8 @@ func TestSessionDirectHotkeyScreenshot(t *testing.T) {
 	// Send ctrl-p (0x10) to trigger screenshot
 	session.SendRaw([]byte{16})
 
-	// Allow disk write
-	time.Sleep(200 * time.Millisecond)
+	// Wait for file creation before allowing the child to exit.
+	waitForSessionScreenshot(t, dir)
 
 	// Finish child
 	session.Send("done\n")
@@ -184,7 +206,7 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 
 	// Send ctrl-b (2) followed by 's'
 	session.SendRaw([]byte{2, 's'})
-	time.Sleep(200 * time.Millisecond)
+	waitForSessionScreenshot(t, dir)
 
 	// Exit child
 	session.Send("done\n")
@@ -284,7 +306,7 @@ func TestSessionAlternateScreenScreenshot(t *testing.T) {
 
 	// Send ctrl-p
 	session.SendRaw([]byte{16})
-	time.Sleep(200 * time.Millisecond)
+	waitForSessionScreenshot(t, dir)
 
 	session.Send("done\n")
 	_ = session.Wait(time.Second * 5)
@@ -355,9 +377,10 @@ func TestSessionFailedScreenshotReportedOnStderr(t *testing.T) {
 
 	// Send ctrl-p (trigger screenshot which should fail)
 	session.SendRaw([]byte{16})
-	time.Sleep(200 * time.Millisecond)
 
+	// Input is processed in order; the error is printed when the child exits.
 	session.Send("done\n")
+	session.WaitFor("Error saving screenshot:", time.Second*5)
 	_ = session.Wait(time.Second * 5)
 
 	// The stderr output must report the failure
@@ -388,9 +411,10 @@ func TestSessionStderrCleanLineStart(t *testing.T) {
 	session.WaitFor("PROMPT", time.Second*5)
 
 	session.SendRaw([]byte{16}) // ctrl-p
-	time.Sleep(200 * time.Millisecond)
+	waitForSessionScreenshot(t, dir)
 
 	session.Send("done\n")
+	session.WaitFor("Saved screenshot: ", time.Second*5)
 	_ = session.Wait(time.Second * 5)
 
 	raw := string(session.Raw())
@@ -859,7 +883,7 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
-	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'ORIGINAL_TAB1\\n'; while true; do sleep 1; done")
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'ORIGINAL_TAB1\\n'; while IFS= read -r line; do printf 'INPUT:%s\\n' \"$line\"; done")
 	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
 
 	// Open Tab 2 with ctrl-n
@@ -882,7 +906,9 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 
 	// With 1 tab, send alt-2 (\x1b2): must be swallowed and NOT printed to shell
 	session.SendRaw([]byte{27, '2'})
-	time.Sleep(200 * time.Millisecond)
+	// A child acknowledgment proves input after alt-2 has been processed.
+	session.Send("SENTINEL\n")
+	session.WaitFor("INPUT:SENTINEL", time.Second*5)
 
 	for _, row := range session.Screen() {
 		if strings.Contains(row, "2") && !strings.Contains(row, "1: bash") {
