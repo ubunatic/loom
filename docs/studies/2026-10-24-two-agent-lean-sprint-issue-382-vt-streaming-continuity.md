@@ -24,7 +24,7 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
    Colon flattening disrupted ITU T.416 format (`38:2::R:G:B`), and truncated `38;2;...` sequences fell through to attribute parsing.
 
 ## 2. Sprint Milestones
-- **M1**: Harden `vt.VT` Escape & Control String Parser (`vt/vt.go`)
+- **M1**: Harden `vt.VT` Escape & Control String Parser (`vt/vt.go`) — Delivered in commit `7703a90`.
 - **M2**: Harden `internal/session` Output Stream Framing (`internal/session/session.go`)
 - **M3**: Adversarial Split-Byte, Malformed Sequence & PTY Verification (`vt/vt_test.go`, `internal/session/session_pty_test.go`)
 
@@ -32,4 +32,7 @@ Architect refinement completed in 3m15s (710k tokens processed). It identified c
 
 ## 3. Execution Log
 - [01:14] Launched architect refinement with `argon:low`.
-- [01:18] Architect refinement completed with concrete findings; updated and committed Issue #382 ticket.
+- [01:18] Architect refinement completed with concrete findings; updated and committed Issue #382 ticket (`9195930`).
+- [01:19] Dispatched developer `sol:med` for plan-first inspection.
+- [01:20] Developer submitted concrete implementation plan. Authorized M1.
+- [01:22] M1 completed and committed (`7703a90`). Host review verified diff and unit tests; identified API snapshot update needed for new exports. Embedded pre-work in ticket.
