@@ -1,6 +1,6 @@
 # 371 — loom session: tabs (windows), ctrl-n opens a new tab
 
-**Status**: Open
+**Status**: Closed — Tabs in loom session: ctrl-n/prefix c new $SHELL tab, prefix n/p/1-9 switch, prefix x close, bottom bar hidden at one tab, DECSTBM protects bar, VT.Repaint on switch, last-tab exit code (1124380, dddb36a, cce3597). Host q1 green 2x; live tmux: switch harnez<->zsh<->mc, clear keeps bar, x hides bar, ctrl-q exit 0, no stale bar. Stale tab text after quit moved to 372
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
