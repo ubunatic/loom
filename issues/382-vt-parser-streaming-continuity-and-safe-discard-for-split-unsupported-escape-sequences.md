@@ -42,15 +42,14 @@ Inspection of `vt/vt.go` and `internal/session/session.go` by architect refineme
 - Implemented intermediate byte consuming in `VT.escape`, abort/cancellation for embedded `ESC`, `CAN`, `SUB`, support for SOS (`X`), BEL and ST terminators, SGR colon subparameters, truncated tail handling, 1024-byte safety cap, `ResetParser()`, and `WriteFramed()`.
 - Verified with table-driven tests across all split boundaries in `vt/vt_test.go`.
 
-### M2: Harden `internal/session` Output Stream Framing (`internal/session/session.go`)
-- **Pre-Work / Required Refinements**:
-  - Run `go test ./internal/apitest -update` to update golden snapshot in `internal/apitest/testdata/api/vt.txt` for new additive `ResetParser()` and `WriteFramed()` exports on `*vt.VT`.
-- **Scope**:
-  - In `runSession` (`internal/session/session.go`), use `t.vt.WriteFramed(buf[:n])` for active tab forwarding to `out`.
-  - Ensure `out.Write` only receives complete frames before `syncSessionMouse` or `drawSessionTabBar` writes to `out`.
-  - Maintain inactive tab state and ensure tab switches mid-sequence do not corrupt outer or virtual screens.
-  - Never flush incomplete escape tails at EOF.
+### M2 Delivered: Harden `internal/session` Output Stream Framing (`internal/session/session.go`)
+- **Status**: Delivered & verified in commit `f8a9d37`.
+- Pre-work completed: updated API snapshot golden `testdata/api/vt.txt` for `ResetParser()` and `WriteFramed()`.
+- Implemented framed PTY output writing in `runSession` using `t.vt.WriteFramed(buf[:n])`, withholding incomplete escape and UTF-8 tails so `out.Write` never interleaves UI escape sequences inside child sequences.
+- Verified with `go test -v ./internal/session` and `go test ./internal/apitest`.
 
 ### M3: Adversarial Split-Byte, Malformed Sequence & PTY Verification (`vt/vt_test.go`, `internal/session/session_pty_test.go`)
-- Table-driven unit tests in `vt/vt_test.go` and PTY integration tests in `internal/session/session_pty_test.go`.
-- Run and pass `HTO=0 make test-q1`.
+- **Scope**:
+  - Add comprehensive table-driven tests in `vt/vt_test.go` covering byte-by-byte split streams, ZWJ emoji / grapheme splits, and edge cases.
+  - Add PTY integration test in `internal/session/session_pty_test.go` asserting zero leakage with active tab bar updates during split PTY chunks and checking raw framing.
+  - Run and pass `HTO=0 make test-q1`.
