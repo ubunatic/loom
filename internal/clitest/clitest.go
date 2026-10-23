@@ -6,33 +6,72 @@ package clitest
 
 import (
 	"bytes"
+	"fmt"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"ubunatic.com/loom"
 )
 
-// BuildLoomBinary builds the CLI from the module root for integration tests.
+// The test process owns this cache; RunTests removes it after all tests finish.
+var loomBinary struct {
+	once sync.Once
+	dir  string
+	path string
+	err  error
+}
+
+// RunTests runs a package's tests and removes its shared CLI binary.
+// Packages using BuildLoomBinary must call os.Exit(clitest.RunTests(m)) in TestMain.
+func RunTests(m *testing.M) int {
+	code := m.Run()
+	if loomBinary.dir != "" {
+		if err := os.RemoveAll(loomBinary.dir); err != nil {
+			fmt.Fprintf(os.Stderr, "remove test loom binary: %v\n", err)
+			return 1
+		}
+	}
+	return code
+}
+
+// BuildLoomBinary builds the CLI once per test process for integration tests.
 func BuildLoomBinary(t *testing.T) string {
 	t.Helper()
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")
 	}
+	loomBinary.once.Do(func() {
+		loomBinary.err = buildLoomBinary()
+	})
+	if loomBinary.err != nil {
+		t.Fatal(loomBinary.err)
+	}
+	return loomBinary.path
+}
+
+func buildLoomBinary() error {
 	_, source, _, ok := runtime.Caller(0)
 	if !ok {
-		t.Fatal("locate clitest source file")
+		return fmt.Errorf("locate clitest source file")
 	}
+	var err error
+	loomBinary.dir, err = os.MkdirTemp("", "loom-clitest-*")
+	if err != nil {
+		return fmt.Errorf("create test loom directory: %w", err)
+	}
+	loomBinary.path = filepath.Join(loomBinary.dir, "loom")
 	root := filepath.Clean(filepath.Join(filepath.Dir(source), "..", ".."))
-	bin := filepath.Join(t.TempDir(), "loom")
-	cmd := exec.Command("go", "build", "-o", bin, "./cmd/loom")
+	cmd := exec.Command("go", "build", "-o", loomBinary.path, "./cmd/loom")
 	cmd.Dir = root
 	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("build loom: %v\n%s", err, output)
+		return fmt.Errorf("build loom: %w\n%s", err, output)
 	}
-	return bin
+	return nil
 }
 
 // ExecuteLoom runs the CLI for integration assertions and returns its output.

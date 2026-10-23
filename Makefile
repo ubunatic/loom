@@ -7,6 +7,8 @@ _rst  := \033[0m
 LOOMOJI_DIR ?= $(HOME)/.local/share/loomoji
 ANSIVIEWER_DESKTOP_DIR ?= $(HOME)/.local/share/applications
 PKG ?= .
+# Bound concurrent package builds/tests; override with e.g. TEST_PARALLEL='-p 4'.
+TEST_PARALLEL ?= -p 2
 HARNEZ_VERSION ?= v0.1.33
 ANSIVIEWER_ICON_DIR ?= $(HOME)/.local/share/icons/hicolor/scalable/apps
 
@@ -20,17 +22,17 @@ build: ⚙️  ## compile the package
 
 test: ⚙️ validate-spec geometry-replay  ## validate specs, vet and run the test suite
 	go vet ./...
-	go test ./...
+	go test $(TEST_PARALLEL) ./...
 
 check: ⚙️ validate-spec geometry-replay  ## validate specs, vet and test with the pinned module dependencies
 	GOWORK=off go vet ./...
-	GOWORK=off go test ./...
+	GOWORK=off go test $(TEST_PARALLEL) ./...
 
 test-pkg: ⚙️  ## test PKG (default .) with race detection and no cached results
-	go test -race -count=1 $(PKG)
+	go test $(TEST_PARALLEL) -race -count=1 $(PKG)
 
 test-short: ⚙️  ## run fast unit tests, skipping PTY/media/subprocess integration
-	go test -short ./...
+	go test $(TEST_PARALLEL) -short ./...
 
 lint-tools: ⚙️  ## install the pinned Harnez lint tool used by CI and containers
 	GOTOOLCHAIN=auto go install ubunatic.com/harnez/cmd/harnez@$(HARNEZ_VERSION)

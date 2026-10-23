@@ -21,5 +21,5 @@ func canvasScreenText(canvas *loom.Canvas) string { return clitest.CanvasScreenT
 
 func TestMain(m *testing.M) {
 	_ = os.Setenv("LOOMCOLOR", "truecolor")
-	os.Exit(m.Run())
+	os.Exit(clitest.RunTests(m))
 }
