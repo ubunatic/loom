@@ -1137,6 +1137,30 @@ func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
 	_ = session.Wait(time.Second * 5)
 }
 
+func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 100, 12, bin, "session", "--", "bash", "-c", "while true; do sleep 1; done")
+	session.SendRaw([]byte{2, '?'})
+	session.WaitFor("Session tools", time.Second*5)
+	session.WaitFor("return", time.Second*5)
+	rows := session.Screen()
+	text := strings.Join(rows, "\n")
+	for _, want := range []string{"Search", "Close tab", "Press any key to return"} {
+		if !strings.Contains(text, want) {
+			t.Fatalf("short-terminal help missing %q: %q", want, rows)
+		}
+	}
+	session.SendRaw([]byte{'z'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "Session tools")
+	})
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
 func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")

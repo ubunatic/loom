@@ -275,7 +275,7 @@ func sessionMouseIconRange(cols int) (int, int) {
 	return cols - 1 - loom.StringWidth(icon), cols - 1
 }
 
-func drawSessionHelp(out io.Writer) {
+func drawSessionHelp(out io.Writer, cols, rows, page int) int {
 	d := loom.SpeccedDefaults.Session
 	style := loom.DefaultTheme().HintBarStyle()
 	entries := []struct {
@@ -288,18 +288,77 @@ func drawSessionHelp(out io.Writer) {
 		{d.PrefixBindings.NextTab, d.BarLabels.NextTab}, {d.PrefixBindings.PreviousTab, d.BarLabels.PreviousTab}, {d.PrefixBindings.CloseTab, d.BarLabels.CloseTab},
 		{d.PrefixBindings.Search, d.BarLabels.Search},
 	}
-	var b strings.Builder
-	b.WriteString("\x1b[0m\x1b[2J\x1b[H")
-	fmt.Fprintf(&b, "%sSession tools%s\r\n\r\n", style.Cap.ANSI(), style.Label.ANSI())
-	for _, entry := range entries {
+	if rows <= 0 || cols <= 0 {
+		return 1
+	}
+	labelText := func(entry struct {
+		keys  []string
+		label string
+	}) (string, string) {
 		keys := make([]string, len(entry.keys))
 		for i, key := range entry.keys {
 			keys[i] = loom.KeyCap(key)
 		}
-		fmt.Fprintf(&b, "%s%-18s%s %s\r\n", style.Cap.ANSI(), strings.Join(keys, ", "), style.Label.ANSI(), entry.label)
+		return strings.Join(keys, ", "), entry.label
 	}
-	fmt.Fprintf(&b, "\r\n%sPress any key to return%s\r\n", style.Label.ANSI(), "\x1b[0m")
+	entryWidth := func(entry struct {
+		keys  []string
+		label string
+	}) int {
+		keys, label := labelText(entry)
+		return loom.StringWidth(keys) + 1 + loom.StringWidth(label)
+	}
+	leftCount := (len(entries) + 1) / 2
+	leftWidth, rightWidth := 0, 0
+	for i, entry := range entries {
+		width := entryWidth(entry)
+		if i < leftCount {
+			leftWidth = max(leftWidth, width)
+		} else {
+			rightWidth = max(rightWidth, width)
+		}
+	}
+	twoColumns := leftWidth+rightWidth+3 <= cols && leftCount+4 <= rows
+	var b strings.Builder
+	b.WriteString("\x1b[0m\x1b[2J\x1b[H")
+	fmt.Fprintf(&b, "%sSession tools%s\r\n\r\n", style.Cap.ANSI(), style.Label.ANSI())
+	renderEntry := func(entry struct {
+		keys  []string
+		label string
+	}) string {
+		keys, label := labelText(entry)
+		return fmt.Sprintf("%s%s%s %s%s", style.Cap.ANSI(), keys, style.Label.ANSI(), label, "\x1b[0m")
+	}
+	pages := 1
+	if twoColumns {
+		for i := 0; i < leftCount; i++ {
+			left := entries[i]
+			leftKeys, leftLabel := labelText(left)
+			fmt.Fprintf(&b, "%s%s%s %s%s", style.Cap.ANSI(), leftKeys, style.Label.ANSI(), leftLabel, "\x1b[0m")
+			if rightIndex := i + leftCount; rightIndex < len(entries) {
+				padding := leftWidth - entryWidth(left) + 3
+				b.WriteString(strings.Repeat(" ", padding))
+				b.WriteString(renderEntry(entries[rightIndex]))
+			}
+			b.WriteString("\r\n")
+		}
+	} else {
+		perPage := max(1, rows-4)
+		pages = (len(entries) + perPage - 1) / perPage
+		page = (page%pages + pages) % pages
+		start := page * perPage
+		end := min(len(entries), start+perPage)
+		for _, entry := range entries[start:end] {
+			fmt.Fprintf(&b, "%s%s\r\n", renderEntry(entry), "\x1b[0m")
+		}
+	}
+	footer := "Press any key to return"
+	if pages > 1 {
+		footer = fmt.Sprintf("Any key: next · Esc: return (%d/%d)", page+1, pages)
+	}
+	fmt.Fprintf(&b, "\r\n%s%s%s\r\n", style.Label.ANSI(), footer, "\x1b[0m")
 	_, _ = out.Write([]byte(b.String()))
+	return pages
 }
 
 func tabIndexAtCol(tabs []*sessionTab, col, cols int) int {
@@ -489,6 +548,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 	outerAltActive := false
 	helpActive := false
+	helpPage := 0
+	helpPages := 1
 	searchActive := false
 	searchBar := loom.NewSearchBar()
 	searchBar.Prompt = loom.SpeccedDefaults.Session.Search.Prompt
@@ -628,7 +689,9 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						setPTYSize(t.master, cols, childRows)
 						t.vt.Resize(cols, childRows)
 					}
-					if searchActive && activeIndex >= 0 && activeIndex < len(tabs) {
+					if helpActive {
+						helpPages = drawSessionHelp(out, cols, rows, helpPage)
+					} else if searchActive && activeIndex >= 0 && activeIndex < len(tabs) {
 						var selected *sessionMatch
 						if searchMatchIndex >= 0 && searchMatchIndex < len(searchMatches) {
 							selected = &searchMatches[searchMatchIndex]
@@ -905,7 +968,8 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						case key.Is(sessionDefs.PrefixBindings.Help...):
 							helpActive = true
 							prefixMode = false
-							drawSessionHelp(out)
+							helpPage = 0
+							helpPages = drawSessionHelp(out, cols, rows, helpPage)
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.Screenshot...):
 							prefixMode = false
@@ -999,9 +1063,17 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						continue
 					}
 					if helpActive {
-						helpActive = false
 						prefixMode = false
-						repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						if key.Is("esc") {
+							helpActive = false
+							repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						} else if helpPages > 1 {
+							helpPage = (helpPage + 1) % helpPages
+							helpPages = drawSessionHelp(out, cols, rows, helpPage)
+						} else {
+							helpActive = false
+							repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						}
 						sessionMu.Unlock()
 						pending = pending[used:]
 						continue
