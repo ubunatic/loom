@@ -106,55 +106,207 @@ func setPTYSize(f *os.File, cols, rows int) {
 }
 
 type sessionTab struct {
-	id       int
-	title    string
-	command  string
-	args     []string
-	master   *os.File
-	child    *exec.Cmd
-	vt       *vt.VT
-	exitCode int
-	waitErr  error
-	done     chan struct{}
+	id            int
+	title         string
+	command       string
+	args          []string
+	master        *os.File
+	child         *exec.Cmd
+	vt            *vt.VT
+	exitCode      int
+	waitErr       error
+	mouseOverride int // -1 disabled, 0 follows child, 1 enabled
+	done          chan struct{}
 }
 
 func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
-	if len(tabs) <= 1 {
+	defs := loom.SpeccedDefaults.Session
+	if !sessionBarVisible(defs, len(tabs)) || cols <= 0 {
 		return
 	}
 	var b strings.Builder
 	b.WriteString("\x1b7") // DEC save cursor & attributes
 	fmt.Fprintf(&b, "\x1b[%d;1H", rows)
 
-	style := loom.DefaultTabsStyle()
-	usedCols := 0
-	for i, t := range tabs {
-		tabStyle := style.Inactive
-		if i == activeIndex {
-			tabStyle = style.Active
-		}
-		title := fmt.Sprintf(" %d: %s ", i+1, t.title)
-		b.WriteString(tabStyle.ANSI())
-		b.WriteString(title)
-		usedCols += loom.StringWidth(title)
+	barCols := cols - 1 // avoid terminal's pending-wrap behavior on the final cell
+	if barCols < 0 {
+		barCols = 0
 	}
-	if usedCols < cols {
-		b.WriteString(style.Inactive.ANSI())
-		b.WriteString(strings.Repeat(" ", cols-usedCols))
-	}
+	bar, _, _ := sessionBarContent(tabs, activeIndex, barCols, activeIndex >= 0 && activeIndex < len(tabs) && sessionTabMouseOn(tabs[activeIndex]))
+	b.WriteString(bar)
 	b.WriteString("\x1b[0m\x1b8") // reset style and restore cursor
 	_, _ = out.Write([]byte(b.String()))
 }
 
-func tabIndexAtCol(tabs []*sessionTab, col int) int {
-	used := 1
-	for i, t := range tabs {
-		title := fmt.Sprintf(" %d: %s ", i+1, t.title)
-		width := loom.StringWidth(title)
-		if col >= used && col < used+width {
-			return i
+func sessionBarVisible(defs loom.SessionDefaults, tabCount int) bool {
+	return defs.Bar == "always" || (defs.Bar == "tabs" && tabCount > 1)
+}
+
+func sessionChildRows(defs loom.SessionDefaults, tabCount, rows int) int {
+	if sessionBarVisible(defs, tabCount) && rows > 1 {
+		return rows - 1
+	}
+	return rows
+}
+
+func enterSessionOuterAlt(out io.Writer, rows int) {
+	_, _ = fmt.Fprintf(out, "\x1b[r\x1b[%d;1H\x1b[2K\x1b[?1049h\x1b[2J\x1b[H", rows)
+}
+
+type sessionBarTabHit struct{ start, end, index int }
+
+func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) (string, int, []sessionBarTabHit) {
+	defs := loom.SpeccedDefaults.Session
+	labels := defs.BarLabels
+	hintStyle := loom.DefaultTheme().HintBarStyle()
+	capStyle, labelStyle := hintStyle.Cap.ANSI(), hintStyle.Label.ANSI()
+	mouseStyle := labelStyle
+	if mouseOn {
+		mouseStyle = capStyle
+	}
+	icon := labels.Separator + labels.MouseIcon
+	iconWidth := loom.StringWidth(icon)
+	widths := []int{loom.StringWidth(loom.KeyCap(defs.Prefix)+"…") + 4 + loom.StringWidth(labels.Tools), loom.StringWidth(loom.KeyCap(defs.PrefixBindings.Help[0])) + 4 + loom.StringWidth(labels.Help), loom.StringWidth(loom.KeyCap(defs.Bindings.Screenshot[0])) + 4 + loom.StringWidth(labels.Screenshot), loom.StringWidth(loom.KeyCap(defs.Bindings.Quit[0])) + 4 + loom.StringWidth(labels.Quit)}
+	hints := []string{sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Prefix)+"…", labels.Tools), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.PrefixBindings.Help[0]), labels.Help), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Screenshot[0]), labels.Screenshot), sessionHint(capStyle, labelStyle, loom.KeyCap(defs.Bindings.Quit[0]), labels.Quit)}
+	visible := []bool{true, true, true, true}
+	tabWidth := 0
+	for i, tab := range tabs {
+		sep := 0
+		if i > 0 {
+			sep = 1
 		}
-		used += width
+		tabWidth += sep + loom.StringWidth(fmt.Sprintf(" %d: %s ", i+1, tab.title))
+	}
+	dropIndices := map[string]int{"tools": 0, "help": 1, "screenshot": 2, "quit": 3}
+	for _, name := range labels.DropOrder {
+		i := dropIndices[name]
+		need := iconWidth
+		for j, w := range widths {
+			if visible[j] {
+				need += w
+			}
+		}
+		if tabWidth+need <= cols {
+			break
+		}
+		visible[i] = false
+	}
+	usedHints := 0
+	for i, w := range widths {
+		if visible[i] {
+			usedHints += w
+		}
+	}
+	if usedHints > 0 {
+		usedHints += 1
+	}
+	remainingTabs := cols - iconWidth - usedHints
+	var b strings.Builder
+	style := loom.DefaultTabsStyle()
+	hits := []sessionBarTabHit{}
+	x := 0
+	for i, tab := range tabs {
+		if i > 0 {
+			if x >= remainingTabs {
+				break
+			}
+			b.WriteString(" ")
+			x++
+		}
+		text := fmt.Sprintf(" %d: %s ", i+1, tab.title)
+		if x+loom.StringWidth(text) > remainingTabs {
+			text = loom.TruncateText(text, remainingTabs-x, "…")
+		}
+		if text == "" {
+			break
+		}
+		start := x
+		tabStyle := style.Inactive
+		if i == activeIndex {
+			tabStyle = style.Active
+		}
+		b.WriteString(tabStyle.ANSI())
+		b.WriteString(text)
+		x += loom.StringWidth(text)
+		hits = append(hits, sessionBarTabHit{start, x, i})
+	}
+	if x > 0 && usedHints > 0 {
+		b.WriteString(strings.Repeat(" ", remainingTabs-x))
+		x = remainingTabs
+	}
+	mouseStart := cols - iconWidth
+	for i, hint := range hints {
+		if visible[i] {
+			b.WriteString(hint)
+		}
+	}
+	b.WriteString(mouseStyle)
+	b.WriteString(icon)
+	width := x + usedHints + iconWidth
+	if width < cols {
+		b.WriteString(labelStyle)
+		b.WriteString(strings.Repeat(" ", cols-width))
+	}
+	return b.String(), mouseStart, hits
+}
+
+func sessionHint(capStyle, labelStyle, key, label string) string {
+	return capStyle + " " + key + " " + labelStyle + " " + label + " "
+}
+
+func sessionTabMouseOn(tab *sessionTab) bool {
+	return tab != nil && (tab.mouseOverride > 0 || (tab.mouseOverride == 0 && tab.vt.MouseMode != 0))
+}
+
+func syncSessionMouse(out io.Writer, tab *sessionTab) {
+	if tab == nil || tab.mouseOverride == 0 {
+		return
+	}
+	if tab.mouseOverride < 0 {
+		_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l")
+		return
+	}
+	_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l\x1b[?1000h\x1b[?1006h")
+}
+
+func sessionMouseIconRange(cols int) (int, int) {
+	icon := loom.SpeccedDefaults.Session.BarLabels.Separator + loom.SpeccedDefaults.Session.BarLabels.MouseIcon
+	return cols - 1 - loom.StringWidth(icon), cols - 1
+}
+
+func drawSessionHelp(out io.Writer) {
+	d := loom.SpeccedDefaults.Session
+	style := loom.DefaultTheme().HintBarStyle()
+	entries := []struct {
+		keys  []string
+		label string
+	}{
+		{d.Bindings.Screenshot, d.BarLabels.Screenshot}, {d.Bindings.Quit, d.BarLabels.Quit}, {d.Bindings.NewTab, d.BarLabels.NewTab},
+		{d.PrefixBindings.Help, d.BarLabels.Help}, {d.PrefixBindings.ToggleMouse, d.BarLabels.ToggleMouse}, {d.PrefixBindings.Screenshot, d.BarLabels.Screenshot},
+		{d.PrefixBindings.Quit, d.BarLabels.Quit}, {d.PrefixBindings.SendPrefix, d.BarLabels.SendPrefix}, {d.PrefixBindings.NewTab, d.BarLabels.NewTab},
+		{d.PrefixBindings.NextTab, d.BarLabels.NextTab}, {d.PrefixBindings.PreviousTab, d.BarLabels.PreviousTab}, {d.PrefixBindings.CloseTab, d.BarLabels.CloseTab},
+	}
+	var b strings.Builder
+	b.WriteString("\x1b[0m\x1b[2J\x1b[H")
+	fmt.Fprintf(&b, "%sSession tools%s\r\n\r\n", style.Cap.ANSI(), style.Label.ANSI())
+	for _, entry := range entries {
+		keys := make([]string, len(entry.keys))
+		for i, key := range entry.keys {
+			keys[i] = loom.KeyCap(key)
+		}
+		fmt.Fprintf(&b, "%s%-18s%s %s\r\n", style.Cap.ANSI(), strings.Join(keys, ", "), style.Label.ANSI(), entry.label)
+	}
+	fmt.Fprintf(&b, "\r\n%sPress any key to return%s\r\n", style.Label.ANSI(), "\x1b[0m")
+	_, _ = out.Write([]byte(b.String()))
+}
+
+func tabIndexAtCol(tabs []*sessionTab, col, cols int) int {
+	barCols := cols - 1
+	_, _, hits := sessionBarContent(tabs, -1, barCols, false)
+	for _, hit := range hits {
+		if col >= hit.start && col < hit.end {
+			return hit.index
+		}
 	}
 	return -1
 }
@@ -261,6 +413,7 @@ func applyTabModes(out io.Writer, oldTab, newTab *sessionTab) {
 	if b.Len() > 0 {
 		_, _ = out.Write([]byte(b.String()))
 	}
+	syncSessionMouse(out, newTab)
 }
 
 func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int, outerAlt bool) {
@@ -275,7 +428,7 @@ func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows
 	}
 	_, _ = out.Write([]byte(repaint))
 
-	if len(tabs) > 1 {
+	if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 		fmt.Fprintf(out, "\x1b[1;%dr", rows-1)
 		drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 		x, y := tab.vt.Cursor()
@@ -333,9 +486,12 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	}()
 
 	outerAltActive := false
+	helpActive := false
 	var sessionMu sync.Mutex
 	var tabs []*sessionTab
 	activeIndex := 0
+	barDrawn := false
+	barMouseState := false
 	nextTabID := 1
 
 	tabExitChan := make(chan *sessionTab, 16)
@@ -355,10 +511,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	})
 
 	spawnTab := func(cmdName string, cmdArgs ...string) (*sessionTab, error) {
-		childRows := rows
-		if len(tabs) >= 1 {
-			childRows = rows - 1
-		}
+		childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs)+1, rows)
 		master, slave, err := openSessionPTY(cols, childRows)
 		if err != nil {
 			return nil, err
@@ -402,10 +555,16 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					if t.vt.AltScreen() {
 						restorer.SetAltScreen(true)
 					}
-					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t {
+					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && !helpActive {
 						_, _ = out.Write(buf[:n])
-						if len(tabs) > 1 {
-							drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+						syncSessionMouse(out, t)
+						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+							mouseState := sessionTabMouseOn(t)
+							if len(tabs) > 1 || !barDrawn || mouseState != barMouseState {
+								drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+								barDrawn = true
+								barMouseState = mouseState
+							}
 						}
 					}
 					sessionMu.Unlock()
@@ -435,6 +594,10 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		return err
 	}
 	tabs = append(tabs, initialTab)
+	if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+		fmt.Fprintf(out, "\x1b[1;%dr", rows-1)
+		drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+	}
 
 	sigWinch := make(chan os.Signal, 1)
 	signal.Notify(sigWinch, syscall.SIGWINCH)
@@ -449,10 +612,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			if inFile, ok := in.(*os.File); ok && term.IsTerminal(int(inFile.Fd())) {
 				if w, h, err := term.GetSize(int(inFile.Fd())); err == nil && w > 0 && h > 0 {
 					cols, rows = w, h
-					childRows := rows
-					if len(tabs) > 1 {
-						childRows = rows - 1
-					}
+					childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
 					for _, t := range tabs {
 						setPTYSize(t.master, cols, childRows)
 						t.vt.Resize(cols, childRows)
@@ -558,14 +718,21 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 					// SGR Mouse event (\x1b[<...M or \x1b[<...m)
 					if ev, used, ok := loom.ScanMouse(pending); ok {
-						if len(tabs) > 1 && ev.Y == rows {
+						if sessionBarVisible(sessionDefs, len(tabs)) && ev.Y == rows {
 							if ev.Action == loom.MousePress && ev.Button == loom.MouseLeft {
-								target := tabIndexAtCol(tabs, ev.X)
-								if target >= 0 && target < len(tabs) && target != activeIndex {
-									oldTab := tabs[activeIndex]
-									activeIndex = target
-									newTab := tabs[activeIndex]
-									switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+								iconStart, iconEnd := sessionMouseIconRange(cols)
+								if sessionTabMouseOn(tabs[activeIndex]) && ev.X-1 >= iconStart && ev.X-1 < iconEnd {
+									tabs[activeIndex].mouseOverride = -1
+									syncSessionMouse(out, tabs[activeIndex])
+									drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+								} else {
+									target := tabIndexAtCol(tabs, ev.X-1, cols)
+									if target >= 0 && target < len(tabs) && target != activeIndex {
+										oldTab := tabs[activeIndex]
+										activeIndex = target
+										newTab := tabs[activeIndex]
+										switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+									}
 								}
 							}
 							pending = pending[used:]
@@ -585,14 +752,21 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 						col := int(pending[4]) - 32
 						row := int(pending[5]) - 32
 						btn := int(pending[3]) - 32
-						if len(tabs) > 1 && row == rows {
+						if sessionBarVisible(sessionDefs, len(tabs)) && row == rows {
 							if btn&3 == 0 {
-								target := tabIndexAtCol(tabs, col)
-								if target >= 0 && target < len(tabs) && target != activeIndex {
-									oldTab := tabs[activeIndex]
-									activeIndex = target
-									newTab := tabs[activeIndex]
-									switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+								iconStart, iconEnd := sessionMouseIconRange(cols)
+								if sessionTabMouseOn(tabs[activeIndex]) && col-1 >= iconStart && col-1 < iconEnd {
+									tabs[activeIndex].mouseOverride = -1
+									syncSessionMouse(out, tabs[activeIndex])
+									drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+								} else {
+									target := tabIndexAtCol(tabs, col-1, cols)
+									if target >= 0 && target < len(tabs) && target != activeIndex {
+										oldTab := tabs[activeIndex]
+										activeIndex = target
+										newTab := tabs[activeIndex]
+										switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
+									}
 								}
 							}
 							pending = pending[6:]
@@ -615,6 +789,22 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 					if prefixMode {
 						switch {
+						case key.Is(sessionDefs.PrefixBindings.ToggleMouse...):
+							tab := tabs[activeIndex]
+							if sessionTabMouseOn(tab) {
+								tab.mouseOverride = -1
+							} else {
+								tab.mouseOverride = 1
+							}
+							syncSessionMouse(out, tab)
+							drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.Help...):
+							helpActive = true
+							prefixMode = false
+							drawSessionHelp(out)
+							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.Screenshot...):
 							prefixMode = false
 							sessionMu.Unlock()
@@ -640,10 +830,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 								if !outerAltActive {
 									outerAltActive = true
 									restorer.SetAltScreen(true)
-									_, _ = out.Write([]byte("\x1b[?1049h\x1b[2J\x1b[H"))
+									enterSessionOuterAlt(out, rows)
 								}
-								setPTYSize(tabs[0].master, cols, rows-1)
-								tabs[0].vt.Resize(cols, rows-1)
+								childRows := sessionChildRows(sessionDefs, len(tabs)+1, rows)
+								setPTYSize(tabs[0].master, cols, childRows)
+								tabs[0].vt.Resize(cols, childRows)
 							}
 							oldTab := tabs[activeIndex]
 							newTab, err := spawnTab(shell)
@@ -655,7 +846,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							prefixMode = false
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.NextTab...):
-							if len(tabs) > 1 {
+							if sessionBarVisible(sessionDefs, len(tabs)) {
 								oldTab := tabs[activeIndex]
 								activeIndex = (activeIndex + 1) % len(tabs)
 								newTab := tabs[activeIndex]
@@ -664,7 +855,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							prefixMode = false
 							sessionMu.Unlock()
 						case key.Is(sessionDefs.PrefixBindings.PreviousTab...):
-							if len(tabs) > 1 {
+							if sessionBarVisible(sessionDefs, len(tabs)) {
 								oldTab := tabs[activeIndex]
 								activeIndex = (activeIndex - 1 + len(tabs)) % len(tabs)
 								newTab := tabs[activeIndex]
@@ -702,6 +893,14 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							prefixMode = false
 							sessionMu.Unlock()
 						}
+						pending = pending[used:]
+						continue
+					}
+					if helpActive {
+						helpActive = false
+						prefixMode = false
+						repaintActiveTab(out, tabs, activeIndex, cols, rows, outerAltActive)
+						sessionMu.Unlock()
 						pending = pending[used:]
 						continue
 					}
@@ -747,10 +946,11 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							if !outerAltActive {
 								outerAltActive = true
 								restorer.SetAltScreen(true)
-								_, _ = out.Write([]byte("\x1b[?1049h\x1b[2J\x1b[H"))
+								enterSessionOuterAlt(out, rows)
 							}
-							setPTYSize(tabs[0].master, cols, rows-1)
-							tabs[0].vt.Resize(cols, rows-1)
+							childRows := sessionChildRows(sessionDefs, len(tabs)+1, rows)
+							setPTYSize(tabs[0].master, cols, childRows)
+							tabs[0].vt.Resize(cols, childRows)
 						}
 						oldTab := tabs[activeIndex]
 						newTab, err := spawnTab(shell)
@@ -829,8 +1029,9 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					activeIndex = len(tabs) - 1
 				}
 				if len(tabs) == 1 {
-					setPTYSize(tabs[0].master, cols, rows)
-					tabs[0].vt.Resize(cols, rows)
+					childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
+					setPTYSize(tabs[0].master, cols, childRows)
+					tabs[0].vt.Resize(cols, childRows)
 					eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
 					_, _ = out.Write([]byte("\x1b[r" + eraseBar))
 				}
@@ -845,6 +1046,9 @@ done:
 	// Restore outer terminal cooked mode before printing status messages to errOut
 	if inFD >= 0 && oldState != nil {
 		_ = term.Restore(inFD, oldState)
+	}
+	if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+		fmt.Fprintf(out, "\x1b[r\x1b[%d;1H\x1b[2K\r\n", rows)
 	}
 
 	shotMu.Lock()
@@ -877,4 +1081,3 @@ func killProcessGroup(pid int) {
 	_ = syscall.Kill(-pid, syscall.SIGTERM)
 	_ = syscall.Kill(pid, syscall.SIGTERM)
 }
-
