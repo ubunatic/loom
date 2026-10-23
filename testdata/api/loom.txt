@@ -4001,6 +4001,7 @@ type SessionBarLabels struct {
 	CloseTab    string   `yaml:"close_tab"`
 	SendPrefix  string   `yaml:"send_prefix"`
 	ToggleMouse string   `yaml:"toggle_mouse"`
+	Search      string   `yaml:"search"`
 	DropOrder   []string `yaml:"drop_order"`
 }
     SessionBarLabels defines the text and glyphs shown in the Loom session bar.
@@ -4013,12 +4014,14 @@ type SessionBindings struct {
 }
 
 type SessionDefaults struct {
-	Mouse          string                `yaml:"mouse"`
-	Bar            string                `yaml:"bar"`
-	BarLabels      SessionBarLabels      `yaml:"bar_labels"`
-	Prefix         string                `yaml:"prefix"`
-	Bindings       SessionBindings       `yaml:"bindings"`
-	PrefixBindings SessionPrefixBindings `yaml:"prefix_bindings"`
+	Mouse           string                `yaml:"mouse"`
+	Bar             string                `yaml:"bar"`
+	ScrollbackLines int                   `yaml:"scrollback_lines"`
+	BarLabels       SessionBarLabels      `yaml:"bar_labels"`
+	Prefix          string                `yaml:"prefix"`
+	Bindings        SessionBindings       `yaml:"bindings"`
+	PrefixBindings  SessionPrefixBindings `yaml:"prefix_bindings"`
+	Search          SessionSearchDefaults `yaml:"search"`
 }
     SessionDefaults defines specced defaults for the Loom session command.
 
@@ -4033,6 +4036,23 @@ type SessionPrefixBindings struct {
 	SelectTab   []string `yaml:"select_tab"`
 	Help        []string `yaml:"help"`
 	ToggleMouse []string `yaml:"toggle_mouse"`
+	Search      []string `yaml:"search"`
+}
+
+type SessionSearchBindings struct {
+	Next     []string `yaml:"next"`
+	Previous []string `yaml:"previous"`
+	Close    []string `yaml:"close"`
+}
+
+type SessionSearchDefaults struct {
+	Prompt       string                `yaml:"prompt"`
+	Placeholder  string                `yaml:"placeholder"`
+	NoMatch      string                `yaml:"no_match"`
+	NextHint     string                `yaml:"next_hint"`
+	PreviousHint string                `yaml:"previous_hint"`
+	CloseHint    string                `yaml:"close_hint"`
+	Bindings     SessionSearchBindings `yaml:"bindings"`
 }
 
 type Setting struct {

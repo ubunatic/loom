@@ -144,6 +144,15 @@ func (v *VT) Resize(cols, rows int)
 func (v *VT) Screen() []string
     Screen returns the visible rows with trailing blanks trimmed.
 
+func (v *VT) ScrollbackCells() [][]Cell
+    ScrollbackCells returns a copy of the main-screen history followed by the
+    visible screen. While the alternate screen is active, it returns only that
+    visible screen because alternate-screen rows are not part of history.
+
+func (v *VT) SetScrollbackLimit(limit int)
+    SetScrollbackLimit enables a bounded main-screen history. Setting zero
+    disables history and clears rows already collected.
+
 func (v *VT) Text() string
     Text returns Screen joined by newlines.
 
