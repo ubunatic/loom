@@ -332,11 +332,6 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}()
 
-	restorer.OnRestore(func() {
-		eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
-		_, _ = out.Write([]byte("\x1b[r" + eraseBar))
-	})
-
 	outerAltActive := false
 	var sessionMu sync.Mutex
 	var tabs []*sessionTab
@@ -345,6 +340,19 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 
 	tabExitChan := make(chan *sessionTab, 16)
 	sessionQuitChan := make(chan struct{})
+
+	restorer.OnRestore(func() {
+		sessionMu.Lock()
+		for _, t := range tabs {
+			if t.vt != nil && t.vt.AltScreen() {
+				restorer.SetAltScreen(true)
+				break
+			}
+		}
+		sessionMu.Unlock()
+		eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
+		_, _ = out.Write([]byte("\x1b[r" + eraseBar))
+	})
 
 	spawnTab := func(cmdName string, cmdArgs ...string) (*sessionTab, error) {
 		childRows := rows
@@ -388,6 +396,12 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				if n > 0 {
 					sessionMu.Lock()
 					_, _ = t.vt.Write(buf[:n])
+					if t.vt.KittyKeyboard {
+						restorer.SetKittyKeyboard(true)
+					}
+					if t.vt.AltScreen() {
+						restorer.SetAltScreen(true)
+					}
 					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t {
 						_, _ = out.Write(buf[:n])
 						if len(tabs) > 1 {
@@ -781,12 +795,17 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			}
 			sessionMu.Unlock()
 			goto done
-		case <-sigTerm:
+		case sig := <-sigTerm:
 			sessionMu.Lock()
 			for _, t := range tabs {
 				killProcessGroup(t.child.Process.Pid)
 			}
 			sessionMu.Unlock()
+			if unixSig, ok := sig.(syscall.Signal); ok {
+				finalExitCode = 128 + int(unixSig)
+			} else {
+				finalExitCode = 143
+			}
 			goto done
 		case exitedTab := <-tabExitChan:
 			sessionMu.Lock()

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -991,6 +992,67 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 
 	session.SendRaw([]byte{17}) // ctrl-q
 	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	// Single-tab child enters alternate screen (?1049h)
+	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("ALT_RUNNING", time.Second*5)
+
+	if !session.VT().AltScreen() {
+		t.Fatalf("expected child to enter alternate screen")
+	}
+
+	// Quit with ctrl-q
+	session.SendRaw([]byte{17})
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session wait: %v", err)
+	}
+
+	// The outer VT must NOT be left in alternate screen
+	if session.VT().AltScreen() {
+		t.Fatalf("outer VT left in alternate screen after ctrl-q with alt-screen child")
+	}
+}
+
+func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := buildLoomBinary(t)
+	// Single-tab child enters alternate screen (?1049h)
+	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", fixture)
+	session.WaitFor("ALT_RUNNING", time.Second*5)
+
+	if !session.VT().AltScreen() {
+		t.Fatalf("expected child to enter alternate screen")
+	}
+
+	// Send SIGTERM to loom session
+	if err := session.Signal(syscall.SIGTERM); err != nil {
+		t.Fatalf("send SIGTERM: %v", err)
+	}
+
+	waitErr := session.Wait(time.Second * 5)
+	if waitErr == nil {
+		t.Fatalf("expected non-zero exit code on SIGTERM, got nil")
+	}
+	if !strings.Contains(waitErr.Error(), "143") {
+		t.Fatalf("expected exit code 143 (128+SIGTERM), got %v", waitErr)
+	}
+
+	// The outer VT must NOT be left in alternate screen
+	if session.VT().AltScreen() {
+		t.Fatalf("outer VT left in alternate screen after SIGTERM with alt-screen child")
+	}
 }
 
 
