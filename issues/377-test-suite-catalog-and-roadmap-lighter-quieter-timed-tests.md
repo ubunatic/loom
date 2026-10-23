@@ -75,3 +75,14 @@ Roadmap step 0 (before step 2):
 - Add a rule to AGENTS.md/docs: new features go in a sub-package, not `cmd/loom` or the root package,
   unless they are root widgets.
 - Each split is its own milestone with before/after cache-hit and run-time numbers.
+
+## Parked from 378 (host, 2026-10-23)
+
+- 378 moved session/editor to `internal/session`, `internal/editor`, `internal/clitest` (990a30a,
+  ea9ce6b). Tested: build, vet, `go test -p 2` of those three packages and `cmd/loom`. Not yet run: the
+  full suite after the move; do it as the first bounded run of this ticket.
+- 378 cache probe re-ran 23 packages, not 2. Assumption: the probe ran on a cold cache (other packages
+  last ran before the move, and some tests read source files that the move changed). Redo: one warm
+  `go test -p 2 ./...`, then add a comment in `internal/session`, run again, list re-runs. If the root
+  package and examples still re-run, find which of their tests read repo files (`go test` caches on
+  files a test opens) and fix that.
