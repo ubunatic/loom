@@ -3988,6 +3988,7 @@ func DefaultSearchBarStyle() SearchBarStyle
 type SessionBindings struct {
 	Screenshot []string `yaml:"screenshot"`
 	Quit       []string `yaml:"quit"`
+	NewTab     []string `yaml:"new_tab"`
 }
 
 type SessionDefaults struct {
@@ -3998,9 +3999,14 @@ type SessionDefaults struct {
     SessionDefaults defines specced defaults for the Loom session command.
 
 type SessionPrefixBindings struct {
-	Screenshot []string `yaml:"screenshot"`
-	Quit       []string `yaml:"quit"`
-	SendPrefix []string `yaml:"send_prefix"`
+	Screenshot  []string `yaml:"screenshot"`
+	Quit        []string `yaml:"quit"`
+	SendPrefix  []string `yaml:"send_prefix"`
+	NewTab      []string `yaml:"new_tab"`
+	NextTab     []string `yaml:"next_tab"`
+	PreviousTab []string `yaml:"previous_tab"`
+	CloseTab    []string `yaml:"close_tab"`
+	SelectTab   []string `yaml:"select_tab"`
 }
 
 type Setting struct {

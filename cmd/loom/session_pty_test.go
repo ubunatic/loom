@@ -395,3 +395,211 @@ func TestSessionStderrCleanLineStart(t *testing.T) {
 		t.Fatalf("notification does not start at clean line start: %q", raw)
 	}
 }
+
+func TestSessionNewTabCtrlN(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 0")
+	session.WaitFor("TAB1_READY", time.Second*5)
+
+	// Send ctrl-n (14) to open new tab running $SHELL
+	session.SendRaw([]byte{14})
+
+	// Wait for tab bar to appear
+	session.WaitFor("1: bash", time.Second*5)
+
+	// In new tab, print TAB2_RUNNING
+	session.Send("printf 'TAB2_RUNNING\\n'\n")
+	session.WaitFor("TAB2_RUNNING", time.Second*5)
+
+	// Close tab 2 with ctrl-b x (2, 'x')
+	session.SendRaw([]byte{2, 'x'})
+
+	// Wait for tab bar to disappear (only tab 1 remains)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+
+	// Finish tab 1
+	session.Send("done\n")
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session did not exit cleanly: %v", err)
+	}
+}
+
+func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'SCREEN1_CONTENT\\n'; read -r line; exit 0")
+	session.WaitFor("SCREEN1_CONTENT", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	session.Send("printf 'SCREEN2_CONTENT\\n'\n")
+	session.WaitFor("SCREEN2_CONTENT", time.Second*5)
+
+	// Switch to previous tab with ctrl-b p (2, 'p')
+	session.SendRaw([]byte{2, 'p'})
+	session.WaitForUpdate("SCREEN1_CONTENT", time.Second*5)
+
+	// Switch to next tab with ctrl-b n (2, 'n')
+	session.SendRaw([]byte{2, 'n'})
+	session.WaitForUpdate("SCREEN2_CONTENT", time.Second*5)
+
+	// Close tab 2 and finish tab 1
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+	session.Send("done\n")
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session did not exit cleanly: %v", err)
+	}
+}
+
+func TestSessionTabSwitchPrefixSelect(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB_ONE_MARKER\\n'; read -r line; exit 0")
+	session.WaitFor("TAB_ONE_MARKER", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	session.Send("printf 'TAB_TWO_MARKER\\n'\n")
+	session.WaitFor("TAB_TWO_MARKER", time.Second*5)
+
+	// Select tab 1 with ctrl-b 1 (2, '1')
+	session.SendRaw([]byte{2, '1'})
+	session.WaitForUpdate("TAB_ONE_MARKER", time.Second*5)
+
+	// Select tab 2 with ctrl-b 2 (2, '2')
+	session.SendRaw([]byte{2, '2'})
+	session.WaitForUpdate("TAB_TWO_MARKER", time.Second*5)
+
+	// Close tab 2 and finish tab 1
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+	session.Send("done\n")
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session did not exit cleanly: %v", err)
+	}
+}
+
+func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB_KEEP\\n'; read -r line; exit 0")
+	session.WaitFor("TAB_KEEP", time.Second*5)
+
+	// Open tab 2 with prefix c (2, 'c')
+	session.SendRaw([]byte{2, 'c'})
+	session.WaitFor("1: bash", time.Second*5)
+
+	session.Send("printf 'TAB_TO_CLOSE\\n'\n")
+	session.WaitFor("TAB_TO_CLOSE", time.Second*5)
+
+	// Close tab 2 with prefix x (2, 'x')
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+
+	// Finish tab 1
+	session.Send("done\n")
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session did not exit cleanly: %v", err)
+	}
+}
+
+func TestSessionLastTabExitCode(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 42")
+	session.WaitFor("TAB1_READY", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// Exit tab 2 with code 0
+	session.Send("exit 0\n")
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+
+	// Finish tab 1 which exits 42
+	session.Send("done\n")
+	err := session.Wait(time.Second * 5)
+	if err == nil {
+		t.Fatal("expected exit code 42, got nil")
+	}
+	if !strings.Contains(err.Error(), "42") {
+		t.Fatalf("expected error containing 42, got %v", err)
+	}
+}
+
+func TestSessionAltScreenTabSwitch(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	t.Setenv("SHELL", "/bin/sh")
+	bin := buildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "bash", "-c", "printf 'MAIN_SCREEN_TAB\\n'; read -r line; exit 0")
+	session.WaitFor("MAIN_SCREEN_TAB", time.Second*5)
+
+	// Open tab 2 with ctrl-n
+	session.SendRaw([]byte{14})
+	session.WaitFor("1: bash", time.Second*5)
+
+	// In tab 2, enter alt screen and print text
+	session.Send("printf '\\033[?1049h\\033[1;1HALT_SCREEN_TAB\\033[0m\\n'\n")
+	session.WaitFor("ALT_SCREEN_TAB", time.Second*5)
+
+	// Switch to tab 1 (main screen) with ctrl-b p
+	session.SendRaw([]byte{2, 'p'})
+	session.WaitForUpdate("MAIN_SCREEN_TAB", time.Second*5)
+
+	// Switch back to tab 2 (alt screen) with ctrl-b n
+	session.SendRaw([]byte{2, 'n'})
+	session.WaitForUpdate("ALT_SCREEN_TAB", time.Second*5)
+
+	// Close tab 2 with ctrl-b x
+	session.SendRaw([]byte{2, 'x'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+
+	// Finish tab 1
+	session.Send("done\n")
+	if err := session.Wait(time.Second * 5); err != nil {
+		t.Fatalf("session did not exit cleanly: %v", err)
+	}
+}
+

@@ -807,20 +807,26 @@
         "bindings": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["screenshot", "quit"],
+          "required": ["screenshot", "quit", "new_tab"],
           "properties": {
             "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-            "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+            "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "new_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
           }
         },
         "prefix_bindings": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["screenshot", "quit", "send_prefix"],
+          "required": ["screenshot", "quit", "send_prefix", "new_tab", "next_tab", "previous_tab", "close_tab", "select_tab"],
           "properties": {
             "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-            "send_prefix": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+            "send_prefix": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "new_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "next_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "previous_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "close_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "select_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
           }
         }
       }

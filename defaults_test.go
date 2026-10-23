@@ -311,6 +311,9 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.Bindings.Quit, []string{"ctrl-q"}) {
 		t.Fatalf("session.bindings.quit = %v, want [ctrl-q]", s.Bindings.Quit)
 	}
+	if !slices.Equal(s.Bindings.NewTab, []string{"ctrl-n"}) {
+		t.Fatalf("session.bindings.new_tab = %v, want [ctrl-n]", s.Bindings.NewTab)
+	}
 	if !slices.Equal(s.PrefixBindings.Screenshot, []string{"s"}) {
 		t.Fatalf("session.prefix_bindings.screenshot = %v, want [s]", s.PrefixBindings.Screenshot)
 	}
@@ -319,6 +322,21 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	}
 	if !slices.Equal(s.PrefixBindings.SendPrefix, []string{"ctrl-b"}) {
 		t.Fatalf("session.prefix_bindings.send_prefix = %v, want [ctrl-b]", s.PrefixBindings.SendPrefix)
+	}
+	if !slices.Equal(s.PrefixBindings.NewTab, []string{"c"}) {
+		t.Fatalf("session.prefix_bindings.new_tab = %v, want [c]", s.PrefixBindings.NewTab)
+	}
+	if !slices.Equal(s.PrefixBindings.NextTab, []string{"n"}) {
+		t.Fatalf("session.prefix_bindings.next_tab = %v, want [n]", s.PrefixBindings.NextTab)
+	}
+	if !slices.Equal(s.PrefixBindings.PreviousTab, []string{"p"}) {
+		t.Fatalf("session.prefix_bindings.previous_tab = %v, want [p]", s.PrefixBindings.PreviousTab)
+	}
+	if !slices.Equal(s.PrefixBindings.CloseTab, []string{"x"}) {
+		t.Fatalf("session.prefix_bindings.close_tab = %v, want [x]", s.PrefixBindings.CloseTab)
+	}
+	if !slices.Equal(s.PrefixBindings.SelectTab, []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}) {
+		t.Fatalf("session.prefix_bindings.select_tab = %v, want 1..9", s.PrefixBindings.SelectTab)
 	}
 	if err := s.validate(); err != nil {
 		t.Fatalf("session.validate() failed: %v", err)

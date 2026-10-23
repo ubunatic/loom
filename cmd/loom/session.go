@@ -44,21 +44,32 @@ func sessionCommand() *cobra.Command {
 	sessionDefs := loom.SpeccedDefaults.Session
 	shotKey := strings.Join(sessionDefs.Bindings.Screenshot, ", ")
 	quitKey := strings.Join(sessionDefs.Bindings.Quit, ", ")
+	newTabKey := strings.Join(sessionDefs.Bindings.NewTab, ", ")
 	prefixShot := strings.Join(sessionDefs.PrefixBindings.Screenshot, ", ")
 	prefixQuit := strings.Join(sessionDefs.PrefixBindings.Quit, ", ")
 	sendPrefix := strings.Join(sessionDefs.PrefixBindings.SendPrefix, ", ")
+	prefixNewTab := strings.Join(sessionDefs.PrefixBindings.NewTab, ", ")
+	nextTab := strings.Join(sessionDefs.PrefixBindings.NextTab, ", ")
+	prevTab := strings.Join(sessionDefs.PrefixBindings.PreviousTab, ", ")
+	closeTab := strings.Join(sessionDefs.PrefixBindings.CloseTab, ", ")
 	longHelp := fmt.Sprintf(
-		"Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: %s saves an ANSI screenshot, %s quits. Prefix %s followed by %s saves a screenshot, %s quits, and %s forwards %s to the child.",
-		shotKey, quitKey, sessionDefs.Prefix, prefixShot, prefixQuit, sendPrefix, sessionDefs.Prefix,
+		"Run the command in a pseudo-terminal, passing all input and output through unchanged. Hotkeys: %s saves an ANSI screenshot, %s quits, %s opens a new tab. Prefix %s followed by %s saves a screenshot, %s quits, and %s forwards %s to the child. Prefix %s opens a new tab, %s/%s switches tabs, %s closes a tab.",
+		shotKey, quitKey, newTabKey, sessionDefs.Prefix, prefixShot, prefixQuit, sendPrefix, sessionDefs.Prefix, prefixNewTab, nextTab, prevTab, closeTab,
 	)
 	cmd := &cobra.Command{
-		Use:   "session -- <cmd> [args...]",
-		Short: "Run a command in a PTY wrapper with screenshot and quit hotkeys",
-		Long:  longHelp,
-		Args:  cobra.MinimumNArgs(1),
+		Use:          "session [-- <cmd> [args...]]",
+		Short:        "Run a command in a PTY wrapper with screenshot and quit hotkeys",
+		Long:         longHelp,
+		Args:         cobra.ArbitraryArgs,
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runSession(cmd.Context(), os.Stdin, cmd.OutOrStdout(), cmd.ErrOrStderr(), args[0], args[1:]...)
+			cmdName := ""
+			var cmdArgs []string
+			if len(args) > 0 {
+				cmdName = args[0]
+				cmdArgs = args[1:]
+			}
+			return runSession(cmd.Context(), os.Stdin, cmd.OutOrStdout(), cmd.ErrOrStderr(), cmdName, cmdArgs...)
 		},
 	}
 	return cmd
@@ -93,7 +104,78 @@ func setPTYSize(f *os.File, cols, rows int) {
 	_ = unix.IoctlSetWinsize(int(f.Fd()), unix.TIOCSWINSZ, ws)
 }
 
+type sessionTab struct {
+	id       int
+	title    string
+	command  string
+	args     []string
+	master   *os.File
+	child    *exec.Cmd
+	vt       *vt.VT
+	exitCode int
+	waitErr  error
+	done     chan struct{}
+}
+
+func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
+	if len(tabs) <= 1 {
+		return
+	}
+	var b strings.Builder
+	b.WriteString("\x1b7") // DEC save cursor & attributes
+	fmt.Fprintf(&b, "\x1b[%d;1H", rows)
+
+	style := loom.DefaultTabsStyle()
+	usedCols := 0
+	for i, t := range tabs {
+		tabStyle := style.Inactive
+		if i == activeIndex {
+			tabStyle = style.Active
+		}
+		title := fmt.Sprintf(" %d: %s ", i+1, t.title)
+		b.WriteString(tabStyle.ANSI())
+		b.WriteString(title)
+		usedCols += loom.StringWidth(title)
+	}
+	if usedCols < cols {
+		b.WriteString(style.Inactive.ANSI())
+		b.WriteString(strings.Repeat(" ", cols-usedCols))
+	}
+	b.WriteString("\x1b[0m\x1b8") // reset style and restore cursor
+	_, _ = out.Write([]byte(b.String()))
+}
+
+func repaintActiveTab(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
+	if activeIndex < 0 || activeIndex >= len(tabs) {
+		return
+	}
+	tab := tabs[activeIndex]
+	repaint := tab.vt.Repaint()
+	_, _ = out.Write([]byte(repaint))
+
+	if len(tabs) > 1 {
+		fmt.Fprintf(out, "\x1b[1;%dr", rows-1)
+		drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+		x, y := tab.vt.Cursor()
+		fmt.Fprintf(out, "\x1b[%d;%dH", y+1, x+1)
+		if tab.vt.CursorVisible {
+			_, _ = out.Write([]byte("\x1b[?25h"))
+		} else {
+			_, _ = out.Write([]byte("\x1b[?25l"))
+		}
+	} else {
+		_, _ = out.Write([]byte("\x1b[r"))
+	}
+}
+
 func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, command string, args ...string) error {
+	if command == "" {
+		command = os.Getenv("SHELL")
+		if command == "" {
+			command = "/bin/sh"
+		}
+	}
+
 	cols, rows := 80, 24
 	var oldState *term.State
 	if inFile, ok := in.(*os.File); ok && term.IsTerminal(int(inFile.Fd())) {
@@ -103,11 +185,6 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		state, err := term.MakeRaw(int(inFile.Fd()))
 		if err == nil {
 			oldState = state
-			defer func() {
-				if oldState != nil {
-					_ = term.Restore(int(inFile.Fd()), oldState)
-				}
-			}()
 		}
 	} else if outFile, ok := out.(*os.File); ok && term.IsTerminal(int(outFile.Fd())) {
 		if w, h, err := term.GetSize(int(outFile.Fd())); err == nil && w > 0 && h > 0 {
@@ -115,39 +192,119 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}
 
-	master, slave, err := openSessionPTY(cols, rows)
+	defer func() {
+		_, _ = out.Write([]byte("\x1b[r\x1b[?1049l\x1b[?25h"))
+		if inFile, ok := in.(*os.File); ok && oldState != nil {
+			_ = term.Restore(int(inFile.Fd()), oldState)
+			oldState = nil
+		}
+	}()
+
+	var sessionMu sync.Mutex
+	var tabs []*sessionTab
+	activeIndex := 0
+	nextTabID := 1
+
+	tabExitChan := make(chan *sessionTab, 16)
+	sessionQuitChan := make(chan struct{})
+
+	spawnTab := func(cmdName string, cmdArgs ...string) (*sessionTab, error) {
+		childRows := rows
+		if len(tabs) >= 1 {
+			childRows = rows - 1
+		}
+		master, slave, err := openSessionPTY(cols, childRows)
+		if err != nil {
+			return nil, err
+		}
+		child := exec.CommandContext(ctx, cmdName, cmdArgs...)
+		child.Stdin = slave
+		child.Stdout = slave
+		child.Stderr = slave
+		child.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
+		if err := child.Start(); err != nil {
+			master.Close()
+			slave.Close()
+			return nil, fmt.Errorf("session start %s: %w", cmdName, err)
+		}
+		slave.Close()
+
+		baseCmd := filepath.Base(cmdName)
+		tab := &sessionTab{
+			id:      nextTabID,
+			title:   baseCmd,
+			command: cmdName,
+			args:    cmdArgs,
+			master:  master,
+			child:   child,
+			vt:      vt.NewVT(cols, childRows),
+			done:    make(chan struct{}),
+		}
+		nextTabID++
+
+		go func(t *sessionTab) {
+			defer close(t.done)
+			buf := make([]byte, 4096)
+			for {
+				n, readErr := t.master.Read(buf)
+				if n > 0 {
+					sessionMu.Lock()
+					_, _ = t.vt.Write(buf[:n])
+					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t {
+						_, _ = out.Write(buf[:n])
+						if len(tabs) > 1 {
+							drawSessionTabBar(out, tabs, activeIndex, cols, rows)
+						}
+					}
+					sessionMu.Unlock()
+				}
+				if readErr != nil {
+					break
+				}
+			}
+			waitErr := t.child.Wait()
+			var exitCode int
+			if waitErr != nil {
+				var exitErr *exec.ExitError
+				if errors.As(waitErr, &exitErr) {
+					exitCode = exitErr.ExitCode()
+				}
+			}
+			t.exitCode = exitCode
+			t.waitErr = waitErr
+			tabExitChan <- t
+		}(tab)
+
+		return tab, nil
+	}
+
+	initialTab, err := spawnTab(command, args...)
 	if err != nil {
 		return err
 	}
-	defer master.Close()
-
-	child := exec.CommandContext(ctx, command, args...)
-	child.Stdin = slave
-	child.Stdout = slave
-	child.Stderr = slave
-	child.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
-	if err := child.Start(); err != nil {
-		slave.Close()
-		return fmt.Errorf("session start %s: %w", command, err)
-	}
-	slave.Close()
-
-	var vtMu sync.Mutex
-	screenModel := vt.NewVT(cols, rows)
+	tabs = append(tabs, initialTab)
 
 	sigWinch := make(chan os.Signal, 1)
 	signal.Notify(sigWinch, syscall.SIGWINCH)
 	defer signal.Stop(sigWinch)
 	go func() {
 		for range sigWinch {
+			sessionMu.Lock()
 			if inFile, ok := in.(*os.File); ok && term.IsTerminal(int(inFile.Fd())) {
 				if w, h, err := term.GetSize(int(inFile.Fd())); err == nil && w > 0 && h > 0 {
-					setPTYSize(master, w, h)
-					vtMu.Lock()
-					screenModel.Resize(w, h)
-					vtMu.Unlock()
+					cols, rows = w, h
+					childRows := rows
+					if len(tabs) > 1 {
+						childRows = rows - 1
+					}
+					for _, t := range tabs {
+						setPTYSize(t.master, cols, childRows)
+						t.vt.Resize(cols, childRows)
+					}
+					repaintActiveTab(out, tabs, activeIndex, cols, rows)
 				}
 			}
+			sessionMu.Unlock()
 		}
 	}()
 
@@ -155,11 +312,17 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	var shotErrors []error
 	var shotMu sync.Mutex
 	saveScreenshot := func() error {
-		vtMu.Lock()
-		content := screenModel.ANSI()
-		vtMu.Unlock()
+		sessionMu.Lock()
+		if len(tabs) == 0 || activeIndex >= len(tabs) {
+			sessionMu.Unlock()
+			return errors.New("no active tab for screenshot")
+		}
+		curTab := tabs[activeIndex]
+		content := curTab.vt.ANSI()
+		cmdName := curTab.command
+		sessionMu.Unlock()
 
-		baseCmd := filepath.Base(command)
+		baseCmd := filepath.Base(cmdName)
 		safeCmd := strings.Map(func(r rune) rune {
 			if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '-' || r == '_' {
 				return r
@@ -196,24 +359,6 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}
 
-	stdoutDone := make(chan struct{})
-	go func() {
-		defer close(stdoutDone)
-		buf := make([]byte, 4096)
-		for {
-			n, err := master.Read(buf)
-			if n > 0 {
-				out.Write(buf[:n]) //nolint:errcheck
-				vtMu.Lock()
-				screenModel.Write(buf[:n]) //nolint:errcheck
-				vtMu.Unlock()
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
-
 	stdinDone := make(chan struct{})
 	go func() {
 		defer close(stdinDone)
@@ -229,49 +374,114 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 				pending = append(pending, buf[:n]...)
 
 				for len(pending) > 0 {
-					// A lone Esc (0x1b with no following byte in the same read) must reach
-					// the child at once rather than waiting for more input.
+					sessionMu.Lock()
+					if len(tabs) == 0 {
+						sessionMu.Unlock()
+						return
+					}
+					activeMaster := tabs[activeIndex].master
+
+					// Lone Esc
 					if len(pending) == 1 && pending[0] == 0x1b {
 						prefixMode = false
-						master.Write(pending) //nolint:errcheck
+						_, _ = activeMaster.Write(pending)
 						pending = nil
+						sessionMu.Unlock()
 						break
 					}
 
-					// Check for bracketed paste first so pasted control characters are never split
+					// Bracketed paste
 					if paste, used, ok := loom.DecodePaste(pending); ok {
 						_ = paste
-						master.Write(pending[:used]) //nolint:errcheck
+						_, _ = activeMaster.Write(pending[:used])
 						pending = pending[used:]
 						prefixMode = false
+						sessionMu.Unlock()
 						continue
 					}
 
 					key, used, ok := loom.ScanKey(pending)
 					if !ok {
-						// Incomplete sequence; wait for more data
+						sessionMu.Unlock()
 						break
 					}
 
 					if prefixMode {
 						switch {
 						case key.Is(sessionDefs.PrefixBindings.Screenshot...):
+							prefixMode = false
+							sessionMu.Unlock()
 							if err := saveScreenshot(); err != nil {
 								shotMu.Lock()
 								shotErrors = append(shotErrors, err)
 								shotMu.Unlock()
 							}
-							prefixMode = false
 						case key.Is(sessionDefs.PrefixBindings.Quit...):
-							killProcessGroup(child.Process.Pid)
+							sessionMu.Unlock()
+							close(sessionQuitChan)
 							return
 						case key.Is(sessionDefs.PrefixBindings.SendPrefix...):
-							master.Write(pending[:used]) //nolint:errcheck
+							_, _ = activeMaster.Write(pending[:used])
 							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.NewTab...):
+							shell := os.Getenv("SHELL")
+							if shell == "" {
+								shell = "/bin/sh"
+							}
+							if len(tabs) == 1 {
+								setPTYSize(tabs[0].master, cols, rows-1)
+								tabs[0].vt.Resize(cols, rows-1)
+							}
+							newTab, err := spawnTab(shell)
+							if err == nil {
+								tabs = append(tabs, newTab)
+								activeIndex = len(tabs) - 1
+								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+							}
+							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.NextTab...):
+							if len(tabs) > 1 {
+								activeIndex = (activeIndex + 1) % len(tabs)
+								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+							}
+							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.PreviousTab...):
+							if len(tabs) > 1 {
+								activeIndex = (activeIndex - 1 + len(tabs)) % len(tabs)
+								repaintActiveTab(out, tabs, activeIndex, cols, rows)
+							}
+							prefixMode = false
+							sessionMu.Unlock()
+						case key.Is(sessionDefs.PrefixBindings.CloseTab...):
+							if len(tabs) > 0 {
+								t := tabs[activeIndex]
+								killProcessGroup(t.child.Process.Pid)
+								_ = t.master.Close()
+							}
+							prefixMode = false
+							sessionMu.Unlock()
 						default:
-							// Any other key cancels prefix mode and forwards the key
+							// Check select_tab bindings by index
+							selected := -1
+							for idx, binding := range sessionDefs.PrefixBindings.SelectTab {
+								if key.Is(binding) {
+									selected = idx
+									break
+								}
+							}
+							if selected >= 0 {
+								if selected < len(tabs) {
+									activeIndex = selected
+									repaintActiveTab(out, tabs, activeIndex, cols, rows)
+								}
+							} else {
+								_, _ = activeMaster.Write(pending[:used])
+							}
 							prefixMode = false
-							master.Write(pending[:used]) //nolint:errcheck
+							sessionMu.Unlock()
 						}
 						pending = pending[used:]
 						continue
@@ -280,18 +490,38 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 					// Direct hotkey matching
 					switch {
 					case key.Is(sessionDefs.Bindings.Screenshot...):
+						sessionMu.Unlock()
 						if err := saveScreenshot(); err != nil {
 							shotMu.Lock()
 							shotErrors = append(shotErrors, err)
 							shotMu.Unlock()
 						}
 					case key.Is(sessionDefs.Bindings.Quit...):
-						killProcessGroup(child.Process.Pid)
+						sessionMu.Unlock()
+						close(sessionQuitChan)
 						return
+					case key.Is(sessionDefs.Bindings.NewTab...):
+						shell := os.Getenv("SHELL")
+						if shell == "" {
+							shell = "/bin/sh"
+						}
+						if len(tabs) == 1 {
+							setPTYSize(tabs[0].master, cols, rows-1)
+							tabs[0].vt.Resize(cols, rows-1)
+						}
+						newTab, err := spawnTab(shell)
+						if err == nil {
+							tabs = append(tabs, newTab)
+							activeIndex = len(tabs) - 1
+							repaintActiveTab(out, tabs, activeIndex, cols, rows)
+						}
+						sessionMu.Unlock()
 					case key.Is(sessionDefs.Prefix):
 						prefixMode = true
+						sessionMu.Unlock()
 					default:
-						master.Write(pending[:used]) //nolint:errcheck
+						_, _ = activeMaster.Write(pending[:used])
+						sessionMu.Unlock()
 					}
 					pending = pending[used:]
 				}
@@ -302,10 +532,59 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 		}
 	}()
 
-	waitErr := child.Wait()
+	var finalExitCode int
+	var finalWaitErr error
 
-	// Restore outer terminal to cooked mode before printing status to errOut so lines
-	// start cleanly at column 0 and do not staircase.
+	for {
+		select {
+		case <-ctx.Done():
+			sessionMu.Lock()
+			for _, t := range tabs {
+				killProcessGroup(t.child.Process.Pid)
+			}
+			sessionMu.Unlock()
+			return ctx.Err()
+		case <-sessionQuitChan:
+			sessionMu.Lock()
+			for _, t := range tabs {
+				killProcessGroup(t.child.Process.Pid)
+			}
+			sessionMu.Unlock()
+			goto done
+		case exitedTab := <-tabExitChan:
+			sessionMu.Lock()
+			idx := -1
+			for i, t := range tabs {
+				if t == exitedTab {
+					idx = i
+					break
+				}
+			}
+			if idx >= 0 {
+				exitedTab.master.Close()
+				tabs = append(tabs[:idx], tabs[idx+1:]...)
+				if len(tabs) == 0 {
+					finalExitCode = exitedTab.exitCode
+					finalWaitErr = exitedTab.waitErr
+					sessionMu.Unlock()
+					goto done
+				}
+				if activeIndex >= len(tabs) {
+					activeIndex = len(tabs) - 1
+				}
+				if len(tabs) == 1 {
+					setPTYSize(tabs[0].master, cols, rows)
+					tabs[0].vt.Resize(cols, rows)
+					_, _ = out.Write([]byte("\x1b[r"))
+				}
+				repaintActiveTab(out, tabs, activeIndex, cols, rows)
+			}
+			sessionMu.Unlock()
+		}
+	}
+
+done:
+	// Restore outer terminal cooked mode before printing status messages to errOut
 	if inFile, ok := in.(*os.File); ok && oldState != nil {
 		_ = term.Restore(int(inFile.Fd()), oldState)
 		oldState = nil
@@ -320,23 +599,25 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 	}
 	shotMu.Unlock()
 
-	var exitCode int
-	if waitErr != nil {
+	if finalWaitErr != nil {
 		var exitErr *exec.ExitError
-		if errors.As(waitErr, &exitErr) {
-			exitCode = exitErr.ExitCode()
+		if errors.As(finalWaitErr, &exitErr) {
+			finalExitCode = exitErr.ExitCode()
 		} else {
-			return waitErr
+			return finalWaitErr
 		}
 	}
 
-	if exitCode != 0 {
-		return sessionExitError{code: exitCode}
+	if finalExitCode != 0 {
+		return sessionExitError{code: finalExitCode}
 	}
 	return nil
 }
 
 func killProcessGroup(pid int) {
+	_ = syscall.Kill(-pid, syscall.SIGHUP)
+	_ = syscall.Kill(pid, syscall.SIGHUP)
 	_ = syscall.Kill(-pid, syscall.SIGTERM)
 	_ = syscall.Kill(pid, syscall.SIGTERM)
 }
+

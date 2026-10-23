@@ -644,23 +644,31 @@ type SessionDefaults struct {
 type SessionBindings struct {
 	Screenshot []string `yaml:"screenshot"`
 	Quit       []string `yaml:"quit"`
+	NewTab     []string `yaml:"new_tab"`
 }
 
 type SessionPrefixBindings struct {
-	Screenshot []string `yaml:"screenshot"`
-	Quit       []string `yaml:"quit"`
-	SendPrefix []string `yaml:"send_prefix"`
+	Screenshot  []string `yaml:"screenshot"`
+	Quit        []string `yaml:"quit"`
+	SendPrefix  []string `yaml:"send_prefix"`
+	NewTab      []string `yaml:"new_tab"`
+	NextTab     []string `yaml:"next_tab"`
+	PreviousTab []string `yaml:"previous_tab"`
+	CloseTab    []string `yaml:"close_tab"`
+	SelectTab   []string `yaml:"select_tab"`
 }
 
 func (d SessionDefaults) validate() error {
 	if d.Prefix == "" {
 		return fmt.Errorf("session.prefix must not be empty")
 	}
-	if len(d.Bindings.Screenshot) == 0 || len(d.Bindings.Quit) == 0 {
-		return fmt.Errorf("session.bindings must configure screenshot and quit")
+	if len(d.Bindings.Screenshot) == 0 || len(d.Bindings.Quit) == 0 || len(d.Bindings.NewTab) == 0 {
+		return fmt.Errorf("session.bindings must configure screenshot, quit, and new_tab")
 	}
-	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 {
-		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, and send_prefix")
+	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 ||
+		len(d.PrefixBindings.NewTab) == 0 || len(d.PrefixBindings.NextTab) == 0 || len(d.PrefixBindings.PreviousTab) == 0 ||
+		len(d.PrefixBindings.CloseTab) == 0 || len(d.PrefixBindings.SelectTab) == 0 {
+		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, send_prefix, new_tab, next_tab, previous_tab, close_tab, and select_tab")
 	}
 	return nil
 }
