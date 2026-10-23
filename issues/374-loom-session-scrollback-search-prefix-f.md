@@ -23,3 +23,13 @@ Search is scrollback search, on prefix `f` (not `ctrl-f`, which shells and `less
 - Alt-screen children (mc, htop) have no scrollback; search only their visible screen?
 - UI: reuse the loom `SearchBar` in the session bar row; scrolled view while searching (like tmux copy
   mode); copy of the match is a later step.
+
+## Decisions (host, 2026-10-23, user: "decide yourself")
+
+- `vt.VT` keeps scrollback for the main screen: lines that scroll off the top are kept, limit from the
+  spec (`session.scrollback_lines`, default 5000), ring buffer, no growth past the limit.
+- Alt-screen children (mc, htop) have no scrollback; search covers their visible screen only.
+- UI: prefix `f` turns the bar row into a search prompt (reuse `SearchBar` look and keys); the view
+  scrolls to the match like tmux copy mode; next/previous and close keys from the spec; Esc closes and
+  repaints the child's current screen unchanged. Child output during search updates its VT only.
+- Copy of the match is out of scope. The bar's search hint (373, hidden) becomes visible.
