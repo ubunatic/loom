@@ -302,8 +302,8 @@ func TestWidgetDefaultsLoadAndValidate(t *testing.T) {
 
 func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	s := SpeccedDefaults.Session
-	if s.Prefix != "ctrl-]" {
-		t.Fatalf("session.prefix = %q, want ctrl-]", s.Prefix)
+	if s.Prefix != "ctrl-b" {
+		t.Fatalf("session.prefix = %q, want ctrl-b", s.Prefix)
 	}
 	if len(s.Bindings.Screenshot) == 0 || s.Bindings.Screenshot[0] != SpeccedDefaults.Editor.HotkeyScreenshotBinding {
 		t.Fatalf("session.bindings.screenshot = %v, want editor binding %q", s.Bindings.Screenshot, SpeccedDefaults.Editor.HotkeyScreenshotBinding)
@@ -317,8 +317,8 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.PrefixBindings.Quit, []string{"q"}) {
 		t.Fatalf("session.prefix_bindings.quit = %v, want [q]", s.PrefixBindings.Quit)
 	}
-	if !slices.Equal(s.PrefixBindings.SendPrefix, []string{"ctrl-]"}) {
-		t.Fatalf("session.prefix_bindings.send_prefix = %v, want [ctrl-]]", s.PrefixBindings.SendPrefix)
+	if !slices.Equal(s.PrefixBindings.SendPrefix, []string{"ctrl-b"}) {
+		t.Fatalf("session.prefix_bindings.send_prefix = %v, want [ctrl-b]", s.PrefixBindings.SendPrefix)
 	}
 	if err := s.validate(); err != nil {
 		t.Fatalf("session.validate() failed: %v", err)
