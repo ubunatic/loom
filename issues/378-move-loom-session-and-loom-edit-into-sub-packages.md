@@ -32,3 +32,16 @@ Modularize before the big test assessment (377). A pure move, no behaviour chang
 - Cache check: after the move, touch only `internal/session` and show that `go test ./...` re-runs
   only `internal/session` and `cmd/loom` (list from `go test` output).
 - Host rule (377): the host asks the user before any full test run.
+
+## Approved plan (host, 2026-10-23)
+
+d378 plan approved (`internal/session` with `Run`, `internal/editor` with `Run(path, cfg)`, shared
+`internal/clitest`, thin Cobra commands in `cmd/loom`). Changes:
+
+- Two commits: session first, then editor, each building and passing its package tests.
+- No "failing first" step for a pure move; existing tests are the guard.
+- Machine load (user): do not run `make test-q1`. Run `go build ./...`, `go vet ./...`, and
+  `go test -p 2 ./cmd/loom ./internal/session ./internal/editor ./internal/clitest`.
+- Cache probe: after both commits, add a comment line to one file in `internal/session` (do not commit),
+  run `go test -p 2 ./... 2>&1 | grep -v '(cached)'` once, report the re-run list, then revert.
+- `make install` at the end. The host decides with the user on a full run.
