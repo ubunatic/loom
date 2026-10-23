@@ -48,3 +48,20 @@ the child's current screen; child output during search only updates the VT.
 - Overlays (help) must fit the height: 12 rows cut the help's first lines (375).
 - Live checks in tmux (`#{mouse_any_flag} #{mouse_sgr_flag} #{alternate_on}`) found bugs green tests
   missed: stale bar after quit, alt screen left on, doubled key names, swapped search direction.
+- **PTY Output Stream Framing & Interleaving (382)**: High-frequency TUI monitors like `btop` emit
+  truecolor SGR and private modes that cross PTY `read()` chunk boundaries. If raw chunks are forwarded
+  to `out` before loom draws the tab bar or mouse overrides (`\x1b7\x1b[...H`), the outer terminal treats
+  the UI sequence as an abort of the child's incomplete CSI sequence. When the completing chunk arrives
+  (e.g. `20;30m`), it lands in Ground state and prints literally onto the screen. To prevent this,
+  `runSession` parses via `t.vt.WriteFramed()` and forwards only complete frames to `out`, withholding
+  incomplete escape and UTF-8 tails until completed or safely discarded.
+- **VT Parser Continuity & Safe Discard (382)**: `vt.VT` maintains streaming state across chunk boundaries:
+  - Multi-byte ESC sequences consume intermediate bytes (`0x20..0x2F`) through final (`0x30..0x7E`) so
+    charset commands (e.g. `ESC ( B`) never leak their final character.
+  - Cancel (`CAN`/`SUB`, `0x18`/`0x1A`) safely aborts sequences to Ground.
+  - Embedded `ESC` inside an in-flight CSI or string control (OSC/DCS/APC/PM/SOS) aborts the prior sequence
+    and restarts immediately at the new `ESC`.
+  - ITU T.416 colon subparameters (`38:2::R:G:B`) and truncated SGR tails advance safely without misparsing
+    color operands as top-level attributes.
+  - A 1024-byte safety cap on incomplete controls resets to Ground to prevent unbounded memory growth on
+    unterminated streams.
