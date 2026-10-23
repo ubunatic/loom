@@ -14,6 +14,22 @@ command). Tickets: 369–376, 378.
 - `session.bar: always` (default) or `tabs` (only with more than one tab).
 - With more than one tab, loom runs on the outer alt screen so tab text never stays on the main screen.
 
+## Session debug mode
+
+Run `loom session --debug -- <cmd>` to enable per-tab raw-stream tracking and ANSI leakage checks.
+Set `LOOM_SESSION_DEBUG=1` to enable it by default; an explicit `--debug` or `--debug=false` flag takes
+precedence. Choose a diagnostics directory with `--debug-dir <path>` or `LOOM_DEBUG_DIR=<path>`.
+Without either directory setting, captures go to `$XDG_STATE_HOME/loom/debug` or
+`~/.local/state/loom/debug`.
+
+When the detector finds a stalled or overlong control sequence, or a suspicious ANSI fragment in
+the rendered screen, loom records the current screen, resets the VT parser, then briefly toggles the
+child PTY row count to deliver `SIGWINCH` and request a redraw. After 150 ms it records the updated
+screen. Each incident produces a `.log`, `-before.ansi`, and `-after.ansi` file. The log contains
+the anomaly and the recent raw PTY chunks from the 64 KB ring buffer. FIFO rotation retains at most
+five incident bundles (15 files). A 10-second circuit breaker limits repairs and diagnostic writes.
+While a debug alert is active, the session bar shows `[!]`; it clears after the cooldown.
+
 ## Keys (all from `spec/defaults.yaml` `session`)
 
 - Prefix `ctrl-b` (tmux habit; `ctrl-]` needs AltGr on German keyboards). Prefix twice sends it.

@@ -42,6 +42,28 @@ func waitForSessionScreenshot(t *testing.T, dir string) {
 	}
 }
 
+func waitForDebugBundles(t *testing.T, dir string, count int) []string {
+	t.Helper()
+	timeout := time.NewTimer(5 * time.Second * ptytest.RaceFactor)
+	defer timeout.Stop()
+	poll := time.NewTicker(10 * time.Millisecond)
+	defer poll.Stop()
+	for {
+		logs, err := filepath.Glob(filepath.Join(dir, "loom-session-*.log"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(logs) >= count {
+			return logs
+		}
+		select {
+		case <-poll.C:
+		case <-timeout.C:
+			t.Fatalf("timed out waiting for %d diagnostic bundles in %s; found %d", count, dir, len(logs))
+		}
+	}
+}
+
 func TestSessionPassThroughIO(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
@@ -93,6 +115,90 @@ func TestSessionWindowResize(t *testing.T) {
 	session.WaitFor("WINCH:14 50", time.Second*5)
 	session.SendRaw([]byte{17}) // ctrl-q
 	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := clitest.BuildLoomBinary(t)
+	dir := t.TempDir()
+	child := `count=0; trap 'count=$((count+1)); printf "REPAIRED_ON_WINCH:%s\n" "$count"' WINCH; printf 'READY\n'; printf '38;2;255;0;128m\n'; while :; do read -r -t 0.2 line || continue; case "$line" in leak) printf '38;2;255;0;128m\nLEAK_SENT\n';; count) printf 'COUNT:%s\n' "$count";; quit) exit 0;; esac; done`
+	session := ptytest.Start(t, 100, 24, bin, "session", "--debug", "--debug-dir", dir, "--", "bash", "-c", child)
+	session.WaitFor("READY", 5*time.Second)
+	session.WaitFor("REPAIRED_ON_WINCH:1", 5*time.Second)
+	session.WaitForState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
+		return len(rows) > 0 && strings.Contains(rows[len(rows)-1], "[!]")
+	})
+	waitForDebugBundles(t, dir, 1)
+	files, err := filepath.Glob(filepath.Join(dir, "loom-session-*-*.ansi"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("ANSI captures = %v", files)
+	}
+	var before, after string
+	for _, file := range files {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.HasSuffix(file, "-before.ansi") {
+			before = string(data)
+		}
+		if strings.HasSuffix(file, "-after.ansi") {
+			after = string(data)
+		}
+	}
+	if !strings.Contains(before, "38;2;255;0;128m") {
+		t.Fatalf("before capture missing leaked fragment: %q", before)
+	}
+	if !strings.Contains(after, "REPAIRED_ON_WINCH:1") {
+		t.Fatalf("after capture missing redraw: %q", after)
+	}
+
+	session.Send("leak\n")
+	session.WaitForUpdate("LEAK_SENT", 5*time.Second)
+	// The child's timed read handles pending signals before accepting this query.
+	session.Send("count\n")
+	session.WaitForUpdate("COUNT:1", 5*time.Second)
+	logs, err := filepath.Glob(filepath.Join(dir, "loom-session-*.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(logs) != 1 {
+		t.Fatalf("cooldown created %d bundles, want 1", len(logs))
+	}
+	if strings.Contains(string(session.Raw()), "REPAIRED_ON_WINCH:2") {
+		t.Fatal("cooldown allowed a second SIGWINCH repair")
+	}
+	session.Send("quit\n")
+	_ = session.Wait(5 * time.Second)
+}
+
+func TestSessionDebugDiagnosticRotationCapsAtFiveBundles(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := clitest.BuildLoomBinary(t)
+	dir := t.TempDir()
+	for i := 0; i < 6; i++ {
+		child := `repaired=0; trap 'printf "REPAIRED\n"; repaired=1' WINCH; printf '38;2;255;0;128m\n'; while test "$repaired" -eq 0; do read -r -t 0.1 line || true; done; read -r -t 0.3 line || true`
+		session := ptytest.Start(t, 100, 24, bin, "session", "--debug", "--debug-dir", dir, "--", "bash", "-c", child)
+		session.WaitFor("REPAIRED", 5*time.Second)
+		waitForDebugBundles(t, dir, min(i+1, 5))
+		if err := session.Wait(5 * time.Second); err != nil {
+			t.Fatalf("canary %d exit: %v", i, err)
+		}
+	}
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 15 {
+		t.Fatalf("retained diagnostic files = %d, want 15", len(entries))
+	}
 }
 
 func TestSessionDirectHotkeyScreenshot(t *testing.T) {
