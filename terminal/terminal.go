@@ -81,11 +81,11 @@ type Restorer struct {
 	altScreen     bool
 	kittyKeyboard bool
 
-	mu        sync.Mutex
-	once      sync.Once
-	hooks     []func()
-	sigCh     chan os.Signal
-	sigDone   chan struct{}
+	mu      sync.Mutex
+	once    sync.Once
+	hooks   []func()
+	sigCh   chan os.Signal
+	sigDone chan struct{}
 }
 
 // NewRestorer constructs a Restorer for the given terminal file descriptor and output writer.
