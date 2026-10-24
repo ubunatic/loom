@@ -18,7 +18,7 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 5. **Spec System**: Add `detach: ["d"]` under `session.prefix_bindings` and update API snapshots.
 
 ## 2. Sprint Milestones
-- **M1**: Spec Update & UNIX Socket IPC Foundation (`internal/session/ipc.go`, `spec/defaults.yaml`, `specdefaults/defaults.go`, `ipc_test.go`)
+- **M1**: Spec Update & UNIX Socket IPC Foundation (`internal/session/ipc.go`, `spec/defaults.yaml`, `specdefaults/defaults.go`, `ipc_test.go`) — Delivered in commit `cb2a914`.
 - **M2**: Daemon Server & Client Attach/Detach Engine (`internal/session/server.go`, `client.go`, `session.go`)
 - **M3**: CLI Subcommands & Flag Routing (`cmd/loom/session.go`)
 - **M4**: Automated PTY Canary Tests & Documentation (`internal/session/session_pty_test.go`, `docs/Session.md`)
@@ -28,3 +28,6 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 ## 3. Execution Log
 - [02:01] Launched architect refinement with `argon:low`.
 - [02:03] Architect refinement completed with concrete architecture; updated and committed Issue #383 ticket (`40aee67`).
+- [02:04] Dispatched developer `sol:med` for plan-first inspection.
+- [02:05] Developer submitted concrete implementation plan. Authorized M1.
+- [02:07] M1 completed and committed (`cb2a914`). Host review verified diff, unit tests, and API snapshots. Embedded M2 pre-work in ticket (`cf910d7`).
