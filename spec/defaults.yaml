@@ -594,6 +594,7 @@ session:
     send_prefix: "Send prefix"
     toggle_mouse: "Toggle mouse"
     search: "Search"
+    detach: "Detach"
     drop_order: ["quit", "screenshot", "help", "tools", "search"]
   prefix: "ctrl-b"
   bindings:
@@ -614,6 +615,7 @@ session:
     help: ["?"]
     toggle_mouse: ["m"]
     search: ["f"]
+    detach: ["d"]
   search:
     prompt: "Find: "
     placeholder: "type to search"

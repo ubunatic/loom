@@ -686,6 +686,7 @@ type SessionBarLabels struct {
 	SendPrefix  string   `yaml:"send_prefix"`
 	ToggleMouse string   `yaml:"toggle_mouse"`
 	Search      string   `yaml:"search"`
+	Detach      string   `yaml:"detach"`
 	DropOrder   []string `yaml:"drop_order"`
 }
 
@@ -709,6 +710,7 @@ type SessionPrefixBindings struct {
 	Help        []string `yaml:"help"`
 	ToggleMouse []string `yaml:"toggle_mouse"`
 	Search      []string `yaml:"search"`
+	Detach      []string `yaml:"detach"`
 }
 
 type SessionSearchDefaults struct {
@@ -735,7 +737,7 @@ func (d SessionDefaults) Validate() error {
 	if d.Bar != "always" && d.Bar != "tabs" {
 		return fmt.Errorf("session.bar must be 'always' or 'tabs'")
 	}
-	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIcon == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || d.BarLabels.Search == "" || len(d.BarLabels.DropOrder) != 5 {
+	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIcon == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || d.BarLabels.Search == "" || d.BarLabels.Detach == "" || len(d.BarLabels.DropOrder) != 5 {
 		return fmt.Errorf("session.bar_labels must configure all labels, glyphs, and five hint drop priorities")
 	}
 	dropNames := map[string]bool{"tools": true, "help": true, "screenshot": true, "quit": true, "search": true}
@@ -756,8 +758,8 @@ func (d SessionDefaults) Validate() error {
 	}
 	if len(d.PrefixBindings.Screenshot) == 0 || len(d.PrefixBindings.Quit) == 0 || len(d.PrefixBindings.SendPrefix) == 0 ||
 		len(d.PrefixBindings.NewTab) == 0 || len(d.PrefixBindings.NextTab) == 0 || len(d.PrefixBindings.PreviousTab) == 0 ||
-		len(d.PrefixBindings.CloseTab) == 0 || len(d.PrefixBindings.SelectTab) == 0 || len(d.PrefixBindings.Help) == 0 || len(d.PrefixBindings.ToggleMouse) == 0 || len(d.PrefixBindings.Search) == 0 {
-		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, send_prefix, new_tab, next_tab, previous_tab, close_tab, select_tab, help, toggle_mouse, and search")
+		len(d.PrefixBindings.CloseTab) == 0 || len(d.PrefixBindings.SelectTab) == 0 || len(d.PrefixBindings.Help) == 0 || len(d.PrefixBindings.ToggleMouse) == 0 || len(d.PrefixBindings.Search) == 0 || len(d.PrefixBindings.Detach) == 0 {
+		return fmt.Errorf("session.prefix_bindings must configure screenshot, quit, send_prefix, new_tab, next_tab, previous_tab, close_tab, select_tab, help, toggle_mouse, search, and detach")
 	}
 	if d.Search.Prompt == "" || d.Search.Placeholder == "" || d.Search.NoMatch == "" || d.Search.NextHint == "" || d.Search.PreviousHint == "" || d.Search.CloseHint == "" ||
 		len(d.Search.Bindings.Next) == 0 || len(d.Search.Bindings.Previous) == 0 || len(d.Search.Bindings.Close) == 0 {

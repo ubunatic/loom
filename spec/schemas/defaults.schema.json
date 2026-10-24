@@ -809,7 +809,7 @@
         "bar_labels": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["tools", "help", "quit", "screenshot", "mouse_icon", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "search", "drop_order"],
+          "required": ["tools", "help", "quit", "screenshot", "mouse_icon", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "search", "detach", "drop_order"],
           "properties": {
             "tools": { "type": "string", "minLength": 1 },
             "help": { "type": "string", "minLength": 1 },
@@ -824,6 +824,7 @@
             "send_prefix": { "type": "string", "minLength": 1 },
             "toggle_mouse": { "type": "string", "minLength": 1 },
             "search": { "type": "string", "minLength": 1 },
+            "detach": { "type": "string", "minLength": 1 },
             "drop_order": { "type": "array", "minItems": 5, "maxItems": 5, "items": { "type": "string", "enum": ["quit", "screenshot", "help", "tools", "search"] } }
           }
         },
@@ -843,7 +844,7 @@
         "prefix_bindings": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["screenshot", "quit", "send_prefix", "new_tab", "next_tab", "previous_tab", "close_tab", "select_tab", "help", "toggle_mouse", "search"],
+          "required": ["screenshot", "quit", "send_prefix", "new_tab", "next_tab", "previous_tab", "close_tab", "select_tab", "help", "toggle_mouse", "search", "detach"],
           "properties": {
             "screenshot": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "quit": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
@@ -855,7 +856,8 @@
             "select_tab": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "help": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
             "toggle_mouse": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-            "search": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+            "search": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "detach": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
           }
         },
         "search": {

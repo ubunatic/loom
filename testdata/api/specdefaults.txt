@@ -517,6 +517,7 @@ type SessionBarLabels struct {
 	SendPrefix  string   `yaml:"send_prefix"`
 	ToggleMouse string   `yaml:"toggle_mouse"`
 	Search      string   `yaml:"search"`
+	Detach      string   `yaml:"detach"`
 	DropOrder   []string `yaml:"drop_order"`
 }
     SessionBarLabels defines the text and glyphs shown in the Loom session bar.
@@ -556,6 +557,7 @@ type SessionPrefixBindings struct {
 	Help        []string `yaml:"help"`
 	ToggleMouse []string `yaml:"toggle_mouse"`
 	Search      []string `yaml:"search"`
+	Detach      []string `yaml:"detach"`
 }
 
 type SessionSearchBindings struct {
