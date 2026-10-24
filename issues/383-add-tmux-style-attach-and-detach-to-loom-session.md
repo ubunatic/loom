@@ -42,17 +42,22 @@ Adding tmux-style attach and detach capabilities allows users to keep long-runni
 ### 2.3 Spec Defaults & API Snapshot Discipline
 - Spec updates in `spec/defaults.yaml` and `specdefaults/defaults.go` require updating `testdata/api/specdefaults.txt` and `testdata/api/loom.txt` via `go test ./internal/apitest -update`.
 
-## 3. Milestones
+## 3. Milestones & Delivery
 
-### M1: Spec Update & UNIX Socket IPC Foundation
-- Update `spec/defaults.yaml`, `spec/schemas/defaults.schema.json`, and `specdefaults/defaults.go` to add `detach: ["d"]` under `session.prefix_bindings` and `detach: "Detach"` under `session.bar_labels`.
-- Run `go test ./internal/apitest -update` to refresh API snapshots.
-- Implement `internal/session/ipc.go` with socket path resolution, stale socket probe, and framed message serialization (`msgAttach`, `msgInput`, `msgResize`, `msgDetach`, `msgKill`, `msgOutput`, `msgExit`, etc.).
-- Unit tests in `internal/session/ipc_test.go`.
+### M1 Delivered: Spec Update & UNIX Socket IPC Foundation
+- **Status**: Delivered & verified in commit `cb2a914`.
+- Added `detach: ["d"]` under `session.prefix_bindings` and `detach: "Detach"` under `session.bar_labels` in `spec/defaults.yaml`, updated schema and `specdefaults/defaults.go`.
+- Refreshed API snapshots in `testdata/api/specdefaults.txt`.
+- Implemented `internal/session/ipc.go` with length-prefixed framed message protocol, socket path resolution, stale socket cleanup, and private permissions.
+- Verified with unit tests in `internal/session/ipc_test.go` and `go test ./internal/apitest`.
 
 ### M2: Daemon Server & Client Attach/Detach Engine
-- Implement background session server in `internal/session/server.go`: manages detached/attached states, runs PTY loops continuously, handles `prefix d` in key dispatch, and repaints active tab via `t.vt.Repaint()` on client connection.
-- Implement client connection handler in `internal/session/client.go`: sets raw terminal modes via `terminal.Restorer`, traps `SIGWINCH` (`msgResize`) and `SIGHUP` (clean detach), and restores outer screen on detach/exit.
+- **Pre-Work / Required Refinements**:
+  - Extract `sessionEngine` in `internal/session/session.go`: tabs, active index, dimensions, parser state, debug ring buffers.
+- **Scope**:
+  - Implement background session server in `internal/session/server.go`: manages detached/attached states, runs PTY loops continuously, handles `prefix d` in key dispatch, and repaints active tab via `t.vt.Repaint()` on client connection.
+  - Implement client connection handler in `internal/session/client.go`: sets raw terminal modes via `terminal.Restorer`, traps `SIGWINCH` (`msgResize`) and `SIGHUP` (clean detach), and restores outer screen on detach/exit.
+  - Keep `Run`/`RunWithOptions` backward-compatible.
 
 ### M3: CLI Subcommands & Flag Routing
 - Update `cmd/loom/session.go` to add `-s, --session <name>` flag and subcommands:
