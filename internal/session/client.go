@@ -106,10 +106,13 @@ func attachSession(ctx context.Context, name string, in io.Reader, out io.Writer
 
 	sigWinch := make(chan os.Signal, 1)
 	sigHangup := make(chan os.Signal, 1)
+	sigTerm := make(chan os.Signal, 1)
 	signal.Notify(sigWinch, syscall.SIGWINCH)
 	signal.Notify(sigHangup, syscall.SIGHUP)
+	signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM)
 	defer signal.Stop(sigWinch)
 	defer signal.Stop(sigHangup)
+	defer signal.Stop(sigTerm)
 	for {
 		select {
 		case <-ctx.Done():
@@ -118,6 +121,10 @@ func attachSession(ctx context.Context, name string, in io.Reader, out io.Writer
 		case <-sigHangup:
 			_ = writeMessage(conn, ipcMessage{Type: msgDetach})
 			return nil
+		case sig := <-sigTerm:
+			if unixSignal, ok := sig.(syscall.Signal); ok {
+				_ = writeMessage(conn, ipcMessage{Type: msgKill, Code: 128 + int(unixSignal)})
+			}
 		case <-sigWinch:
 			if fd >= 0 && term.IsTerminal(fd) {
 				if width, height, sizeErr := term.GetSize(fd); sizeErr == nil && width > 0 && height > 0 {
@@ -149,6 +156,10 @@ func attachSession(ctx context.Context, name string, in io.Reader, out io.Writer
 			}
 			switch result.message.Type {
 			case msgOutput:
+				if _, err := out.Write(result.message.Data); err != nil {
+					return err
+				}
+			case msgStderr:
 				if _, err := out.Write(result.message.Data); err != nil {
 					return err
 				}

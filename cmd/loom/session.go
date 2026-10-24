@@ -42,6 +42,13 @@ func sessionCommand() *cobra.Command {
 				debugDirDefault = debugDir
 			}
 			options := session.Options{Debug: debugDefault, DebugDir: debugDirDefault}
+			if os.Getenv("LOOM_SESSION_SERVER_NAME") != "" {
+				program := ""
+				if len(args) > 0 {
+					program, args = args[0], args[1:]
+				}
+				return session.RunWithOptions(cmd.Context(), os.Stdin, cmd.OutOrStdout(), cmd.ErrOrStderr(), options, program, args...)
+			}
 			if len(args) == 0 {
 				name := sessionName
 				if name == "" {
@@ -140,6 +147,7 @@ func startAndAttach(ctx context.Context, name string, options session.Options, p
 	defer devNull.Close()
 	child.Stdin, child.Stdout, child.Stderr = devNull, devNull, devNull
 	child.Env = setEnvironment(os.Environ(), "LOOM_SESSION_SERVER_NAME", name)
+	child.Env = setEnvironment(child.Env, "LOOM_SESSION_WAIT_ATTACH", "1")
 	if options.Debug {
 		child.Env = setEnvironment(child.Env, "LOOM_SESSION_DEBUG", "1")
 	}

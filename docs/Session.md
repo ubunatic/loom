@@ -4,6 +4,27 @@
 with the child's ANSI output. Code: `internal/session` (since 378; `cmd/loom` only holds the Cobra
 command). Tickets: 369–376, 378.
 
+## Persistent sessions
+
+`loom session` starts or attaches to the interactive `default` session. Starting a command with
+`loom session -- <cmd> [args...]` creates a uniquely named session; add `-s <name>` (or
+`--session <name>`) to choose a stable name. Sessions run in a background daemon, so closing the
+foreground client does not stop tabs or their child processes.
+
+- Prefix `ctrl-b`, then `d` detaches the current client and restores its terminal modes. The session
+  remains available in the background.
+- `loom session attach [-s <name>]` (alias `a`) attaches to a session. Without a name, Loom uses the
+  `default` session or the only active session; if several sessions are active, specify one.
+- `loom session detach [-s <name>]` disconnects an attached client. `loom session list` (alias `ls`)
+  shows each active session's name, tab count, and attached/detached state.
+- `loom session kill [-s <name>]` stops the daemon and its child processes. Control commands default
+  to `default` or the only active session when `-s` is omitted.
+
+Session sockets are stored under `$LOOM_SOCKET_DIR` when set, otherwise under `$XDG_RUNTIME_DIR/loom`,
+then `~/.local/state/loom`, and finally a per-user directory under the system temporary directory.
+The socket directory is private to the user. Loom removes socket files when a daemon exits and prunes
+stale sockets after confirming that no daemon is listening.
+
 ## Model
 
 - Each tab has its own PTY and `vt.VT` (screen model, bounded scrollback). Only the active tab writes to

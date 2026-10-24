@@ -114,21 +114,29 @@ func setPTYSize(f *os.File, cols, rows int) {
 	_ = unix.IoctlSetWinsize(int(f.Fd()), unix.TIOCSWINSZ, ws)
 }
 
+func notifyTabResize(tab *sessionTab) {
+	if tab == nil || !tab.noControllingTTY || tab.child == nil || tab.child.Process == nil {
+		return
+	}
+	_ = syscall.Kill(-tab.child.Process.Pid, syscall.SIGWINCH)
+}
+
 type sessionTab struct {
-	id            int
-	title         string
-	command       string
-	args          []string
-	master        *os.File
-	child         *exec.Cmd
-	vt            *vt.VT
-	exitCode      int
-	waitErr       error
-	mouseOverride int // -1 disabled, 0 follows child, 1 enabled
-	done          chan struct{}
-	debugRing     *debugRing
-	debugDetector *debugDetector
-	debugAlert    bool
+	id               int
+	title            string
+	command          string
+	args             []string
+	master           *os.File
+	child            *exec.Cmd
+	vt               *vt.VT
+	exitCode         int
+	waitErr          error
+	mouseOverride    int // -1 disabled, 0 follows child, 1 enabled
+	done             chan struct{}
+	debugRing        *debugRing
+	debugDetector    *debugDetector
+	debugAlert       bool
+	noControllingTTY bool
 }
 
 func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, rows int) {
@@ -536,7 +544,7 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 }
 
 func runSessionWithServer(ctx context.Context, server *sessionServer, options Options, command string, args ...string) error {
-	err := runSessionCore(ctx, server.inputR, server.output, io.Discard, options, server, command, args...)
+	err := runSessionCore(ctx, server.inputR, server.output, &serverStderr{server: server}, options, server, command, args...)
 	var exitCode int
 	var exitErr ExitError
 	if errors.As(err, &exitErr) {
@@ -547,6 +555,13 @@ func runSessionWithServer(ctx context.Context, server *sessionServer, options Op
 }
 
 func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, options Options, server *sessionServer, command string, args ...string) error {
+	if server != nil && server.waitForClient {
+		select {
+		case <-server.clientAttached:
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 	if command == "" {
 		command = os.Getenv("SHELL")
 		if command == "" {
@@ -626,8 +641,12 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 		if childRows > 1 {
 			toggleRows = childRows - 1
 		}
-		setPTYSize(t.master, cols, toggleRows)
-		setPTYSize(t.master, cols, childRows)
+		if t.noControllingTTY {
+			notifyTabResize(t)
+		} else {
+			setPTYSize(t.master, cols, toggleRows)
+			setPTYSize(t.master, cols, childRows)
+		}
 		if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 			drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 			barDrawn = true
@@ -668,28 +687,41 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 		if err != nil {
 			return nil, err
 		}
-		child := exec.CommandContext(ctx, cmdName, cmdArgs...)
-		child.Stdin = slave
-		child.Stdout = slave
-		child.Stderr = slave
-		child.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
+		newChild := func(setCTTY bool) *exec.Cmd {
+			cmd := exec.CommandContext(ctx, cmdName, cmdArgs...)
+			cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
+			cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: setCTTY, Ctty: 0}
+			return cmd
+		}
+		child := newChild(true)
+		noControllingTTY := false
 		if err := child.Start(); err != nil {
-			master.Close()
-			slave.Close()
-			return nil, fmt.Errorf("session start %s: %w", cmdName, err)
+			if server != nil && errors.Is(err, syscall.EPERM) {
+				// Some restricted daemon environments forbid acquiring a controlling
+				// terminal. The PTY remains fully usable for direct input and output.
+				child = newChild(false)
+				noControllingTTY = true
+				err = child.Start()
+			}
+			if err != nil {
+				master.Close()
+				slave.Close()
+				return nil, fmt.Errorf("session start %s: %w", cmdName, err)
+			}
 		}
 		slave.Close()
 
 		baseCmd := filepath.Base(cmdName)
 		tab := &sessionTab{
-			id:      nextTabID,
-			title:   baseCmd,
-			command: cmdName,
-			args:    cmdArgs,
-			master:  master,
-			child:   child,
-			vt:      vt.NewVT(cols, childRows),
-			done:    make(chan struct{}),
+			id:               nextTabID,
+			title:            baseCmd,
+			command:          cmdName,
+			args:             cmdArgs,
+			master:           master,
+			child:            child,
+			vt:               vt.NewVT(cols, childRows),
+			done:             make(chan struct{}),
+			noControllingTTY: noControllingTTY,
 		}
 		if options.Debug {
 			tab.debugRing = newDebugRing()
@@ -762,6 +794,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 	if err != nil {
 		return err
 	}
+	sessionMu.Lock()
 	tabs = append(tabs, initialTab)
 	if server != nil {
 		server.setTabCount(len(tabs))
@@ -770,13 +803,18 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 		fmt.Fprintf(out, "\x1b[1;%dr", rows-1)
 		drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 	}
+	sessionMu.Unlock()
 
 	sigWinch := make(chan os.Signal, 1)
 	signal.Notify(sigWinch, syscall.SIGWINCH)
 	defer signal.Stop(sigWinch)
 
 	sigTerm := make(chan os.Signal, 2)
-	signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	if server == nil {
+		signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	} else {
+		signal.Notify(sigTerm, os.Interrupt, syscall.SIGTERM)
+	}
 	defer signal.Stop(sigTerm)
 	go func() {
 		for range sigWinch {
@@ -788,6 +826,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 					for _, t := range tabs {
 						setPTYSize(t.master, cols, childRows)
 						t.vt.Resize(cols, childRows)
+						notifyTabResize(t)
 					}
 					if helpActive {
 						helpPages = drawSessionHelp(out, cols, rows, helpPage)
@@ -1111,6 +1150,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 								childRows := sessionChildRows(sessionDefs, len(tabs)+1, rows)
 								setPTYSize(tabs[0].master, cols, childRows)
 								tabs[0].vt.Resize(cols, childRows)
+								notifyTabResize(tabs[0])
 							}
 							oldTab := tabs[activeIndex]
 							newTab, err := spawnTab(shell)
@@ -1241,6 +1281,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 							childRows := sessionChildRows(sessionDefs, len(tabs)+1, rows)
 							setPTYSize(tabs[0].master, cols, childRows)
 							tabs[0].vt.Resize(cols, childRows)
+							notifyTabResize(tabs[0])
 						}
 						oldTab := tabs[activeIndex]
 						newTab, err := spawnTab(shell)
@@ -1292,6 +1333,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 			goto done
 		case <-serverKillEvents(server):
 			sessionMu.Lock()
+			server.mu.Lock()
+			finalExitCode = server.killCode
+			server.mu.Unlock()
 			for _, t := range tabs {
 				killProcessGroup(t.child.Process.Pid)
 			}
@@ -1305,6 +1349,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 				for _, tab := range tabs {
 					setPTYSize(tab.master, cols, childRows)
 					tab.vt.Resize(cols, childRows)
+					notifyTabResize(tab)
 				}
 			}
 			if activeIndex >= 0 && activeIndex < len(tabs) {
@@ -1316,7 +1361,11 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 				if server != nil && attached.attach {
 					repaintOut = &serverOutput{server: server, direct: true}
 				}
+				applyTabModes(repaintOut, nil, active)
 				repaintActiveTab(repaintOut, tabs, activeIndex, cols, rows, outerAltActive)
+				if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+					drawSessionTabBar(repaintOut, tabs, activeIndex, cols, rows)
+				}
 				if server != nil && attached.attach {
 					server.markReady()
 				}
@@ -1380,6 +1429,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 					childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
 					setPTYSize(tabs[0].master, cols, childRows)
 					tabs[0].vt.Resize(cols, childRows)
+					notifyTabResize(tabs[0])
 					eraseBar := fmt.Sprintf("\x1b7\x1b[%d;1H\x1b[2K\x1b8", rows)
 					_, _ = out.Write([]byte("\x1b[r" + eraseBar))
 				}

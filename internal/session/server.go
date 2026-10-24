@@ -12,7 +12,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 )
 
@@ -23,20 +25,24 @@ type attachEvent struct {
 }
 
 type sessionServer struct {
-	name     string
-	listener net.Listener
-	inputR   *io.PipeReader
-	inputW   *io.PipeWriter
-	output   *serverOutput
-	attached chan attachEvent
-	kill     chan struct{}
-	killOnce sync.Once
-	finished chan struct{}
-	mu       sync.Mutex
-	conn     net.Conn
-	ready    bool
-	tabCount int
-	writeMu  sync.Mutex
+	name             string
+	listener         net.Listener
+	inputR           *io.PipeReader
+	inputW           *io.PipeWriter
+	output           *serverOutput
+	attached         chan attachEvent
+	kill             chan struct{}
+	killOnce         sync.Once
+	finished         chan struct{}
+	clientAttached   chan struct{}
+	clientAttachOnce sync.Once
+	waitForClient    bool
+	mu               sync.Mutex
+	conn             net.Conn
+	ready            bool
+	tabCount         int
+	killCode         int
+	writeMu          sync.Mutex
 }
 
 type serverOutput struct {
@@ -44,14 +50,24 @@ type serverOutput struct {
 	direct bool
 }
 
+type serverStderr struct{ server *sessionServer }
+
+func (w *serverStderr) Write(p []byte) (int, error) {
+	if len(p) > 0 {
+		_ = w.server.writeOutput(ipcMessage{Type: msgStderr, Data: append([]byte(nil), p...)}, false)
+	}
+	return len(p), nil
+}
+
 func newSessionServer(listener net.Listener) *sessionServer {
 	inputR, inputW := io.Pipe()
 	s := &sessionServer{
-		listener: listener,
-		inputR:   inputR,
-		inputW:   inputW,
-		attached: make(chan attachEvent, 1),
-		kill:     make(chan struct{}),
+		listener:       listener,
+		inputR:         inputR,
+		inputW:         inputW,
+		attached:       make(chan attachEvent, 1),
+		clientAttached: make(chan struct{}),
+		kill:           make(chan struct{}),
 	}
 	s.output = &serverOutput{server: s}
 	return s
@@ -93,6 +109,15 @@ func (s *sessionServer) setTabCount(count int) {
 	s.mu.Unlock()
 }
 
+func (s *sessionServer) requestKill(code int) {
+	s.mu.Lock()
+	if code != 0 {
+		s.killCode = code
+	}
+	s.mu.Unlock()
+	s.killOnce.Do(func() { close(s.kill) })
+}
+
 func (s *sessionServer) attach(conn net.Conn, cols, rows int) error {
 	s.mu.Lock()
 	if s.conn != nil {
@@ -102,6 +127,9 @@ func (s *sessionServer) attach(conn net.Conn, cols, rows int) error {
 	s.conn = conn
 	s.ready = false
 	s.mu.Unlock()
+	if s.waitForClient {
+		s.clientAttachOnce.Do(func() { close(s.clientAttached) })
+	}
 	select {
 	case s.attached <- attachEvent{cols: cols, rows: rows, attach: true}:
 		return nil
@@ -141,12 +169,16 @@ func (w *serverOutput) Write(p []byte) (int, error) {
 
 // serveSession owns a detached session until its last tab exits or ctx ends.
 func serveSession(ctx context.Context, name string, options Options, command string, args ...string) error {
+	// The server is independent from its clients and must survive their terminal hangups.
+	signal.Ignore(syscall.SIGHUP)
+	defer signal.Reset(syscall.SIGHUP)
 	listener, err := listenSessionSocket(name)
 	if err != nil {
 		return err
 	}
 	server := newSessionServer(listener)
 	server.name = name
+	server.waitForClient = os.Getenv("LOOM_SESSION_WAIT_ATTACH") == "1"
 	server.finished = make(chan struct{})
 	defer func() {
 		server.detach(false)
@@ -222,7 +254,7 @@ func (s *sessionServer) handleClient(conn net.Conn) error {
 		return conn.Close()
 	}
 	if first.Type == msgKill {
-		s.killOnce.Do(func() { close(s.kill) })
+		s.requestKill(first.Code)
 		if s.finished != nil {
 			<-s.finished
 		}
@@ -261,7 +293,7 @@ func (s *sessionServer) handleClient(conn net.Conn) error {
 			s.detach(true)
 			return nil
 		case msgKill:
-			s.killOnce.Do(func() { close(s.kill) })
+			s.requestKill(message.Code)
 			if s.finished != nil {
 				<-s.finished
 			}
