@@ -51,21 +51,24 @@ Adding tmux-style attach and detach capabilities allows users to keep long-runni
 - Implemented `internal/session/ipc.go` with length-prefixed framed message protocol, socket path resolution, stale socket cleanup, and private permissions.
 - Verified with unit tests in `internal/session/ipc_test.go` and `go test ./internal/apitest`.
 
-### M2: Daemon Server & Client Attach/Detach Engine
-- **Pre-Work / Required Refinements**:
-  - Extract `sessionEngine` in `internal/session/session.go`: tabs, active index, dimensions, parser state, debug ring buffers.
-- **Scope**:
-  - Implement background session server in `internal/session/server.go`: manages detached/attached states, runs PTY loops continuously, handles `prefix d` in key dispatch, and repaints active tab via `t.vt.Repaint()` on client connection.
-  - Implement client connection handler in `internal/session/client.go`: sets raw terminal modes via `terminal.Restorer`, traps `SIGWINCH` (`msgResize`) and `SIGHUP` (clean detach), and restores outer screen on detach/exit.
-  - Keep `Run`/`RunWithOptions` backward-compatible.
+### M2 Delivered: Daemon Server & Client Attach/Detach Engine
+- **Status**: Delivered & verified in commit `d544475`.
+- Implemented background session server in `internal/session/server.go`: manages detached/attached states, runs PTY loops continuously, handles `prefix d` in key dispatch, and repaints active tab via `t.vt.Repaint()` on client connection.
+- Implemented client connection handler in `internal/session/client.go`: sets raw terminal modes via `terminal.Restorer`, traps `SIGWINCH` (`msgResize`) and `SIGHUP` (clean detach), and restores outer screen on detach/exit.
+- Preserved `Run` and `RunWithOptions` backward compatibility.
+- Verified with lifecycle unit tests in `internal/session/server_test.go`.
 
 ### M3: CLI Subcommands & Flag Routing
-- Update `cmd/loom/session.go` to add `-s, --session <name>` flag and subcommands:
-  - `attach` (alias `a`)
-  - `detach`
-  - `list` (alias `ls`)
-  - `kill`
-- Maintain full compatibility with `loom session [-- <cmd>]`.
+- **Pre-Work / Required Refinements**:
+  - Add daemon launcher/bootstrap path so `loom session` can fork a background daemon using `Setsid: true` or connect to an existing server socket.
+  - Session naming: default to `default` for interactive session, auto-generate unique session name when an explicit command is given without `-s`.
+- **Scope**:
+  - Update `cmd/loom/session.go` to add `-s, --session <name>` flag and subcommands:
+    - `attach` (alias `a`)
+    - `detach`
+    - `list` (alias `ls`)
+    - `kill`
+  - Maintain full compatibility with `loom session [-- <cmd>]`.
 
 ### M4: Automated PTY Canary Tests & Documentation
 - Automated PTY tests in `internal/session/session_pty_test.go`:
