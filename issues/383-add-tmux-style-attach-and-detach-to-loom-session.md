@@ -1,6 +1,6 @@
 # 383 — Add tmux-style attach and detach to loom session
 
-**Status**: Open
+**Status**: Closed — Tmux-style attach/detach with UNIX domain socket IPC, background daemon persistence, prefix d hotkey, and CLI commands verified with PTY tests
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Feature
