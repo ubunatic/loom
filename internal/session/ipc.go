@@ -51,6 +51,7 @@ type ipcMessage struct {
 	Cols          int         `json:"cols,omitempty"`
 	Rows          int         `json:"rows,omitempty"`
 	PID           int         `json:"pid,omitempty"`
+	Tabs          int         `json:"tabs,omitempty"`
 	Status        string      `json:"status,omitempty"`
 	Code          int         `json:"code,omitempty"`
 	Error         string      `json:"error,omitempty"`

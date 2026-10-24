@@ -763,6 +763,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 		return err
 	}
 	tabs = append(tabs, initialTab)
+	if server != nil {
+		server.setTabCount(len(tabs))
+	}
 	if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 		fmt.Fprintf(out, "\x1b[1;%dr", rows-1)
 		drawSessionTabBar(out, tabs, activeIndex, cols, rows)
@@ -1113,6 +1116,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 							newTab, err := spawnTab(shell)
 							if err == nil {
 								tabs = append(tabs, newTab)
+								if server != nil {
+									server.setTabCount(len(tabs))
+								}
 								activeIndex = len(tabs) - 1
 								switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 							}
@@ -1240,6 +1246,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						newTab, err := spawnTab(shell)
 						if err == nil {
 							tabs = append(tabs, newTab)
+							if server != nil {
+								server.setTabCount(len(tabs))
+							}
 							activeIndex = len(tabs) - 1
 							switchActiveTab(out, oldTab, newTab, tabs, activeIndex, cols, rows, outerAltActive)
 						}
@@ -1355,6 +1364,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 			if idx >= 0 {
 				exitedTab.master.Close()
 				tabs = append(tabs[:idx], tabs[idx+1:]...)
+				if server != nil {
+					server.setTabCount(len(tabs))
+				}
 				if len(tabs) == 0 {
 					finalExitCode = exitedTab.exitCode
 					finalWaitErr = exitedTab.waitErr

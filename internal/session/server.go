@@ -23,6 +23,7 @@ type attachEvent struct {
 }
 
 type sessionServer struct {
+	name     string
 	listener net.Listener
 	inputR   *io.PipeReader
 	inputW   *io.PipeWriter
@@ -34,6 +35,7 @@ type sessionServer struct {
 	mu       sync.Mutex
 	conn     net.Conn
 	ready    bool
+	tabCount int
 	writeMu  sync.Mutex
 }
 
@@ -82,6 +84,12 @@ func (s *sessionServer) writeOutput(message ipcMessage, direct bool) error {
 func (s *sessionServer) markReady() {
 	s.mu.Lock()
 	s.ready = true
+	s.mu.Unlock()
+}
+
+func (s *sessionServer) setTabCount(count int) {
+	s.mu.Lock()
+	s.tabCount = count
 	s.mu.Unlock()
 }
 
@@ -138,6 +146,7 @@ func serveSession(ctx context.Context, name string, options Options, command str
 		return err
 	}
 	server := newSessionServer(listener)
+	server.name = name
 	server.finished = make(chan struct{})
 	defer func() {
 		server.detach(false)
@@ -188,6 +197,37 @@ func (s *sessionServer) handleClient(conn net.Conn) error {
 	if err != nil {
 		conn.Close()
 		return err
+	}
+	if first.Type == msgStatus {
+		s.mu.Lock()
+		status := "detached"
+		if s.conn != nil {
+			status = "attached"
+		}
+		reply := ipcMessage{Type: msgStatusReply, Name: s.name, Status: status, Tabs: s.tabCount, PID: os.Getpid()}
+		s.mu.Unlock()
+		_ = writeMessage(conn, reply)
+		return conn.Close()
+	}
+	if first.Type == msgDetach {
+		s.mu.Lock()
+		attached := s.conn != nil
+		s.mu.Unlock()
+		if !attached {
+			_ = writeMessage(conn, ipcMessage{Type: msgError, Error: "session has no attached client"})
+			return conn.Close()
+		}
+		s.detach(true)
+		_ = writeMessage(conn, ipcMessage{Type: msgDetached})
+		return conn.Close()
+	}
+	if first.Type == msgKill {
+		s.killOnce.Do(func() { close(s.kill) })
+		if s.finished != nil {
+			<-s.finished
+		}
+		_ = writeMessage(conn, ipcMessage{Type: msgExit})
+		return conn.Close()
 	}
 	if first.Type != msgAttach {
 		_ = writeMessage(conn, ipcMessage{Type: msgError, Error: "first session message must be attach"})

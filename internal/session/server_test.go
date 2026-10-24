@@ -172,6 +172,74 @@ func TestServerLastTabExitCleansSocket(t *testing.T) {
 	}
 }
 
+func TestServerControlStatusListDetachAndKill(t *testing.T) {
+	t.Setenv("LOOM_SOCKET_DIR", t.TempDir())
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		done <- serveSession(ctx, "control-test", Options{}, "bash", "-c", "printf 'CONTROL_READY\\n'; while :; do sleep 1; done")
+	}()
+	deadline := time.Now().Add(5 * time.Second)
+	var status SessionInfo
+	var err error
+	for time.Now().Before(deadline) {
+		status, err = SessionStatus("control-test")
+		if err == nil {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if err != nil {
+		t.Fatalf("session did not become ready: %v", err)
+	}
+	if status.Name != "control-test" || status.Status != "detached" || status.Tabs != 1 || status.PID <= 0 {
+		t.Fatalf("SessionStatus() = %#v", status)
+	}
+	items, err := ListSessions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(items) != 1 || items[0].Name != status.Name {
+		t.Fatalf("ListSessions() = %#v", items)
+	}
+
+	path, err := sessionSocketPath("control-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := net.Dial("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeMessage(client, ipcMessage{Type: msgAttach, Cols: 80, Rows: 24}); err != nil {
+		t.Fatal(err)
+	}
+	_ = readServerStatus(t, client)
+	if err := Detach("control-test"); err != nil {
+		t.Fatal(err)
+	}
+	if got := readUntilType(t, client, msgDetached); got.Type != msgDetached {
+		t.Fatalf("detach message = %#v", got)
+	}
+	_ = client.Close()
+	status, err = SessionStatus("control-test")
+	if err != nil || status.Status != "detached" {
+		t.Fatalf("status after detach = %#v, %v", status, err)
+	}
+	if err := Kill("control-test"); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("daemon exit: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("daemon did not exit after kill")
+	}
+}
+
 func attachTestClient(t *testing.T, server *sessionServer, cols, rows int) (net.Conn, <-chan error) {
 	t.Helper()
 	client, handler := net.Pipe()
