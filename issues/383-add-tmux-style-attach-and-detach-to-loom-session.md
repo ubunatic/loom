@@ -58,23 +58,22 @@ Adding tmux-style attach and detach capabilities allows users to keep long-runni
 - Preserved `Run` and `RunWithOptions` backward compatibility.
 - Verified with lifecycle unit tests in `internal/session/server_test.go`.
 
-### M3: CLI Subcommands & Flag Routing
-- **Pre-Work / Required Refinements**:
-  - Add daemon launcher/bootstrap path so `loom session` can fork a background daemon using `Setsid: true` or connect to an existing server socket.
-  - Session naming: default to `default` for interactive session, auto-generate unique session name when an explicit command is given without `-s`.
-- **Scope**:
-  - Update `cmd/loom/session.go` to add `-s, --session <name>` flag and subcommands:
-    - `attach` (alias `a`)
-    - `detach`
-    - `list` (alias `ls`)
-    - `kill`
-  - Maintain full compatibility with `loom session [-- <cmd>]`.
+### M3 Delivered: CLI Subcommands & Flag Routing
+- **Status**: Delivered & verified in commit `47389a2`.
+- Added `-s, --session <name>` flag and subcommands `attach` (alias `a`), `detach`, `list` (alias `ls`), and `kill` to `cmd/loom/session.go`.
+- Added socket-backed control functions and auto-generated unique session names for explicit commands.
+- Verified with unit tests in `cmd/loom/session_test.go` and `internal/session/server_test.go`.
 
 ### M4: Automated PTY Canary Tests & Documentation
-- Automated PTY tests in `internal/session/session_pty_test.go`:
-  - `prefix d` detach and `loom session attach` reattach verifying child persistence and screen repaint.
-  - Background child output while detached verified on reattach.
-  - SIGHUP auto-detach handling.
-  - CLI `list` and `kill`.
-- Update `docs/Session.md`.
-- Run full verification (`HTO=0 make test-q1`).
+- **Pre-Work / Required Refinements**:
+  - Address startup tabs read/write race in `internal/session/session.go` observed during `-race` run so PTY tests and full repository tests run cleanly.
+- **Scope**:
+  - Add comprehensive PTY integration tests in `internal/session/session_pty_test.go`:
+    1. Start named session, verify detach with `prefix d` exits 0 and restores cooked terminal mode.
+    2. Verify `loom session list` reports detached status.
+    3. Reattach via `loom session attach`, verify `t.vt.Repaint()` redraws screen, tabs and cursor are preserved, and child input works.
+    4. Child output emitted while detached is displayed upon reattach.
+    5. Client SIGHUP auto-detach handling.
+    6. CLI detach and kill commands.
+  - Update `docs/Session.md` and help strings.
+  - Run `HTO=0 make test-q1`.
