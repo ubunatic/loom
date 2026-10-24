@@ -20,7 +20,7 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 ## 2. Sprint Milestones
 - **M1**: Spec Update & UNIX Socket IPC Foundation (`internal/session/ipc.go`, `spec/defaults.yaml`, `specdefaults/defaults.go`, `ipc_test.go`) — Delivered in commit `cb2a914`.
 - **M2**: Daemon Server & Client Attach/Detach Engine (`internal/session/server.go`, `client.go`, `session.go`) — Delivered in commit `d544475`.
-- **M3**: CLI Subcommands & Flag Routing (`cmd/loom/session.go`)
+- **M3**: CLI Subcommands & Flag Routing (`cmd/loom/session.go`) — Delivered in commit `47389a2`.
 - **M4**: Automated PTY Canary Tests & Documentation (`internal/session/session_pty_test.go`, `docs/Session.md`)
 
 ---
@@ -32,3 +32,4 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 - [02:05] Developer submitted concrete implementation plan. Authorized M1.
 - [02:07] M1 completed and committed (`cb2a914`). Host review verified diff, unit tests, and API snapshots. Embedded M2 pre-work in ticket (`cf910d7`).
 - [02:14] M2 completed and committed (`d544475`). Host review verified diff and lifecycle tests in `server_test.go`. Embedded M3 pre-work in ticket (`f9e3875`).
+- [02:17] M3 completed and committed (`47389a2`). Host review verified CLI subcommands and control tests. Embedded M4 pre-work in ticket (`c247133`).
