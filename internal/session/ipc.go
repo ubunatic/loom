@@ -40,19 +40,22 @@ const (
 	msgStatusReply messageType = "status_reply"
 	msgExit        messageType = "exit"
 	msgError       messageType = "error"
+	msgDetached    messageType = "detached"
 )
 
 // ipcMessage is one framed request or response on a session socket.
 type ipcMessage struct {
-	Type   messageType `json:"type"`
-	Name   string      `json:"name,omitempty"`
-	Data   []byte      `json:"data,omitempty"`
-	Cols   int         `json:"cols,omitempty"`
-	Rows   int         `json:"rows,omitempty"`
-	PID    int         `json:"pid,omitempty"`
-	Status string      `json:"status,omitempty"`
-	Code   int         `json:"code,omitempty"`
-	Error  string      `json:"error,omitempty"`
+	Type          messageType `json:"type"`
+	Name          string      `json:"name,omitempty"`
+	Data          []byte      `json:"data,omitempty"`
+	Cols          int         `json:"cols,omitempty"`
+	Rows          int         `json:"rows,omitempty"`
+	PID           int         `json:"pid,omitempty"`
+	Status        string      `json:"status,omitempty"`
+	Code          int         `json:"code,omitempty"`
+	Error         string      `json:"error,omitempty"`
+	AltScreen     bool        `json:"alt_screen,omitempty"`
+	KittyKeyboard bool        `json:"kitty_keyboard,omitempty"`
 }
 
 // socketDirectory resolves the directory used for session sockets.
@@ -237,5 +240,5 @@ func writeAll(w io.Writer, data []byte) error {
 }
 
 func validMessageType(t messageType) bool {
-	return strings.Contains(" attach input resize detach kill output stderr status status_reply exit error ", " "+string(t)+" ")
+	return strings.Contains(" attach input resize detach detached kill output stderr status status_reply exit error ", " "+string(t)+" ")
 }

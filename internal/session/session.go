@@ -78,6 +78,10 @@ type Options struct {
 
 // RunWithOptions runs a command in a pseudo-terminal with optional features.
 func RunWithOptions(ctx context.Context, in io.Reader, out, errOut io.Writer, options Options, command string, args ...string) error {
+	if name := os.Getenv("LOOM_SESSION_SERVER_NAME"); name != "" {
+		_ = os.Unsetenv("LOOM_SESSION_SERVER_NAME")
+		return serveSession(ctx, name, options, command, args...)
+	}
 	return runSession(ctx, in, out, errOut, options, command, args...)
 }
 
@@ -528,6 +532,21 @@ func switchActiveTab(out io.Writer, oldTab, newTab *sessionTab, tabs []*sessionT
 }
 
 func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, options Options, command string, args ...string) error {
+	return runSessionCore(ctx, in, out, errOut, options, nil, command, args...)
+}
+
+func runSessionWithServer(ctx context.Context, server *sessionServer, options Options, command string, args ...string) error {
+	err := runSessionCore(ctx, server.inputR, server.output, io.Discard, options, server, command, args...)
+	var exitCode int
+	var exitErr ExitError
+	if errors.As(err, &exitErr) {
+		exitCode = exitErr.ExitCode()
+	}
+	_ = server.writeMessage(ipcMessage{Type: msgExit, Code: exitCode})
+	return err
+}
+
+func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writer, options Options, server *sessionServer, command string, args ...string) error {
 	if command == "" {
 		command = os.Getenv("SHELL")
 		if command == "" {
@@ -1065,6 +1084,12 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 							sessionMu.Unlock()
 							close(sessionQuitChan)
 							return
+						case key.Is(sessionDefs.PrefixBindings.Detach...):
+							prefixMode = false
+							sessionMu.Unlock()
+							if server != nil {
+								server.detach(true)
+							}
 						case key.Is(sessionDefs.PrefixBindings.SendPrefix...):
 							_, _ = activeMaster.Write(pending[:used])
 							prefixMode = false
@@ -1256,6 +1281,38 @@ func runSession(ctx context.Context, in io.Reader, out io.Writer, errOut io.Writ
 			}
 			sessionMu.Unlock()
 			goto done
+		case <-serverKillEvents(server):
+			sessionMu.Lock()
+			for _, t := range tabs {
+				killProcessGroup(t.child.Process.Pid)
+			}
+			sessionMu.Unlock()
+			goto done
+		case attached := <-serverAttachEvents(server):
+			sessionMu.Lock()
+			if attached.cols > 0 && attached.rows > 0 && (attached.cols != cols || attached.rows != rows) {
+				cols, rows = attached.cols, attached.rows
+				childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
+				for _, tab := range tabs {
+					setPTYSize(tab.master, cols, childRows)
+					tab.vt.Resize(cols, childRows)
+				}
+			}
+			if activeIndex >= 0 && activeIndex < len(tabs) {
+				active := tabs[activeIndex]
+				if server != nil && attached.attach {
+					_ = server.writeMessage(ipcMessage{Type: msgStatus, Status: "modes", AltScreen: outerAltActive, KittyKeyboard: active.vt.KittyKeyboard})
+				}
+				repaintOut := out
+				if server != nil && attached.attach {
+					repaintOut = &serverOutput{server: server, direct: true}
+				}
+				repaintActiveTab(repaintOut, tabs, activeIndex, cols, rows, outerAltActive)
+				if server != nil && attached.attach {
+					server.markReady()
+				}
+			}
+			sessionMu.Unlock()
 		case now := <-debugTick.C:
 			sessionMu.Lock()
 			for _, tab := range tabs {
