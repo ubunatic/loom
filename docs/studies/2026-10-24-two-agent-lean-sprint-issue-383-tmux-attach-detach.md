@@ -17,11 +17,23 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 4. **CLI Subcommands**: `attach` (alias `a`), `detach`, `list` (alias `ls`), `kill`, plus `-s, --session <name>`.
 5. **Spec System**: Add `detach: ["d"]` under `session.prefix_bindings` and update API snapshots.
 
-## 2. Sprint Milestones
-- **M1**: Spec Update & UNIX Socket IPC Foundation (`internal/session/ipc.go`, `spec/defaults.yaml`, `specdefaults/defaults.go`, `ipc_test.go`) — Delivered in commit `cb2a914`.
-- **M2**: Daemon Server & Client Attach/Detach Engine (`internal/session/server.go`, `client.go`, `session.go`) — Delivered in commit `d544475`.
-- **M3**: CLI Subcommands & Flag Routing (`cmd/loom/session.go`) — Delivered in commit `47389a2`.
-- **M4**: Automated PTY Canary Tests & Documentation (`internal/session/session_pty_test.go`, `docs/Session.md`)
+---
+
+## 2. Sprint Milestones & Verification
+- **M1 (Spec update & UNIX socket IPC foundation)**: Delivered in commit [`cb2a914`](file:///home/uwe/projects/loom/internal/session/ipc.go).
+  - Added `detach: ["d"]` under `session.prefix_bindings` and `detach: "Detach"` under `session.bar_labels` in `spec/defaults.yaml`. Updated schema, `specdefaults/defaults.go`, and API snapshot `testdata/api/specdefaults.txt`.
+  - Implemented length-prefixed framed message protocol, socket path resolution, and stale socket cleanup in `internal/session/ipc.go`.
+- **M2 (Daemon server & client attach/detach engine)**: Delivered in commit [`d544475`](file:///home/uwe/projects/loom/internal/session/server.go).
+  - Implemented background server in `server.go` and client relay in `client.go`.
+  - Verified attach, detach, client input relay, `prefix d`, resize, and repaint on attach.
+- **M3 (CLI subcommands & flag routing)**: Delivered in commit [`47389a2`](file:///home/uwe/projects/loom/cmd/loom/session.go).
+  - Added `loom session attach`, `detach`, `list`, `kill`, and `-s/--session <name>`.
+  - Added automatic daemon spawning with unique session naming.
+- **M4 (Automated PTY canary tests & documentation)**: Delivered in commit [`f2146fb`](file:///home/uwe/projects/loom/internal/session/session_pty_test.go).
+  - Added PTY integration tests verifying prefix detach, reattach repaint, cooked mode restoration, SIGHUP auto-detach, and CLI detach/kill.
+  - Resolved tabs startup mutex race and daemon bootstrap recursion.
+  - Updated documentation in `docs/Session.md`.
+  - Full repository test suite passed via `HTO=0 make test-q1`.
 
 ---
 
@@ -33,3 +45,5 @@ Architect refinement completed in 2m09s (828k tokens processed). Key architectur
 - [02:07] M1 completed and committed (`cb2a914`). Host review verified diff, unit tests, and API snapshots. Embedded M2 pre-work in ticket (`cf910d7`).
 - [02:14] M2 completed and committed (`d544475`). Host review verified diff and lifecycle tests in `server_test.go`. Embedded M3 pre-work in ticket (`f9e3875`).
 - [02:17] M3 completed and committed (`47389a2`). Host review verified CLI subcommands and control tests. Embedded M4 pre-work in ticket (`c247133`).
+- [02:18] Dispatched developer for M4.
+- [02:34] M4 completed and committed (`f2146fb`). Quota-1 test suite passed. Ran `make install`. Closed Issue #383 (`e0ae76a`).
