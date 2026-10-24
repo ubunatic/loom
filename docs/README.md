@@ -82,6 +82,7 @@
 | [studies/2026-10-24-session-debug-mode-and-self-healing-diagnostics.md](studies/2026-10-24-session-debug-mode-and-self-healing-diagnostics.md) | Issue #381 (Add session debug mode: detect ANSI leakage, rotating diagnostics, auto-SIGWINCH repair, and status indicator) |
 | [studies/2026-10-24-two-agent-lean-sprint-issue-381-session-debug-mode.md](studies/2026-10-24-two-agent-lean-sprint-issue-381-session-debug-mode.md) | Two-Agent Lean Sprint Study: Issue #381 Session Debug Mode & Self-Healing Diagnostics |
 | [studies/2026-10-24-two-agent-lean-sprint-issue-382-vt-streaming-continuity.md](studies/2026-10-24-two-agent-lean-sprint-issue-382-vt-streaming-continuity.md) | Two-Agent Lean Sprint Study: Issue #382 VT Parser Streaming Continuity and Safe Discard |
+| [studies/2026-10-24-two-agent-lean-sprint-issue-383-tmux-attach-detach.md](studies/2026-10-24-two-agent-lean-sprint-issue-383-tmux-attach-detach.md) | Two-Agent Lean Sprint Study: Issue #383 Tmux-Style Attach/Detach for Loom Session |
 <!-- harnez:end docs-studies-index -->
 
 
