@@ -4,7 +4,6 @@
 package main
 
 import (
-	"io"
 	"strconv"
 	"strings"
 	"unicode/utf8"
@@ -26,7 +25,7 @@ func fmtCommand() *cobra.Command {
 			if write {
 				return atomicWrite(args[0], formatted)
 			}
-			_, err = io.WriteString(cmd.OutOrStdout(), string(formatted))
+			_, err = cmd.OutOrStdout().Write(formatted)
 			return err
 		},
 	}

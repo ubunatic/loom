@@ -80,7 +80,6 @@ func (e KeyEvent) Rune() rune {
 		if unicode.IsPrint(r) {
 			return r
 		}
-		return 0
 	}
 	return 0
 }
