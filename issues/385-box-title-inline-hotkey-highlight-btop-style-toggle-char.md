@@ -1,6 +1,6 @@
 # 385 — box title: inline hotkey highlight (btop-style toggle char)
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
