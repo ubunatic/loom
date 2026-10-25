@@ -1,4 +1,4 @@
-# 385 — box title: inline hotkey highlight (btop-style toggle char)
+# 385 — box title: styled title segments with inline hotkey highlight
 
 **Status**: In Progress
 **Priority**: P2 (Medium)
@@ -8,23 +8,24 @@
 
 ---
 
-/goal A loom `Box` title can mark one character (or a short key badge) as its hotkey and draw it in its own
-style, btop-style (`¹cpu`, `menu` with a red `m`, `preset` with a red `p`), with the rest of the title in the
-normal title style; verified by a per-cell canvas test (glyph, FG, BG) and a gallery entry; or stop and report on
-an API decision. Circuit breaker: on a loop or no progress, clear the goal and write a failure report here.
+/goal A loom `Box` title supports ordered, independently styled segments, including a hotkey character (or
+short key badge), bold badge text, normal title text, and dim host/source metadata; verified by per-cell canvas
+tests (glyph, FG, BG, bold) and a gallery entry; or stop and report on an API decision. Circuit breaker: on a
+loop or no progress, clear the goal and write a failure report here.
 
 ## Motivation
 
 harnez usage wants btop-style toggles in its box titles: the key letter inside the title word is coloured
-(e.g. red `m` in `menu`), or a superscript digit precedes it (`¹cpu`). Today `Box.Draw` (`box.go:227-238`)
-writes `TitlePrefix + Title + TitleSuffix` in one `Style.Title`, so a single char cannot be styled. Only the
-toggle char styling is wanted, not btop's frame style.
+(e.g. red `m` in `menu`), or a superscript digit precedes it (`¹cpu`). It also needs independently styled
+segments for bold key badges (for example `[L]`) and dim host/source metadata (for example `(@host · source)`).
+Today `Box.Draw` (`box.go:227-238`) writes `TitlePrefix + Title + TitleSuffix` in one `Style.Title`, so it
+cannot represent these title runs. Preserve display-width clipping across segment boundaries.
 
 ## Notes
 
-- Design point: a hotkey index/rune on `Box` plus a `Style.TitleKey` (theme/spec colour, semantic name), or a
-  small markup in the title. Prefer the field: no escaping, measurable width.
+- A hotkey character is one independently styled title segment; arbitrary ordered title segments are also
+  needed for badges and metadata. Prefer structured fields over markup: no escaping, measurable width.
 - Hotkey letter not in the title (e.g. key `L` for "Load" works, `d` for "Fetch diagnostics" does not): fall back
   to a prefixed key badge in the key style.
-- Width must stay display-width correct (superscript digits, wide runes); YAML/spec fields as for other Box
-  fields.
+- Width and clipping must stay display-width correct across segment boundaries (superscript digits, wide runes);
+  YAML/spec fields as for other Box fields.
