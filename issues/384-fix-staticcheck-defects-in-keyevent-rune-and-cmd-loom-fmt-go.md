@@ -1,6 +1,6 @@
 # 384 — Fix staticcheck defects in KeyEvent.Rune and cmd/loom/fmt.go
 
-**Status**: In Progress
+**Status**: Closed — fixed KeyEvent.Rune early termination and direct byte write in fmt
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
