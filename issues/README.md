@@ -50,4 +50,5 @@ upkeep.
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
 | 385 | [385-box-title-inline-hotkey-highlight-btop-style-toggle-char.md](385-box-title-inline-hotkey-highlight-btop-style-toggle-char.md) | box title: styled title segments with inline hotkey highlight | In Progress |
+| 386 | [386-agent-edit-flow-for-ansi-files-document-the-tui-round-trip-and-add-markup-o-in-place.md](386-agent-edit-flow-for-ansi-files-document-the-tui-round-trip-and-add-markup-o-in-place.md) | Agent edit flow for .ansi files: document the .tui round trip and add markup -o / --in-place | Open |
 <!-- harnez:end issues-active-index -->
