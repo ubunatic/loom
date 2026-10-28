@@ -29,6 +29,22 @@ func TestCursorAdvanceFromColumnOne(t *testing.T) {
 	}
 }
 
+func TestParseKittyQueryReply(t *testing.T) {
+	tests := map[string]kittySupport{
+		"":                           {},
+		"\x1b[?62;22c":               {answered: true},
+		"\x1b[?0u\x1b[?62;22c":       {supported: true, flags: 0, answered: true},
+		"\x1b[?1u\x1b[?1;2c":         {supported: true, flags: 1, answered: true},
+		"\x1b[?1u":                   {supported: true, flags: 1},
+		"junk\x1b[?31u\x1b[?65;1;9c": {supported: true, flags: 31, answered: true},
+	}
+	for reply, want := range tests {
+		if got := parseKittyQueryReply(reply); got != want {
+			t.Errorf("parseKittyQueryReply(%q) = %+v, want %+v", reply, got, want)
+		}
+	}
+}
+
 func TestProbeSummaryEndsWithNewline(t *testing.T) {
 	var output strings.Builder
 	writeResults(&output, []result{{sample: sample{name: "ZWJ family"}, row: 1, col: 3}})

@@ -18,7 +18,10 @@ comparisons so that routine release version bumps do not cause spurious golden f
 
 `go test ./...` runs `internal/apitest.TestPublicAPI`, which discovers packages with
 `go list` and compares `go doc -all` output with `testdata/api/<package>.txt`.
-Subpackage separators become `__` in filenames. Missing and stale snapshots fail,
+Subpackage separators become `__` in filenames. Go's test cache only sees files the
+test process opens itself, not those `go doc` reads, so the test reads each package's
+directory listing and `GoFiles` to key the cache on them (385). Keep that when
+changing the test, or an API change passes as `(cached) ok`. Missing and stale snapshots fail,
 so adding or removing a package also requires review. Documentation is part of this
 baseline. Use the Go toolchain declared in `go.mod` and CI when updating; a toolchain
 format change may require a separately reviewed baseline refresh.

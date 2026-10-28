@@ -19,6 +19,8 @@ var update = flag.Bool("update", false, "accept reviewed exported API snapshots"
 type listedPackage struct {
 	ImportPath string
 	Name       string
+	Dir        string
+	GoFiles    []string
 }
 
 // TestPublicAPI covers every importable package, including experimental examples.
@@ -61,6 +63,17 @@ func TestPublicAPI(t *testing.T) {
 		name += ".txt"
 		seen[name] = true
 		t.Run(strings.TrimPrefix(pkg.ImportPath, "ubunatic.com/"), func(t *testing.T) {
+			// go test caches only files the test process opens itself, not those
+			// read by the go doc subprocess, so open the sources to key the cache.
+			// Listing the directory also catches added or removed files.
+			if _, err := os.ReadDir(pkg.Dir); err != nil {
+				t.Fatal(err)
+			}
+			for _, file := range pkg.GoFiles {
+				if _, err := os.ReadFile(filepath.Join(pkg.Dir, file)); err != nil {
+					t.Fatal(err)
+				}
+			}
 			doc := exec.Command("go", "doc", "-all", pkg.ImportPath)
 			doc.Dir = root
 			got, err := doc.Output()

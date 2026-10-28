@@ -339,8 +339,8 @@ func TestSessionDefaultsLoadFromSpec(t *testing.T) {
 	if !slices.Equal(s.PrefixBindings.SendPrefix, []string{"ctrl-b"}) {
 		t.Fatalf("session.prefix_bindings.send_prefix = %v, want [ctrl-b]", s.PrefixBindings.SendPrefix)
 	}
-	if !slices.Equal(s.PrefixBindings.NewTab, []string{"c"}) {
-		t.Fatalf("session.prefix_bindings.new_tab = %v, want [c]", s.PrefixBindings.NewTab)
+	if !slices.Equal(s.PrefixBindings.NewTab, []string{"c", "N"}) {
+		t.Fatalf("session.prefix_bindings.new_tab = %v, want [c N]", s.PrefixBindings.NewTab)
 	}
 	if !slices.Equal(s.PrefixBindings.NextTab, []string{"n"}) {
 		t.Fatalf("session.prefix_bindings.next_tab = %v, want [n]", s.PrefixBindings.NextTab)

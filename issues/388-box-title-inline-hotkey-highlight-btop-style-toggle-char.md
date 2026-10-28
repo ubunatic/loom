@@ -1,4 +1,4 @@
-# 385 — box title: styled title segments with inline hotkey highlight
+# 388 — box title: styled title segments with inline hotkey highlight
 
 **Status**: In Progress
 **Priority**: P2 (Medium)

@@ -567,7 +567,8 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 	_ = sessionQ.Wait(time.Second * 5)
 
 	// Test prefix twice sends ctrl-b to child
-	sessionSend := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
+	sessionSend := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'SEND READY\\n'; read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
+	sessionSend.WaitFor("SEND READY", time.Second*5)
 	// Send ctrl-b twice
 	sessionSend.SendRaw([]byte{2, 2})
 	sessionSend.WaitFor("RECEIVED:2", time.Second*5)

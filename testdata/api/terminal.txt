@@ -21,16 +21,19 @@ const ResetSequences = "\x1b[?9l" +
 	"\x1b[?1015l" +
 	"\x1b[?1004l" +
 	"\x1b[?2004l" +
-	"\x1b[r" +
+	"\x1b[>4m" +
+	"\x1b7\x1b[r\x1b8" +
 	"\x1b[0m" +
 	"\x1b[?25h" +
 	"\x1b[0 q" +
 	"\x1b[?7h"
     ResetSequences contains the ANSI escape sequence string that resets every
     terminal mode a child or loom process may set: mouse tracking (9, 1000,
-    1002, 1003, 1005, 1006, 1015 off), focus events (1004 off), bracketed
-    paste (2004 off), DECSTBM scroll region reset (r), SGR reset (0m), cursor
-    visibility (25h), default cursor shape (0 q), and auto-wrap on (7h).
+    1002, 1003, 1005, 1006, 1015 off), focus events (1004 off), bracketed paste
+    (2004 off), xterm modifyOtherKeys back to its default (>4m), DECSTBM scroll
+    region reset (r, wrapped in DECSC/DECRC because DECSTBM homes the cursor),
+    SGR reset (0m), cursor visibility (25h), default cursor shape (0 q),
+    and auto-wrap on (7h).
 
 
 FUNCTIONS
