@@ -86,7 +86,7 @@ func RunWithOptions(ctx context.Context, in io.Reader, out, errOut io.Writer, op
 }
 
 func openSessionPTY(cols, rows int) (master, slave *os.File, err error) {
-	master, err = os.OpenFile("/dev/ptmx", os.O_RDWR, 0)
+	master, err = os.OpenFile("/dev/ptmx", os.O_RDWR|unix.O_NOCTTY, 0)
 	if err != nil {
 		return nil, nil, fmt.Errorf("open /dev/ptmx: %w", err)
 	}
@@ -100,7 +100,7 @@ func openSessionPTY(cols, rows int) (master, slave *os.File, err error) {
 		master.Close()
 		return nil, nil, fmt.Errorf("pty number: %w", err)
 	}
-	slave, err = os.OpenFile(fmt.Sprintf("/dev/pts/%d", n), os.O_RDWR, 0)
+	slave, err = os.OpenFile(fmt.Sprintf("/dev/pts/%d", n), os.O_RDWR|unix.O_NOCTTY, 0)
 	if err != nil {
 		master.Close()
 		return nil, nil, fmt.Errorf("open slave: %w", err)
