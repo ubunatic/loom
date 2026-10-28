@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -79,10 +80,17 @@ func readChunk(fd int, timeout time.Duration) ([]byte, error) {
 			return chunk, nil
 		}
 		n, err := unix.Read(fd, buf)
-		if err != nil && err != unix.EINTR {
+		if err == unix.EINTR {
+			continue
+		}
+		if err != nil {
 			return chunk, err
 		}
-		chunk = append(chunk, buf[:max(n, 0)]...)
+		if n == 0 {
+			// Hangup: poll keeps reporting the fd ready, so stop instead of spinning.
+			return chunk, io.EOF
+		}
+		chunk = append(chunk, buf[:n]...)
 		wait = int(keyGap.Milliseconds())
 	}
 }

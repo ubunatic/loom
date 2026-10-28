@@ -59,11 +59,15 @@ func attachSession(ctx context.Context, name string, in io.Reader, out io.Writer
 		}
 	}
 	restorer := terminal.NewRestorer(fd, state, out)
+	painted := false
 	defer func() {
 		restorer.Restore()
 		// The session painted the whole screen, and leaving the outer alt screen
 		// brings back the stale single-tab screen, so clear after the restore.
-		_, _ = io.WriteString(out, "\x1b[H\x1b[J")
+		// Keep the screen when the attach failed before any session output.
+		if painted {
+			_, _ = io.WriteString(out, "\x1b[H\x1b[J")
+		}
 	}()
 	if err := writeMessage(conn, ipcMessage{Type: msgAttach, Name: name, Cols: cols, Rows: rows}); err != nil {
 		return err
@@ -158,6 +162,7 @@ func attachSession(ctx context.Context, name string, in io.Reader, out io.Writer
 			}
 			switch result.message.Type {
 			case msgOutput:
+				painted = true
 				if _, err := out.Write(result.message.Data); err != nil {
 					return err
 				}
