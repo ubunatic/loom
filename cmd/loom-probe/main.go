@@ -2,7 +2,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
 // Command loom-probe measures how the current terminal advances its cursor
-// after representative emoji sequences.
+// after representative emoji sequences. "loom-probe keys" reports kitty
+// keyboard protocol support and echoes the bytes each key sends.
 package main
 
 import (
@@ -30,7 +31,11 @@ type result struct {
 }
 
 func main() {
-	if err := run(os.Stdin, os.Stdout); err != nil {
+	probe := run
+	if len(os.Args) > 1 && os.Args[1] == "keys" {
+		probe = runKeys
+	}
+	if err := probe(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "loom-probe:", err)
 		os.Exit(1)
 	}
