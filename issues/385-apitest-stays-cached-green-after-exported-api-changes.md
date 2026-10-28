@@ -1,6 +1,6 @@
 # 385 — apitest stays cached green after exported API changes
 
-**Status**: Draft
+**Status**: Closed — Fixed in 2f14c19 (test cache keyed on GoFiles; verified cached->rerun after source edit) and 34ddb95 (terminal snapshot); gokay check --all: fmt/vet/test ok
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
