@@ -43,16 +43,19 @@ Adding `ctrl-N` bindings alone would therefore only work while a kitty-aware app
 | Key | Phase 1 (legacy) | Phase 3 (modifyOtherKeys=2) |
 | --- | --- | --- |
 | Ctrl-1..Ctrl-9 | nothing | nothing |
-| Alt-1 | nothing; `"\x1b1"` (alt-1) once Gram's Alt keybindings are disabled | same as phase 1 |
+| Alt-1 | nothing; `"\x1b1"` (alt-1) once the Gram `Terminal` keymap sends it | same as phase 1 |
 | Shift-Enter | `"\n"` | `"\n"` |
 | Enter | `"\r"` | `"\r"` |
 | Esc | `"\x1b"` | `"\x1b"` |
 
 Kitty query: not supported (DA1 only), so phase 2 was skipped. Phase 3 was identical to phase 1, so
 modifyOtherKeys is not supported either. Shift-Enter is distinct only because it sends LF, which
-legacy Ctrl-J also sends. Alt-1 produced nothing at first because Gram binds Alt-digits itself; after
-the user disabled Gram's Alt keybindings it arrives as `"\x1b1"`, so the session's existing
-`alt-1`..`alt-9` work there and cover the use case. Conclusion: ctrl-digit tab switching needs a kitty-capable terminal (kitty, Ghostty, WezTerm,
+legacy Ctrl-J also sends. Alt-1 produced nothing at first because Gram binds Alt-digits itself. The
+working setup keeps Gram's own Alt-digit bindings and adds a `"Terminal"` context block to
+`~/.config/gram/keymap.jsonc` that maps `alt-N` to `["terminal::SendText", "\u001bN"]` (and unbinds
+`ctrl-n` in `Workspace` so it reaches the terminal). Alt-1 then arrives as `"\x1b1"`, so the
+session's existing `alt-1`..`alt-9` work there and cover the use case. For new Alt or Ctrl bindings,
+fix conflicts in that `Terminal` context, not by disabling Gram bindings globally. Conclusion: ctrl-digit tab switching needs a kitty-capable terminal (kitty, Ghostty, WezTerm,
 foot, Alacritty); the user's terminal cannot support it.
 
 - **Detection** per client attach: write `CSI ? u` + `CSI c`; a `CSI ? <flags> u` reply before the DA1
