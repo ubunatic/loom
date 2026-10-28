@@ -49,4 +49,5 @@ upkeep.
 | 313 | [313-manual-acceptance-checklist-for-open-issue-follow-ups.md](313-manual-acceptance-checklist-for-open-issue-follow-ups.md) | Manual acceptance checklist for open issue follow-ups | Open |
 | 314 | [314-aggregate-remaining-development-across-open-issues.md](314-aggregate-remaining-development-across-open-issues.md) | Aggregate remaining development across open issues | Open |
 | 368 | [368-loom-view-space-and-ctrl-f-do-not-page-down.md](368-loom-view-space-and-ctrl-f-do-not-page-down.md) | loom view: Space and Ctrl+F do not page down | Open |
+| 384 | [384-loom-session-opt-in-always-on-kitty-keyboard-mode-with-legacy-re-encoding-and-ctrl-1-9-tab-switching.md](384-loom-session-opt-in-always-on-kitty-keyboard-mode-with-legacy-re-encoding-and-ctrl-1-9-tab-switching.md) | loom session: opt-in always-on kitty keyboard mode with legacy re-encoding and ctrl-1..9 tab switching | Blocked — needs a kitty-capable terminal; the user's Gram integrated terminal reports neither kitty nor modifyOtherKeys and sends nothing for ctrl-digits |
 <!-- harnez:end issues-active-index -->
