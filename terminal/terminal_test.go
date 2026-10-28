@@ -16,20 +16,21 @@ import (
 func TestResetSequencesCompleteness(t *testing.T) {
 	seq := terminal.ResetSequences
 	required := []string{
-		"\x1b[?9l",    // X10 mouse off
-		"\x1b[?1000l", // normal mouse off
-		"\x1b[?1002l", // button-event mouse off
-		"\x1b[?1003l", // any-event mouse off
-		"\x1b[?1005l", // utf-8 mouse off
-		"\x1b[?1006l", // sgr mouse off
-		"\x1b[?1015l", // urxvt mouse off
-		"\x1b[?1004l", // focus tracking off
-		"\x1b[?2004l", // bracketed paste off
-		"\x1b[r",      // scroll region reset (DECSTBM)
-		"\x1b[0m",     // SGR style reset
-		"\x1b[?25h",   // cursor visible
-		"\x1b[0 q",    // default cursor shape (DECSCUSR 0)
-		"\x1b[?7h",    // auto-wrap on (DECAWM)
+		"\x1b[?9l",         // X10 mouse off
+		"\x1b[?1000l",      // normal mouse off
+		"\x1b[?1002l",      // button-event mouse off
+		"\x1b[?1003l",      // any-event mouse off
+		"\x1b[?1005l",      // utf-8 mouse off
+		"\x1b[?1006l",      // sgr mouse off
+		"\x1b[?1015l",      // urxvt mouse off
+		"\x1b[?1004l",      // focus tracking off
+		"\x1b[?2004l",      // bracketed paste off
+		"\x1b[>4m",         // modifyOtherKeys default
+		"\x1b7\x1b[r\x1b8", // scroll region reset (DECSTBM) keeping the cursor
+		"\x1b[0m",          // SGR style reset
+		"\x1b[?25h",        // cursor visible
+		"\x1b[0 q",         // default cursor shape (DECSCUSR 0)
+		"\x1b[?7h",         // auto-wrap on (DECAWM)
 	}
 
 	for _, req := range required {
