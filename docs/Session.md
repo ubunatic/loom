@@ -56,7 +56,7 @@ While a debug alert is active, the session bar shows `[!]`; it clears after the 
 - Prefix `ctrl-b` (tmux habit; `ctrl-]` needs AltGr on German keyboards). Prefix twice sends it.
 - Direct and swallowed: `ctrl-p` screenshot (`.ansi`, same key as `loom edit`), `ctrl-q` quit, `ctrl-n`
   new tab, `ctrl-f` search, `alt-1`…`alt-9` select tab. Ctrl+digit is unusable (legacy encodings collide).
-- Prefix: `s` screenshot, `q` quit, `c` new tab, `n`/`p` next/previous, `1`–`9`, `x` close, `?` help
+- Prefix: `s` screenshot, `q` quit, `c`/`N` new tab, `n`/`p` next/previous, `1`–`9`, `x` close, `?` help
   (not F1, so children keep it), `m` mouse toggle, `f` search.
 - Swallowed keys are lost to the child: `ctrl-f` is forward-char in shells and page-down in less/vim;
   the user chose that trade-off (376).

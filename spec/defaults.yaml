@@ -607,7 +607,7 @@ session:
     screenshot: ["s"]
     quit: ["q"]
     send_prefix: ["ctrl-b"]
-    new_tab: ["c"]
+    new_tab: ["c", "N"]
     next_tab: ["n"]
     previous_tab: ["p"]
     close_tab: ["x"]
