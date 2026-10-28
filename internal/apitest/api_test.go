@@ -65,6 +65,10 @@ func TestPublicAPI(t *testing.T) {
 		t.Run(strings.TrimPrefix(pkg.ImportPath, "ubunatic.com/"), func(t *testing.T) {
 			// go test caches only files the test process opens itself, not those
 			// read by the go doc subprocess, so open the sources to key the cache.
+			// Listing the directory also catches added or removed files.
+			if _, err := os.ReadDir(pkg.Dir); err != nil {
+				t.Fatal(err)
+			}
 			for _, file := range pkg.GoFiles {
 				if _, err := os.ReadFile(filepath.Join(pkg.Dir, file)); err != nil {
 					t.Fatal(err)
