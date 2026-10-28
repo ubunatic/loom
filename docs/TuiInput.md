@@ -100,7 +100,10 @@ keys (codes 57399-57427) decode like their legacy counterparts (digits and
 operators as text, `enter`, `up`, `pgdown`, ...), F13-F35 as `f13`..`f35`, and
 other private-use codes as `key-<code>`. Super, Hyper and Meta add `super-`,
 `hyper-` and `meta-` after `ctrl-shift-alt-`; Caps/Num Lock are ignored. Terminals
-without the protocol ignore the push and behave as before (issue 321).
+without the protocol ignore the push and behave as before (issue 321). To check a
+terminal, run `loom-probe keys`: it sends `CSI ? u` + DA1 (a `CSI ? <flags> u` reply
+before DA1 means supported) and echoes raw bytes per key in legacy, kitty and
+modifyOtherKeys modes (384).
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Left/Right move along the bar, and Enter or Space activates the focused action.

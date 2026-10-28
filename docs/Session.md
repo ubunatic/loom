@@ -64,8 +64,12 @@ While a debug alert is active, the session bar shows `[!]`; it clears after the 
 ## Terminal modes and restore
 
 - The `terminal` package (372) owns the reset set: mouse 9/1000/1002/1003/1005/1006/1015, focus, paste,
-  kitty pop, DECSTBM, SGR, cursor, auto-wrap, alt screen. `terminal.Restorer` runs once on every exit
-  path, including signals (exit 128+sig) and panic. Use it for any raw-mode program.
+  kitty pop, modifyOtherKeys (`>4m`), DECSTBM, SGR, cursor, auto-wrap, alt screen. `terminal.Restorer`
+  runs once on every exit path, including signals (exit 128+sig) and panic. Use it for any raw-mode program.
+- DECSTBM (`CSI r`) homes the cursor, so the reset wraps it in DECSC/DECRC (`ESC 7 … ESC 8`); a bare
+  `CSI r` on exit leaves the shell prompt at the top left.
+- The attach client clears the screen (`CSI H CSI J`) after restore only once the session sent output:
+  leaving the outer alt screen brings back a stale screen, but a failed attach must keep its error visible.
 - A killed child cannot reset its modes, so loom must. Each tab's VT tracks the modes its child set;
   on switch, loom resets the outer modes and applies the new tab's.
 - Mouse `safe` (default): loom enables tracking only when the active child asked for it, then handles
@@ -79,6 +83,13 @@ search covers their visible screen. Smart case. `Enter`/`↑` older, `↓` newer
 the child's current screen; child output during search only updates the VT.
 
 ## Pitfalls seen
+
+- Open `/dev/ptmx` and the slave with `O_NOCTTY`. Without it the slave becomes the loom server's
+  controlling TTY, the child's `setsid`+`TIOCSCTTY` fails, and fish exits with "No TTY for interactive
+  shell".
+- Terminal key support varies: run `loom-probe keys` to see whether the terminal speaks kitty keyboard or
+  modifyOtherKeys and which bytes each key sends. Gram (Zed fork) supports neither; Ctrl-digits send
+  nothing and Alt-digits arrive only via its `Terminal` keymap (384).
 
 - PTY tests that wait for "the bar" can match the one-tab bar before tab 2 exists; wait for the new
   tab's label.
