@@ -30,8 +30,12 @@ let loom disambiguate these keys without terminal support.
   `/run/voxi/modifiers` every 10 ms (`--state-file /run/voxi/modifiers --interval 10ms`). The file
   is world-readable (`0644`) and contained a single byte, `\0`, when no modifiers were held
   (2026-10-30).
-- Unknown: the bitmask layout (ctrl/alt/shift/super bits, left/right). Read it from the voxi
-  source instead of guessing.
+- Format (voxi source, `internal/modifiers/modifiers.go`, verified 2026-10-30): one byte;
+  bit 0 left Ctrl, 1 right Ctrl, 2 left Alt, 3 right Alt, 4 left Super, 5 right Super,
+  6 left Shift, 7 right Shift. There is no AltGr bit. The daemon writes a temp file and renames it
+  over the state file (atomic), so readers read byte 0 of a fresh open.
+- voxi's reader is in `internal/` (not importable) and voxi is AGPL-3.0: loom implements its own
+  reader against this documented file contract and copies no voxi code.
 - Detection: the feature is available only when the state file exists and is readable. Do not
   shell out to systemctl. It is opt-in or automatic only on legacy terminals; kitty mode always
   takes precedence.
@@ -39,13 +43,33 @@ let loom disambiguate these keys without terminal support.
   container sessions, and it races with input arriving 10 ms later, so samples must be taken on byte
   arrival. Ambiguous bytes (`1` with ctrl held → `ctrl-1`) are re-interpreted only when the sample
   agrees.
-- Where: the decoder layer (`loom.DecodeKey` / session input path); fix the library, not callers.
+- Where (searcher, 2026-10-30): `DecodeKey` `event.go:120` (legacy control map `:129`, CSI-u
+  `:342`); pane input reads and splits at `pane_run.go:519-537`; session has its own input path at
+  `internal/session/session.go:941`. There is no single choke point, so both paths need the
+  library hook. The spec flag follows `pane.kitty_keyboard` (`spec/defaults.yaml:62`,
+  `specdefaults/defaults.go:891`, `spec/schemas/defaults.schema.json:533`, consumer `pane.go:95`).
+  The probe goes next to `loom-probe keys` (`cmd/loom-probe/main.go:33`, `keys.go:62`, `echoKeys`
+  `:133`).
 
 ## 3. Implementation & Verification Plan
 
-- Canary first (docs/Canary.md): a `loom-probe` subcommand that prints raw bytes plus the sampled
-  modifier state, run in Gram, to prove that `^1`..`^9` can be recovered reliably.
-- If the canary passes, add the modifier source behind a spec flag with an injectable reader, so
-  tests use a fake state file. Add unit tests for the re-interpretation table, then run
-  `make test-q1`.
-- If timing is unreliable, close as won't fix and record the canary results here.
+### M1 — Canary probe (`loom-probe mods`)
+- A new `loom-probe mods` subcommand next to `keys`, in raw mode. After each read it samples
+  `/run/voxi/modifiers` and prints one line: quoted raw bytes, `DecodeKey` result, the mask in hex,
+  and decoded names (`lctrl rctrl lalt ralt lsuper rsuper lshift rshift`). With `--path` it reads
+  another file. A missing or unreadable file gives a clear message and the plain `keys`-style
+  output.
+- A small mask parser in its own file, unit-tested with a fake state file (bit table, missing file,
+  empty file). No PTY test.
+- Files: `cmd/loom-probe/main.go`, a new `cmd/loom-probe/mods.go`, and `cmd/loom-probe/main_test.go`
+  or a new `mods_test.go`. Do not touch the decoder or the spec in M1.
+- Gate: the user runs `loom-probe mods` in the Gram terminal and presses `^1`..`^9`, `^2`/`^3`
+  and plain digits. M2 starts only if every ctrl-digit shows the ctrl bit set and every plain digit
+  shows it clear. Otherwise, close as won't fix with the results.
+
+### M2 — Library feature (after the M1 gate)
+- Spec `pane.modifier_state` (off by default) in YAML, schema and `specdefaults`, plus a session
+  consumer. An injectable reader interface, so tests use a fake file. Re-interpret only on
+  non-kitty terminals and only the ambiguous legacy bytes when the sampled mask agrees.
+- Unit tests for the re-interpretation table, including near misses (ctrl bit clear, shift held,
+  kitty active). `make test-q1`, then `make install`.
