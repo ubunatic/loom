@@ -55,4 +55,5 @@ upkeep.
 | 390 | [390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md](390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md) | loom session: tab label shows foreground command (emoji for well-known) and cwd | Open |
 | 391 | [391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md](391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md) | agy vim mode UI breaks in loom session (stray letters, repeated lines, wrong popup offset) | Open |
 | 392 | [392-loom-session-mouse-modes-off-full-basic-basic-suppresses-drag-to-preserve-text-selection.md](392-loom-session-mouse-modes-off-full-basic-basic-suppresses-drag-to-preserve-text-selection.md) | loom session mouse modes: off\|full\|basic (basic suppresses drag to preserve text selection) | Open |
+| 393 | [393-fix-hang-in-testserverlasttabexitcleanssocket-in-internal-session.md](393-fix-hang-in-testserverlasttabexitcleanssocket-in-internal-session.md) | Fix hang in TestServerLastTabExitCleansSocket in internal/session | Draft |
 <!-- harnez:end issues-active-index -->
