@@ -28,3 +28,33 @@ Acceptance: Cover query/mode/control clicks, overlay occlusion, focus changes, s
 ## Integration verification (2026-10-07)
 
 Host integration adds display-only RichTextEdit.Highlights in the library, replaces search SetSelection/ClearSelection, synchronizes editor/search focus on draw, retains press-only mouse focus and edit-driven match refresh, and uses standard HintBar mode hit testing. Tab/Shift-Tab moves container focus and ^R switches mode. Selection isolation, editing cursor and bounds regression tests pass. Keep open for complete mouse/control/focus coverage.
+
+## Sprint Plan (lean sprint, 2026-10-30)
+
+Searcher audit (read-only, code-read, not yet run): the live editor is `internal/editor/edit.go`; `cmd/loom/edit.go` is a 51-line wrapper, so the `cmd/loom/edit.go:623–660` reference above is stale. Search is routed before the editor (`ConsumeMouse` 821–885: searchRect at 843, editorRect at 878). `highlightSearchMatch` (371–381) no longer calls `SetSelection`, but it writes `v.edit.Cursor = to` at 380 when search is focused. Focus is set on mouse press only. Refresh is missing after edits made while search is closed, on reopen, and after mouse edits.
+
+### Milestones
+
+- **M1 (reproduction tests, red first):** add tests before any fix.
+  - PTY: open ^F, click the query field, type X, ^S; the file must hold X in the query and the document must be unchanged.
+  - PTY or unit: clicks on the mode row and each control in the search bar (edit.go:848–861) reach the intended action and do not fall through.
+  - Click-through: a click inside searchRect never changes the editor's cursor, selection or content.
+  - Stale matches: edit with search closed, reopen, and the match count and search_next offsets match the current text.
+  - Focus: hover and scroll over the search panel and the editor do not change focus.
+  - Cursor: a search highlight move does not change `edit.Cursor` (edit.go:380).
+  - Acceptance: commit the failing tests with the fix in M2–M4, or mark them as `t.Skip` only with a dated reason. Do not weaken assertions.
+- **M2 (stale matches and tiny-panel clicks):** refresh matches when search opens and on every document modification, not only when `showSearch` is set (edit.go:667–668, 305–316, OnStateChange at 134–141). Set `searchRect` only inside the draw guard (edit.go:491 vs 493) so an invisible panel does not swallow clicks.
+- **M3 (search highlight must not move editing cursor):** keep the highlight display-only (library `RichTextEdit.Highlights`, documented at docs/Widgets.md:20). Remove the cursor assignment at edit.go:380. If scroll-to-match is needed, use a view-only operation that does not touch `Cursor`.
+- **M4 (popover precedence and mouse edits):** a formatting popover open from a selection currently captures clicks before searchRect (edit.go:809–818, modal_mouse.go:50–75). Probe in a PTY first. If it reproduces, fix it in the library modal contract, not in the app. Confirm which mouse paths can mutate text (edit.go:877–885) and refresh matches after any such edit.
+- **M5 (final acceptance, host only):** the host runs `make test-q1`, `make install`, and the PTY acceptance list on the installed binary. The developer does not close the ticket.
+
+### Pre-Work / Required Refinements
+
+- Fix the file reference in the Technical Specification to `internal/editor/edit.go`; keep the old line numbers in a note only.
+- Do not add a file-level workaround in the editor for a library routing gap; fix the library event contract (docs/Widgets.md: 0-based child-local coordinates, press-only focus, Tab belongs to containers).
+- Event routing: the developer must follow the event-routing contract in docs/Widgets.md when editing mouse routing, and must not subtract 1 from mouse coordinates.
+- Tests: no sleeps; PTY tests stay in the full tier (docs/TestTiers.md).
+
+## Decision
+
+- Model mapping for this sprint: Searcher `claude:haiku:med`, developer `claude:sonnet:high`, architect skipped because the Searcher findings are narrow. The CLAUDE.md convention `codex:sol:med` for event-routing tickets is not applied; the user chose the models. Reason and offer to redispatch are reported to the user.
