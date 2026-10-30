@@ -1,6 +1,6 @@
 # 384 — loom session: opt-in always-on kitty keyboard mode with legacy re-encoding and ctrl-1..9 tab switching
 
-**Status**: Blocked — needs a kitty-capable terminal; the user's Gram integrated terminal reports neither kitty nor modifyOtherKeys and sends nothing for ctrl-digits
+**Status**: Closed — Won't fix: Ctrl-1..9 needs kitty keyboard protocol support in Gram; we keep Alt+<num> as the tab/pane digit binding.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
