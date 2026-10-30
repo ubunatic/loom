@@ -32,4 +32,13 @@ Reproduced on 2026-10-30 with `go test -count=1 -timeout 90s -run 'TestServerLas
 - **Scope of impact:** any `make test-q1` run from a loom session shell hangs the same way. This is why the ticket reproduces here and not in a clean CI environment.
 - **Decision (low-risk, host):** fix the library. `RunWithOptions` takes the attach gate from an explicit option or consumes the variable, following the existing `LOOM_SESSION_SERVER_NAME` handling (`session.go:81–82`). The test is not changed. The developer's plan turn chooses between these, and it must keep real loom children waiting for attach.
 
+## Pre-Work: host review of 4a19821 (2026-10-30)
+
+- **Accepted:** the fix is correct. `server.go` reads `options.WaitForAttach` and not the env. `cmd/loom/session.go` sets the option only in the daemon branch and clears the env there. No existing test assertion changed. Host reran `go build ./...` and `go vet` clean. `go test -count=1 ./internal/session/ ./cmd/loom/` passes with `LOOM_SESSION_WAIT_ATTACH=1` set (6.167s) and cleared (6.134s).
+- **Must fix before close (docs/TestTiers.md:39–44):** the new tests break the test-tier rules.
+  1. `TestServeSessionWaitForAttachHoldsChildUntilAttach` polls with `time.Sleep(20 * time.Millisecond)` (two loops). Wait on a channel or an event instead. If the child must signal, have it do so through a channel or an existing helper. Do not add a sleep.
+  2. Fixed `5 * time.Second` budgets in `TestServeSessionIgnoresWaitAttachEnv` and the attach test. Scale them with `const raceFactor` (`budget := N * time.Millisecond * raceFactor`), as TestTiers.md describes.
+- **Write set for this fix:** `internal/session/server_test.go` and, if needed, the test helper file in the same package. No library changes.
+- **Verify:** rerun `go test -count=1 ./internal/session/ ./cmd/loom/` with and without the env. Quote the summary lines. Commit as a new commit, `test(session): wait for attach without sleeps (issue 393)`, with the Haiku trailer. Do not amend.
+
 /goal `TestServerLastTabExitCleansSocket` returns, the session socket is removed after the last tab exits, and `make test-q1` is green. Stop and report when blocked.
