@@ -60,6 +60,8 @@ type editView struct {
 	searchMatches []searchMatch
 	searchIndex   int
 	searchErr     string
+	searchStale   bool // matches are older than the document or the query
+	searchKey     bool // the current key was consumed by the search panel
 	unsavedDialog *loom.Dialog
 	pendingAction func()
 	quit          func()
@@ -155,7 +157,8 @@ func (v *editView) closeDocument() {
 	v.edit.Close()
 	v.filePath = ""
 	v.statusMessage = ""
-	v.updateSearchMatches()
+	v.invalidateSearch()
+	v.syncSearch()
 }
 
 // guardUnsaved runs action now when the buffer is clean, otherwise after the
@@ -181,7 +184,8 @@ func (v *editView) openFile(path string) error {
 	if theme := loom.Theme(v.config.Theme); v.config.Theme != "" {
 		v.edit.ApplyTheme(theme)
 	}
-	v.updateSearchMatches()
+	v.invalidateSearch()
+	v.syncSearch()
 	return nil
 }
 
@@ -307,6 +311,9 @@ func (v *editView) toggleSearch() {
 	if v.showSearch {
 		v.focused = focusSearch
 		v.searchBar.SetFocused(true)
+		// The document may have changed while the panel was closed.
+		v.invalidateSearch()
+		v.syncSearch()
 	} else {
 		if v.focused == focusSearch {
 			v.focused = focusEditor
@@ -315,11 +322,36 @@ func (v *editView) toggleSearch() {
 	}
 }
 
+// invalidateSearch marks the matches as older than the document or the query.
+func (v *editView) invalidateSearch() { v.searchStale = true }
+
+// syncSearch brings stale matches and the highlight up to date. A closed
+// search stays stale until it reopens, so editing costs nothing meanwhile,
+// and never leaves a highlight behind.
+func (v *editView) syncSearch() {
+	if !v.showSearch {
+		v.edit.Highlights = nil
+		return
+	}
+	if v.searchStale {
+		v.refreshSearchMatches()
+		v.paintSearchHighlight()
+	}
+}
+
+// updateSearchMatches refreshes the matches and paints the current one.
 func (v *editView) updateSearchMatches() {
+	v.refreshSearchMatches()
+	v.highlightSearchMatch()
+}
+
+// refreshSearchMatches recomputes the matches for the current query and
+// document and clamps the current index. It never touches the editor.
+func (v *editView) refreshSearchMatches() {
+	v.searchStale = false
 	v.searchMatches = nil
 	v.searchErr = ""
 	if v.searchQuery == "" {
-		v.edit.Highlights = nil
 		return
 	}
 
@@ -328,7 +360,6 @@ func (v *editView) updateSearchMatches() {
 		re, err := regexp.Compile(v.regexQuery())
 		if err != nil {
 			v.searchErr = loom.SpeccedDefaults.Editor.InvalidRegex
-			v.edit.Highlights = nil
 			return
 		}
 		for lineIdx, line := range lines {
@@ -358,24 +389,31 @@ func (v *editView) updateSearchMatches() {
 		}
 	}
 
-	if len(v.searchMatches) > 0 {
-		if v.searchIndex >= len(v.searchMatches) {
-			v.searchIndex = 0
-		}
-		v.highlightSearchMatch()
-	} else {
-		v.edit.Highlights = nil
+	if v.searchIndex >= len(v.searchMatches) || v.searchIndex < 0 {
+		v.searchIndex = 0
 	}
 }
 
-func (v *editView) highlightSearchMatch() {
-	if len(v.searchMatches) == 0 {
+// paintSearchHighlight shows the current match as a display-only highlight,
+// and nothing while the panel is closed or has no match.
+func (v *editView) paintSearchHighlight() {
+	if !v.showSearch || len(v.searchMatches) == 0 {
+		v.edit.Highlights = nil
 		return
 	}
 	m := v.searchMatches[v.searchIndex]
 	from := loom.RichPosition{Line: m.line, Offset: m.start}
 	to := loom.RichPosition{Line: m.line, Offset: m.start + m.length}
 	v.edit.Highlights = []loom.RichTextHighlight{{From: from, To: to, Style: v.edit.SelectionStyle}}
+}
+
+func (v *editView) highlightSearchMatch() {
+	v.paintSearchHighlight()
+	if !v.showSearch || len(v.searchMatches) == 0 {
+		return
+	}
+	m := v.searchMatches[v.searchIndex]
+	to := loom.RichPosition{Line: m.line, Offset: m.start + m.length}
 	if v.focused == focusSearch {
 		v.edit.Cursor = to
 	}
@@ -384,6 +422,9 @@ func (v *editView) highlightSearchMatch() {
 func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	v.lastRect = rect
 	v.hints, v.indicators = nil, nil
+	// Hit regions exist only for what this draw painted; a hidden panel or a
+	// skipped draw must not keep swallowing clicks through last frame's rects.
+	v.editorRect, v.browserRect, v.searchRect, v.searchModes = loom.Rect{}, loom.Rect{}, loom.Rect{}, nil
 	if rect.W <= 0 || rect.H <= 0 {
 		return
 	}
@@ -395,7 +436,6 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 
 	outer := loom.Box{Title: loom.SpeccedDefaults.Editor.Title, Style: boxStyle, Border: loom.BoxBorder{TitlePrefix: loom.SpeccedDefaults.Editor.TitlePrefix, TitleSuffix: loom.SpeccedDefaults.Editor.TitleSuffix}}
 	outer.Draw(canvas, rect)
-	v.editorRect, v.browserRect, v.searchRect = loom.Rect{}, loom.Rect{}, loom.Rect{}
 	v.edit.SetFocus(v.focused == focusEditor)
 	v.searchBar.SetFocused(v.showSearch && v.focused == focusSearch)
 
@@ -488,11 +528,12 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 			sHeight := min(loom.SpeccedDefaults.Editor.SearchMaxHeight, contentH)
 			sX := max(v.editorRect.X, v.editorRect.X+v.editorRect.W-sWidth)
 			sY := v.editorRect.Y
-			v.searchRect = loom.Rect{X: sX, Y: sY, W: sWidth, H: sHeight}
+			searchRect := loom.Rect{X: sX, Y: sY, W: sWidth, H: sHeight}
 
 			if sWidth > 4 && sHeight > 2 {
+				v.searchRect = searchRect
 				searchBox := loom.Box{Title: loom.SpeccedDefaults.Editor.SearchTitle, Style: boxStyle}
-				searchBox.Draw(canvas, v.searchRect)
+				searchBox.Draw(canvas, searchRect)
 
 				// Find input line
 				v.searchBar.MaxWidth = max(1, sWidth-4)
@@ -528,7 +569,20 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 	}
 }
 
+// ConsumeKey routes a key and then keeps the search matches current: any key
+// the search panel did not own may have edited the document, whichever panel
+// had focus, so the matches are marked stale and refreshed while search is open.
 func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
+	v.searchKey = false
+	res := v.consumeKey(key)
+	if res.Consumed && !v.searchKey {
+		v.invalidateSearch()
+	}
+	v.syncSearch()
+	return res
+}
+
+func (v *editView) consumeKey(key loom.KeyEvent) loom.EventResult {
 	// This app-level binding stays available when a dialog or editor overlay owns
 	// input, so users can always restore mouse reporting from mouse-off mode.
 	if key.Is(loom.SpeccedDefaults.Editor.HotkeyMouseGrabBinding) {
@@ -605,6 +659,7 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	}
 
 	if v.showSearch && v.focused == focusSearch {
+		v.searchKey = true // the panel refreshes its own matches below
 		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) {
 			v.toggleSearch()
 			return loom.Handled()
@@ -663,9 +718,6 @@ func (v *editView) ConsumeKey(key loom.KeyEvent) loom.EventResult {
 	if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["cancel"]...) && v.focused == focusEditor && v.edit.HasSelection && !wasBoxMode {
 		v.edit.ClearSelection()
 		return loom.Handled()
-	}
-	if v.showSearch && res.Consumed {
-		v.updateSearchMatches()
 	}
 	return res
 }
@@ -819,10 +871,14 @@ func (v *editView) ModalMouseTarget() (loom.Widget, loom.Rect) {
 }
 
 func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
+	// Popover actions and editor clicks can edit the document, so refresh the
+	// matches once the event is routed.
+	defer v.syncSearch()
 	if result, captured := v.modalMouse.Dispatch(v, mouse); captured {
 		if v.unsavedDialog != nil && !v.unsavedDialog.Open {
 			v.unsavedDialog = nil
 		}
+		v.invalidateSearch()
 		return result
 	}
 
@@ -882,6 +938,7 @@ func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 		mouseLocal := mouse
 		mouseLocal.X -= v.editorRect.X
 		mouseLocal.Y -= v.editorRect.Y
+		v.invalidateSearch()
 		return v.edit.ConsumeMouse(mouseLocal)
 	}
 
