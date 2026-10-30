@@ -83,3 +83,20 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
 - Add a `richtextedit_test.go` test for reveal and for display-only highlights.
 - Restore the cursor assertions removed in M1 (see above).
 - Move the held cursor file into the M3 commit; all tests in the package must pass.
+
+## M3–M4 review and installed-binary acceptance (host, 2026-10-30)
+
+- **M3 (`c373a58`) host-verified:** `go test -count=1` passes for `internal/editor`, `internal/apitest`, the root package and `cmd/loom`. Assertion changes reviewed: the cursor checks are restored, and the navigation test now parks the cursor where a move is visible.
+- **M4 (`452c8d9`) host-verified:** the same four packages pass. `DeferPopover` and `DrawPopover` are additive. The editor calls `DrawPopover` outside the search-panel block, so the popover still draws when search is closed. The probe loosening (a cell with no background of its own may show the background beneath) is accepted: text and foreground are still compared for every cell.
+- **Decision (selection):** a click on the search panel while the popover is open clears the selection, as a backdrop click does (`Test304`, `docs/Widgets.md`). The stricter "selection unchanged" reading is rejected.
+- **Decision (snapshot):** the `testdata/api/loom.txt` updates for M3 and M4 are additive and approved.
+- **Gate blocked:** `make test-q1` fails in `internal/session` on `TestServerLastTabExitCleansSocket`. Reproduced in isolation: it hangs until the 90s test timeout. The test sets its own `LOOM_SOCKET_DIR`, so the live session server is an unlikely cause. Filed as [393](393-fix-hang-in-testserverlasttabexitcleanssocket-in-internal-session.md). This ticket cannot close until `make test-q1` is green.
+- **Installed binary (`make install`, tmux 100×24, `loom edit --mousegrab`), host-run:**
+  - Query click at row 3, column 60, typed `X` → `Find: X`. Save leaves the file unchanged (`first line`, `second line`, `third line`). PASS.
+  - Mode clicks: `Regex` at row 4, column 72 switches to Regex; `Normal` at row 4, column 58 switches back. PASS.
+  - Stale matches: query `line` shows `1 / 3`. After closing search and inserting `line ` at the start of line 2, reopening shows `1 / 4`. PASS.
+  - Popover: a selection opens the formatting popover, drawn left of the search panel. The overlap case is not reproduced in this run; the M4 probe covers it. PARTIAL.
+  - Hint-bar controls: a click on `^F Search` (row 23, column 15) closes an open search panel, and the file stays unchanged. PASS. A click on `^O Files` (column 12) opens the file panel. Both were run in a fresh PTY.
+  - Focus on hover and scroll: `Test287HoverAndScrollDoNotChangeFocus` (`edit_287_test.go:449`). Unit test only; not exercised in the PTY run. PARTIAL.
+  - Search-bar controls other than the mode labels (prev/next, close): no dedicated test and not exercised in the PTY run. NOT RUN.
+- **Acceptance status:** not met in full, so the ticket stays open. Remaining: the `make test-q1` gate (blocked by 393), a PTY run of the overlap and control-click cases, and the close command after both pass.
