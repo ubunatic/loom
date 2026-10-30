@@ -66,6 +66,8 @@ let loom disambiguate these keys without terminal support.
 - Gate: the user runs `loom-probe mods` in the Gram terminal and presses `^1`..`^9`, `^2`/`^3`
   and plain digits. M2 starts only if every ctrl-digit shows the ctrl bit set and every plain digit
   shows it clear. Otherwise, close as won't fix with the results.
+- M1 delivered (2026-10-30): `loom-probe mods [--path]`; mask parser in `cmd/loom-probe/mods.go`
+  with tests; awaiting the Gram gate.
 
 ### M2 — Library feature (after the M1 gate)
 - Spec `pane.modifier_state` (off by default) in YAML, schema and `specdefaults`, plus a session
@@ -73,3 +75,7 @@ let loom disambiguate these keys without terminal support.
   non-kitty terminals and only the ambiguous legacy bytes when the sampled mask agrees.
 - Unit tests for the re-interpretation table, including near misses (ctrl bit clear, shift held,
   kitty active). `make test-q1`, then `make install`.
+
+## Decision
+
+No build tag for `loom-probe mods`: a missing state file falls back to plain key output on any OS.
