@@ -52,4 +52,5 @@ upkeep.
 | 386 | [386-agent-edit-flow-for-ansi-files-document-the-tui-round-trip-and-add-markup-o-in-place.md](386-agent-edit-flow-for-ansi-files-document-the-tui-round-trip-and-add-markup-o-in-place.md) | Agent edit flow for .ansi files: document the .tui round trip and add markup -o / --in-place | Open |
 | 388 | [388-box-title-inline-hotkey-highlight-btop-style-toggle-char.md](388-box-title-inline-hotkey-highlight-btop-style-toggle-char.md) | box title: styled title segments with inline hotkey highlight | In Progress |
 | 389 | [389-detect-modifier-keys-via-voxi-modifierd-on-non-kitty-terminals.md](389-detect-modifier-keys-via-voxi-modifierd-on-non-kitty-terminals.md) | Detect modifier keys via voxi-modifierd on non-kitty terminals | Open |
+| 390 | [390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md](390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md) | loom session: tab label shows foreground command (emoji for well-known) and cwd | Open |
 <!-- harnez:end issues-active-index -->
