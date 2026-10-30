@@ -1,6 +1,6 @@
 # 393 — Fix hang in TestServerLastTabExitCleansSocket in internal/session
 
-**Status**: Open
+**Status**: In Progress — searcher audit running; developer plan-first next
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
