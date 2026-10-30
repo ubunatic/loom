@@ -30,8 +30,8 @@ The session bar renders `" %d: %s "` with `tab.title`, which is fixed at spawn t
 - Optional source: OSC 7 (cwd URI) and OSC 0/2 (title) sent by the child, if the VT parses them.
   Check whether `vt` handles these before adding polling.
 - Label (user decision 2026-10-30): a superscript tab number, then the emoji, then the cwd
-  basename, for example `¹🐚 loom`. Unknown commands show the name instead of the emoji
-  (`²make loom`). The home directory shows as `~`. Tabs 10 and above use superscript digits too
+  basename, for example `¹🐚 loom`. Unknown commands show the name and a middle dot instead of
+  the emoji (`²make·loom`). The home directory shows as `~`. Tabs 10 and above use superscript digits too
   (`¹⁰`). Measure with display width, not bytes (docs/Go.md), and cut overlong basenames at a spec
   width limit.
 - The emoji table (for example shells, editors, `git`, `go`, `make`, `htop`/`btop`, `ssh`, `man`,
