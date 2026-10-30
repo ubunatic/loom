@@ -113,3 +113,19 @@ the child's current screen; child output during search only updates the VT.
     color operands as top-level attributes.
   - A 1024-byte safety cap on incomplete controls resets to Ground to prevent unbounded memory growth on
     unterminated streams.
+- **Terminal Queries & Cursor Position Reports (CPR) Leaking to Input (391)**: Interactive prompt
+  applications (such as `agy` in vim mode, readline, or prompt-toolkit) query cursor position (`\x1b[6n`)
+  or device attributes (`\x1b[c`) to align inline popups and completion menus. When forwarded to the
+  outer terminal, responses (`\x1b[row;colR`) return on the multiplexer's `stdin`. If not intercepted
+  or recognized by `loom.ScanKey`, CPR responses are parsed as plain keys and trailing characters
+  (such as `R`, semicolons, and coordinate digits) leak back into the child PTY master, causing stray
+  characters on the prompt, duplicated lines, and popup offset displacement.
+- **Mouse Motion Tracking vs Native Selection (392)**: When child applications request button-event
+  tracking (`\x1b[?1002h`) or any-event tracking (`\x1b[?1003h`), the outer terminal reports drag
+  motion events (`\x1b[<...M`), which prevents the outer terminal's native drag-to-select text selection
+  unless the user holds a terminal-specific modifier key (such as `Shift`). To prevent hosted applications
+  from hijacking text selection, a 3-way mouse model (`off` | `basic` | `full`) clamps outer terminal
+  tracking to normal tracking (`\x1b[?1000h` + SGR `\x1b[?1006h`) or filters drag motion sequences in
+  Loom, allowing clicks and scrolling to reach the child app while preserving drag selection at the
+  session / outer terminal level.
+
