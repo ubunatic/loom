@@ -57,4 +57,4 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
 
 ## Decision
 
-- Model mapping for this sprint: Searcher `claude:haiku:med`, developer `claude:sonnet:high`, architect skipped because the Searcher findings are narrow. The CLAUDE.md convention `codex:sol:med` for event-routing tickets is not applied; the user chose the models. Reason and offer to redispatch are reported to the user.
+- Model mapping for this sprint: Searcher `claude:haiku:med`, developer `claude:sonnet:high`, architect skipped because the Searcher findings are narrow. The CLAUDE.md convention `codex:sol:med` for event-routing tickets is not applied: Sol is not available here, so the whole sprint stays on Claude models. Luna High (`luna:high`) is reserved for one optional one-shot second opinion, not for implementation.
