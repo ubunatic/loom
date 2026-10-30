@@ -172,6 +172,87 @@ func TestServerLastTabExitCleansSocket(t *testing.T) {
 	}
 }
 
+func TestServeSessionIgnoresWaitAttachEnv(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("LOOM_SOCKET_DIR", dir)
+	t.Setenv("LOOM_SESSION_WAIT_ATTACH", "1")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := serveSession(ctx, "envgate", Options{}, "bash", "-c", "exit 0"); err != nil {
+		t.Fatalf("server returned error: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(dir, "session-envgate.sock")); !os.IsNotExist(err) {
+		t.Fatalf("session socket still exists after last tab exit: %v", err)
+	}
+}
+
+func TestServeSessionWaitForAttachHoldsChildUntilAttach(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("LOOM_SOCKET_DIR", dir)
+	t.Setenv("LOOM_SESSION_WAIT_ATTACH", "")
+	marker := filepath.Join(dir, "started")
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		done <- serveSession(ctx, "gate-test", Options{WaitForAttach: true}, "bash", "-c", "touch "+marker+"; while :; do sleep 1; done")
+	}()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second):
+			t.Error("session server did not stop")
+		}
+	})
+
+	deadline := time.Now().Add(5 * time.Second)
+	var status SessionInfo
+	var err error
+	for time.Now().Before(deadline) {
+		status, err = SessionStatus("gate-test")
+		if err == nil {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if err != nil {
+		t.Fatalf("session did not become ready: %v", err)
+	}
+	if status.Tabs != 0 {
+		t.Fatalf("tabs before attach = %d, want 0 while waiting for a client", status.Tabs)
+	}
+	if _, err := os.Lstat(marker); !os.IsNotExist(err) {
+		t.Fatalf("child started before any client attached: %v", err)
+	}
+
+	path, err := sessionSocketPath("gate-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := net.Dial("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.Close()
+	if err := writeMessage(client, ipcMessage{Type: msgAttach, Cols: 80, Rows: 24}); err != nil {
+		t.Fatal(err)
+	}
+	_ = readServerStatus(t, client)
+	for time.Now().Before(deadline) {
+		if _, err = os.Lstat(marker); err == nil {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if err != nil {
+		t.Fatalf("child did not start after a client attached: %v", err)
+	}
+	status, err = SessionStatus("gate-test")
+	if err != nil || status.Tabs != 1 {
+		t.Fatalf("status after attach = %#v, %v; want 1 tab", status, err)
+	}
+}
+
 func TestServerControlStatusListDetachAndKill(t *testing.T) {
 	t.Setenv("LOOM_SOCKET_DIR", t.TempDir())
 	ctx, cancel := context.WithCancel(context.Background())
