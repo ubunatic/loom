@@ -342,7 +342,7 @@ func (v *editView) syncSearch() {
 // updateSearchMatches refreshes the matches and paints the current one.
 func (v *editView) updateSearchMatches() {
 	v.refreshSearchMatches()
-	v.highlightSearchMatch()
+	v.paintSearchHighlight()
 }
 
 // refreshSearchMatches recomputes the matches for the current query and
@@ -395,7 +395,8 @@ func (v *editView) refreshSearchMatches() {
 }
 
 // paintSearchHighlight shows the current match as a display-only highlight,
-// and nothing while the panel is closed or has no match.
+// and nothing while the panel is closed or has no match. The editor keeps the
+// match in view while unfocused (Reveal); the editing cursor never moves.
 func (v *editView) paintSearchHighlight() {
 	if !v.showSearch || len(v.searchMatches) == 0 {
 		v.edit.Highlights = nil
@@ -404,19 +405,7 @@ func (v *editView) paintSearchHighlight() {
 	m := v.searchMatches[v.searchIndex]
 	from := loom.RichPosition{Line: m.line, Offset: m.start}
 	to := loom.RichPosition{Line: m.line, Offset: m.start + m.length}
-	v.edit.Highlights = []loom.RichTextHighlight{{From: from, To: to, Style: v.edit.SelectionStyle}}
-}
-
-func (v *editView) highlightSearchMatch() {
-	v.paintSearchHighlight()
-	if !v.showSearch || len(v.searchMatches) == 0 {
-		return
-	}
-	m := v.searchMatches[v.searchIndex]
-	to := loom.RichPosition{Line: m.line, Offset: m.start + m.length}
-	if v.focused == focusSearch {
-		v.edit.Cursor = to
-	}
+	v.edit.Highlights = []loom.RichTextHighlight{{From: from, To: to, Style: v.edit.SelectionStyle, Reveal: true}}
 }
 
 func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
@@ -667,14 +656,14 @@ func (v *editView) consumeKey(key loom.KeyEvent) loom.EventResult {
 		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["search_next"]...) {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex + 1) % len(v.searchMatches)
-				v.highlightSearchMatch()
+				v.paintSearchHighlight()
 			}
 			return loom.Handled()
 		}
 		if key.Is(loom.SpeccedDefaults.RichTextEdit.Bindings["search_previous"]...) {
 			if len(v.searchMatches) > 0 {
 				v.searchIndex = (v.searchIndex - 1 + len(v.searchMatches)) % len(v.searchMatches)
-				v.highlightSearchMatch()
+				v.paintSearchHighlight()
 			}
 			return loom.Handled()
 		}

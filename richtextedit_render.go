@@ -7,8 +7,8 @@ import (
 	"ubunatic.com/loom/measure"
 )
 
-// Draw renders visible lines and styled spans, scrolls the cursor into view,
-// paints selected text, and places the terminal cursor when focused.
+// Draw renders visible lines and styled spans, scrolls the cursor (or, while
+// unfocused, a revealed highlight) into view, paints selected text, and places the terminal cursor when focused.
 func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	if c == nil {
 		return
@@ -38,17 +38,22 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.Cursor = e.normalizePosition(e.Cursor, 0)
 	}
 	cursorLine, cursorCol := e.cursorCoordinates(lines)
-	if cursorLine < e.ScrollY {
-		e.ScrollY = cursorLine
+	// The view follows the cursor, or a revealed highlight while unfocused.
+	followLine, followCol := cursorLine, cursorCol
+	if line, col, ok := e.revealCoordinates(lines); ok {
+		followLine, followCol = line, col
 	}
-	if cursorLine >= e.ScrollY+r.H {
-		e.ScrollY = cursorLine - r.H + 1
+	if followLine < e.ScrollY {
+		e.ScrollY = followLine
 	}
-	if cursorCol < e.ScrollX {
-		e.ScrollX = cursorCol
+	if followLine >= e.ScrollY+r.H {
+		e.ScrollY = followLine - r.H + 1
 	}
-	if cursorCol >= e.ScrollX+r.W {
-		e.ScrollX = cursorCol - r.W + 1
+	if followCol < e.ScrollX {
+		e.ScrollX = followCol
+	}
+	if followCol >= e.ScrollX+r.W {
+		e.ScrollX = followCol - r.W + 1
 	}
 	e.ScrollX = max(0, e.ScrollX)
 	maxScrollY := max(0, len(lines)-r.H)
@@ -88,9 +93,31 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 
 // RichTextHighlight marks a half-open range in document rune coordinates.
 // Style controls highlighted cells without changing saved content or selection.
+// Reveal asks Draw to keep the start of the range in view while the editor is
+// unfocused, instead of the cursor; the cursor itself never moves.
 type RichTextHighlight struct {
 	From, To RichPosition
 	Style    Style
+	Reveal   bool
+}
+
+// revealCoordinates returns the display line and column of the first
+// highlight that asks to be revealed. Only an unfocused editor follows it: a
+// focused editor always keeps its cursor in view. The position is clamped to
+// the document, and the cursor is never touched.
+func (e *RichTextEdit) revealCoordinates(lines []RichLine) (line, col int, ok bool) {
+	if e.focused || len(lines) == 0 {
+		return 0, 0, false
+	}
+	for _, highlight := range e.Highlights {
+		if !highlight.Reveal {
+			continue
+		}
+		line = min(max(0, highlight.From.Line), len(lines)-1)
+		offset := min(max(0, highlight.From.Offset), richLineRuneCount(lines[line]))
+		return line, richLineColumn(lines[line], offset), true
+	}
+	return 0, 0, false
 }
 
 func (e *RichTextEdit) drawLine(c *Canvas, rect Rect, line RichLine, lineIndex int) {

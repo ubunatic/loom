@@ -3267,7 +3267,8 @@ type RichTextEdit struct {
 	SelectionTo    RichPosition
 	HasSelection   bool
 	SelectionStyle Style
-	// Highlights are display-only ranges, independent of editing selection.
+	// Highlights are display-only ranges, independent of editing selection and
+	// cursor. A highlight with Reveal set is kept in view while unfocused.
 	Highlights  []RichTextHighlight
 	ActiveStyle Style
 	ScrollX     int
@@ -3365,8 +3366,9 @@ func (e *RichTextEdit) DocState() DocState
     untitled.
 
 func (e *RichTextEdit) Draw(c *Canvas, r Rect)
-    Draw renders visible lines and styled spans, scrolls the cursor into view,
-    paints selected text, and places the terminal cursor when focused.
+    Draw renders visible lines and styled spans, scrolls the cursor (or,
+    while unfocused, a revealed highlight) into view, paints selected text,
+    and places the terminal cursor when focused.
 
 func (e *RichTextEdit) Focused() bool
     Focused reports whether the editor currently has keyboard focus.
@@ -3421,10 +3423,12 @@ type RichTextEditDefaults = specdefaults.RichTextEditDefaults
 type RichTextHighlight struct {
 	From, To RichPosition
 	Style    Style
+	Reveal   bool
 }
     RichTextHighlight marks a half-open range in document rune coordinates.
     Style controls highlighted cells without changing saved content or
-    selection.
+    selection. Reveal asks Draw to keep the start of the range in view while the
+    editor is unfocused, instead of the cursor; the cursor itself never moves.
 
 type Router struct {
 	// Has unexported fields.

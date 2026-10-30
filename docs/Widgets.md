@@ -17,7 +17,7 @@ typing and a block cursor in box drawing mode. Its optional
 enabled, navigation can move into empty columns and rows without changing the
 document until typing or drawing materializes that space.
 
-`RichTextEdit.Highlights` accepts display-only `RichTextHighlight` ranges in document rune coordinates. Highlight styles overlay styled spans without changing editing selection, formatting popovers, dirty state or serialized document content. Assign an empty/nil slice to clear highlights; callers keep ranges current after edits.
+`RichTextEdit.Highlights` accepts display-only `RichTextHighlight` ranges in document rune coordinates. Highlight styles overlay styled spans without changing editing selection, formatting popovers, dirty state or serialized document content. A highlight with `Reveal: true` is kept in view while the editor is unfocused, so a host can show an off-screen search match without moving the cursor; focus returns the view to the cursor. Highlights are display-only and never change selection, cursor, popovers, dirty state or content. Assign an empty/nil slice to clear highlights; callers keep ranges current after edits.
 
 ### Wrapping widgets
 

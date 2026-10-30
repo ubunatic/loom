@@ -22,7 +22,8 @@ type RichTextEdit struct {
 	SelectionTo    RichPosition
 	HasSelection   bool
 	SelectionStyle Style
-	// Highlights are display-only ranges, independent of editing selection.
+	// Highlights are display-only ranges, independent of editing selection and
+	// cursor. A highlight with Reveal set is kept in view while unfocused.
 	Highlights  []RichTextHighlight
 	ActiveStyle Style
 	ScrollX     int

@@ -192,13 +192,16 @@ func Test287ReopenRefreshesStaleMatches(t *testing.T) {
 	if text := canvasScreenText(c); !strings.Contains(text, "1 / 3 matches") {
 		t.Fatalf("counter after reopen is stale:\n%s", text)
 	}
-	// The cursor is covered by Test287SearchHighlightKeepsEditingCursor.
-	requireSame287(t, "reopening search", before, view, false, true)
+	// Reopening and revealing a match must not move the editing cursor.
+	requireSame287(t, "reopening search", before, view, true, true)
 }
 
 // Expected red before M2: next/previous walk offsets of the old text.
 func Test287SearchNextOffsetsFollowEditsWhileClosed(t *testing.T) {
 	view := editWhileClosed287(t)
+	// The edit leaves the cursor at the end of the last match; park it where
+	// no match ends so a cursor move cannot go unnoticed.
+	view.edit.Cursor = loom.RichPosition{Offset: 3}
 	before := snap287(view)
 
 	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-f"})
@@ -213,8 +216,8 @@ func Test287SearchNextOffsetsFollowEditsWhileClosed(t *testing.T) {
 	}
 	view.ConsumeKey(loom.KeyEvent{Key: "shift-enter"})
 	requireHighlight287(t, view, want[len(want)-1])
-	// The cursor is covered by Test287SearchHighlightKeepsEditingCursor.
-	requireSame287(t, "navigating matches", before, view, false, true)
+	// Stepping through matches must not move the editing cursor.
+	requireSame287(t, "navigating matches", before, view, true, true)
 }
 
 // Expected red before M2: a retained query repaints highlights on a document
