@@ -181,3 +181,15 @@ the short tier skips it.
 - **Modularize early**: `cmd/loom` and the root package grew because agents add files there. Moving
   session/editor to `internal/` (378) was a quick pure move; the root package (29k lines) still makes
   most packages re-run on any change (377).
+
+## Search overlay and session gate (2026-10-30, tickets 287 and 393)
+
+- **Model constraints came from the user, not the sprint**: Sol was unavailable and the user restricted sprints to Claude models, so 287 ran on Sonnet with a Haiku Searcher. The Luna second opinion was reserved and never run. Record model constraints in the ticket's Decision section before dispatch.
+- **Plan-first caught stale premises**: the 287 ticket pointed at `cmd/loom/edit.go:623–660`. The live editor is `internal/editor/edit.go`. The developer's plan turn corrected the paths and found three extra defects (a stale mode hit target, highlights painted while search was closed, and `OnStateChange` firing per transition, not per edit). The host confirmed them against the code before granting writes.
+- **Expected-red tests were held until their fix**: the cursor tests went in with M3, not M2, so no commit was red. Each milestone was host-reviewed before the next was granted.
+- **A milestone commit is not acceptance**: the host PTY run on the installed binary covered query, mode, stale-match and hint-bar clicks. It did not cover popover overlap, hover and scroll, or the other search-bar controls. 287 stayed open, which is the right outcome. The developer's "done" did not count as evidence.
+- **A hang with no code in its path is probably the environment**: the Searcher found `LOOM_SESSION_WAIT_ATTACH=1` in the library's wait path in one read-only pass. The host confirmed it with one command (`env -u LOOM_SESSION_WAIT_ATTACH go test ...` passed in 0.011s). Check the shell environment before you blame a test.
+- **Test-tier rules still need review**: the 393 developer's first attempt polled with `time.Sleep` and used fixed 5s budgets. The host caught it against `docs/TestTiers.md`, and one pre-work round fixed it. The review of new tests should look for sleeps and budgets, not only assertions.
+- **Helper failure stops at the report**: the Gemini Flash 3.8 reviewer (`agy:flash38:med`) failed with `authentication failed or timed out`. Under the lean rules, the host did not substitute a model. The review was not run, and 393 was closed on the gate evidence alone.
+- **Quota figures need one reading**: the user reported 2% of Gemini quota left. The harness showed `agy weekly 98%` on the same day, and it did not say whether 98% was used or remaining. The host dispatched anyway. Check the reading before you spend the quota.
+- **Two process gaps**: the `/pm` and `/lean-sprint` skill docs point to `docs/commands/*`, which does not exist in this repo. `.harnez/repo.yaml` read as empty, so whether `docs.studies` is enabled was not confirmed. The sprint study is written in `docs/studies/` anyway.

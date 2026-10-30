@@ -128,4 +128,12 @@ the child's current screen; child output during search only updates the VT.
   tracking to normal tracking (`\x1b[?1000h` + SGR `\x1b[?1006h`) or filters drag motion sequences in
   Loom, allowing clicks and scrolling to reach the child app while preserving drag selection at the
   session / outer terminal level.
+- **Attach gate inherited from the shell (393)**: `loom session` sets `LOOM_SESSION_WAIT_ATTACH=1` for the
+  daemon it spawns, and every shell inside a loom session inherits it. The library used to read that
+  variable in `serveSession`, so any `go test` or `make test-q1` run from a loom shell held its child
+  until a client attached and hung (`TestServerLastTabExitCleansSocket`, and `Tabs:0` in
+  `TestServerControlStatusListDetachAndKill`). The gate is now `Options.WaitForAttach`: the library never
+  reads the environment, and `cmd/loom` reads the variable once in the daemon branch and clears it so tab
+  children do not inherit it. If a session test hangs or reports `Tabs:0` in a loom shell, check
+  `env | grep LOOM_` before changing code, and reproduce with `env -u LOOM_SESSION_WAIT_ATTACH`.
 
