@@ -24,4 +24,12 @@ Reproduced on 2026-10-30 with `go test -count=1 -timeout 90s -run 'TestServerLas
 2. Fix the shutdown path so `runDone` is observed when the command exits, without a sleep in the test.
 3. Verify: `go test -count=1 -run 'TestServerLastTabExitCleansSocket$' ./internal/session/` passes, then `make test-q1` passes in full.
 
+## Searcher findings and decision (host, 2026-10-30)
+
+- **Root cause (verified by the host):** the host shell has `LOOM_SESSION_WAIT_ATTACH=1`. With it cleared, the test passes in 0.011s (`env -u LOOM_SESSION_WAIT_ATTACH go test -count=1 -timeout 40s -run 'TestServerLastTabExitCleansSocket$' ./internal/session/`).
+- **Mechanism (Searcher, `internal/session`):** `server.go:181` sets `waitForClient` from that env var. `session.go:558–564` then blocks on `<-server.clientAttached` or `ctx.Done()`. `clientAttached` closes only on the attach path (`server.go:131`), which this test never calls, so the child never starts. The setter is `cmd/loom/session.go:150`, which marks children a loom session spawns.
+- **History:** the gate came from `f2146fb` (issue 383 M4); the serve loop and `runDone` from `d544475` (issue 383 M2).
+- **Scope of impact:** any `make test-q1` run from a loom session shell hangs the same way. This is why the ticket reproduces here and not in a clean CI environment.
+- **Decision (low-risk, host):** fix the library. `RunWithOptions` takes the attach gate from an explicit option or consumes the variable, following the existing `LOOM_SESSION_SERVER_NAME` handling (`session.go:81–82`). The test is not changed. The developer's plan turn chooses between these, and it must keep real loom children waiting for attach.
+
 /goal `TestServerLastTabExitCleansSocket` returns, the session socket is removed after the last tab exits, and `make test-q1` is green. Stop and report when blocked.
