@@ -66,3 +66,20 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
   - **D (commit policy):** approved. One commit per milestone, never a red commit. M1 tests stay uncommitted as red evidence until M2 lands in the same milestone commit.
   - **M4 model:** stays on Claude (`claude:sonnet:high`). Sol is not available, so the suggested `sol:med` is declined.
 - Model mapping for this sprint: Searcher `claude:haiku:med`, developer `claude:sonnet:high`, architect skipped because the Searcher findings are narrow. The CLAUDE.md convention `codex:sol:med` for event-routing tickets is not applied: Sol is not available here, so the whole sprint stays on Claude models. Luna High (`luna:high`) is reserved for one optional one-shot second opinion, not for implementation.
+
+## M2 review and M3 pre-work (host, 2026-10-30)
+
+- **M2 (commit `34eda3d`) host-verified:** `go test ./internal/editor -count=1 -skip 'Test287SearchHighlightKeepsEditingCursor|Test287SearchRevealsOffscreenMatchWithoutMovingCursor|Test287EditPTYSearchHighlightKeepsCursorStatus'` passes. The three held cursor tests fail as expected until M3. `make test-q1` has not run since M2; it is owed at the final gate.
+- **Assertions relaxed in M1 and held for M3:** the reopen and navigation tests in `edit_287_test.go` (about lines 195–196 and 216–217) drop their cursor checks. The M3 commit must restore those cursor checks.
+- **Coverage caveat:** the tiny-terminal probe (about lines 301–307) skips sizes where the panel is painted and skips the third line at 4×7. Keep the `tested == 0` guard. Do not weaken it further.
+- **Flaky-risk:** PTY test 8's check right after typing the query can run before the frame redraws. Use the existing wait helper, not a sleep, and keep the check after `search_next` as the red assertion.
+- **Commit trailer:** commit `34eda3d` carries `Co-Authored-By: Claude Sonnet 5.5`, not the Haiku line the host asked for. Left as-is: amending is off the table. Flagged to the user.
+
+### M3 pre-work
+
+- Remove the cursor assignment at `internal/editor/edit.go` (highlightSearchMatch, about 379–380).
+- Add `RichTextHighlight.Reveal` in `richtextedit_render.go` and `richtextedit.go`, with the draw change from the developer's plan (keep the highlight in view while the editor is unfocused, do not snap the cursor).
+- Update `docs/Widgets.md:20` to describe the reveal behaviour and keep "display-only, does not change selection or cursor".
+- Add a `richtextedit_test.go` test for reveal and for display-only highlights.
+- Restore the cursor assertions removed in M1 (see above).
+- Move the held cursor file into the M3 commit; all tests in the package must pass.
