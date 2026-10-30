@@ -1,6 +1,6 @@
 # 393 — Fix hang in TestServerLastTabExitCleansSocket in internal/session
 
-**Status**: In Progress — searcher audit running; developer plan-first next
+**Status**: Closed — make test-q1 green (exit 0, 43 ok, zero FAIL) after fix 4a19821 and test rewrite 67f922a; TestServerLastTabExitCleansSocket returns and the session package passes with LOOM_SESSION_WAIT_ATTACH set and unset. Gemini review not run (agy auth failed). Gaps filed as 394.
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
