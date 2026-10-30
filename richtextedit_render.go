@@ -65,7 +65,12 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 	for row := 0; row < r.H && e.ScrollY+row < len(lines); row++ {
 		e.drawLine(c, r, lines[e.ScrollY+row], e.ScrollY+row)
 	}
-	e.drawPopover(c, r, lines)
+	if e.DeferPopover {
+		// DrawPopover rebuilds the hit areas; none may outlive this frame.
+		e.resetPopoverHitAreas()
+	} else {
+		e.drawPopover(c, r, lines)
+	}
 	if e.ShowCursor && e.focused && !e.ViewMode {
 		x := cursorCol - e.ScrollX
 		y := cursorLine - e.ScrollY
@@ -89,6 +94,33 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect) {
 		e.helpPopup.Height = min(SpeccedDefaults.RichTextEdit.HelpMaxHeight, max(3, r.H))
 		e.helpPopup.Draw(c, r)
 	}
+}
+
+// DrawPopover paints the format popover, its submenus and its pointer. Hosts
+// that set DeferPopover call it after painting their own overlays, with the
+// rectangle they gave Draw, so the popover is drawn above everything it
+// captures clicks over. It does nothing for a default editor, whose Draw
+// already painted the popover, while a help or save popup is open (those are
+// drawn above the popover), or when no popover is open.
+func (e *RichTextEdit) DrawPopover(c *Canvas, r Rect) {
+	if e == nil || c == nil || !e.DeferPopover || e.helpPopup != nil || e.savePopup != nil {
+		return
+	}
+	if e.ShowFileBar && r.H > 0 {
+		r.H--
+	}
+	if r.W <= 0 || r.H <= 0 {
+		e.resetPopoverHitAreas()
+		return
+	}
+	e.drawPopover(c, r, e.documentLines())
+}
+
+func (e *RichTextEdit) resetPopoverHitAreas() {
+	e.popoverButtons = nil
+	e.popoverBoxChoices = nil
+	e.popoverHamburgerChoices = nil
+	e.popoverColorRect = Rect{}
 }
 
 // RichTextHighlight marks a half-open range in document rune coordinates.

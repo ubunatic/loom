@@ -2204,3 +2204,115 @@ func TestRichTextEditRevealIgnoredWhileFocusedAndOutOfRangeSafe(t *testing.T) {
 		}
 	}
 }
+
+// deferPopoverEdit returns an editor with an open selection popover, drawn in
+// a rectangle that is offset from the canvas origin.
+func deferPopoverEdit(deferred bool) (*RichTextEdit, Rect) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "first"}}},
+		{Spans: []RichSpan{{Text: "second"}}},
+		{Spans: []RichSpan{{Text: "some selected text"}}},
+		{Spans: []RichSpan{{Text: "last"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.DeferPopover = deferred
+	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
+	return edit, Rect{X: 3, Y: 1, W: 42, H: 5}
+}
+
+func canvasCellsDiffer(a, b *Canvas) (x, y int, differ bool) {
+	for y := 0; y < a.Rows(); y++ {
+		for x := 0; x < a.Cols(); x++ {
+			if a.Get(x, y) != b.Get(x, y) {
+				return x, y, true
+			}
+		}
+	}
+	return 0, 0, false
+}
+
+func TestRichTextEditDeferPopoverSkipsPopoverInDrawAndPaintsInDrawPopover(t *testing.T) {
+	plain, rect := deferPopoverEdit(false)
+	want := NewCanvas(50, 6)
+	plain.Draw(want, rect)
+	if len(plain.popoverButtons) == 0 {
+		t.Fatal("setup: the default Draw did not paint the popover")
+	}
+
+	deferred, rect := deferPopoverEdit(true)
+	got := NewCanvas(50, 6)
+	deferred.Draw(got, rect)
+	if len(deferred.popoverButtons) != 0 {
+		t.Fatalf("Draw with DeferPopover recorded %d popover buttons", len(deferred.popoverButtons))
+	}
+	if !deferred.ModalOpen() {
+		t.Fatal("deferring the popover paint released the modal capture")
+	}
+	hidden, _ := deferPopoverEdit(false)
+	hidden.ShowPopover = false
+	without := NewCanvas(50, 6)
+	hidden.Draw(without, rect)
+	if x, y, differ := canvasCellsDiffer(got, without); differ {
+		t.Fatalf("Draw with DeferPopover painted the popover: cell (%d,%d) %+v", x, y, got.Get(x, y))
+	}
+
+	deferred.DrawPopover(got, rect)
+	if x, y, differ := canvasCellsDiffer(got, want); differ {
+		t.Fatalf("DrawPopover cell (%d,%d) = %+v, want %+v from the default Draw", x, y, got.Get(x, y), want.Get(x, y))
+	}
+	if len(deferred.popoverButtons) != len(plain.popoverButtons) {
+		t.Fatalf("DrawPopover recorded %d buttons, want %d", len(deferred.popoverButtons), len(plain.popoverButtons))
+	}
+}
+
+func TestRichTextEditDeferredPopoverClicksMatchDefault(t *testing.T) {
+	for _, deferred := range []bool{false, true} {
+		edit, rect := deferPopoverEdit(deferred)
+		canvas := NewCanvas(50, 6)
+		edit.Draw(canvas, rect)
+		edit.DrawPopover(canvas, rect) // a no-op for the default editor
+		button := edit.popoverButtons[popoverActionIndex("S")]
+		if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y}); !result.Consumed {
+			t.Fatalf("deferred=%v: popover click was not consumed", deferred)
+		}
+		if !anySpanStrike(edit.Document.Lines[2]) {
+			t.Fatalf("deferred=%v: the S item was not activated", deferred)
+		}
+	}
+}
+
+func anySpanStrike(line RichLine) bool {
+	for _, span := range line.Spans {
+		if span.Style.Strike {
+			return true
+		}
+	}
+	return false
+}
+
+func TestRichTextEditDrawPopoverWithoutOpenPopoverOrWithOverlayPaintsNothing(t *testing.T) {
+	edit, rect := deferPopoverEdit(true)
+	edit.ShowPopover = false
+	canvas := NewCanvas(50, 6)
+	edit.Draw(canvas, rect)
+	before := NewCanvas(50, 6)
+	edit.Draw(before, rect)
+	edit.DrawPopover(canvas, rect)
+	if x, y, differ := canvasCellsDiffer(canvas, before); differ || len(edit.popoverButtons) != 0 {
+		t.Fatalf("DrawPopover painted a closed popover at (%d,%d), buttons=%d", x, y, len(edit.popoverButtons))
+	}
+
+	edit, rect = deferPopoverEdit(true)
+	edit.ConsumeKey(KeyEvent{Key: "f1"}) // the help popup is drawn over the editor
+	edit.Draw(canvas, rect)
+	if edit.helpPopup == nil {
+		t.Fatal("setup: help popup did not open")
+	}
+	edit.DrawPopover(canvas, rect)
+	if len(edit.popoverButtons) != 0 {
+		t.Fatal("DrawPopover painted the popover over an open help popup")
+	}
+	var nilEdit *RichTextEdit
+	nilEdit.DrawPopover(canvas, rect) // must not panic
+	edit.DrawPopover(nil, rect)
+}

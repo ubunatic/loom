@@ -132,6 +132,8 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 // bindEdit subscribes the host status line to the editor's document state,
 // which is the single source of the Saved/Modified indicator.
 func (v *editView) bindEdit() {
+	// The popover captures clicks above the search panel, so it is painted last.
+	v.edit.DeferPopover = true
 	v.edit.AddHelpSection(helpSection())
 	v.edit.OnStateChange = func(state loom.DocState) {
 		switch state {
@@ -550,6 +552,8 @@ func (v *editView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 				}
 			}
 		}
+
+		v.edit.DrawPopover(canvas, v.editorRect)
 	}
 
 	// Unsaved Changes Dialog Overlay

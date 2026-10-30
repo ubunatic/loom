@@ -3275,6 +3275,10 @@ type RichTextEdit struct {
 	ScrollY     int
 	ShowCursor  bool
 	ShowPopover bool
+	// DeferPopover makes Draw skip painting the format popover so a host can
+	// paint it after its own overlays with DrawPopover. Mouse capture and key
+	// handling are unchanged; the zero value paints the popover in Draw.
+	DeferPopover bool
 	// PopoverDefaults configures popup behavior; initialized from the embedded spec.
 	PopoverDefaults RichTextEditDefaults
 
@@ -3369,6 +3373,14 @@ func (e *RichTextEdit) Draw(c *Canvas, r Rect)
     Draw renders visible lines and styled spans, scrolls the cursor (or,
     while unfocused, a revealed highlight) into view, paints selected text,
     and places the terminal cursor when focused.
+
+func (e *RichTextEdit) DrawPopover(c *Canvas, r Rect)
+    DrawPopover paints the format popover, its submenus and its pointer.
+    Hosts that set DeferPopover call it after painting their own overlays,
+    with the rectangle they gave Draw, so the popover is drawn above everything
+    it captures clicks over. It does nothing for a default editor, whose Draw
+    already painted the popover, while a help or save popup is open (those are
+    drawn above the popover), or when no popover is open.
 
 func (e *RichTextEdit) Focused() bool
     Focused reports whether the editor currently has keyboard focus.

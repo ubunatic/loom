@@ -30,6 +30,10 @@ type RichTextEdit struct {
 	ScrollY     int
 	ShowCursor  bool
 	ShowPopover bool
+	// DeferPopover makes Draw skip painting the format popover so a host can
+	// paint it after its own overlays with DrawPopover. Mouse capture and key
+	// handling are unchanged; the zero value paints the popover in Draw.
+	DeferPopover bool
 	// PopoverDefaults configures popup behavior; initialized from the embedded spec.
 	PopoverDefaults      RichTextEditDefaults
 	popoverExplicit      bool
