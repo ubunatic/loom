@@ -53,4 +53,5 @@ upkeep.
 | 388 | [388-box-title-inline-hotkey-highlight-btop-style-toggle-char.md](388-box-title-inline-hotkey-highlight-btop-style-toggle-char.md) | box title: styled title segments with inline hotkey highlight | In Progress |
 | 389 | [389-detect-modifier-keys-via-voxi-modifierd-on-non-kitty-terminals.md](389-detect-modifier-keys-via-voxi-modifierd-on-non-kitty-terminals.md) | Detect modifier keys via voxi-modifierd on non-kitty terminals | Open |
 | 390 | [390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md](390-loom-session-tab-label-shows-foreground-command-emoji-for-well-known-and-cwd.md) | loom session: tab label shows foreground command (emoji for well-known) and cwd | Open |
+| 391 | [391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md](391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md) | agy vim mode UI breaks in loom session (stray letters, repeated lines, wrong popup offset) | Open |
 <!-- harnez:end issues-active-index -->
