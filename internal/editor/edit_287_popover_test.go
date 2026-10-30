@@ -63,28 +63,33 @@ func requirePopoverGoneSame287(t *testing.T, what string, want state287, v *edit
 	}
 }
 
-// Probe 1: a click on the search panel with the popover open belongs to the
-// popover layer only. It is consumed, dismisses the popover and changes nothing
-// in the search bar or the editor.
-func Test287PopoverClickOnSearchPanelIsConsumedByPopover(t *testing.T) {
+// Probe 1: a press on the search panel with the popover open dismisses the
+// popover and is then handled by the panel, so the click performs the action of
+// the control it hit. The dismissal clears the selection exactly like a
+// backdrop click and changes nothing in the document.
+func Test287PopoverClickOnSearchPanelDismissesAndReachesPanel(t *testing.T) {
 	// Relative to searchRect and clear of the popover's own cells (the bar spans
 	// the panel's first row and its pointer sits on the second), so each click
 	// reaches the popover only as a backdrop click.
 	spots := []struct {
 		name string
 		x, y int
+		mode bool // the click is on the mode row and may switch the mode
 	}{
-		{"border", 30, 0},
-		{"query row", 10, 1},
-		{"mode row", 3, 2},
-		{"count row", 3, 3},
-		{"hint row", 3, 4},
-		{"right edge of query row", 47, 1},
+		{"border", 30, 0, false},
+		{"query row", 10, 1, false},
+		{"mode row", 3, 2, true},
+		{"count row", 3, 3, false},
+		{"hint row", 3, 4, false},
+		{"right edge of query row", 47, 1, false},
 	}
 	for _, spot := range spots {
 		view, _ := popover287(t)
 		before := snap287(view)
-		focus, query, regex, index := view.focused, view.searchBar.Query, view.regexMode, view.searchIndex
+		query, regex, index := view.searchBar.Query, view.regexMode, view.searchIndex
+		if view.focused != focusEditor {
+			t.Fatalf("%s: setup: focus %v, want the editor", spot.name, view.focused)
+		}
 		res := click287(view, view.searchRect.X+spot.x, view.searchRect.Y+spot.y)
 		if !res.Consumed {
 			t.Fatalf("%s: click on the search panel under a popover was not consumed: %+v", spot.name, res)
@@ -92,14 +97,20 @@ func Test287PopoverClickOnSearchPanelIsConsumedByPopover(t *testing.T) {
 		if view.edit.ModalOpen() {
 			t.Fatalf("%s: click did not dismiss the popover", spot.name)
 		}
-		if view.focused != focus {
-			t.Fatalf("%s: click changed the search focus: %v, want %v", spot.name, view.focused, focus)
+		if view.focused != focusSearch || !view.searchBar.Focused {
+			t.Fatalf("%s: click did not reach the panel: focus %v, want %v", spot.name, view.focused, focusSearch)
 		}
-		if view.searchBar.Query != query || view.regexMode != regex || view.searchIndex != index {
-			t.Fatalf("%s: click reached the search bar: query %q mode %v index %d, want %q %v %d",
+		if view.searchBar.Query != query || view.searchIndex != index || (!spot.mode && view.regexMode != regex) {
+			t.Fatalf("%s: click changed the query or mode: query %q mode %v index %d, want %q %v %d",
 				spot.name, view.searchBar.Query, view.regexMode, view.searchIndex, query, regex, index)
 		}
 		requirePopoverGoneSame287(t, spot.name, before, view)
+		// The panel holds the focus now: typing edits the query only.
+		type287(view, "X")
+		if view.searchBar.Query != query+"X" {
+			t.Fatalf("%s: typing after the click gave query %q, want %q", spot.name, view.searchBar.Query, query+"X")
+		}
+		requirePopoverGoneSame287(t, spot.name+" and typing", before, view)
 	}
 }
 
@@ -176,9 +187,9 @@ func rowsText287(c *loom.Canvas, from, to int) string {
 	return strings.Join(out, "\n")
 }
 
-// Probe 3: mode clicks while the popover is open reach the popover only; the
-// search mode stays as it was in both directions.
-func Test287PopoverModeClicksDoNotSwitchSearchMode(t *testing.T) {
+// Probe 3: a mode click while the popover is open dismisses the popover and
+// then switches the search mode, in both directions.
+func Test287PopoverModeClicksSwitchSearchMode(t *testing.T) {
 	defs := loom.SpeccedDefaults.Editor
 	for _, regex := range []bool{false, true} {
 		view, _ := popover287(t)
@@ -197,16 +208,15 @@ func Test287PopoverModeClicksDoNotSwitchSearchMode(t *testing.T) {
 		}
 		x, y := locate287(t, c, label)
 		before := snap287(view)
-		focus := view.focused
 		res := click287(view, x, y)
 		if !res.Consumed {
 			t.Fatalf("regex=%v: click on %q was not consumed: %+v", regex, label, res)
 		}
-		if view.regexMode != regex {
-			t.Fatalf("regex=%v: click on %q under a popover switched the search mode to %v", regex, label, view.regexMode)
+		if view.regexMode == regex {
+			t.Fatalf("regex=%v: click on %q under a popover did not switch the search mode", regex, label)
 		}
-		if view.focused != focus {
-			t.Fatalf("regex=%v: click on %q changed the search focus: %v, want %v", regex, label, view.focused, focus)
+		if view.focused != focusSearch {
+			t.Fatalf("regex=%v: click on %q left the focus at %v, want %v", regex, label, view.focused, focusSearch)
 		}
 		if view.edit.ModalOpen() {
 			t.Fatalf("regex=%v: click on %q did not dismiss the popover", regex, label)

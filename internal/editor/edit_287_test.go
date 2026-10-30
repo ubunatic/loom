@@ -485,9 +485,10 @@ func Test287HoverAndScrollDoNotChangeFocus(t *testing.T) {
 	}
 }
 
-// Regression guard: the formatting popover owns the backdrop. A click on the
-// search panel only dismisses it; the next click reaches the panel.
-func Test287PopoverOpenSearchClickIsBackdrop(t *testing.T) {
+// Regression guard: a click on the search panel dismisses the formatting
+// popover and reaches the panel in the same click (issue 287 M4b); only
+// backdrop clicks outside the panel are consumed by the dismissal.
+func Test287PopoverOpenSearchClickDismissesAndReachesPanel(t *testing.T) {
 	view, _ := new287View(t, "alpha beta alpha\n")
 	view.ConsumeKey(loom.KeyEvent{Key: "ctrl-f"})
 	type287(view, "alpha")
@@ -505,8 +506,8 @@ func Test287PopoverOpenSearchClickIsBackdrop(t *testing.T) {
 	if view.edit.ModalOpen() {
 		t.Fatal("backdrop click did not dismiss the popover")
 	}
-	if view.focused != focusEditor || view.searchQuery != "alpha" || !view.showSearch {
-		t.Fatalf("backdrop click changed host state: focus=%v query=%q show=%v", view.focused, view.searchQuery, view.showSearch)
+	if view.focused != focusSearch || view.searchQuery != "alpha" || !view.showSearch {
+		t.Fatalf("panel click under a popover: focus=%v query=%q show=%v, want focus on the search bar", view.focused, view.searchQuery, view.showSearch)
 	}
 	// The popover closing clears the selection by contract; the rest is fixed.
 	got := snap287(view)

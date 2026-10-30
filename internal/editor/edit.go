@@ -863,6 +863,12 @@ func (v *editView) ModalMouseTarget() (loom.Widget, loom.Rect) {
 	return target, origin
 }
 
+// ModalMousePassThrough lets a press on the search panel dismiss a popover and
+// then reach the panel's controls. Other backdrop presses stay consumed.
+func (v *editView) ModalMousePassThrough(mouse loom.MouseEvent) bool {
+	return v.showSearch && v.searchRect.Contains(mouse.X, mouse.Y)
+}
+
 func (v *editView) ConsumeMouse(mouse loom.MouseEvent) loom.EventResult {
 	// Popover actions and editor clicks can edit the document, so refresh the
 	// matches once the event is routed.

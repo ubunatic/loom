@@ -2362,6 +2362,13 @@ func Retention(capacity int) MetricStoreOption
 func WithRetention(capacity int) MetricStoreOption
     WithRetention is an explicit alias for Retention.
 
+type ModalMouseBackdrop interface {
+	ModalMouseBackdrop(e MouseEvent) bool
+}
+    ModalMouseBackdrop is an optional interface of a modal target. It reports
+    whether e, in target-local coordinates, is a press that only dismisses the
+    modal as a backdrop press, without the modal acting on anything it draws.
+
 type ModalMouseCapture struct {
 	// Has unexported fields.
 }
@@ -2375,6 +2382,17 @@ func (c *ModalMouseCapture) Dispatch(root Widget, e MouseEvent) (result EventRes
     It preserves Done and Quit and always marks a captured event Consumed, even
     when the modal's handler ignores it. Coordinates reaching the target are
     0-based and target-local; a backdrop event may have negative coordinates.
+
+type ModalMousePassThrough interface {
+	ModalMousePassThrough(e MouseEvent) bool
+}
+    ModalMousePassThrough is an optional interface of the root widget given to
+    ModalMouseCapture.Dispatch. It reports whether a backdrop press at e, in the
+    root's coordinates, dismisses the modal and is then routed to the root's
+    own widgets, so the click also performs the action of the control it hit.
+    It applies only when the modal target implements ModalMouseBackdrop and
+    agrees that the press is a backdrop press; all other backdrop presses stay
+    consumed.
 
 type ModalMouseProvider interface {
 	ModalMouseTarget() (Widget, Rect)
@@ -3396,6 +3414,12 @@ func (e *RichTextEdit) HotkeyHint(width int) string
 func (e *RichTextEdit) IsModified() bool
     IsModified reports whether the document has unsaved changes compared to its
     last saved state.
+
+func (e *RichTextEdit) ModalMouseBackdrop(mouse MouseEvent) bool
+    ModalMouseBackdrop reports whether a left press at the editor-local
+    position only dismisses the format popover: no popup or menu is open and
+    the press lands outside every popover control. Hosts that opt in through
+    ModalMousePassThrough then route the press to the widget beneath.
 
 func (e *RichTextEdit) ModalMouseTarget() (Widget, Rect)
     ModalMouseTarget captures mouse input while an editor overlay is active.

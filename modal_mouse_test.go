@@ -305,3 +305,111 @@ func Test304ModelessContentLeavesSiblingsInteractive(t *testing.T) {
 		})
 	}
 }
+
+// passThroughModal is a modal whose presses are backdrop presses unless they
+// land on its own cell (0,0).
+type passThroughModal struct{ modalMouseProbe }
+
+func (m *passThroughModal) ModalMouseTarget() (Widget, Rect) {
+	if m.open {
+		return m, Rect{}
+	}
+	return nil, Rect{}
+}
+
+func (m *passThroughModal) ModalMouseBackdrop(e MouseEvent) bool {
+	return e.Action == MousePress && e.Button == MouseLeft && (e.X != 0 || e.Y != 0)
+}
+
+// passThroughHost routes events to a modal and a sibling and lets backdrop
+// presses with X >= 50 reach the sibling.
+type passThroughHost struct {
+	modal   *passThroughModal
+	sibling *modalMouseProbe
+	capture ModalMouseCapture
+}
+
+func (*passThroughHost) Draw(*Canvas, Rect)              {}
+func (*passThroughHost) ConsumeKey(KeyEvent) EventResult { return Ignored() }
+func (h *passThroughHost) ModalMouseTarget() (Widget, Rect) {
+	return h.modal.ModalMouseTarget()
+}
+func (h *passThroughHost) ModalMousePassThrough(e MouseEvent) bool { return e.X >= 50 }
+func (h *passThroughHost) ConsumeMouse(e MouseEvent) EventResult {
+	if result, captured := h.capture.Dispatch(h, e); captured {
+		return result
+	}
+	return h.sibling.ConsumeMouse(e)
+}
+
+func newPassThroughHost() *passThroughHost {
+	return &passThroughHost{modal: &passThroughModal{modalMouseProbe{open: true}}, sibling: &modalMouseProbe{}}
+}
+
+func Test287ModalBackdropPassThrough(t *testing.T) {
+	press := func(x, y int, button MouseButton) MouseEvent {
+		return MouseEvent{X: x, Y: y, Action: MousePress, Button: button}
+	}
+	t.Run("backdrop press in the region dismisses and reaches the host", func(t *testing.T) {
+		h := newPassThroughHost()
+		if got := h.ConsumeMouse(press(60, 3, MouseLeft)); got != h.sibling.result {
+			t.Fatalf("result = %+v, want the sibling's result", got)
+		}
+		if h.modal.open || len(h.modal.events) != 1 || len(h.sibling.events) != 1 || h.sibling.events[0].X != 60 {
+			t.Fatalf("modal=%+v sibling=%+v", h.modal.events, h.sibling.events)
+		}
+		// The gesture belongs to the host now: release and drag are not swallowed.
+		for _, action := range []MouseAction{MouseDrag, MouseRelease} {
+			h.ConsumeMouse(MouseEvent{X: 60, Y: 3, Action: action, Button: MouseLeft})
+		}
+		if len(h.modal.events) != 1 || len(h.sibling.events) != 3 {
+			t.Fatalf("trailing events: modal=%d sibling=%d", len(h.modal.events), len(h.sibling.events))
+		}
+	})
+	t.Run("backdrop press outside the region is consumed", func(t *testing.T) {
+		h := newPassThroughHost()
+		if got := h.ConsumeMouse(press(20, 3, MouseLeft)); got != Handled() {
+			t.Fatalf("result = %+v", got)
+		}
+		if h.modal.open || len(h.sibling.events) != 0 {
+			t.Fatalf("modal open=%v sibling=%+v", h.modal.open, h.sibling.events)
+		}
+	})
+	t.Run("press on the modal itself stays with the modal", func(t *testing.T) {
+		h := newPassThroughHost()
+		// Host origin is (0,0), so cell (0,0) is the modal; the region is not consulted.
+		h.modal.open = true
+		h.ConsumeMouse(press(0, 0, MouseLeft))
+		if len(h.modal.events) != 1 || len(h.sibling.events) != 0 {
+			t.Fatalf("modal=%+v sibling=%+v", h.modal.events, h.sibling.events)
+		}
+	})
+	t.Run("other buttons and actions are consumed", func(t *testing.T) {
+		for _, e := range []MouseEvent{
+			press(60, 3, MouseRight), press(60, 3, MouseMiddle),
+			{X: 60, Y: 3, Action: MouseHover}, {X: 60, Y: 3, Action: MouseScrollDown},
+			{X: 60, Y: 3, Action: MouseDrag, Button: MouseLeft}, {X: 60, Y: 3, Action: MouseRelease, Button: MouseLeft},
+		} {
+			h := newPassThroughHost()
+			if got := h.ConsumeMouse(e); got != Handled() || len(h.sibling.events) != 0 {
+				t.Fatalf("%+v: result %+v sibling %+v", e, got, h.sibling.events)
+			}
+		}
+	})
+	t.Run("pane routes the press the same way", func(t *testing.T) {
+		h := newPassThroughHost()
+		p := &Pane{}
+		// Pane captures before the host's ConsumeMouse runs.
+		if _, captured := p.modalMouse.Dispatch(h, press(60, 3, MouseLeft)); captured {
+			t.Fatal("pane capture swallowed a pass-through press")
+		}
+		if h.modal.open || len(h.modal.events) != 1 {
+			t.Fatalf("pane did not dismiss the modal: %+v", h.modal.events)
+		}
+		h2 := newPassThroughHost()
+		p.dispatchMouse(h2, press(60, 3, MouseLeft))
+		if len(h2.sibling.events) != 1 {
+			t.Fatalf("pane dispatch did not reach the host: %+v", h2.sibling.events)
+		}
+	})
+}
