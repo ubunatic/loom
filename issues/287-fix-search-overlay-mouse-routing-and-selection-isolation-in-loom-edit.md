@@ -12,7 +12,7 @@
 PR #16 routes search-panel clicks to the document underneath. PTY reproduction at 100×24 with --mousegrab: open ^F, click the query field at column 55/row 5, type X, then ^S; X is saved into the second document line instead of the query. Search highlights also call SetSelection, visibly opening the formatting popover.
 
 ## 2. Technical Specification / Findings
-cmd/loom/edit.go:623–660 does not route searchRect before editorRect. Synchronize widget focus, prevent mouse hover/scroll from stealing focus, and render search highlights separately from editing selections/popovers. Refresh matches after document edits and restore usable editor focus when closing search. Use standard Loom widgets and container-owned routing; file/link library gaps rather than app hacks. Start on codex:sol:med.
+Stale reference: when this was written, cmd/loom/edit.go:623–660 did not route searchRect before editorRect. The live code is internal/editor/edit.go, where search is routed first (ConsumeMouse 821–889). Synchronize widget focus, prevent mouse hover/scroll from stealing focus, and render search highlights separately from editing selections/popovers. Refresh matches after document edits and restore usable editor focus when closing search. Use standard Loom widgets and container-owned routing; file/link library gaps rather than app hacks. Start on codex:sol:med.
 
 Observed at PR head b8a59ca; this branch has not been merged locally. Before implementation, check live code and recent commits and reverify the finding.
 
@@ -57,4 +57,12 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
 
 ## Decision
 
+- Plan review (host, 2026-10-30): the developer's plan turn (job b7za1pr4q, session loom-287-dev) confirmed the premises and found these extra items, which go into M2–M3 below: `searchModes` is never reset (stale mode hit target, edit.go:502 and 398); highlights paint while search is closed (updateSearchMatches 318–369, called from closeDocument 158 and openFile 184); `OnStateChange` fires per state transition, not per edit (richtextedit_file.go:59), so it cannot drive refresh; scroll-to-match is blocked because `richtextedit_render.go:41–58` snaps ScrollY to the cursor on every Draw.
+- Baseline: `make test-q1` is red before any change. `internal/session` `TestServerLastTabExitCleansSocket` times out after 10m. `internal/editor` passes. A live `loom session -s projects` server (pid 1647677) is running and may interfere. The host owns this: it is outside this ticket, and it blocks the final gate, not the editor milestones.
+- Plan review decisions:
+  - **A (baseline):** the developer does not touch the session test. The host checks it with the live session server stopped and files its own ticket if it is a real failure. Milestone tests run with targeted `go test ./internal/editor`; the full `make test-q1` runs at the final gate only.
+  - **B (M3 scope):** approved. Add `RichTextHighlight.Reveal`, the library change in `richtextedit_render.go` and `richtextedit.go`, and the matching update in `docs/Widgets.md`. A follow-up for scroll is not acceptable here, because the highlight would not be visible.
+  - **C (ticket text):** the host records the findings in this ticket, as done above. The developer does not edit the ticket.
+  - **D (commit policy):** approved. One commit per milestone, never a red commit. M1 tests stay uncommitted as red evidence until M2 lands in the same milestone commit.
+  - **M4 model:** stays on Claude (`claude:sonnet:high`). Sol is not available, so the suggested `sol:med` is declined.
 - Model mapping for this sprint: Searcher `claude:haiku:med`, developer `claude:sonnet:high`, architect skipped because the Searcher findings are narrow. The CLAUDE.md convention `codex:sol:med` for event-routing tickets is not applied: Sol is not available here, so the whole sprint stays on Claude models. Luna High (`luna:high`) is reserved for one optional one-shot second opinion, not for implementation.
