@@ -9,10 +9,10 @@
 ---
 
 /goal In `loom session`, each tab label shows the tab's current foreground command instead of the
-static spawn name (`1: zsh`). Well-known commands show as an emoji plus the cwd, unknown ones as
-the command name plus the cwd. Labels update when the foreground process or the directory changes,
+static spawn name (`1: zsh`). The label is a superscript tab number, then an emoji for a well-known
+command or the command name otherwise, then the cwd basename (`¹🐚 loom`). Linux only. Labels update when the foreground process or the directory changes,
 the bar still fits narrow widths, and the emoji table lives in the spec. Stop and report when
-blocked on a user decision (label format, platform scope); on a loop or no progress, clear the goal
+blocked on a user decision; on a loop or no progress, clear the goal
 and write a failure report saying why.
 
 ## 1. Problem & Motivation
@@ -25,16 +25,17 @@ The session bar renders `" %d: %s "` with `tab.title`, which is fixed at spawn t
 
 - Foreground process: `tcgetpgrp` on the tab's PTY master gives the foreground process group. On
   Linux, read the name from `/proc/<pgid>/comm` (or `cmdline`) and the cwd from the
-  `/proc/<pgid>/cwd` link. Unverified: macOS (no `/proc`; would need `proc_pidinfo`/`lsof`).
-  Decide the scope: Linux only with a fallback to today's static title, or both platforms.
+  `/proc/<pgid>/cwd` link. Linux only (user decision 2026-10-30). Other platforms keep today's
+  static title.
 - Optional source: OSC 7 (cwd URI) and OSC 0/2 (title) sent by the child, if the VT parses them.
   Check whether `vt` handles these before adding polling.
-- Label: `<emoji> <cwd>` for well-known commands, `<cmd> <cwd>` otherwise. Shorten the cwd (`~`
-  for home, last path element or truncated at a spec width limit), using display width, not bytes
-  (docs/Go.md). Open: does the tab number stay (`1: 🐚 ~/projects/loom`)? It keeps prefix `1`..`9`
-  and alt-digit switching discoverable, so the default is to keep it.
+- Label (user decision 2026-10-30): a superscript tab number, then the emoji, then the cwd
+  basename, for example `¹🐚 loom`. Unknown commands show the name instead of the emoji
+  (`²make loom`). The home directory shows as `~`. Tabs 10 and above use superscript digits too
+  (`¹⁰`). Measure with display width, not bytes (docs/Go.md), and cut overlong basenames at a spec
+  width limit.
 - The emoji table (for example shells, editors, `git`, `go`, `make`, `htop`/`btop`, `ssh`, `man`,
-  `less`) and the cwd width live in `spec/defaults.yaml` under `session`, with schema, and no Go
+  `less`) and the basename width limit live in `spec/defaults.yaml` under `session`, with schema, and no Go
   copy (docs/Spec.md). Validate emoji width with `loom measure`.
 - Refresh: poll at a modest spec interval or on output and focus events; never redraw when the
   label is unchanged. Tab width must be recomputed (`:204`).
