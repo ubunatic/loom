@@ -3,10 +3,12 @@
 
 // Command loom-probe measures how the current terminal advances its cursor
 // after representative emoji sequences. "loom-probe keys" reports kitty
-// keyboard protocol support and echoes the bytes each key sends.
+// keyboard protocol support and echoes the bytes each key sends. "loom-probe
+// mods" echoes keys together with the voxi-modifierd modifier state.
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"os"
@@ -30,10 +32,34 @@ type result struct {
 	err    error
 }
 
+const usage = `Usage:
+  loom-probe                    measure emoji cursor advances
+  loom-probe keys               report kitty support and echo key bytes
+  loom-probe mods [--path FILE] echo keys with the voxi modifier mask
+                                (default FILE ` + defaultModsPath + `)
+`
+
 func main() {
 	probe := run
-	if len(os.Args) > 1 && os.Args[1] == "keys" {
-		probe = runKeys
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "keys":
+			probe = runKeys
+		case "mods":
+			fs := flag.NewFlagSet("mods", flag.ExitOnError)
+			fs.Usage = func() { fmt.Fprint(os.Stderr, usage) }
+			path := fs.String("path", defaultModsPath, "modifier state file")
+			fs.Parse(os.Args[2:]) //nolint:errcheck // ExitOnError
+			probe = func(input *os.File, output io.Writer) error {
+				return runMods(input, output, *path)
+			}
+		case "-h", "--help", "help":
+			fmt.Print(usage)
+			return
+		default:
+			fmt.Fprint(os.Stderr, usage)
+			os.Exit(2)
+		}
 	}
 	if err := probe(os.Stdin, os.Stdout); err != nil {
 		fmt.Fprintln(os.Stderr, "loom-probe:", err)
