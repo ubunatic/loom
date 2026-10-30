@@ -22,13 +22,18 @@ type RichTextEdit struct {
 	SelectionTo    RichPosition
 	HasSelection   bool
 	SelectionStyle Style
-	// Highlights are display-only ranges, independent of editing selection.
+	// Highlights are display-only ranges, independent of editing selection and
+	// cursor. A highlight with Reveal set is kept in view while unfocused.
 	Highlights  []RichTextHighlight
 	ActiveStyle Style
 	ScrollX     int
 	ScrollY     int
 	ShowCursor  bool
 	ShowPopover bool
+	// DeferPopover makes Draw skip painting the format popover so a host can
+	// paint it after its own overlays with DrawPopover. Mouse capture and key
+	// handling are unchanged; the zero value paints the popover in Draw.
+	DeferPopover bool
 	// PopoverDefaults configures popup behavior; initialized from the embedded spec.
 	PopoverDefaults      RichTextEditDefaults
 	popoverExplicit      bool

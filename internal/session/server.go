@@ -178,7 +178,7 @@ func serveSession(ctx context.Context, name string, options Options, command str
 	}
 	server := newSessionServer(listener)
 	server.name = name
-	server.waitForClient = os.Getenv("LOOM_SESSION_WAIT_ATTACH") == "1"
+	server.waitForClient = options.WaitForAttach
 	server.finished = make(chan struct{})
 	defer func() {
 		server.detach(false)

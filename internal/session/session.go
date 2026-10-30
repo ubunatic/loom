@@ -74,6 +74,10 @@ func Run(ctx context.Context, in io.Reader, out, errOut io.Writer, command strin
 type Options struct {
 	Debug    bool
 	DebugDir string
+	// WaitForAttach holds a detached session server back from starting its
+	// command until the first client attaches. The library never reads this
+	// from the environment; the loom CLI sets it for the daemon it spawns.
+	WaitForAttach bool
 }
 
 // RunWithOptions runs a command in a pseudo-terminal with optional features.

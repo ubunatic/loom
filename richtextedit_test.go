@@ -2123,3 +2123,196 @@ func Test317SelectionTabItalic(t *testing.T) {
 		})
 	}
 }
+
+func revealDocument(lines, width int) *RichDocument {
+	doc := &RichDocument{}
+	for i := 0; i < lines; i++ {
+		doc.Lines = append(doc.Lines, RichLine{Spans: []RichSpan{{Text: strings.Repeat("x", width)}}})
+	}
+	return doc
+}
+
+func TestRichTextEditRevealHighlightScrollsWithoutMovingCursor(t *testing.T) {
+	doc := revealDocument(40, 10)
+	edit := NewRichTextEdit(doc)
+	edit.ShowPopover = false
+	edit.SetFocus(false)
+	before := doc.ToANSI()
+	edit.Highlights = []RichTextHighlight{{From: RichPosition{Line: 30, Offset: 2}, To: RichPosition{Line: 30, Offset: 5}, Style: Style{BG: ColorIndex(4)}, Reveal: true}}
+	c := NewCanvas(20, 5)
+	edit.Draw(c, c.Bounds())
+	if edit.ScrollY > 30 || 30 >= edit.ScrollY+5 {
+		t.Fatalf("revealed line 30 is outside the viewport at ScrollY=%d", edit.ScrollY)
+	}
+	if edit.Cursor != (RichPosition{}) || edit.HasSelection || doc.ToANSI() != before || edit.IsModified() {
+		t.Fatalf("reveal changed cursor %+v, selection %v or document", edit.Cursor, edit.HasSelection)
+	}
+	if got := c.Get(2, 30-edit.ScrollY).Style.BG; got != ColorIndex(4) {
+		t.Fatalf("revealed highlight not painted: BG=%v", got)
+	}
+
+	// Focus returns: the cursor wins again and the view snaps back to it.
+	edit.SetFocus(true)
+	edit.Draw(c, c.Bounds())
+	if edit.ScrollY != 0 || edit.Cursor != (RichPosition{}) {
+		t.Fatalf("focused editor did not return to its cursor: ScrollY=%d cursor=%+v", edit.ScrollY, edit.Cursor)
+	}
+}
+
+func TestRichTextEditRevealHighlightScrollsHorizontally(t *testing.T) {
+	edit := NewRichTextEdit(revealDocument(1, 80))
+	edit.ShowPopover = false
+	edit.SetFocus(false)
+	edit.Highlights = []RichTextHighlight{{From: RichPosition{Offset: 60}, To: RichPosition{Offset: 65}, Reveal: true}}
+	c := NewCanvas(20, 3)
+	edit.Draw(c, c.Bounds())
+	if edit.ScrollX > 60 || 60 >= edit.ScrollX+20 {
+		t.Fatalf("revealed column 60 is outside the viewport at ScrollX=%d", edit.ScrollX)
+	}
+	if edit.Cursor != (RichPosition{}) {
+		t.Fatalf("reveal moved the cursor: %+v", edit.Cursor)
+	}
+}
+
+func TestRichTextEditHighlightWithoutRevealDoesNotScroll(t *testing.T) {
+	edit := NewRichTextEdit(revealDocument(40, 10))
+	edit.ShowPopover = false
+	edit.SetFocus(false)
+	edit.Highlights = []RichTextHighlight{{From: RichPosition{Line: 30}, To: RichPosition{Line: 30, Offset: 3}}}
+	c := NewCanvas(20, 5)
+	edit.Draw(c, c.Bounds())
+	if edit.ScrollY != 0 {
+		t.Fatalf("a display-only highlight scrolled the view to ScrollY=%d", edit.ScrollY)
+	}
+}
+
+func TestRichTextEditRevealIgnoredWhileFocusedAndOutOfRangeSafe(t *testing.T) {
+	edit := NewRichTextEdit(revealDocument(40, 10))
+	edit.ShowPopover = false
+	edit.Highlights = []RichTextHighlight{{From: RichPosition{Line: 30}, To: RichPosition{Line: 30, Offset: 3}, Reveal: true}}
+	c := NewCanvas(20, 5)
+	edit.Draw(c, c.Bounds())
+	if edit.ScrollY != 0 {
+		t.Fatalf("a focused editor followed a reveal highlight: ScrollY=%d", edit.ScrollY)
+	}
+	edit.SetFocus(false)
+	for _, from := range []RichPosition{{Line: 500, Offset: 3}, {Line: -4, Offset: -2}, {Line: 3, Offset: 500}} {
+		edit.Highlights = []RichTextHighlight{{From: from, To: from, Reveal: true}}
+		edit.Draw(c, c.Bounds()) // must neither panic nor move the cursor
+		if edit.Cursor != (RichPosition{}) {
+			t.Fatalf("out-of-range reveal %+v moved the cursor to %+v", from, edit.Cursor)
+		}
+	}
+}
+
+// deferPopoverEdit returns an editor with an open selection popover, drawn in
+// a rectangle that is offset from the canvas origin.
+func deferPopoverEdit(deferred bool) (*RichTextEdit, Rect) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "first"}}},
+		{Spans: []RichSpan{{Text: "second"}}},
+		{Spans: []RichSpan{{Text: "some selected text"}}},
+		{Spans: []RichSpan{{Text: "last"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.DeferPopover = deferred
+	edit.SetSelection(RichPosition{Line: 2, Offset: 5}, RichPosition{Line: 2, Offset: 13})
+	return edit, Rect{X: 3, Y: 1, W: 42, H: 5}
+}
+
+func canvasCellsDiffer(a, b *Canvas) (x, y int, differ bool) {
+	for y := 0; y < a.Rows(); y++ {
+		for x := 0; x < a.Cols(); x++ {
+			if a.Get(x, y) != b.Get(x, y) {
+				return x, y, true
+			}
+		}
+	}
+	return 0, 0, false
+}
+
+func TestRichTextEditDeferPopoverSkipsPopoverInDrawAndPaintsInDrawPopover(t *testing.T) {
+	plain, rect := deferPopoverEdit(false)
+	want := NewCanvas(50, 6)
+	plain.Draw(want, rect)
+	if len(plain.popoverButtons) == 0 {
+		t.Fatal("setup: the default Draw did not paint the popover")
+	}
+
+	deferred, rect := deferPopoverEdit(true)
+	got := NewCanvas(50, 6)
+	deferred.Draw(got, rect)
+	if len(deferred.popoverButtons) != 0 {
+		t.Fatalf("Draw with DeferPopover recorded %d popover buttons", len(deferred.popoverButtons))
+	}
+	if !deferred.ModalOpen() {
+		t.Fatal("deferring the popover paint released the modal capture")
+	}
+	hidden, _ := deferPopoverEdit(false)
+	hidden.ShowPopover = false
+	without := NewCanvas(50, 6)
+	hidden.Draw(without, rect)
+	if x, y, differ := canvasCellsDiffer(got, without); differ {
+		t.Fatalf("Draw with DeferPopover painted the popover: cell (%d,%d) %+v", x, y, got.Get(x, y))
+	}
+
+	deferred.DrawPopover(got, rect)
+	if x, y, differ := canvasCellsDiffer(got, want); differ {
+		t.Fatalf("DrawPopover cell (%d,%d) = %+v, want %+v from the default Draw", x, y, got.Get(x, y), want.Get(x, y))
+	}
+	if len(deferred.popoverButtons) != len(plain.popoverButtons) {
+		t.Fatalf("DrawPopover recorded %d buttons, want %d", len(deferred.popoverButtons), len(plain.popoverButtons))
+	}
+}
+
+func TestRichTextEditDeferredPopoverClicksMatchDefault(t *testing.T) {
+	for _, deferred := range []bool{false, true} {
+		edit, rect := deferPopoverEdit(deferred)
+		canvas := NewCanvas(50, 6)
+		edit.Draw(canvas, rect)
+		edit.DrawPopover(canvas, rect) // a no-op for the default editor
+		button := edit.popoverButtons[popoverActionIndex("S")]
+		if result := edit.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: button.rect.X, Y: button.rect.Y}); !result.Consumed {
+			t.Fatalf("deferred=%v: popover click was not consumed", deferred)
+		}
+		if !anySpanStrike(edit.Document.Lines[2]) {
+			t.Fatalf("deferred=%v: the S item was not activated", deferred)
+		}
+	}
+}
+
+func anySpanStrike(line RichLine) bool {
+	for _, span := range line.Spans {
+		if span.Style.Strike {
+			return true
+		}
+	}
+	return false
+}
+
+func TestRichTextEditDrawPopoverWithoutOpenPopoverOrWithOverlayPaintsNothing(t *testing.T) {
+	edit, rect := deferPopoverEdit(true)
+	edit.ShowPopover = false
+	canvas := NewCanvas(50, 6)
+	edit.Draw(canvas, rect)
+	before := NewCanvas(50, 6)
+	edit.Draw(before, rect)
+	edit.DrawPopover(canvas, rect)
+	if x, y, differ := canvasCellsDiffer(canvas, before); differ || len(edit.popoverButtons) != 0 {
+		t.Fatalf("DrawPopover painted a closed popover at (%d,%d), buttons=%d", x, y, len(edit.popoverButtons))
+	}
+
+	edit, rect = deferPopoverEdit(true)
+	edit.ConsumeKey(KeyEvent{Key: "f1"}) // the help popup is drawn over the editor
+	edit.Draw(canvas, rect)
+	if edit.helpPopup == nil {
+		t.Fatal("setup: help popup did not open")
+	}
+	edit.DrawPopover(canvas, rect)
+	if len(edit.popoverButtons) != 0 {
+		t.Fatal("DrawPopover painted the popover over an open help popup")
+	}
+	var nilEdit *RichTextEdit
+	nilEdit.DrawPopover(canvas, rect) // must not panic
+	edit.DrawPopover(nil, rect)
+}

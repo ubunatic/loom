@@ -43,6 +43,7 @@ func sessionCommand() *cobra.Command {
 			}
 			options := session.Options{Debug: debugDefault, DebugDir: debugDirDefault}
 			if os.Getenv("LOOM_SESSION_SERVER_NAME") != "" {
+				options = daemonSessionOptions(options)
 				program := ""
 				if len(args) > 0 {
 					program, args = args[0], args[1:]
@@ -180,6 +181,14 @@ func startAndAttach(ctx context.Context, name string, options session.Options, p
 			return ctx.Err()
 		}
 	}
+}
+
+// daemonSessionOptions turns the attach gate that startAndAttach passes through
+// the environment into an option, and clears it so tab children do not inherit it.
+func daemonSessionOptions(options session.Options) session.Options {
+	options.WaitForAttach = os.Getenv("LOOM_SESSION_WAIT_ATTACH") == "1"
+	_ = os.Unsetenv("LOOM_SESSION_WAIT_ATTACH")
+	return options
 }
 
 func setEnvironment(environment []string, key, value string) []string {

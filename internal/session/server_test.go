@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func TestServerAttachDetachRepaintAndInput(t *testing.T) {
@@ -169,6 +171,59 @@ func TestServerLastTabExitCleansSocket(t *testing.T) {
 	}
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
 		t.Fatalf("session socket still exists after last tab exit: %v", err)
+	}
+}
+
+func TestServeSessionIgnoresWaitAttachEnv(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("LOOM_SOCKET_DIR", dir)
+	t.Setenv("LOOM_SESSION_WAIT_ATTACH", "1")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second*ptytest.RaceFactor)
+	defer cancel()
+	if err := serveSession(ctx, "envgate", Options{}, "bash", "-c", "exit 0"); err != nil {
+		t.Fatalf("server returned error: %v", err)
+	}
+	if _, err := os.Lstat(filepath.Join(dir, "session-envgate.sock")); !os.IsNotExist(err) {
+		t.Fatalf("session socket still exists after last tab exit: %v", err)
+	}
+}
+
+func TestServeSessionWaitForAttachHoldsChildUntilAttach(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	server := newSessionServer(nil)
+	server.waitForClient = true
+	done := make(chan error, 1)
+	go func() {
+		done <- runSessionWithServer(ctx, server, Options{}, "bash", "-c", "printf 'STARTED\\n'; while :; do sleep 1; done")
+	}()
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(5 * time.Second * ptytest.RaceFactor):
+			t.Error("session server did not stop")
+		}
+	})
+
+	server.mu.Lock()
+	tabs := server.tabCount
+	server.mu.Unlock()
+	if tabs != 0 {
+		t.Fatalf("tabs before attach = %d, want 0 while waiting for a client", tabs)
+	}
+	select {
+	case err := <-done:
+		t.Fatalf("session ended while waiting for a client: %v", err)
+	default:
+	}
+
+	// Output only reaches an attached client, so seeing it proves the child
+	// started after the attach released the gate.
+	client, _ := attachTestClient(t, server, 80, 24)
+	defer client.Close()
+	_ = readServerStatus(t, client)
+	if got := readOutputUntil(t, client, "STARTED"); !strings.Contains(got, "STARTED") {
+		t.Fatalf("child output after attach = %q", got)
 	}
 }
 

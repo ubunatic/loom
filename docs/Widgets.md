@@ -17,7 +17,7 @@ typing and a block cursor in box drawing mode. Its optional
 enabled, navigation can move into empty columns and rows without changing the
 document until typing or drawing materializes that space.
 
-`RichTextEdit.Highlights` accepts display-only `RichTextHighlight` ranges in document rune coordinates. Highlight styles overlay styled spans without changing editing selection, formatting popovers, dirty state or serialized document content. Assign an empty/nil slice to clear highlights; callers keep ranges current after edits.
+`RichTextEdit.Highlights` accepts display-only `RichTextHighlight` ranges in document rune coordinates. Highlight styles overlay styled spans without changing editing selection, formatting popovers, dirty state or serialized document content. A highlight with `Reveal: true` is kept in view while the editor is unfocused, so a host can show an off-screen search match without moving the cursor; focus returns the view to the cursor. Highlights are display-only and never change selection, cursor, popovers, dirty state or content. Assign an empty/nil slice to clear highlights; callers keep ranges current after edits.
 
 ### Wrapping widgets
 
@@ -361,7 +361,13 @@ selection shows a floating formatting popover by default; set `ShowPopover` to
 false to hide it. Its B/I/U/S buttons toggle styles on the selection. The bar
 uses `▏` separators and offers 🎨, Frame, Link and the ≡ submenu. The b/B, i/I,
 u/U and s/S hotkeys toggle formatting; f/F opens Frame. L/l activates the
-disabled Link entry without changing the document. Ctrl+Space opens the bar
+disabled Link entry without changing the document. The popover captures mouse
+input above any host overlay, so a host that paints its own overlay over the
+editor (such as a search panel) sets `DeferPopover`: `Draw` then skips the
+popover and the host calls `DrawPopover(canvas, rect)` with the same rectangle
+after its overlays. Capture, hit areas and keys are unchanged, and the default
+`Draw` paints the popover itself; `DrawPopover` does nothing for a default
+editor and while the help or save popup is open. Ctrl+Space opens the bar
 focused on its first item; Up/Down enters an auto-shown bar before its letters
 act as hotkeys. Letters remain normal text while the selection popover is
 unfocused. The 🎨

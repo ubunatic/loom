@@ -20,6 +20,12 @@ integration entry points. Full tests probe external tools and PTY availability,
 skipping unavailable features with a reason. Containers exercise `/dev/ptmx` tests;
 foreground `/dev/tty` tests still require an interactive controlling terminal.
 
+Tests run from a loom session shell inherit the session's environment. In particular
+`LOOM_SESSION_WAIT_ATTACH=1` is set there, and before 393 it made session tests hang. The library now
+takes the attach gate from its options, so `make test-q1` works from a loom shell. If a session test
+fails in a loom shell but passes outside one, compare with `env -u LOOM_SESSION_WAIT_ATTACH`. See
+[Session](Session.md#pitfalls-seen).
+
 `make lint` checks tracked files, so stage newly added sources before validating.
 CI runs the lint gate before building and running the race suite. Container logs
 are written to `/tmp/loom-container-test` by default; override `CONTAINER_OUTPUT`,
