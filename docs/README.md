@@ -83,6 +83,7 @@
 | [studies/2026-10-24-two-agent-lean-sprint-issue-381-session-debug-mode.md](studies/2026-10-24-two-agent-lean-sprint-issue-381-session-debug-mode.md) | Two-Agent Lean Sprint Study: Issue #381 Session Debug Mode & Self-Healing Diagnostics |
 | [studies/2026-10-24-two-agent-lean-sprint-issue-382-vt-streaming-continuity.md](studies/2026-10-24-two-agent-lean-sprint-issue-382-vt-streaming-continuity.md) | Two-Agent Lean Sprint Study: Issue #382 VT Parser Streaming Continuity and Safe Discard |
 | [studies/2026-10-24-two-agent-lean-sprint-issue-383-tmux-attach-detach.md](studies/2026-10-24-two-agent-lean-sprint-issue-383-tmux-attach-detach.md) | Two-Agent Lean Sprint Study: Issue #383 Tmux-Style Attach/Detach for Loom Session |
+| [studies/2026-10-30-two-agent-lean-sprint-issues-287-393.md](studies/2026-10-30-two-agent-lean-sprint-issues-287-393.md) | Two-Agent Lean Sprint Study: Issues 287 and 393 |
 <!-- harnez:end docs-studies-index -->
 
 

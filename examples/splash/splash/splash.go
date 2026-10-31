@@ -64,7 +64,7 @@ func newSplashApp(opts Options) *splashApp {
 	cfg := loom.SplashConfig{
 		Title:        "harnez usage",
 		Tasks:        defaultTasks,
-		TickInterval: 80 * time.Millisecond,
+		TickInterval: loom.SpeccedDefaults.Spinner.TickInterval,
 		HoldDuration: 600 * time.Millisecond,
 	}
 	sc := loom.NewSplashController(cfg)
@@ -81,7 +81,7 @@ func (a *splashApp) TickInterval() time.Duration {
 	if a.static || a.active {
 		return 0
 	}
-	return 80 * time.Millisecond
+	return loom.SpeccedDefaults.Spinner.TickInterval
 }
 
 func (a *splashApp) Tick(now time.Time) {

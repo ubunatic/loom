@@ -33,7 +33,7 @@ func (h *KeyHelp) Text() string {
 	}
 	separator := h.Separator
 	if separator == "" {
-		separator = " · "
+		separator = SpeccedDefaults.KeyHelp.Separator
 	}
 	actions := make([]string, 0, len(h.KeyMap.labels))
 	for action, label := range h.KeyMap.labels {

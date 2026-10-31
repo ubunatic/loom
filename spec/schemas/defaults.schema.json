@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "form", "settings", "key_conventions", "collector", "session"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "key_help", "form", "settings", "key_conventions", "collector", "session"],
   "properties": {
     "collector": {
       "type": "object",
@@ -514,11 +514,12 @@
     "clock": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["start", "stop", "reset"],
+      "required": ["start", "stop", "reset", "tick_interval"],
       "properties": {
         "start": { "type": "string", "minLength": 1 },
         "stop": { "type": "string", "minLength": 1 },
-        "reset": { "type": "string", "minLength": 1 }
+        "reset": { "type": "string", "minLength": 1 },
+        "tick_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" }
       }
     },
     "quit_keys": {
@@ -577,12 +578,13 @@
     "progress_bar": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["width", "done_pattern", "demo_interval", "demo_step"],
+      "required": ["width", "done_pattern", "demo_interval", "demo_step", "fallback_interval"],
       "properties": {
         "width": { "type": "integer", "minimum": 1 },
         "done_pattern": { "type": "string", "minLength": 1 },
         "demo_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
-        "demo_step": { "type": "number", "exclusiveMinimum": 0 }
+        "demo_step": { "type": "number", "exclusiveMinimum": 0 },
+        "fallback_interval": { "type": "string", "pattern": "^[0-9]+(ms|s)$" }
       }
     },
     "spinner": {
@@ -640,16 +642,22 @@
       "required": [
         "loading_label",
         "render_error_label",
+        "play_label",
+        "pause_label",
         "loading_threshold",
         "loading_bar_width",
         "zoom_factor",
         "pan_step",
+        "default_fps",
         "bindings",
         "labels"
       ],
       "properties": {
         "loading_label": { "type": "string", "minLength": 1 },
         "render_error_label": { "type": "string", "minLength": 1 },
+        "play_label": { "type": "string", "minLength": 1 },
+        "pause_label": { "type": "string", "minLength": 1 },
+        "default_fps": { "type": "number", "exclusiveMinimum": 0 },
         "loading_threshold": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
         "loading_bar_width": { "type": "integer", "minimum": 1 },
         "zoom_factor": { "type": "number", "exclusiveMinimum": 1.0 },
@@ -726,8 +734,10 @@
     "menu": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["bindings"],
+      "required": ["bindings", "checked_marker", "unchecked_marker"],
       "properties": {
+        "checked_marker": { "type": "string", "minLength": 1 },
+        "unchecked_marker": { "type": "string", "minLength": 1 },
         "bindings": {
           "type": "object",
           "additionalProperties": false,
@@ -742,6 +752,14 @@
             "activate": { "type": "array", "minItems": 1, "items": { "type": "string" } }
           }
         }
+      }
+    },
+    "key_help": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["separator"],
+      "properties": {
+        "separator": { "type": "string", "minLength": 1 }
       }
     },
     "form": {

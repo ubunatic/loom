@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-const clockWidgetInterval = time.Second
-
 // DurationFormatter formats the remaining or elapsed duration shown by a
 // Timer or Stopwatch. A nil formatter uses mm:ss, growing to h:mm:ss as needed.
 type DurationFormatter func(time.Duration) string
@@ -130,7 +128,7 @@ func (t *Timer) TickInterval() time.Duration {
 	if !t.started || t.done {
 		return 0
 	}
-	return clockWidgetInterval
+	return SpeccedDefaults.Clock.TickInterval
 }
 
 // Tick updates the countdown and invokes OnDone once on completion.
@@ -335,7 +333,7 @@ func (s *Stopwatch) TickInterval() time.Duration {
 	if !s.started {
 		return 0
 	}
-	return clockWidgetInterval
+	return SpeccedDefaults.Clock.TickInterval
 }
 func (s *Stopwatch) Tick(now time.Time) {
 	s.mu.Lock()

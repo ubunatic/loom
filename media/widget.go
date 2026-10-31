@@ -144,8 +144,8 @@ func LoadImage(path string, mode Mode) (*Widget, error) {
 	return NewImage(src, mode)
 }
 
-// NewVideo opens a cati video frame stream. A non-positive fps uses 24 frames
-// per second; ffprobe and ffmpeg must be available on PATH.
+// NewVideo opens a cati video frame stream. A non-positive fps uses the
+// spec's media.default_fps; ffprobe and ffmpeg must be available on PATH.
 func NewVideo(path string, mode Mode, fps float64) (*Widget, error) {
 	return newVideo(path, mode, fps, image.NewRGBA(image.Rect(0, 0, 1, 1)))
 }
@@ -168,7 +168,7 @@ func newVideoWithOpener(path string, mode Mode, fps float64, poster image.Image,
 		return nil, fmt.Errorf("media: invalid frame rate %v", fps)
 	}
 	if fps <= 0 {
-		fps = 24
+		fps = loom.SpeccedDefaults.Media.DefaultFPS
 	}
 	widget.path = path
 	widget.fps = fps
@@ -408,6 +408,14 @@ func scaleForView(src image.Image, mode Mode, cols, rows int, zoom, panX, panY f
 	return out
 }
 
+// playControlLabel returns the spec label for the play/pause control.
+func playControlLabel(playing bool) string {
+	if playing {
+		return loom.SpeccedDefaults.Media.PauseLabel
+	}
+	return loom.SpeccedDefaults.Media.PlayLabel
+}
+
 func (w *Widget) drawControls(c *loom.Canvas, playing bool, zoom float64) {
 	w.mu.RLock()
 	controls, play, minus, plus := w.controls, w.playButton, w.zoomOut, w.zoomIn
@@ -430,11 +438,7 @@ func (w *Widget) drawControls(c *loom.Canvas, playing bool, zoom float64) {
 	plus.X += base.X
 	plus.Y += base.Y
 	if play.W > 0 {
-		label := "▶ Play"
-		if playing {
-			label = "❚❚ Pause"
-		}
-		c.Write(play.X, play.Y, label, style)
+		c.Write(play.X, play.Y, playControlLabel(playing), style)
 	}
 	if minus.W > 0 {
 		c.Write(minus.X, minus.Y, "[-]", style)

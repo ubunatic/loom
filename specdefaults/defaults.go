@@ -52,6 +52,7 @@ type LibDefaults struct {
 	Tabs           TabsDefaults         `yaml:"tabs"`
 	View           ViewDefaults         `yaml:"view"`
 	Menu           MenuDefaults         `yaml:"menu"`
+	KeyHelp        KeyHelpDefaults      `yaml:"key_help"`
 	Form           FormDefaults         `yaml:"form"`
 	Settings       SettingsDefaults     `yaml:"settings"`
 	Session        SessionDefaults      `yaml:"session"`
@@ -616,11 +617,21 @@ func (d ViewDefaults) Validate() error {
 
 // MenuDefaults defines specced navigation and accelerator defaults for Menu and MenuBar.
 type MenuDefaults struct {
-	Bindings map[string][]string `yaml:"bindings"`
+	CheckedMarker   string              `yaml:"checked_marker"`
+	UncheckedMarker string              `yaml:"unchecked_marker"`
+	Bindings        map[string][]string `yaml:"bindings"`
+}
+
+// KeyHelpDefaults defines the compact key help line shared by KeyHelp.
+type KeyHelpDefaults struct {
+	Separator string `yaml:"separator"`
 }
 
 // Validate checks the configured defaults.
 func (d MenuDefaults) Validate() error {
+	if d.CheckedMarker == "" || d.UncheckedMarker == "" {
+		return fmt.Errorf("menu checked_marker and unchecked_marker must not be empty")
+	}
 	for _, action := range []string{"open_bar", "cancel", "up", "down", "left", "right", "activate"} {
 		if len(d.Bindings[action]) == 0 {
 			return fmt.Errorf("menu.bindings.%s must not be empty", action)
@@ -791,13 +802,17 @@ type PaintCanvasDefaults struct {
 
 // ClockDefaults defines the labels for timer and stopwatch controls.
 type ClockDefaults struct {
-	Start string `yaml:"start"`
-	Stop  string `yaml:"stop"`
-	Reset string `yaml:"reset"`
+	TickInterval time.Duration `yaml:"tick_interval"`
+	Start        string        `yaml:"start"`
+	Stop         string        `yaml:"stop"`
+	Reset        string        `yaml:"reset"`
 }
 
 // MediaDefaults defines user-facing media status and rendering timing defaults.
 type MediaDefaults struct {
+	PlayLabel        string              `yaml:"play_label"`
+	PauseLabel       string              `yaml:"pause_label"`
+	DefaultFPS       float64             `yaml:"default_fps"`
 	LoadingLabel     string              `yaml:"loading_label"`
 	RenderErrorLabel string              `yaml:"render_error_label"`
 	LoadingThreshold time.Duration       `yaml:"loading_threshold"`
@@ -810,8 +825,11 @@ type MediaDefaults struct {
 
 // Validate checks the configured defaults.
 func (d MediaDefaults) Validate() error {
-	if d.LoadingLabel == "" || d.RenderErrorLabel == "" {
+	if d.LoadingLabel == "" || d.RenderErrorLabel == "" || d.PlayLabel == "" || d.PauseLabel == "" {
 		return fmt.Errorf("media labels must not be empty")
+	}
+	if d.DefaultFPS <= 0 {
+		return fmt.Errorf("media.default_fps must be positive")
 	}
 	if d.LoadingThreshold <= 0 {
 		return fmt.Errorf("media.loading_threshold must be positive")
@@ -909,15 +927,48 @@ type SplashDefaults struct {
 
 // ProgressBarDefaults defines specced defaults for the ProgressBar widget.
 type ProgressBarDefaults struct {
-	Width        int           `yaml:"width"`
-	DonePattern  string        `yaml:"done_pattern"`
-	DemoInterval time.Duration `yaml:"demo_interval"`
-	DemoStep     float64       `yaml:"demo_step"`
+	FallbackInterval time.Duration `yaml:"fallback_interval"`
+	Width            int           `yaml:"width"`
+	DonePattern      string        `yaml:"done_pattern"`
+	DemoInterval     time.Duration `yaml:"demo_interval"`
+	DemoStep         float64       `yaml:"demo_step"`
 }
 
 // SpinnerDefaults defines specced animation timing for Spinner.
 type SpinnerDefaults struct {
 	TickInterval time.Duration `yaml:"tick_interval"`
+}
+
+// Validate checks the configured defaults.
+func (d KeyHelpDefaults) Validate() error {
+	if d.Separator == "" {
+		return fmt.Errorf("key_help.separator must not be empty")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d ClockDefaults) Validate() error {
+	if d.TickInterval <= 0 {
+		return fmt.Errorf("clock.tick_interval must be positive")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d ProgressBarDefaults) Validate() error {
+	if d.FallbackInterval <= 0 {
+		return fmt.Errorf("progress_bar.fallback_interval must be positive")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d SpinnerDefaults) Validate() error {
+	if d.TickInterval <= 0 {
+		return fmt.Errorf("spinner.tick_interval must be positive")
+	}
+	return nil
 }
 
 // SpeccedDefaults holds the loaded immutable defaults from spec/defaults.yaml.
@@ -978,6 +1029,18 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Session.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.KeyHelp.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Clock.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.ProgressBar.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Spinner.Validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if len(defs.KeyConventions) == 0 {

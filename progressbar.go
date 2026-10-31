@@ -111,7 +111,7 @@ func (p *ProgressBar) TickInterval() time.Duration {
 	if p.Interval > 0 {
 		return p.Interval
 	}
-	return 100 * time.Millisecond
+	return SpeccedDefaults.ProgressBar.FallbackInterval
 }
 
 // Tick advances the marquee pulse and requests a redraw.
