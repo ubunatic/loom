@@ -106,7 +106,14 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
 - Hover and scroll over the search panel, focus in the editor: keys still go to the document. PASS.
 - Hover and scroll over the editor, focus in search: keys still go to the query (`Find: Q`). PASS.
 - Popover overlap, FAIL: search open, select on row 2 from col 40 to col 48. The formatting popover opens on row 4 and reaches the panel's mode row. The first click on Regex (row 4, col 72) only dismisses the popover; the mode stays `Normal *`. A second click toggles it to `Regex *`. The document is unchanged. Reproduces M4: the popover modal consumes the press before `searchRect`.
-- Other search-bar controls: the panel has no clickable prev, next or close buttons. `Enter: next` and `S-Enter: prev` are text hints, and close is `^F`. Still to confirm in code that `edit.go:848–861` has no hit regions for these, and that clicking the hint text does nothing.
+- Other search-bar controls: the panel has no clickable prev, next or close buttons. `Enter: next` and `S-Enter: prev` are text hints, and close is `^F`. Confirmed by the Searcher audit (round 2): prev, next and close have no mouse hit regions. PTY check: a click on the `Enter: next` hint text does nothing.
+
+## Round 2 result (host, 2026-10-31, installed binary from `b17b784`)
+
+- Popover overlap: a first click on Regex under the popover dismisses the popover and toggles to `Regex *`. PASS. Before M4b it needed two clicks.
+- Hint text click: no change. PASS.
+- `make test-q1`: exit 0, 43 packages `ok`, no `FAIL` or `panic` lines (log in the session scratchpad).
+- The stale `popoverRelease` flag noted by the developer was assessed as harmless: the next press clears it, and no drag or release can start in the editor without a press.
 
 ## Decision (round 2, host, 2026-10-31)
 
