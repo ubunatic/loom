@@ -46,8 +46,8 @@ func NewImageWithTheme(src image.Image, mode Mode, theme loom.ThemeColors) (*Wid
     NewImageWithTheme creates a still-image widget using the supplied theme.
 
 func NewVideo(path string, mode Mode, fps float64) (*Widget, error)
-    NewVideo opens a cati video frame stream. A non-positive fps uses 24 frames
-    per second; ffprobe and ffmpeg must be available on PATH.
+    NewVideo opens a cati video frame stream. A non-positive fps uses the spec's
+    media.default_fps; ffprobe and ffmpeg must be available on PATH.
 
 func NewVideoWithPoster(path string, mode Mode, fps float64, poster image.Image) (*Widget, error)
     NewVideoWithPoster opens a video stream and displays poster until its first

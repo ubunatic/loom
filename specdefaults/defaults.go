@@ -629,6 +629,9 @@ type KeyHelpDefaults struct {
 
 // Validate checks the configured defaults.
 func (d MenuDefaults) Validate() error {
+	if d.CheckedMarker == "" || d.UncheckedMarker == "" {
+		return fmt.Errorf("menu checked_marker and unchecked_marker must not be empty")
+	}
 	for _, action := range []string{"open_bar", "cancel", "up", "down", "left", "right", "activate"} {
 		if len(d.Bindings[action]) == 0 {
 			return fmt.Errorf("menu.bindings.%s must not be empty", action)
@@ -822,8 +825,11 @@ type MediaDefaults struct {
 
 // Validate checks the configured defaults.
 func (d MediaDefaults) Validate() error {
-	if d.LoadingLabel == "" || d.RenderErrorLabel == "" {
+	if d.LoadingLabel == "" || d.RenderErrorLabel == "" || d.PlayLabel == "" || d.PauseLabel == "" {
 		return fmt.Errorf("media labels must not be empty")
+	}
+	if d.DefaultFPS <= 0 {
+		return fmt.Errorf("media.default_fps must be positive")
 	}
 	if d.LoadingThreshold <= 0 {
 		return fmt.Errorf("media.loading_threshold must be positive")
@@ -933,6 +939,38 @@ type SpinnerDefaults struct {
 	TickInterval time.Duration `yaml:"tick_interval"`
 }
 
+// Validate checks the configured defaults.
+func (d KeyHelpDefaults) Validate() error {
+	if d.Separator == "" {
+		return fmt.Errorf("key_help.separator must not be empty")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d ClockDefaults) Validate() error {
+	if d.TickInterval <= 0 {
+		return fmt.Errorf("clock.tick_interval must be positive")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d ProgressBarDefaults) Validate() error {
+	if d.FallbackInterval <= 0 {
+		return fmt.Errorf("progress_bar.fallback_interval must be positive")
+	}
+	return nil
+}
+
+// Validate checks the configured defaults.
+func (d SpinnerDefaults) Validate() error {
+	if d.TickInterval <= 0 {
+		return fmt.Errorf("spinner.tick_interval must be positive")
+	}
+	return nil
+}
+
 // SpeccedDefaults holds the loaded immutable defaults from spec/defaults.yaml.
 var SpeccedDefaults = func() LibDefaults {
 	var defs LibDefaults
@@ -991,6 +1029,18 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Session.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.KeyHelp.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Clock.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.ProgressBar.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Spinner.Validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if len(defs.KeyConventions) == 0 {

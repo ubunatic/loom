@@ -31,44 +31,62 @@ func TestVersionConstantMatchesVersionYAML(t *testing.T) {
 	}
 }
 
+// withSpecDefaults overrides spec values for the duration of a test. Consumers
+// read SpeccedDefaults at call time, so a sentinel that comes back out proves the
+// value is consumed, not copied into Go.
+func withSpecDefaults(t *testing.T, mutate func(*LibDefaults)) {
+	t.Helper()
+	saved := SpeccedDefaults
+	t.Cleanup(func() { SpeccedDefaults = saved })
+	mutate(&SpeccedDefaults)
+}
+
 // TestRespectedSpecDefaultsAreConsumed checks that values moved out of Go
-// literals exist in the embedded spec and are returned by their consumers.
+// literals are read by their consumers. The splash and media keys are covered in
+// their own packages.
 func TestRespectedSpecDefaultsAreConsumed(t *testing.T) {
-	if SpeccedDefaults.ProgressBar.FallbackInterval <= 0 {
-		t.Fatal("progress_bar.fallback_interval missing from spec")
-	}
-	if got := (&ProgressBar{Indeterminate: true}).TickInterval(); got != SpeccedDefaults.ProgressBar.FallbackInterval {
-		t.Fatalf("ProgressBar fallback interval = %v, want spec %v", got, SpeccedDefaults.ProgressBar.FallbackInterval)
+	const (
+		fallback  = 37 * time.Millisecond
+		tick      = 3 * time.Second
+		separator = " | "
+	)
+	withSpecDefaults(t, func(d *LibDefaults) {
+		d.ProgressBar.FallbackInterval = fallback
+		d.Clock.TickInterval = tick
+		d.Menu.CheckedMarker = "[x] "
+		d.Menu.UncheckedMarker = "[ ] "
+		d.KeyHelp.Separator = separator
+	})
+
+	if got := (&ProgressBar{Indeterminate: true}).TickInterval(); got != fallback {
+		t.Fatalf("ProgressBar fallback interval = %v, want spec %v", got, fallback)
 	}
 
-	if SpeccedDefaults.Clock.TickInterval <= 0 {
-		t.Fatal("clock.tick_interval missing from spec")
-	}
 	timer := NewTimer(time.Minute)
 	timer.Start()
-	if got := timer.TickInterval(); got != SpeccedDefaults.Clock.TickInterval {
-		t.Fatalf("Timer tick interval = %v, want spec %v", got, SpeccedDefaults.Clock.TickInterval)
+	if got := timer.TickInterval(); got != tick {
+		t.Fatalf("Timer tick interval = %v, want spec %v", got, tick)
 	}
 
-	if SpeccedDefaults.Menu.CheckedMarker == "" || SpeccedDefaults.Menu.UncheckedMarker == "" {
-		t.Fatal("menu checked/unchecked markers missing from spec")
+	stopwatch := NewStopwatch()
+	stopwatch.Start()
+	if got := stopwatch.TickInterval(); got != tick {
+		t.Fatalf("Stopwatch tick interval = %v, want spec %v", got, tick)
 	}
+
 	checked := true
-	if got := menuItemLabel(MenuItem{Label: "x", Checked: &checked}); got != SpeccedDefaults.Menu.CheckedMarker+"x" {
+	if got := menuItemLabel(MenuItem{Label: "x", Checked: &checked}); got != "[x] x" {
 		t.Fatalf("checked menu label = %q, want spec marker", got)
 	}
-	if got := menuItemLabel(MenuItem{Label: "x"}); got != SpeccedDefaults.Menu.UncheckedMarker+"x" {
+	if got := menuItemLabel(MenuItem{Label: "x"}); got != "[ ] x" {
 		t.Fatalf("unchecked menu label = %q, want spec marker", got)
 	}
 
-	if SpeccedDefaults.KeyHelp.Separator == "" {
-		t.Fatal("key_help.separator missing from spec")
-	}
 	km := NewKeyMapWithLabels(
 		map[string][]string{"open": {"o"}, "close": {"c"}},
 		map[string]string{"open": "Open", "close": "Close"},
 	)
-	if text := NewKeyHelp(km).Text(); !strings.Contains(text, SpeccedDefaults.KeyHelp.Separator) {
-		t.Fatalf("key help %q does not use spec separator %q", text, SpeccedDefaults.KeyHelp.Separator)
+	if text := NewKeyHelp(km).Text(); !strings.Contains(text, separator) {
+		t.Fatalf("key help %q does not use spec separator %q", text, separator)
 	}
 }

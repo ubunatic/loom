@@ -64,6 +64,18 @@ var SpeccedDefaults = func() LibDefaults {
 	if err := defs.Session.Validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
+	if err := defs.KeyHelp.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Clock.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.ProgressBar.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Spinner.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
 	if len(defs.KeyConventions) == 0 {
 		panic("loom: spec/defaults.yaml: key_conventions must not be empty")
 	}
@@ -99,6 +111,9 @@ type ClockDefaults struct {
 	Reset        string        `yaml:"reset"`
 }
     ClockDefaults defines the labels for timer and stopwatch controls.
+
+func (d ClockDefaults) Validate() error
+    Validate checks the configured defaults.
 
 type ColorPickerDefaults struct {
 	Palette          []int               `yaml:"palette"`
@@ -277,6 +292,9 @@ type KeyHelpDefaults struct {
 }
     KeyHelpDefaults defines the compact key help line shared by KeyHelp.
 
+func (d KeyHelpDefaults) Validate() error
+    Validate checks the configured defaults.
+
 type LibDefaults struct {
 	KeyCaps        KeyCapDefaults       `yaml:"keycaps"`
 	QuitKeys       []string             `yaml:"quit_keys"`
@@ -400,6 +418,9 @@ type ProgressBarDefaults struct {
 	DemoStep         float64       `yaml:"demo_step"`
 }
     ProgressBarDefaults defines specced defaults for the ProgressBar widget.
+
+func (d ProgressBarDefaults) Validate() error
+    Validate checks the configured defaults.
 
 type RichTextEditDefaults struct {
 	Bindings          map[string][]string `yaml:"bindings"`
@@ -602,6 +623,9 @@ type SpinnerDefaults struct {
 	TickInterval time.Duration `yaml:"tick_interval"`
 }
     SpinnerDefaults defines specced animation timing for Spinner.
+
+func (d SpinnerDefaults) Validate() error
+    Validate checks the configured defaults.
 
 type SplashDefaults struct {
 	BracketWidth int           `yaml:"bracket_width"`
