@@ -42,7 +42,6 @@ upkeep.
 | 282 | [282-add-f2-side-panel-with-file-browser-to-loom-edit.md](282-add-f2-side-panel-with-file-browser-to-loom-edit.md) | Add F2 side panel with file browser to loom edit | Open |
 | 283 | [283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md](283-add-f3-and-ctrl-f-search-panel-to-loom-edit.md) | Add F3 and Ctrl-F search panel to loom edit | Open |
 | 284 | [284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md](284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md) | Add Ctrl-P full-editor ANSI screenshots to loom edit | Open |
-| 287 | [287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md](287-fix-search-overlay-mouse-routing-and-selection-isolation-in-loom-edit.md) | Fix search overlay mouse routing and selection isolation in loom edit | Open |
 | 288 | [288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md](288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md) | Compose loom edit panels with standard widgets and clipped responsive layout | Open |
 | 305 | [305-add-ctrl-n-to-create-a-new-file-in-loom-edit.md](305-add-ctrl-n-to-create-a-new-file-in-loom-edit.md) | Add Ctrl+N to create a new file in loom edit | Draft |
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |
@@ -56,5 +55,5 @@ upkeep.
 | 391 | [391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md](391-agy-vim-mode-ui-breaks-in-loom-session-stray-letters-repeated-lines-wrong-popup-offset.md) | agy vim mode UI breaks in loom session (stray letters, repeated lines, wrong popup offset) | Open |
 | 392 | [392-loom-session-mouse-modes-off-full-basic-basic-suppresses-drag-to-preserve-text-selection.md](392-loom-session-mouse-modes-off-full-basic-basic-suppresses-drag-to-preserve-text-selection.md) | loom session mouse modes: off\|full\|basic (basic suppresses drag to preserve text selection) | Open |
 | 394 | [394-cover-waitforattach-wiring-in-servesession-and-remove-sleep-in-control-status-test.md](394-cover-waitforattach-wiring-in-servesession-and-remove-sleep-in-control-status-test.md) | Cover WaitForAttach wiring in serveSession and remove sleep in control status test | Open |
-| 395 | [395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md](395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md) | Guard internal/session against reading LOOM_SESSION env vars in library code | Draft |
+| 395 | [395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md](395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md) | Guard internal/session against reading LOOM_SESSION env vars in library code | Open |
 <!-- harnez:end issues-active-index -->

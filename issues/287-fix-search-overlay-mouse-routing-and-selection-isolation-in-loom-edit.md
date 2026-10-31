@@ -1,6 +1,6 @@
 # 287 — Fix search overlay mouse routing and selection isolation in loom edit
 
-**Status**: Open
+**Status**: Closed — Acceptance met on the installed binary (b17b784, 2026-10-31): a first click on Regex under an open popover now toggles the mode, hover and scroll focus pass in both directions, query/mode/stale-match/hint-bar checks pass, prev/next/close have no mouse regions and the hint text is a no-op; make test-q1 exit 0 with 43 packages ok and no FAIL or panic.
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
