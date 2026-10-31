@@ -27,6 +27,23 @@ func ActiveModalMouse(root Widget) (Widget, Rect) {
 	return nil, Rect{}
 }
 
+// ModalMouseBackdrop is an optional interface of a modal target. It reports
+// whether e, in target-local coordinates, is a press that only dismisses the
+// modal as a backdrop press, without the modal acting on anything it draws.
+type ModalMouseBackdrop interface {
+	ModalMouseBackdrop(e MouseEvent) bool
+}
+
+// ModalMousePassThrough is an optional interface of the root widget given to
+// ModalMouseCapture.Dispatch. It reports whether a backdrop press at e, in the
+// root's coordinates, dismisses the modal and is then routed to the root's own
+// widgets, so the click also performs the action of the control it hit. It
+// applies only when the modal target implements ModalMouseBackdrop and agrees
+// that the press is a backdrop press; all other backdrop presses stay consumed.
+type ModalMousePassThrough interface {
+	ModalMousePassThrough(e MouseEvent) bool
+}
+
 // ModalMouseCapture routes events before ordinary hit-testing or focus changes.
 // Its zero value is ready to use. Hosts and containers retain one instance across
 // events so a modal press owns its drag/release even after dismissing the modal.
@@ -62,14 +79,42 @@ func (c *ModalMouseCapture) Dispatch(root Widget, e MouseEvent) (result EventRes
 	if target == nil {
 		return Ignored(), false
 	}
+	rootEvent := e
+	e.X -= origin.X
+	e.Y -= origin.Y
+	if e.Action == MousePress && modalPassesThrough(root, target, rootEvent, e) {
+		// The target dismisses itself; the press then belongs to the root and
+		// its drag and release are routed like any other gesture.
+		target.ConsumeMouse(e)
+		return Ignored(), false
+	}
 	if e.Action == MousePress {
 		c.target, c.origin = target, origin
 	}
-	e.X -= origin.X
-	e.Y -= origin.Y
 	result = target.ConsumeMouse(e)
 	result.Consumed = true
 	return result, true
+}
+
+// modalPassesThrough reports whether a press on the modal's backdrop must reach
+// the root's widgets after dismissing the modal. rootEvent and local are the
+// same press in root and target coordinates.
+func modalPassesThrough(root, target Widget, rootEvent, local MouseEvent) bool {
+	backdrop, ok := target.(ModalMouseBackdrop)
+	if !ok || !backdrop.ModalMouseBackdrop(local) {
+		return false
+	}
+	for root != nil {
+		if host, ok := root.(ModalMousePassThrough); ok {
+			return host.ModalMousePassThrough(rootEvent)
+		}
+		wrapper, ok := root.(WidgetUnwrapper)
+		if !ok {
+			return false
+		}
+		root = wrapper.Unwrap()
+	}
+	return false
 }
 
 func childModalMouse(child Widget, allocation, parent Rect) (Widget, Rect) {

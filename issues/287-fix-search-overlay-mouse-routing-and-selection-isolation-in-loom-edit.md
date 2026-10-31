@@ -1,6 +1,6 @@
 # 287 — Fix search overlay mouse routing and selection isolation in loom edit
 
-**Status**: Open
+**Status**: Closed — Acceptance met on the installed binary (b17b784, 2026-10-31): a first click on Regex under an open popover now toggles the mode, hover and scroll focus pass in both directions, query/mode/stale-match/hint-bar checks pass, prev/next/close have no mouse regions and the hint text is a no-op; make test-q1 exit 0 with 43 packages ok and no FAIL or panic.
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
@@ -100,3 +100,22 @@ Searcher audit (read-only, code-read, not yet run): the live editor is `internal
   - Focus on hover and scroll: `Test287HoverAndScrollDoNotChangeFocus` (`edit_287_test.go:449`). Unit test only; not exercised in the PTY run. PARTIAL.
   - Search-bar controls other than the mode labels (prev/next, close): no dedicated test and not exercised in the PTY run. NOT RUN.
 - **Acceptance status (updated 2026-10-30, after 393 closed):** the `make test-q1` gate is no longer blocked: it passed on the host run after 393's fix (`4a19821`, `67f922a`). Acceptance is still not met in full, so the ticket stays open. Remaining: a PTY run of the popover-overlap case, focus on hover and scroll in a PTY, and the other search-bar controls (prev/next, close). Close only after those pass.
+
+## PTY round 2 (host, 2026-10-31, installed binary from 3d04ef2)
+
+- Hover and scroll over the search panel, focus in the editor: keys still go to the document. PASS.
+- Hover and scroll over the editor, focus in search: keys still go to the query (`Find: Q`). PASS.
+- Popover overlap, FAIL: search open, select on row 2 from col 40 to col 48. The formatting popover opens on row 4 and reaches the panel's mode row. The first click on Regex (row 4, col 72) only dismisses the popover; the mode stays `Normal *`. A second click toggles it to `Regex *`. The document is unchanged. Reproduces M4: the popover modal consumes the press before `searchRect`.
+- Other search-bar controls: the panel has no clickable prev, next or close buttons. `Enter: next` and `S-Enter: prev` are text hints, and close is `^F`. Confirmed by the Searcher audit (round 2): prev, next and close have no mouse hit regions. PTY check: a click on the `Enter: next` hint text does nothing.
+
+## Round 2 result (host, 2026-10-31, installed binary from `b17b784`)
+
+- Popover overlap: a first click on Regex under the popover dismisses the popover and toggles to `Regex *`. PASS. Before M4b it needed two clicks.
+- Hint text click: no change. PASS.
+- `make test-q1`: exit 0, 43 packages `ok`, no `FAIL` or `panic` lines (log in the session scratchpad).
+- The stale `popoverRelease` flag noted by the developer was assessed as harmless: the next press clears it, and no drag or release can start in the editor without a press.
+
+## Decision (round 2, host, 2026-10-31)
+
+- A press on the search panel while a popover is open dismisses the popover and is then handled by the panel, so the click reaches the control it hit. Reason: the M1 acceptance says panel clicks reach their action and do not fall through. Backdrop clicks outside the panel keep the existing dismiss-and-consume behaviour (Test304). Low-risk and reversible, recorded here.
+- Searcher audit (Claude Haiku, read-only) answers the hint-text and hit-region question, and confirms the modal path. Developer (Claude Sonnet) then fixes the modal contract in the library, not in the editor.

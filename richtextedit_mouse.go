@@ -232,3 +232,18 @@ func (e *RichTextEdit) registerClick(pos RichPosition) int {
 	e.lastClickAt, e.lastClickPos = at, pos
 	return e.clickCount
 }
+
+// ModalMouseBackdrop reports whether a left press at the editor-local position
+// only dismisses the format popover: no popup or menu is open and the press
+// lands outside every popover control. Hosts that opt in through
+// ModalMousePassThrough then route the press to the widget beneath.
+func (e *RichTextEdit) ModalMouseBackdrop(mouse MouseEvent) bool {
+	if e == nil || mouse.Action != MousePress || mouse.Button != MouseLeft {
+		return false
+	}
+	if (e.helpPopup != nil && e.helpPopup.Open) || (e.savePopup != nil && e.savePopup.Open) ||
+		(e.ShowFileBar && e.fileBar != nil && e.fileBar.menu.Open) {
+		return false
+	}
+	return e.popoverOpen() && !e.dragSelecting && !e.popoverHit(mouse.X, mouse.Y)
+}
