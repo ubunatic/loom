@@ -168,7 +168,7 @@ func newVideoWithOpener(path string, mode Mode, fps float64, poster image.Image,
 		return nil, fmt.Errorf("media: invalid frame rate %v", fps)
 	}
 	if fps <= 0 {
-		fps = 24
+		fps = loom.SpeccedDefaults.Media.DefaultFPS
 	}
 	widget.path = path
 	widget.fps = fps
@@ -430,9 +430,9 @@ func (w *Widget) drawControls(c *loom.Canvas, playing bool, zoom float64) {
 	plus.X += base.X
 	plus.Y += base.Y
 	if play.W > 0 {
-		label := "▶ Play"
+		label := loom.SpeccedDefaults.Media.PlayLabel
 		if playing {
-			label = "❚❚ Pause"
+			label = loom.SpeccedDefaults.Media.PauseLabel
 		}
 		c.Write(play.X, play.Y, label, style)
 	}

@@ -105,6 +105,7 @@ clock:
   start: "Start"
   stop: "Stop"
   reset: "Reset"
+  tick_interval: 1s
 
 paint_canvas:
   tune_label: "Tune"
@@ -116,14 +117,18 @@ progress_bar:
   done_pattern: ":"
   demo_interval: 150ms
   demo_step: 10
+  fallback_interval: 100ms
 
 media:
   loading_label: "loading"
   render_error_label: "render error"
+  play_label: "▶ Play"
+  pause_label: "❚❚ Pause"
   loading_threshold: 50ms
   loading_bar_width: 8
   zoom_factor: 1.25
   pan_step: 0.12
+  default_fps: 24
   bindings:
     play: ["space", " "]
     zoom_in: ["+", "="]
@@ -365,6 +370,11 @@ menu:
     left: ["left"]
     right: ["right"]
     activate: ["enter", " "]
+  checked_marker: "✓ "
+  unchecked_marker: "  "
+
+key_help:
+  separator: " · "
 
 form:
   bindings:

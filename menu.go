@@ -395,9 +395,9 @@ func menuItemLine(item MenuItem) string {
 }
 
 func menuItemLabel(item MenuItem) string {
-	mark := "  "
+	mark := SpeccedDefaults.Menu.UncheckedMarker
 	if item.Checked != nil && *item.Checked {
-		mark = "✓ "
+		mark = SpeccedDefaults.Menu.CheckedMarker
 	}
 	return mark + item.Label
 }
