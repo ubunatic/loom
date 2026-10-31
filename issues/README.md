@@ -57,4 +57,5 @@ upkeep.
 | 394 | [394-cover-waitforattach-wiring-in-servesession-and-remove-sleep-in-control-status-test.md](394-cover-waitforattach-wiring-in-servesession-and-remove-sleep-in-control-status-test.md) | Cover WaitForAttach wiring in serveSession and remove sleep in control status test | Open |
 | 395 | [395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md](395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md) | Guard internal/session against reading LOOM_SESSION env vars in library code | Open |
 | 396 | [396-epic-clear-77-harnez-lint-warnings-func-length-params-file-length.md](396-epic-clear-77-harnez-lint-warnings-func-length-params-file-length.md) | Epic: clear 77 harnez lint warnings (func length, params, file length) | Open |
+| 397 | [397-loom-session-view-only-attach-mode-to-observe-running-session-without-detaching-owner.md](397-loom-session-view-only-attach-mode-to-observe-running-session-without-detaching-owner.md) | loom session: view-only attach mode to observe running session without detaching owner | Open |
 <!-- harnez:end issues-active-index -->
