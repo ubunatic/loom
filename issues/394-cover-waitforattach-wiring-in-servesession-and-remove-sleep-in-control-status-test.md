@@ -1,6 +1,6 @@
 # 394 — Cover WaitForAttach wiring in serveSession and remove sleep in control status test
 
-**Status**: Open
+**Status**: Closed — serveSession WaitForAttach test added (111ec99); fails when server.go wiring removed; make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Test
