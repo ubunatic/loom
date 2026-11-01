@@ -35,7 +35,8 @@ func TestRenderEmojiGrid(t *testing.T) {
 	}
 
 	// Test all sections (no width filter)
-	all, err := RenderEmojiGrid(glyphs, "")
+	// Pin the VTE path: RenderEmojiGrid detects it from TERM etc. (issue 402).
+	all, err := RenderEmojiGridWithPath(glyphs, "", "vte")
 	if err != nil {
 		t.Fatalf("RenderEmojiGrid() err: %v", err)
 	}
@@ -47,7 +48,7 @@ func TestRenderEmojiGrid(t *testing.T) {
 
 	// Test specific width filters
 	for _, w := range []string{"1", "2", "3", "4"} {
-		out, err := RenderEmojiGrid(glyphs, w)
+		out, err := RenderEmojiGridWithPath(glyphs, w, "vte")
 		if err != nil {
 			t.Fatalf("RenderEmojiGrid(w=%s) err: %v", w, err)
 		}
@@ -57,7 +58,7 @@ func TestRenderEmojiGrid(t *testing.T) {
 	}
 
 	// Test invalid width filter
-	if _, err := RenderEmojiGrid(glyphs, "99"); err == nil {
+	if _, err := RenderEmojiGridWithPath(glyphs, "99", "vte"); err == nil {
 		t.Error("RenderEmojiGrid(w=99) expected error, got nil")
 	}
 
