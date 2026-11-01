@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/measure"
 )
 
 // TestLoomojiCategoryLineWidthsPTY validates that Loomoji's rendered screen rows
@@ -20,7 +21,11 @@ func TestLoomojiCategoryLineWidthsPTY(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping PTY category width test in short mode")
 	}
-	t.Setenv("LOOM_ZWJ", "join") // The test VT is not a terminal emulator and cannot answer DSR.
+	// The test VT is not a terminal emulator and cannot answer DSR. Measure
+	// reads LOOM_ZWJ once per process, so reload it here and again on cleanup.
+	t.Cleanup(measure.ReloadEnvSwitches)
+	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 
 	bin := filepath.Join(t.TempDir(), "loomoji")
 	if out, err := exec.Command("go", "build", "-o", bin, "ubunatic.com/loom/examples/loomoji").CombinedOutput(); err != nil {

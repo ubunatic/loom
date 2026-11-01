@@ -132,7 +132,9 @@ func TestCanvasRowSanitizesCellText(t *testing.T) {
 func TestZWJEmojiStillOneCluster(t *testing.T) {
 	for _, mode := range []string{"join", "split"} {
 		t.Run(mode, func(t *testing.T) {
+			t.Cleanup(measure.ReloadEnvSwitches)
 			t.Setenv("LOOM_ZWJ", mode)
+			measure.ReloadEnvSwitches()
 			for i, e := range []string{"👨‍👩‍👧", "🏳️‍🌈", "❤️‍🔥"} {
 				cells := ParseANSI(e)
 				if len(cells) == 0 || cells[0].Text != e {

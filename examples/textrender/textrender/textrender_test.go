@@ -13,11 +13,14 @@ import (
 
 	"ubunatic.com/loom"
 	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/measure"
 )
 
 // TestWidths verifies that all test cases have correct display widths
 func TestWidths(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	for _, tc := range Cases {
 		got := loom.StringWidth(tc.Text)
 		if divergence, ok := knownDivergences[tc.Label]; ok {

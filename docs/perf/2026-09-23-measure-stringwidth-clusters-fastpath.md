@@ -15,7 +15,7 @@ This change preserves `StringWidthOld`, `ClustersOld`, `plainTerminalTextOld`, a
 3. `plainTerminalTextNew` & `plainTerminalLinesNew`:
    - Fast paths for clean ASCII and ANSI text with pre-allocated builder capacity.
 
-The fast path is enabled by default and can be fallbacked to the reference implementation by setting the environment variable `LOOM_FAST_MEASURE=0` (or `false`/`off`).
+The fast path is enabled by default and can be fallbacked to the reference implementation by setting the environment variable `LOOM_FAST_MEASURE=0` (or `false`/`off`). Measure reads this switch once at process start (issue 403); call `measure.ReloadEnvSwitches()` after changing it at runtime.
 
 ## Hardware Target
 - Target OS: Modern Linux x86_64 / GNOME / Wayland

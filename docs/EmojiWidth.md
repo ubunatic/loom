@@ -91,7 +91,7 @@ and alacritty draw the parts separately (8 columns). Regional-indicator flags ar
 
 - `Pane.run` calls `measure.DetectZWJMode` after entering raw mode and the screen: it writes a ZWJ
   family, reads the cursor column with `ESC[6n` (200 ms timeout), and erases the probe row.
-- Default without an answer is `split`. `LOOM_ZWJ=join|split` overrides detection; PTY tests pin `join`.
+- Default without an answer is `split`. `LOOM_ZWJ=join|split` overrides detection; PTY tests pin `join`. Measure reads this variable once at process start; call `measure.ReloadEnvSwitches()` after changing it at runtime.
 - On Windows builds (`GOOS=windows`), Unix `poll` is unavailable; `readProbeCursor` returns promptly with `zwjSplit` default fallback so measuring emoji and compiling downstream projects does not block or fail.
 - Importing `measure` does no terminal I/O.
 - `loom-probe` prints the measured advances for a terminal.

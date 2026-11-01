@@ -71,7 +71,10 @@ optional final argument for layout-only comparisons.
 New concurrency tests should use channels, barriers or fake clocks instead of
 wall-clock sleeps. Scale unavoidable timeout budgets for race builds. Use
 `LOOM_ZWJ=join` for deterministic joined emoji, and `LOOMCOLOR=truecolor` when a test
-asserts colors rather than terminal profile detection.
+asserts colors rather than terminal profile detection. Measure reads `LOOM_ZWJ`,
+`LOOM_FAST_MEASURE` and `LOOM_RENDER_PATH` once at process start, so a test that sets them with
+`t.Setenv` must register `t.Cleanup(measure.ReloadEnvSwitches)` before `t.Setenv`, then call
+`measure.ReloadEnvSwitches()` after it.
 
 See [APIStability.md](APIStability.md) for the exported API review/update workflow.
 

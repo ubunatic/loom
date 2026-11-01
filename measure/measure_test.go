@@ -15,7 +15,9 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	// Env switches are snapshotted at package init, which runs before TestMain.
 	_ = os.Setenv("LOOM_ZWJ", "join")
+	ReloadEnvSwitches()
 	os.Exit(m.Run())
 }
 
@@ -79,13 +81,17 @@ func TestStringWidthZWJModeOverride(t *testing.T) {
 		want int
 	}{{"join", 2}, {"split", 6}} {
 		t.Run(tc.mode, func(t *testing.T) {
+			t.Cleanup(ReloadEnvSwitches)
 			t.Setenv("LOOM_ZWJ", tc.mode)
+			ReloadEnvSwitches()
 			if got := StringWidth("👨‍👩‍👧"); got != tc.want {
 				t.Fatalf("StringWidth(family) = %d, want %d for LOOM_ZWJ=%s", got, tc.want, tc.mode)
 			}
 		})
 	}
+	t.Cleanup(ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "split")
+	ReloadEnvSwitches()
 	if got := StringWidth("❤️‍🔥"); got != 4 {
 		t.Fatalf("StringWidth(heart on fire) = %d, want 4 when split", got)
 	}
@@ -313,6 +319,40 @@ func TestDetectRenderPath(t *testing.T) {
 			t.Errorf("DetectRenderPath() = %v, want %v", got, RenderPathVTE)
 		}
 	})
+}
+
+func TestEnvSwitchesReadOnceUntilReload(t *testing.T) {
+	t.Cleanup(ReloadEnvSwitches)
+	ReloadEnvSwitches()
+	before := ActiveRenderPath()
+	other := RenderPathStandard
+	if before == RenderPathStandard {
+		other = RenderPathVTE
+	}
+	t.Setenv("LOOM_RENDER_PATH", "")
+	t.Setenv("FOOT_TERMINAL_PID", "")
+	t.Setenv("FOOT_APP_ID", "")
+	t.Setenv("TERM", "")
+	t.Setenv("TERM_PROGRAM", "")
+	t.Setenv("VTE_VERSION", "")
+	t.Setenv("LOOM_FAST_MEASURE", "off")
+	if !useFastMeasure() {
+		t.Fatal("useFastMeasure() changed without ReloadEnvSwitches")
+	}
+	if got := ActiveRenderPath(); got != before {
+		t.Fatalf("ActiveRenderPath() = %v without reload, want cached %v", got, before)
+	}
+	t.Setenv("LOOM_RENDER_PATH", map[RenderPath]string{RenderPathVTE: "vte", RenderPathStandard: "standard"}[other])
+	if got := ActiveRenderPath(); got != before {
+		t.Fatalf("ActiveRenderPath() = %v after Setenv without reload, want cached %v", got, before)
+	}
+	ReloadEnvSwitches()
+	if useFastMeasure() {
+		t.Fatal("useFastMeasure() still true after reload with LOOM_FAST_MEASURE=off")
+	}
+	if got := ActiveRenderPath(); got != other {
+		t.Fatalf("ActiveRenderPath() = %v after reload, want %v", got, other)
+	}
 }
 
 func TestRenderPathOverride(t *testing.T) {
@@ -569,5 +609,31 @@ func BenchmarkPlainTerminalText_New(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		_ = plainTerminalTextNew(benchTextANSI)
+	}
+}
+
+// Dispatch benchmarks exercise the public entry points, which read the
+// measure env switches on every call. The BenchmarkStringWidth_New family
+// above calls the implementation directly and does not include dispatch cost.
+var benchTextZWJ = "ok 👨‍👩‍👧 done"
+
+func BenchmarkStringWidthDispatch(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidth(benchTextPlain)
+	}
+}
+
+func BenchmarkStringWidthDispatchZWJ(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = StringWidth(benchTextZWJ)
+	}
+}
+
+func BenchmarkActiveRenderPath(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = ActiveRenderPath()
 	}
 }

@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sys/unix"
 	"golang.org/x/term"
 	"ubunatic.com/loom/internal/ptytest"
+	"ubunatic.com/loom/measure"
 )
 
 type firstDrawBoundsProbe struct {
@@ -250,7 +251,9 @@ func TestPaneAlternateScreenModeRestoresPrimaryScreen(t *testing.T) {
 // convention (docs/Canary.md).
 func openPTY(t *testing.T) (master, slave *os.File) {
 	t.Helper()
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join") // This test PTY has no terminal emulator to answer DSR.
+	measure.ReloadEnvSwitches()
 	return openPTYForProbe(t)
 }
 
@@ -741,7 +744,9 @@ func TestPaneFlushesOversizedUnterminatedPaste(t *testing.T) {
 }
 
 func TestPaneProbesZWJAfterEnteringAltScreen(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "")
+	measure.ReloadEnvSwitches()
 	master, slave := openPTYForProbe(t)
 	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 4, cols: 20, startRow: 1, ResizeConfig: DefaultResizeConfig()}
 	p.ResizeConfig.AltScreen = true
