@@ -20,3 +20,16 @@ Ctrl+F leave line 1 on top. The binary from before 323 (b7d2fb7) behaves the sam
 
 - Possibly the CLI view wraps `View` without passing these keys, or `lastH` is 0 on first page; check
   live code.
+
+## Audit (Jules, 2026-11-01, checked against 5c3c603)
+
+Still valid. `ansiView.ConsumeKey` in `cmd/loom/main.go:450-453` hardcodes `pgup` and
+`pgdown`/`pgdn`/`pagedown` instead of reading `view.bindings.page_up`/`page_down`
+(`spec/defaults.yaml:356-357`, which add `ctrl-f`, `" "`, `pageup`, `ctrl-b`, `b`). Step is
+`Pane.ViewPanStep` (`main.go:430`), not `lastH`. Report: `reports/jules/368.md`.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+|---|---|---|---|---|
+| audit | jules-audit-368 | 1133238704641422918 | github #40 | captured; owner prompted Jules to open the PR |
