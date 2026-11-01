@@ -189,12 +189,11 @@ func TestServeSessionIgnoresWaitAttachEnv(t *testing.T) {
 }
 
 func TestServeSessionWaitForAttachHoldsChildUntilAttach(t *testing.T) {
+	t.Setenv("LOOM_SOCKET_DIR", t.TempDir())
 	ctx, cancel := context.WithCancel(context.Background())
-	server := newSessionServer(nil)
-	server.waitForClient = true
 	done := make(chan error, 1)
 	go func() {
-		done <- runSessionWithServer(ctx, server, Options{}, "bash", "-c", "printf 'STARTED\\n'; while :; do sleep 1; done")
+		done <- serveSession(ctx, "wait-test", Options{WaitForAttach: true}, "bash", "-c", "printf 'STARTED\\n'; while :; do sleep 1; done")
 	}()
 	t.Cleanup(func() {
 		cancel()
@@ -205,12 +204,31 @@ func TestServeSessionWaitForAttachHoldsChildUntilAttach(t *testing.T) {
 		}
 	})
 
-	server.mu.Lock()
-	tabs := server.tabCount
-	server.mu.Unlock()
-	if tabs != 0 {
-		t.Fatalf("tabs before attach = %d, want 0 while waiting for a client", tabs)
+	path, err := sessionSocketPath("wait-test")
+	if err != nil {
+		t.Fatal(err)
 	}
+
+	timer := time.NewTimer(5 * time.Second * ptytest.RaceFactor)
+	defer timer.Stop()
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+	var status SessionInfo
+	for {
+		status, err = SessionStatus("wait-test")
+		if err == nil {
+			break
+		}
+		select {
+		case <-ticker.C:
+		case <-timer.C:
+			t.Fatalf("timed out waiting for session marker %s", path)
+		}
+	}
+	if status.Tabs != 0 {
+		t.Fatalf("tabs before attach = %d, want 0 while waiting for a client", status.Tabs)
+	}
+
 	select {
 	case err := <-done:
 		t.Fatalf("session ended while waiting for a client: %v", err)
@@ -219,8 +237,14 @@ func TestServeSessionWaitForAttachHoldsChildUntilAttach(t *testing.T) {
 
 	// Output only reaches an attached client, so seeing it proves the child
 	// started after the attach released the gate.
-	client, _ := attachTestClient(t, server, 80, 24)
+	client, err := net.Dial("unix", path)
+	if err != nil {
+		t.Fatal(err)
+	}
 	defer client.Close()
+	if err := writeMessage(client, ipcMessage{Type: msgAttach, Cols: 80, Rows: 24}); err != nil {
+		t.Fatal(err)
+	}
 	_ = readServerStatus(t, client)
 	if got := readOutputUntil(t, client, "STARTED"); !strings.Contains(got, "STARTED") {
 		t.Fatalf("child output after attach = %q", got)
@@ -235,20 +259,29 @@ func TestServerControlStatusListDetachAndKill(t *testing.T) {
 	go func() {
 		done <- serveSession(ctx, "control-test", Options{}, "bash", "-c", "printf 'CONTROL_READY\\n'; while :; do sleep 1; done")
 	}()
-	deadline := time.Now().Add(5 * time.Second)
+
+	path, err := sessionSocketPath("control-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	timer := time.NewTimer(5 * time.Second * ptytest.RaceFactor)
+	defer timer.Stop()
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
 	var status SessionInfo
-	var err error
-	for time.Now().Before(deadline) {
+	for {
 		status, err = SessionStatus("control-test")
-		if err == nil {
+		if err == nil && status.Tabs == 1 {
 			break
 		}
-		time.Sleep(20 * time.Millisecond)
+		select {
+		case <-ticker.C:
+		case <-timer.C:
+			t.Fatalf("session did not become ready: %v, status=%#v", err, status)
+		}
 	}
-	if err != nil {
-		t.Fatalf("session did not become ready: %v", err)
-	}
-	if status.Name != "control-test" || status.Status != "detached" || status.Tabs != 1 || status.PID <= 0 {
+	if status.Name != "control-test" || status.Status != "detached" || status.PID <= 0 {
 		t.Fatalf("SessionStatus() = %#v", status)
 	}
 	items, err := ListSessions()
@@ -259,10 +292,6 @@ func TestServerControlStatusListDetachAndKill(t *testing.T) {
 		t.Fatalf("ListSessions() = %#v", items)
 	}
 
-	path, err := sessionSocketPath("control-test")
-	if err != nil {
-		t.Fatal(err)
-	}
 	client, err := net.Dial("unix", path)
 	if err != nil {
 		t.Fatal(err)
