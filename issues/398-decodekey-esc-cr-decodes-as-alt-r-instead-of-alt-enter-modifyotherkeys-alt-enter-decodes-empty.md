@@ -1,6 +1,6 @@
 # 398 — DecodeKey: ESC CR decodes as alt-\r instead of alt-enter; modifyOtherKeys alt-enter decodes empty
 
-**Status**: Open
+**Status**: Closed — Fixed in 86c0181: ESC CR and ESC[27;3;13~ decode to alt-enter (also shift/ctrl-enter via modifyOtherKeys); TestDecodeAltEnter 9 rows green, root pkg ok; reviewer opus:low approved. Only suite failure TestRenderEmojiGrid is pre-existing on HEAD~1 (filed separately).
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
