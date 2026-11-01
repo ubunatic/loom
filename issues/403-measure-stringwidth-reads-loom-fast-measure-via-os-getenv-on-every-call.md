@@ -1,6 +1,7 @@
 # 403 — measure: StringWidth reads LOOM_FAST_MEASURE via os.Getenv on every call
 
-**Status**: Open
+**Status**: Closed — Fixed in 1e44167. Env switches are read once into an atomic snapshot (measure/env.go, ReloadEnvSwitches for tests). Bench (-benchtime=1s -count=3): StringWidth ASCII 36.8 -> 18.9 ns/op; ActiveRenderPath 64.5 -> 2.3 ns/op; 0 allocs. make test-q1 green (exit 0, no --- FAIL; log /tmp/issue403-test-q1-2.log).
+**Closed-By**: claude:haiku:med, session d403
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Performance
