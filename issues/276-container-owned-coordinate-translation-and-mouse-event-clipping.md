@@ -1,6 +1,6 @@
 # 276 — Container-owned coordinate translation and mouse event clipping
 
-**Status**: Open
+**Status**: Closed — Already done (Jules audit, host-verified at 5c3c603): Stack (stack.go:171-173), Split (split.go:211) and Grid (grid.go:488) translate mouse events to child-local coordinates and clip by child rect; Viewport clips at viewport.go:193; docs/Widgets.md:96 documents the contract; the gallery RTE example is gone. Report: reports/jules/276.md
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Architecture

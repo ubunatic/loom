@@ -34,7 +34,6 @@ upkeep.
 | 266 | [266-richtextedit-s-f5-box-push-drawing-mode.md](266-richtextedit-s-f5-box-push-drawing-mode.md) | RichTextEdit S-F5 box-push drawing mode | Open |
 | 274 | [274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md](274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md) | Overlay and modal layer for Canvas to eliminate local popup stacks | Open |
 | 275 | [275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md](275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) | Decouple focus state updates from Popup and Widget Draw rendering | Open |
-| 276 | [276-container-owned-coordinate-translation-and-mouse-event-clipping.md](276-container-owned-coordinate-translation-and-mouse-event-clipping.md) | Container-owned coordinate translation and mouse event clipping | Open |
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
 | 279 | [279-add-loom-edit-command-to-open-a-file-in-richtextedit.md](279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) | Add loom edit command to open a file in RichTextEdit | Open |
 | 280 | [280-add-mouse-capture-flag-to-loom-edit.md](280-add-mouse-capture-flag-to-loom-edit.md) | Add mouse capture flag to loom edit | Open |
