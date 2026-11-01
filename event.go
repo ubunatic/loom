@@ -162,8 +162,12 @@ func DecodeKey(b []byte) KeyEvent {
 		if key, ok := decodeModifyOtherKeys(b); ok {
 			return key
 		}
+		// ESC CR is legacy Alt+Enter (issue 398).
+		if len(b) == 2 && b[1] == '\r' {
+			return KeyEvent{Key: "alt-enter"}
+		}
 		// ESC + control byte is Ctrl+Alt+letter on legacy terminals; Backspace,
-		// Tab, LF and CR keep their historical alt- names.
+		// Tab and LF keep their historical alt- names.
 		if len(b) == 2 && b[1] >= 1 && b[1] <= 26 && b[1] != 8 && b[1] != 9 && b[1] != 10 && b[1] != 13 {
 			return KeyEvent{Key: "ctrl-alt-" + string(rune('a'+b[1]-1))}
 		}
@@ -456,7 +460,8 @@ func kittyFunctionalKey(code int) (string, bool) {
 }
 
 // decodeModifyOtherKeys decodes the xterm modifyOtherKeys form
-// \x1b[27;<mod>;<code>~ for modified letters.
+// \x1b[27;<mod>;<code>~ for modified letters and Enter (code 13), named
+// like the kitty CSI-u forms: alt-enter, shift-enter, ctrl-enter.
 func decodeModifyOtherKeys(b []byte) (KeyEvent, bool) {
 	if len(b) < 8 || b[1] != '[' || b[len(b)-1] != '~' {
 		return KeyEvent{}, false
@@ -467,10 +472,17 @@ func decodeModifyOtherKeys(b []byte) (KeyEvent, bool) {
 	}
 	code, err := strconv.Atoi(fields[2])
 	prefix := csiModifierPrefix(fields[1])
-	if err != nil || prefix == "" || code < 'a' || code > 'z' {
+	name := ""
+	switch {
+	case code >= 'a' && code <= 'z':
+		name = string(rune(code))
+	case code == 13:
+		name = "enter"
+	}
+	if err != nil || prefix == "" || name == "" {
 		return KeyEvent{}, false
 	}
-	return KeyEvent{Key: prefix + string(rune(code))}, true
+	return KeyEvent{Key: prefix + name}, true
 }
 
 // DecodeMouse parses an SGR (\x1b[<…M or \x1b[<…m) mouse report.

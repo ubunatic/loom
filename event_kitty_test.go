@@ -97,7 +97,6 @@ func TestDecodeLegacyKeysUnchanged(t *testing.T) {
 		"\x08":   "backspace",
 		"\x1b":   "esc",
 		"\x1b[Z": "shift-tab",
-		"\x1b\r": "alt-\r",
 		"\x1ba":  "alt-a",
 		"\x01":   "ctrl-a",
 	} {

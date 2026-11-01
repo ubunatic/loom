@@ -84,6 +84,11 @@ applications; see `KeyDefaults.md` for the library's default key actions.
 - RichTextEdit uses `Ctrl+Shift+Left/Right` for word selection, `Ctrl+Home/End` for document boundaries, Ctrl+Shift+Home/End to extend there, and Shift+PgUp/PgDn to extend by a page. Page movement uses the visible editor height. Select all is bound to `Ctrl+Alt+A`, `Alt+A`, and `Super+A`; Ctrl+A remains line start. Legacy Alt+A is `ESC a`, Ctrl+Alt+A is `ESC ^A`, and CSI-u terminals encode these and Super+A distinctly. On macOS, configure the terminal to send Option as Meta so Alt bindings reach Loom. Super+A works when the terminal forwards the Super/Cmd key (for example, kitty, WezTerm, or Ghostty).
 - `0x00` decodes to `ctrl-space`. In RichTextEdit, Ctrl+Space closes an open formatting popover or submenu, clears its selection, and leaves the cursor in place. A color picker returns to the bar on Esc; choosing a color closes the bar by default. The focused bar closes on either Up or Down. When closed, Ctrl+Space selects the smallest closed sharp or rounded box perimeter under the cursor, falls back to word selection, or opens a cursor-anchored popover on whitespace. `^D` (Ctrl+D) or F5 toggles box drawing mode; `Enter` or `Esc` exits box drawing mode without inserting text. Within the popover, "Draw" is nested under the "Box" submenu. Up/Down may place the caret past line ends or below the last line; typing or drawing there materializes padding, while navigation alone leaves the document unchanged. Plain `0x09` is always `tab`; `ctrl-i` exists only in the kitty/CSI-u form (`ESC[105;5u`), which also yields `ctrl-shift-<letter>` keys. Legacy terminals send `ctrl-shift-b` as plain `0x02` (`ctrl-b`); RichTextEdit does not bind Ctrl+Shift+B.
 
+Alt+Enter decodes as `alt-enter` in every mode: legacy `ESC CR`, xterm
+modifyOtherKeys `ESC[27;3;13~`, and kitty `ESC[13;3u`. modifyOtherKeys
+`ESC[27;2;13~` and `ESC[27;5;13~` decode as `shift-enter` and `ctrl-enter`,
+matching the kitty names. `ESC LF` keeps its historical name `alt-\n` (issue 398).
+
 ### Kitty keyboard protocol (opt-in)
 
 Legacy terminals send Enter, Ctrl+J and Shift+Enter as the same byte, and
