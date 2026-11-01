@@ -21,7 +21,7 @@ import (
 // never waits for a kitty reply that a legacy terminal will not send.
 const kittyQuery = "\x1b[?u\x1b[c"
 
-const keysHint = "Try Ctrl-1..Ctrl-9, Ctrl-3, Ctrl-8, Esc, Alt-1, Ctrl-A, Enter, Shift-Enter, Tab, Backspace. Press q to end this phase."
+const keysHint = "Try Ctrl-1..Ctrl-9, Ctrl-3, Ctrl-8, Esc, Alt-1, Ctrl-A, Enter, Shift-Enter, Alt-Enter, Tab, Backspace. Press q to end this phase."
 
 // modifyOtherKeys2 enables xterm modifyOtherKeys level 2, which reports
 // modified keys as CSI 27 ; <mod> ; <code> ~. terminal.Restore resets it.
