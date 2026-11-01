@@ -18,14 +18,7 @@ const (
 	zwjJoin
 )
 
-var detectedZWJMode atomic.Int32
-
-func init() {
-	detectedZWJMode.Store(zwjSplit)
-	if mode, ok := parseZWJMode(os.Getenv("LOOM_ZWJ")); ok {
-		detectedZWJMode.Store(mode)
-	}
-}
+var detectedZWJMode atomic.Int32 // zero value is zwjSplit
 
 // DetectZWJMode probes an interactive terminal after its caller has entered
 // raw mode and selected its screen. It is safe to call with non-terminal files.
@@ -40,11 +33,12 @@ func DetectZWJMode(input, output *os.File, row int) {
 }
 
 // ZWJClusterWidth reports the visible width of a ZWJ sequence under the
-// startup terminal probe, with LOOM_ZWJ=join|split taking precedence.
+// startup terminal probe, with LOOM_ZWJ=join|split taking precedence. The
+// override is read at process start (see ReloadEnvSwitches).
 func ZWJClusterWidth(cluster string) int {
 	mode := detectedZWJMode.Load()
-	if override, ok := parseZWJMode(os.Getenv("LOOM_ZWJ")); ok {
-		mode = override
+	if s := env(); s.zwjOverrideSet {
+		mode = s.zwjOverride
 	}
 	if mode == zwjJoin {
 		return ActiveEmojiSpec().ZWJDefaultWidth

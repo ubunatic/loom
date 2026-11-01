@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"golang.org/x/sys/unix"
+	"ubunatic.com/loom/measure"
 )
 
 const suspendMarker = "<<child-runs>>"
@@ -167,7 +168,9 @@ func TestPaneSuspendHandsTTYToChild(t *testing.T) {
 	if err != nil {
 		t.Skip("head not available")
 	}
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	master, slave, cooked := openPTYWithCookedState(t)
 	setPTYSize(t, master, 40, 10)
 	// Answer the resume cursor query with typeahead ahead of the report: the
@@ -268,7 +271,9 @@ func TestPaneSuspendHandsTTYToChild(t *testing.T) {
 // the alternate screen; nothing is drawn meanwhile and the first resumed frame
 // has the new size.
 func TestPaneSuspendResizeAppliesOnResume(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	master, slave, cooked := openPTYWithCookedState(t)
 	setPTYSize(t, master, 40, 10)
 	capture := capturePTY(master, "")
@@ -378,7 +383,9 @@ func TestPaneSuspendRestoresAfterPanicAndError(t *testing.T) {
 // TestPaneSuspendCloseInsideFn closes the pane from fn: Suspend must not
 // resume onto the closed tty, and Run must return cleanly.
 func TestPaneSuspendCloseInsideFn(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	master, slave, cooked := openPTYWithCookedState(t)
 	setPTYSize(t, master, 40, 10)
 	capture := capturePTY(master, "")

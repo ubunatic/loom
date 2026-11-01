@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/measure"
 )
 
 func TestMeasureWidgetStagesAndConfirmsPages(t *testing.T) {
@@ -137,7 +138,9 @@ func TestApplyRenderMode(t *testing.T) {
 }
 
 func TestEvaluateVTEModeAndWidth(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	tests := []struct {
 		glyph     string
 		wantMode  string

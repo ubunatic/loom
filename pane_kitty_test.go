@@ -7,13 +7,17 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"ubunatic.com/loom/measure"
 )
 
 // TestPaneKittyKeyboardPushPop runs an opted-in pane on a PTY: the flag is
 // pushed on start, popped before a suspended child runs, pushed again on
 // resume and popped on close; CSI-u keys reach the widget by name.
 func TestPaneKittyKeyboardPushPop(t *testing.T) {
+	t.Cleanup(measure.ReloadEnvSwitches)
 	t.Setenv("LOOM_ZWJ", "join")
+	measure.ReloadEnvSwitches()
 	master, slave, cooked := openPTYWithCookedState(t)
 	setPTYSize(t, master, 40, 10)
 	capture := capturePTY(master, "")
@@ -88,7 +92,9 @@ func (w *panicWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 // mode, and that a pane without the opt-in never pushes it.
 func TestPaneKittyKeyboardPanicPops(t *testing.T) {
 	for _, opt := range []bool{true, false} {
+		t.Cleanup(measure.ReloadEnvSwitches)
 		t.Setenv("LOOM_ZWJ", "join")
+		measure.ReloadEnvSwitches()
 		master, slave, cooked := openPTYWithCookedState(t)
 		setPTYSize(t, master, 40, 10)
 		capture := capturePTY(master, "")

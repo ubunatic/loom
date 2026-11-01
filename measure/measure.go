@@ -6,16 +6,15 @@
 package measure
 
 import (
-	"os"
 	"strings"
 	"unicode"
 	"unicode/utf8"
 )
 
-// useFastMeasure returns true unless LOOM_FAST_MEASURE is set to "0", "false", or "off".
+// useFastMeasure reports whether the fast measure path is enabled. The switch
+// is LOOM_FAST_MEASURE=0|false|off, read once at process start (see env.go).
 func useFastMeasure() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_FAST_MEASURE")))
-	return v != "0" && v != "false" && v != "off"
+	return env().fastMeasure
 }
 
 // Size describes the visible terminal-cell dimensions of text lines.

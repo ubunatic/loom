@@ -215,12 +215,13 @@ func DetectRenderPath() RenderPath {
 	return RenderPathVTE
 }
 
-// ActiveRenderPath returns the currently active RenderPath (either manually overridden or autodetected).
+// ActiveRenderPath returns the currently active RenderPath (either manually
+// overridden or autodetected once from the environment, see ReloadEnvSwitches).
 func ActiveRenderPath() RenderPath {
 	if p := currentRenderPath.Load(); p != nil {
 		return *p
 	}
-	return DetectRenderPath()
+	return env().detectedRenderPath
 }
 
 // SetRenderPath sets an explicit override for the active RenderPath.

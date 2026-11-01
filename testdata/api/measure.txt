@@ -75,6 +75,14 @@ func NonVTEMode(glyph string) string
 func Pad(text string, width int, right bool) string
     Pad extends text to width terminal cells using spaces.
 
+func ReloadEnvSwitches()
+    ReloadEnvSwitches re-reads LOOM_FAST_MEASURE, LOOM_ZWJ and LOOM_RENDER_PATH
+    and the terminal variables used by DetectRenderPath. Measure reads
+    these once at process start, so a program or test that changes them
+    at runtime must call ReloadEnvSwitches for the change to take effect.
+    Tests should register t.Cleanup(measure.ReloadEnvSwitches) before t.Setenv,
+    so the restore is seen.
+
 func RenderMode(glyph string, path RenderPath) string
     RenderMode returns the authoritative rendering mode for a glyph for the
     given RenderPath.
@@ -115,6 +123,7 @@ func VTEMode(glyph string) string
 func ZWJClusterWidth(cluster string) int
     ZWJClusterWidth reports the visible width of a ZWJ sequence under the
     startup terminal probe, with LOOM_ZWJ=join|split taking precedence.
+    The override is read at process start (see ReloadEnvSwitches).
 
 
 TYPES
@@ -189,8 +198,9 @@ const (
 	RenderPathNonVTE RenderPath = "non-vte"
 )
 func ActiveRenderPath() RenderPath
-    ActiveRenderPath returns the currently active RenderPath (either manually
-    overridden or autodetected).
+    ActiveRenderPath returns the currently active RenderPath (either
+    manually overridden or autodetected once from the environment, see
+    ReloadEnvSwitches).
 
 func DetectRenderPath() RenderPath
     DetectRenderPath inspects the process environment and terminal variables to
