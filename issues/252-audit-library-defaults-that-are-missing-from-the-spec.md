@@ -33,3 +33,7 @@ Keep in Go: algorithm flow and validation predicates; loop/index/buffer mechanic
 
 ## 3. Implementation & Verification Plan
 Resolve the recommendations set by set. For accepted values, add YAML keys and schema declarations, load them from the embedded spec, remove duplicate Go defaults, and add integrity tests proving runtime consumption. Preserve code for implementation mechanics and record any consciously retained policy constants. Run spec validation and the relevant test/build targets after implementation; accepted candidates are implemented as recorded in the progress note in section 2, and the remaining candidates stay as the open decisions listed there.
+
+## Jules audit (2026-11-01, GitHub main 5c3c603)
+
+Verdict: partly done, matching the 2026-10-31 progress note. 10/11 refs hold (clock.tick_interval is not at `spec/defaults.yaml:113`). Remaining work is the owner decisions already listed above: `yaml.go:140,143` minH/maxH, `internal/session/debug.go:19-23`, `version.go:3`, plus `resize.go:56` repeating mode IDs. Report: `reports/jules/252.md`.
