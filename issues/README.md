@@ -58,4 +58,5 @@ upkeep.
 | 395 | [395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md](395-guard-internal-session-against-reading-loom-session-env-vars-in-library-code.md) | Guard internal/session against reading LOOM_SESSION env vars in library code | Open |
 | 396 | [396-epic-clear-77-harnez-lint-warnings-func-length-params-file-length.md](396-epic-clear-77-harnez-lint-warnings-func-length-params-file-length.md) | Epic: clear 77 harnez lint warnings (func length, params, file length) | Open |
 | 397 | [397-loom-session-view-only-attach-mode-to-observe-running-session-without-detaching-owner.md](397-loom-session-view-only-attach-mode-to-observe-running-session-without-detaching-owner.md) | loom session: view-only attach mode to observe running session without detaching owner | Open |
+| 398 | [398-decodekey-esc-cr-decodes-as-alt-r-instead-of-alt-enter-modifyotherkeys-alt-enter-decodes-empty.md](398-decodekey-esc-cr-decodes-as-alt-r-instead-of-alt-enter-modifyotherkeys-alt-enter-decodes-empty.md) | DecodeKey: ESC CR decodes as alt-\r instead of alt-enter; modifyOtherKeys alt-enter decodes empty | Open |
 <!-- harnez:end issues-active-index -->
