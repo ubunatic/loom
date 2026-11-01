@@ -1,6 +1,7 @@
 # 402 — TestRenderEmojiGrid fails: expects VTE Width 2 header, grid prints STANDARD Width 2
 
-**Status**: Open
+**Status**: Closed — Root cause: TestRenderEmojiGrid used env-detected RenderEmojiGrid, so TERM=foot selected the Standard render path and the grid output diverged. Fix pins the VTE path via RenderEmojiGridWithPath(..., "vte") (commit 3ab57ba). Green make test-q1 run: examples/loomoji and examples/loomoji/loomoji ok, no --- FAIL (log /tmp/loom-issue402-test-q1-2.log).
+**Closed-By**: claude:haiku:med, session t402
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

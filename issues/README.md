@@ -61,6 +61,5 @@ upkeep.
 | 399 | [399-loom-measure-warns-trailing-whitespace-on-full-width-blank-padding-rows.md](399-loom-measure-warns-trailing-whitespace-on-full-width-blank-padding-rows.md) | loom measure warns trailing whitespace on full-width blank padding rows | Open |
 | 400 | [400-loom-view-and-loom-probe-keys-need-dev-tty-add-headless-key-input-for-agents.md](400-loom-view-and-loom-probe-keys-need-dev-tty-add-headless-key-input-for-agents.md) | loom view and loom-probe keys need /dev/tty; add headless key input for agents | Open |
 | 401 | [401-scrolling-word-wrapping-transcript-view-with-follow-end-and-scroll-indicator.md](401-scrolling-word-wrapping-transcript-view-with-follow-end-and-scroll-indicator.md) | Scrolling word-wrapping transcript view with follow-end and scroll indicator | Open |
-| 402 | [402-testrenderemojigrid-fails-expects-vte-width-2-header-grid-prints-standard-width-2.md](402-testrenderemojigrid-fails-expects-vte-width-2-header-grid-prints-standard-width-2.md) | TestRenderEmojiGrid fails: expects VTE Width 2 header, grid prints STANDARD Width 2 | Open |
 | 403 | [403-measure-stringwidth-reads-loom-fast-measure-via-os-getenv-on-every-call.md](403-measure-stringwidth-reads-loom-fast-measure-via-os-getenv-on-every-call.md) | measure: StringWidth reads LOOM_FAST_MEASURE via os.Getenv on every call | Open |
 <!-- harnez:end issues-active-index -->
