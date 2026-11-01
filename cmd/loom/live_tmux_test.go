@@ -37,8 +37,15 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 		t.Fatalf("failed to build loom: %v\n%s", err, out)
 	}
 
+	env := []string{"PATH=" + binDir + ":" + filepath.Dir(tmux) + ":" + os.Getenv("PATH")}
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "PATH=") {
+			env = append(env, e)
+		}
+	}
+
 	cmd := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
-	cmd.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
+	cmd.Env = env
 	cmd.Stdin = strings.NewReader("pause 0.12\nsnap before\ndiff " + want + "\nkeys Enter\nwait done\nsnap after\n")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -63,7 +70,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 		t.Fatal(err)
 	}
 	diff := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--", "bash", "-c", "printf 'ready\\n'; read -r line")
-	diff.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
+	diff.Env = env
 	diff.Stdin = strings.NewReader("diff " + wrong + "\n")
 	diffOutput, err := diff.CombinedOutput()
 	if err == nil || !strings.Contains(string(diffOutput), "screens differ") {
@@ -72,7 +79,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 
 	lastRowDir := t.TempDir()
 	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
-	lastRow.Env = append(os.Environ(), "TMPDIR="+lastRowDir, "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
+	lastRow.Env = append(env, "TMPDIR="+lastRowDir)
 	lastRow.Stdin = strings.NewReader("snap last-row\n")
 	lastRowOutput, err := lastRow.CombinedOutput()
 	if err != nil || !strings.Contains(string(lastRowOutput), "bottom") {
@@ -109,9 +116,17 @@ func TestLiveTmuxTimeoutKillsItsServer(t *testing.T) {
 	if out, err := buildCmd.CombinedOutput(); err != nil {
 		t.Fatalf("failed to build loom: %v\n%s", err, out)
 	}
+
+	env := []string{"PATH=" + binDir + ":" + filepath.Dir(tmux) + ":" + os.Getenv("PATH")}
+	for _, e := range os.Environ() {
+		if !strings.HasPrefix(e, "PATH=") {
+			env = append(env, e)
+		}
+	}
+
 	started := time.Now()
 	cmd := exec.Command("bash", filepath.Join(root, "scripts", "live-tmux.sh"), "--wait", "missing text", "--timeout", "0.2", "--interval", "0.02", "--", "bash", "-c", "read -r line")
-	cmd.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
+	cmd.Env = env
 	output, err := cmd.CombinedOutput()
 	if err == nil || !strings.Contains(string(output), "timed out waiting for pane text") {
 		t.Fatalf("expected wait timeout, err=%v output=%s", err, output)
