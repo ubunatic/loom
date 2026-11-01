@@ -60,4 +60,5 @@ upkeep.
 | 399 | [399-loom-measure-warns-trailing-whitespace-on-full-width-blank-padding-rows.md](399-loom-measure-warns-trailing-whitespace-on-full-width-blank-padding-rows.md) | loom measure warns trailing whitespace on full-width blank padding rows | Open |
 | 400 | [400-loom-view-and-loom-probe-keys-need-dev-tty-add-headless-key-input-for-agents.md](400-loom-view-and-loom-probe-keys-need-dev-tty-add-headless-key-input-for-agents.md) | loom view and loom-probe keys need /dev/tty; add headless key input for agents | Open |
 | 401 | [401-scrolling-word-wrapping-transcript-view-with-follow-end-and-scroll-indicator.md](401-scrolling-word-wrapping-transcript-view-with-follow-end-and-scroll-indicator.md) | Scrolling word-wrapping transcript view with follow-end and scroll indicator | Open |
+| 404 | [404-key-decoder-test-gaps-ctrl-shift-enter-lone-esc-across-reads-modifyotherkeys-lf.md](404-key-decoder-test-gaps-ctrl-shift-enter-lone-esc-across-reads-modifyotherkeys-lf.md) | Key decoder test gaps: ctrl-shift-enter, lone ESC across reads, modifyOtherKeys LF | Open |
 <!-- harnez:end issues-active-index -->
