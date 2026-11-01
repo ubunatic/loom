@@ -1,6 +1,6 @@
 # 368 — loom view: Space and Ctrl+F do not page down
 
-**Status**: Open
+**Status**: Closed — space/ctrl-f page down via spec bindings (2ff965c); PTY test fails without fix; make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug
