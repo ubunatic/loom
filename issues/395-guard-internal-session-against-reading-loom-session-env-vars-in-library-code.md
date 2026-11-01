@@ -1,6 +1,6 @@
 # 395 — Guard internal/session against reading LOOM_SESSION env vars in library code
 
-**Status**: Open
+**Status**: Closed — lint_test guards LOOM_SESSION_* reads via Getenv/LookupEnv (752fe35); probe injection caught; make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Test
