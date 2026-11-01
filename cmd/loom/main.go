@@ -447,9 +447,9 @@ func (v *ansiView) ConsumeKey(event loom.KeyEvent) loom.EventResult {
 		v.offsetY--
 	case event.Is("down", "j"):
 		v.offsetY++
-	case event.Is("pgup"):
+	case event.Is(loom.SpeccedDefaults.View.Bindings["page_up"]...):
 		v.offsetY -= panStep
-	case event.Is("pgdown", "pgdn", "pagedown"):
+	case event.Is(loom.SpeccedDefaults.View.Bindings["page_down"]...):
 		v.offsetY += panStep
 	}
 	v.clampOffsets()
