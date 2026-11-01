@@ -1,1 +1,4 @@
 issues/README.md merge=union
+issues/BACKLOG.md merge=union
+issues/CLOSED.md merge=union
+docs/README.md merge=union
