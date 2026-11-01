@@ -31,8 +31,14 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 	}
 	started := time.Now()
 	outputDir := t.TempDir()
+	binDir := t.TempDir()
+	buildCmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "loom"), ".")
+	if out, err := buildCmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build loom: %v\n%s", err, out)
+	}
+
 	cmd := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
-	cmd.Env = append(os.Environ(), "PATH="+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
+	cmd.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
 	cmd.Stdin = strings.NewReader("pause 0.12\nsnap before\ndiff " + want + "\nkeys Enter\nwait done\nsnap after\n")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -57,6 +63,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 		t.Fatal(err)
 	}
 	diff := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--", "bash", "-c", "printf 'ready\\n'; read -r line")
+	diff.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
 	diff.Stdin = strings.NewReader("diff " + wrong + "\n")
 	diffOutput, err := diff.CombinedOutput()
 	if err == nil || !strings.Contains(string(diffOutput), "screens differ") {
@@ -65,7 +72,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 
 	lastRowDir := t.TempDir()
 	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
-	lastRow.Env = append(os.Environ(), "TMPDIR="+lastRowDir)
+	lastRow.Env = append(os.Environ(), "TMPDIR="+lastRowDir, "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
 	lastRow.Stdin = strings.NewReader("snap last-row\n")
 	lastRowOutput, err := lastRow.CombinedOutput()
 	if err != nil || !strings.Contains(string(lastRowOutput), "bottom") {
@@ -89,15 +96,22 @@ func TestLiveTmuxTimeoutKillsItsServer(t *testing.T) {
 	if testing.Short() {
 		t.Skip("real tmux integration test")
 	}
-	if _, err := exec.LookPath("tmux"); err != nil {
+	tmux, err := exec.LookPath("tmux")
+	if err != nil {
 		t.Skip("tmux unavailable")
 	}
 	root, err := filepath.Abs(filepath.Join("..", ".."))
 	if err != nil {
 		t.Fatal(err)
 	}
+	binDir := t.TempDir()
+	buildCmd := exec.Command("go", "build", "-o", filepath.Join(binDir, "loom"), ".")
+	if out, err := buildCmd.CombinedOutput(); err != nil {
+		t.Fatalf("failed to build loom: %v\n%s", err, out)
+	}
 	started := time.Now()
 	cmd := exec.Command("bash", filepath.Join(root, "scripts", "live-tmux.sh"), "--wait", "missing text", "--timeout", "0.2", "--interval", "0.02", "--", "bash", "-c", "read -r line")
+	cmd.Env = append(os.Environ(), "PATH="+binDir+":"+filepath.Dir(tmux)+":"+os.Getenv("PATH"))
 	output, err := cmd.CombinedOutput()
 	if err == nil || !strings.Contains(string(output), "timed out waiting for pane text") {
 		t.Fatalf("expected wait timeout, err=%v output=%s", err, output)

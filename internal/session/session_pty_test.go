@@ -75,10 +75,10 @@ func TestSessionPassThroughIO(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	// Run bash echoing a prompt and waiting for input
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'READY\\n'; read -r line; printf 'ECHO:%s\\n' \"$line\"")
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	session.Send("hello-session\n")
-	session.WaitFor("ECHO:hello-session", time.Second*5)
+	session.WaitFor("ECHO:hello-session", 5*time.Second*ptytest.RaceFactor)
 }
 
 func TestSessionDetachPrefixDAndReattach(t *testing.T) {
@@ -316,13 +316,13 @@ func TestSessionExitCodePassThrough(t *testing.T) {
 
 	// Exit code 0
 	s0 := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "exit 0")
-	if err := s0.Wait(time.Second * 5); err != nil {
+	if err := s0.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("expected exit 0, got err: %v; output: %q", err, s0.Raw())
 	}
 
 	// Exit code 42
 	s42 := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "exit 42")
-	err := s42.Wait(time.Second * 5)
+	err := s42.Wait(5 * time.Second * ptytest.RaceFactor)
 	if err == nil {
 		t.Fatal("expected non-zero exit, got nil")
 	}
@@ -338,12 +338,12 @@ func TestSessionWindowResize(t *testing.T) {
 
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "trap 'printf \"WINCH:%s\\n\" \"$(stty size 2>/dev/null)\"' WINCH; printf 'READY\\n'; while true; do sleep 1; done")
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	session.Resize(50, 15)
-	session.WaitFor("WINCH:14 50", time.Second*5)
+	session.WaitFor("WINCH:14 50", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{17}) // ctrl-q
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics(t *testing.T) {
@@ -403,7 +403,7 @@ func TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics(t *testin
 		t.Fatal("cooldown allowed a second SIGWINCH repair")
 	}
 	session.Send("quit\n")
-	_ = session.Wait(5 * time.Second)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionDebugDiagnosticRotationCapsAtFiveBundles(t *testing.T) {
@@ -417,7 +417,7 @@ func TestSessionDebugDiagnosticRotationCapsAtFiveBundles(t *testing.T) {
 		session := ptytest.Start(t, 100, 24, bin, "session", "--debug", "--debug-dir", dir, "--", "/bin/bash", "-c", child)
 		session.WaitFor("REPAIRED", 5*time.Second)
 		waitForDebugBundles(t, dir, min(i+1, 5))
-		if err := session.Wait(5 * time.Second); err != nil {
+		if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 			t.Fatalf("canary %d exit: %v", i, err)
 		}
 	}
@@ -449,7 +449,7 @@ func TestSessionDirectHotkeyScreenshot(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(origDir) })
 
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf '\\033[1;31mHELLO SCREENSHOT\\033[0m\\n'; read -r line; exit 0")
-	session.WaitFor("HELLO SCREENSHOT", time.Second*5)
+	session.WaitFor("HELLO SCREENSHOT", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-p (0x10) to trigger screenshot
 	session.SendRaw([]byte{16})
@@ -459,7 +459,7 @@ func TestSessionDirectHotkeyScreenshot(t *testing.T) {
 
 	// Finish child
 	session.Send("done\n")
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	// Find the created screenshot file
 	entries, err := os.ReadDir(dir)
@@ -509,13 +509,13 @@ func TestSessionDirectHotkeyQuit(t *testing.T) {
 
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'RUNNING\\n'; while true; do sleep 1; done")
-	session.WaitFor("RUNNING", time.Second*5)
+	session.WaitFor("RUNNING", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-q (0x11)
 	session.SendRaw([]byte{17})
 
 	// Wait for session to terminate
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionPrefixHotkeys(t *testing.T) {
@@ -537,7 +537,7 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 
 	// Test prefix then 's' (screenshot)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PREFIX TEST\\n'; read -r line; exit 0")
-	session.WaitFor("PREFIX TEST", time.Second*5)
+	session.WaitFor("PREFIX TEST", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-b (2) followed by 's'
 	session.SendRaw([]byte{2, 's'})
@@ -545,7 +545,7 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 
 	// Exit child
 	session.Send("done\n")
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	entries, _ := os.ReadDir(dir)
 	found := false
@@ -561,17 +561,17 @@ func TestSessionPrefixHotkeys(t *testing.T) {
 
 	// Test prefix then 'q' (quit)
 	sessionQ := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PREFIX Q\\n'; while true; do sleep 1; done")
-	sessionQ.WaitFor("PREFIX Q", time.Second*5)
+	sessionQ.WaitFor("PREFIX Q", 5*time.Second*ptytest.RaceFactor)
 	// Send ctrl-b followed by 'q'
 	sessionQ.SendRaw([]byte{2, 'q'})
-	_ = sessionQ.Wait(time.Second * 5)
+	_ = sessionQ.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	// Test prefix twice sends ctrl-b to child
 	sessionSend := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'SEND READY\\n'; read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
-	sessionSend.WaitFor("SEND READY", time.Second*5)
+	sessionSend.WaitFor("SEND READY", 5*time.Second*ptytest.RaceFactor)
 	// Send ctrl-b twice
 	sessionSend.SendRaw([]byte{2, 2})
-	sessionSend.WaitFor("RECEIVED:2", time.Second*5)
+	sessionSend.WaitFor("RECEIVED:2", 5*time.Second*ptytest.RaceFactor)
 }
 
 func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
@@ -583,7 +583,7 @@ func TestSessionCtrlRightBracketPassesThrough(t *testing.T) {
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "read -r -n 1 char; printf 'RECEIVED:%d\\n' \"$(printf '%d' \"'$char'\")\"")
 	// Send ctrl-] (29) once; it must reach the child directly without prefix interception
 	session.SendRaw([]byte{29})
-	session.WaitFor("RECEIVED:29", time.Second*5)
+	session.WaitFor("RECEIVED:29", 5*time.Second*ptytest.RaceFactor)
 }
 
 func TestSessionHelpText(t *testing.T) {
@@ -605,18 +605,18 @@ func TestSessionMultiByteInputNotSplit(t *testing.T) {
 
 	// Child reads 5 bytes and prints hex
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PROMPT\\n'; IFS= read -r -d '' -n 5 input; printf 'HEX:%s\\n' \"$(printf '%s' \"$input\" | od -An -tx1 | tr -d ' \\n')\"")
-	session.WaitFor("PROMPT", time.Second*5)
+	session.WaitFor("PROMPT", 5*time.Second*ptytest.RaceFactor)
 
 	// Send an escape sequence containing byte 16 (ctrl-p): \x1b[16~
 	// It should NOT trigger a screenshot; it should pass to child
 	session.SendRaw([]byte("\x1b[16~"))
-	session.WaitFor("HEX:1b5b31367e", time.Second*5)
+	session.WaitFor("HEX:1b5b31367e", 5*time.Second*ptytest.RaceFactor)
 
 	// Test bracketed paste containing ctrl-b (2), ctrl-p (16), ctrl-q (17), ctrl-] (29)
 	sessionPaste := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "stty -ixon 2>/dev/null; printf 'PASTE_PROMPT\\n'; IFS= read -r line; printf 'PASTE:%s\\n' \"$(printf '%s' \"$line\" | tr '\\002\\020\\021\\035' 'BPQD')\"")
-	sessionPaste.WaitFor("PASTE_PROMPT", time.Second*5)
+	sessionPaste.WaitFor("PASTE_PROMPT", 5*time.Second*ptytest.RaceFactor)
 	sessionPaste.SendRaw([]byte("\x1b[200~a\x02b\x10c\x11d\x1de\x1b[201~\n"))
-	sessionPaste.WaitFor("PASTE:aBbPcQdDe", time.Second*5)
+	sessionPaste.WaitFor("PASTE:aBbPcQdDe", 5*time.Second*ptytest.RaceFactor)
 }
 
 func TestSessionAlternateScreenScreenshot(t *testing.T) {
@@ -638,14 +638,14 @@ func TestSessionAlternateScreenScreenshot(t *testing.T) {
 
 	// Child switches to alternate screen (\x1b[?1049h), prints text, waits
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf '\\033[?1049h\\033[1;1HALTSCREEN_HOTKEY\\033[0m\\n'; read -r line; exit 0")
-	session.WaitFor("ALTSCREEN_HOTKEY", time.Second*5)
+	session.WaitFor("ALTSCREEN_HOTKEY", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-p
 	session.SendRaw([]byte{16})
 	waitForSessionScreenshot(t, dir)
 
 	session.Send("done\n")
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	entries, _ := os.ReadDir(dir)
 	var shotFile string
@@ -676,7 +676,7 @@ func TestSessionLoneEscReachesChildAtOnce(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	// Child reads a single byte and prints its ASCII code
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'READY\\n'; IFS= read -r -d '' -n 1 key; printf 'KEY:%d\\n' \"$(printf '%d' \"'$key'\")\"")
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Send lone Esc (27)
 	session.SendRaw([]byte{27})
@@ -709,15 +709,15 @@ func TestSessionFailedScreenshotReportedOnStderr(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PROMPT\\n'; read -r line; exit 0")
-	session.WaitFor("PROMPT", time.Second*5)
+	session.WaitFor("PROMPT", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-p (trigger screenshot which should fail)
 	session.SendRaw([]byte{16})
 
 	// Input is processed in order; the error is printed when the child exits.
 	session.Send("done\n")
-	session.WaitFor("Error saving screenshot:", time.Second*5)
-	_ = session.Wait(time.Second * 5)
+	session.WaitFor("Error saving screenshot:", 5*time.Second*ptytest.RaceFactor)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	// The stderr output must report the failure
 	output := string(session.Raw())
@@ -744,14 +744,14 @@ func TestSessionStderrCleanLineStart(t *testing.T) {
 	t.Cleanup(func() { _ = os.Chdir(origDir) })
 
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PROMPT\\n'; read -r line; exit 0")
-	session.WaitFor("PROMPT", time.Second*5)
+	session.WaitFor("PROMPT", 5*time.Second*ptytest.RaceFactor)
 
 	session.SendRaw([]byte{16}) // ctrl-p
 	waitForSessionScreenshot(t, dir)
 
 	session.Send("done\n")
-	session.WaitFor("Saved screenshot: ", time.Second*5)
-	_ = session.Wait(time.Second * 5)
+	session.WaitFor("Saved screenshot: ", 5*time.Second*ptytest.RaceFactor)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	raw := string(session.Raw())
 	if !strings.Contains(raw, "Saved screenshot: ") {
@@ -772,29 +772,29 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 0")
-	session.WaitFor("TAB1_READY", time.Second*5)
+	session.WaitFor("TAB1_READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-n (14) to open new tab running $SHELL
 	session.SendRaw([]byte{14})
 
 	// Wait for tab bar to appear
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// In new tab, print TAB2_RUNNING
 	session.Send("printf 'TAB2_RUNNING\\n'\n")
-	session.WaitFor("TAB2_RUNNING", time.Second*5)
+	session.WaitFor("TAB2_RUNNING", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 with ctrl-b x (2, 'x')
 	session.SendRaw([]byte{2, 'x'})
 
 	// Wait for tab bar to disappear (only tab 1 remains)
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 
 	// Finish tab 1
 	session.Send("done\n")
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session did not exit cleanly: %v", err)
 	}
 }
@@ -836,7 +836,7 @@ func TestSessionSplitEscapeAcrossTabBarRedraw(t *testing.T) {
 		}
 	}
 	session.SendRaw([]byte{17})
-	_ = session.Wait(5 * time.Second)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
@@ -847,30 +847,30 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'SCREEN1_CONTENT\\n'; read -r line; exit 0")
-	session.WaitFor("SCREEN1_CONTENT", time.Second*5)
+	session.WaitFor("SCREEN1_CONTENT", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	session.Send("printf 'SCREEN2_CONTENT\\n'\n")
-	session.WaitFor("SCREEN2_CONTENT", time.Second*5)
+	session.WaitFor("SCREEN2_CONTENT", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch to previous tab with ctrl-b p (2, 'p')
 	session.SendRaw([]byte{2, 'p'})
-	session.WaitForUpdate("SCREEN1_CONTENT", time.Second*5)
+	session.WaitForUpdate("SCREEN1_CONTENT", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch to next tab with ctrl-b n (2, 'n')
 	session.SendRaw([]byte{2, 'n'})
-	session.WaitForUpdate("SCREEN2_CONTENT", time.Second*5)
+	session.WaitForUpdate("SCREEN2_CONTENT", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 and finish tab 1
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 	session.Send("done\n")
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session did not exit cleanly: %v", err)
 	}
 }
@@ -883,30 +883,30 @@ func TestSessionTabSwitchPrefixSelect(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'TAB_ONE_MARKER\\n'; read -r line; exit 0")
-	session.WaitFor("TAB_ONE_MARKER", time.Second*5)
+	session.WaitFor("TAB_ONE_MARKER", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	session.Send("printf 'TAB_TWO_MARKER\\n'\n")
-	session.WaitFor("TAB_TWO_MARKER", time.Second*5)
+	session.WaitFor("TAB_TWO_MARKER", 5*time.Second*ptytest.RaceFactor)
 
 	// Select tab 1 with ctrl-b 1 (2, '1')
 	session.SendRaw([]byte{2, '1'})
-	session.WaitForUpdate("TAB_ONE_MARKER", time.Second*5)
+	session.WaitForUpdate("TAB_ONE_MARKER", 5*time.Second*ptytest.RaceFactor)
 
 	// Select tab 2 with ctrl-b 2 (2, '2')
 	session.SendRaw([]byte{2, '2'})
-	session.WaitForUpdate("TAB_TWO_MARKER", time.Second*5)
+	session.WaitForUpdate("TAB_TWO_MARKER", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 and finish tab 1
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 	session.Send("done\n")
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session did not exit cleanly: %v", err)
 	}
 }
@@ -919,24 +919,24 @@ func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'TAB_KEEP\\n'; read -r line; exit 0")
-	session.WaitFor("TAB_KEEP", time.Second*5)
+	session.WaitFor("TAB_KEEP", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with prefix c (2, 'c')
 	session.SendRaw([]byte{2, 'c'})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	session.Send("printf 'TAB_TO_CLOSE\\n'\n")
-	session.WaitFor("TAB_TO_CLOSE", time.Second*5)
+	session.WaitFor("TAB_TO_CLOSE", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 with prefix x (2, 'x')
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 
 	// Finish tab 1
 	session.Send("done\n")
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session did not exit cleanly: %v", err)
 	}
 }
@@ -949,21 +949,21 @@ func TestSessionLastTabExitCode(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'TAB1_READY\\n'; read -r line; exit 42")
-	session.WaitFor("TAB1_READY", time.Second*5)
+	session.WaitFor("TAB1_READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Exit tab 2 with code 0
 	session.Send("exit 0\n")
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 
 	// Finish tab 1 which exits 42
 	session.Send("done\n")
-	err := session.Wait(time.Second * 5)
+	err := session.Wait(5 * time.Second * ptytest.RaceFactor)
 	if err == nil {
 		t.Fatal("expected exit code 42, got nil")
 	}
@@ -980,33 +980,33 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'MAIN_SCREEN_TAB\\n'; read -r line; exit 0")
-	session.WaitFor("MAIN_SCREEN_TAB", time.Second*5)
+	session.WaitFor("MAIN_SCREEN_TAB", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// In tab 2, enter alt screen and print text
 	session.Send("printf '\\033[?1049h\\033[1;1HALT_SCREEN_TAB\\033[0m\\n'\n")
-	session.WaitFor("ALT_SCREEN_TAB", time.Second*5)
+	session.WaitFor("ALT_SCREEN_TAB", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch to tab 1 (main screen) with ctrl-b p
 	session.SendRaw([]byte{2, 'p'})
-	session.WaitForUpdate("MAIN_SCREEN_TAB", time.Second*5)
+	session.WaitForUpdate("MAIN_SCREEN_TAB", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch back to tab 2 (alt screen) with ctrl-b n
 	session.SendRaw([]byte{2, 'n'})
-	session.WaitForUpdate("ALT_SCREEN_TAB", time.Second*5)
+	session.WaitForUpdate("ALT_SCREEN_TAB", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 with ctrl-b x
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
 	})
 
 	// Finish tab 1
 	session.Send("done\n")
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session did not exit cleanly: %v", err)
 	}
 }
@@ -1019,15 +1019,15 @@ func TestSessionQuitErasesTabBarOnOuterScreen(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'RUNNING\\n'; while true; do sleep 1; done")
-	session.WaitFor("RUNNING", time.Second*5)
+	session.WaitFor("RUNNING", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Send ctrl-q (17) to quit session while bar is shown
 	session.SendRaw([]byte{17})
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1047,19 +1047,19 @@ func TestSessionQuitInAltScreenErasesTabBarOnOuterScreen(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'MAIN\\n'; while true; do sleep 1; done")
-	session.WaitFor("MAIN", time.Second*5)
+	session.WaitFor("MAIN", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Enter alt screen in tab 2
 	session.Send("printf '\\033[?1049h\\033[1;1HALT\\033[0m\\n'\n")
-	session.WaitFor("ALT", time.Second*5)
+	session.WaitFor("ALT", 5*time.Second*ptytest.RaceFactor)
 
 	// Quit while in alt screen with ctrl-q (17)
 	session.SendRaw([]byte{17})
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1079,15 +1079,15 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PERSIST\\n'; while true; do sleep 1; done")
-	session.WaitFor("PERSIST", time.Second*5)
+	session.WaitFor("PERSIST", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Close tab 2 with ctrl-b x; the configured bar remains with one tab.
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "2: ") && strings.Contains(strings.Join(rows, "\n"), "1: bash")
 	})
 
@@ -1096,7 +1096,7 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
@@ -1108,7 +1108,7 @@ func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
 	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, and waits
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Child turned tracking on; verify it was active
 	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
@@ -1117,7 +1117,7 @@ func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
 
 	// Quit with ctrl-q (17)
 	session.SendRaw([]byte{17})
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1143,7 +1143,7 @@ func TestSessionSafeRestoreOnChildExit(t *testing.T) {
 	// Fixture child enables mouse 1000+1006, focus 1004, bracketed paste 2004, then exits directly
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hEXITING\\n'; exit 0"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1167,11 +1167,11 @@ func TestSessionSafeRestoreOnLastTabClosed(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Close the only tab with prefix x (ctrl-b x)
 	session.SendRaw([]byte{2, 'x'})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	vt := session.VT()
 	if vt.MouseMode != 0 || vt.MouseSGR {
@@ -1193,11 +1193,11 @@ func TestSessionSafeRestoreOnSIGTERM(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf '\\033[?1000h\\033[?1006h\\033[?1004h\\033[?2004hREADY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("READY", time.Second*5)
+	session.WaitFor("READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Send SIGTERM to loom session
 	_ = session.Signal(os.Interrupt) // or syscall.SIGTERM
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 
 	vt := session.VT()
 	if vt.MouseMode != 0 || vt.MouseSGR {
@@ -1221,7 +1221,7 @@ func TestSessionPerTabModes(t *testing.T) {
 	// Tab 1 enables SGR mouse mode and stays alive
 	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("TAB1_READY", time.Second*5)
+	session.WaitFor("TAB1_READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Tab 1 turned mouse on in outer VT
 	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
@@ -1230,7 +1230,7 @@ func TestSessionPerTabModes(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n (14)
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// In Tab 2, mouse tracking in outer VT must be OFF
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -1239,7 +1239,7 @@ func TestSessionPerTabModes(t *testing.T) {
 
 	// Switch back to Tab 1 using prefix 1 (ctrl-b 1) or alt-1 (\x1b1)
 	session.SendRaw([]byte{2, '1'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return session.VT().MouseMode == 1000
 	})
 
@@ -1249,7 +1249,7 @@ func TestSessionPerTabModes(t *testing.T) {
 
 	// Quit with ctrl-q
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionDirectTabSelectAltDigits(t *testing.T) {
@@ -1260,31 +1260,31 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'ORIGINAL_TAB1\\n'; while IFS= read -r line; do printf 'INPUT:%s\\n' \"$line\"; done")
-	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+	session.WaitFor("ORIGINAL_TAB1", 5*time.Second*ptytest.RaceFactor)
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Send alt-1 (\x1b1) to switch to Tab 1
 	session.SendRaw([]byte{27, '1'})
-	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+	session.WaitFor("ORIGINAL_TAB1", 5*time.Second*ptytest.RaceFactor)
 
 	// Send alt-2 (\x1b2) to switch back to Tab 2
 	session.SendRaw([]byte{27, '2'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "ORIGINAL_TAB1")
 	})
 
 	// Close Tab 2 with prefix x (ctrl-b x) so only Tab 1 remains
 	session.SendRaw([]byte{2, 'x'})
-	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+	session.WaitFor("ORIGINAL_TAB1", 5*time.Second*ptytest.RaceFactor)
 
 	// With 1 tab, send alt-2 (\x1b2): must be swallowed and NOT printed to shell
 	session.SendRaw([]byte{27, '2'})
 	// A child acknowledgment proves input after alt-2 has been processed.
 	session.Send("SENTINEL\n")
-	session.WaitFor("INPUT:SENTINEL", time.Second*5)
+	session.WaitFor("INPUT:SENTINEL", 5*time.Second*ptytest.RaceFactor)
 
 	for _, row := range session.Screen() {
 		if strings.Contains(row, "2") && !strings.Contains(row, "1: bash") {
@@ -1293,7 +1293,7 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
@@ -1304,23 +1304,23 @@ func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'INITIAL_SHELL_TEXT\\n'; while true; do sleep 1; done")
-	session.WaitFor("INITIAL_SHELL_TEXT", time.Second*5)
+	session.WaitFor("INITIAL_SHELL_TEXT", 5*time.Second*ptytest.RaceFactor)
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Print unique text in Tab 2
 	session.Send("printf 'TAB2_ISOLATED\\n'\n")
-	session.WaitFor("TAB2_ISOLATED", time.Second*5)
+	session.WaitFor("TAB2_ISOLATED", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch back to Tab 1 with alt-1 (\x1b1)
 	session.SendRaw([]byte{27, '1'})
-	session.WaitFor("INITIAL_SHELL_TEXT", time.Second*5)
+	session.WaitFor("INITIAL_SHELL_TEXT", 5*time.Second*ptytest.RaceFactor)
 
 	// Quit session with ctrl-q (17)
 	session.SendRaw([]byte{17})
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1346,15 +1346,15 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 	// Tab 1 enables mouse SGR tracking
 	fixture := "printf '\\033[?1000h\\033[?1006hTAB1_READY\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("TAB1_READY", time.Second*5)
+	session.WaitFor("TAB1_READY", 5*time.Second*ptytest.RaceFactor)
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// Switch back to Tab 1 so active tab has mouse tracking on
 	session.SendRaw([]byte{27, '1'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return session.VT().MouseMode == 1000
 	})
 
@@ -1364,7 +1364,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 	session.SendRaw([]byte("\x1b[<0;14;24m"))
 
 	// Verify that active tab switched to Tab 2 (where mouse mode is 0)
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return session.VT().MouseMode == 0
 	})
 
@@ -1373,7 +1373,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
@@ -1385,11 +1385,11 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	// Both tabs are plain shells (no child enables mouse)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'PLAIN_SHELL\\n'; while true; do sleep 1; done")
-	session.WaitFor("PLAIN_SHELL", time.Second*5)
+	session.WaitFor("PLAIN_SHELL", 5*time.Second*ptytest.RaceFactor)
 
 	// Open Tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("2: ", 5*time.Second*ptytest.RaceFactor)
 
 	// In safe mode, plain shells must NOT cause mouse tracking to be enabled on the outer VT
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -1397,7 +1397,7 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
@@ -1406,7 +1406,7 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	}
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 40, 12, bin, "session", "--", "/bin/bash", "-c", "while true; do sleep 1; done")
-	session.WaitFor("Tools", time.Second*5)
+	session.WaitFor("Tools", 5*time.Second*ptytest.RaceFactor)
 	rows := session.Screen()
 	bar := rows[len(rows)-1]
 	for _, want := range []string{"Tools", "🖱"} {
@@ -1441,7 +1441,7 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	}
 	assertSessionBarCellStyle(t, session, iconCol, barY, hintStyle.Label)
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func displayColumnOf(line, text string) int {
@@ -1523,30 +1523,30 @@ func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
 	}
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'HELP_READY\\n'; while true; do sleep 1; done")
-	session.WaitFor("HELP_READY", time.Second*5)
+	session.WaitFor("HELP_READY", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{2, '?'})
-	session.WaitFor("Session tools", time.Second*5)
+	session.WaitFor("Session tools", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{'z'})
-	session.WaitFor("HELP_READY", time.Second*5)
+	session.WaitFor("HELP_READY", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool { return session.VT().MouseMode == 1000 })
 	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
 		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.VT().MouseMode, session.VT().MouseSGR)
 	}
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool { return session.VT().MouseMode == 0 })
 	if session.VT().MouseMode != 0 {
 		t.Fatalf("mouse mode = %d, want disabled", session.VT().MouseMode)
 	}
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool { return session.VT().MouseMode == 1000 })
 	session.SendRaw([]byte("\x1b[<0;78;24M"))
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool { return session.VT().MouseMode == 0 })
 	if session.VT().MouseMode != 0 {
 		t.Fatalf("mouse click left mode %d enabled", session.VT().MouseMode)
 	}
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
@@ -1556,8 +1556,8 @@ func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 100, 12, bin, "session", "--", "/bin/bash", "-c", "while true; do sleep 1; done")
 	session.SendRaw([]byte{2, '?'})
-	session.WaitFor("Session tools", time.Second*5)
-	session.WaitFor("return", time.Second*5)
+	session.WaitFor("Session tools", 5*time.Second*ptytest.RaceFactor)
+	session.WaitFor("return", 5*time.Second*ptytest.RaceFactor)
 	rows := session.Screen()
 	text := strings.Join(rows, "\n")
 	for _, want := range []string{"⌃F Search", "F Search", "Close tab", "Press any key to return"} {
@@ -1566,11 +1566,11 @@ func TestSessionPrefixHelpFitsShortTerminal(t *testing.T) {
 		}
 	}
 	session.SendRaw([]byte{'z'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "Session tools")
 	})
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
@@ -1582,7 +1582,7 @@ func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 	// Single-tab child enters alternate screen (?1049h)
 	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("ALT_RUNNING", time.Second*5)
+	session.WaitFor("ALT_RUNNING", 5*time.Second*ptytest.RaceFactor)
 
 	if !session.VT().AltScreen() {
 		t.Fatalf("expected child to enter alternate screen")
@@ -1590,7 +1590,7 @@ func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 
 	// Quit with ctrl-q
 	session.SendRaw([]byte{17})
-	if err := session.Wait(time.Second * 5); err != nil {
+	if err := session.Wait(5 * time.Second * ptytest.RaceFactor); err != nil {
 		t.Fatalf("session wait: %v", err)
 	}
 
@@ -1609,7 +1609,7 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 	// Single-tab child enters alternate screen (?1049h)
 	fixture := "printf '\\033[?1049h\\033[1;1HALT_RUNNING\\n'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("ALT_RUNNING", time.Second*5)
+	session.WaitFor("ALT_RUNNING", 5*time.Second*ptytest.RaceFactor)
 
 	if !session.VT().AltScreen() {
 		t.Fatalf("expected child to enter alternate screen")
@@ -1620,7 +1620,7 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 		t.Fatalf("send SIGTERM: %v", err)
 	}
 
-	waitErr := session.Wait(time.Second * 5)
+	waitErr := session.Wait(5 * time.Second * ptytest.RaceFactor)
 	if waitErr == nil {
 		t.Fatalf("expected non-zero exit code on SIGTERM, got nil")
 	}
@@ -1640,24 +1640,24 @@ func TestSessionCtrlFSearchOpenAndClose(t *testing.T) {
 	}
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "/bin/bash", "-c", "printf 'SEARCH_READY\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; read -r line")
-	session.WaitFor("SEARCH_READY", time.Second*5)
+	session.WaitFor("SEARCH_READY", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{6}) // ctrl-f is a session binding, never child input.
-	session.WaitFor("Find:", time.Second*5)
+	session.WaitFor("Find:", 5*time.Second*ptytest.RaceFactor)
 	session.Send("SEARCH_READY")
-	session.WaitFor("1/1", time.Second*5)
+	session.WaitFor("1/1", 5*time.Second*ptytest.RaceFactor)
 	// Global bindings and mouse input must not restart or leave active search.
 	session.SendRaw([]byte{6})
 	session.SendRaw([]byte("\x1b[<0;2;1M"))
 	session.Send("x")
-	session.WaitFor("SEARCH_READYx", time.Second*5)
+	session.WaitFor("SEARCH_READYx", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{0x1b})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return !strings.Contains(strings.Join(rows, "\n"), "Find:")
 	})
 	session.Send("restored-input\n")
-	session.WaitFor("CHILD:restored-input", time.Second*5)
+	session.WaitFor("CHILD:restored-input", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
@@ -1667,12 +1667,12 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf 'old needle\\n'; for i in $(seq 1 20); do printf 'filler-%s\\n' \"$i\"; done; printf 'new needle\\n'; read -r line; printf 'CHILD:%s\\n' \"$line\"; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("new needle", time.Second*5)
+	session.WaitFor("new needle", 5*time.Second*ptytest.RaceFactor)
 
 	session.SendRaw([]byte{2, 'f'})
-	session.WaitFor("Find:", time.Second*5)
+	session.WaitFor("Find:", 5*time.Second*ptytest.RaceFactor)
 	session.Send("needle")
-	session.WaitFor("2/2", time.Second*5)
+	session.WaitFor("2/2", 5*time.Second*ptytest.RaceFactor)
 	searchBar := session.Screen()[len(session.Screen())-1]
 	if !strings.Contains(searchBar, "Enter/↑ older") || strings.Contains(searchBar, "enter/up") {
 		t.Fatalf("search bar hint has raw or missing key names: %q", searchBar)
@@ -1686,19 +1686,19 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	}
 
 	session.SendRaw([]byte("\x1b[A"))
-	session.WaitForUpdate("1/2", time.Second*5)
+	session.WaitForUpdate("1/2", 5*time.Second*ptytest.RaceFactor)
 	oldY := sessionRowContaining(session.Screen(), "old needle")
 	if oldY < 0 || strings.Contains(session.Text(), "new needle") || !session.Cell(4, oldY).Style.Reverse {
 		t.Fatalf("up did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
 	}
 	session.SendRaw([]byte("\x1b[B"))
-	session.WaitForUpdate("2/2", time.Second*5)
+	session.WaitForUpdate("2/2", 5*time.Second*ptytest.RaceFactor)
 	newY = sessionRowContaining(session.Screen(), "new needle")
 	if newY < 0 || strings.Contains(session.Text(), "old needle") || !session.Cell(4, newY).Style.Reverse {
 		t.Fatalf("down did not select newer match at row %d: %+v", newY, session.Cell(4, newY))
 	}
 	session.Send("\n")
-	session.WaitForUpdate("1/2", time.Second*5)
+	session.WaitForUpdate("1/2", 5*time.Second*ptytest.RaceFactor)
 	oldY = sessionRowContaining(session.Screen(), "old needle")
 	if oldY < 0 || strings.Contains(session.Text(), "new needle") || !session.Cell(4, oldY).Style.Reverse {
 		t.Fatalf("enter did not select older match at row %d: %+v", oldY, session.Cell(4, oldY))
@@ -1708,7 +1708,7 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	session.SendRaw([]byte("\x1b1"))
 	session.SendRaw([]byte("\x1b[<0;2;1M\n"))
 	session.Send("missing")
-	session.WaitFor("No matches", time.Second*5)
+	session.WaitFor("No matches", 5*time.Second*ptytest.RaceFactor)
 	for _, row := range session.Cells() {
 		for _, cell := range row {
 			if cell.Style.Reverse {
@@ -1718,7 +1718,7 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 	}
 
 	session.SendRaw([]byte{0x1b})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		for _, row := range rows {
 			if strings.Contains(row, "Find:") {
 				return false
@@ -1727,9 +1727,9 @@ func TestSessionSearchFindNavigateNoMatchAndClose(t *testing.T) {
 		return true
 	})
 	session.Send("restored-input\n")
-	session.WaitFor("CHILD:restored-input", time.Second*5)
+	session.WaitFor("CHILD:restored-input", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func sessionRowContaining(rows []string, text string) int {
@@ -1748,14 +1748,14 @@ func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	fixture := "printf 'HISTORY_NEEDLE\\n'; printf '\\033[?1049hALT_NEEDLE'; while true; do sleep 1; done"
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "/bin/bash", "-c", fixture)
-	session.WaitFor("ALT_NEEDLE", time.Second*5)
+	session.WaitFor("ALT_NEEDLE", 5*time.Second*ptytest.RaceFactor)
 
 	session.SendRaw([]byte{2, 'f'})
-	session.WaitFor("Find:", time.Second*5)
+	session.WaitFor("Find:", 5*time.Second*ptytest.RaceFactor)
 	session.Send("HISTORY_NEEDLE")
-	session.WaitFor("No matches", time.Second*5)
+	session.WaitFor("No matches", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{0x1b})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		for _, row := range rows {
 			if strings.Contains(row, "Find:") {
 				return false
@@ -1764,14 +1764,14 @@ func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
 		return true
 	})
 	session.SendRaw([]byte{2, 'f'})
-	session.WaitFor("Find:", time.Second*5)
+	session.WaitFor("Find:", 5*time.Second*ptytest.RaceFactor)
 	session.Send("ALT_NEEDLE")
-	session.WaitFor("1/1", time.Second*5)
+	session.WaitFor("1/1", 5*time.Second*ptytest.RaceFactor)
 	if !strings.Contains(session.Text(), "ALT_NEEDLE") {
 		t.Fatalf("visible alternate-screen text was not searchable: %q", session.Text())
 	}
 	session.SendRaw([]byte{0x1b})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+	session.WaitForUpdateState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		for _, row := range rows {
 			if strings.Contains(row, "Find:") {
 				return false
@@ -1783,7 +1783,7 @@ func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
 		t.Fatal("closing search left the child alternate screen")
 	}
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
 
 func TestSessionSearchKeepsGlobalQuitBinding(t *testing.T) {
@@ -1792,9 +1792,9 @@ func TestSessionSearchKeepsGlobalQuitBinding(t *testing.T) {
 	}
 	bin := clitest.BuildLoomBinary(t)
 	session := ptytest.Start(t, 80, 12, bin, "session", "--", "/bin/bash", "-c", "while true; do sleep 1; done")
-	session.WaitFor("Search", time.Second*5)
+	session.WaitFor("Search", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{2, 'f'})
-	session.WaitFor("Find:", time.Second*5)
+	session.WaitFor("Find:", 5*time.Second*ptytest.RaceFactor)
 	session.SendRaw([]byte{17})
-	_ = session.Wait(time.Second * 5)
+	_ = session.Wait(5 * time.Second * ptytest.RaceFactor)
 }
