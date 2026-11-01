@@ -4,8 +4,6 @@
 package loom
 
 import (
-	"os"
-	"strings"
 	"unicode"
 
 	"ubunatic.com/loom/ansi"
@@ -14,8 +12,7 @@ import (
 
 // useFastANSI returns true unless LOOM_FAST_ANSI is set to "0", "false", or "off".
 func useFastANSI() bool {
-	v := strings.ToLower(strings.TrimSpace(os.Getenv("LOOM_FAST_ANSI")))
-	return v != "0" && v != "false" && v != "off"
+	return env().fastANSI
 }
 
 // ParseANSI decodes an ANSI-formatted string into a slice of Cells.
