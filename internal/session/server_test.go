@@ -272,16 +272,16 @@ func TestServerControlStatusListDetachAndKill(t *testing.T) {
 	var status SessionInfo
 	for {
 		status, err = SessionStatus("control-test")
-		if err == nil {
+		if err == nil && status.Tabs == 1 {
 			break
 		}
 		select {
 		case <-ticker.C:
 		case <-timer.C:
-			t.Fatalf("session did not become ready: %v", err)
+			t.Fatalf("session did not become ready: %v, status=%#v", err, status)
 		}
 	}
-	if status.Name != "control-test" || status.Status != "detached" || status.Tabs != 1 || status.PID <= 0 {
+	if status.Name != "control-test" || status.Status != "detached" || status.PID <= 0 {
 		t.Fatalf("SessionStatus() = %#v", status)
 	}
 	items, err := ListSessions()
