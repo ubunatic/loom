@@ -155,3 +155,8 @@ the pane, an unconsumed `Esc` never does unless `Pane.EscapeQuits` is set, and `
 or SIGINT/SIGTERM/SIGHUP count as an interrupt. Every one of these first calls
 `Pane.OnCloseRequest(reason)`; returning `CloseVeto` keeps the pane running, and the
 app calls `Pane.Quit()` later (for example from a Save/Discard/Cancel dialog).
+The hook only sees these unconsumed defaults: a widget or `ConsumeKey` handler
+that returns `loom.Quit()` (a consumed `QuitResult`) closes the pane directly and
+bypasses `OnCloseRequest`. Apps whose cleanup lives in the hook (stopping streams,
+saving state) must run it before returning `Quit()`, or return `Ignored()` and let
+the default close path call the hook.
