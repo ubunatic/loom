@@ -19,3 +19,5 @@
 /goal Enforce click-only/key-only focus and cursor placement invariants across all Loom compound widgets.
 
 **Note (2026-10-06, from 242):** Table now consumes Tab (its documented sort key), so gallery Tab navigation stops at the Table demo (Shift-Tab and clicking tabs still work). Decide here whether widgets may own Tab or whether container focus keys take precedence.
+
+**Note (2026-11-02, Jules audit github#51, report discarded at 3/6 exact refs):** host-verified lead: `Choice` still sets `c.sel = fi` on `MouseHover`/`MouseDrag` (`choice.go:647-648`). Owner decision: is a hover highlight in a list "focus" under this invariant, or an allowed visual?
