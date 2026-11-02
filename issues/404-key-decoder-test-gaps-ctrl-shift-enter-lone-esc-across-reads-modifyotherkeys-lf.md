@@ -22,3 +22,6 @@ A Jules ideas run (2026-11-01, `reports/jules/key-decoding.md`, GitHub PR #49) l
 1. Table cases in `event_test.go` for `ctrl-shift-enter` and the code-10 decision.
 2. A `scanKey` test: `[]byte{27}` returns `ok=false, used=0`, then the full sequence decodes.
 3. `go test -count=1 .` then `make test-q1`.
+
+## Decision
+- 2026-11-02 (decide mode): `ESC[27;5;10~` stays unmapped. No terminal sends code 10 for Enter, and `ctrl-enter` would conflate it with Ctrl+J. Pinned in `event_decoder_gaps_test.go`.
