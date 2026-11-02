@@ -90,3 +90,19 @@ func TestRespectedSpecDefaultsAreConsumed(t *testing.T) {
 		t.Fatalf("key help %q does not use spec separator %q", text, separator)
 	}
 }
+
+// TestYamlHeightFallbackReadsSpec proves pane.min_height/max_height are
+// consumed when a YAML app sets no bounds (issue 252).
+func TestYamlHeightFallbackReadsSpec(t *testing.T) {
+	withSpecDefaults(t, func(d *LibDefaults) {
+		d.Pane.MinHeight = 7
+		d.Pane.MaxHeight = 11
+	})
+	c := &YamlConfig{Views: []YamlView{{}}}
+	if got := c.Height(1); got != 7 {
+		t.Errorf("Height(1) = %d, want spec min 7", got)
+	}
+	if got := c.Height(50); got != 11 {
+		t.Errorf("Height(50) = %d, want spec max 11", got)
+	}
+}

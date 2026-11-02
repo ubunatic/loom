@@ -913,6 +913,19 @@ type PaneDefaults struct {
 	GuardDuration time.Duration `yaml:"guard_duration"`
 	ViewPanStep   int           `yaml:"view_pan_step"`
 	KittyKeyboard bool          `yaml:"kitty_keyboard"`
+	MinHeight     int           `yaml:"min_height"`
+	MaxHeight     int           `yaml:"max_height"`
+}
+
+// Validate checks the configured defaults.
+func (d PaneDefaults) Validate() error {
+	if d.MinHeight <= 0 || d.MaxHeight <= 0 {
+		return fmt.Errorf("pane.min_height and pane.max_height must be positive")
+	}
+	if d.MinHeight > d.MaxHeight {
+		return fmt.Errorf("pane.min_height must not exceed pane.max_height")
+	}
+	return nil
 }
 
 // SplashDefaults defines specced defaults for splash lifecycle and widgets.
@@ -976,6 +989,9 @@ var SpeccedDefaults = func() LibDefaults {
 	var defs LibDefaults
 	if err := yaml.Unmarshal(defaultsYAML, &defs); err != nil {
 		panic(fmt.Sprintf("loom: parse spec/defaults.yaml: %v", err))
+	}
+	if err := defs.Pane.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Scrollbar.Validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
