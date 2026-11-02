@@ -1,6 +1,6 @@
 # 404 — Key decoder test gaps: ctrl-shift-enter, lone ESC across reads, modifyOtherKeys LF
 
-**Status**: Open
+**Status**: Closed — decoder tests for ctrl-shift-enter, lone ESC split and unmapped LF code 10 added and green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Test
