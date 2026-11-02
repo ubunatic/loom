@@ -56,4 +56,5 @@ upkeep.
 | 405 | [405-session-drops-outer-replies-to-child-queries-the-vt-does-not-answer-decrqm-kitty-u-xtversion.md](405-session-drops-outer-replies-to-child-queries-the-vt-does-not-answer-decrqm-kitty-u-xtversion.md) | Session drops outer replies to child queries the VT does not answer (DECRQM, kitty ?u, XTVERSION) | Open |
 | 406 | [406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md](406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md) | Flaky TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics under full test-q1 load | Open |
 | 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
+| 409 | [409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md](409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md) | TextArea: arrow keys leak as text under foot; add basic text navigation | Open |
 <!-- harnez:end issues-active-index -->
