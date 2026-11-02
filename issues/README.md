@@ -56,4 +56,5 @@ upkeep.
 | 405 | [405-session-drops-outer-replies-to-child-queries-the-vt-does-not-answer-decrqm-kitty-u-xtversion.md](405-session-drops-outer-replies-to-child-queries-the-vt-does-not-answer-decrqm-kitty-u-xtversion.md) | Session drops outer replies to child queries the VT does not answer (DECRQM, kitty ?u, XTVERSION) | Open |
 | 406 | [406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md](406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md) | Flaky TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics under full test-q1 load | Open |
 | 407 | [407-loom-view-ctrl-f-is-find-never-page-down-drop-ctrl-b-paging-document-key-policy.md](407-loom-view-ctrl-f-is-find-never-page-down-drop-ctrl-b-paging-document-key-policy.md) | loom view: ctrl-f is find, never page down; drop ctrl-b paging; document key policy | Open |
+| 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
 <!-- harnez:end issues-active-index -->
