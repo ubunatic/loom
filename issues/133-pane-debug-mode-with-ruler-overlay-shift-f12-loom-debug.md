@@ -1,6 +1,6 @@
 # 133 — Pane debug mode with ruler overlay (Shift-F12, LOOM_DEBUG)
 
-**Status**: Open
+**Status**: Closed — all parts done (Jules audit, host-checked); resize on toggle not needed, the Pane re-insets bounds each frame (pane_run.go:254)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
