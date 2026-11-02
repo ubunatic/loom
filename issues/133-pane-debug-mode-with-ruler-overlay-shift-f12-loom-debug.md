@@ -36,3 +36,6 @@ that can later show more hints (box outlines, focus, mouse position, redraw coun
 ## Jules audit (2026-11-01, GitHub main 5c3c603)
 
 Verdict: partly done; 10/11 refs hold (mouse inset is at `pane_run_mouse.go:21`, not :18). Done: Shift-F12 toggle (`pane_dispatch.go:14-16`), `LOOM_DEBUG` (`pane_terminal.go:106`), ruler and inset (`pane_run.go:254`, `ruler.go:10`, used by ansiviewer `viewer.go:300`), decoding test (`event_test.go:87`), PTY test (`pane_pty_test.go:1541`). Left: the toggle sends no resize to the app (`pane_dispatch.go:15` only flips the flag); decide whether that is still needed or close. Report: `reports/jules/133.md`.
+
+## Decision
+- 2026-11-02 (decide mode): no resize on toggle. The Pane re-insets `drawBounds` every frame (`pane_run.go:254`), so in-process widgets get the new bounds on the next draw; nothing outside the Pane sizes itself from them.
