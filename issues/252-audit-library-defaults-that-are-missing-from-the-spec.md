@@ -1,6 +1,6 @@
 # 252 — Audit library defaults that are missing from the spec
 
-**Status**: Open
+**Status**: Closed — last spec gap closed: pane.min_height/max_height in spec, consumed by yaml.go, override-tested; other items kept in Go by owner decision
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

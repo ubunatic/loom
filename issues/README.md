@@ -27,7 +27,6 @@ upkeep.
 | 157 | [157-ansi-golden-mockup-visual-test-comparator.md](157-ansi-golden-mockup-visual-test-comparator.md) | ANSI Golden Mockup Visual Test Comparator | Open |
 | 161 | [161-align-media-example-with-redesign-005.md](161-align-media-example-with-redesign-005.md) | Align media example with redesign 005 | Open |
 | 241 | [241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md](241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) | Add public grab package (SDL3 transparent input grabber) and examples/grabber demo | Open |
-| 252 | [252-audit-library-defaults-that-are-missing-from-the-spec.md](252-audit-library-defaults-that-are-missing-from-the-spec.md) | Audit library defaults that are missing from the spec | Open |
 | 259 | [259-osc-8-terminal-hyperlink-support-human-assisted.md](259-osc-8-terminal-hyperlink-support-human-assisted.md) | OSC 8 terminal hyperlink support (human-assisted) | Open |
 | 265 | [265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md](265-richtextedit-right-click-context-menu-and-clear-style-popover-button.md) | RichTextEdit right-click context menu and clear-style popover button | Open |
 | 266 | [266-richtextedit-s-f5-box-push-drawing-mode.md](266-richtextedit-s-f5-box-push-drawing-mode.md) | RichTextEdit S-F5 box-push drawing mode | Open |
