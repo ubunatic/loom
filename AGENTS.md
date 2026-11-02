@@ -14,6 +14,7 @@ Developer agents get the standard prompt in `.harnez/prompts/developer.md`.
 A developer's "fixed but not rerun" counts as untested; the host reruns `make test-q1` before closing the ticket.
 A release that breaks callers (API, semantics, module path) adds a row to the breaking-changes table in `docs/Upgrading.md`.
 PRs go to `origin` (ubunatic/loom) by AGit, not via fork or upstream branches: `git push origin HEAD:refs/for/main/<topic> -o title="<line>" -o description="{base64}$(base64 -w0 body.md)"`. A fast-forward re-push updates the PR (rewrites need `-o force-push=true`). A topic whose PR is closed opens a new PR, so pick a fresh topic. Add labels via the API. Sync local `main` from `origin`.
+Manual tests for the owner: open foot as a background task with a short checklist, then a login shell: `timeout 15m foot -- bash -c "printf '%s\n' '1. <step>' '2. <step>'; $SHELL -l"`. Keep full steps and expected results in chat. Drop the `timeout` only when the owner just replied asking for the test now.
 
 <!-- harnez:begin Language Conventions -->
 Adhere to the following conventions.
