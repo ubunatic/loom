@@ -452,10 +452,10 @@ func (v *ansiView) ConsumeKey(event loom.KeyEvent) loom.EventResult {
 		v.offsetX--
 	case event.Is("right", "l"):
 		v.offsetX++
-	case event.Is("home"):
-		v.offsetX = 0
-	case event.Is("end"):
-		v.offsetX = v.buffer.Cols()
+	case event.Is(loom.SpeccedDefaults.View.Bindings["home"]...):
+		v.offsetY = 0
+	case event.Is(loom.SpeccedDefaults.View.Bindings["end"]...):
+		v.offsetY = v.buffer.Rows()
 	case event.Is("up", "k"):
 		v.offsetY--
 	case event.Is("down", "j"):

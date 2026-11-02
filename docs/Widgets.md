@@ -323,6 +323,13 @@ while Table uses Tab for sort and shows it as `[tab:…]` (open question in issu
 `ColorPicker` leaves Tab to its containing Frame, Split, Tabs or other focus
 container. Up and Down move between its foreground and background rows.
 
+Find and paging policy (issue 407): Ctrl+F always means find and is never
+bound to paging. PgUp/PgDn scroll by a page, and so do Shift+PgUp/PgDn in
+read-only views (in text input they extend the selection by a page); Home/End scroll to the top and
+bottom unless a text input is focused, where they move the caret. Ctrl+B is
+the `loom session` prefix and is not bound to paging either. `loom.View` has
+no find yet, so it leaves Ctrl+F unconsumed for its host.
+
 Before v0.2.15 widgets returned `bool`, where `true` meant quit; see
 [Upgrading](Upgrading.md) for the mapping to `EventResult`.
 
@@ -548,7 +555,7 @@ view.Pan(dx, dy) // moves offset with non-negative clamping
 ### Key Capabilities & Invariants
 - **2D Offset & Panning**: `OffsetX` sets the first visible terminal display column; `OffsetY` (alias for `Scroll`) sets the first visible line index.
 - **ANSI-Aware Style-Preserving Slicing**: When lines contain SGR escape codes (e.g. truecolor or 256-color text), horizontal column offsets cleanly clip preceding characters without dropping active color styles or breaking multi-byte/wide Unicode runes (`drawViewLine`).
-- **Interactive Navigation**: Supports two-axis keyboard panning (`left`/`right`/`up`/`down`, `h`/`l`/`k`/`j`, `pgup`/`pgdn`, `home`/`end`) and mouse wheel / trackbar dragging.
+- **Interactive Navigation**: Supports two-axis keyboard panning (`left`/`right`/`up`/`down`, `h`/`l`/`k`/`j`, `pgup`/`pgdn` and Shift+PgUp/PgDn, Space/`b`, `home`/`end`; Ctrl+F and Ctrl+B are left to the host, see the find and paging policy) and mouse wheel / trackbar dragging.
 
 ---
 

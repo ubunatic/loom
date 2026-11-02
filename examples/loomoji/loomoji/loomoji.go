@@ -262,7 +262,7 @@ func (p *picker) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		p.index = min(max(0, len(p.items)-1), p.index+p.cols)
 	case "pgup", "shift-left":
 		p.prevCategory()
-	case "pgdown", "shift-right", "ctrl-f":
+	case "pgdown", "shift-right":
 		p.nextCategory()
 	case "enter":
 		if len(p.items) > 0 {

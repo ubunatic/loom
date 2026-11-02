@@ -64,6 +64,32 @@ func TestViewportDrawScrollAndClamp(t *testing.T) {
 	}
 }
 
+// TestViewportHomeEndScrollVerticallyOnly pins the key policy (issue 407):
+// outside text input, home/end scroll to top/bottom and never pan columns.
+func TestViewportHomeEndScrollVerticallyOnly(t *testing.T) {
+	viewport := loom.NewViewport(&viewportChild{width: 40, height: 20})
+	viewport.ScrollbarMode = loom.ScrollbarNever
+	canvas := loom.NewCanvas(10, 4)
+	viewport.Draw(canvas, canvas.Bounds())
+	viewport.ScrollX = 5
+	viewport.ConsumeKey(loom.KeyEvent{Key: "shift-pgdown"})
+	if viewport.ScrollY != 4 {
+		t.Fatalf("shift-pgdown ScrollY = %d, want 4", viewport.ScrollY)
+	}
+	viewport.ConsumeKey(loom.KeyEvent{Key: "shift-pgup"})
+	if viewport.ScrollY != 0 {
+		t.Fatalf("shift-pgup ScrollY = %d, want 0", viewport.ScrollY)
+	}
+	viewport.ConsumeKey(loom.KeyEvent{Key: "end"})
+	if viewport.ScrollX != 5 || viewport.ScrollY == 0 {
+		t.Fatalf("end: ScrollX=%d ScrollY=%d, want ScrollX 5 and ScrollY at bottom", viewport.ScrollX, viewport.ScrollY)
+	}
+	viewport.ConsumeKey(loom.KeyEvent{Key: "home"})
+	if viewport.ScrollX != 5 || viewport.ScrollY != 0 {
+		t.Fatalf("home: ScrollX=%d ScrollY=%d, want 5, 0", viewport.ScrollX, viewport.ScrollY)
+	}
+}
+
 func TestViewportTranslatesMouseAndScrollWheel(t *testing.T) {
 	child := &viewportChild{width: 8, height: 8}
 	viewport := loom.NewViewport(child)
