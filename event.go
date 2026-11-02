@@ -20,6 +20,11 @@ type KeyEvent struct {
 	//            "ctrl-b","ctrl-c","ctrl-d","ctrl-f","ctrl-q","ctrl-u","ctrl-w",
 	//            or "" for plain text
 	Text string // typed printable text (Key == "" when Text != "")
+
+	// Report marks a terminal report (cursor position, DA, DSR status or
+	// DECRPM) consumed by ScanKey. It answers a query and is never a keypress;
+	// callers drop it instead of forwarding it or treating it as text.
+	Report bool
 }
 
 // PasteEvent carries the text from one bracketed terminal paste operation.
@@ -608,12 +613,16 @@ func scanKey(b []byte) (KeyEvent, int, bool) {
 
 // scanEscapeKey handles the b[0] == 27 (ESC) case for scanKey, mirroring the
 // escape-sequence forms DecodeKey recognizes so it can report how many bytes
-// each one consumes (or that more bytes are needed to tell).
+// each one consumes (or that more bytes are needed to tell). CSI sequences are
+// scanned whole by scanCSI, so a terminal report never leaves tail bytes behind.
 func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
 	if len(b) == 1 {
 		return KeyEvent{}, 0, false // could be a standalone ESC, or the start of a sequence
 	}
-	if b[1] != '[' && b[1] != 'O' {
+	if b[1] == '[' {
+		return scanCSI(b)
+	}
+	if b[1] != 'O' {
 		if b[1] >= 0x80 {
 			if !utf8.FullRune(b[1:]) {
 				return KeyEvent{}, 0, false
@@ -623,44 +632,98 @@ func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
 		}
 		return DecodeKey(b[:2]), 2, true
 	}
+	// SS3 (ESC O <final>): a single final byte follows the introducer.
 	if len(b) == 2 {
 		return KeyEvent{}, 0, false
-	}
-	if b[1] == '[' && b[2] == '1' {
-		if len(b) == 3 {
-			return KeyEvent{}, 0, false
-		}
-		if b[3] == ';' {
-			// Modified cursor: ESC [ 1 ; <mod> <letter>
-			if len(b) < 6 {
-				return KeyEvent{}, 0, false
-			}
-			return DecodeKey(b[:6]), 6, true
-		}
-		// Not modified-cursor; falls through to the tilde-number scan below
-		// (e.g. "\x1b[15~").
 	}
 	switch b[2] {
 	case 'Z', 'A', 'B', 'C', 'D', 'a', 'b', 'c', 'd', 'P', 'Q', 'R', 'S', 'H', 'F':
 		return DecodeKey(b[:3]), 3, true
 	}
-	if b[2] >= '0' && b[2] <= '9' {
-		i := 2
-		for i < len(b) && (b[i] >= '0' && b[i] <= '9' || b[i] == ';' || b[i] == ':') {
-			i++
-		}
-		if i == len(b) {
-			return KeyEvent{}, 0, false // parameters ran out; a final '~' or 'u' may still follow
-		}
-		if b[i] == '~' || b[i] == 'u' {
-			return DecodeKey(b[:i+1]), i + 1, true
-		}
-		// Not a tilde sequence after all; consume what was scanned so an
-		// unrecognized form cannot stall the loop.
-		return KeyEvent{}, i, true
-	}
-	// Unrecognized CSI/SS3 form; consume the 3 bytes seen so far.
+	// Unrecognized SS3 form; consume the 3 bytes seen so far.
 	return KeyEvent{}, 3, true
+}
+
+// csiMaxLen bounds one CSI sequence so a runaway parameter run cannot hold the
+// input buffer forever.
+const csiMaxLen = 64
+
+// csiSpan returns the length of the CSI sequence at the start of b, which
+// begins with ESC [. Per ECMA-48 it is parameter bytes 0x30-0x3F (this covers
+// the private markers <=>?), intermediate bytes 0x20-0x2F and one final byte
+// 0x40-0x7E. complete is false while b ends before the final byte. malformed is
+// true when a byte outside those classes, or csiMaxLen, ends the scan early; n
+// then counts the bytes before it, so the caller consumes them and moves on.
+func csiSpan(b []byte) (n int, complete, malformed bool) {
+	for i := 2; i < len(b); i++ {
+		switch c := b[i]; {
+		case c >= 0x40 && c <= 0x7e:
+			return i + 1, true, false
+		case c >= 0x20 && c <= 0x3f && i < csiMaxLen:
+			// parameter or intermediate byte; keep scanning
+		default:
+			return i, false, true
+		}
+	}
+	return len(b), false, false
+}
+
+// scanCSI scans the CSI sequence at the start of b (b begins with ESC [). A
+// complete sequence is decoded as a whole by DecodeKey; when that yields no key
+// and the sequence is a terminal report, the event is marked Report.
+func scanCSI(b []byte) (KeyEvent, int, bool) {
+	n, complete, malformed := csiSpan(b)
+	if !complete && !malformed {
+		return KeyEvent{}, 0, false
+	}
+	if !complete {
+		return KeyEvent{}, n, true
+	}
+	ev := DecodeKey(b[:n])
+	if ev == (KeyEvent{}) && isTerminalReply(b[:n]) {
+		ev.Report = true
+	}
+	return ev, n, true
+}
+
+// isTerminalReply reports whether seq, one complete CSI sequence, is a terminal
+// report: cursor position (CPR, DECXCPR), DSR status, primary or secondary DA,
+// or DECRPM. Such a sequence answers a query and is never a keypress.
+func isTerminalReply(seq []byte) bool {
+	if len(seq) < 3 || seq[1] != '[' {
+		return false
+	}
+	final := seq[len(seq)-1]
+	body := seq[2 : len(seq)-1]
+	switch final {
+	case 'R': // CPR "ESC [ row ; col R" or DECXCPR "ESC [ ? row ; col ; page R"
+		if len(body) > 0 && body[0] == '?' {
+			body = body[1:]
+		}
+		return isNumberList(body)
+	case 'n': // DSR status "ESC [ 0 n"
+		return isNumberList(body)
+	case 'c': // DA reply "ESC [ ? ... c" or secondary DA "ESC [ > ... c"
+		return len(body) > 0 && (body[0] == '?' || body[0] == '>') && isNumberList(body[1:])
+	case 'y': // DECRPM "ESC [ ? Ps ; Pm $ y"
+		n := len(body)
+		return n > 1 && body[0] == '?' && body[n-1] == '$' && isNumberList(body[1:n-1])
+	}
+	return false
+}
+
+// isNumberList reports whether s is a non-empty list of decimal numbers
+// separated by ';'.
+func isNumberList(s []byte) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if !(c >= '0' && c <= '9' || c == ';') {
+			return false
+		}
+	}
+	return true
 }
 
 // parseInts parses semicolon-separated ints into dst, returning how many were filled.

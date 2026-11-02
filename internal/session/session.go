@@ -1064,6 +1064,14 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						break
 					}
 
+					// A terminal report answers a query, not a keypress: drop it
+					// before search or prefix see it, and keep prefix mode armed.
+					if key.Report {
+						pending = pending[used:]
+						sessionMu.Unlock()
+						continue
+					}
+
 					if searchActive {
 						if key.Is(sessionDefs.Bindings.Quit...) {
 							sessionMu.Unlock()

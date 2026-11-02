@@ -619,6 +619,32 @@ func TestSessionMultiByteInputNotSplit(t *testing.T) {
 	sessionPaste.WaitFor("PASTE:aBbPcQdDe", time.Second*5)
 }
 
+// TestSessionDropsTerminalReplies covers issue 391 M1: a cursor-position or DA
+// reply arriving on stdin answers a query, so the session must consume all of
+// it and forward none of it to the child, even when it arrives split.
+func TestSessionDropsTerminalReplies(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := clitest.BuildLoomBinary(t)
+
+	// Child reads exactly 5 bytes and prints them as hex.
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'REPLY_PROMPT\\n'; IFS= read -r -d '' -n 5 input; printf 'HEX:%s\\n' \"$(printf '%s' \"$input\" | od -An -tx1 | tr -d ' \\n')\"")
+	session.WaitFor("REPLY_PROMPT", time.Second*5)
+
+	session.SendRaw([]byte("\x1b[24;80R"))
+	session.SendRaw([]byte("abcde"))
+	session.WaitFor("HEX:6162636465", time.Second*5)
+
+	// A DA reply split across two writes is still one report.
+	split := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", "printf 'SPLIT_PROMPT\\n'; IFS= read -r -d '' -n 5 input; printf 'HEX:%s\\n' \"$(printf '%s' \"$input\" | od -An -tx1 | tr -d ' \\n')\"")
+	split.WaitFor("SPLIT_PROMPT", time.Second*5)
+	split.SendRaw([]byte("\x1b[?62;"))
+	split.SendRaw([]byte("22cabcde"))
+	split.WaitFor("HEX:6162636465", time.Second*5)
+}
+
 func TestSessionAlternateScreenScreenshot(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")

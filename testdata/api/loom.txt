@@ -2070,6 +2070,11 @@ type KeyEvent struct {
 	//            "ctrl-b","ctrl-c","ctrl-d","ctrl-f","ctrl-q","ctrl-u","ctrl-w",
 	//            or "" for plain text
 	Text string // typed printable text (Key == "" when Text != "")
+
+	// Report marks a terminal report (cursor position, DA, DSR status or
+	// DECRPM) consumed by ScanKey. It answers a query and is never a keypress;
+	// callers drop it instead of forwarding it or treating it as text.
+	Report bool
 }
     KeyEvent is a decoded keyboard event. Key names match common terminal
     conventions; Text carries printable input.
