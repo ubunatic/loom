@@ -1,6 +1,6 @@
 # 407 — loom view: ctrl-f is find, never page down; drop ctrl-b paging; document key policy
 
-**Status**: Open
+**Status**: Closed — Fixed in 0edabbb: ctrl-f/ctrl-b dropped from view paging, View ignores both (unit test), 368 PTY test uses pgdn, policy in Widgets.md, Upgrading row; find split to 408; make test-q1 run, api and view PTY tests green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
