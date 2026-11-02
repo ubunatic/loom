@@ -11,10 +11,11 @@ import (
 	"ubunatic.com/loom/internal/ptytest"
 )
 
-// TestANSIViewPTYSpaceAndCtrlFPagesDown checks that space and ctrl-f page
-// down in `loom view` (issue 368). Each key gets a fresh view so one key's
-// scroll cannot mask the other's.
-func TestANSIViewPTYSpaceAndCtrlFPagesDown(t *testing.T) {
+// TestANSIViewPTYSpaceAndPgDnPageDown checks that space and pgdn page down in
+// `loom view` (issue 368). ctrl-f is find, not page down (issue 407); the
+// unbound case is pinned in TestViewCtrlFAndCtrlBDoNotPage. Each key gets a
+// fresh view so one key's scroll cannot mask the other's.
+func TestANSIViewPTYSpaceAndPgDnPageDown(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")
 	}
@@ -31,7 +32,7 @@ func TestANSIViewPTYSpaceAndCtrlFPagesDown(t *testing.T) {
 
 	for _, tc := range []struct{ name, key string }{
 		{"space", " "},
-		{"ctrl-f", "\x06"},
+		{"pgdn", "\x1b[6~"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			view := ptytest.Start(t, 40, 10, bin, "view", ansiFile)

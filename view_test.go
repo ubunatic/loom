@@ -10,20 +10,33 @@ func TestViewPagerNavigation(t *testing.T) {
 		want int
 	}{
 		{KeyEvent{Key: "pgdown"}, 6},
-		{KeyEvent{Key: "ctrl-f"}, 12},
+		{KeyEvent{Key: "pgdn"}, 12},
 		{KeyEvent{Text: " "}, 18},
 		{KeyEvent{Key: "ctrl-d"}, 21},
 		{KeyEvent{Key: "end"}, 24},
 		{KeyEvent{Text: "G"}, 24},
 		{KeyEvent{Key: "ctrl-u"}, 21},
 		{KeyEvent{Key: "pgup"}, 15},
-		{KeyEvent{Key: "ctrl-b"}, 9},
+		{KeyEvent{Key: "pageup"}, 9},
 		{KeyEvent{Text: "b"}, 3},
 		{KeyEvent{Key: "home"}, 0},
 		{KeyEvent{Text: "g"}, 0},
 	} {
 		if v.ConsumeKey(tc.key).Quit || v.Scroll != tc.want {
 			t.Fatalf("key %+v: scroll %d, want %d", tc.key, v.Scroll, tc.want)
+		}
+	}
+}
+
+// TestViewCtrlFAndCtrlBDoNotPage pins the key policy (issue 407): ctrl-f is
+// find and ctrl-b is the session prefix, so View leaves both unconsumed.
+func TestViewCtrlFAndCtrlBDoNotPage(t *testing.T) {
+	v := NewView(make([]string, 30))
+	v.Draw(NewCanvas(20, 6), Rect{W: 20, H: 6})
+	v.ConsumeKey(KeyEvent{Key: "pgdown"})
+	for _, key := range []string{"ctrl-f", "ctrl-b"} {
+		if r := v.ConsumeKey(KeyEvent{Key: key}); r != Ignored() || v.Scroll != 6 {
+			t.Fatalf("%s: result %+v scroll %d, want ignored and scroll 6", key, r, v.Scroll)
 		}
 	}
 }
