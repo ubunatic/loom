@@ -1,6 +1,7 @@
 # 391 — agy vim mode UI breaks in loom session (stray letters, repeated lines, wrong popup offset)
 
-**Status**: Open
+**Status**: Closed — Fixed in the library: scanEscapeKey consumes whole CSI sequences (CPR, DA, DECRPM, DSR replies become Report events and are dropped by the session, 869c304); the session answers child DSR 6n/5n and DA from the child VT in child coordinates (7b61498). Pinned by unit, VT and session PTY tests; make test-q1 green. Not verified live against agy vim mode (agy not run here).
+**Closed-By**: claude:haiku:med, session d391
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
