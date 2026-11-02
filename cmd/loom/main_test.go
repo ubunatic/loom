@@ -877,9 +877,16 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 	if got := canvas.Get(0, 0).Text; got != "c" {
 		t.Fatalf("first rendered cell after horizontal pan = %q, want %q", got, "c")
 	}
+	// home/end scroll vertically only (issue 407); "]" pans to the right edge.
 	view.ConsumeKey(loom.KeyEvent{Key: "end"})
+	if view.offsetX != 2 || view.offsetY != buffer.Rows()-2 {
+		t.Fatalf("end offsets = %d,%d, want 2,%d", view.offsetX, view.offsetY, buffer.Rows()-2)
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "home"})
+	view.ConsumeKey(loom.KeyEvent{Key: "]"})
+	view.ConsumeKey(loom.KeyEvent{Key: "]"})
 	if want := buffer.Cols() - 4; view.offsetX != want {
-		t.Fatalf("end horizontal offset = %d, want maximum offset %d", view.offsetX, want)
+		t.Fatalf("] horizontal offset = %d, want maximum offset %d", view.offsetX, want)
 	}
 	view.Draw(canvas, loom.Rect{W: 4, H: 2})
 	if got := canvas.Get(0, 0).Text; got != "q" {
@@ -890,6 +897,10 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 		t.Fatalf("right edge offset = %d, want %d", view.offsetX, want)
 	}
 	view.ConsumeKey(loom.KeyEvent{Key: "home"})
+	if view.offsetX != buffer.Cols()-4 || view.offsetY != 0 {
+		t.Fatalf("home offsets = %d,%d, want %d,0", view.offsetX, view.offsetY, buffer.Cols()-4)
+	}
+	view.offsetX = 0
 	view.ConsumeKey(loom.KeyEvent{Key: "]"})
 	if view.offsetX != 10 {
 		t.Fatalf("] horizontal offset = %d, want 10", view.offsetX)
@@ -903,9 +914,8 @@ func TestANSIViewPansWideBufferAndClampsOffsets(t *testing.T) {
 		t.Fatalf("[ horizontal offset = %d, want 6", view.offsetX)
 	}
 	view.ConsumeKey(loom.KeyEvent{Key: "left"})
-	view.ConsumeKey(loom.KeyEvent{Key: "home"})
-	if view.offsetX != 0 {
-		t.Fatalf("home horizontal offset = %d, want 0", view.offsetX)
+	if view.offsetX != 5 {
+		t.Fatalf("left horizontal offset = %d, want 5", view.offsetX)
 	}
 	view.ConsumeKey(loom.KeyEvent{Key: "pgdn"})
 	if want := buffer.Rows() - 2; view.offsetY != want {

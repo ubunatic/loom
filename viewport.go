@@ -144,10 +144,10 @@ func (v *Viewport) ConsumeKey(e KeyEvent) EventResult {
 		v.ScrollY = max(0, v.ScrollY-page)
 		return Handled()
 	case "home":
-		v.ScrollX, v.ScrollY = 0, 0
+		v.ScrollY = 0
 		return Handled()
 	case "end":
-		v.ScrollX, v.ScrollY = maxX, maxY
+		v.ScrollY = maxY
 		return Handled()
 	default:
 		if v.Child != nil {
