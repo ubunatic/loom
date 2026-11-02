@@ -36,3 +36,14 @@ Key areas to investigate:
 ## Jules experiment (2026-11-01): failed run, one lead host-verified
 
 The run ended asking a question (no PR, not answered). Its lead holds at 5c3c603: `scanEscapeKey` (`event.go:612`) does not recognise CPR or DA replies. Host probe with `scanKey`: `ESC[24;80R` consumes 7 bytes and leaves a stray `R`; `ESC[>1;10;0c` and `ESC[?62;22c` consume only 3 bytes and leave the rest as text. That matches the "stray letters" symptom if these replies pass through the key decoder on the session path (not yet checked). Second open question from the run: CPR rows may need rewriting by the status-bar offset before reaching the child.
+
+## Searcher findings (2026-11-02, HEAD 5bf20a3)
+- The session server decodes stdin with `loom.ScanKey` (`internal/session/session.go:1061` → `event.go:579-612`) and forwards each unit to the child PTY raw (`session.go:1305`). Plain forwarding is byte-exact; search (`~1140`) and prefix (`~1214`) see the split pieces (stray `R`/`c` as query text or prefix commands).
+- `scanEscapeKey` (`event.go:612-660`) treats `R`/`c` as finals only when `b[2]` is a letter; `<`, `=`, `>`, `?` private parameter bytes fall back to 3 bytes.
+- The session VT (`vt/vt.go:702-760`) has no `n` (DSR/CPR) or `c` (DA) case, and child output is redrawn from cells, so a child's `ESC[6n`/`ESC[c` may never reach the outer terminal and stay unanswered (hypothesis: matches the misplaced popups; not verified live).
+- No session-path tests for CPR/DA.
+
+## Milestones
+- **M1 (full CSI scan, library):** `scanEscapeKey` consumes a whole CSI per ECMA-48 (params 0x30-0x3F incl. `<=>?`, intermediates 0x20-0x2F, final 0x40-0x7E); a CPR/DA reply is one unit with no stray bytes. Unit tests for `ESC[24;80R`, `ESC[>1;10;0c`, `ESC[?62;22c`, plus split-across-reads cases; existing key names (arrows, F-keys, SGR mouse, modifyOtherKeys, CSI u) unchanged.
+- **M2 (child queries):** a session PTY test where the child sends `ESC[6n` and `ESC[c`; decide from evidence whether the session answers them from the child VT (cursor in child coordinates) or forwards them. Implement the smaller correct option; test that the child gets a well-formed reply and that search/prefix modes never see reply bytes.
+- Close only when M1 and M2 tests are green and `make test-q1` passes.
