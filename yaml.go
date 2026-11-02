@@ -137,10 +137,10 @@ func (c *YamlConfig) Height(contentH int) int {
 	}
 
 	if minH <= 0 {
-		minH = 3 // default minimum fallback
+		minH = SpeccedDefaults.Pane.MinHeight
 	}
 	if maxH <= 0 {
-		maxH = 20 // default maximum fallback
+		maxH = SpeccedDefaults.Pane.MaxHeight
 	}
 	if minH > maxH {
 		minH = maxH

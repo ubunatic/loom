@@ -534,12 +534,14 @@
     "pane": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["max_cols", "esc_key_timeout", "guard_duration", "view_pan_step"],
+      "required": ["max_cols", "esc_key_timeout", "guard_duration", "view_pan_step", "min_height", "max_height"],
       "properties": {
         "max_cols": { "type": "integer", "minimum": 1 },
         "esc_key_timeout": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
         "guard_duration": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
         "view_pan_step": { "type": "integer", "minimum": 1 },
+        "min_height": { "type": "integer", "minimum": 1 },
+        "max_height": { "type": "integer", "minimum": 1 },
         "kitty_keyboard": { "type": "boolean" }
       }
     },

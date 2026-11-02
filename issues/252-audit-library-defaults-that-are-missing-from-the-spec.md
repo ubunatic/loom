@@ -37,3 +37,10 @@ Resolve the recommendations set by set. For accepted values, add YAML keys and s
 ## Jules audit (2026-11-01, GitHub main 5c3c603)
 
 Verdict: partly done, matching the 2026-10-31 progress note. 10/11 refs hold (clock.tick_interval is not at `spec/defaults.yaml:113`). Remaining work is the owner decisions already listed above: `yaml.go:140,143` minH/maxH, `internal/session/debug.go:19-23`, `version.go:3`, plus `resize.go:56` repeating mode IDs. Report: `reports/jules/252.md`.
+
+## Decision (owner, 2026-11-02)
+- Layout `minH`/`maxH` fallbacks: moved to spec as `pane.min_height`/`pane.max_height` (3/20), schema-required, validated (positive, min ≤ max), consumed in `yaml.go` and proven by `TestYamlHeightFallbackReadsSpec`.
+- Session debug constants (`internal/session/debug.go`): kept in Go, internal diagnostics tuning.
+- `Version` literal: kept (goreleaser ldflags), guarded by the drift test.
+- Syntax token names and demo gallery URL: kept in Go (protocol identifiers, app content).
+- `resize.go:56` (Jules): already reads `SpeccedResizeModes.ModeOrder`; nothing left.
