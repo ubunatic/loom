@@ -72,6 +72,14 @@ func TestViewportHomeEndScrollVerticallyOnly(t *testing.T) {
 	canvas := loom.NewCanvas(10, 4)
 	viewport.Draw(canvas, canvas.Bounds())
 	viewport.ScrollX = 5
+	viewport.ConsumeKey(loom.KeyEvent{Key: "shift-pgdown"})
+	if viewport.ScrollY != 4 {
+		t.Fatalf("shift-pgdown ScrollY = %d, want 4", viewport.ScrollY)
+	}
+	viewport.ConsumeKey(loom.KeyEvent{Key: "shift-pgup"})
+	if viewport.ScrollY != 0 {
+		t.Fatalf("shift-pgup ScrollY = %d, want 0", viewport.ScrollY)
+	}
 	viewport.ConsumeKey(loom.KeyEvent{Key: "end"})
 	if viewport.ScrollX != 5 || viewport.ScrollY == 0 {
 		t.Fatalf("end: ScrollX=%d ScrollY=%d, want ScrollX 5 and ScrollY at bottom", viewport.ScrollX, viewport.ScrollY)

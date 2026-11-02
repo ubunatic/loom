@@ -11,6 +11,8 @@ func TestViewPagerNavigation(t *testing.T) {
 	}{
 		{KeyEvent{Key: "pgdown"}, 6},
 		{KeyEvent{Key: "pgdn"}, 12},
+		{KeyEvent{Key: "shift-pgdown"}, 18},
+		{KeyEvent{Key: "shift-pgup"}, 12},
 		{KeyEvent{Text: " "}, 18},
 		{KeyEvent{Key: "ctrl-d"}, 21},
 		{KeyEvent{Key: "end"}, 24},

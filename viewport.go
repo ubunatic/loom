@@ -137,10 +137,10 @@ func (v *Viewport) ConsumeKey(e KeyEvent) EventResult {
 	case "right", "l":
 		v.ScrollX = min(maxX, v.ScrollX+1)
 		return Handled()
-	case "pgdown", "pgdn", "pagedown", " ":
+	case "pgdown", "pgdn", "pagedown", "shift-pgdown", "shift-pgdn", "shift-pagedown", " ":
 		v.ScrollY = min(maxY, v.ScrollY+page)
 		return Handled()
-	case "pgup", "pageup":
+	case "pgup", "pageup", "shift-pgup", "shift-pageup":
 		v.ScrollY = max(0, v.ScrollY-page)
 		return Handled()
 	case "home":
