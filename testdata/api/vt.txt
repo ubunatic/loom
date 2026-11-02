@@ -125,6 +125,12 @@ func (v *VT) Cells() [][]Cell
 func (v *VT) Cursor() (x, y int)
     Cursor returns the zero-based cursor position.
 
+func (v *VT) DrainReplies() []byte
+    DrainReplies returns and clears the terminal reports (cursor position, DSR
+    status, device attributes) that the program writing into v must read back.
+    The cursor is reported in v's own coordinates, so a host that embeds v
+    writes these bytes to the program's input and never relays the query.
+
 func (v *VT) FrameCells() [][][]Cell
     FrameCells returns a copy of the cell snapshots taken at each ?2026 frame
     end.

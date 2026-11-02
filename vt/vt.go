@@ -51,6 +51,7 @@ type VT struct {
 	x, y            int
 	autoWrap        bool
 	pending         []byte // incomplete escape or UTF-8 tail carried between Write calls
+	replies         []byte // terminal reports owed to the program, see DrainReplies
 	discardControl  byte   // unterminated control type discarded after the safety cap
 	main            *terminalState
 	saved           cursorState
@@ -384,6 +385,26 @@ func isTrailingBlank(c Cell) bool {
 
 // Cursor returns the zero-based cursor position.
 func (v *VT) Cursor() (x, y int) { return v.x, v.y }
+
+// maxReplies bounds unread reports so a VT that is never drained cannot grow.
+const maxReplies = 256
+
+// reply queues a terminal report for the program that produced the output.
+func (v *VT) reply(s string) {
+	if len(v.replies)+len(s) <= maxReplies {
+		v.replies = append(v.replies, s...)
+	}
+}
+
+// DrainReplies returns and clears the terminal reports (cursor position, DSR
+// status, device attributes) that the program writing into v must read back.
+// The cursor is reported in v's own coordinates, so a host that embeds v
+// writes these bytes to the program's input and never relays the query.
+func (v *VT) DrainReplies() []byte {
+	r := v.replies
+	v.replies = nil
+	return r
+}
 
 // Pen returns the current SGR pen style.
 func (v *VT) Pen() Style { return v.pen }
@@ -741,6 +762,26 @@ func (v *VT) csi(params string, final byte) {
 			return
 		}
 		v.x, v.y, v.pen = v.saved.x, v.saved.y, v.saved.pen
+	case 'n':
+		// DSR: ESC [ 6 n asks for the cursor position, ESC [ 5 n for status.
+		// Private DSR (ESC [ ? ... n) has its own report format and is not answered.
+		if strings.HasPrefix(params, "?") {
+			break
+		}
+		switch arg(0, 0) {
+		case 6:
+			v.reply(fmt.Sprintf("\x1b[%d;%dR", v.y+1, v.x+1))
+		case 5:
+			v.reply("\x1b[0n")
+		}
+	case 'c':
+		// DA: ESC [ c (or ESC [ 0 c) asks for primary attributes, ESC [ > c for secondary.
+		switch {
+		case strings.HasPrefix(params, ">"):
+			v.reply("\x1b[>1;10;0c")
+		case params == "" || params == "0":
+			v.reply("\x1b[?62;22c")
+		}
 	case 'K':
 		v.eraseLine(p[0])
 	case 'J':

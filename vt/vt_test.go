@@ -23,6 +23,31 @@ func TestVTNoWrapKeepsCursorOnRightmostCell(t *testing.T) {
 	}
 }
 
+func TestVTAnswersCursorAndDeviceQueries(t *testing.T) {
+	v := NewVT(20, 5)
+	v.Write([]byte("abc\x1b[6n")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1b[1;4R" {
+		t.Fatalf("CPR after abc = %q, want ESC[1;4R (1-based, child coordinates)", got)
+	}
+	if got := v.DrainReplies(); len(got) != 0 {
+		t.Fatalf("second DrainReplies = %q, want empty", got)
+	}
+
+	v.Write([]byte("\x1b[3;5H\x1b[6n\x1b[c\x1b[>c\x1b[5n")) //nolint:errcheck
+	want := "\x1b[3;5R\x1b[?62;22c\x1b[>1;10;0c\x1b[0n"
+	if got := string(v.DrainReplies()); got != want {
+		t.Fatalf("replies = %q, want %q", got, want)
+	}
+}
+
+func TestVTIgnoresUnansweredPrivateQueries(t *testing.T) {
+	v := NewVT(20, 5)
+	v.Write([]byte("\x1b[?6n\x1b[?2004$p")) //nolint:errcheck
+	if got := v.DrainReplies(); len(got) != 0 {
+		t.Fatalf("unanswered queries produced replies %q", got)
+	}
+}
+
 func TestVTPositioningAndErase(t *testing.T) {
 	v := NewVT(12, 3)
 	v.Write([]byte("\x1b[1;1Hhello world\x1b[2;3Hab\x1b[1;6H\x1b[K")) //nolint:errcheck
