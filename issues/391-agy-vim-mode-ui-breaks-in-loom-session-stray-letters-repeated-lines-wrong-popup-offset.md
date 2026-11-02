@@ -1,6 +1,7 @@
 # 391 — agy vim mode UI breaks in loom session (stray letters, repeated lines, wrong popup offset)
 
-**Status**: Open
+**Status**: Closed — Fixed in the library: scanEscapeKey consumes whole CSI sequences (CPR, DA, DECRPM, DSR replies become Report events and are dropped by the session, 869c304); the session answers child DSR 6n/5n and DA from the child VT in child coordinates (7b61498). Pinned by unit, VT and session PTY tests; make test-q1 green. Not verified live against agy vim mode (agy not run here).
+**Closed-By**: claude:haiku:med, session d391
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -47,3 +48,9 @@ The run ended asking a question (no PR, not answered). Its lead holds at 5c3c603
 - **M1 (full CSI scan, library):** `scanEscapeKey` consumes a whole CSI per ECMA-48 (params 0x30-0x3F incl. `<=>?`, intermediates 0x20-0x2F, final 0x40-0x7E); a CPR/DA reply is one unit with no stray bytes. Unit tests for `ESC[24;80R`, `ESC[>1;10;0c`, `ESC[?62;22c`, plus split-across-reads cases; existing key names (arrows, F-keys, SGR mouse, modifyOtherKeys, CSI u) unchanged.
 - **M2 (child queries):** a session PTY test where the child sends `ESC[6n` and `ESC[c`; decide from evidence whether the session answers them from the child VT (cursor in child coordinates) or forwards them. Implement the smaller correct option; test that the child gets a well-formed reply and that search/prefix modes never see reply bytes.
 - Close only when M1 and M2 tests are green and `make test-q1` passes.
+
+## Plan review (host, 2026-11-02)
+Plan from d391 (haiku:med) approved: full-CSI fallback after the existing fast paths, `KeyEvent.Report` for replies, session drops reports before search/prefix, M2 answers DSR 6n / DA from the child VT. Pre-work for M1:
+- Before adding `Report`, check every other consumer of CPR in the library (Pane path, `pane_pty_test.go:777`, any code waiting for `ESC[...R` from the outer terminal) so the new flag does not swallow a reply loom itself asked for.
+- Golden table of current key names lands in the same commit, before the scanner edit is visible in the diff order.
+- M2: confirm whether raw child bytes reach the outer terminal (`session.go:741-775`); if they do, strip the answered queries so the child never gets two replies.

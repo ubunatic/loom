@@ -747,6 +747,11 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						anomaly = t.debugDetector.Observe(buf[:n], time.Now())
 					}
 					frame, _ := t.vt.WriteFramed(buf[:n])
+					// The child's cursor and device queries are answered from the
+					// VT, in child coordinates, whether or not this frame is shown.
+					if reply := t.vt.DrainReplies(); len(reply) > 0 {
+						_, _ = t.master.Write(reply)
+					}
 					if anomaly == "" && t.debugDetector != nil && suspiciousDebugText(t.vt.Text()) {
 						anomaly = debugLeak
 					}
@@ -1062,6 +1067,14 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 					if !ok {
 						sessionMu.Unlock()
 						break
+					}
+
+					// A terminal report answers a query, not a keypress: drop it
+					// before search or prefix see it, and keep prefix mode armed.
+					if key.Report {
+						pending = pending[used:]
+						sessionMu.Unlock()
+						continue
 					}
 
 					if searchActive {

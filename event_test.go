@@ -3,7 +3,10 @@
 
 package loom
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestScanKeySeparatesPrintableKeys(t *testing.T) {
 	for _, input := range []string{"r ", "ä🙂r ", "r\x1b[A "} {
@@ -44,6 +47,93 @@ func TestScanKeyWaitsForCompleteUTF8Rune(t *testing.T) {
 		if event, used, ok := scanKey(raw[:end]); ok || used != 0 || event != (KeyEvent{}) {
 			t.Fatalf("partial rune decoded as (%+v, %d, %v)", event, used, ok)
 		}
+	}
+}
+
+// TestScanKeyMatchesDecodeKeyForKnownSequences pins the key names of the
+// escape forms scanKey must keep: each complete sequence is consumed whole and
+// decodes exactly as DecodeKey decodes it (issue 391 M1 golden table).
+func TestScanKeyMatchesDecodeKeyForKnownSequences(t *testing.T) {
+	seqs := []string{
+		"\x1b[93;5u", "\x1b[A", "\x1b[B", "\x1b[C", "\x1b[D", "\x1b[Z",
+		"\x1b[1;2A", "\x1b[1;5B", "\x1b[1;3A", "\x1b[1;5R", "\x1b[1;2P",
+		"\x1b[a", "\x1b[b", "\x1bOP", "\x1bOQ", "\x1bOR", "\x1bOS",
+		"\x1b[15~", "\x1b[21~", "\x1b[24~", "\x1b[24;2~", "\x1b[24;5~",
+		"\x1b[1~", "\x1b[3~", "\x1b[4~", "\x1b[5~", "\x1b[6~",
+		"\x1b[2~", "\x1b[2;2~", "\x1b[2;5~", "\x1b[3;2~", "\x1b[1;2~",
+		"\x1b[4;2~", "\x1b[7;5~", "\x1b[8;2~", "\x1b[5;2~", "\x1b[6;2~",
+		"\x1b[122;6u", "\x1b[97;3u", "\x1b[97;7u", "\x1b[97;9u", "\x1b[97;6u",
+		"\x1b[101;6u", "\x1b[9u", "\x1b[32;5u", "\x1b[H", "\x1b[F", "\x1bOH",
+		"\x1bOF", "\x1b[1;2H", "\x1b[1;2F", "\x1b[1;5H", "\x1b[1;3H",
+		"\x1b[1;6F", "\x1b[1;6D", "\x1b[1;6C", "\x1b[1;6H",
+		"\x1ba", "\x1b\x01", "\x1b\r", "\x01", "\x7f", "\r", "\x1b\x7f",
+	}
+	for _, s := range seqs {
+		t.Run(s, func(t *testing.T) {
+			raw := []byte(s)
+			want := DecodeKey(raw)
+			got, used, ok := scanKey(raw)
+			if !ok || used != len(raw) || got != want {
+				t.Fatalf("scanKey(%q) = (%+v, %d, %t), want (%+v, %d, true)", s, got, used, ok, want, len(raw))
+			}
+		})
+	}
+}
+
+// terminalReplies are complete CSI reports; each must be consumed whole and
+// marked Report, with no key and no stray tail bytes (issue 391 M1).
+var terminalReplies = []string{
+	"\x1b[24;80R",   // CPR
+	"\x1b[1;1R",     // CPR at row 1 col 1: no key, so a report
+	"\x1b[1;12R",    // CPR, two-digit column: must not decode as modified F3
+	"\x1b[?24;80R",  // DECXCPR
+	"\x1b[>1;10;0c", // secondary DA
+	"\x1b[?62;22c",  // primary DA
+	"\x1b[?1;2$y",   // DECRPM
+	"\x1b[0n",       // DSR status
+}
+
+func TestScanKeyConsumesWholeTerminalReply(t *testing.T) {
+	for _, s := range terminalReplies {
+		t.Run(s, func(t *testing.T) {
+			got, used, ok := scanKey([]byte(s))
+			if !ok || used != len(s) {
+				t.Fatalf("scanKey(%q) = used %d, ok %t; want used %d", s, used, ok, len(s))
+			}
+			if got != (KeyEvent{Report: true}) {
+				t.Fatalf("scanKey(%q) = %+v, want a Report with no key or text", s, got)
+			}
+		})
+	}
+}
+
+func TestScanKeyWaitsForCompleteTerminalReply(t *testing.T) {
+	for _, s := range terminalReplies {
+		for end := 1; end < len(s); end++ {
+			if event, used, ok := scanKey([]byte(s[:end])); ok || used != 0 || event != (KeyEvent{}) {
+				t.Fatalf("partial reply %q decoded as (%+v, %d, %t)", s[:end], event, used, ok)
+			}
+		}
+	}
+}
+
+func TestScanKeyReplyThenTextKeepsText(t *testing.T) {
+	raw := []byte("\x1b[24;80Rq")
+	event, used, ok := scanKey(raw)
+	if !ok || used != len("\x1b[24;80R") || !event.Report {
+		t.Fatalf("reply scan = (%+v, %d, %t)", event, used, ok)
+	}
+	event, used, ok = scanKey(raw[used:])
+	if !ok || used != 1 || event != (KeyEvent{Text: "q"}) {
+		t.Fatalf("text after reply = (%+v, %d, %t), want q", event, used, ok)
+	}
+}
+
+func TestScanKeyRunawayCSIIsBounded(t *testing.T) {
+	raw := []byte("\x1b[" + strings.Repeat("1", 200))
+	event, used, ok := scanKey(raw)
+	if !ok || used <= 0 || used > csiMaxLen || event != (KeyEvent{}) {
+		t.Fatalf("runaway CSI = (%+v, %d, %t), want a bounded junk consume", event, used, ok)
 	}
 }
 
