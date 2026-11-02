@@ -54,6 +54,43 @@ func TestMeasureAndEval(t *testing.T) {
 	}
 }
 
+func TestMeasureIgnoresTrailingWhitespaceOnFullWidthBlankPadding(t *testing.T) {
+	// 5 chars width, line 3 is 5 spaces. It should not report trailing whitespace.
+	path := writeFixture(t, "Hello\nWorld\n     \n")
+	var measured bytes.Buffer
+	if err := execute([]string{"measure", path}, &measured); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(measured.String(), "trailing whitespace") {
+		t.Errorf("measure output unexpectedly warned about trailing whitespace: %q", measured.String())
+	}
+
+	// 5 chars width, line 3 is 4 spaces (ragged). It should report trailing whitespace.
+	path2 := writeFixture(t, "Hello\nWorld\n    \n")
+	var measured2 bytes.Buffer
+	if err := execute([]string{"measure", path2}, &measured2); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(measured2.String(), "trailing whitespace") {
+		t.Errorf("measure output failed to warn about trailing whitespace: %q", measured2.String())
+	}
+
+	// eval --annotate applies the same rule per line (issue 399).
+	var eval1, eval2 bytes.Buffer
+	if err := execute([]string{"eval", "--annotate", path}, &eval1); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(eval1.String(), "trailing whitespace") {
+		t.Errorf("eval flagged full-width blank padding: %q", eval1.String())
+	}
+	if err := execute([]string{"eval", "--annotate", path2}, &eval2); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(eval2.String(), "line 3: trailing whitespace") {
+		t.Errorf("eval missed ragged blank line: %q", eval2.String())
+	}
+}
+
 func TestEvalAnnotatedOutput(t *testing.T) {
 	path := writeFixture(t, "┌──┐\n│ x│  \n└──┘\n")
 	for _, flag := range []string{"--annotate", "-a"} {

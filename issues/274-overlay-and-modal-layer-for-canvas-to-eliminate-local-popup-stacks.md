@@ -18,3 +18,11 @@ Widgets like `RichTextEdit` (`richtextedit.go:58-59`, `260-269`, `720-732`, `910
 
 ## 3. Implementation & Verification Plan
 /goal Provide an overlay/modal layer in Loom so widgets do not need local modal fields or custom event interceptors.
+
+## Audit (Jules, 2026-11-01, checked against 5c3c603)
+
+Still valid (report said "partly done"; the pane's existing overlay is only the F1 help request,
+`pane_run.go:116`, not a general layer). Current locations of the local modal state:
+`richtextedit.go:76-78` (savePicker, savePopup, helpPopup), sizing in `richtextedit_render.go:87-96`,
+key/mouse interception in `richtextedit_input.go:19-24` and `richtextedit_mouse.go:21-26`.
+Report: `reports/jules/274.md` (GitHub PR #43).

@@ -37,3 +37,7 @@ Following the successful spike in #118 and interface definition in #119, this is
 - Incremental parsing correctly reflects single-character insertions, deletions, and multi-line pastes.
 - Benchmark suite verifies allocation count and latency metrics meet interactive editing requirements.
 - Zero CGO dependencies (`CGO_ENABLED=0 go build` succeeds).
+
+## Jules experiment (2026-11-01): wazero + tree-sitter-go
+
+Inconclusive (lead, not host-reproduced): `tree-sitter build --wasm` gives a 217KB grammar module that imports Emscripten `env` (memory etc.) and needs the tree-sitter core engine in the same module, so a bare wazero host fails with `module[env] not instantiated`. Next step would be one wasm build of core + grammar (e.g. along the lines of malivvan/tree-sitter). No startup/size/highlight numbers yet. Report: `reports/jules/120-wazero.md`.

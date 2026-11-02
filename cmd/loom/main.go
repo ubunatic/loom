@@ -77,7 +77,7 @@ func measureFile(out io.Writer, path string) error {
 	lines := strings.Split(strings.TrimSuffix(text, "\n"), "\n")
 	widths := make([]int, len(lines))
 	maxWidth := 0
-	trailing := false
+	trailingLines := make([]bool, len(lines))
 	for i, line := range lines {
 		widths[i] = measure.StringWidth(line)
 		if widths[i] > maxWidth {
@@ -85,7 +85,17 @@ func measureFile(out io.Writer, path string) error {
 		}
 		plain := stripANSI(line)
 		if strings.TrimRight(plain, " \t") != plain {
-			trailing = true
+			trailingLines[i] = true
+		}
+	}
+	trailing := false
+	for i, line := range lines {
+		if trailingLines[i] {
+			plain := stripANSI(line)
+			isBlank := strings.TrimSpace(plain) == ""
+			if !(isBlank && widths[i] == maxWidth) {
+				trailing = true
+			}
 		}
 	}
 	for i, width := range widths {
@@ -125,7 +135,10 @@ func evaluateFile(out io.Writer, path string, annotate bool) error {
 			}
 			plain := stripANSI(line)
 			if strings.TrimRight(plain, " \t") != plain {
-				diagnostics = append(diagnostics, annotation{row: i, message: fmt.Sprintf("line %d: trailing whitespace", i+1)})
+				isBlank := strings.TrimSpace(plain) == ""
+				if !(isBlank && widths[i] == maxWidth) {
+					diagnostics = append(diagnostics, annotation{row: i, message: fmt.Sprintf("line %d: trailing whitespace", i+1)})
+				}
 			}
 		}
 		return writeAnnotated(out, text, diagnostics)
@@ -447,9 +460,9 @@ func (v *ansiView) ConsumeKey(event loom.KeyEvent) loom.EventResult {
 		v.offsetY--
 	case event.Is("down", "j"):
 		v.offsetY++
-	case event.Is("pgup"):
+	case event.Is(loom.SpeccedDefaults.View.Bindings["page_up"]...):
 		v.offsetY -= panStep
-	case event.Is("pgdown", "pgdn", "pagedown"):
+	case event.Is(loom.SpeccedDefaults.View.Bindings["page_down"]...):
 		v.offsetY += panStep
 	}
 	v.clampOffsets()

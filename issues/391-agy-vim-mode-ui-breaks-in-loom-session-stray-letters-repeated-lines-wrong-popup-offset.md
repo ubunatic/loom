@@ -32,3 +32,7 @@ Key areas to investigate:
 - Ensure terminal queries/responses (CPR, DA) are correctly handled or scoped to child coordinates.
 - Verify margin and cursor offset arithmetic when the session bar is displayed.
 - Run `make test-q1` to confirm no regressions.
+
+## Jules experiment (2026-11-01): failed run, one lead host-verified
+
+The run ended asking a question (no PR, not answered). Its lead holds at 5c3c603: `scanEscapeKey` (`event.go:612`) does not recognise CPR or DA replies. Host probe with `scanKey`: `ESC[24;80R` consumes 7 bytes and leaves a stray `R`; `ESC[>1;10;0c` and `ESC[?62;22c` consume only 3 bytes and leave the rest as text. That matches the "stray letters" symptom if these replies pass through the key decoder on the session path (not yet checked). Second open question from the run: CPR rows may need rewriting by the status-bar offset before reaching the child.

@@ -1,6 +1,6 @@
 # 399 — loom measure warns trailing whitespace on full-width blank padding rows
 
-**Status**: Open
+**Status**: Closed — measure/eval skip full-width blank rows, both covered by tests (744da62); make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Trivial
 **Category**: Bug
