@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -121,5 +122,43 @@ func TestFormatInvalidFlags(t *testing.T) {
 		if err := execute(args, &out); err == nil {
 			t.Errorf("execute(%q) succeeded", args)
 		}
+	}
+}
+
+// view --plain mirrors the input's line ends: one final newline, not two.
+func TestViewPlainEndsWithOneNewline(t *testing.T) {
+	dir := t.TempDir()
+	for _, tc := range []struct{ in, want string }{
+		{"ab\n", "ab\n"},
+		{"ab", "ab\n"},
+		{"ab\n\ncd\n", "ab\n\ncd\n"},
+	} {
+		path := filepath.Join(dir, "in.ansi")
+		if err := os.WriteFile(path, []byte(tc.in), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		var out bytes.Buffer
+		if err := execute([]string{"view", "--plain", path}, &out); err != nil {
+			t.Fatalf("view --plain %q: %v", tc.in, err)
+		}
+		if got := out.String(); got != tc.want {
+			t.Errorf("view --plain %q = %q, want %q", tc.in, got, tc.want)
+		}
+	}
+}
+
+// --write replaces regular files only; a pipe such as /dev/fd/N has no
+// directory to hold the temp file, so it must fail with a clear error.
+func TestAtomicWriteRejectsNonRegularFiles(t *testing.T) {
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer r.Close()
+	defer w.Close()
+	path := "/dev/fd/" + strconv.Itoa(int(r.Fd()))
+	err = atomicWrite(path, []byte("x"))
+	if err == nil || !strings.Contains(err.Error(), "not a regular file") {
+		t.Fatalf("atomicWrite(%s) error = %v, want not a regular file", path, err)
 	}
 }
