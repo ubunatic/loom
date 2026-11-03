@@ -196,6 +196,9 @@ func atomicWrite(path string, data []byte) error {
 	if err != nil {
 		return err
 	}
+	if !info.Mode().IsRegular() {
+		return fmt.Errorf("%s: not a regular file; --write needs a file it can replace", path)
+	}
 	tmp, err := os.CreateTemp(filepath.Dir(path), ".loom-format-*")
 	if err != nil {
 		return err

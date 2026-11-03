@@ -19,3 +19,9 @@ Since 391, `loom session` drops every CSI reply arriving on stdin (`KeyEvent.Rep
 1. List the queries common TUIs send at startup (DECRQM, kitty ?u, XTVERSION, OSC 10/11 colors).
 2. For each: answer from the VT (state it owns) or forward the outer reply to the active tab's child.
 3. Session PTY test per choice: child sends the query, gets exactly one well-formed reply.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-405 | 16101408603233734506 | pending | running on Jules (started 2026-11-03); adopt with `harnez agent resume --model jules --id 16101408603233734506 wait` |

@@ -364,7 +364,8 @@ func viewCommand() *cobra.Command {
 				return fmt.Errorf("%s: %w", path, err)
 			}
 			if plain {
-				_, err := fmt.Fprintln(cmd.OutOrStdout(), buf.PlainText())
+				// A final newline in the input parses as an empty last row.
+				_, err := fmt.Fprintln(cmd.OutOrStdout(), strings.TrimSuffix(buf.PlainText(), "\n"))
 				return err
 			}
 			pane, err := loom.New(24)
