@@ -39,3 +39,9 @@ Add a "🧹" button to the main format popover that removes all styling (bold, i
 
 - Unit tests for each action, incl. empty clipboard, mixed-style paste-style guess, case conversions with punctuation and non-ASCII, undo/redo.
 - Live gallery check by the user in Tilix.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-265 | 47a9aa73-5a20-45e8-a773-1b3fdaac1d0f | - | running |

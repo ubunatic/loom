@@ -53,3 +53,9 @@ During development of a split-pane ANSI mockup and TUI prototype in `cati` (`exa
    - When a border fails, printing an inline visual pointer (e.g., showing where the expected `│` or `┐` was expected vs where it was encountered in terminal cells) would make manual fixes even faster.
 3. **Interactive Preview in `loom view`**:
    - `loom view` displays `.ansi` files interactively. Supporting a split or ruler inspection overlay in `loom view` to inspect per-column coordinate markers would be a valuable design aid.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-137 | 01ffcb9f-a4b9-46b9-9109-20f05b95b3b5 | - | running |
