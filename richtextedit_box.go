@@ -119,9 +119,20 @@ func (e *RichTextEdit) restyleSelectedBox(boxStyle BoxBorderStyle) {
 	})
 }
 
+func (e *RichTextEdit) toggleBoxPushMode() {
+	if !e.BoxMode {
+		e.toggleBoxMode()
+	}
+	e.BoxPushMode = !e.BoxPushMode
+	if !e.BoxMode {
+		e.BoxPushMode = false
+	}
+}
+
 func (e *RichTextEdit) toggleBoxMode() {
 	if !e.BoxMode {
 		e.ClearSelection()
+		e.BoxPushMode = false
 		e.boxStrokeFGSet = false
 		lines := e.documentLines()
 		line, column := e.cursorCoordinates(lines)
@@ -187,6 +198,44 @@ func (e *RichTextEdit) drawBoxStep(dy, dx int) {
 	for len(lines[toLine].Spans) > 0 && richLineColumn(lines[toLine], richLineRuneCount(lines[toLine])) < toColumn {
 		lines[toLine].Spans = append(lines[toLine].Spans, RichSpan{Text: " "})
 	}
+
+	if e.BoxPushMode {
+		toCell := richLineCell(lines[toLine], toColumn)
+		if toCell != " " && BoxGlyphArms(toCell) == 0 {
+			if dy != 0 {
+				wordStartCol := toColumn
+				for wordStartCol > 0 {
+					cell := richLineCell(lines[toLine], wordStartCol-1)
+					if cell == " " || BoxGlyphArms(cell) != 0 {
+						break
+					}
+					wordStartCol--
+				}
+				offset := richLineOffsetAtColumn(lines[toLine], wordStartCol)
+				left, right := splitRichLine(lines[toLine], offset)
+				leftLen := richLineColumn(RichLine{Spans: left}, richLineRuneCount(RichLine{Spans: left}))
+				if leftLen < wordStartCol {
+					left = append(left, RichSpan{Text: strings.Repeat(" ", wordStartCol-leftLen)})
+				}
+				var newSpans []RichSpan
+				newSpans = append(newSpans, left...)
+				newSpans = append(newSpans, RichSpan{Text: " "})
+				newSpans = append(newSpans, right...)
+				lines[toLine].Spans = mergeRichSpans(newSpans)
+			} else if dx != 0 {
+				newLines := make([]RichLine, 0, len(lines)+1)
+				newLines = append(newLines, lines[:toLine]...)
+				newLines = append(newLines, RichLine{})
+				newLines = append(newLines, lines[toLine:]...)
+				lines = newLines
+				toLine++
+				for len(lines[toLine].Spans) > 0 && richLineColumn(lines[toLine], richLineRuneCount(lines[toLine])) < toColumn {
+					lines[toLine].Spans = append(lines[toLine].Spans, RichSpan{Text: " "})
+				}
+			}
+		}
+	}
+
 	fromArm, toArm := BoxArmRight, BoxArmLeft
 	if dx < 0 {
 		fromArm, toArm = BoxArmLeft, BoxArmRight

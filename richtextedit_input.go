@@ -94,6 +94,14 @@ func (e *RichTextEdit) consumeKey(key KeyEvent) EventResult {
 			e.popoverSuppressed = e.PopoverDefaults.ArrowsCancelUnfocusedMenu
 		}()
 	}
+	if key.Is(SpeccedDefaults.Editor.HotkeyBoxPushBinding) {
+		if e.HasSelection {
+			e.wrapSelectionInBox()
+		} else {
+			e.toggleBoxPushMode()
+		}
+		return Handled()
+	}
 	if key.Is(SpeccedDefaults.Editor.HotkeyBoxBinding) {
 		if e.HasSelection {
 			e.wrapSelectionInBox()
