@@ -18,6 +18,8 @@ type widget struct {
 	pane    *loom.Pane
 	themes  []string
 	theme   int
+	bgs     []loom.Background
+	bgIdx   int
 }
 
 func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
@@ -46,6 +48,14 @@ func (w *widget) ConsumeKey(k loom.KeyEvent) loom.EventResult {
 		if len(w.themes) > 0 {
 			w.theme = (w.theme + 1) % len(w.themes)
 			applyTheme(w.frame, loom.Theme(w.themes[w.theme]))
+		}
+		return loom.Ignored()
+	case "b", "B":
+		if len(w.bgs) > 0 {
+			w.bgIdx = (w.bgIdx + 1) % len(w.bgs)
+			if w.pane != nil {
+				w.pane.Background = w.bgs[w.bgIdx]
+			}
 		}
 		return loom.Ignored()
 	}
@@ -125,12 +135,18 @@ func Run(_ []string) error {
 	defer pane.Close()
 	pane.MaxCols = 0 // use the full terminal width for the image background
 	pane.DisableDefaultQuit = true
-	pane.Background = loom.NewAstraBackground()
+	astra := loom.NewAstraBackground()
+	pane.Background = astra
+	bgs := []loom.Background{astra}
+	if imgBg, err := loom.LoadImageBackground("examples/background/assets/cati.png"); err == nil {
+		bgs = append(bgs, imgBg)
+	}
+
 	metrics := &loom.RenderMetrics{}
 	pane.Metrics = metrics
 	themes := make([]string, 0, len(loom.SpeccedThemes))
 	for name := range loom.SpeccedThemes {
 		themes = append(themes, name)
 	}
-	return pane.Run(&widget{metrics: metrics, frame: demoFrame(), pane: pane, themes: themes})
+	return pane.Run(&widget{metrics: metrics, frame: demoFrame(), pane: pane, themes: themes, bgs: bgs})
 }

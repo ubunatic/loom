@@ -27,9 +27,15 @@ func TestWidgetDraw(t *testing.T) {
 
 func TestWidgetKeyHandling(t *testing.T) {
 	pane := &loom.Pane{}
-	w := &widget{pane: pane, frame: demoFrame(), themes: []string{"plain", "mc"}}
+	bg1 := loom.NewAstraBackground()
+	bg2 := loom.NewAstraBackground() // just need a dummy second background
+	pane.Background = bg1
+	w := &widget{pane: pane, frame: demoFrame(), themes: []string{"plain", "mc"}, bgs: []loom.Background{bg1, bg2}}
 	if w.ConsumeKey(loom.KeyEvent{Key: "m"}).Quit || !pane.ReduceMotion {
 		t.Fatal("m should toggle reduced motion")
+	}
+	if w.ConsumeKey(loom.KeyEvent{Key: "b"}).Quit || w.bgIdx != 1 || pane.Background != bg2 {
+		t.Fatal("b should toggle the background")
 	}
 	if w.ConsumeKey(loom.KeyEvent{Key: "T"}).Quit || w.theme != 1 {
 		t.Fatal("T should cycle the theme")
