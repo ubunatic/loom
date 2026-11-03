@@ -31,4 +31,4 @@ Host integration fixes numeric allocation with exclusive creation, sanitizes bas
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-284 | d5ac3065-7da7-49cf-95ab-d349b60fa16c | - | running |
+| implement | jules-implement-284 | 5898989194043600887 | GH #73 | adopted: screenshot test for Unicode, styles, editing state; host replaced a dead cursor check with real ones; q1 green |
