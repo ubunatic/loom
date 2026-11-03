@@ -610,6 +610,13 @@ func (v *VT) putCluster(r rune, text string, w int) {
 	if v.x < 0 || v.x >= v.Cols || v.y < 0 || v.y >= v.Rows {
 		return
 	}
+	if v.x > 0 && v.cells[v.y][v.x].Rune == 0 {
+		v.cells[v.y][v.x-1] = Cell{Rune: ' ', Style: v.cells[v.y][v.x-1].Style}
+	}
+	if v.x+w < v.Cols && v.cells[v.y][v.x+w].Rune == 0 {
+		v.cells[v.y][v.x+w] = Cell{Rune: ' ', Style: v.cells[v.y][v.x+w].Style}
+	}
+
 	v.cells[v.y][v.x] = Cell{Rune: r, Text: text, Style: v.pen}
 	for k := 1; k < w && v.x+k < v.Cols; k++ {
 		v.cells[v.y][v.x+k] = Cell{Rune: 0, Style: v.pen}

@@ -502,3 +502,47 @@ func TestVTRepaintCursorVisibility(t *testing.T) {
 		t.Fatal("expected v2 cursor to be hidden after repaint")
 	}
 }
+
+func TestVTWideOverwrite(t *testing.T) {
+	cases := []struct {
+		name string
+		in   string
+		want []string
+	}{
+		{
+			name: "wide over left half",
+			in:   "中\x1b[1;1H x",
+			want: []string{" x"},
+		},
+		{
+			name: "narrow over left half",
+			in:   "中\x1b[1;1Hx",
+			want: []string{"x"},
+		},
+		{
+			name: "narrow over right half",
+			in:   "中\x1b[1;2Hx",
+			want: []string{" x"},
+		},
+		{
+			name: "wide over right half",
+			in:   "中\x1b[1;2H中",
+			want: []string{" 中"},
+		},
+		{
+			name: "wide over both halves",
+			in:   "中\x1b[1;1H中",
+			want: []string{"中"},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v := NewVT(4, 1)
+			v.Write([]byte(tc.in))
+			got := v.Screen()
+			if len(got) != 1 || got[0] != tc.want[0] {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
