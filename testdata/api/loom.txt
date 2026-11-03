@@ -626,23 +626,26 @@ type BackgroundCadence interface {
     interval. Implementations that do not provide it use the spec default.
 
 type Box struct {
-	ID         string    `yaml:"id"`
-	Title      string    `yaml:"title"`
-	Width      int       `yaml:"width"`
-	Height     int       `yaml:"height"`
-	Dynamic    bool      `yaml:"dynamic"`
-	FillHeight bool      `yaml:"fill_height"`
-	MinWidth   int       `yaml:"min_width"`
-	MaxWidth   int       `yaml:"max_width"`
-	MinHeight  int       `yaml:"min_height"`
-	MaxHeight  int       `yaml:"max_height"`
-	Padding    int       `yaml:"padding"`
-	Border     BoxBorder `yaml:"-"`
-	Style      BoxStyle  `yaml:"-"`
-	Child      Widget    `yaml:"-"`
-	Hidden     bool      `yaml:"hidden"`
-	Footer     string    `yaml:"footer"`
-	Rows       *Rows     `yaml:"rows"`
+	ID    string `yaml:"id"`
+	Title string `yaml:"title"`
+	// TitleSegments, when set, is drawn in place of Title. Border.TitlePrefix
+	// and Border.TitleSuffix still frame the segments, in Style.Title.
+	TitleSegments []TitleSegment `yaml:"-"`
+	Width         int            `yaml:"width"`
+	Height        int            `yaml:"height"`
+	Dynamic       bool           `yaml:"dynamic"`
+	FillHeight    bool           `yaml:"fill_height"`
+	MinWidth      int            `yaml:"min_width"`
+	MaxWidth      int            `yaml:"max_width"`
+	MinHeight     int            `yaml:"min_height"`
+	MaxHeight     int            `yaml:"max_height"`
+	Padding       int            `yaml:"padding"`
+	Border        BoxBorder      `yaml:"-"`
+	Style         BoxStyle       `yaml:"-"`
+	Child         Widget         `yaml:"-"`
+	Hidden        bool           `yaml:"hidden"`
+	Footer        string         `yaml:"footer"`
+	Rows          *Rows          `yaml:"rows"`
 
 	// Has unexported fields.
 }
@@ -4699,6 +4702,23 @@ func (t *Timer) Tick(now time.Time)
 func (t *Timer) TickInterval() time.Duration
     TickInterval implements Ticker. The countdown updates once per displayed
     second.
+
+type TitleSegment struct {
+	Text  string
+	Style Style
+}
+    TitleSegment is one independently styled run of a Box title. Segments are
+    drawn left to right with their own Style, and are clipped by display width
+    across segment boundaries.
+
+func HotkeyTitle(title string, key rune, hotkey, text Style) []TitleSegment
+    HotkeyTitle builds title segments that show key as a hotkey in title.
+    When key matches (case-insensitively) a letter of the title's first word,
+    that letter is drawn in hotkey and the rest of the title in text, e.g.
+    "menu" with 'm' gives "m" (hotkey) + "enu" (text). Otherwise the title is
+    preceded by a key badge "[k]" in hotkey, e.g. "[d] Fetch diagnostics".
+    The segment texts always concatenate to title, or to "[k]" + " " + title for
+    the badge form.
 
 type Toggle struct {
 	Value *bool

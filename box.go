@@ -8,6 +8,8 @@ import (
 	"embed"
 	"fmt"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"gopkg.in/yaml.v3"
 	"ubunatic.com/loom/measure"
@@ -146,29 +148,95 @@ func getStringField(m map[string]interface{}, key string, defaultVal string) str
 	return defaultVal
 }
 
+// TitleSegment is one independently styled run of a Box title. Segments are
+// drawn left to right with their own Style, and are clipped by display width
+// across segment boundaries.
+type TitleSegment struct {
+	Text  string
+	Style Style
+}
+
+// HotkeyTitle builds title segments that show key as a hotkey in title.
+// When key matches (case-insensitively) a letter of the title's first word,
+// that letter is drawn in hotkey and the rest of the title in text, e.g.
+// "menu" with 'm' gives "m" (hotkey) + "enu" (text). Otherwise the title is
+// preceded by a key badge "[k]" in hotkey, e.g. "[d] Fetch diagnostics".
+// The segment texts always concatenate to title, or to "[k]" + " " + title
+// for the badge form.
+func HotkeyTitle(title string, key rune, hotkey, text Style) []TitleSegment {
+	start := strings.IndexFunc(title, func(r rune) bool { return !unicode.IsSpace(r) })
+	if start >= 0 {
+		end := strings.IndexFunc(title[start:], unicode.IsSpace)
+		if end < 0 {
+			end = len(title)
+		} else {
+			end += start
+		}
+		word := title[start:end]
+		for i, r := range word {
+			if unicode.ToLower(r) != unicode.ToLower(key) {
+				continue
+			}
+			// Keep combining marks with their base letter.
+			j := i + utf8.RuneLen(r)
+			for j < len(word) {
+				next, size := utf8.DecodeRuneInString(word[j:])
+				if !unicode.Is(unicode.Mn, next) && !unicode.Is(unicode.Me, next) {
+					break
+				}
+				j += size
+			}
+			matchStart, matchEnd := start+i, start+j
+			return nonEmptySegments(
+				TitleSegment{Text: title[:matchStart], Style: text},
+				TitleSegment{Text: title[matchStart:matchEnd], Style: hotkey},
+				TitleSegment{Text: title[matchEnd:], Style: text},
+			)
+		}
+	}
+	return nonEmptySegments(
+		TitleSegment{Text: "[" + string(key) + "]", Style: hotkey},
+		TitleSegment{Text: " " + title, Style: text},
+	)
+}
+
+// nonEmptySegments drops segments with no text.
+func nonEmptySegments(segments ...TitleSegment) []TitleSegment {
+	var out []TitleSegment
+	for _, s := range segments {
+		if s.Text != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 // Box is a titled border with padding and an optional isolated child.
 // Width and Height are preferred outer dimensions used by Frame.
 // YAML frames load Border from Loom's embedded spec; Go callers supply it.
 type Box struct {
-	ID         string    `yaml:"id"`
-	Title      string    `yaml:"title"`
-	Width      int       `yaml:"width"`
-	Height     int       `yaml:"height"`
-	Dynamic    bool      `yaml:"dynamic"`
-	FillHeight bool      `yaml:"fill_height"`
-	MinWidth   int       `yaml:"min_width"`
-	MaxWidth   int       `yaml:"max_width"`
-	MinHeight  int       `yaml:"min_height"`
-	MaxHeight  int       `yaml:"max_height"`
-	Padding    int       `yaml:"padding"`
-	Border     BoxBorder `yaml:"-"`
-	Style      BoxStyle  `yaml:"-"`
-	Child      Widget    `yaml:"-"`
-	Hidden     bool      `yaml:"hidden"`
-	Footer     string    `yaml:"footer"`
-	Rows       *Rows     `yaml:"rows"`
-	childRect  Rect
-	modalMouse ModalMouseCapture
+	ID    string `yaml:"id"`
+	Title string `yaml:"title"`
+	// TitleSegments, when set, is drawn in place of Title. Border.TitlePrefix
+	// and Border.TitleSuffix still frame the segments, in Style.Title.
+	TitleSegments []TitleSegment `yaml:"-"`
+	Width         int            `yaml:"width"`
+	Height        int            `yaml:"height"`
+	Dynamic       bool           `yaml:"dynamic"`
+	FillHeight    bool           `yaml:"fill_height"`
+	MinWidth      int            `yaml:"min_width"`
+	MaxWidth      int            `yaml:"max_width"`
+	MinHeight     int            `yaml:"min_height"`
+	MaxHeight     int            `yaml:"max_height"`
+	Padding       int            `yaml:"padding"`
+	Border        BoxBorder      `yaml:"-"`
+	Style         BoxStyle       `yaml:"-"`
+	Child         Widget         `yaml:"-"`
+	Hidden        bool           `yaml:"hidden"`
+	Footer        string         `yaml:"footer"`
+	Rows          *Rows          `yaml:"rows"`
+	childRect     Rect
+	modalMouse    ModalMouseCapture
 }
 
 // Measure returns the preferred outer size of the box, including border,
@@ -189,7 +257,7 @@ func (b *Box) Measure(width int) measure.Size {
 			contentHeight = child.ContentHeight()
 		}
 	}
-	contentWidth = max(contentWidth, StringWidth(b.Title)+StringWidth(b.Border.TitlePrefix)+StringWidth(b.Border.TitleSuffix))
+	contentWidth = max(contentWidth, b.titleWidth())
 	contentWidth = max(contentWidth, StringWidth(b.Footer))
 	if width > 0 {
 		contentWidth = max(1, width-innerInsets.Width())
@@ -211,6 +279,55 @@ func (b *Box) SetRowsValues(values [][]string) {
 	}
 }
 
+// titleRuns returns the title runs in draw order: the border prefix, the title
+// segments (or Title when no segments are set), and the border suffix. It
+// returns nil when there is no title text to draw.
+func (b *Box) titleRuns() []TitleSegment {
+	body := b.TitleSegments
+	if len(body) == 0 {
+		body = []TitleSegment{{Text: b.Title, Style: b.Style.Title}}
+	}
+	text := nonEmptySegments(body...)
+	if len(text) == 0 {
+		return nil
+	}
+	runs := make([]TitleSegment, 0, len(text)+2)
+	runs = append(runs, TitleSegment{Text: b.Border.TitlePrefix, Style: b.Style.Title})
+	runs = append(runs, text...)
+	return append(runs, TitleSegment{Text: b.Border.TitleSuffix, Style: b.Style.Title})
+}
+
+// titleWidth is the display width of the title including prefix and suffix.
+func (b *Box) titleWidth() int {
+	width := StringWidth(b.Border.TitlePrefix) + StringWidth(b.Border.TitleSuffix)
+	if len(b.TitleSegments) == 0 {
+		return width + StringWidth(b.Title)
+	}
+	for _, seg := range b.TitleSegments {
+		width += StringWidth(seg.Text)
+	}
+	return width
+}
+
+// drawTitleRuns writes runs left to right from (x, y) into at most maxW display
+// columns. Clipping works per grapheme cluster across all runs: a cluster that
+// does not fit is dropped whole, and nothing after it is drawn.
+func drawTitleRuns(c *Canvas, x, y, maxW int, runs []TitleSegment) {
+	fit := 0
+	for _, run := range runs {
+		for _, cluster := range textClusters(run.Text) {
+			clusterWidth := StringWidth(cluster)
+			if fit+clusterWidth > maxW {
+				return
+			}
+			if c.Write(x+fit, y, cluster, run.Style) <= 0 {
+				return
+			}
+			fit += clusterWidth
+		}
+	}
+}
+
 // Draw paints a box. Bounds smaller than a complete border are left blank.
 func (b *Box) Draw(c *Canvas, r Rect) {
 	b.childRect = Rect{}
@@ -224,24 +341,8 @@ func (b *Box) Draw(c *Canvas, r Rect) {
 		// Draw border and title using the new primitive.
 		// The border is drawn, then the title is overlaid on the top edge.
 		local.DrawBorder(Rect{X: 0, Y: 0, W: w, H: h}, BoxBorderStyleSharp, b.Style.Border)
-		if b.Title != "" {
-			// Write title with prefix/suffix (matching original behavior)
-			titleStr := b.Border.TitlePrefix + b.Title + b.Border.TitleSuffix
-			// Title is positioned at (1, 0) and styled with Title style
-			fit := 0
-			for _, cluster := range textClusters(titleStr) {
-				clusterWidth := StringWidth(cluster)
-				// Keep title within border: w-2 is the interior width (excluding corners)
-				if fit+clusterWidth > w-2 {
-					break
-				}
-				n := local.Write(1+fit, 0, cluster, b.Style.Title)
-				if n <= 0 {
-					break
-				}
-				fit += clusterWidth
-			}
-		}
+		// Title sits at (1, 0) inside the corners: w-2 is the interior width.
+		drawTitleRuns(local, 1, 0, w-2, b.titleRuns())
 		padding := max(0, b.Padding)
 		// Compare before doubling to avoid overflow for programmatic inputs.
 		if b.Child != nil && padding < (w-1)/2 && padding < (h-1)/2 {

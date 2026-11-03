@@ -45,6 +45,22 @@ var demos = map[string]constructor{
 		picker.Now = func() time.Time { return time.Date(2024, time.January, 20, 0, 0, 0, 0, time.UTC) }
 		return picker
 	},
+	"Box": func() loom.Widget {
+		hot := loom.Style{FG: loom.ColorIndex(1), Bold: true}
+		text := loom.Style{FG: loom.ColorIndex(7)}
+		meta := loom.Style{FG: loom.ColorIndex(8), Dim: true}
+		title := append(loom.HotkeyTitle("menu", 'm', hot, text),
+			loom.TitleSegment{Text: " ", Style: text},
+			loom.TitleSegment{Text: "[L]", Style: hot},
+			loom.TitleSegment{Text: " Load", Style: text},
+			loom.TitleSegment{Text: " (@host · source)", Style: meta},
+		)
+		return &loom.Box{
+			TitleSegments: title,
+			Border:        loom.BoxBorder{TitlePrefix: " ", TitleSuffix: " "},
+			Child:         loom.NewView([]string{"Press m for the menu or L to load.", "Title segments keep their own styles."}),
+		}
+	},
 	"Choice": func() loom.Widget {
 		choice := loom.NewChoice([]loom.Item{
 			{Name: "filebrowser-widget", Desc: "Browser widget implementation"},

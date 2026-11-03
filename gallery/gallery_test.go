@@ -682,7 +682,7 @@ func TestGalleryTabsCycleDemos(t *testing.T) {
 func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	// These demos intentionally present static content and have no input action.
 	displayOnly := map[string]bool{
-		"Chart": true, "KeyHelp": true, "PillCluster": true,
+		"Box": true, "Chart": true, "KeyHelp": true, "PillCluster": true,
 		"ProgressBar": true, "Spinner": true, "Stopwatch": true, "Timer": true,
 	}
 	keys := map[string]loom.KeyEvent{
@@ -953,7 +953,9 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
-	const cols, rows = 100, 30
+	// The tab list has 32 demos (Box added); 30 rows no longer show Tree in the
+	// nav grid, so the click target needs one more row.
+	const cols, rows = 100, 34
 	s := ptytest.Start(t, cols, rows, bin, "widgets", "--show")
 	clickText := func(text string) {
 		t.Helper()

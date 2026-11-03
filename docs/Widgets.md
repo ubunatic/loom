@@ -286,6 +286,12 @@ bar := loom.NewMenuBar(loom.Menu{
 
 When the host permits menu routing, F10 opens the bar and `Alt+<mnemonic>` opens a matching menu. A `Pane` handles F10 as global Quit by default. Left/Right moves between titles, Up/Down moves through items, Enter/Space invokes the selected action, Escape closes the dropdown, and a second Escape unfocuses the bar. Mouse hover changes the active title or highlighted item; a title click toggles its dropdown and an outside click dismisses it. Item shortcut labels are matched through `KeyMap`. `Submenu` is reserved for nested menus and is not opened by this one-level widget.
 
+## Box Title Segments (`loom.Box.TitleSegments`, `loom.HotkeyTitle`)
+
+`Box.TitleSegments` is an ordered list of `loom.TitleSegment{Text, Style}` runs drawn in place of `Box.Title`. Each run keeps its own style, so one title can hold a hotkey letter, a bold key badge and dim metadata. `Border.TitlePrefix` and `Border.TitleSuffix` still frame the runs in `Style.Title`. Clipping is by display width across run boundaries: a wide rune or grapheme cluster that does not fit is dropped whole.
+
+`loom.HotkeyTitle(title, key, hotkey, text)` builds the runs for a hotkey. If `key` matches a letter of the title's first word (case-insensitive), that letter is drawn in `hotkey`, e.g. `menu` with `m` gives `m` + `enu`. Otherwise it returns a key badge `[k]` in `hotkey` followed by the full title in `text`, e.g. `[d] Fetch diagnostics`. The helper is render-only and adds no key routing.
+
 ## 8. Root Event Loop Contract: EventResult and Quit Invariants
 
 Loom uses the small value struct `loom.EventResult` to cleanly distinguish whether an event was consumed from whether the application should terminate:
