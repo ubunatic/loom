@@ -81,4 +81,4 @@ The round trip was lossless, and `loom diff` turned "I think it's right" into pr
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-386 | 39bf6d93-0313-48e8-9f10-0da2f8bf4454 | - | running |
+| implement | jules-implement-386 | 600841563133354344 | GH #71 | adopted: -o, --in-place, help and docs; host buffers output so -o onto the input cannot truncate it; q1 green |

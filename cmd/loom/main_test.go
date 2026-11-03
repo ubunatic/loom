@@ -1046,4 +1046,57 @@ func TestMarkupCommandConvertsBothWays(t *testing.T) {
 	if markup.String() != "[bold]b[/]\n" {
 		t.Fatalf("markup = %q", markup.String())
 	}
+
+	// Test -o / --output
+	outputTui := filepath.Join(dir, "out.tui")
+	if err := execute([]string{"markup", "-o", outputTui, ansiPath}, &ansi); err != nil {
+		t.Fatal(err)
+	}
+	outBytes, err := os.ReadFile(outputTui)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(outBytes) != "[bold]b[/]\n" {
+		t.Fatalf("markup -o = %q", string(outBytes))
+	}
+
+	// Test --in-place
+	inPlaceAnsi := filepath.Join(dir, "in_place.ansi")
+	if err := os.WriteFile(inPlaceAnsi, ansi.Bytes(), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := execute([]string{"markup", "--in-place", inPlaceAnsi}, &ansi); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(inPlaceAnsi); !os.IsNotExist(err) {
+		t.Fatalf("expected %q to be deleted by --in-place", inPlaceAnsi)
+	}
+	inPlaceTui := filepath.Join(dir, "in_place.tui")
+	outBytes, err = os.ReadFile(inPlaceTui)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(outBytes) != "[bold]b[/]\n" {
+		t.Fatalf("markup --in-place = %q", string(outBytes))
+	}
+
+	// Test --in-place back to ANSI
+	if err := execute([]string{"markup", "--in-place", inPlaceTui}, &ansi); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(inPlaceTui); !os.IsNotExist(err) {
+		t.Fatalf("expected %q to be deleted by --in-place", inPlaceTui)
+	}
+	outBytes, err = os.ReadFile(inPlaceAnsi)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(outBytes) != (loom.Style{Bold: true}).ANSI()+"b\x1b[0m\n" {
+		t.Fatalf("markup --in-place back to ansi = %q, want %q", string(outBytes), (loom.Style{Bold: true}).ANSI()+"b\x1b[0m\n")
+	}
+
+	// Test mutually exclusive
+	if err := execute([]string{"markup", "-o", "foo", "--in-place", ansiPath}, &ansi); err == nil {
+		t.Fatal("expected error when using both -o and --in-place")
+	}
 }
