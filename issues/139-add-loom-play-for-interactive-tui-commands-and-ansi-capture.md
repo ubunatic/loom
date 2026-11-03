@@ -19,3 +19,9 @@ Compare with existing adjacent tools before settling the interface or implementa
 ## 3. Implementation & Verification Plan
 
 /goal Deliver `loom play -- <cmd> <args>` with live interactive terminal passthrough, basic key-sequence injection, and `.ansi` capture; verify a real TUI can be seen and operated while scripted keys are delivered and output is captured, and stop and report if blocked on a user decision or denied permission.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-139 | bbea7715-c5c4-4a44-beb6-5b31131d7ad8 | - | running |

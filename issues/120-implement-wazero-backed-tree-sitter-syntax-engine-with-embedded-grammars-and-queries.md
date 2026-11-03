@@ -41,3 +41,9 @@ Following the successful spike in #118 and interface definition in #119, this is
 ## Jules experiment (2026-11-01): wazero + tree-sitter-go
 
 Inconclusive (lead, not host-reproduced): `tree-sitter build --wasm` gives a 217KB grammar module that imports Emscripten `env` (memory etc.) and needs the tree-sitter core engine in the same module, so a bare wazero host fails with `module[env] not instantiated`. Next step would be one wasm build of core + grammar (e.g. along the lines of malivvan/tree-sitter). No startup/size/highlight numbers yet. Report: `reports/jules/120-wazero.md`.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-120 | d15cf1f5-6c2c-48d7-899c-7b8f7d10d41a | - | running |

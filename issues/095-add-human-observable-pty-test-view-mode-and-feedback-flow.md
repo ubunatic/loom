@@ -44,3 +44,9 @@ Add PTY-level coverage for view-mode pacing, visible test boundaries,
 continue/feedback prompts, title editing, `$EDITOR` integration, draft creation,
 cancellation, and non-interactive mode. Run a representative Loom TUI suite in
 view mode and verify a human can follow each scenario and file feedback safely.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-095 | 5fc48c55-c7c0-4162-bfcd-309b86805cac | - | running |
