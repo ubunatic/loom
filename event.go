@@ -176,28 +176,14 @@ func DecodeKey(b []byte) KeyEvent {
 		if len(b) == 2 && b[1] >= 1 && b[1] <= 26 && b[1] != 8 && b[1] != 9 && b[1] != 10 && b[1] != 13 {
 			return KeyEvent{Key: "ctrl-alt-" + string(rune('a'+b[1]-1))}
 		}
-		// CSI 1;<mod><A|B|C|D> (xterm modified cursor keys)
-		// mod: 2=Shift, 3=Alt, 4=Shift+Alt, 5=Ctrl, 6=Ctrl+Shift
+		// CSI 1;<mod><final> (xterm modified cursor keys). Any modifier
+		// value decodes (issue 409): 1 is no modifier, 9 and up add super,
+		// hyper or meta, and Caps/Num Lock bits are ignored. A value the
+		// switch once missed left the key unnamed, and older scanners
+		// leaked its tail ("9D") as text.
 		if len(b) >= 6 && b[1] == '[' && b[2] == '1' && b[3] == ';' {
-			var prefix string
-			switch b[4] {
-			case '2':
-				prefix = "shift-"
-			case '3':
-				prefix = "alt-"
-			case '4':
-				prefix = "shift-alt-"
-			case '5':
-				prefix = "ctrl-"
-			case '6':
-				prefix = "ctrl-shift-"
-			case '7':
-				prefix = "ctrl-alt-"
-			case '8':
-				prefix = "ctrl-shift-alt-"
-			}
-			if prefix != "" {
-				switch b[5] {
+			if prefix, ok := csiCursorModifier(string(b[4:len(b)-1]), b[len(b)-1]); ok {
+				switch b[len(b)-1] {
 				case 'A':
 					return KeyEvent{Key: prefix + "up"}
 				case 'B':
@@ -346,6 +332,35 @@ func csiModifierPrefix(param string) string {
 		}
 	}
 	return prefix
+}
+
+// csiCursorModifier parses the modifier parameter of CSI 1;<mod><final>: a
+// decimal value of at least 1, optionally followed by a ":"-separated kitty
+// event type. It reports false for anything else, so CPR-style replies such
+// as CSI 1;80R never decode as keys.
+func csiCursorModifier(param string, final byte) (string, bool) {
+	value := param
+	if i := strings.IndexByte(value, ':'); i >= 0 {
+		value = value[:i]
+	}
+	if value == "" {
+		return "", false
+	}
+	for _, c := range value {
+		if c < '0' || c > '9' {
+			return "", false
+		}
+	}
+	mod, err := strconv.Atoi(value)
+	if err != nil || mod < 1 || mod > 255 {
+		return "", false
+	}
+	// CSI 1;<col>R is also a cursor position report for row 1, so F3 keeps
+	// the historical single-modifier range 2..8 to stay distinguishable.
+	if final == 'R' && (mod < 2 || mod > 8) {
+		return "", false
+	}
+	return csiModifierPrefix(param), true
 }
 
 // decodeCSIu decodes the kitty/CSI-u form \x1b[<code>;<mod>u (see

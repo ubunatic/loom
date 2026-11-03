@@ -5,6 +5,7 @@ package loom
 
 import (
 	"strings"
+	"unicode"
 
 	"ubunatic.com/loom/measure"
 	"ubunatic.com/loom/syntax"
@@ -298,11 +299,31 @@ func (t *TextArea) ConsumeKey(e KeyEvent) (consumed EventResult) {
 			}
 		}
 		return Handled()
-	case "home":
+	case "home", "ctrl-a":
 		t.col = 0
 		return Handled()
-	case "end":
+	case "end", "ctrl-e":
 		t.col = len(t.lines[t.row])
+		return Handled()
+	case "ctrl-home":
+		t.row, t.col = 0, 0
+		return Handled()
+	case "ctrl-end":
+		t.row = len(t.lines) - 1
+		t.col = len(t.lines[t.row])
+		return Handled()
+	case "ctrl-left":
+		t.moveWordLeft()
+		return Handled()
+	case "ctrl-right":
+		t.moveWordRight()
+		return Handled()
+	case "ctrl-u":
+		// Delete to the line start, one rune at a time so the syntax
+		// highlighter sees ordinary edits.
+		for t.col > 0 {
+			t.backspace()
+		}
 		return Handled()
 	case "enter":
 		t.splitLine()
@@ -339,6 +360,42 @@ func (t *TextArea) moveRight() {
 		t.row++
 		t.col = 0
 	}
+}
+
+// moveWordLeft moves the caret to the start of the previous word, crossing
+// line starts like moveLeft. A word is a run of letters, digits or '_'.
+func (t *TextArea) moveWordLeft() {
+	if t.col == 0 {
+		t.moveLeft()
+		return
+	}
+	line := t.lines[t.row]
+	for t.col > 0 && !isWordRune(line[t.col-1]) {
+		t.col--
+	}
+	for t.col > 0 && isWordRune(line[t.col-1]) {
+		t.col--
+	}
+}
+
+// moveWordRight moves the caret past the end of the next word, crossing
+// line ends like moveRight.
+func (t *TextArea) moveWordRight() {
+	line := t.lines[t.row]
+	if t.col == len(line) {
+		t.moveRight()
+		return
+	}
+	for t.col < len(line) && !isWordRune(line[t.col]) {
+		t.col++
+	}
+	for t.col < len(line) && isWordRune(line[t.col]) {
+		t.col++
+	}
+}
+
+func isWordRune(r rune) bool {
+	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
 }
 
 // clampCol keeps the caret column within the current line after a vertical move.
