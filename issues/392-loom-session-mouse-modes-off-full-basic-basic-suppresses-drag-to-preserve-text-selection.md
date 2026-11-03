@@ -40,3 +40,7 @@ Users often want mouse clicking (focus, buttons, cursor placement) and mouse whe
   - Verify full mode passes drag events.
   - Verify off mode passes no mouse events.
 - Validate with `make test-q1`.
+
+## Jules ideas note (2026-11-03)
+
+The session prefix toggle (`internal/session/session.go:1113-1118`) flips `tab.mouseOverride` between -1 and 1, so once toggled a tab can never return to 0 (follow the child's own mouse mode). Consider this when adding modes here. From Jules ideas run session-vt (GitHub #76).

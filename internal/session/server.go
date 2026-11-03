@@ -160,7 +160,8 @@ func (w *serverOutput) Write(p []byte) (int, error) {
 	if len(p) == 0 {
 		return 0, nil
 	}
-	if err := w.server.writeOutput(ipcMessage{Type: msgOutput, Data: append([]byte(nil), p...)}, w.direct); err != nil {
+	// writeOutput encodes the message before returning, so p need not be copied.
+	if err := w.server.writeOutput(ipcMessage{Type: msgOutput, Data: p}, w.direct); err != nil {
 		w.server.detach(false)
 		return len(p), nil // a lost client must never stop PTY output processing
 	}
