@@ -24,3 +24,4 @@ Split out of 258. A human assists: clickability can only be checked by hand in r
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
 | audit | jules-audit-259 | 5441328c-20f4-451e-b921-f67587c9d08d | - | failed: ended AWAITING_USER_FEEDBACK, no PR, not answered |
+| audit | jules-audit-259b | f4a4cb3a-e1b5-463f-8254-6dafb34d7c91 | - | running |

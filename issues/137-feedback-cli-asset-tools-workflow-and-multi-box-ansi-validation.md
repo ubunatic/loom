@@ -61,3 +61,4 @@ During development of a split-pane ANSI mockup and TUI prototype in `cati` (`exa
 | audit | jules-audit-137 | 01ffcb9f-a4b9-46b9-9109-20f05b95b3b5 | GH #60 | kept: partly done, refs hold (±4 lines) |
 
 Audit note (Jules, 2026-11-03, checked at 53ffc4a): `loom check-box --annotate` already prints an inline pointer (`cmd/loom/main.go:255`). Left: multi-column `boxEdges` in `cmd/loom/format.go:153`, and a ruler toggle in `loom view` (`DrawRuler` in `ruler.go:10` is only used by ansiviewer).
+| implement | jules-implement-137 | ad9423ce-fc76-45b6-a58e-d2066770915b | - | running |

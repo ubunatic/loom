@@ -20,3 +20,9 @@ Add a boolean `--mousegrab` flag to enable mouse capture; allow explicit `--mous
 /goal `loom edit --mousegrab <file>` captures mouse input and disabling capture restores normal terminal behavior; verify CLI parsing and a PTY interaction, or stop and report when blocked on a user decision or denied permission.
 
 Before implementation, check live code and recent commits. Acceptance: flag documented in help; enabled clicks/selection/scroll reach the editor with correct child-local coordinates; disabled capture emits no enable sequence; exit restores terminal state. Run `make test-q1` and `make install` before closure.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-280 | eca3d952-3522-4f8c-8dde-3528ccc60606 | - | running |

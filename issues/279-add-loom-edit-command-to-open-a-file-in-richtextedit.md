@@ -32,3 +32,4 @@ Acceptance: CLI test for load, missing file and save round-trip; PTY test of the
 | audit | jules-audit-279 | 3cf68098-4d0e-48ad-ab88-675f977a1b55 | GH #63 | discarded: refs ~5/8; host check, note below |
 
 Audit note (host check of Jules lead, 2026-11-03 at 2179487): implementation is done (`cmd/loom/edit.go:14`, `internal/editor/edit.go:178` loads via `NewRichTextEditFromFileWith`, final newline at `richtextedit_file.go:180`). The editor builds its own bar in `internal/editor/edit.go:206` instead of `RichTextEdit.HotkeyBar()`. Left only the acceptance in section 3: PTY test of the installed binary including F10 Save/Discard/Cancel.
+| implement | jules-implement-279 | b43dc7da-ac94-4780-8266-db1fbc01920b | - | running |
