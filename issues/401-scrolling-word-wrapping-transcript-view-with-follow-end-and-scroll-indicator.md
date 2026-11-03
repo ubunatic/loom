@@ -11,3 +11,9 @@
 /goal Loom ships a transcript widget (word wrap by display width, scroll, follow-end that pauses when the user scrolls up, scroll indicator) adopted from taia's proven internal/tui implementation, with tests; stop and report if taia's version is not yet proven or blocked on a user decision.
 
 Reported by the taia session while building the taia chat TUI on loom v0.5.6 (source: codeberg harnez/horg docs/studies/2026-11-01-agent-performance-log.md, "Tool Experience"). Request, not a bug. taia builds it first in its own internal/tui; port it once proven there. Draft until taia reports it stable.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-401 | 7671810449244141841 | GH #82 | discarded: verdict unclear with no path:line refs; host confirms no transcript widget in loom (`git grep -il transcript -- *.go` empty); still waiting on taia |
