@@ -52,4 +52,4 @@ the image-backed mode renders correctly through a real terminal session.
 | audit | jules-audit-090 | 9a08c30d-a08b-4ac1-8163-ec20e27de642 | GH #66 | discarded: refs ~2/5; host check, note below |
 
 Audit note (host check of Jules lead, 2026-11-03 at 2179487): partly done. `ImageBackground` exists (`background.go:131`, Braille sampling via `c.PaintDecoration`) and does not use `ubunatic.com/cati`. Left: average-colour fill under animated cells (no averaging in `background*.go`), and the Astra/cat switch in `examples/background` (it sets only `loom.NewAstraBackground()` at `examples/background/background/background.go:128`; `assets/cati.png` is already present).
-| implement | jules-implement-090 | 441c1f8c-7b06-40fd-a272-a58b6f30dd6b | - | running |
+| implement | jules-implement-090 | 13373839881592329688 | GH #68 | adopted: b toggles Astra/cat; host embedded a 640px cat copy and exported NewImageBackground |

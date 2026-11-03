@@ -2037,6 +2037,10 @@ func LoadImageBackground(path string) (*ImageBackground, error)
     background. The image is fitted to the target rectangle while preserving its
     aspect ratio.
 
+func NewImageBackground(src image.Image) *ImageBackground
+    NewImageBackground returns a terminal background for an already decoded
+    image, for example one embedded in the program.
+
 func (b *ImageBackground) DrawBackground(c *Canvas, r Rect)
     DrawBackground paints the image using the eight specced single-dot Braille
     glyphs. Each terminal cell represents a 2x4 sample block.

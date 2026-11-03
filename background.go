@@ -125,10 +125,12 @@ func LoadImageBackground(path string) (*ImageBackground, error) {
 	if err != nil {
 		return nil, fmt.Errorf("decode background image: %w", err)
 	}
-	return newImageBackground(src), nil
+	return NewImageBackground(src), nil
 }
 
-func newImageBackground(src image.Image) *ImageBackground {
+// NewImageBackground returns a terminal background for an already decoded
+// image, for example one embedded in the program.
+func NewImageBackground(src image.Image) *ImageBackground {
 	return &ImageBackground{
 		image: src, dim: SpeccedBackground.DimFactor,
 		threshold: SpeccedBackground.Threshold,
