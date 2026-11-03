@@ -772,6 +772,37 @@ func TestRichTextEditBoxModeCompletesCrossingAndTJunction(t *testing.T) {
 	})
 }
 
+func TestRichTextEditBoxPushModePushesCharacters(t *testing.T) {
+	doc := &RichDocument{Lines: []RichLine{
+		{Spans: []RichSpan{{Text: "ab"}}},
+		{Spans: []RichSpan{{Text: "c"}}},
+	}}
+	edit := NewRichTextEdit(doc)
+	edit.Cursor = RichPosition{Line: 0, Offset: 0}
+
+	// enter box push mode
+	if got := edit.ConsumeKey(KeyEvent{Key: "shift-f5"}); !got.Consumed || !edit.BoxPushMode {
+		t.Fatalf("shift-f5 toggle box push mode result = %+v, BoxPushMode = %v", got, edit.BoxPushMode)
+	}
+
+	// draw down - should push 'a' and 'c' right
+	edit.ConsumeKey(KeyEvent{Key: "down"})
+
+	// draw right - should push down
+	edit.ConsumeKey(KeyEvent{Key: "right"})
+
+	want := "╷ ab\n└╶ c"
+	if got := doc.ToPlainText(); got != want {
+		t.Fatalf("pushed box path = %q, want %q", got, want)
+	}
+
+	// test undo
+	edit.ConsumeKey(KeyEvent{Key: "ctrl-z"})
+	if got := doc.ToPlainText(); got != "ab\nc" {
+		t.Fatalf("one undo did not restore pre-stroke document: %q", got)
+	}
+}
+
 func TestRichTextEditBoxModeDoesNotModifyAdjacentBox(t *testing.T) {
 	doc := &RichDocument{Lines: []RichLine{{Spans: []RichSpan{{Text: "│ "}}}}}
 	edit := NewRichTextEdit(doc)
