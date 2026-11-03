@@ -825,6 +825,30 @@ func TestViewPlainTextFlag(t *testing.T) {
 	}
 }
 
+func TestANSIViewRuler(t *testing.T) {
+	buffer, err := loom.ParseAnsiBuffer("ruler", 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view := &ansiView{buffer: buffer}
+	if view.ruler {
+		t.Fatal("ruler enabled by default")
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "r"})
+	if !view.ruler {
+		t.Fatal("r did not enable ruler")
+	}
+	canvas := loom.NewCanvas(20, 20)
+	view.Draw(canvas, loom.Rect{W: 20, H: 20})
+	if got := canvas.Get(5, 0).Text; got != "┊" {
+		t.Fatalf("ruler mark at x=5 = %q, want ┊", got)
+	}
+	view.ConsumeKey(loom.KeyEvent{Key: "r"})
+	if view.ruler {
+		t.Fatal("r did not disable ruler")
+	}
+}
+
 func TestANSIViewScrollAndQuit(t *testing.T) {
 	buffer, err := loom.ParseAnsiBuffer("one\ntwo\nthree", 1, 1)
 	if err != nil {
