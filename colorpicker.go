@@ -193,16 +193,34 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 				if target == ColorPickerFG {
 					style.FG = ColorReset()
 					style.BG = panelBG
+					if p.focused && p.Target == target && p.ResetSelected {
+						style.FG = colorPickerHighContrast(style.BG)
+						text = "*"
+					}
 				} else {
 					style.FG = panelStyle.FG
 					style.BG = ColorReset()
+					if p.focused && p.Target == target && p.ResetSelected {
+						style.FG = colorPickerHighContrast(style.BG)
+						text = "*"
+					}
 				}
 			} else if target == ColorPickerFG {
 				style.FG = p.Palette[cell-1]
 				text = defs.Glyphs.Swatch
+				if p.focused && p.Target == target && p.Selected == cell-1 && !p.ResetSelected {
+					style.BG = p.Palette[cell-1]
+					style.FG = colorPickerHighContrast(style.BG)
+					text = "*"
+				}
 			} else {
 				style.BG = p.Palette[cell-1]
 				text = defs.Glyphs.Swatch
+				if p.focused && p.Target == target && p.Selected == cell-1 && !p.ResetSelected {
+					style.BG = p.Palette[cell-1]
+					style.FG = colorPickerHighContrast(style.BG)
+					text = "*"
+				}
 			}
 			writeColorPickerText(c, r, x, y, text, style)
 			for pad := measure.StringWidth(text); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
@@ -389,4 +407,19 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	}
 	p.applyCursor()
 	return Handled()
+}
+
+func colorPickerLuminance(c Color) uint8 {
+	r, g, b, ok := c.RGB()
+	if !ok {
+		return 0
+	}
+	return uint8((299*uint32(r) + 587*uint32(g) + 114*uint32(b)) / 1000)
+}
+
+func colorPickerHighContrast(c Color) Color {
+	if colorPickerLuminance(c) > 127 {
+		return ColorIndex(0) // Black for light colors
+	}
+	return ColorIndex(15) // White for dark colors
 }

@@ -163,3 +163,20 @@ func styleRichLine(line RichLine, start, end int, state bool, set func(*Style, b
 	}
 	return mergeRichSpans(result)
 }
+
+func (e *RichTextEdit) clearStyle() {
+	if !e.HasSelection {
+		return
+	}
+	from, to := e.selectionBounds()
+	e.mutate(false, false, func() {
+		e.clampPosition(&from, e.Document.Lines)
+		e.clampPosition(&to, e.Document.Lines)
+		from, to = expandRangeForPills(e.Document.Lines, from, to)
+		for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
+			start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
+			e.Document.Lines[lineIndex].Spans = styleRichLine(e.Document.Lines[lineIndex], start, end, false, func(s *Style, _ bool) { *s = Style{} })
+			e.Document.Lines[lineIndex].Spans = mergeRichSpans(e.Document.Lines[lineIndex].Spans)
+		}
+	})
+}

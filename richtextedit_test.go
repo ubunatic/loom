@@ -296,7 +296,7 @@ func TestRichTextEditPopoverTabWrapsAndHighlightsEnabledActions(t *testing.T) {
 	canvas := NewCanvas(60, 4)
 	edit.Draw(canvas, Rect{W: 60, H: 4})
 	edit.ConsumeKey(KeyEvent{Key: "down"})
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 6; i++ {
 		if result := edit.ConsumeKey(KeyEvent{Key: "tab"}); !result.Consumed || result.Done || result.Quit {
 			t.Fatalf("Tab %d result = %+v", i, result)
 		}

@@ -149,7 +149,7 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 	if got.ToolbarFG != 15 || got.ToolbarBG != 239 || got.SeparatorGlyph != "▏" || got.SeparatorFG != 8 || got.SeparatorBG != 239 || got.PointerUpGlyph != "▲" || got.PointerDownGlyph != "▼" || got.PointerFG != 8 || got.PopoverFocusFG != 15 {
 		t.Fatalf("rich text edit defaults = %+v", got)
 	}
-	want := []string{"B", "I", "U", "S", "🎨", "Frame", "Link"}
+	want := []string{"B", "I", "U", "S", "🎨", "Frame", "Link", "🧹"}
 	if len(got.PopoverLabels) != len(want) {
 		t.Fatalf("popover labels = %q, want %q", got.PopoverLabels, want)
 	}
@@ -158,10 +158,10 @@ func TestRichTextEditDefaultsLoadFromSpec(t *testing.T) {
 			t.Fatalf("popover label %d = %q, want %q", i, got.PopoverLabels[i], want[i])
 		}
 	}
-	if want := []string{"b", "i", "u", "s", "", "f", "l", ""}; !reflect.DeepEqual(got.PopoverHotkeys, want) {
+	if want := []string{"b", "i", "u", "s", "", "f", "l", "", ""}; !reflect.DeepEqual(got.PopoverHotkeys, want) {
 		t.Fatalf("popover hotkeys = %q, want %q", got.PopoverHotkeys, want)
 	}
-	if want := []int{0, 0, 0, 0, -1, 0, 0, -1}; !reflect.DeepEqual(got.PopoverHotkeyIndices, want) {
+	if want := []int{0, 0, 0, 0, -1, 0, 0, -1, -1}; !reflect.DeepEqual(got.PopoverHotkeyIndices, want) {
 		t.Fatalf("popover hotkey indices = %v, want %v", got.PopoverHotkeyIndices, want)
 	}
 	if got.PopoverHamburgerLabel != "≡" || len(got.PopoverHamburgerItems) != 1 || got.PopoverHamburgerItems[0] != "Select all" || len(got.PopoverHamburgerActions) != 1 || got.PopoverHamburgerActions[0] != "select_all" {

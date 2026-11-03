@@ -19,7 +19,7 @@ func TestRichTextEditPopoverLabelsAndHotkeys(t *testing.T) {
 	for x := bar.X; x < edit.popoverButtons[len(edit.popoverButtons)-1].rect.X+edit.popoverButtons[len(edit.popoverButtons)-1].rect.W; x++ {
 		got.WriteString(canvas.Get(x, bar.Y).Text)
 	}
-	want := " B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏≡ "
+	want := " B ▏I ▏U ▏S ▏🎨 ▏Frame ▏Link ▏🧹 ▏≡ "
 	if got.String() != want {
 		t.Fatalf("toolbar = %q, want %q", got.String(), want)
 	}
