@@ -52,3 +52,22 @@ func TestFindSessionMatchesSmartCaseAndDisplayColumns(t *testing.T) {
 		t.Fatalf("wide-rune match = %+v, want display column 4", matches)
 	}
 }
+
+// The rune comparison must agree with strings.EqualFold, including folds
+// outside ASCII such as KELVIN SIGN to k and ſ (long s) to s.
+func TestFindSessionMatchesFoldsLikeEqualFold(t *testing.T) {
+	term := vt.NewVT(40, 2)
+	term.Write([]byte("ÄBC Key ſun xyz")) //nolint:errcheck
+	rows := term.ScrollbackCells()
+	for _, query := range []string{"äbc", "key", "sun", "xyz", "abc", "kez"} {
+		want := 0
+		for _, word := range []string{"ÄBC", "Key", "ſun", "xyz"} {
+			if strings.EqualFold(word, query) {
+				want++
+			}
+		}
+		if got := len(findSessionMatches(rows, query)); got != want {
+			t.Errorf("findSessionMatches(%q) = %d matches, want %d", query, got, want)
+		}
+	}
+}
