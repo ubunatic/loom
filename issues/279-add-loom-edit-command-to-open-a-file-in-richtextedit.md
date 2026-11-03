@@ -24,3 +24,9 @@ Status checked 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) is
 /goal `loom edit <file>` opens the file in RichTextEdit and ^S saves it back, sharing load code with the gallery demo; stop and report when blocked on a user decision or denied permission.
 
 Acceptance: CLI test for load, missing file and save round-trip; PTY test of the installed binary (open, type, ^S, F10, file content; F10 with unsaved changes asks, and Save/Discard/Cancel each behave as named); `--help`, completion and man page list the command; `make install`.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-279 | 3cf68098-4d0e-48ad-ab88-675f977a1b55 | - | running |

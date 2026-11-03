@@ -44,3 +44,9 @@ average-color fallback, loading/error behavior, and theme switching. Verify the
 background example with both themes and representative foreground content.
 Extend the PTY tests to launch the background example, switch themes, and prove
 the image-backed mode renders correctly through a real terminal session.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-090 | 9a08c30d-a08b-4ac1-8163-ec20e27de642 | - | running |

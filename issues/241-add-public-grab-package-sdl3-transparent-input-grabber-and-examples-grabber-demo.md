@@ -70,3 +70,9 @@ user input -> SDL event -> grabber C helper -> ring write -> Go reader -> Go eve
   measured from inside the process. The demo states this. An optional external check is a flash test: a key
   toggles a full-screen color change, filmed with a phone slow-motion camera (documented, not automated).
 - Tests: stage stamps are monotonic and non-negative; statistics are computed correctly on fixed samples.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-241 | ce27b927-59c7-4f80-b0aa-5aa5122948b7 | - | running |

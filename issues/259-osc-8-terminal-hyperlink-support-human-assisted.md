@@ -18,3 +18,9 @@ Split out of 258. A human assists: clickability can only be checked by hand in r
 - Likely belongs in the renderer/cell layer ("fix the library, not the caller"): cells need a link attribute, and the screen diff must open/close links correctly across cells and redraws.
 - Gallery RichTextEdit demo shows `https://ubunatic.com/loom` as a clickable link.
 - Probe target terminals (kitty, foot, gnome-terminal, tmux passthrough) with the human first, per `docs/Canary.md`.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-259 | 5441328c-20f4-451e-b921-f67587c9d08d | - | running |
