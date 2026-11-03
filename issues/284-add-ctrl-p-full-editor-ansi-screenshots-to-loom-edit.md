@@ -26,3 +26,9 @@ Before implementation, check live code and recent commits. Acceptance: repeated 
 ## Integration verification (2026-10-07)
 
 Host integration fixes numeric allocation with exclusive creation, sanitizes basename details, moves the binding into the spec, reports status/errors and captures the unsaved dialog. Collision and overlay regression tests and a real PTY probe pass; captures pass Loom ANSI validation. Keep open for broader styled/Unicode and editing-state coverage.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-284 | d5ac3065-7da7-49cf-95ab-d349b60fa16c | - | running |

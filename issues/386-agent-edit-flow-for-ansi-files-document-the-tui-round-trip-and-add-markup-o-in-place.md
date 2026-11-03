@@ -76,3 +76,9 @@ The round trip was lossless, and `loom diff` turned "I think it's right" into pr
    `.tui`, edit, convert back, check with `loom eval` + `loom diff`) in the docs and as an
    example in `loom markup --help`.
 3. Optional: let `loom diff` accept a `.tui` file on either side.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-386 | 39bf6d93-0313-48e8-9f10-0da2f8bf4454 | - | running |

@@ -23,3 +23,9 @@ Add a flag or verb to detect unclosed boxes. When a box is unclosed, report that
 ## Jules audit (2026-11-01, GitHub main 5c3c603)
 
 Verdict: still valid (2/2 refs checked). `ValidateAnsiBox` (`ansibox.go:60-75`) compares framed rows and returns nil at the end without tracking open boxes; `check-box` is defined at `cmd/loom/main.go:245`. No unclosed-box detection exists for ANSI boxes (the only "unclosed" errors are markup blocks in `markup.go:166`). Report: `reports/jules/147.md`.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-147 | 209f14d1-d21e-4d4e-903f-a3e7e41d0d47 | - | running |
