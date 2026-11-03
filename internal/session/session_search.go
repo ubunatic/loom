@@ -35,10 +35,28 @@ func findSessionMatches(rows [][]vt.Cell, query string) []sessionMatch {
 	for y, row := range rows {
 		runes, columns := sessionRowRunes(row)
 		for start := 0; start+len(want) <= len(runes); start++ {
-			candidate := string(runes[start : start+len(want)])
-			equal := candidate == query
-			if !caseSensitive {
-				equal = strings.EqualFold(candidate, query)
+			equal := true
+			for i, w := range want {
+				r := runes[start+i]
+				if r == w {
+					continue
+				}
+				if caseSensitive {
+					equal = false
+					break
+				}
+				// case-insensitive fallback using unicode.SimpleFold
+				match := false
+				for f := unicode.SimpleFold(r); f != r; f = unicode.SimpleFold(f) {
+					if f == w {
+						match = true
+						break
+					}
+				}
+				if !match {
+					equal = false
+					break
+				}
 			}
 			if equal {
 				end := columns[start+len(want)-1] + 1
