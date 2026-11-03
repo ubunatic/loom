@@ -1,6 +1,6 @@
 # 409 — TextArea: arrow keys leak as text under foot; add basic text navigation
 
-**Status**: Open
+**Status**: Closed — Fixed in v0.5.9 (PR #55); owner verified text navigation live in foot via taia (taia#14 closed)
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
