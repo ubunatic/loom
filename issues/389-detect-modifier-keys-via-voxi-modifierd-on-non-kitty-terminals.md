@@ -79,3 +79,9 @@ let loom disambiguate these keys without terminal support.
 ## Decision
 
 No build tag for `loom-probe mods`: a missing state file falls back to plain key output on any OS.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-389 | 7007712254790743791 | GH #84 | kept: partly done, 4/4 refs hold (lines within 10 on 24e2214); M1 probe in `cmd/loom-probe/mods.go`, M2 (`modifier_state` spec and consumer) missing: host search empty; report `reports/jules/389.md` |
