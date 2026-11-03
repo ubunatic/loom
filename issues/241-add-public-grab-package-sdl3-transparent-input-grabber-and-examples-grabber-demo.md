@@ -75,4 +75,4 @@ user input -> SDL event -> grabber C helper -> ring write -> Go reader -> Go eve
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| audit | jules-audit-241 | ce27b927-59c7-4f80-b0aa-5aa5122948b7 | - | running |
+| audit | jules-audit-241 | ce27b927-59c7-4f80-b0aa-5aa5122948b7 | GH #65 | kept: still valid, refs hold |
