@@ -44,4 +44,6 @@ Add a "🧹" button to the main format popover that removes all styling (bold, i
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| audit | jules-audit-265 | 47a9aa73-5a20-45e8-a773-1b3fdaac1d0f | - | running |
+| audit | jules-audit-265 | 47a9aa73-5a20-45e8-a773-1b3fdaac1d0f | GH #59 | kept: partly done, refs hold |
+
+Audit note (Jules, 2026-11-03, checked at 53ffc4a): the internal clipboard exists (`richtextedit_clipboard.go:9`). Left: right-click menu (no `MouseRight` handling in `richtextedit*.go`), Paste style, Change case, the 🧹 clear-style button (`applyPopoverAction` in `richtextedit_popover_draw.go:429`), and the focused-swatch marker (`colorpicker.go:202`).

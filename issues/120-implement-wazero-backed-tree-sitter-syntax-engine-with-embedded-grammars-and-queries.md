@@ -46,4 +46,4 @@ Inconclusive (lead, not host-reproduced): `tree-sitter build --wasm` gives a 217
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| audit | jules-audit-120 | d15cf1f5-6c2c-48d7-899c-7b8f7d10d41a | - | running |
+| audit | jules-audit-120 | d15cf1f5-6c2c-48d7-899c-7b8f7d10d41a | GH #62 | kept: still valid, refs hold; syntax_test.go has tests |
