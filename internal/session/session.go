@@ -1490,7 +1490,12 @@ done:
 	return nil
 }
 
+// killProcessGroup signals a child's process group. A pid of 0 or less would
+// address the server's own group (or every process), so it is ignored.
 func killProcessGroup(pid int) {
+	if pid <= 0 {
+		return
+	}
 	_ = syscall.Kill(-pid, syscall.SIGHUP)
 	_ = syscall.Kill(pid, syscall.SIGHUP)
 	_ = syscall.Kill(-pid, syscall.SIGTERM)
