@@ -38,6 +38,8 @@ type VT struct {
 	KeypadApp bool
 	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
 	KittyKeyboard bool
+	// SyncMode tracks whether frame synchronization (2026) is active.
+	SyncMode bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
@@ -759,7 +761,113 @@ func (v *VT) csi(params string, final byte) {
 		v.y, v.x = max(v.y-arg(0, 1), 0), 0
 	case 's':
 		v.saved = cursorState{v.x, v.y, v.pen}
+
+	case 'p':
+		if strings.HasPrefix(params, "?") && strings.HasSuffix(params, "$") {
+			modeStr := params[1 : len(params)-1]
+			mode, _ := strconv.Atoi(modeStr)
+			status := 0
+			switch mode {
+			case 1:
+				if v.CursorKeysApp {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 7:
+				if v.autoWrap {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 9:
+				if v.MouseMode == 9 {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 25:
+				if v.CursorVisible {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1000:
+				if v.MouseMode == 1000 {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1002:
+				if v.MouseMode == 1002 {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1003:
+				if v.MouseMode == 1003 {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1004:
+				if v.FocusEvents {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1005:
+				if v.MouseUTF8 {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1006:
+				if v.MouseSGR {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1015:
+				if v.MouseURXVT {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 1049, 47:
+				if v.AltScreen() {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 2004:
+				if v.BracketedPaste {
+					status = 1
+				} else {
+					status = 2
+				}
+			case 2026:
+				if v.SyncMode {
+					status = 1
+				} else {
+					status = 2
+				}
+			}
+			v.reply(fmt.Sprintf("\x1b[?%d;%d$y", mode, status))
+		}
+	case 'q':
+		if strings.HasPrefix(params, ">") {
+			v.reply("\x1bP>|loom-vt\x1b\\")
+		}
 	case 'u':
+		if strings.HasPrefix(params, "?") {
+			if v.KittyKeyboard {
+				v.reply("\x1b[?1u")
+			} else {
+				v.reply("\x1b[?0u")
+			}
+			return
+		}
 		if strings.HasPrefix(params, ">") {
 			v.KittyKeyboard = true
 			return
@@ -843,6 +951,7 @@ func (v *VT) csi(params string, final byte) {
 			case 2004:
 				v.BracketedPaste = on
 			case 2026:
+				v.SyncMode = on
 				if !on {
 					v.Frames = append(v.Frames, v.Screen())
 					v.CellFrames = append(v.CellFrames, v.Cells())
