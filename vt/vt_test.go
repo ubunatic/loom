@@ -173,6 +173,24 @@ func TestVTParserSafetyCapAndReset(t *testing.T) {
 	}
 }
 
+func TestVTSGRColonTruecolorForms(t *testing.T) {
+	for _, tc := range []struct {
+		seq  string
+		want Color
+	}{
+		{"38:2::10:20:30", ColorRGB(10, 20, 30)},  // empty color-space id
+		{"38:2:1:10:20:30", ColorRGB(10, 20, 30)}, // explicit color-space id
+		{"38:2:10:20:30", ColorRGB(10, 20, 30)},   // no color-space slot
+		{"38:2:::20:30", ColorRGB(0, 20, 30)},     // omitted red means 0
+	} {
+		v := NewVT(4, 1)
+		_, _ = v.Write([]byte("\x1b[" + tc.seq + "mA"))
+		if got := v.Cell(0, 0).Style.FG; got != tc.want {
+			t.Errorf("%s: FG = %+v, want %+v", tc.seq, got, tc.want)
+		}
+	}
+}
+
 func TestVTSGRColonSubparametersAndTruncatedColor(t *testing.T) {
 	v := NewVT(20, 1)
 	_, _ = v.Write([]byte("\x1b[38:2::10:20:30mA\x1b[48:5:42mB\x1b[4:3mC"))

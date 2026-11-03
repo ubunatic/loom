@@ -858,14 +858,18 @@ func (v *VT) sgr(params string) {
 			if (code == 38 || code == 48) && len(parts) >= 3 {
 				mode, _ := strconv.Atoi(parts[1])
 				color := []int{}
+				// An empty subparameter means 0 (ITU T.416).
 				for _, part := range parts[2:] {
-					if part == "" {
+					value, err := strconv.Atoi(part)
+					if err != nil && part != "" {
 						continue
 					}
-					value, err := strconv.Atoi(part)
-					if err == nil {
-						color = append(color, value)
-					}
+					color = append(color, value)
+				}
+				// 38:2:id:r:g:b carries a color-space slot before r;
+				// 38:2:r:g:b (no slot) is also common.
+				if mode == 2 && len(color) >= 4 {
+					color = color[1:]
 				}
 				if mode == 5 && len(color) >= 1 {
 					setSGRColor(v, code, ColorIndex(uint8(color[0])))
