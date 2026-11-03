@@ -534,6 +534,16 @@ func TestVTWideOverwrite(t *testing.T) {
 			in:   "中\x1b[1;1H中",
 			want: []string{"中"},
 		},
+		{
+			name: "wide straddles two wides",
+			in:   "中中\x1b[1;2H中",
+			want: []string{" 中"},
+		},
+		{
+			name: "narrow over right half at right edge",
+			in:   "ab中\x1b[1;4Hx",
+			want: []string{"ab x"},
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -542,6 +552,14 @@ func TestVTWideOverwrite(t *testing.T) {
 			got := v.Screen()
 			if len(got) != 1 || got[0] != tc.want[0] {
 				t.Errorf("got %q, want %q", got, tc.want)
+			}
+			// Screen skips continuation cells, so check them directly:
+			// each must follow a wide (non-ASCII) base cell.
+			row := v.cells[0]
+			for x, cell := range row {
+				if cell.Rune == 0 && cell.Text == "" && (x == 0 || row[x-1].Rune < 0x80) {
+					t.Errorf("orphan continuation cell at column %d: %+v", x, row)
+				}
 			}
 		})
 	}
