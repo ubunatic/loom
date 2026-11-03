@@ -346,6 +346,7 @@ func writeAnnotated(out io.Writer, text string, diagnostics []annotation) error 
 
 func viewCommand() *cobra.Command {
 	var plain bool
+	var ruler bool
 	cmd := &cobra.Command{
 		Use: "view <file>", Short: "Interactively view an ANSI art file",
 		Args: cobra.ExactArgs(1), SilenceUsage: true,
@@ -372,10 +373,11 @@ func viewCommand() *cobra.Command {
 			}
 			defer pane.Close()
 			configureViewPane(pane)
-			return pane.Run(&ansiView{buffer: buf})
+			return pane.Run(&ansiView{buffer: buf, ruler: ruler})
 		},
 	}
 	cmd.Flags().BoolVarP(&plain, "plain", "p", false, "Print parsed ANSI art as plain text")
+	cmd.Flags().BoolVar(&ruler, "ruler", false, "Show coordinate ruler overlay")
 	return cmd
 }
 
@@ -390,6 +392,7 @@ type ansiView struct {
 	offsetY      int
 	viewportCols int
 	viewportRows int
+	ruler        bool
 }
 
 func (v *ansiView) Draw(canvas *loom.Canvas, rect loom.Rect) {
@@ -408,6 +411,9 @@ func (v *ansiView) Draw(canvas *loom.Canvas, rect loom.Rect) {
 			}
 			canvas.Set(rect.X+x, rect.Y+y, v.buffer.Get(col, row).ToCell())
 		}
+	}
+	if v.ruler {
+		loom.DrawRuler(canvas, rect)
 	}
 }
 
@@ -444,6 +450,8 @@ func (v *ansiView) ConsumeKey(event loom.KeyEvent) loom.EventResult {
 	switch {
 	case event.Is("q", "f10", "ctrl-c"):
 		return loom.QuitResult()
+	case event.Is("r"):
+		v.ruler = !v.ruler
 	case event.Is("shift-left", "["):
 		v.offsetX -= panStep
 	case event.Is("shift-right", "]"):
