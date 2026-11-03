@@ -1,6 +1,6 @@
 # 280 — Add mouse capture flag to loom edit
 
-**Status**: Open
+**Status**: Closed — flag already in cmd/loom/edit.go:48, PTY test edit_280_pty_test.go covers on and off
 **Priority**: P2 (Medium)
 **Severity**: Moderate
 **Category**: Bug
@@ -25,4 +25,4 @@ Before implementation, check live code and recent commits. Acceptance: flag docu
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-280 | eca3d952-3522-4f8c-8dde-3528ccc60606 | - | running |
+| implement | jules-implement-280 | 744810130472229506 | GH #72 | adopted: flag already existed; PTY test kept, budgets scaled by RaceFactor; replies: 1; q1 green |
