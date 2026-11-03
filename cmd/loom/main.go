@@ -265,14 +265,25 @@ func checkBoxCommand() *cobra.Command {
 					err = loom.ValidateAnsiBox(string(data))
 				}
 				if err != nil {
-					if annotate && data != nil && strings.HasPrefix(err.Error(), "boxed line ") {
+					if annotate && data != nil {
 						var line, left, right, width, wantLeft, wantRight, wantWidth, previous int
-						if _, scanErr := fmt.Sscanf(err.Error(), "boxed line %d: boundaries %d..%d width %d, want %d..%d width %d from line %d", &line, &left, &right, &width, &wantLeft, &wantRight, &wantWidth, &previous); scanErr == nil {
-							detail := fmt.Sprintf("line %d: box width mismatch (%d columns, expected %d from line %d)", line, width, wantWidth, previous)
-							fmt.Fprintf(cmd.OutOrStdout(), "%s:\n", path)
-							annotated := writeAnnotated(cmd.OutOrStdout(), string(data), []annotation{{row: line - 1, message: detail}})
-							if annotated != nil {
-								return annotated
+						if strings.HasPrefix(err.Error(), "boxed line ") {
+							if _, scanErr := fmt.Sscanf(err.Error(), "boxed line %d: boundaries %d..%d width %d, want %d..%d width %d from line %d", &line, &left, &right, &width, &wantLeft, &wantRight, &wantWidth, &previous); scanErr == nil {
+								detail := fmt.Sprintf("line %d: box width mismatch (%d columns, expected %d from line %d)", line, width, wantWidth, previous)
+								fmt.Fprintf(cmd.OutOrStdout(), "%s:\n", path)
+								annotated := writeAnnotated(cmd.OutOrStdout(), string(data), []annotation{{row: line - 1, message: detail}})
+								if annotated != nil {
+									return annotated
+								}
+							}
+						} else if strings.HasPrefix(err.Error(), "unclosed box at line ") {
+							if _, scanErr := fmt.Sscanf(err.Error(), "unclosed box at line %d", &line); scanErr == nil {
+								detail := fmt.Sprintf("line %d: unclosed box", line)
+								fmt.Fprintf(cmd.OutOrStdout(), "%s:\n", path)
+								annotated := writeAnnotated(cmd.OutOrStdout(), string(data), []annotation{{row: line - 1, message: detail}})
+								if annotated != nil {
+									return annotated
+								}
 							}
 						}
 					}

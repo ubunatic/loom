@@ -52,6 +52,39 @@ func ValidateAnsiBox(text string) error {
 			framed = append(framed, edge{line: i + 1, left: left, right: right, width: col, kind: kind, first: firstRune(trimmed), last: lastRune(trimmed)})
 		}
 	}
+	if len(framed) == 0 {
+		return nil
+	}
+	// Check for unclosed boxes.
+	for i := 0; i < len(framed); i++ {
+		row := framed[i]
+		hasBottom := row.kind == 'b' || isBoxBottomLeft(row.first) || isBoxBottomRight(row.last)
+		if hasBottom {
+			continue
+		}
+		unclosed := false
+		if row.left == row.right {
+			// A single vertical line is not a 2D box that requires closing.
+			continue
+		}
+		if i == len(framed)-1 {
+			unclosed = true
+		} else {
+			next := framed[i+1]
+			if next.line != row.line+1 {
+				unclosed = true
+			} else if next.kind == 'b' || isBoxBottomLeft(next.first) || isBoxBottomRight(next.last) {
+				// The next row closes this box.
+				unclosed = false
+			} else if next.kind == 't' || isBoxTopLeft(next.first) || isBoxTopRight(next.last) {
+				unclosed = true
+			}
+		}
+		if unclosed {
+			return fmt.Errorf("unclosed box at line %d", row.line)
+		}
+	}
+
 	if len(framed) < 2 {
 		return nil
 	}
@@ -84,13 +117,13 @@ func boxRowKind(first, last rune) rune {
 	return 'm'
 }
 
-func isBoxTopLeft(r rune) bool { return r == '┌' || r == '╔' }
+func isBoxTopLeft(r rune) bool { return r == '┌' || r == '╔' || r == '╭' || r == '+' }
 
-func isBoxTopRight(r rune) bool { return r == '┐' || r == '╗' }
+func isBoxTopRight(r rune) bool { return r == '┐' || r == '╗' || r == '╮' || r == '+' }
 
-func isBoxBottomLeft(r rune) bool { return r == '└' || r == '╚' }
+func isBoxBottomLeft(r rune) bool { return r == '└' || r == '╚' || r == '╰' || r == '+' }
 
-func isBoxBottomRight(r rune) bool { return r == '┘' || r == '╝' }
+func isBoxBottomRight(r rune) bool { return r == '┘' || r == '╝' || r == '╯' || r == '+' }
 
 func hasNonSGRANSI(s string) bool {
 	for i := 0; i < len(s); i++ {
@@ -115,7 +148,7 @@ func hasNonSGRANSI(s string) bool {
 func isBoxVertical(r rune) bool { return r == '│' || r == '║' || r == '┃' || r == '|' }
 
 func isBoxCorner(r rune) bool {
-	return strings.ContainsRune("┌┐└┘╔╗╚╝╭╮╰╯├┤┬┴┼╟╢╤╧╪", r)
+	return strings.ContainsRune("┌┐└┘╔╗╚╝╭╮╰╯├┤┬┴┼╟╢╤╧╪+", r)
 }
 
 func isBoxEdge(r rune) bool { return isBoxVertical(r) || isBoxCorner(r) }
