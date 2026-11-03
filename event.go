@@ -708,6 +708,8 @@ func isTerminalReply(seq []byte) bool {
 	case 'y': // DECRPM "ESC [ ? Ps ; Pm $ y"
 		n := len(body)
 		return n > 1 && body[0] == '?' && body[n-1] == '$' && isNumberList(body[1:n-1])
+	case 'u': // Kitty keyboard query reply
+		return len(body) > 0 && body[0] == '?' && (len(body) == 1 || isNumberList(body[1:]))
 	}
 	return false
 }
