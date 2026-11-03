@@ -45,3 +45,11 @@ Some of these may already exist in `richtextedit_navigation.go` or `key_navigati
 - Decoder tests on the exact foot byte sequences, plus xterm and tmux variants.
 - TextArea tests for each action.
 - A live check in foot and in tmux.
+
+## Host findings and fix (2026-11-03)
+
+- Cause: `DecodeKey` mapped `CSI 1;<mod><final>` only for single-digit mods 2..8. `CSI 1;9D` (and `1;1D`, two-digit mods) decoded to no key; the pre-869c304 scanner (v0.5.6, v0.5.8) consumed `ESC [ 1 ;` and leaked `9D` as text. On main after 869c304 the key was dropped silently instead.
+- Fix: any modifier value decodes through `csiModifierPrefix` (`csiCursorModifier` in `event.go`); `CSI 1;<col>R` keeps the old 2..8 range so row-1 cursor reports never become F3.
+- TextArea: added Ctrl-Home/End, Ctrl-Left/Right (word), ^A/^E, ^U. Arrows, Home and End already existed.
+- Tests: `key_409_test.go`; decoder and TextArea tests fail without the fix. `make test-q1` green.
+- Open: raw foot bytes were never captured. If foot sends `CSI 1;9D` for a plain Left, the key now arrives as `super-left`, which TextArea does not treat as Left. Live check in foot still pending.
