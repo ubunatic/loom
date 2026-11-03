@@ -1,0 +1,4 @@
+=== RUN   TestEditPTYF10QuitSaveDiscardCancel
+--- PASS: TestEditPTYF10QuitSaveDiscardCancel (1.27s)
+PASS
+ok  	ubunatic.com/loom/internal/editor	1.298s
