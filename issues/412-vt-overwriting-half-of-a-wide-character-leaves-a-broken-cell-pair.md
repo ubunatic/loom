@@ -1,6 +1,6 @@
 # 412 — vt: overwriting half of a wide character leaves a broken cell pair
 
-**Status**: Open
+**Status**: Closed — Fixed: putCluster blanks the orphaned half of a wide character it overwrites; TestVTWideOverwrite (7 cases, 5 fail without the fix, cell-level orphan check); host make test-q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

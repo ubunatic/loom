@@ -57,5 +57,4 @@ upkeep.
 | 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
 | 409 | [409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md](409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md) | TextArea: arrow keys leak as text under foot; add basic text navigation | Open |
 | 410 | [410-loom-session-search-allocates-a-string-per-scrollback-window.md](410-loom-session-search-allocates-a-string-per-scrollback-window.md) | loom session search allocates a string per scrollback window | Open |
-| 412 | [412-vt-overwriting-half-of-a-wide-character-leaves-a-broken-cell-pair.md](412-vt-overwriting-half-of-a-wide-character-leaves-a-broken-cell-pair.md) | vt: overwriting half of a wide character leaves a broken cell pair | Open |
 <!-- harnez:end issues-active-index -->
