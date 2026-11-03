@@ -218,3 +218,14 @@ See `examples/markup/image.tui`.
 - `loom markup file.tui` prints ANSI; `loom markup file.ansi` prints markup.
   Validate a design with `loom markup art.tui > art.ansi`, then `loom eval`,
   `loom measure` and `loom check-box` on `art.ansi`.
+
+## Agent edit flow
+
+AI agents are good at drafting `.ansi` screens directly, but can struggle with editing them afterwards because escape characters are hidden and identical lines cannot be uniquely targeted. When an edit gets stuck, use the following round trip without shell redirects:
+
+1. `loom markup --in-place file.ansi` — converts the file to `file.tui` and removes the original. Every style becomes readable bracket text and every space visible.
+2. Edit the `.tui` file using the normal edit tool. Including neighboring lines can make matches unique.
+3. `loom markup --in-place file.tui` — converts the file back to `file.ansi` and removes the `.tui`.
+4. Validate the geometry with `loom eval file.ansi` and check the changes with `loom diff old.ansi file.ansi`.
+
+Alternatively, use `loom markup -o file.tui file.ansi` to output to a specific file without deleting the original.
