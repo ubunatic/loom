@@ -1,6 +1,6 @@
 # 412 — vt: overwriting half of a wide character leaves a broken cell pair
 
-**Status**: Open
+**Status**: Closed — Fixed: putCluster blanks the orphaned half of a wide character it overwrites; TestVTWideOverwrite (7 cases, 5 fail without the fix, cell-level orphan check); host make test-q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
@@ -23,3 +23,9 @@ Like xterm: before writing at `x`, if the cell is a continuation cell, blank the
 
 ## 3. Implementation & Verification Plan
 /goal Writing over either half of a wide character leaves no orphan base or continuation cell; table tests cover both halves, a wide-over-wide overwrite and the right edge. Stop and report when blocked on a user decision.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-412 | 8254930771683443876 | GH #86 | adopted: fix in `putCluster`; host added a straddle case, a right-edge case and a cell-level orphan check (Screen hides left-half orphans); all 7 cases run, 5 fail without the fix; host make test-q1 green |
