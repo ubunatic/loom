@@ -1,6 +1,6 @@
 # 411 — loom session listener Close removes a socket another server may own
 
-**Status**: Open
+**Status**: Closed — Fixed: sessionListener.Close removes the path only when os.SameFile matches the socket it created, and Go's own unlink-on-close is off; TestIPCListenerCloseRemovesOnlyItsOwnSocket fails without the fix; host make test-q1 green
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Bug

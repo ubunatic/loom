@@ -57,5 +57,4 @@ upkeep.
 | 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
 | 409 | [409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md](409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md) | TextArea: arrow keys leak as text under foot; add basic text navigation | Open |
 | 410 | [410-loom-session-search-allocates-a-string-per-scrollback-window.md](410-loom-session-search-allocates-a-string-per-scrollback-window.md) | loom session search allocates a string per scrollback window | Open |
-| 411 | [411-loom-session-listener-close-removes-a-socket-another-server-may-own.md](411-loom-session-listener-close-removes-a-socket-another-server-may-own.md) | loom session listener Close removes a socket another server may own | Open |
 <!-- harnez:end issues-active-index -->
