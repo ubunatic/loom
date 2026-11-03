@@ -1,6 +1,6 @@
 # 410 — loom session search allocates a string per scrollback window
 
-**Status**: Open
+**Status**: Closed — Fixed: findSessionMatches compares runes in place; host benchmark 15.8 ms to 8.3 ms per 5000x120 search; EqualFold parity test added; make test-q1 green. Remaining allocations come from sessionRowRunes
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Performance
