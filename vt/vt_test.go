@@ -40,9 +40,37 @@ func TestVTAnswersCursorAndDeviceQueries(t *testing.T) {
 	}
 }
 
+func TestVTPrivateQueriesAnswers(t *testing.T) {
+	v := NewVT(20, 5)
+	v.Write([]byte("\x1b[?2004$p")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1b[?2004;2$y" {
+		t.Fatalf("DECRQM 2004 produced reply %q, want %q", got, "\x1b[?2004;2$y")
+	}
+
+	v.Write([]byte("\x1b[?2004h\x1b[?2004$p")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1b[?2004;1$y" {
+		t.Fatalf("DECRQM 2004 produced reply %q, want %q", got, "\x1b[?2004;1$y")
+	}
+
+	v.Write([]byte("\x1b[>0q")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1bP>|loom-vt\x1b\\" {
+		t.Fatalf("XTVERSION produced reply %q, want %q", got, "\x1bP>|loom-vt\x1b\\")
+	}
+
+	v.Write([]byte("\x1b[?u")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1b[?0u" {
+		t.Fatalf("Kitty ?u produced reply %q, want %q", got, "\x1b[?0u")
+	}
+
+	v.Write([]byte("\x1b[>1u\x1b[?u")) //nolint:errcheck
+	if got := string(v.DrainReplies()); got != "\x1b[?1u" {
+		t.Fatalf("Kitty ?u produced reply %q, want %q", got, "\x1b[?1u")
+	}
+}
+
 func TestVTIgnoresUnansweredPrivateQueries(t *testing.T) {
 	v := NewVT(20, 5)
-	v.Write([]byte("\x1b[?6n\x1b[?2004$p")) //nolint:errcheck
+	v.Write([]byte("\x1b[?6n")) //nolint:errcheck
 	if got := v.DrainReplies(); len(got) != 0 {
 		t.Fatalf("unanswered queries produced replies %q", got)
 	}

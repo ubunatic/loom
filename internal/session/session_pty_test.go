@@ -667,6 +667,21 @@ func TestSessionAnswersChildQueries(t *testing.T) {
 	session.WaitFor("LINE:end", time.Second*5)
 }
 
+// TestSessionAnswersChildQueriesExtended covers issue 405.
+func TestSessionAnswersChildQueriesExtended(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	bin := clitest.BuildLoomBinary(t)
+	script := "stty -echo -icanon; " +
+		"printf '\033[?2026$p'; IFS= read -r -d y decrqm; " +
+		"if [ \"$decrqm\" = \"$(printf '\033[?2026;2$')\" ]; then printf 'DECRQM_OK\n'; else printf 'DECRQM_BAD\n'; fi; " +
+		"IFS= read -r line; printf 'LINE:%s\n' \"$line\""
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", script)
+	session.WaitFor("DECRQM_OK", time.Second*5)
+	session.Send("end\n")
+	session.WaitFor("LINE:end", time.Second*5)
+}
 func TestSessionAlternateScreenScreenshot(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
