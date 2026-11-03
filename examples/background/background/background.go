@@ -2,10 +2,28 @@
 package background
 
 import (
+	"bytes"
+	_ "embed"
 	"fmt"
+	"image"
+	_ "image/png"
 
 	"ubunatic.com/loom"
 )
+
+// catPNG is a 640px copy of ../assets/cati.png, small enough to embed.
+//
+//go:embed cati.png
+var catPNG []byte
+
+// catBackground decodes the embedded cat image as a pane background.
+func catBackground() (*loom.ImageBackground, error) {
+	img, _, err := image.Decode(bytes.NewReader(catPNG))
+	if err != nil {
+		return nil, fmt.Errorf("decode embedded cat image: %w", err)
+	}
+	return loom.NewImageBackground(img), nil
+}
 
 var (
 	paneBlue   = loom.ColorRGB(25, 30, 38)
@@ -18,6 +36,8 @@ type widget struct {
 	pane    *loom.Pane
 	themes  []string
 	theme   int
+	bgs     []loom.Background
+	bgIdx   int
 }
 
 func (w widget) Draw(c *loom.Canvas, r loom.Rect) {
@@ -46,6 +66,14 @@ func (w *widget) ConsumeKey(k loom.KeyEvent) loom.EventResult {
 		if len(w.themes) > 0 {
 			w.theme = (w.theme + 1) % len(w.themes)
 			applyTheme(w.frame, loom.Theme(w.themes[w.theme]))
+		}
+		return loom.Ignored()
+	case "b", "B":
+		if len(w.bgs) > 0 {
+			w.bgIdx = (w.bgIdx + 1) % len(w.bgs)
+			if w.pane != nil {
+				w.pane.Background = w.bgs[w.bgIdx]
+			}
 		}
 		return loom.Ignored()
 	}
@@ -125,12 +153,19 @@ func Run(_ []string) error {
 	defer pane.Close()
 	pane.MaxCols = 0 // use the full terminal width for the image background
 	pane.DisableDefaultQuit = true
-	pane.Background = loom.NewAstraBackground()
+	astra := loom.NewAstraBackground()
+	pane.Background = astra
+	cat, err := catBackground()
+	if err != nil {
+		return err
+	}
+	bgs := []loom.Background{astra, cat}
+
 	metrics := &loom.RenderMetrics{}
 	pane.Metrics = metrics
 	themes := make([]string, 0, len(loom.SpeccedThemes))
 	for name := range loom.SpeccedThemes {
 		themes = append(themes, name)
 	}
-	return pane.Run(&widget{metrics: metrics, frame: demoFrame(), pane: pane, themes: themes})
+	return pane.Run(&widget{metrics: metrics, frame: demoFrame(), pane: pane, themes: themes, bgs: bgs})
 }
