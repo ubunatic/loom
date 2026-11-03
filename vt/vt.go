@@ -38,6 +38,8 @@ type VT struct {
 	KeypadApp bool
 	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
 	KittyKeyboard bool
+	// SyncUpdate reports whether synchronized update mode (2026) is active.
+	SyncUpdate bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
@@ -768,6 +770,14 @@ func (v *VT) csi(params string, final byte) {
 			v.KittyKeyboard = false
 			return
 		}
+		if params == "?" {
+			flags := 0
+			if v.KittyKeyboard {
+				flags = 1
+			}
+			v.reply(fmt.Sprintf("\x1b[?%du", flags))
+			return
+		}
 		v.x, v.y, v.pen = v.saved.x, v.saved.y, v.saved.pen
 	case 'n':
 		// DSR: ESC [ 6 n asks for the cursor position, ESC [ 5 n for status.
@@ -788,6 +798,40 @@ func (v *VT) csi(params string, final byte) {
 			v.reply("\x1b[>1;10;0c")
 		case params == "" || params == "0":
 			v.reply("\x1b[?62;22c")
+		}
+	case 'p':
+		if strings.HasSuffix(params, "$") && strings.HasPrefix(params, "?") {
+			mode, _ := strconv.Atoi(params[1 : len(params)-1])
+			status := 0
+			switch mode {
+			case 1:
+				if v.CursorKeysApp { status = 1 } else { status = 2 }
+			case 7:
+				if v.autoWrap { status = 1 } else { status = 2 }
+			case 25:
+				if v.CursorVisible { status = 1 } else { status = 2 }
+			case 1000:
+				if v.MouseMode == 1000 { status = 1 } else { status = 2 }
+			case 1002:
+				if v.MouseMode == 1002 { status = 1 } else { status = 2 }
+			case 1003:
+				if v.MouseMode == 1003 { status = 1 } else { status = 2 }
+			case 1006:
+				if v.MouseSGR { status = 1 } else { status = 2 }
+			case 1049, 47:
+				if v.AltScreen() { status = 1 } else { status = 2 }
+			case 2004:
+				if v.BracketedPaste { status = 1 } else { status = 2 }
+			case 2026:
+				if v.SyncUpdate { status = 1 } else { status = 2 }
+			default:
+				return // Ignored
+			}
+			v.reply(fmt.Sprintf("\x1b[?%d;%d$y", mode, status))
+		}
+	case 'q':
+		if params == ">0" || params == ">" {
+			v.reply("\x1bP>|loom-vt\x1b\\")
 		}
 	case 'K':
 		v.eraseLine(p[0])
@@ -843,6 +887,7 @@ func (v *VT) csi(params string, final byte) {
 			case 2004:
 				v.BracketedPaste = on
 			case 2026:
+				v.SyncUpdate = on
 				if !on {
 					v.Frames = append(v.Frames, v.Screen())
 					v.CellFrames = append(v.CellFrames, v.Cells())

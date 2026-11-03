@@ -659,10 +659,13 @@ func TestSessionAnswersChildQueries(t *testing.T) {
 		"if [ \"$cpr\" = \"$(printf '\\033[1;4')\" ]; then printf 'CPR_OK\\n'; else printf 'CPR_BAD\\n'; fi; " +
 		"printf '\\033[c'; IFS= read -r -d c da; " +
 		"if [ \"$da\" = \"$(printf '\\033[?62;22')\" ]; then printf 'DA_OK\\n'; else printf 'DA_BAD\\n'; fi; " +
+		"printf '\\033[?2026$p'; IFS= read -r -d y rqm; " +
+		"if [ \"$rqm\" = \"$(printf '\\033[?2026;2$')\" ] || [ \"$rqm\" = \"$(printf '\\033[?2026;0$')\" ] || [ \"$rqm\" = \"$(printf '\\033[?2026;1$')\" ]; then printf 'RQM_OK\\n'; else printf 'RQM_BAD\\n'; fi; " +
 		"IFS= read -r line; printf 'LINE:%s\\n' \"$line\""
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", script)
 	session.WaitFor("CPR_OK", time.Second*5)
 	session.WaitFor("DA_OK", time.Second*5)
+	session.WaitFor("RQM_OK", time.Second*5)
 	session.Send("end\n")
 	session.WaitFor("LINE:end", time.Second*5)
 }

@@ -96,6 +96,8 @@ type VT struct {
 	KeypadApp bool
 	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
 	KittyKeyboard bool
+	// SyncUpdate reports whether synchronized update mode (2026) is active.
+	SyncUpdate bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
