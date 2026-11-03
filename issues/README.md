@@ -56,5 +56,5 @@ upkeep.
 | 406 | [406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md](406-flaky-testsessiondebugdetectsleakrepairsviasigwinchandwritesdiagnostics-under-full-test-q1-load.md) | Flaky TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics under full test-q1 load | Open |
 | 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
 | 409 | [409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md](409-textarea-arrow-keys-leak-as-text-under-foot-add-basic-text-navigation.md) | TextArea: arrow keys leak as text under foot; add basic text navigation | Open |
-| 411 | [411-loom-session-listener-close-removes-a-socket-another-server-may-own.md](411-loom-session-listener-close-removes-a-socket-another-server-may-own.md) | loom session listener Close removes a socket another server may own | Open |
+| 412 | [412-vt-overwriting-half-of-a-wide-character-leaves-a-broken-cell-pair.md](412-vt-overwriting-half-of-a-wide-character-leaves-a-broken-cell-pair.md) | vt: overwriting half of a wide character leaves a broken cell pair | Open |
 <!-- harnez:end issues-active-index -->

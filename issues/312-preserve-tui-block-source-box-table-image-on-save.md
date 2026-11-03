@@ -28,3 +28,9 @@ lost. Editing box content also does not re-flow the border.
 ## 3. Implementation & Verification Plan
 To be decided after a design pass. Verification: a load/save round trip of
 `examples/markup/{box,table,image}.tui` without edits reproduces the source.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-312 | 17157573906681433363 | GH #81 | kept: still valid, 8/8 refs hold on 8b8bce4 (`RichDocument` is only `Lines []RichLine`, `richtext.go:13`; `ToMarkup` at `markup.go:348` writes glyphs); report `reports/jules/312.md`; design pass still open |

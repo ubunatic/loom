@@ -248,3 +248,38 @@ func TestIPCListenerCloseRemovesSocket(t *testing.T) {
 		t.Fatalf("socket remains after close: %v", err)
 	}
 }
+
+func TestIPCListenerCloseRemovesOnlyItsOwnSocket(t *testing.T) {
+	t.Setenv("LOOM_SOCKET_DIR", t.TempDir())
+	listener1, err := listenSessionSocket("takeover")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	path, _ := sessionSocketPath("takeover")
+
+	// Simulate takeover: move the first listener's socket out of the way
+	// and create a new one (since listenSessionSocket removes stale sockets,
+	// but listener1 is still open, it would reject it, so we manually remove it
+	// and create a second listener).
+	os.Remove(path)
+
+	listener2, err := listenSessionSocket("takeover")
+	if err != nil {
+		listener1.Close()
+		t.Fatal(err)
+	}
+	defer listener2.Close()
+
+	// Close the first listener. This should NOT remove listener2's socket.
+	if err := listener1.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify the socket still exists
+	if _, err := os.Lstat(path); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("second listener's socket was removed by first listener's Close")
+	} else if err != nil {
+		t.Fatal(err)
+	}
+}
