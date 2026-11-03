@@ -17,3 +17,8 @@ Reported by the taia session while building the taia chat TUI on loom v0.5.6 (so
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
 | audit | jules-audit-401 | 7671810449244141841 | GH #82 | discarded: verdict unclear with no path:line refs; host confirms no transcript widget in loom (`git grep -il transcript -- *.go` empty); still waiting on taia |
+
+## Source pointer (2026-11-03)
+
+- Source to adopt: `~/projects/taia/internal/tui` at taia commit 45a6469. It is about 7.3k lines; taia calls it stable, but it is not a reusable widget yet.
+- Deferred by the owner: do it later. The work happens in loom only; taia is read-only.
