@@ -29,7 +29,7 @@ type richPopoverHamburgerChoice struct {
 	rect  Rect
 }
 
-var richPopoverActions = []string{"B", "I", "U", "S", "ColorPicker", "Box", "Link", "Hamburger"}
+var richPopoverActions = []string{"B", "I", "U", "S", "ColorPicker", "Box", "Link", "ClearStyle", "Hamburger"}
 
 func richPopoverLabels() []string {
 	labels := append([]string(nil), SpeccedDefaults.RichTextEdit.PopoverLabels...)
@@ -457,6 +457,9 @@ func (e *RichTextEdit) applyPopoverAction(label string) {
 		e.toggleAttribute(func(s *Style, on bool) { s.Underline = on }, func(s Style) bool { return s.Underline })
 	case "S":
 		e.toggleAttribute(func(s *Style, on bool) { s.Strike = on }, func(s Style) bool { return s.Strike })
+	case "ClearStyle":
+		e.clearStyle()
+		defer e.finishPopoverAction()
 	case "ColorPicker":
 		e.popoverSubmenu = ""
 		e.popoverBoxChoices = nil

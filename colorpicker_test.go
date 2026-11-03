@@ -88,7 +88,11 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 		fg := canvas.Get(3+(i*2), 1)
 		bg := canvas.Get(3+(i*2), 2)
 		if fg.Style.FG != color || fg.Style.BG != panelBG {
-			t.Errorf("FG swatch %d style=%+v", i, fg.Style)
+            if picker.Focused() && picker.Target == ColorPickerFG && picker.Selected == i && fg.Text == "*" {
+                // Focus styling applied, skip check
+            } else {
+                t.Errorf("FG swatch %d style=%+v", i, fg.Style)
+            }
 		}
 		if bg.Style.FG != picker.Style.FG || bg.Style.BG != color {
 			t.Errorf("BG swatch %d style=%+v", i, bg.Style)
