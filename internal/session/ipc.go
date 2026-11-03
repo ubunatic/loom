@@ -114,17 +114,25 @@ func listenSessionSocket(name string) (net.Listener, error) {
 	if err != nil {
 		return nil, fmt.Errorf("listen on session socket: %w", err)
 	}
+	listener.(*net.UnixListener).SetUnlinkOnClose(false)
+	info, err := os.Lstat(path)
+	if err != nil {
+		listener.Close()
+		os.Remove(path)
+		return nil, fmt.Errorf("stat session socket: %w", err)
+	}
 	if err := os.Chmod(path, 0o600); err != nil {
 		listener.Close()
 		os.Remove(path)
 		return nil, fmt.Errorf("secure session socket: %w", err)
 	}
-	return &sessionListener{Listener: listener, path: path}, nil
+	return &sessionListener{Listener: listener, path: path, info: info}, nil
 }
 
 type sessionListener struct {
 	net.Listener
 	path      string
+	info      os.FileInfo
 	closeOnce sync.Once
 	closeErr  error
 }
@@ -132,9 +140,13 @@ type sessionListener struct {
 func (l *sessionListener) Close() error {
 	l.closeOnce.Do(func() {
 		closeErr := l.Listener.Close()
-		removeErr := os.Remove(l.path)
-		if errors.Is(removeErr, os.ErrNotExist) {
-			removeErr = nil
+		var removeErr error
+		current, err := os.Lstat(l.path)
+		if err == nil && os.SameFile(l.info, current) {
+			removeErr = os.Remove(l.path)
+			if errors.Is(removeErr, os.ErrNotExist) {
+				removeErr = nil
+			}
 		}
 		l.closeErr = errors.Join(closeErr, removeErr)
 	})
