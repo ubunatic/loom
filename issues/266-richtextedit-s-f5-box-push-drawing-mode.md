@@ -42,3 +42,9 @@ Uncertain (user): the vertical case "depends on the situation"; implement the ru
 
 - Unit tests: horizontal and vertical pushes, spaces overpainted not pushed, styled characters keep their style, junctions with existing boxes, wide characters, undo/redo.
 - Live gallery check by the user in Tilix (S-F5 arrives as `ESC[15;2~`).
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-266 | 89705459-f01c-4826-975b-bf2745c3da4d | GH #64 | discarded: refs 1/3; host confirms still valid |

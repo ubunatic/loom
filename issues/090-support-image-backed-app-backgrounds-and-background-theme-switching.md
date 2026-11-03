@@ -44,3 +44,11 @@ average-color fallback, loading/error behavior, and theme switching. Verify the
 background example with both themes and representative foreground content.
 Extend the PTY tests to launch the background example, switch themes, and prove
 the image-backed mode renders correctly through a real terminal session.
+
+## Jules runs
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| audit | jules-audit-090 | 9a08c30d-a08b-4ac1-8163-ec20e27de642 | GH #66 | discarded: refs ~2/5; host check, note below |
+
+Audit note (host check of Jules lead, 2026-11-03 at 2179487): partly done. `ImageBackground` exists (`background.go:131`, Braille sampling via `c.PaintDecoration`) and does not use `ubunatic.com/cati`. Left: average-colour fill under animated cells (no averaging in `background*.go`), and the Astra/cat switch in `examples/background` (it sets only `loom.NewAstraBackground()` at `examples/background/background/background.go:128`; `assets/cati.png` is already present).
