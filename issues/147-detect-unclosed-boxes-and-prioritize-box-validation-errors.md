@@ -28,4 +28,4 @@ Verdict: still valid (2/2 refs checked). `ValidateAnsiBox` (`ansibox.go:60-75`) 
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-147 | 209f14d1-d21e-4d4e-903f-a3e7e41d0d47 | - | running |
+| implement | jules-implement-147 | 10857839160933416479 | GH #69 | rejected: flips an existing valid-layout test to error (false positive), treats + as a corner everywhere |
