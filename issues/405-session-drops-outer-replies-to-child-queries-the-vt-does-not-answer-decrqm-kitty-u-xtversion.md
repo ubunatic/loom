@@ -24,4 +24,7 @@ Since 391, `loom session` drops every CSI reply arriving on stdin (`KeyEvent.Rep
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-405 | 16101408603233734506 | pending | running on Jules (started 2026-11-03); adopt with `harnez agent resume --model jules --id 16101408603233734506 wait` |
+| implement | jules-implement-405 | 16101408603233734506 | pending | asked back twice; final "submit a draft PR" reply sent 2026-11-03, replies: 2; adopt with `harnez agent resume --model jules --id 16101408603233734506 wait` |
+| implement | jules-implement-405a | 13296704772212350363 | pending | PAUSED after harnez auto-reply (replies: 1); adopt with `harnez agent resume --model jules --id 13296704772212350363 wait` |
+| implement | jules-implement-405b | 14704705202975718091 | pending | running; adopt with `harnez agent resume --model jules --id 14704705202975718091 wait` |
+| implement | jules-implement-405c | 16418329315455329292 | pending | running; adopt with `harnez agent resume --model jules --id 16418329315455329292 wait` |
