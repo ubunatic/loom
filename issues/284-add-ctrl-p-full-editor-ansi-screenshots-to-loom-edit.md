@@ -1,6 +1,6 @@
 # 284 — Add Ctrl-P full-editor ANSI screenshots to loom edit
 
-**Status**: Open
+**Status**: Closed — Ctrl-P screenshots shipped: internal/editor/edit.go:765 MkdirAll, :797 O_EXCL, :781 sanitize, :813 status, spec/defaults.yaml:234 binding (Jules audit PR 95, 7/7 refs hold)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
