@@ -1,6 +1,6 @@
 # 419 — loom edit: --files flag and directory argument open the file pane
 
-**Status**: Open
+**Status**: Closed — files flag and directory argument in 3b420cd
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

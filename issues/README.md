@@ -54,5 +54,4 @@ upkeep.
 | 408 | [408-loom-view-and-loom-view-add-find-on-ctrl-f.md](408-loom-view-and-loom-view-add-find-on-ctrl-f.md) | loom view and loom.View: add find on ctrl-f | Open |
 | 413 | [413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md](413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md) | ansibuffer: parser misses CSI A/B/D, colon truecolor, wide-char continuation and relative-move prescan | Open |
 | 414 | [414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md](414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md) | measure: share one grapheme cluster boundary scanner between StringWidthNew and ClustersNew | Open |
-| 419 | [419-loom-edit-files-flag-and-directory-argument-open-the-file-pane.md](419-loom-edit-files-flag-and-directory-argument-open-the-file-pane.md) | loom edit: --files flag and directory argument open the file pane | Open |
 <!-- harnez:end issues-active-index -->
