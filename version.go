@@ -1,3 +1,3 @@
 package loom
 
-var Version = "0.7.2"
+var Version = "0.8.0"
