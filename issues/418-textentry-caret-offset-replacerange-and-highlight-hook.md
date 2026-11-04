@@ -1,6 +1,6 @@
 # 418 — TextEntry: caret offset, ReplaceRange and highlight hook
 
-**Status**: Open
+**Status**: Closed — TextEntry caret offset, ReplaceRange, Highlight in 2b55331; q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
