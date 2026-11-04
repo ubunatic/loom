@@ -1,6 +1,6 @@
 # 279 — Add loom edit command to open a file in RichTextEdit
 
-**Status**: Open
+**Status**: Closed — loom edit shipped: cmd/loom/edit.go editCommand, FromANSI load, final newline, F10 Save/Discard/Cancel dialog, PTY test edit_279_pty_test.go (Jules audit PR 93)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature

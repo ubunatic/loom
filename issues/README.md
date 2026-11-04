@@ -33,7 +33,6 @@ upkeep.
 | 274 | [274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md](274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md) | Overlay and modal layer for Canvas to eliminate local popup stacks | Open |
 | 275 | [275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md](275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) | Decouple focus state updates from Popup and Widget Draw rendering | Open |
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
-| 279 | [279-add-loom-edit-command-to-open-a-file-in-richtextedit.md](279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) | Add loom edit command to open a file in RichTextEdit | Open |
 | 281 | [281-add-schema-backed-loom-edit-settings-in-editor-yaml.md](281-add-schema-backed-loom-edit-settings-in-editor-yaml.md) | Add schema-backed loom edit settings in editor.yaml | Open |
 | 282 | [282-add-f2-side-panel-with-file-browser-to-loom-edit.md](282-add-f2-side-panel-with-file-browser-to-loom-edit.md) | Add F2 side panel with file browser to loom edit | Open |
 | 284 | [284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md](284-add-ctrl-p-full-editor-ansi-screenshots-to-loom-edit.md) | Add Ctrl-P full-editor ANSI screenshots to loom edit | Open |
