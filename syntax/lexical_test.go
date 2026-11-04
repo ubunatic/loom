@@ -9,7 +9,7 @@ func TestLexicalEngineLanguages(t *testing.T) {
 	}{
 		{"go", "package main\nfunc run() { return 42 }; call() // note", []string{"keyword", "function", "function.call", "punctuation.bracket", "number", "comment"}},
 		{"markdown", "# Heading\n`code`", []string{"keyword", "string"}},
-		{"json", `{"ok": true, "n": 12}`, []string{"punctuation.bracket", "string", "keyword", "number"}},
+		{"json", `{"ok": true, "n": 12}`, []string{"punctuation.bracket", "property", "constant", "number"}},
 		{"yaml", "name: 'Ada' # note", []string{"type", "string", "comment"}},
 	}
 	for _, tc := range cases {

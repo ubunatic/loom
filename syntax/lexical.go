@@ -16,6 +16,26 @@ type LexicalEngine struct {
 func NewLexicalEngine(language string) *LexicalEngine {
 	return &LexicalEngine{lang: strings.ToLower(language)}
 }
+
+// HighlightString lexes s as lang without an editor buffer and returns its spans
+// (byte and rune offsets into s; multi-line s gives per-line spans). Unknown lang gives nil.
+func HighlightString(lang, s string) []Span {
+	e := NewLexicalEngine(lang)
+	switch e.Language() {
+	case "go", "markdown", "md", "json", "yaml", "yml":
+	default:
+		return nil
+	}
+	src := []byte(s)
+	if err := e.Parse(src); err != nil {
+		return nil
+	}
+	var out []Span
+	for line := range lineRanges(src) {
+		out = append(out, e.HighlightLine(line)...)
+	}
+	return out
+}
 func (e *LexicalEngine) Language() string { return e.lang }
 func (e *LexicalEngine) NotifyEdit(Edit)  {}
 func (e *LexicalEngine) Parse(source []byte) error {
@@ -148,7 +168,17 @@ func (e *LexicalEngine) lexLine(src []byte, base, end int) []Span {
 			if j > len(b) {
 				j = len(b)
 			}
-			add(i, j, "string")
+			c := "string"
+			if lang == "json" && jsonKeyFollows(b, j) {
+				c = string(CaptureProperty)
+			}
+			add(i, j, c)
+			i = j
+			continue
+		}
+		if lang == "json" && (isDigit(b[i]) || b[i] == '-' && i+1 < len(b) && isDigit(b[i+1])) {
+			j := jsonNumberEnd(b, i)
+			add(i, j, "number")
 			i = j
 			continue
 		}
@@ -185,7 +215,7 @@ func (e *LexicalEngine) lexLine(src []byte, base, end int) []Span {
 				}
 			case "json":
 				if word == "true" || word == "false" || word == "null" {
-					cap = "keyword"
+					cap = string(CaptureConstant)
 				}
 			case "yaml", "yml":
 				if j < len(b) && b[j] == ':' {
@@ -210,6 +240,50 @@ func (e *LexicalEngine) lexLine(src []byte, base, end int) []Span {
 	}
 	return out
 }
+
+// jsonKeyFollows reports whether the JSON string that ends before b[end] is an
+// object key, that is, whether only spaces or tabs separate it from a colon.
+func jsonKeyFollows(b []byte, end int) bool {
+	for end < len(b) && (b[end] == ' ' || b[end] == '\t') {
+		end++
+	}
+	return end < len(b) && b[end] == ':'
+}
+
+// jsonNumberEnd returns the end of the JSON number that starts at b[i]: an
+// optional minus sign, digits, an optional fraction and an optional exponent.
+// The caller guarantees b[i] is a digit, or '-' followed by a digit. A '.' or an
+// exponent marker without digits after it is not part of the number, so a
+// number cut off by the end of the input ends before the marker.
+func jsonNumberEnd(b []byte, i int) int {
+	j := i
+	if b[j] == '-' {
+		j++
+	}
+	for j < len(b) && isDigit(b[j]) {
+		j++
+	}
+	if j+1 < len(b) && b[j] == '.' && isDigit(b[j+1]) {
+		j++
+		for j < len(b) && isDigit(b[j]) {
+			j++
+		}
+	}
+	if j < len(b) && (b[j] == 'e' || b[j] == 'E') {
+		k := j + 1
+		if k < len(b) && (b[k] == '+' || b[k] == '-') {
+			k++
+		}
+		if k < len(b) && isDigit(b[k]) {
+			j = k
+			for j < len(b) && isDigit(b[j]) {
+				j++
+			}
+		}
+	}
+	return j
+}
+
 func firstRune(s string) rune { r, _ := utf8.DecodeRuneInString(s); return r }
 func isIdentifierStart(b []byte) bool {
 	r, _ := utf8.DecodeRune(b)

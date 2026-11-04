@@ -4,7 +4,7 @@ import "testing"
 
 func TestThemeMapResolve(t *testing.T) {
 	m := DefaultThemeMap()
-	for capture, want := range map[string]string{"keyword": "syntax.keyword", "function.call": "syntax.function", "type": "syntax.type", "string": "syntax.string", "comment": "syntax.comment", "number": "syntax.number", "operator": "syntax.operator", "punctuation.bracket": "syntax.punctuation"} {
+	for capture, want := range map[string]string{"keyword": "syntax.keyword", "function.call": "syntax.function", "type": "syntax.type", "string": "syntax.string", "comment": "syntax.comment", "number": "syntax.number", "operator": "syntax.operator", "punctuation.bracket": "syntax.punctuation", "property": "syntax.property", "constant": "syntax.constant"} {
 		if got := m.Resolve(capture); got != want {
 			t.Errorf("Resolve(%q)=%q, want %q", capture, got, want)
 		}
@@ -20,6 +20,7 @@ func TestDefaultStyleResolverCoversStandardCaptures(t *testing.T) {
 		"keyword": "1;35", "function": "1;36", "function.call": "36",
 		"type": "1;34", "string": "32", "comment": "90", "number": "33",
 		"operator": "37", "punctuation": "37", "punctuation.bracket": "37",
+		"property": "94", "constant": "91",
 	}
 	for capture, style := range want {
 		if got := r.Resolve(capture); got != style {

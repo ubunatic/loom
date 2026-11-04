@@ -35,6 +35,8 @@ const (
 	CaptureOperator           Capture = "operator"
 	CapturePunctuation        Capture = "punctuation"
 	CapturePunctuationBracket Capture = "punctuation.bracket"
+	CaptureProperty           Capture = "property" // JSON object key
+	CaptureConstant           Capture = "constant" // JSON true, false, null
 )
 type Edit struct {
 	StartByte, OldEndByte, NewEndByte    int
@@ -127,6 +129,11 @@ type Span struct {
     are zero-based offsets in the complete parsed document (not line-local).
     Start offsets are inclusive and end offsets are exclusive. Byte offsets
     always land on UTF-8 boundaries.
+
+func HighlightString(lang, s string) []Span
+    HighlightString lexes s as lang without an editor buffer and returns its
+    spans (byte and rune offsets into s; multi-line s gives per-line spans).
+    Unknown lang gives nil.
 
 type StyleResolver map[string]string
     StyleResolver maps standard captures to ANSI SGR styles. Values are SGR

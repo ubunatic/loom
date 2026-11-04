@@ -13,6 +13,12 @@ ends (byte offsets must be UTF-8 boundaries).
 `NullEngine` disables highlighting. `NewLexicalEngine` provides a lightweight
 standard-library fallback for Go, Markdown, JSON, and YAML.
 
+`HighlightString(lang, s)` lexes a string without an editor buffer and returns
+its spans; it returns nil for an unknown language. In JSON, object keys get the
+`property` capture, `true`, `false` and `null` get `constant`, and numbers
+include a sign, fraction and exponent. Truncated input is lexed without
+panicking, and complete tokens keep their captures.
+
 `DefaultStyleResolver` maps standard capture names directly to ANSI SGR
 parameters for terminal adapters; `DefaultThemeMap` remains available for UI
 adapters that use named theme keys.
