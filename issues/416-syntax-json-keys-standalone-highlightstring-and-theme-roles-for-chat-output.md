@@ -1,6 +1,6 @@
 # 416 — syntax: JSON keys, standalone HighlightString and theme roles for chat output
 
-**Status**: Open
+**Status**: Closed — CaptureProperty, CaptureConstant, HighlightString in e55f66d
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
