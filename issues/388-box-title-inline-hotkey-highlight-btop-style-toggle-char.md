@@ -1,6 +1,6 @@
 # 388 — box title: styled title segments with inline hotkey highlight
 
-**Status**: In Progress
+**Status**: Closed — Box.TitleSegments and loom.HotkeyTitle shipped in 77d610a
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
@@ -29,3 +29,7 @@ cannot represent these title runs. Preserve display-width clipping across segmen
   to a prefixed key badge in the key style.
 - Width and clipping must stay display-width correct across segment boundaries (superscript digits, wide runes);
   YAML/spec fields as for other Box fields.
+
+## Resolution
+
+Shipped in 77d610a (`Box.TitleSegments`, `loom.HotkeyTitle`). Matching is on the title's first word only.

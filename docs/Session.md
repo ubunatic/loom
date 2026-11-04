@@ -44,9 +44,10 @@ Without either directory setting, captures go to `$XDG_STATE_HOME/loom/debug` or
 `~/.local/state/loom/debug`.
 
 When the detector finds a stalled or overlong control sequence, or a suspicious ANSI fragment in
-the rendered screen, loom records the current screen, resets the VT parser, then briefly toggles the
-child PTY row count to deliver `SIGWINCH` and request a redraw. After 150 ms it records the updated
-screen. Each incident produces a `.log`, `-before.ansi`, and `-after.ansi` file. The log contains
+the rendered screen, loom records the current screen, resets the VT parser, then sends one `SIGWINCH`
+to the child's foreground process group to request a redraw. The PTY size is not changed, so the child
+sees exactly one signal per repair. After 2 s it records the updated screen. Each incident produces a `.log`, `-before.ansi`, and `-after.ansi` file,
+written in that order with the `.log` last, so a complete `.log` means both captures exist. The log contains
 the anomaly and the recent raw PTY chunks from the 64 KB ring buffer. FIFO rotation retains at most
 five incident bundles (15 files). A 10-second circuit breaker limits repairs and diagnostic writes.
 While a debug alert is active, the session bar shows `[!]`; it clears after the cooldown.

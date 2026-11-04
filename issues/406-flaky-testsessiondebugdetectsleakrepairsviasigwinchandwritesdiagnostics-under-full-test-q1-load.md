@@ -1,6 +1,6 @@
 # 406 — Flaky TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics under full test-q1 load
 
-**Status**: Open
+**Status**: Closed — single SIGWINCH repair and bundle write order in f304619; 20/20 under -race load
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug

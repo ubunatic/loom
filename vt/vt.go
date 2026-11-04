@@ -55,6 +55,7 @@ type VT struct {
 	discardControl  byte   // unterminated control type discarded after the safety cap
 	main            *terminalState
 	saved           cursorState
+	kittyFlags      int // flags from the last kitty push, reported by ESC [ ? u
 }
 
 type cursorState struct {
@@ -397,7 +398,8 @@ func (v *VT) reply(s string) {
 }
 
 // DrainReplies returns and clears the terminal reports (cursor position, DSR
-// status, device attributes) that the program writing into v must read back.
+// status, device attributes, DECRQM mode state, kitty keyboard flags and the
+// XTVERSION name) that the program writing into v must read back.
 // The cursor is reported in v's own coordinates, so a host that embeds v
 // writes these bytes to the program's input and never relays the query.
 func (v *VT) DrainReplies() []byte {
@@ -727,6 +729,41 @@ func csiParams(s string) []int {
 	return out
 }
 
+// privateModeState reports the DECRQM state of private mode n: 1 when set,
+// 2 when reset, and 0 (unknown) for modes the VT does not track. Unknown modes
+// are never guessed, so programs fall back instead of relying on them.
+func (v *VT) privateModeState(n int) int {
+	on := false
+	switch n {
+	case 1:
+		on = v.CursorKeysApp
+	case 7:
+		on = v.autoWrap
+	case 9, 1000, 1002, 1003:
+		on = v.MouseMode == n
+	case 25:
+		on = v.CursorVisible
+	case 1004:
+		on = v.FocusEvents
+	case 1005:
+		on = v.MouseUTF8
+	case 1006:
+		on = v.MouseSGR
+	case 1015:
+		on = v.MouseURXVT
+	case 1049:
+		on = v.AltScreen()
+	case 2004:
+		on = v.BracketedPaste
+	default:
+		return 0
+	}
+	if on {
+		return 1
+	}
+	return 2
+}
+
 func (v *VT) csi(params string, final byte) {
 	p := csiParams(params)
 	arg := func(i, def int) int {
@@ -760,12 +797,23 @@ func (v *VT) csi(params string, final byte) {
 	case 's':
 		v.saved = cursorState{v.x, v.y, v.pen}
 	case 'u':
+		if strings.HasPrefix(params, "?") {
+			// Kitty keyboard query: ESC [ ? u reports the active flags, 0 when off.
+			flags := 0
+			if v.KittyKeyboard {
+				flags = v.kittyFlags
+			}
+			v.reply(fmt.Sprintf("\x1b[?%du", flags))
+			return
+		}
 		if strings.HasPrefix(params, ">") {
 			v.KittyKeyboard = true
+			v.kittyFlags, _ = strconv.Atoi(params[1:])
 			return
 		}
 		if strings.HasPrefix(params, "<") {
 			v.KittyKeyboard = false
+			v.kittyFlags = 0
 			return
 		}
 		v.x, v.y, v.pen = v.saved.x, v.saved.y, v.saved.pen
@@ -788,6 +836,19 @@ func (v *VT) csi(params string, final byte) {
 			v.reply("\x1b[>1;10;0c")
 		case params == "" || params == "0":
 			v.reply("\x1b[?62;22c")
+		}
+	case 'p':
+		// DECRQM: ESC [ ? Pm $ p asks whether private mode Pm is set.
+		if !strings.HasPrefix(params, "?") || !strings.HasSuffix(params, "$") {
+			break
+		}
+		if mode, err := strconv.Atoi(params[1 : len(params)-1]); err == nil {
+			v.reply(fmt.Sprintf("\x1b[?%d;%d$y", mode, v.privateModeState(mode)))
+		}
+	case 'q':
+		// XTVERSION: ESC [ > 0 q asks for the terminal name and version.
+		if params == ">" || params == ">0" {
+			v.reply("\x1bP>|loom-vt\x1b\\")
 		}
 	case 'K':
 		v.eraseLine(p[0])

@@ -20,7 +20,11 @@ const debugControlLimit = 1024
 const debugStallTimeout = time.Second
 const debugRepairCooldown = 10 * time.Second
 const debugBundleLimit = 5
-const debugCaptureDelay = 150 * time.Millisecond
+
+// debugCaptureDelay is how long after a repair the "after" capture waits for the
+// child to redraw. It is generous because the redraw is asynchronous; 150 ms was
+// too short under -race and parallel load.
+const debugCaptureDelay = 2 * time.Second
 
 // debugChunk records a raw PTY read in the rolling stream.
 type debugChunk struct {
@@ -235,17 +239,20 @@ func writeDebugBundle(dir string, tabID int, reason string, ring *debugRing, bef
 	}
 	prefix := filepath.Join(dir, fmt.Sprintf("loom-session-%s-tab%d", at.Format("20060102-150405.000000000"), tabID))
 	logPath := prefix + ".log"
-	files := []struct{ path, content string }{
-		{logPath, fmt.Sprintf("time: %s\ntab: %d\nanomaly: %s\nraw stream chunks (offset: quoted bytes):\n", at.Format(time.RFC3339Nano), tabID, reason)},
-		{prefix + "-before.ansi", before},
-		{prefix + "-after.ansi", after},
-	}
+	logContent := fmt.Sprintf("time: %s\ntab: %d\nanomaly: %s\nraw stream chunks (offset: quoted bytes):\n", at.Format(time.RFC3339Nano), tabID, reason)
 	if ring != nil {
 		var b bytes.Buffer
 		for _, chunk := range ring.Chunks() {
 			fmt.Fprintf(&b, "%d: %q\n", chunk.Offset, chunk.Data)
 		}
-		files[0].content += b.String()
+		logContent += b.String()
+	}
+	// The .log is written last: its appearance marks a complete bundle, so readers
+	// that wait for it always find both captures.
+	files := []struct{ path, content string }{
+		{prefix + "-before.ansi", before},
+		{prefix + "-after.ansi", after},
+		{logPath, logContent},
 	}
 	created := make([]string, 0, len(files))
 	for _, file := range files {

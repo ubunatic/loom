@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"testing"
@@ -43,6 +44,48 @@ func waitForSessionScreenshot(t *testing.T, dir string) {
 			t.Fatalf("timed out waiting for screenshot in %s", dir)
 		}
 	}
+}
+
+// childReply sends one command to the test child's read loop and returns the
+// text after prefix in its reply. It waits for the reply to appear in the raw
+// output, so it never depends on the timing of the child's signal handling.
+func childReply(t *testing.T, session *ptytest.Session, command, prefix string) string {
+	t.Helper()
+	before := strings.Count(string(session.Raw()), prefix)
+	session.Send(command + "\n")
+	session.WaitForState(5*time.Second*ptytest.RaceFactor, func([]string) bool {
+		return strings.Count(string(session.Raw()), prefix) > before
+	})
+	raw := string(session.Raw())
+	rest := raw[strings.LastIndex(raw, prefix)+len(prefix):]
+	if end := strings.IndexAny(rest, "\r\n"); end >= 0 {
+		rest = rest[:end]
+	}
+	return rest
+}
+
+// childSignalCount returns how many SIGWINCHes the child's trap has handled.
+// The child's read loop runs pending traps before it reads the query.
+func childSignalCount(t *testing.T, session *ptytest.Session) int {
+	t.Helper()
+	n, err := strconv.Atoi(childReply(t, session, "count", "COUNT:"))
+	if err != nil {
+		t.Fatalf("child count reply: %v", err)
+	}
+	return n
+}
+
+// waitForChildSize queries the child's terminal size until it reports want.
+// Loom's attach resize can arrive at any point after spawn, so each query may
+// still see the old size.
+func waitForChildSize(t *testing.T, session *ptytest.Session, want string) {
+	t.Helper()
+	for range 50 {
+		if childReply(t, session, "size", "SIZE:") == want {
+			return
+		}
+	}
+	t.Fatalf("child never reported size %q", want)
 }
 
 func waitForDebugBundles(t *testing.T, dir string, count int) []string {
@@ -352,10 +395,15 @@ func TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics(t *testin
 	}
 	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
-	child := `count=0; trap 'count=$((count+1)); printf "REPAIRED_ON_WINCH:%s\n" "$count"' WINCH; printf 'READY\n'; printf '38;2;255;0;128m\n'; while :; do read -r -t 0.2 line || continue; case "$line" in leak) printf '38;2;255;0;128m\nLEAK_SENT\n';; count) printf 'COUNT:%s\n' "$count";; quit) exit 0;; esac; done`
+	child := `count=0; trap 'count=$((count+1)); printf "REPAIRED_ON_WINCH:%s\n" "$count"' WINCH; printf 'READY\n'; while :; do read -r -t 0.2 line || continue; case "$line" in leak) printf '38;2;255;0;128m\nLEAK_SENT\n';; size) printf 'SIZE:%s\n' "$(stty size)";; count) printf 'COUNT:%s\n' "$count";; quit) exit 0;; esac; done`
 	session := ptytest.Start(t, 100, 24, bin, "session", "--debug", "--debug-dir", dir, "--", "/bin/bash", "-c", child)
 	session.WaitFor("READY", 5*time.Second)
-	session.WaitFor("REPAIRED_ON_WINCH:1", 5*time.Second)
+	// Attaching resizes a fresh child from loom's default 80 columns to the client's
+	// 100, and that resize raises its own SIGWINCH. Wait for it to land so the
+	// baseline counts only signals before the repair.
+	waitForChildSize(t, session, "23 100")
+	baseline := childSignalCount(t, session)
+	session.Send("leak\n")
 	session.WaitForState(5*time.Second*ptytest.RaceFactor, func(rows []string) bool {
 		return len(rows) > 0 && strings.Contains(rows[len(rows)-1], "[!]")
 	})
@@ -383,24 +431,23 @@ func TestSessionDebugDetectsLeakRepairsViaSIGWINCHAndWritesDiagnostics(t *testin
 	if !strings.Contains(before, "38;2;255;0;128m") {
 		t.Fatalf("before capture missing leaked fragment: %q", before)
 	}
-	if !strings.Contains(after, "REPAIRED_ON_WINCH:1") {
-		t.Fatalf("after capture missing redraw: %q", after)
+	// The after capture follows the child's redraw, which is the repair's one signal.
+	if want := fmt.Sprintf("REPAIRED_ON_WINCH:%d", baseline+1); !strings.Contains(after, want) {
+		t.Fatalf("after capture missing redraw %s: %q", want, after)
 	}
 
 	session.Send("leak\n")
 	session.WaitForUpdate("LEAK_SENT", 5*time.Second)
-	// The child's timed read handles pending signals before accepting this query.
-	session.Send("count\n")
-	session.WaitForUpdate("COUNT:1", 5*time.Second)
+	// The second leak falls inside the cooldown, so the child must see no new signal.
+	if got := childSignalCount(t, session); got != baseline+1 {
+		t.Fatalf("cooldown allowed a second SIGWINCH repair: child count %d, want %d", got, baseline+1)
+	}
 	logs, err := filepath.Glob(filepath.Join(dir, "loom-session-*.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(logs) != 1 {
 		t.Fatalf("cooldown created %d bundles, want 1", len(logs))
-	}
-	if strings.Contains(string(session.Raw()), "REPAIRED_ON_WINCH:2") {
-		t.Fatal("cooldown allowed a second SIGWINCH repair")
 	}
 	session.Send("quit\n")
 	_ = session.Wait(5 * time.Second)
@@ -413,10 +460,13 @@ func TestSessionDebugDiagnosticRotationCapsAtFiveBundles(t *testing.T) {
 	bin := clitest.BuildLoomBinary(t)
 	dir := t.TempDir()
 	for i := 0; i < 6; i++ {
-		child := `repaired=0; trap 'printf "REPAIRED\n"; repaired=1' WINCH; printf '38;2;255;0;128m\n'; while test "$repaired" -eq 0; do read -r -t 0.1 line || true; done; read -r -t 0.3 line || true`
+		// The child stays alive after the repair until its bundle count is reached:
+		// the "after" capture runs 2 s later, and the session exits with its child.
+		want := min(i+1, 5)
+		child := fmt.Sprintf(`repaired=0; trap 'printf "REPAIRED\n"; repaired=1' WINCH; printf '38;2;255;0;128m\n'; while test "$repaired" -eq 0; do read -r -t 0.1 line || true; done; until test "$(ls %s/loom-session-*.log 2>/dev/null | wc -l)" -ge %d; do read -r -t 0.1 line || true; done`, dir, want)
 		session := ptytest.Start(t, 100, 24, bin, "session", "--debug", "--debug-dir", dir, "--", "/bin/bash", "-c", child)
 		session.WaitFor("REPAIRED", 5*time.Second)
-		waitForDebugBundles(t, dir, min(i+1, 5))
+		waitForDebugBundles(t, dir, want)
 		if err := session.Wait(5 * time.Second); err != nil {
 			t.Fatalf("canary %d exit: %v", i, err)
 		}
@@ -663,6 +713,25 @@ func TestSessionAnswersChildQueries(t *testing.T) {
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", script)
 	session.WaitFor("CPR_OK", time.Second*5)
 	session.WaitFor("DA_OK", time.Second*5)
+	session.Send("end\n")
+	session.WaitFor("LINE:end", time.Second*5)
+}
+
+// TestSessionAnswersDECRQMOnce covers issue 405: a DECRQM query for a mode the
+// VT does not track (2026) gets exactly one well-formed reply, from the VT. The
+// outer terminal's own reply is dropped by the session, so the child reads
+// nothing else; the sentinel line proves no extra bytes arrived.
+func TestSessionAnswersDECRQMOnce(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := clitest.BuildLoomBinary(t)
+	script := "stty -echo -icanon; printf '\\033[?2026$p'; IFS= read -r -d y reply; " +
+		"if [ \"$reply\" = \"$(printf '\\033[?2026;0$')\" ]; then printf 'DECRQM_OK\\n'; else printf 'DECRQM_BAD\\n'; fi; " +
+		"IFS= read -r line; printf 'LINE:%s\\n' \"$line\""
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", script)
+	session.WaitFor("DECRQM_OK", time.Second*5)
 	session.Send("end\n")
 	session.WaitFor("LINE:end", time.Second*5)
 }

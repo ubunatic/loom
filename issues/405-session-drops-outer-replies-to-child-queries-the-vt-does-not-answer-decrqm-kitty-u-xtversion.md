@@ -1,6 +1,6 @@
 # 405 — Session drops outer replies to child queries the VT does not answer (DECRQM, kitty ?u, XTVERSION)
 
-**Status**: Open
+**Status**: Closed — VT answers DECRQM, kitty ?u, XTVERSION in c065881; Jules runs superseded
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
@@ -24,7 +24,12 @@ Since 391, `loom session` drops every CSI reply arriving on stdin (`KeyEvent.Rep
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-405 | 16101408603233734506 | pending | asked back twice; final "submit a draft PR" reply sent 2026-11-03, replies: 2; adopt with `harnez agent resume --model jules --id 16101408603233734506 wait` |
-| implement | jules-implement-405a | 13296704772212350363 | pending | PAUSED after harnez auto-reply (replies: 1); adopt with `harnez agent resume --model jules --id 13296704772212350363 wait` |
-| implement | jules-implement-405b | 14704705202975718091 | pending | running; adopt with `harnez agent resume --model jules --id 14704705202975718091 wait` |
-| implement | jules-implement-405c | 16418329315455329292 | pending | running; adopt with `harnez agent resume --model jules --id 16418329315455329292 wait` |
+| implement | jules-implement-405 | 16101408603233734506 | none | ABANDONED 2026-11-03 22:50: still AWAITING_USER_FEEDBACK after 3 replies incl. the full decision below |
+| implement | jules-implement-405a | 13296704772212350363 | pending | IN_PROGRESS 22:50 after decision reply; adopt with `harnez agent resume --model jules --id 13296704772212350363 wait` |
+| implement | jules-implement-405b | 14704705202975718091 | pending | IN_PROGRESS 22:50 after decision reply; adopt with `harnez agent resume --model jules --id 14704705202975718091 wait` |
+| implement | jules-implement-405c | 16418329315455329292 | none | COMPLETED without PR or branch (checked GitHub refs and PR list) |
+
+Decision sent to the runs (host, decide mode): implement in `vt/vt.go` next to the DSR/DA replies.
+DECRQM `CSI ? Pm $ p` -> `CSI ? Pm ; Ps $ y` (1 set, 2 reset, 0 unknown); kitty `CSI ? u` -> `CSI ? <flags> u`
+from `v.KittyKeyboard`; XTVERSION `CSI > 0 q` -> `DCS > | loom-vt ST`. Keep session.go report dropping.
+Fallback if no PR lands: run it as a haiku:med developer ticket with this spec.

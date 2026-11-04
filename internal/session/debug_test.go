@@ -7,13 +7,62 @@ package session
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
+	"golang.org/x/sys/unix"
 	"ubunatic.com/loom/vt"
 )
+
+// TestDebugRedrawSignalsForegroundGroupWithoutResizing pins one repair to one
+// SIGWINCH. Each PTY size change raises its own SIGWINCH, so a size toggle lets a
+// child's trap run twice (REPAIRED:1 then :2) under load.
+func TestDebugRedrawSignalsForegroundGroupWithoutResizing(t *testing.T) {
+	master, slave, err := openSessionPTY(80, 24)
+	if err != nil {
+		t.Skipf("PTY unavailable: %v", err)
+	}
+	t.Cleanup(func() { master.Close() })
+	cmd := exec.Command("sleep", "30")
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
+	if err := cmd.Start(); err != nil {
+		slave.Close()
+		t.Fatalf("start child: %v", err)
+	}
+	slave.Close()
+	t.Cleanup(func() {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+	})
+	tab := &sessionTab{master: master, child: cmd, vt: vt.NewVT(80, 24)}
+
+	resizes := 0
+	origResize, origSignal := debugResizePTY, debugSignalGroup
+	t.Cleanup(func() { debugResizePTY, debugSignalGroup = origResize, origSignal })
+	debugResizePTY = func(f *os.File, cols, rows int) {
+		resizes++
+		setPTYSize(f, cols, rows)
+	}
+	var signaled []int
+	debugSignalGroup = func(pgid int) error {
+		signaled = append(signaled, pgid)
+		return unix.Kill(-pgid, unix.SIGWINCH)
+	}
+
+	redrawTabChild(tab)
+
+	if resizes != 0 {
+		t.Fatalf("repair resized the PTY %d times; each resize raises its own SIGWINCH", resizes)
+	}
+	if len(signaled) != 1 || signaled[0] != cmd.Process.Pid {
+		t.Fatalf("repair signaled groups %v, want one signal to child group %d", signaled, cmd.Process.Pid)
+	}
+}
 
 func TestDebugRingWrapAndChunkReconstruction(t *testing.T) {
 	ring := newDebugRing()

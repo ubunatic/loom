@@ -125,6 +125,31 @@ func notifyTabResize(tab *sessionTab) {
 	_ = syscall.Kill(-tab.child.Process.Pid, syscall.SIGWINCH)
 }
 
+// Test seams: production values are the real PTY resize and process-group signal.
+var (
+	debugResizePTY   = setPTYSize
+	debugSignalGroup = func(pgid int) error { return syscall.Kill(-pgid, syscall.SIGWINCH) }
+)
+
+// redrawTabChild asks the child to redraw after a debug repair with exactly one
+// SIGWINCH to the PTY's foreground process group. Resizing the PTY instead would
+// raise one SIGWINCH per size change and let the child observe two redraws.
+func redrawTabChild(t *sessionTab) {
+	pgid := 0
+	if !t.noControllingTTY {
+		if fg, err := unix.IoctlGetInt(int(t.master.Fd()), unix.TIOCGPGRP); err == nil && fg > 0 {
+			pgid = fg
+		}
+	}
+	if pgid == 0 {
+		if t.child == nil || t.child.Process == nil {
+			return
+		}
+		pgid = t.child.Process.Pid
+	}
+	_ = debugSignalGroup(pgid)
+}
+
 type sessionTab struct {
 	id               int
 	title            string
@@ -640,17 +665,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 		t.debugDetector.pending = nil
 		t.debugDetector.pendingAt = time.Time{}
 		t.debugAlert = true
-		childRows := t.vt.Rows
-		toggleRows := childRows + 1
-		if childRows > 1 {
-			toggleRows = childRows - 1
-		}
-		if t.noControllingTTY {
-			notifyTabResize(t)
-		} else {
-			setPTYSize(t.master, cols, toggleRows)
-			setPTYSize(t.master, cols, childRows)
-		}
+		redrawTabChild(t)
 		if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
 			drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 			barDrawn = true

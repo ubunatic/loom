@@ -40,9 +40,12 @@ func TestVTAnswersCursorAndDeviceQueries(t *testing.T) {
 	}
 }
 
+// Private DSR (?6n) has no report format in the VT, so it stays unanswered.
+// DECRQM (?Pm$p) used to be in this list too; since issue 405 it is answered,
+// see TestVTAnswersDECRQM.
 func TestVTIgnoresUnansweredPrivateQueries(t *testing.T) {
 	v := NewVT(20, 5)
-	v.Write([]byte("\x1b[?6n\x1b[?2004$p")) //nolint:errcheck
+	v.Write([]byte("\x1b[?6n")) //nolint:errcheck
 	if got := v.DrainReplies(); len(got) != 0 {
 		t.Fatalf("unanswered queries produced replies %q", got)
 	}
