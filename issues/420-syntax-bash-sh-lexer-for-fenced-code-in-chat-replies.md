@@ -1,6 +1,6 @@
 # 420 — syntax: bash/sh lexer for fenced code in chat replies
 
-**Status**: Open
+**Status**: Closed — shell lexer and CaptureVariable in 1b9a78d; q1 green
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
