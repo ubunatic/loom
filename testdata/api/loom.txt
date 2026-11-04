@@ -221,6 +221,11 @@ func Render(root Widget, cols, rows int) []string
     Canvas.Row). It opens no terminal, so it is safe in headless contexts,
     tests, and screenshots.
 
+func RenderHTML(w io.Writer, root Widget, cols, rows int, opts HTMLOptions) error
+    RenderHTML draws root off-screen at cols x rows and writes it with
+    WriteHTML. It opens no terminal, so it is safe in headless contexts, tests,
+    and screenshots.
+
 func RenderTo(w io.Writer, root Widget, cols, rows int) error
     RenderTo draws one off-screen frame and writes it as sequential lines to w.
     It performs no terminal control, making it suitable for non-interactive
@@ -308,6 +313,17 @@ func ValidateEditorConfigYAML(data []byte) error
 
 func ValidateYAML(r io.Reader) error
     ValidateYAML decodes and validates a Loom YAML layout configuration stream.
+
+func WriteHTML(w io.Writer, c *Canvas, opts HTMLOptions) error
+    WriteHTML writes canvas c as one self-contained HTML document: a single
+    <pre> monospace grid with inline styles only, no external assets and no
+    scripts. Colours are written as resolved hex values; the canvas colour
+    profile does not change the output.
+
+func WriteHTMLRows(w io.Writer, rows []string, opts HTMLOptions) error
+    WriteHTMLRows writes ANSI rows (as from Render, or any SGR-styled lines of
+    any count) as one HTML document. SGR sequences set the style; other escape
+    sequences are dropped. Rows keep their own lengths.
 
 func WriteOSC52(w io.Writer, text string) error
     WriteOSC52 writes an OSC 52 clipboard request containing text to w.
@@ -1970,6 +1986,11 @@ const (
 	GridBorderInner GridBorderMode = "inner"
 	GridBorderFull  GridBorderMode = "full"
 )
+type HTMLOptions struct {
+	Title string // <title>; empty gives "loom screenshot"
+}
+    HTMLOptions controls HTML screenshot output. The zero value is valid.
+
 type HelpEntry = specdefaults.HelpEntry
     HelpEntry is one row of a help section. Keys are bindings rendered
     with KeyCap; Cap overrides the rendered keycap text; Ref names a

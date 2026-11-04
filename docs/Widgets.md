@@ -244,6 +244,7 @@ err := pane.RunStartup(ctx, cfg)
 ```
 
 - **One-Shot Writer Previews (`loom.RenderTo`)**: Renders static widget snapshots directly to an `io.Writer` (e.g. for non-interactive CLI `--version` or `--help` banners).
+- **HTML Screenshots (`loom.RenderHTML`, `loom.WriteHTML`, `loom.WriteHTMLRows`)**: Writes a frame (or ANSI rows from `loom.Render`) as one self-contained HTML document you can open offline in a browser. The output is a single `<pre>` monospace grid with inline styles only: no external assets and no scripts. Each run of equal-style cells is one `<span>` with its foreground, background (256-colour and 16-colour values resolved to hex), bold, italic and underline. Terminal-default colours use fixed values (`#d4d4d4` on `#1e1e1e`). Dim and strikethrough are not rendered.
 
 ## 7. Primitives Added by the 2026-09 Lean Sprints
 
