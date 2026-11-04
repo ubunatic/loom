@@ -79,9 +79,16 @@ type editView struct {
 }
 
 func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*editView, error) {
-	dir := filepath.Dir(path)
-	if dir == "" || dir == "." {
-		dir, _ = filepath.Abs(".")
+	return newEditViewWith(edit, path, cfg, Options{})
+}
+
+func newEditViewWith(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig, opts Options) (*editView, error) {
+	dir := opts.Dir
+	if dir == "" {
+		dir = filepath.Dir(path)
+		if dir == "" || dir == "." {
+			dir, _ = filepath.Abs(".")
+		}
 	}
 
 	v := &editView{
@@ -89,8 +96,11 @@ func newEditView(edit *loom.RichTextEdit, path string, cfg loom.EditorConfig) (*
 		filePath:      path,
 		config:        cfg,
 		focused:       focusEditor,
-		showSidePanel: loom.SpeccedDefaults.Editor.ShowSidePanel,
+		showSidePanel: loom.SpeccedDefaults.Editor.ShowSidePanel || opts.ShowFiles,
 		regexMode:     loom.SpeccedDefaults.Editor.SearchRegex,
+	}
+	if opts.ShowFiles {
+		v.focused = focusBrowser
 	}
 
 	v.bindEdit()

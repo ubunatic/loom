@@ -1,6 +1,6 @@
 # Loom Editor
 
-`loom edit [file]` hosts RichTextEdit for rich text and ANSI documents. When invoked without arguments, it opens an empty, Untitled buffer. This guide records editor design decisions and verification lessons; issue files own implementation status and reproductions.
+`loom edit [file|dir]` hosts RichTextEdit for rich text and ANSI documents. When invoked without arguments, it opens an empty, Untitled buffer. When given a directory, it opens no file and shows the file pane rooted there ([419](../issues/419-loom-edit-files-flag-and-directory-argument-open-the-file-pane.md)). This guide records editor design decisions and verification lessons; issue files own implementation status and reproductions.
 
 ## Design decisions
 
@@ -56,7 +56,7 @@ mousegrab: true
 altscreen: true
 ```
 
-The schema ships in the repository and is embedded for runtime validation; no external schema installation is performed. `--config`, `--theme`, `--mousegrab=false` (or `-m=false`) and `--altscreen=false` override file preferences. Defaults come from the `editor` section of [spec/defaults.yaml](../spec/defaults.yaml): `julia256` theme, mouse capture on, alternate screen on. Shared editor controls and limits are in `rich_text_edit`. See [Editor defaults](Spec.md#editor-defaults) for the full ownership map; edit the embedded YAML and rebuild/install to manage defaults.
+The schema ships in the repository and is embedded for runtime validation; no external schema installation is performed. `--config`, `--theme`, `--mousegrab=false` (or `-m=false`) and `--altscreen=false` override file preferences. `--files` (`-f`) starts with the file pane shown and focused. Defaults come from the `editor` section of [spec/defaults.yaml](../spec/defaults.yaml): `julia256` theme, mouse capture on, alternate screen on. Shared editor controls and limits are in `rich_text_edit`. See [Editor defaults](Spec.md#editor-defaults) for the full ownership map; edit the embedded YAML and rebuild/install to manage defaults.
 
 
 Snapshot, 2026-10-07: [PR #15](https://github.com/ubunatic/loom/pull/15) merged the initial editor command and is present locally; [279](../issues/279-add-loom-edit-command-to-open-a-file-in-richtextedit.md) remains open pending its acceptance verification. [PR #16](https://github.com/ubunatic/loom/pull/16), updated head `9f41045`, is draft/unmerged and proposes issues 280–284. Recheck live code, PR state and recent history before beginning ticket work.

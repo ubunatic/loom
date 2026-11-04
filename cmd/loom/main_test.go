@@ -975,9 +975,10 @@ func TestEditCommandArityAndFileErrors(t *testing.T) {
 	if err := execute([]string{"edit", "a", "b"}, &out); err == nil || !strings.Contains(err.Error(), "accepts at most 1 arg") {
 		t.Fatalf("execute(edit a b) error = %v, want arity error", err)
 	}
-	dir := t.TempDir()
-	if err := execute([]string{"edit", dir}, &out); err == nil {
-		t.Fatal("execute(edit) on directory succeeded, want error")
+	// A directory argument is valid since issue 419 (it roots the file pane), so
+	// it is no longer an error here. Its handling is tested in internal/editor.
+	if f := editCommand().Flags().Lookup("files"); f == nil || f.Shorthand != "f" || f.DefValue != "false" {
+		t.Fatalf("edit --files flag = %+v, want bool flag with shorthand -f defaulting to false", f)
 	}
 }
 

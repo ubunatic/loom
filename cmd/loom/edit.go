@@ -13,9 +13,9 @@ import (
 
 func editCommand() *cobra.Command {
 	var configPath, themeName string
-	var mouseGrab, altScreen bool
+	var mouseGrab, altScreen, files bool
 	cmd := &cobra.Command{
-		Use:          "edit [file]",
+		Use:          "edit [file|dir]",
 		Short:        "Interactively edit a rich text or ANSI file",
 		Args:         cobra.MaximumNArgs(1),
 		SilenceUsage: true,
@@ -40,9 +40,10 @@ func editCommand() *cobra.Command {
 			if len(args) > 0 {
 				path = args[0]
 			}
-			return editor.Run(path, cfg)
+			return editor.Run(path, cfg, editor.Options{ShowFiles: files})
 		},
 	}
+	cmd.Flags().BoolVarP(&files, "files", "f", false, "start with the file pane shown and focused")
 	cmd.Flags().StringVarP(&configPath, "config", "c", "", "path to editor settings YAML file")
 	cmd.Flags().StringVarP(&themeName, "theme", "t", "", "color theme name")
 	cmd.Flags().BoolVarP(&mouseGrab, "mousegrab", "m", loom.SpeccedDefaults.Editor.MouseGrab, "enable mouse tracking/capture")
