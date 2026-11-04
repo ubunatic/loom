@@ -12,7 +12,8 @@ type LexicalEngine struct {
 	source []byte
 }
 
-// NewLexicalEngine creates a lexer for go, markdown, json, or yaml.
+// NewLexicalEngine creates a lexer for go, markdown, json, yaml, or shell
+// (bash, sh, shell, zsh).
 func NewLexicalEngine(language string) *LexicalEngine {
 	return &LexicalEngine{lang: strings.ToLower(language)}
 }
@@ -22,7 +23,7 @@ func NewLexicalEngine(language string) *LexicalEngine {
 func HighlightString(lang, s string) []Span {
 	e := NewLexicalEngine(lang)
 	switch e.Language() {
-	case "go", "markdown", "md", "json", "yaml", "yml":
+	case "go", "markdown", "md", "json", "yaml", "yml", "bash", "sh", "shell", "zsh":
 	default:
 		return nil
 	}
@@ -115,6 +116,9 @@ func (e *LexicalEngine) lexLine(src []byte, base, end int) []Span {
 		}
 	}
 	lang := e.lang
+	if isShellLanguage(lang) {
+		return lexShellLine(src, base, end)
+	}
 	if lang == "markdown" || lang == "md" {
 		if strings.HasPrefix(string(b), "#") {
 			i := 0

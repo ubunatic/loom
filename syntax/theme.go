@@ -16,6 +16,7 @@ const (
 	CapturePunctuationBracket Capture = "punctuation.bracket"
 	CaptureProperty           Capture = "property" // JSON object key
 	CaptureConstant           Capture = "constant" // JSON true, false, null
+	CaptureVariable           Capture = "variable" // shell $name, ${...}, $1, $@, $?
 )
 
 // ThemeMap maps capture names to UI-owned theme identifiers. Values are
@@ -34,6 +35,7 @@ func DefaultThemeMap() ThemeMap {
 		"number": "syntax.number", "operator": "syntax.operator",
 		"punctuation": "syntax.punctuation", "punctuation.bracket": "syntax.punctuation",
 		"property": "syntax.property", "constant": "syntax.constant",
+		"variable": "syntax.variable",
 	}
 }
 
@@ -49,6 +51,7 @@ func DefaultStyleResolver() StyleResolver {
 		"type": "1;34", "string": "32", "comment": "90",
 		"number": "33", "operator": "37", "punctuation": "37",
 		"punctuation.bracket": "37", "property": "94", "constant": "91",
+		"variable": "96",
 	}
 }
 

@@ -37,6 +37,7 @@ const (
 	CapturePunctuationBracket Capture = "punctuation.bracket"
 	CaptureProperty           Capture = "property" // JSON object key
 	CaptureConstant           Capture = "constant" // JSON true, false, null
+	CaptureVariable           Capture = "variable" // shell $name, ${...}, $1, $@, $?
 )
 type Edit struct {
 	StartByte, OldEndByte, NewEndByte    int
@@ -59,7 +60,8 @@ type LexicalEngine struct {
     LexicalEngine provides lightweight standard-library tokenization.
 
 func NewLexicalEngine(language string) *LexicalEngine
-    NewLexicalEngine creates a lexer for go, markdown, json, or yaml.
+    NewLexicalEngine creates a lexer for go, markdown, json, yaml, or shell
+    (bash, sh, shell, zsh).
 
 func (e *LexicalEngine) Breadcrumb(line, col int) []string
     Breadcrumb returns the scope hierarchy at the given zero-based line and
