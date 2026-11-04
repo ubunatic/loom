@@ -1,6 +1,6 @@
 # 282 — Add F2 side panel with file browser to loom edit
 
-**Status**: Open
+**Status**: Closed — F2 side panel shipped: spec/defaults.yaml:218 f2 binding, internal/editor/edit.go:629 toggle, :110 file picker OnSelect with guardUnsaved at :114; layout left to 288 (Jules audit PR 94, two line refs off by 19, quotes checked)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
