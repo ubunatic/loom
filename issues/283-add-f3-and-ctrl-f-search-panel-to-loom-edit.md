@@ -1,6 +1,6 @@
 # 283 — Add F3 and Ctrl-F search panel to loom edit
 
-**Status**: Open
+**Status**: Closed — F3/Ctrl-F search panel shipped (internal/editor/edit.go:634 toggleSearch, search_next, regex, cancel); review follow-ups 285-287 closed; layout containers left to 288 (Jules audit PR 92)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
