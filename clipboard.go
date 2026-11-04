@@ -17,9 +17,16 @@ func WriteOSC52(w io.Writer, text string) error {
 
 type clipboardAware interface{ SetClipboardWriter(func(string)) }
 
+// clipboardSink is the unexported form of clipboardAware, for widgets whose
+// exported method set is fixed by their API (TextEntry).
+type clipboardSink interface{ setClipboardWriter(func(string)) }
+
 func bindClipboardTree(root Widget, write func(string)) {
 	if aware, ok := root.(clipboardAware); ok {
 		aware.SetClipboardWriter(write)
+	}
+	if sink, ok := root.(clipboardSink); ok {
+		sink.setClipboardWriter(write)
 	}
 	switch node := root.(type) {
 	case *Tabs:

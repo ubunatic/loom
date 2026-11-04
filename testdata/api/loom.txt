@@ -4489,6 +4489,81 @@ func (t *TextArea) Value() string
 func (t *TextArea) VisibleLines() []int
     VisibleLines returns the slice of document line indices currently visible.
 
+type TextEntry struct {
+	// Has unexported fields.
+}
+    TextEntry is a plain-text input for chat-style lines. It wraps its text
+    to the width it is given, grows with its content up to MaxHeight and then
+    scrolls, and edits with mouse and keyboard selection, cut, copy and paste
+    (internal clipboard, OSC 52 through the host clipboard hook, bracketed
+    paste), and undo and redo.
+
+    The host keeps its own keys: TextEntry returns Ignored for every key that
+    is not an editing key, so Tab, Ctrl+O, Ctrl+S and similar host shortcuts
+    reach the host. Cursor keys are always consumed, except Up and Down (and
+    page keys) at the first or last row, which are ignored so the host can use
+    them for history. Edits and clipboard actions that change nothing are also
+    ignored. The Submit and Newline bindings decide between submitting and
+    inserting a line break; Enter without OnSubmit is ignored as well.
+
+    Text is plain: tabs become four spaces and CR or CRLF become LF.
+
+func NewTextEntry(opts TextEntryOptions) *TextEntry
+    NewTextEntry creates an empty entry configured by opts.
+
+func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult
+    ConsumeKey applies an editing key. Keys it does not use are returned
+    Ignored.
+
+func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult
+    ConsumeMouse places the caret on a press, extends the selection on a drag,
+    selects a word on a double click and a line on a triple click, and scrolls
+    the wheel. Coordinates are 0-based and relative to the widget.
+
+func (e *TextEntry) ConsumePaste(event PasteEvent) EventResult
+    ConsumePaste inserts pasted text at the caret as one undo step.
+
+func (e *TextEntry) Cursor() (row, col int)
+    Cursor returns the caret cell relative to the widget's visible top-left
+    corner, after soft wrap and scrolling. The wrap width is that of the latest
+    Draw or Measure call.
+
+func (e *TextEntry) Draw(c *Canvas, r Rect)
+    Draw paints the prompt, the wrapped text or the placeholder into r. When
+    focused, it places the hardware cursor at the caret and keeps the caret row
+    visible. Mouse wheel scrolling is kept until the caret moves again.
+
+func (e *TextEntry) Focused() bool
+    Focused reports whether the entry shows the caret.
+
+func (e *TextEntry) Measure(width int) measure.Size
+    Measure reports the soft-wrapped size at width, with height between one row
+    and MaxHeight. A width of zero or less measures the text on its own lines.
+
+func (e *TextEntry) SetFocus(focused bool)
+    SetFocus sets whether the entry shows the caret and takes editing input.
+    Losing focus ends a mouse drag and the current typing run.
+
+func (e *TextEntry) SetValue(s string)
+    SetValue replaces the text, puts the caret at the end and clears the
+    selection. The change is one undo step. It does not call OnChange.
+
+func (e *TextEntry) Value() string
+    Value returns the entry text with line breaks as "\n".
+
+type TextEntryOptions struct {
+	Placeholder string
+	Prompt      string   // first-row prefix, e.g. "> "
+	MaxHeight   int      // visual rows before scrolling; 0 = unbounded
+	SubmitKeys  []string // default ["enter"]
+	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
+	OnChange    func(value string)
+	OnSubmit    func(value string) EventResult
+}
+    TextEntryOptions configures a TextEntry. The zero value gives a plain entry
+    that grows without a height limit, submits on Enter and breaks lines on
+    Shift+Enter, Ctrl+J or Alt+Enter.
+
 type TextInput struct {
 	Prompt      string  // drawn before the value, e.g. "title> "
 	Placeholder string  // dim hint shown when the buffer is empty

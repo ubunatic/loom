@@ -224,6 +224,21 @@ var demos = map[string]constructor{
 	"TextArea": func() loom.Widget {
 		return &textAreaWidget{area: loom.NewTextArea("A multi-line editor\nwith sample content.\nUse the arrow keys to move.")}
 	},
+	"TextEntry": func() loom.Widget {
+		var entry *loom.TextEntry
+		entry = loom.NewTextEntry(loom.TextEntryOptions{
+			Placeholder: "Message the team…",
+			Prompt:      "> ",
+			MaxHeight:   4,
+			OnSubmit: func(string) loom.EventResult {
+				entry.SetValue("")
+				return loom.Consumed()
+			},
+		})
+		entry.SetValue("Draft: a longer message that wraps across several rows of the chat input.")
+		entry.SetFocus(true)
+		return entry
+	},
 	"TextInput": func() loom.Widget {
 		input := loom.NewTextInput("Ada Lovelace")
 		placeholder := loom.NewTextInput("")

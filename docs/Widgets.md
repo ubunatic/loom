@@ -772,3 +772,51 @@ type ModalTarget interface {
 - **Temporary Engagement**: When any interactive modal overlay opens, `Pane` automatically engages temporary mouse tracking (`\x1b[?1000h\x1b[?1006h` / `\x1b[?1003h\x1b[?1006h`) so users can click buttons, select menu options, or scroll.
 - **Automatic Restoration**: When all overlays close (or the backdrop is clicked), `Pane` automatically restores base mouse-off mode. If persistent global grab (`"M"`) was already active, mouse tracking remains permanently enabled.
 
+## 18. Plain-Text Entry (`loom.TextEntry`)
+
+`loom.TextEntry` is a multi-line plain-text input for chat-style lines. The host embeds it, gives it a width and height through `Draw` or `Measure`, and receives the text through `OnChange` and `OnSubmit`. It is plain text only: no syntax highlighting, no folding, and tabs become four spaces.
+
+```go
+entry := loom.NewTextEntry(loom.TextEntryOptions{
+    Placeholder: "Message the team…",
+    Prompt:      "> ",
+    MaxHeight:   4,
+    OnSubmit: func(value string) loom.EventResult {
+        send(value)
+        return loom.Consumed()
+    },
+})
+entry.SetFocus(true)
+```
+
+### Options and defaults
+
+| Field | Default | Meaning |
+|---|---|---|
+| `Placeholder` | empty | Dimmed text shown while the entry is empty. |
+| `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. |
+| `MaxHeight` | 0 (unbounded) | Visual rows before the entry scrolls. |
+| `SubmitKeys` | `["enter"]` | Keys that call `OnSubmit`. Without `OnSubmit`, they are ignored. |
+| `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
+| `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
+| `OnSubmit` | nil | Called with the current value. Its result is returned to the caller. |
+
+The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
+
+### Key handling
+
+- **Editing keys** are consumed: printable text, Backspace and Delete, the arrow keys with Home, End, and Ctrl+Left and Ctrl+Right, and Shift with any of them to extend a selection.
+- **Clipboard keys**: Ctrl+A selects all. Ctrl+C copies, Ctrl+X cuts, and Ctrl+V pastes from the internal clipboard. Copy and cut also write to the host clipboard through the Pane hook (OSC 52). Bracketed paste inserts as one undo step.
+- **Undo**: Ctrl+Z undoes, and Ctrl+Y or Ctrl+Shift+Z redoes. Consecutive typed characters form one undo step.
+- **Host keys** are returned `Ignored`: Tab, Shift+Tab, Ctrl+O, Ctrl+S, Ctrl+G, Ctrl+F, Esc, and F-keys. Up, Down, PageUp and PageDown are ignored at the first or last row so the host can use them for history.
+- **Page keys**: the decoder emits `pgup` and `pgdown`. Bindings also accept `pageup`, `pagedown` and `pgdn`.
+
+### Mouse
+
+Coordinates are 0-based and relative to the widget. A press places the caret, and a drag extends the selection. A double click selects a word, and a triple click selects a logical line. The wheel scrolls without moving the caret, and the scroll position holds until the caret moves again.
+
+### Known limits
+
+- Ctrl+J and Shift+Enter are distinct from Enter only when the terminal sends the kitty keyboard protocol (CSI u). In legacy terminals, Ctrl+J arrives as plain LF, which the decoder reports as `enter`, and Shift+Enter arrives as Enter. Alt+Enter works in both.
+- There is no design sketch for this widget yet, so the per-cell checks in its tests assert the contract directly: Invert on selected cells, Dim on the placeholder, the prompt on row 0, and the hardware cursor at the caret.
+

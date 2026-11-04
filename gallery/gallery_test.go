@@ -693,7 +693,7 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"SearchBar": {Text: "x"},
 		"Table":     {Key: "down"}, "Tabs": {Key: "tab"}, "TextArea": {Text: "x"}, "RichTextEdit": {Text: "x"},
-		"TextInput": {Text: "x"}, "Toggle": {Key: "enter"}, "Tree": {Key: "down"},
+		"TextEntry": {Text: "x"}, "TextInput": {Text: "x"}, "Toggle": {Key: "enter"}, "Tree": {Key: "down"},
 		"Viewport": {Key: "down"},
 	}
 	for _, name := range Names() {

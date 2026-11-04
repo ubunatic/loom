@@ -426,6 +426,17 @@ widgets:
       area.Draw(canvas, rect, true)
     source: textarea.go
     docs: docs/Widgets.md §9
+  - name: loom.TextEntry
+    package: loom
+    purpose: Plain-text chat input that soft-wraps, grows to MaxHeight, selects, copies and pastes, and leaves host keys to the host; embedded control drawn by its parent.
+    category: input
+    example: |-
+      entry := loom.NewTextEntry(loom.TextEntryOptions{Prompt: "> ", OnSubmit: send})
+      entry.SetFocus(true)
+      entry.Draw(canvas, rect)
+    source: text_entry.go
+    docs: docs/Widgets.md §18
+    ticket: issues/417
   - name: loom.TextInput
     package: loom
     purpose: Edit one line of text; embedded control drawn by its parent.
