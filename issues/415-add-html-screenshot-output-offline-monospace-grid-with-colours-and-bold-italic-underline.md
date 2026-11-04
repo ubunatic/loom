@@ -1,6 +1,6 @@
 # 415 — Add HTML screenshot output: offline monospace grid with colours and bold/italic/underline
 
-**Status**: Open
+**Status**: Closed — WriteHTML, RenderHTML, WriteHTMLRows in b38bb5c; q1 green after 416
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
