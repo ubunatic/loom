@@ -1,6 +1,6 @@
 # 417 — Public rich-text entry widget with loom edit selection and clipboard, for chat inputs
 
-**Status**: Open
+**Status**: Closed — loom.TextEntry in f5ed154
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
