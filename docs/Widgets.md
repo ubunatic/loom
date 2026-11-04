@@ -800,6 +800,7 @@ entry.SetFocus(true)
 | `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
 | `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
 | `OnSubmit` | nil | Called with the current value. Its result is returned to the caller. |
+| `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. Selected cells keep the selection style. |
 
 The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
 
@@ -814,6 +815,25 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 ### Mouse
 
 Coordinates are 0-based and relative to the widget. A press places the caret, and a drag extends the selection. A double click selects a word, and a triple click selects a logical line. The wheel scrolls without moving the caret, and the scroll position holds until the caret moves again.
+
+### Offsets, replacement and highlight
+
+Offsets are byte offsets into `Value()`. An offset inside a grapheme cluster snaps to the start of that cluster, and an offset outside the text clamps to `[0, len(Value())]`.
+
+- `CursorOffset()` returns the caret as a byte offset. `SetCursorOffset(off)` moves the caret and clears the selection. Neither makes an undo step or calls `OnChange`.
+- `ReplaceRange(start, end, s)` replaces the text between two offsets with `s`. A reversed range is swapped. It is one undo step, the caret moves to the end of `s`, and it does not call `OnChange`. Use it for completion: replace the word at the caret.
+- `Highlight` returns `[]TextEntrySpan{Start, End, Style}`. Spans clamp, snap to cluster starts, and a later span wins over an earlier one. A reversed span is ignored. Highlight styles sit under the selection, so a selected cell always shows the selection style.
+
+```go
+entry := loom.NewTextEntry(loom.TextEntryOptions{
+    Highlight: func(value string) []loom.TextEntrySpan {
+        if strings.HasPrefix(value, "/") {
+            return []loom.TextEntrySpan{{Start: 0, End: len(value), Style: loom.Style{FG: loom.ColorIndex(6)}}}
+        }
+        return nil
+    },
+})
+```
 
 ### Known limits
 

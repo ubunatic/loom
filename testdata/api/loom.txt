@@ -4528,6 +4528,9 @@ func (e *TextEntry) Cursor() (row, col int)
     corner, after soft wrap and scrolling. The wrap width is that of the latest
     Draw or Measure call.
 
+func (e *TextEntry) CursorOffset() int
+    CursorOffset returns the caret as a byte offset into Value().
+
 func (e *TextEntry) Draw(c *Canvas, r Rect)
     Draw paints the prompt, the wrapped text or the placeholder into r. When
     focused, it places the hardware cursor at the caret and keeps the caret row
@@ -4539,6 +4542,18 @@ func (e *TextEntry) Focused() bool
 func (e *TextEntry) Measure(width int) measure.Size
     Measure reports the soft-wrapped size at width, with height between one row
     and MaxHeight. A width of zero or less measures the text on its own lines.
+
+func (e *TextEntry) ReplaceRange(start, end int, s string)
+    ReplaceRange replaces the text from byte offset start to end of Value()
+    with s. Offsets snap and clamp as in SetCursorOffset, and a reversed range
+    is swapped. The change is one undo step. The caret moves to the end of s,
+    the selection clears, and OnChange is not called, as with SetValue.
+
+func (e *TextEntry) SetCursorOffset(off int)
+    SetCursorOffset moves the caret to byte offset off of Value() and clears the
+    selection. An offset inside a grapheme cluster snaps to the start of that
+    cluster, and an offset outside the text clamps to it. This is not an edit:
+    it makes no undo step and does not call OnChange.
 
 func (e *TextEntry) SetFocus(focused bool)
     SetFocus sets whether the entry shows the caret and takes editing input.
@@ -4559,10 +4574,22 @@ type TextEntryOptions struct {
 	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
 	OnChange    func(value string)
 	OnSubmit    func(value string) EventResult
+	// Highlight is called on each draw and styles the spans it returns. Nil
+	// leaves the text plain.
+	Highlight func(value string) []TextEntrySpan
 }
     TextEntryOptions configures a TextEntry. The zero value gives a plain entry
     that grows without a height limit, submits on Enter and breaks lines on
     Shift+Enter, Ctrl+J or Alt+Enter.
+
+type TextEntrySpan struct {
+	Start, End int // byte offsets into the value, end exclusive
+	Style      Style
+}
+    TextEntrySpan styles the bytes from Start to End of the value, End
+    exclusive. Offsets snap and clamp as in SetCursorOffset. Overlapping spans
+    take the later one, and a reversed span is ignored. Highlight styles are
+    drawn under the selection: selected cells always use the selection style.
 
 type TextInput struct {
 	Prompt      string  // drawn before the value, e.g. "title> "

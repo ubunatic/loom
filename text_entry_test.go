@@ -4,6 +4,7 @@
 package loom
 
 import (
+	"math"
 	"slices"
 	"strings"
 	"testing"
@@ -508,6 +509,214 @@ func TestTextEntryCursorOnlyWhenFocused(t *testing.T) {
 	e.Draw(c, Rect{W: 10, H: 1})
 	if c.CursorX != 1 || c.CursorY != 0 {
 		t.Fatalf("focused cursor at (%d,%d), want (1,0)", c.CursorX, c.CursorY)
+	}
+}
+
+func TestTextEntryCursorOffsetRoundTripsWideRunesAndClusters(t *testing.T) {
+	// "a" is 1 byte and 1 cell, "界" is 3 bytes and 2 cells, "é" is one
+	// 3-byte cluster of 1 cell, and "b" is 1 byte and 1 cell: 8 bytes in all.
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("a界éb")
+	c := NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	for _, tc := range []struct{ off, col int }{{0, 0}, {1, 1}, {4, 3}, {7, 4}, {8, 5}} {
+		e.SetCursorOffset(tc.off)
+		if got := e.CursorOffset(); got != tc.off {
+			t.Fatalf("CursorOffset() after SetCursorOffset(%d) = %d", tc.off, got)
+		}
+		if _, col := e.Cursor(); col != tc.col {
+			t.Fatalf("offset %d: caret column %d, want %d", tc.off, col, tc.col)
+		}
+	}
+	// Offsets inside a cluster snap to its start; out-of-range offsets clamp.
+	for _, tc := range []struct{ off, want int }{{2, 1}, {3, 1}, {5, 4}, {6, 4}, {-3, 0}, {99, 8}} {
+		e.SetCursorOffset(tc.off)
+		if got := e.CursorOffset(); got != tc.want {
+			t.Fatalf("SetCursorOffset(%d) gives CursorOffset %d, want %d", tc.off, got, tc.want)
+		}
+	}
+}
+
+func TestTextEntrySetCursorOffsetClearsSelectionWithoutChange(t *testing.T) {
+	var changes int
+	e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }})
+	e.SetValue("abc")
+	entryKey(e, "shift-left")
+	if !e.hasSelection() {
+		t.Fatal("shift-left did not create a selection")
+	}
+	e.SetCursorOffset(1)
+	if e.hasSelection() {
+		t.Fatal("SetCursorOffset must clear the selection")
+	}
+	if e.CursorOffset() != 1 || e.Value() != "abc" || changes != 0 {
+		t.Fatalf("offset %d, value %q, OnChange calls %d; want 1, \"abc\", 0",
+			e.CursorOffset(), e.Value(), changes)
+	}
+}
+
+func TestTextEntryReplaceRangeIsOneUndoStepWithoutOnChange(t *testing.T) {
+	var changes int
+	e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }})
+	e.SetValue("hello world")
+	e.ReplaceRange(6, 11, "there")
+	if e.Value() != "hello there" {
+		t.Fatalf("Value() = %q, want %q", e.Value(), "hello there")
+	}
+	if e.CursorOffset() != len("hello there") {
+		t.Fatalf("caret at %d after ReplaceRange, want the end of the inserted text", e.CursorOffset())
+	}
+	if changes != 0 {
+		t.Fatalf("ReplaceRange called OnChange %d times, want 0", changes)
+	}
+	entryKey(e, "ctrl-z")
+	if e.Value() != "hello world" {
+		t.Fatalf("one undo gave %q, want the text from before ReplaceRange", e.Value())
+	}
+	entryKey(e, "ctrl-y")
+	if e.Value() != "hello there" {
+		t.Fatalf("redo after undo gave %q, want %q", e.Value(), "hello there")
+	}
+}
+
+func TestTextEntryReplaceRangeSwapsReversedAndClampsOutOfRange(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("hello world")
+	e.ReplaceRange(11, 6, "X")
+	if e.Value() != "hello X" {
+		t.Fatalf("reversed range gave %q, want %q", e.Value(), "hello X")
+	}
+	e.SetValue("abc")
+	e.ReplaceRange(-5, 100, "")
+	if e.Value() != "" || e.CursorOffset() != 0 {
+		t.Fatalf("clamped range gave %q at %d, want \"\" at 0", e.Value(), e.CursorOffset())
+	}
+	e.SetValue("abc")
+	e.ReplaceRange(100, 200, "!")
+	if e.Value() != "abc!" {
+		t.Fatalf("range past the end gave %q, want %q", e.Value(), "abc!")
+	}
+}
+
+func TestTextEntryReplaceRangeSnapsInsideClusters(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	// "a" is 0..1, "界" is 1..4 and "b" is 4..5.
+	e.SetValue("a界b")
+	e.ReplaceRange(2, 4, "") // start 2 snaps to 1, the start of 界
+	if e.Value() != "ab" {
+		t.Fatalf("start inside a cluster gave %q, want %q", e.Value(), "ab")
+	}
+	e.SetValue("a界b")
+	e.ReplaceRange(0, 2, "") // end 2 snaps to 1, so only "a" goes
+	if e.Value() != "界b" {
+		t.Fatalf("end inside a cluster gave %q, want %q", e.Value(), "界b")
+	}
+}
+
+func TestTextEntryHighlightColoursSpansAndSelectionWins(t *testing.T) {
+	red, blue := ColorRGB(255, 0, 0), ColorRGB(0, 0, 255)
+	e := NewTextEntry(TextEntryOptions{
+		Prompt: "> ",
+		Highlight: func(string) []TextEntrySpan {
+			return []TextEntrySpan{
+				{Start: 0, End: 3, Style: Style{FG: red}},
+				{Start: 4, End: 7, Style: Style{FG: blue}},
+			}
+		},
+	})
+	e.SetValue("/go now")
+	e.SetFocus(true)
+	c := NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	n := entryColumnOf(c, 0, "n")
+	if n != 6 {
+		t.Fatalf("\"n\" at column %d, want 6 after the two-cell prompt", n)
+	}
+	for x, want := range map[int]Color{2: red, 4: red, 5: ColorReset(), 6: blue, 8: blue} {
+		if got := c.Get(x, 0).Style.FG; got != want {
+			t.Fatalf("column %d FG = %v, want %v", x, got, want)
+		}
+	}
+
+	// Select "/g" from the start. Selected cells take the selection style alone.
+	e.SetCursorOffset(0)
+	entryKey(e, "shift-right")
+	entryKey(e, "shift-right")
+	c = NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	for x := 2; x <= 3; x++ {
+		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
+			t.Fatalf("selected column %d style = %+v, want only Invert", x, cell)
+		}
+	}
+	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {
+		t.Fatalf("unselected highlighted column 4 style = %+v, want red FG without Invert", got)
+	}
+}
+
+func TestTextEntryHighlightBadSpansClampAndNeverPanic(t *testing.T) {
+	red, green, blue := ColorRGB(255, 0, 0), ColorRGB(0, 255, 0), ColorRGB(0, 0, 255)
+	e := NewTextEntry(TextEntryOptions{Highlight: func(string) []TextEntrySpan {
+		return []TextEntrySpan{
+			{Start: math.MinInt, End: math.MaxInt, Style: Style{FG: ColorIndex(1)}},
+			{Start: -5, End: 2, Style: Style{FG: red}},     // clamps to [0, 2)
+			{Start: 3, End: 1000, Style: Style{FG: green}}, // clamps to [3, 4)
+			{Start: 4, End: 2, Style: Style{FG: blue}},     // reversed: ignored
+			{Start: 1, End: 2, Style: Style{FG: blue}},     // overlaps red; later wins
+		}
+	}})
+	e.SetValue("abcd")
+	c := NewCanvas(10, 1)
+	e.Draw(c, Rect{W: 10, H: 1})
+	want := []Color{red, blue, ColorIndex(1), green}
+	for x, fg := range want {
+		if got := c.Get(x, 0).Style.FG; got != fg {
+			t.Fatalf("column %d FG = %v, want %v", x, got, fg)
+		}
+	}
+	empty := NewTextEntry(TextEntryOptions{Highlight: e.highlight})
+	empty.Draw(NewCanvas(10, 1), Rect{W: 10, H: 1})
+}
+
+func TestTextEntryHighlightSnapsSpanToClusterStart(t *testing.T) {
+	red := ColorRGB(255, 0, 0)
+	e := NewTextEntry(TextEntryOptions{Highlight: func(string) []TextEntrySpan {
+		return []TextEntrySpan{{Start: 2, End: 5, Style: Style{FG: red}}}
+	}})
+	e.SetValue("a界b")
+	c := NewCanvas(10, 1)
+	e.Draw(c, Rect{W: 10, H: 1})
+	// Start 2 is inside 界 and snaps to its start, so 界 and b are red and a is not.
+	if got := c.Get(0, 0).Style.FG; got == red {
+		t.Fatal("column 0 (\"a\") is outside the span but is red")
+	}
+	if got := c.Get(1, 0).Style.FG; got != red {
+		t.Fatalf("wide rune column FG = %v, want red", got)
+	}
+	if b := entryColumnOf(c, 0, "b"); b != 3 || c.Get(b, 0).Style.FG != red {
+		t.Fatalf("\"b\" at column %d not red, want column 3 red", b)
+	}
+}
+
+func TestTextEntryMouseSelectionOverHighlightUsesSelectionStyle(t *testing.T) {
+	red := ColorRGB(255, 0, 0)
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", Highlight: func(string) []TextEntrySpan {
+		return []TextEntrySpan{{Start: 0, End: 3, Style: Style{FG: red}}}
+	}})
+	e.SetValue("/go now")
+	e.Draw(NewCanvas(20, 1), Rect{W: 20, H: 1})
+	// Press on the "/" cell and drag to the "o" cell: selects "/g".
+	e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 0})
+	e.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 4, Y: 0})
+	c := NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	for x := 2; x <= 3; x++ {
+		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
+			t.Fatalf("mouse-selected column %d style = %+v, want only Invert", x, cell)
+		}
+	}
+	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {
+		t.Fatalf("column 4 after the drag = %+v, want red FG without Invert", got)
 	}
 }
 

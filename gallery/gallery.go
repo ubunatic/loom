@@ -234,8 +234,9 @@ var demos = map[string]constructor{
 				entry.SetValue("")
 				return loom.Consumed()
 			},
+			Highlight: leadingCommandSpans,
 		})
-		entry.SetValue("Draft: a longer message that wraps across several rows of the chat input.")
+		entry.SetValue("/topic Draft: a longer message that wraps across several rows of the chat input.")
 		entry.SetFocus(true)
 		return entry
 	},
@@ -597,6 +598,19 @@ func (w *textInputWidget) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 }
 func (w *textInputWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult {
 	return loom.Ignored()
+}
+
+// leadingCommandSpans colours a /command at the start of a chat line, the way
+// a chat input marks one before the text.
+func leadingCommandSpans(value string) []loom.TextEntrySpan {
+	if !strings.HasPrefix(value, "/") {
+		return nil
+	}
+	end := strings.IndexByte(value, ' ')
+	if end < 0 {
+		end = len(value)
+	}
+	return []loom.TextEntrySpan{{Start: 0, End: end, Style: loom.Style{FG: loom.ColorIndex(6), Bold: true}}}
 }
 
 // progressDemo drives a determinate bar through fill, dim, hidden, and restart.

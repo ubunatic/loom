@@ -24,6 +24,18 @@ type TextEntryOptions struct {
 	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
 	OnChange    func(value string)
 	OnSubmit    func(value string) EventResult
+	// Highlight is called on each draw and styles the spans it returns. Nil
+	// leaves the text plain.
+	Highlight func(value string) []TextEntrySpan
+}
+
+// TextEntrySpan styles the bytes from Start to End of the value, End exclusive.
+// Offsets snap and clamp as in SetCursorOffset. Overlapping spans take the
+// later one, and a reversed span is ignored. Highlight styles are drawn under
+// the selection: selected cells always use the selection style.
+type TextEntrySpan struct {
+	Start, End int // byte offsets into the value, end exclusive
+	Style      Style
 }
 
 // Default key bindings, used when TextEntryOptions leaves a list empty.
@@ -55,6 +67,7 @@ type TextEntry struct {
 	newlineKeys []string
 	onChange    func(string)
 	onSubmit    func(string) EventResult
+	highlight   func(string) []TextEntrySpan
 
 	units   []string // one grapheme cluster per element; "\n" is a hard line break
 	caret   int      // unit index in [0, len(units)]
@@ -105,6 +118,7 @@ func NewTextEntry(opts TextEntryOptions) *TextEntry {
 		newlineKeys: slices.Clone(opts.NewlineKeys),
 		onChange:    opts.OnChange,
 		onSubmit:    opts.OnSubmit,
+		highlight:   opts.Highlight,
 		now:         time.Now,
 	}
 	if len(e.submitKeys) == 0 {
@@ -130,6 +144,50 @@ func (e *TextEntry) SetValue(s string) {
 	}
 	e.units = next
 	e.caret = len(next)
+	e.anchor = e.caret
+	e.typingRun = false
+	e.goalSet = false
+	e.followCaret = true
+}
+
+// CursorOffset returns the caret as a byte offset into Value().
+func (e *TextEntry) CursorOffset() int {
+	return e.byteStarts()[e.caret]
+}
+
+// SetCursorOffset moves the caret to byte offset off of Value() and clears the
+// selection. An offset inside a grapheme cluster snaps to the start of that
+// cluster, and an offset outside the text clamps to it. This is not an edit: it
+// makes no undo step and does not call OnChange.
+func (e *TextEntry) SetCursorOffset(off int) {
+	e.caret = textEntryUnitAt(e.byteStarts(), off)
+	e.anchor = e.caret
+	e.goalSet = false
+	e.typingRun = false
+	e.followCaret = true
+}
+
+// ReplaceRange replaces the text from byte offset start to end of Value() with
+// s. Offsets snap and clamp as in SetCursorOffset, and a reversed range is
+// swapped. The change is one undo step. The caret moves to the end of s, the
+// selection clears, and OnChange is not called, as with SetValue.
+func (e *TextEntry) ReplaceRange(start, end int, s string) {
+	starts := e.byteStarts()
+	lo, hi := textEntryUnitAt(starts, start), textEntryUnitAt(starts, end)
+	if hi < lo {
+		lo, hi = hi, lo
+	}
+	ins := textEntryUnits(s)
+	next := make([]string, 0, len(e.units)-(hi-lo)+len(ins))
+	next = append(next, e.units[:lo]...)
+	next = append(next, ins...)
+	next = append(next, e.units[hi:]...)
+	if !slices.Equal(next, e.units) {
+		e.pushUndo(e.snapshot())
+		e.redo = nil
+		e.units = next
+	}
+	e.caret = lo + len(ins)
 	e.anchor = e.caret
 	e.typingRun = false
 	e.goalSet = false
@@ -208,6 +266,7 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 
 	promptW := e.promptWidth()
 	right := r.X + r.W
+	styles := e.unitStyles()
 	for y := 0; y < r.H && e.scroll+y < len(rows); y++ {
 		row := rows[e.scroll+y]
 		x := r.X
@@ -221,8 +280,11 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 		}
 		for i := row.start; i < row.end; i++ {
 			style := Style{}
+			if styles != nil {
+				style = styles[i]
+			}
 			if e.selected(i) {
-				style.Invert = true
+				style = Style{Invert: true}
 			}
 			x = e.writeClipped(c, x, r.Y+y, right, e.units[i], style)
 		}
@@ -711,6 +773,47 @@ func (e *TextEntry) setClipboard(text string) {
 	if e.writeClipboard != nil {
 		e.writeClipboard(text)
 	}
+}
+
+// byteStarts returns the byte offset where each unit starts, followed by the
+// total length, so a byte offset into Value() maps to a unit index.
+func (e *TextEntry) byteStarts() []int {
+	starts := make([]int, len(e.units)+1)
+	for i, u := range e.units {
+		starts[i+1] = starts[i] + len(u)
+	}
+	return starts
+}
+
+// textEntryUnitAt returns the unit that contains byte offset off, so an offset
+// inside a cluster snaps to its start. Offsets clamp to the text, and the total
+// length maps to the unit count.
+func textEntryUnitAt(starts []int, off int) int {
+	off = min(max(0, off), starts[len(starts)-1])
+	pos, found := slices.BinarySearch(starts, off)
+	if found {
+		return pos
+	}
+	return pos - 1
+}
+
+// unitStyles returns the highlight style of each unit, or nil when there is no
+// Highlight hook or no text. Later spans win, and out-of-range or reversed spans
+// reduce to nothing.
+func (e *TextEntry) unitStyles() []Style {
+	if e.highlight == nil || len(e.units) == 0 {
+		return nil
+	}
+	spans := e.highlight(e.Value())
+	starts := e.byteStarts()
+	styles := make([]Style, len(e.units))
+	for _, s := range spans {
+		lo, hi := textEntryUnitAt(starts, s.Start), textEntryUnitAt(starts, s.End)
+		for i := lo; i < hi; i++ {
+			styles[i] = s.Style
+		}
+	}
+	return styles
 }
 
 // writeClipped writes text starting at x and stops before column right. It
