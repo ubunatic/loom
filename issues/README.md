@@ -49,5 +49,4 @@ upkeep.
 | 413 | [413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md](413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md) | ansibuffer: parser misses CSI A/B/D, colon truecolor, wide-char continuation and relative-move prescan | Open |
 | 414 | [414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md](414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md) | measure: share one grapheme cluster boundary scanner between StringWidthNew and ClustersNew | Open |
 | 421 | [421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md](421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md) | syntax: shell lexer, colour the command after if, else, while and ! | Open |
-| 423 | [423-widget-gallery-coverage-audit-and-human-test-runbook.md](423-widget-gallery-coverage-audit-and-human-test-runbook.md) | Widget gallery coverage audit and human test runbook | Open |
 <!-- harnez:end issues-active-index -->

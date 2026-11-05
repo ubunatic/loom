@@ -1,6 +1,6 @@
 # 423 — Widget gallery coverage audit and human test runbook
 
-**Status**: Open
+**Status**: Closed — 13 demos + TextEntry controls (3965851, 3a87e3f), coverage docs/GalleryCoverage.md (d6b5454), runbook docs/GalleryRunbook.md (c27c38a); q1 green; flash38 review approve
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Docs / Testing
