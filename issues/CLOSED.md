@@ -389,4 +389,5 @@
 | 418 | [418-textentry-caret-offset-replacerange-and-highlight-hook.md](418-textentry-caret-offset-replacerange-and-highlight-hook.md) | TextEntry: caret offset, ReplaceRange and highlight hook | Closed — TextEntry caret offset, ReplaceRange, Highlight in 2b55331; q1 green |
 | 419 | [419-loom-edit-files-flag-and-directory-argument-open-the-file-pane.md](419-loom-edit-files-flag-and-directory-argument-open-the-file-pane.md) | loom edit: --files flag and directory argument open the file pane | Closed — files flag and directory argument in 3b420cd |
 | 420 | [420-syntax-bash-sh-lexer-for-fenced-code-in-chat-replies.md](420-syntax-bash-sh-lexer-for-fenced-code-in-chat-replies.md) | syntax: bash/sh lexer for fenced code in chat replies | Closed — shell lexer and CaptureVariable in 1b9a78d; q1 green |
+| 422 | [422-textentry-setplaceholder-placeholder-and-acceptplaceholder.md](422-textentry-setplaceholder-placeholder-and-acceptplaceholder.md) | TextEntry: SetPlaceholder, Placeholder and AcceptPlaceholder | Closed — SetPlaceholder, Placeholder, AcceptPlaceholder in 8407f31; q1 green; agy:sonnet review approve |
 <!-- harnez:end issues-closed-index -->

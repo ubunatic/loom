@@ -1,6 +1,6 @@
 # 422 — TextEntry: SetPlaceholder, Placeholder and AcceptPlaceholder
 
-**Status**: Open
+**Status**: Closed — SetPlaceholder, Placeholder, AcceptPlaceholder in 8407f31; q1 green; agy:sonnet review approve
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
