@@ -56,16 +56,12 @@ func init() {
 	demos["StyledRows"] = func() loom.Widget {
 		return loom.NewStyledRows("Plain text", "\x1b[31mRed\x1b[0m and \x1b[1mbold\x1b[0m")
 	}
-	demos["TextArea"] = func() loom.Widget {
-		a := loom.NewTextArea("A multi-line editor\npackage main\nfunc main() { println(\"hello\") }\nUse the arrow keys to move.")
-		a.SetHighlighter(syntax.NewLexicalEngine("go"))
-		return &textAreaWidget{area: a}
-	}
-	demos["TextEntry"] = newTextEntryControls
 	demos["Gauge"] = graphDemo
 }
 
 type routerDemo struct{ router *loom.Router }
+
+func (d *routerDemo) Unwrap() loom.Widget { return d.router }
 
 func (d *routerDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	d.router.Draw(c, r)
@@ -97,6 +93,14 @@ func graphDemo() loom.Widget {
 type textEntryControls struct {
 	entry     *loom.TextEntry
 	alternate bool
+}
+
+func (d *textEntryControls) Unwrap() loom.Widget { return d.entry }
+
+func newTextAreaDemo() loom.Widget {
+	a := loom.NewTextArea("A multi-line editor\npackage main\nfunc main() { println(\"hello\") }\nUse the arrow keys to move.")
+	a.SetHighlighter(syntax.NewLexicalEngine("go"))
+	return &textAreaWidget{area: a}
 }
 
 func newTextEntryControls() loom.Widget {

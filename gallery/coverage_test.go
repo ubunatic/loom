@@ -19,6 +19,21 @@ func TestCoverageDemos(t *testing.T) {
 	}
 }
 
+func TestCoverageDemoUnwrap(t *testing.T) {
+	for _, name := range []string{"Router", "TextEntry"} {
+		t.Run(name, func(t *testing.T) {
+			w, err := New(name)
+			if err != nil {
+				t.Fatal(err)
+			}
+			wrapper, ok := w.(interface{ Unwrap() loom.Widget })
+			if !ok || wrapper.Unwrap() == nil {
+				t.Fatal("demo must expose its underlying widget")
+			}
+		})
+	}
+}
+
 func TestTextEntryDemoControls(t *testing.T) {
 	d := newTextEntryControls().(*textEntryControls)
 	d.Draw(loom.NewCanvas(80, 8), loom.Rect{W: 80, H: 8})
