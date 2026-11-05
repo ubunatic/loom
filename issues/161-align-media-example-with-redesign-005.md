@@ -22,3 +22,7 @@ The mockup places the preview on the left and the filename, playback state, rend
 - [ ] The info panel shows the current terminal columns and rows.
 - [ ] The layout adapts without clipping at smaller terminal sizes.
 - [ ] Relevant checks pass.
+
+## Status 2026-11-05 (Jules audit PR 98, still valid, 3/3 refs hold)
+Starting points: `examples/media/main.go:36` draws the image at full width; `:40` builds the bottom status line
+with cols/rows/mode/path. Split `Draw` into the left preview and a right info column per the 005 mockup.
