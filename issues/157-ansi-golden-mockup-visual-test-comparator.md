@@ -33,3 +33,8 @@ Provide an automated visual parity comparator for golden ANSI files.
 - [ ] Compares glyphs, continuation cells, foreground colors, background colors, and bold/dim attributes.
 - [ ] Produces human-readable visual diff reports on failure highlighting mismatch coordinates.
 - [ ] Unit tests covering exact matches and intentional mismatch diagnostics.
+
+## Status 2026-11-05 (Jules audit PR 100, partly done, 4/4 refs hold within 1 line)
+The comparator exists as `loomtest.CompareWidget` (loomtest/compare.go:23), not `AssertCanvasMatchesANSI`. It
+compares glyph, FG and BG and prints a row/col report (compare.go:71). Left: compare bold/dim and continuation
+cells, and add `loomtest/compare_test.go` (today only `colorpicker_reference_test.go` uses it).
