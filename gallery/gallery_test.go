@@ -684,11 +684,12 @@ func TestEveryDemoRespondsToRepresentativeKey(t *testing.T) {
 	displayOnly := map[string]bool{
 		"Box": true, "Chart": true, "KeyHelp": true, "PillCluster": true,
 		"ProgressBar": true, "Spinner": true, "Stopwatch": true, "Timer": true,
+		"AlignBox": true, "Frame": true, "Gauge": true, "Notif": true, "Rows": true, "SplashView": true, "Split": true, "Stack": true, "StyledRows": true,
 	}
 	keys := map[string]loom.KeyEvent{
-		"ColorPicker": {Key: "right"},
-		"HintBar":     {Key: "f7"},
-		"Choice":      {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "right"},
+		"ColorPicker": {Key: "right"}, "AnsiEditor": {Text: "x"}, "Confirm": {Key: "right"}, "Router": {Key: "enter"}, "Settings": {Key: "down"},
+		"HintBar": {Key: "f7"},
+		"Choice":  {Key: "down"}, "Media": {Key: "+", Text: "+"}, "DatePicker": {Key: "right"}, "Dialog": {Key: "right"},
 		"FilePicker": {Key: "down"}, "Form": {Key: "tab"}, "MenuBar": {Key: "down"},
 		"NumberInput": {Key: "right"}, "Paginator": {Key: "pgdown"}, "PaintCanvas": {Text: "c"}, "Popup": {Key: "esc"},
 		"SearchBar": {Text: "x"},
@@ -953,8 +954,7 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 	if output, err := build.CombinedOutput(); err != nil {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
-	// The tab list has 32 demos (Box added); 30 rows no longer show Tree in the
-	// nav grid, so the click target needs one more row.
+	// Navigate to the end of the scrollable tab list before clicking Tree.
 	const cols, rows = 100, 34
 	s := ptytest.Start(t, cols, rows, bin, "widgets", "--show")
 	clickText := func(text string) {
@@ -969,6 +969,9 @@ func TestWidgetsPTYClickTabAndTreeDisclosure(t *testing.T) {
 		}
 		t.Fatalf("%q not visible on PTY screen:\n%s", text, strings.Join(s.Screen(), "\n"))
 	}
+	s.WaitFor("AlignBox", 5*time.Second)
+	s.Send("\x1b[Z\x1b[Z") // Shift-Tab wraps to Viewport, then Tree.
+	s.WaitFor("tree.go", 5*time.Second)
 	s.WaitFor("Tree", 5*time.Second)
 	clickText("Tree")
 	// All also contains app.go. Wait for content unique to the standalone
