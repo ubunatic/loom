@@ -33,7 +33,6 @@ upkeep.
 | 274 | [274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md](274-overlay-and-modal-layer-for-canvas-to-eliminate-local-popup-stacks.md) | Overlay and modal layer for Canvas to eliminate local popup stacks | Open |
 | 275 | [275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md](275-decouple-focus-state-updates-from-popup-and-widget-draw-rendering.md) | Decouple focus state updates from Popup and Widget Draw rendering | Open |
 | 277 | [277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md](277-standardize-click-only-focus-and-cursor-invariants-across-compound-widgets.md) | Standardize click-only focus and cursor invariants across compound widgets | Open |
-| 281 | [281-add-schema-backed-loom-edit-settings-in-editor-yaml.md](281-add-schema-backed-loom-edit-settings-in-editor-yaml.md) | Add schema-backed loom edit settings in editor.yaml | Open |
 | 288 | [288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md](288-compose-loom-edit-panels-with-standard-widgets-and-clipped-responsive-layout.md) | Compose loom edit panels with standard widgets and clipped responsive layout | Open |
 | 305 | [305-add-ctrl-n-to-create-a-new-file-in-loom-edit.md](305-add-ctrl-n-to-create-a-new-file-in-loom-edit.md) | Add Ctrl+N to create a new file in loom edit | Draft |
 | 312 | [312-preserve-tui-block-source-box-table-image-on-save.md](312-preserve-tui-block-source-box-table-image-on-save.md) | Preserve .tui block source (box, table, image) on save | Draft |

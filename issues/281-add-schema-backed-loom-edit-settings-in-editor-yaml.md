@@ -1,6 +1,6 @@
 # 281 — Add schema-backed loom edit settings in editor.yaml
 
-**Status**: Open
+**Status**: Closed — already done: LoadEditorConfig (editor_config.go:49), spec/schemas/editor.schema.json, CLI flags override (cmd/loom/edit.go:27); Jules triage 424
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
