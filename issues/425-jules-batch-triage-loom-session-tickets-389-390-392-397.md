@@ -1,6 +1,6 @@
 # 425 — Jules batch: triage loom session tickets 389 390 392 397
 
-**Status**: Open
+**Status**: Closed — triage applied: 389 partly done, 390 refs corrected, 392 397 still valid, no merges (Jules PR 103, 9/10 refs)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Triage
@@ -22,4 +22,4 @@ closes this ticket.
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| triage | jules-triage-425 | | | pending |
+| triage | jules-triage-425 | 7214938947892379639 | GH #103 | kept: 9/10 refs hold (mods.go runMods is at :76, not :66); 389 partly done (probe only), 390 line refs corrected, 392 397 still valid; no merges |

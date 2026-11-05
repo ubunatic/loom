@@ -53,6 +53,5 @@ upkeep.
 | 421 | [421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md](421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md) | syntax: shell lexer, colour the command after if, else, while and ! | Open |
 | 423 | [423-widget-gallery-coverage-audit-and-human-test-runbook.md](423-widget-gallery-coverage-audit-and-human-test-runbook.md) | Widget gallery coverage audit and human test runbook | Open |
 | 424 | [424-jules-batch-triage-loom-edit-tickets-281-288-305-312-386.md](424-jules-batch-triage-loom-edit-tickets-281-288-305-312-386.md) | Jules batch: triage loom edit tickets 281 288 305 312 386 | Open |
-| 425 | [425-jules-batch-triage-loom-session-tickets-389-390-392-397.md](425-jules-batch-triage-loom-session-tickets-389-390-392-397.md) | Jules batch: triage loom session tickets 389 390 392 397 | Open |
 | 428 | [428-jules-batch-triage-rendering-and-platform-tickets-090-120-241-413-414.md](428-jules-batch-triage-rendering-and-platform-tickets-090-120-241-413-414.md) | Jules batch: triage rendering and platform tickets 090 120 241 413 414 | Open |
 <!-- harnez:end issues-active-index -->
