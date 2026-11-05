@@ -1,6 +1,6 @@
 # 427 — Jules batch: triage viewer and agent tooling tickets 139 259 400 401 408
 
-**Status**: Open
+**Status**: Closed — triage applied: 139 259 400 401 408 still valid, no merges (Jules PR 102, 8/9 refs)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Triage
@@ -22,4 +22,4 @@ verdicts and closes this ticket.
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| triage | jules-triage-427 | | | pending |
+| triage | jules-triage-427 | 4838448203310502282 | GH #102 | kept: 8/9 refs hold (cmd/loom-probe/keys.go:88 is a deadline loop, not the tty check); 139 259 400 408 still valid; 401 unclear, host check: no transcript widget in *.go, so still valid; no merges, no ticket changes |
