@@ -25,6 +25,8 @@
 - [Emoji & Unicode measurement](EmojiWidth.md): authoritative spec system, VTE render modes (pad-1), cluster parsing, and PTY width invariants.
 - [Upgrading](Upgrading.md): breaking changes by release, the `ubunatic.com/loom` module path, switching dependents, bool → `EventResult` mapping.
 - [Widgets & framework primitives](Widgets.md): split layout, dynamic tabs, metric stores, directory navigation, and startup transition runners, progress bar, and the input widget inventory.
+- [Gallery coverage](GalleryCoverage.md): which loom feature each gallery tab demos, and the known gaps.
+- [Gallery runbook](GalleryRunbook.md): manual test steps per gallery tab, expected results, and a feedback line for the owner.
 
 ## Case Studies
 

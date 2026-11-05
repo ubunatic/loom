@@ -193,3 +193,12 @@ the short tier skips it.
 - **Helper failure stops at the report**: the Gemini Flash 3.8 reviewer (`agy:flash38:med`) failed with `authentication failed or timed out`. Under the lean rules, the host did not substitute a model. The review was not run, and 393 was closed on the gate evidence alone.
 - **Quota figures need one reading**: the user reported 2% of Gemini quota left. The harness showed `agy weekly 98%` on the same day, and it did not say whether 98% was used or remaining. The host dispatched anyway. Check the reading before you spend the quota.
 - **Two process gaps**: the `/pm` and `/lean-sprint` skill docs point to `docs/commands/*`, which does not exist in this repo. `.harnez/repo.yaml` read as empty, so whether `docs.studies` is enabled was not confirmed. The sprint study is written in `docs/studies/` anyway.
+
+## Jules batches, placeholder and gallery coverage (2026-11-05, tickets 422-428, 147)
+
+- **Jules batch triage pays off cheaply**: 5 group tickets (424-428) covered 24 backlog tickets. Each batch was one ticket with a `## Jules runs` table and one triage prompt. Reference accuracy was 80-100% per report (about 90% overall); every wrong line number sat within a few lines of the claim. Two tickets were found done and closed (281, 386); no merges were proposed. Group by title, check every reference, then apply.
+- **Jules verdicts still need a host check**: in 428 Jules said the 090 theme switch was missing; the code at `examples/background/background/background.go:162` showed it adopted. A report is a lead.
+- **Jules implement runs fail on asks-back**: the second 147 run asked back, got the auto-reply and the "submit a draft" reply, and stayed IN_PROGRESS for about 2 hours with no PR. Two implement runs on 147 gave nothing usable; the ticket went to a terra developer. Prefer Jules for triage and audits, not for tricky validator work.
+- **Developers stop to ask about commit trailers**: dev-423 paused to ask which attribution line to use. Put the trailer into every developer prompt.
+- **Review catches generic runbooks**: the first `docs/GalleryRunbook.md` repeated one Expected line for many tabs. The flash38 review flagged it; the fix gave each tab its own Expected line.
+- **Pick models by `harnez usage`**: with Claude at 71% weekly and Codex at 7%, dev and review went to terra and flash38 rather than Claude.
