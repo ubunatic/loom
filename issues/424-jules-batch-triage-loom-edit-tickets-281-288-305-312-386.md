@@ -1,6 +1,6 @@
 # 424 — Jules batch: triage loom edit tickets 281 288 305 312 386
 
-**Status**: Open
+**Status**: Closed — triage applied: 281 386 closed, 288 corrected, 305 312 still valid (Jules PR 105, 5/6 refs)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Triage
@@ -21,4 +21,4 @@ The host checks the evidence (jules skill, Section 4), applies the verdicts and 
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| triage | jules-triage-424 | | | pending |
+| triage | jules-triage-424 | 8266562899155890663 | GH #105 | kept: 5/6 refs hold (markup flags at cmd/loom/markup.go:65-66, not :50). 281 closed (LoadEditorConfig, spec/schemas/editor.schema.json, flag override), 386 closed (-o and --in-place, docs/TuiMarkup.md; optional .tui diff not done), 288 path corrected, 305 312 still valid; no merges |
