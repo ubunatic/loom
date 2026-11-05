@@ -1,6 +1,6 @@
 # 147 — Detect unclosed boxes and prioritize box validation errors
 
-**Status**: Open
+**Status**: Closed — loom check-box --closed reports unclosed Unicode boxes (2d9a17f); q1 green; flash38 review approve
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature / CLI Tooling
