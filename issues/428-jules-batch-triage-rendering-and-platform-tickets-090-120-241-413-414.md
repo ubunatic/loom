@@ -1,6 +1,6 @@
 # 428 — Jules batch: triage rendering and platform tickets 090 120 241 413 414
 
-**Status**: Open
+**Status**: Closed — triage applied: 120 241 413 414 still valid, 090 partly done (switch done, average fill left), no merges (Jules PR 104, 9/10 refs)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Triage
@@ -22,4 +22,4 @@ verdicts and closes this ticket.
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| triage | jules-triage-428 | | | pending |
+| triage | jules-triage-428 | 921243824981913591 | GH #104 | kept: 9/10 refs hold (examples/background/background/background.go:128 is `split.Ratio`; `bgs` is at :162). 120 241 413 414 still valid. 090 partly done: Jules says the theme switch is missing, but the host found it adopted (`bgs := []loom.Background{astra, cat}` at :162, PR 68); only the average-colour fill is left, as the ticket says. No merges, no ticket changes |
