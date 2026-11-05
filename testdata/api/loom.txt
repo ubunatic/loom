@@ -4511,6 +4511,13 @@ type TextEntry struct {
 func NewTextEntry(opts TextEntryOptions) *TextEntry
     NewTextEntry creates an empty entry configured by opts.
 
+func (e *TextEntry) AcceptPlaceholder() bool
+    AcceptPlaceholder inserts the placeholder as the value when the entry is
+    empty and the placeholder is not empty. The whole placeholder is inserted,
+    including any further lines, and the caret goes to its end. The change is
+    one undo step and calls OnChange. It reports whether the value changed;
+    otherwise the call does nothing and returns false.
+
 func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult
     ConsumeKey applies an editing key. Keys it does not use are returned
     Ignored.
@@ -4543,6 +4550,9 @@ func (e *TextEntry) Measure(width int) measure.Size
     Measure reports the soft-wrapped size at width, with height between one row
     and MaxHeight. A width of zero or less measures the text on its own lines.
 
+func (e *TextEntry) Placeholder() string
+    Placeholder returns the hint drawn dim while the entry is empty.
+
 func (e *TextEntry) ReplaceRange(start, end int, s string)
     ReplaceRange replaces the text from byte offset start to end of Value()
     with s. Offsets snap and clamp as in SetCursorOffset, and a reversed range
@@ -4558,6 +4568,11 @@ func (e *TextEntry) SetCursorOffset(off int)
 func (e *TextEntry) SetFocus(focused bool)
     SetFocus sets whether the entry shows the caret and takes editing input.
     Losing focus ends a mouse drag and the current typing run.
+
+func (e *TextEntry) SetPlaceholder(s string)
+    SetPlaceholder replaces the hint drawn while the entry is empty. The next
+    Draw shows it. The value does not change, so OnChange is not called.
+    Only the first line of a multi-line hint is drawn.
 
 func (e *TextEntry) SetValue(s string)
     SetValue replaces the text, puts the caret at the end and clears the

@@ -477,6 +477,143 @@ func TestTextEntryDrawPromptPlaceholderAndSelectionCells(t *testing.T) {
 	}
 }
 
+func TestTextEntryMultiLinePlaceholderDrawsFirstLineOnly(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", Placeholder: "first line\nsecond line"})
+	c := NewCanvas(30, 2)
+	e.Draw(c, Rect{W: 30, H: 2})
+	row0 := strings.TrimRight(strings.Join(entryScreenRow(c, 0)[2:], ""), " ")
+	if row0 != "first line" {
+		t.Fatalf("placeholder row 0 = %q, want only the first line %q", row0, "first line")
+	}
+	if got := strings.TrimSpace(strings.Join(entryScreenRow(c, 1), "")); got != "" {
+		t.Fatalf("placeholder spilled onto row 1: %q", got)
+	}
+	for x := 2; x < 12; x++ {
+		if !c.Get(x, 0).Style.Dim {
+			t.Fatalf("placeholder column %d is not dim", x)
+		}
+	}
+}
+
+func TestTextEntryMultiLinePlaceholderClipsToWidth(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", Placeholder: "first\r\nsecond"})
+	c := NewCanvas(6, 1)
+	e.Draw(c, Rect{W: 6, H: 1})
+	// The prompt takes columns 0 and 1, so the placeholder gets four cells.
+	if got := strings.Join(entryScreenRow(c, 0)[2:6], ""); got != "firs" {
+		t.Fatalf("clipped placeholder = %q, want %q", got, "firs")
+	}
+}
+
+func TestTextEntryWidePlaceholderClipsWithoutSplittingRune(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", Placeholder: "界界界"})
+	c := NewCanvas(5, 1)
+	// Columns 2-3 hold the first rune; the second would need columns 4-5 and stops at width 5.
+	e.Draw(c, Rect{W: 5, H: 1})
+	if got := entryColumnOf(c, 0, "界"); got != 2 {
+		t.Fatalf("first wide placeholder rune at column %d, want 2", got)
+	}
+	if n := strings.Count(strings.Join(entryScreenRow(c, 0), ""), "界"); n != 1 {
+		t.Fatalf("%d wide placeholder runes drawn in width 5, want 1", n)
+	}
+}
+
+func TestTextEntrySetPlaceholderRedrawsWithoutOnChange(t *testing.T) {
+	calls := 0
+	e := NewTextEntry(TextEntryOptions{Placeholder: "old", OnChange: func(string) { calls++ }})
+	if e.Placeholder() != "old" {
+		t.Fatalf("Placeholder() = %q, want %q", e.Placeholder(), "old")
+	}
+	e.SetPlaceholder("Try: summarise the diff")
+	if e.Placeholder() != "Try: summarise the diff" {
+		t.Fatalf("Placeholder() after set = %q", e.Placeholder())
+	}
+	if calls != 0 {
+		t.Fatalf("SetPlaceholder notified OnChange %d times, want 0", calls)
+	}
+	if e.Value() != "" {
+		t.Fatalf("placeholder leaked into Value(): %q", e.Value())
+	}
+	c := NewCanvas(30, 1)
+	e.Draw(c, Rect{W: 30, H: 1})
+	if got := strings.TrimRight(strings.Join(entryScreenRow(c, 0), ""), " "); got != "Try: summarise the diff" {
+		t.Fatalf("redrawn placeholder = %q", got)
+	}
+	if !c.Get(0, 0).Style.Dim {
+		t.Fatal("placeholder set at runtime must be dim")
+	}
+}
+
+func TestTextEntryPlaceholderHiddenByTypingCaretAtStart(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", Placeholder: "hint"})
+	e.SetFocus(true)
+	c := NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	if c.CursorX != 2 || c.CursorY != 0 {
+		t.Fatalf("caret over placeholder at (%d,%d), want (2,0)", c.CursorX, c.CursorY)
+	}
+	typeEntryText(e, "x")
+	c = NewCanvas(20, 1)
+	e.Draw(c, Rect{W: 20, H: 1})
+	if strings.Contains(strings.Join(entryScreenRow(c, 0), ""), "hint") {
+		t.Fatal("placeholder still drawn after typing")
+	}
+	if e.Value() != "x" {
+		t.Fatalf("Value() = %q, want %q", e.Value(), "x")
+	}
+}
+
+func TestTextEntryAcceptPlaceholderInsertsOnceAndUndoes(t *testing.T) {
+	var seen []string
+	e := NewTextEntry(TextEntryOptions{Placeholder: "summarise the diff", OnChange: func(v string) { seen = append(seen, v) }})
+	if !e.AcceptPlaceholder() {
+		t.Fatal("AcceptPlaceholder on an empty entry with a placeholder returned false")
+	}
+	if e.Value() != "summarise the diff" {
+		t.Fatalf("accepted value = %q", e.Value())
+	}
+	if !slices.Equal(seen, []string{"summarise the diff"}) {
+		t.Fatalf("OnChange values after accept = %q, want one call with the text", seen)
+	}
+	if e.CursorOffset() != len("summarise the diff") {
+		t.Fatalf("caret at byte %d, want the end of the inserted text", e.CursorOffset())
+	}
+	if e.Placeholder() != "summarise the diff" {
+		t.Fatal("accepting must keep the placeholder set")
+	}
+	entryKey(e, "ctrl-z")
+	if e.Value() != "" {
+		t.Fatalf("undo after accept gave %q, want empty", e.Value())
+	}
+}
+
+func TestTextEntryAcceptPlaceholderInsertsAllLines(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Placeholder: "a\nb"})
+	if !e.AcceptPlaceholder() {
+		t.Fatal("AcceptPlaceholder returned false")
+	}
+	if e.Value() != "a\nb" {
+		t.Fatalf("accepted value = %q, want the whole placeholder", e.Value())
+	}
+}
+
+func TestTextEntryAcceptPlaceholderNoOpWithoutPlaceholderOrWithValue(t *testing.T) {
+	calls := 0
+	e := NewTextEntry(TextEntryOptions{OnChange: func(string) { calls++ }})
+	if e.AcceptPlaceholder() {
+		t.Fatal("AcceptPlaceholder with no placeholder must return false")
+	}
+	e.SetPlaceholder("hint")
+	typeEntryText(e, "a")
+	calls = 0
+	if e.AcceptPlaceholder() {
+		t.Fatal("AcceptPlaceholder with a non-empty value must return false")
+	}
+	if e.Value() != "a" || calls != 0 {
+		t.Fatalf("no-op accept changed value to %q with %d OnChange calls", e.Value(), calls)
+	}
+}
+
 func TestTextEntryWideRuneCellsAndCursorColumns(t *testing.T) {
 	c := NewCanvas(10, 1)
 	e := NewTextEntry(TextEntryOptions{})

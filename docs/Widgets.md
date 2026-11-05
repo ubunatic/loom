@@ -793,7 +793,7 @@ entry.SetFocus(true)
 
 | Field | Default | Meaning |
 |---|---|---|
-| `Placeholder` | empty | Dimmed text shown while the entry is empty. |
+| `Placeholder` | empty | Dimmed text shown while the entry is empty. Only its first line is drawn. |
 | `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. |
 | `MaxHeight` | 0 (unbounded) | Visual rows before the entry scrolls. |
 | `SubmitKeys` | `["enter"]` | Keys that call `OnSubmit`. Without `OnSubmit`, they are ignored. |
@@ -803,6 +803,13 @@ entry.SetFocus(true)
 | `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. Selected cells keep the selection style. |
 
 The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
+
+### Placeholder
+
+- `Placeholder()` returns the hint, and `SetPlaceholder(s)` replaces it at runtime, for example with a model-proposed next prompt. Setting it does not call `OnChange`, and the next `Draw` shows the new hint.
+- The hint is drawn only while the value is empty, and typing hides it. The hint is never part of `Value()`, and the caret stays at the start of the row while it shows.
+- Only the first line of a multi-line hint is drawn, cut at the row width. Wide runes are never split, so a rune that does not fit is left out.
+- `AcceptPlaceholder()` turns the hint into the value. It works only when the value is empty and the hint is not empty. It inserts the whole hint, including any further lines, puts the caret at its end, makes one undo step, calls `OnChange` once, and returns `true`. Otherwise it returns `false` and changes nothing. It has no key binding of its own, so the host calls it from its own key handler, for example on Tab.
 
 ### Key handling
 

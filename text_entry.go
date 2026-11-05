@@ -150,6 +150,31 @@ func (e *TextEntry) SetValue(s string) {
 	e.followCaret = true
 }
 
+// Placeholder returns the hint drawn dim while the entry is empty.
+func (e *TextEntry) Placeholder() string { return e.placeholder }
+
+// SetPlaceholder replaces the hint drawn while the entry is empty. The next Draw
+// shows it. The value does not change, so OnChange is not called. Only the
+// first line of a multi-line hint is drawn.
+func (e *TextEntry) SetPlaceholder(s string) { e.placeholder = s }
+
+// AcceptPlaceholder inserts the placeholder as the value when the entry is
+// empty and the placeholder is not empty. The whole placeholder is inserted,
+// including any further lines, and the caret goes to its end. The change is one
+// undo step and calls OnChange. It reports whether the value changed; otherwise
+// the call does nothing and returns false.
+func (e *TextEntry) AcceptPlaceholder() bool {
+	if len(e.units) != 0 || e.placeholder == "" {
+		return false
+	}
+	return e.change(false, func() {
+		e.units = textEntryUnits(e.placeholder)
+		e.caret = len(e.units)
+		e.anchor = e.caret
+		e.goalSet = false
+	})
+}
+
 // CursorOffset returns the caret as a byte offset into Value().
 func (e *TextEntry) CursorOffset() int {
 	return e.byteStarts()[e.caret]
@@ -275,7 +300,7 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 		}
 		x = r.X + promptW
 		if len(e.units) == 0 && e.scroll+y == 0 {
-			e.writeClipped(c, x, r.Y+y, right, e.placeholder, Style{Dim: true})
+			e.writeClipped(c, x, r.Y+y, right, textEntryFirstLine(e.placeholder), Style{Dim: true})
 			continue
 		}
 		for i := row.start; i < row.end; i++ {
@@ -814,6 +839,13 @@ func (e *TextEntry) unitStyles() []Style {
 		}
 	}
 	return styles
+}
+
+// textEntryFirstLine returns the part of a placeholder drawn on its row: the
+// text before the first line break. CR and CRLF count as line breaks.
+func textEntryFirstLine(s string) string {
+	line, _, _ := strings.Cut(textEntryNormalizer.Replace(s), "\n")
+	return line
 }
 
 // writeClipped writes text starting at x and stops before column right. It
