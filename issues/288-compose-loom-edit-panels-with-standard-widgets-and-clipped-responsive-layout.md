@@ -10,6 +10,8 @@
 
 ## 1. Problem & Motivation
 PR #16 hand-draws frames, dividers and Normal/Regex controls across cmd/loom/edit.go:342–499 rather than composing standard Loom UI widgets as requested. Its search width is at least 24 even when the editor is narrower, producing a negative/outside panel origin; mode and navigation rows are not clipped to panel width.
+(2026-11-05, Jules triage 424: the drawing code moved to `internal/editor/edit.go`; still hand-drawn, e.g. the
+divider at `internal/editor/edit.go:449`.)
 
 ## 2. Technical Specification / Findings
 Use standard Loom frame/layout/control widgets with only modest tweaks. Keep search within available bounds at narrow widths and short heights. Preserve editor/FilePicker chrome rather than overwrite it with app-drawn status rows. Always file/link larger observed library gaps. Related existing library work: issues 274 and 276.
