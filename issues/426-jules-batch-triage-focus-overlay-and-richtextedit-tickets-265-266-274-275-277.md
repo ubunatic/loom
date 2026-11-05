@@ -1,6 +1,6 @@
 # 426 — Jules batch: triage focus, overlay and RichTextEdit tickets 265 266 274 275 277
 
-**Status**: Open
+**Status**: Closed — triage applied: 266 274 275 still valid, 265 partly done unchanged, 277 corrected; no merges (Jules PR 101, 16/16 refs)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Triage
@@ -22,4 +22,4 @@ The host checks the evidence (jules skill, Section 4), applies the verdicts and 
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| triage | jules-triage-426 | | | pending |
+| triage | jules-triage-426 | 5505947763613931268 | GH #101 | kept: 16/16 refs hold; 265 partly done (no change, ticket already says what is left), 266/274/275 still valid, 277 correction added; no merges |
