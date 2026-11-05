@@ -1,6 +1,6 @@
 # 386 — Agent edit flow for .ansi files: document the .tui round trip and add markup -o / --in-place
 
-**Status**: Open
+**Status**: Closed — already done: loom markup -o and --in-place (cmd/loom/markup.go:65-66), flow in docs/TuiMarkup.md and markup --help; optional .tui diff dropped; Jules triage 424
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
