@@ -55,6 +55,72 @@ func ValidateAnsiBox(text string) error {
 	if len(framed) < 2 {
 		return nil
 	}
+	var openLine int
+	for i := 0; i < len(framed); i++ {
+		row := framed[i]
+		if i > 0 && row.line != framed[i-1].line+1 {
+			if openLine > 0 {
+				foundBottom := false
+				for g := framed[i-1].line; g < row.line-1 && g < len(lines); g++ {
+					prevLinePlain := stripANSIForBox(lines[g])
+					if strings.ContainsRune(prevLinePlain, '└') || strings.ContainsRune(prevLinePlain, '╚') || strings.ContainsRune(prevLinePlain, '╰') || strings.ContainsRune(prevLinePlain, '+') {
+						foundBottom = true
+						break
+					}
+				}
+				if !foundBottom {
+					return fmt.Errorf("boxed line %d: unclosed box from line %d", framed[i-1].line, openLine)
+				}
+			}
+			openLine = 0
+		}
+		if row.kind == 't' {
+			if openLine > 0 {
+				return fmt.Errorf("boxed line %d: unclosed box from line %d", row.line-1, openLine)
+			}
+			openLine = row.line
+		} else if row.kind == 'b' {
+			if openLine == 0 {
+				startLine := row.line
+				for j := i - 1; j >= 0 && framed[j].line == framed[j+1].line-1; j-- {
+					startLine = framed[j].line
+				}
+
+				if startLine > 1 {
+					foundTop := false
+					for g := startLine-2; g >= 0 && g < len(lines); g-- {
+						prevLinePlain := stripANSIForBox(lines[g])
+						if strings.ContainsRune(prevLinePlain, '┌') || strings.ContainsRune(prevLinePlain, '╔') || strings.ContainsRune(prevLinePlain, '╭') || strings.ContainsRune(prevLinePlain, '+') {
+							foundTop = true
+							break
+						}
+						if strings.TrimSpace(prevLinePlain) == "" {
+							break
+						}
+					}
+					if !foundTop {
+						return fmt.Errorf("boxed line %d: unclosed box from line %d", row.line, startLine)
+					}
+				} else {
+					return fmt.Errorf("boxed line %d: unclosed box from line %d", row.line, startLine)
+				}
+			}
+			openLine = 0
+		}
+	}
+	if openLine > 0 {
+		foundBottom := false
+		for g := framed[len(framed)-1].line; g < len(lines); g++ {
+			prevLinePlain := stripANSIForBox(lines[g])
+			if strings.ContainsRune(prevLinePlain, '└') || strings.ContainsRune(prevLinePlain, '╚') || strings.ContainsRune(prevLinePlain, '╰') || strings.ContainsRune(prevLinePlain, '+') {
+				foundBottom = true
+				break
+			}
+		}
+		if !foundBottom {
+			return fmt.Errorf("boxed line %d: unclosed box from line %d", framed[len(framed)-1].line, openLine)
+		}
+	}
 	// Compare rows within a box. A bottom row followed by another top row starts
 	// a new box, even when there is no blank line between the two. A nested box
 	// that closes or opens at either end of a row (a dialog inside a grid cell)
