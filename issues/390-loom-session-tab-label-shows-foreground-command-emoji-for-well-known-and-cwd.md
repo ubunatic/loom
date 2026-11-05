@@ -18,7 +18,8 @@ and write a failure report saying why.
 ## 1. Problem & Motivation
 
 The session bar renders `" %d: %s "` with `tab.title`, which is fixed at spawn to
-`filepath.Base(cmdName)` (`internal/session/session.go:204`, `:242`, `:717`). Every shell tab reads
+`filepath.Base(cmdName)` (`internal/session/session.go:733`, `:887`; title drawn at `:233` width, `:271` text;
+lines checked 2026-11-05, Jules triage 425). Every shell tab reads
 `1: zsh`, `2: zsh`, so tabs running `vim`, `htop` or `harnez` in different projects can't be told apart.
 
 ## 2. Technical Specification / Findings
