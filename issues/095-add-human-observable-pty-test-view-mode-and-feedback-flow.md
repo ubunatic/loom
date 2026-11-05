@@ -50,3 +50,4 @@ view mode and verify a human can follow each scenario and file feedback safely.
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
 | audit | jules-audit-095 | 5fc48c55-c7c0-4162-bfcd-309b86805cac | GH #61 | kept: still valid, refs 2/2 hold |
+| audit | jules-audit-095 | 10208070626976793659 | GH #99 | kept: still valid, 1/1 ref holds, absence searches repeated (2026-11-05) |
