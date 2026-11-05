@@ -59,6 +59,12 @@ During development of a split-pane ANSI mockup and TUI prototype in `cati` (`exa
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
 | audit | jules-audit-137 | 01ffcb9f-a4b9-46b9-9109-20f05b95b3b5 | GH #60 | kept: partly done, refs hold (±4 lines) |
+| audit | jules-audit-137 | 9989701605087595060 | GH #96 | kept: partly done, 3/3 refs hold |
+
+## Status 2026-11-05
+Suggestions 2 and 3 are done: `loom check-box --annotate` (cmd/loom/main.go:273) and `loom view --ruler`
+(cmd/loom/main.go:417). Left: suggestion 1, multi-box rows in `loom format --align-box`; `boxEdges`
+(cmd/loom/format.go:153) returns a single left/right pair. Next step: return all box column pairs and align each.
 
 Audit note (Jules, 2026-11-03, checked at 53ffc4a): `loom check-box --annotate` already prints an inline pointer (`cmd/loom/main.go:255`). Left: multi-column `boxEdges` in `cmd/loom/format.go:153`, and a ruler toggle in `loom view` (`DrawRuler` in `ruler.go:10` is only used by ansiviewer).
 | implement | jules-implement-137 | 11139333066103803628 | GH #70 | adopted: --ruler flag and r key in loom view; host made the test check a ruler mark; q1 green |
