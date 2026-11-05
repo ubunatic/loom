@@ -15,6 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"ubunatic.com/loom"
+	"ubunatic.com/loom/internal/boxcheck"
 	"ubunatic.com/loom/measure"
 )
 
@@ -254,6 +255,7 @@ func stripANSI(text string) string {
 
 func checkBoxCommand() *cobra.Command {
 	var annotate bool
+	var closed bool
 	cmd := &cobra.Command{
 		Use: "check-box <file...>", Short: "Validate alignment of Unicode box borders",
 		Args: cobra.MinimumNArgs(1), SilenceUsage: true,
@@ -263,6 +265,9 @@ func checkBoxCommand() *cobra.Command {
 				data, err := readAsset(path)
 				if err == nil {
 					err = loom.ValidateAnsiBox(string(data))
+					if closed {
+						err = errors.Join(boxcheck.Closed(string(data)), err)
+					}
 				}
 				if err != nil {
 					if annotate && data != nil && strings.HasPrefix(err.Error(), "boxed line ") {
@@ -291,6 +296,7 @@ func checkBoxCommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVarP(&annotate, "annotate", "a", false, "print plain text with diagnostic markers")
+	cmd.Flags().BoolVar(&closed, "closed", false, "also check standalone boxes for missing bottom borders")
 	return cmd
 }
 

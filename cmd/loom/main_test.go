@@ -162,6 +162,20 @@ func TestCheckBox(t *testing.T) {
 	}
 }
 
+func TestCheckBoxClosed(t *testing.T) {
+	path := writeFixture(t, "┌───┐\n│abc│\n└─── \n")
+	var out bytes.Buffer
+	err := execute([]string{"check-box", "--closed", path}, &out)
+	if err == nil || !strings.Contains(err.Error(), "unclosed box") {
+		t.Fatalf("expected unclosed box diagnostic, got %v", err)
+	}
+	other := writeFixture(t, "┌──┐\n│x│\n└─┘\n")
+	err = execute([]string{"check-box", "--closed", path, other}, &out)
+	if err == nil || !strings.Contains(err.Error(), "boxed line") || strings.Index(err.Error(), "unclosed box") > strings.Index(err.Error(), "boxed line") {
+		t.Fatalf("expected structural and unrelated alignment errors, got %v", err)
+	}
+}
+
 func TestCLIArityErrors(t *testing.T) {
 	for _, args := range [][]string{{"measure"}, {"measure", "a", "b"}, {"eval"}, {"diff"}, {"diff", "a"}, {"diff", "a", "b", "c"}, {"view"}, {"edit", "a", "b"}, {"check-box"}, {"widgets", "a", "b"}} {
 		var out bytes.Buffer
