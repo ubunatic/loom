@@ -32,3 +32,10 @@ Test boundary/out-of-range levels and invalid declarations; compare independent 
 ## Scope limits
 
 No global palette registry, terminal-theme discovery, animation system or hardcoded Harnez-specific colors inside widgets.
+
+## Status 2026-11-05 (Jules audit PR 97, 10/10 refs hold)
+Done: sparkline Blocks/Braille presentation and custom `Glyphs` (graph/sparkline.go:56, :93), `BackgroundANSI`
+and a per-value `ForegroundANSI func(float64) string` callback (graph/sparkline.go:85, :90), bar `Fill`, wrappers
+and `NoWrapper` (graph/bar.go:44-51), invalid-range fallback test (graph/graph_test.go:103).
+Left: declarative level ranges / colour stops (today only the callback), the same colouring for bars
+(`BarOptions` has no colour hook), and a demo with two palettes plus monochrome.
