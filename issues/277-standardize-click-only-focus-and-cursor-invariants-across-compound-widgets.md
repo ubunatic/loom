@@ -24,3 +24,7 @@
 
 ## Decision
 - 2026-11-02 (owner): hover may set a **soft focus** (a visual highlight, like a browser link changing the cursor on hover) but never the real focus: no keyboard focus, field activation, caret move or OnSelect. For `Choice`, hover may move the highlight (`c.sel` at `choice.go:647-648`); keyboard focus and acceptance still need a click or a key. Open: whether a key press after hover acts on the soft-focused row or on the last keyboard-selected row; pick the browser-like answer (keys act on the hovered highlight only if the widget already has focus) unless tests show a conflict.
+
+**Note (2026-11-05, Jules triage 426, PR 101, refs checked):** `FilePicker` no longer changes focus on hover; it
+moves focus only on a left press (`filepicker.go:300`). `Choice` hover still sets `c.sel` (`choice.go:647`),
+which the soft-focus decision above allows.
