@@ -39,3 +39,6 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 | batch audit | jules-batch-prio-a | 11899285583632198342 | - | running |
 | batch audit | jules-batch-prio-b | 15741866014100721340 | - | running |
 | ideas | jules-ideas-text-input | 14890562797936204173 | - | running |
+
+## Notes for wave 2
+- Owner tip (2026-11-06): open each prompt with a role line, "You are a <role> and use <approach> to run the <task>", e.g. "You are a Go TUI reviewer and use evidence-first code reading to audit these tickets". Compare its results with wave 1.
