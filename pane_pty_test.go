@@ -685,20 +685,32 @@ func TestPaneRunDecodesMultipleKeysFromOneRead(t *testing.T) {
 	}
 }
 
-type pastePTYWidget struct{ pasted chan PasteEvent }
+type pastePTYWidget struct {
+	pasted      chan PasteEvent
+	keys        chan KeyEvent
+	pasteResult EventResult
+}
 
-func (w *pastePTYWidget) Draw(*Canvas, Rect)                  {}
-func (w *pastePTYWidget) ConsumeKey(KeyEvent) EventResult     { return Ignored() }
+func (w *pastePTYWidget) Draw(*Canvas, Rect) {}
+func (w *pastePTYWidget) ConsumeKey(event KeyEvent) EventResult {
+	if w.keys != nil {
+		w.keys <- event
+	}
+	if event.Is("ctrl-q") {
+		return QuitResult()
+	}
+	return Ignored()
+}
 func (w *pastePTYWidget) ConsumeMouse(MouseEvent) EventResult { return Ignored() }
 func (w *pastePTYWidget) ConsumePaste(event PasteEvent) EventResult {
 	w.pasted <- event
-	return QuitResult()
+	return w.pasteResult
 }
 
 func TestPaneRunDispatchesBracketedPaste(t *testing.T) {
 	master, slave := openPTY(t)
 	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
-	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1)}
+	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1), pasteResult: QuitResult()}
 	errC := make(chan error, 1)
 	go func() { errC <- p.Run(w) }()
 	if _, err := master.Write([]byte("\x1b[200~first\nsecond\x1b[201~")); err != nil {
@@ -720,26 +732,62 @@ func TestPaneRunDispatchesBracketedPaste(t *testing.T) {
 	}
 }
 
-func TestPaneFlushesOversizedUnterminatedPaste(t *testing.T) {
+func TestPaneDiscardsOversizedPasteUntilSplitTerminator(t *testing.T) {
 	master, slave := openPTY(t)
 	p := &Pane{tty: slave, fd: int(slave.Fd()), rows: 1, cols: 20}
-	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1)}
+	w := &pastePTYWidget{pasted: make(chan PasteEvent, 1), keys: make(chan KeyEvent, 8)}
 	errC := make(chan error, 1)
 	go func() { errC <- p.Run(w) }()
-	payload := strings.Repeat("x", maxPendingPasteSize+1)
+	payload := strings.Repeat("x", maxPendingPasteSize) + "\n" + strings.Repeat("y", 32)
 	if _, err := master.Write([]byte("\x1b[200~" + payload)); err != nil {
 		t.Fatal(err)
 	}
 	select {
 	case got := <-w.pasted:
-		if len(got.Text) != len(payload) {
-			t.Fatalf("flushed paste length = %d, want %d", len(got.Text), len(payload))
+		if len(got.Text) != maxPendingPasteSize {
+			t.Fatalf("truncated paste length = %d, want %d", len(got.Text), maxPendingPasteSize)
+		}
+		if strings.ContainsAny(got.Text, "\ny") {
+			t.Fatalf("truncated paste contains discarded payload: tail %q", got.Text[len(got.Text)-16:])
 		}
 	case <-time.After(5 * time.Second):
 		t.Fatal("timed out waiting for oversized paste flush")
 	}
+	if _, err := master.Write([]byte("\x1b[20")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := master.Write([]byte("1~z")); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case got := <-w.keys:
+		if got.Text != "z" {
+			t.Fatalf("key after paste = %+v, want text z", got)
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("timed out waiting for key following split paste terminator")
+	}
+	select {
+	case got := <-w.keys:
+		t.Fatalf("paste payload escaped into key dispatch: %+v", got)
+	default:
+	}
+	if _, err := master.Write([]byte("\x11")); err != nil {
+		t.Fatal(err)
+	}
 	if err := <-errC; err != nil {
 		t.Fatalf("Pane.Run: %v", err)
+	}
+}
+
+func TestDrainPasteTerminatorAcrossChunksPreservesFollowingKeys(t *testing.T) {
+	remaining, tail, complete := drainPasteTerminator(nil, []byte("discard\x1b[20"))
+	if complete || len(remaining) != 0 || !strings.HasSuffix(string(tail), "\x1b[20") {
+		t.Fatalf("first chunk = %q, %q, %t", remaining, tail, complete)
+	}
+	remaining, tail, complete = drainPasteTerminator(tail, []byte("1~z"))
+	if !complete || string(remaining) != "z" || len(tail) != 0 {
+		t.Fatalf("second chunk = %q, %q, %t", remaining, tail, complete)
 	}
 }
 

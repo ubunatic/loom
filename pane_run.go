@@ -12,6 +12,21 @@ import (
 	"ubunatic.com/loom/measure"
 )
 
+// drainPasteTerminator discards bytes until a bracketed-paste terminator. It
+// retains only a possible terminator prefix when a read ends mid-sequence.
+func drainPasteTerminator(tail, raw []byte) (remaining, nextTail []byte, complete bool) {
+	const pasteEnd = "\x1b[201~"
+	combined := append(tail, raw...)
+	if i := strings.Index(string(combined), pasteEnd); i >= 0 {
+		return combined[i+len(pasteEnd):], nil, true
+	}
+	keep := len(pasteEnd) - 1
+	if len(combined) > keep {
+		combined = combined[len(combined)-keep:]
+	}
+	return nil, append([]byte(nil), combined...), false
+}
+
 // Run renders root on every frame and dispatches events until the root signals
 // quit or an unrecoverable error occurs.
 func (p *Pane) Run(root Widget) error {
@@ -303,6 +318,8 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 	var pending []byte
 	var pendingC <-chan time.Time
 	var pendingDeadline time.Time
+	var discardingPaste bool
+	var pasteTerminatorTail []byte
 
 	var guardTimer *time.Timer
 	var guardTimerC <-chan time.Time
@@ -610,18 +627,46 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 			quit := false
 			for len(raw) > 0 {
 				const pasteStart = "\x1b[200~"
+				const pasteEnd = "\x1b[201~"
+				if discardingPaste {
+					var complete bool
+					raw, pasteTerminatorTail, complete = drainPasteTerminator(pasteTerminatorTail, raw)
+					if complete {
+						discardingPaste = false
+						continue
+					}
+					break
+				}
 				if strings.HasPrefix(string(raw), pasteStart) {
 					paste, used, complete := DecodePaste(raw)
 					if !complete {
 						if len(raw) > maxPendingPasteSize {
-							paste = PasteEvent{Text: string(raw[len(pasteStart):])}
+							// Deliver a bounded prefix, then discard the rest of this
+							// paste through its terminator so payload bytes cannot
+							// become key events. A later key after the terminator is
+							// retained and decoded normally.
+							payload := raw[len(pasteStart):]
+							if i := strings.Index(string(payload), pasteEnd); i >= 0 {
+								deliver := min(i, maxPendingPasteSize)
+								paste = PasteEvent{Text: string(payload[:deliver])}
+								raw = payload[i+len(pasteEnd):]
+							} else {
+								deliver := min(len(payload), maxPendingPasteSize)
+								paste = PasteEvent{Text: string(payload[:deliver])}
+								discardingPaste = true
+								_, pasteTerminatorTail, _ = drainPasteTerminator(nil, payload[deliver:])
+							}
 							p.triggerCursorPulse(time.Now())
 							if DispatchPasteEvent(root, paste).Quit {
 								quit = true
 							}
-							pending = nil
-							pendingC = nil
-							break
+							if quit {
+								break
+							}
+							if discardingPaste {
+								break
+							}
+							continue
 						}
 						pending = raw
 						pendingC = nil
@@ -630,6 +675,9 @@ func (p *Pane) run(ctx context.Context, root Widget, samples, frames <-chan time
 						break
 					}
 					raw = raw[used:]
+					if len(paste.Text) > maxPendingPasteSize {
+						paste.Text = paste.Text[:maxPendingPasteSize]
+					}
 					p.triggerCursorPulse(time.Now())
 					if DispatchPasteEvent(root, paste).Quit {
 						quit = true
