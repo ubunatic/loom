@@ -1004,3 +1004,56 @@ func TestTextEntryCtrlUSelectionHistoryAndResize(t *testing.T) {
 		t.Fatalf("mouse selection: %q", e.Value())
 	}
 }
+
+func TestTextEntryCtrlUPreservesClipboardAndHostHook(t *testing.T) {
+	var writes []string
+	e := NewTextEntry(TextEntryOptions{})
+	bindTextEntryClipboardForTest(e, func(text string) { writes = append(writes, text) })
+	typeEntryText(e, "copied")
+	entryKey(e, "ctrl-a")
+	entryKey(e, "ctrl-c")
+	writes = nil
+	e.SetValue("abc\ndef")
+	e.SetCursorOffset(4)
+	entryKey(e, "ctrl-u")
+	if e.CursorOffset() != 3 || e.Value() != "abc\ndef" || len(writes) != 0 {
+		t.Fatalf("hard start changed text or clipboard: %q @%d writes %q", e.Value(), e.CursorOffset(), writes)
+	}
+	e.SetCursorOffset(6)
+	if r := entryKey(e, "ctrl-u"); !r.Consumed || e.Value() != "abc\nf" || len(writes) != 0 {
+		t.Fatalf("deletion wrote clipboard: %+v %q writes %q", r, e.Value(), writes)
+	}
+	entryKey(e, "ctrl-end")
+	entryKey(e, "ctrl-v")
+	if e.Value() != "abc\nfcopied" || len(writes) != 0 {
+		t.Fatalf("paste after Ctrl+U = %q; host writes %q", e.Value(), writes)
+	}
+}
+
+func TestTextEntryCtrlUVisualPrefixSingleUndoRedoAndNotifications(t *testing.T) {
+	var changes []string
+	e := NewTextEntry(TextEntryOptions{OnChange: func(value string) { changes = append(changes, value) }})
+	e.SetValue("abcdefghij\nkeep")
+	e.Measure(5)
+	e.SetCursorOffset(8)
+	entryKey(e, "ctrl-u")
+	if e.Value() != "abcdij\nkeep" || e.CursorOffset() != 4 || !slices.Equal(changes, []string{"abcdij\nkeep"}) {
+		t.Fatalf("first deletion: %q @%d changes %q", e.Value(), e.CursorOffset(), changes)
+	}
+	entryKey(e, "ctrl-u")
+	if e.Value() != "ij\nkeep" || e.CursorOffset() != 0 || !slices.Equal(changes, []string{"abcdij\nkeep", "ij\nkeep"}) {
+		t.Fatalf("second deletion: %q @%d changes %q", e.Value(), e.CursorOffset(), changes)
+	}
+	entryKey(e, "ctrl-z")
+	if e.Value() != "abcdij\nkeep" || !slices.Equal(changes, []string{"abcdij\nkeep", "ij\nkeep", "abcdij\nkeep"}) {
+		t.Fatalf("first undo: %q changes %q", e.Value(), changes)
+	}
+	entryKey(e, "ctrl-z")
+	if e.Value() != "abcdefghij\nkeep" || !slices.Equal(changes, []string{"abcdij\nkeep", "ij\nkeep", "abcdij\nkeep", "abcdefghij\nkeep"}) {
+		t.Fatalf("second undo: %q changes %q", e.Value(), changes)
+	}
+	entryKey(e, "ctrl-y")
+	if e.Value() != "abcdij\nkeep" {
+		t.Fatalf("redo: %q", e.Value())
+	}
+}

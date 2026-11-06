@@ -51,3 +51,11 @@ Host reviewed all M1 source and assertion diffs. Implementation matches the chos
 ## Developer evidence
 
 Regression first: the soft-boundary test failed because Ctrl+U was ignored. Implementation and verification are recorded in the accompanying study; the ticket remains open for host acceptance.
+
+## M2 developer evidence
+
+- Clipboard regression seeds the internal clipboard with Ctrl+C, proves hard-start navigation and visual deletion do not call the host clipboard hook, then pastes the original copied value.
+- Visual-prefix tests assert retained suffix/newlines, each OnChange value, and independent undo/redo steps.
+- CLI PTY coverage sends multiline paste and Ctrl+U byte 0x15; it asserts terminal cursor coordinates at a hard-line start and inside the line, retained surrounding text, and repeated deletion at a known soft-wrap boundary. Existing Ctrl+C confirmation checks remain intact.
+- `go vet ./...` passed. `go test . ./gallery ./cmd/loom` passed. One `make test-q1` passed in full with no `--- FAIL`; output: `/tmp/loom-issue-438-m2-test-q1.log`. `make install` passed.
+- M1's quota failure was in untouched `internal/session/TestSessionDetachPrefixDAndReattach`; it did not recur in M2. Ticket remains open for host acceptance.

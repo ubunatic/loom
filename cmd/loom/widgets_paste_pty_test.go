@@ -104,12 +104,80 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 	bin := buildLoomBinary(t)
 	gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")
 	gallery.WaitFor("/topic Draft:", 3*time.Second)
+	gallery.SendRaw([]byte{0x01}) // select the initial draft
+	gallery.SendRaw([]byte("\x1b[200~aa\nbbbb\x1b[201~"))
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return strings.Contains(joined, "aa") && strings.Contains(joined, "bbbb")
+	})
+	endX, endY := gallery.VT().Cursor()
+	if endX != 6 {
+		t.Fatalf("multiline end cursor x = %d, want prompt plus bbbb (6); screen: %q", endX, gallery.Text())
+	}
+	gallery.SendRaw([]byte("\x1b[H")) // Home: start of the current hard line
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		x, y := gallery.VT().Cursor()
+		return x == 2 && y == endY
+	})
 	gallery.SendRaw([]byte{0x15})
-	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool { return !strings.Contains(strings.Join(rows, "\n"), "/topic Draft:") })
-	gallery.Send("after")
-	gallery.WaitForUpdate("after", 3*time.Second)
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		x, y := gallery.VT().Cursor()
+		joined := strings.Join(rows, "\n")
+		return x == 4 && y == endY-1 && strings.Contains(joined, "aa") && strings.Contains(joined, "bbbb")
+	})
+	if !strings.Contains(gallery.Text(), "aa") || !strings.Contains(gallery.Text(), "bbbb") {
+		t.Fatalf("hard-start navigation did not retain both lines: %q", gallery.Text())
+	}
+
+	gallery.SendRaw([]byte{0x01})
+	gallery.SendRaw([]byte("\x1b[200~abcdef\nxyzz\x1b[201~"))
+	gallery.WaitForUpdate("xyzz", 3*time.Second)
+	gallery.SendRaw([]byte("\x1b[D\x1b[D"))
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		x, _ := gallery.VT().Cursor()
+		return x == 4
+	})
+	insideX, insideY := gallery.VT().Cursor()
+	if insideX != 4 {
+		t.Fatalf("cursor before interior Ctrl+U = (%d,%d), want x=4: %q", insideX, insideY, gallery.Text())
+	}
 	gallery.SendRaw([]byte{0x15})
-	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool { return !strings.Contains(strings.Join(rows, "\n"), "after") })
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		x, y := gallery.VT().Cursor()
+		joined := strings.Join(rows, "\n")
+		return x == 2 && y == insideY && strings.Contains(joined, "abcdef") && strings.Contains(joined, "zz") && !strings.Contains(joined, "xyzz")
+	})
+	// Place the caret at the second soft boundary in a known-width wrapped line.
+	gallery.SendRaw([]byte{0x01})
+	wrapped := strings.Repeat("x", 220)
+	gallery.SendRaw([]byte("\x1b[200~" + wrapped + "\x1b[201~"))
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return strings.Contains(joined, strings.Repeat("x", 97)) && strings.Contains(joined, strings.Repeat("x", 26))
+	})
+	gallery.SendRaw([]byte(strings.Repeat("\x1b[D", 26)))
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		x, _ := gallery.VT().Cursor()
+		return x == 2
+	})
+	gallery.SendRaw([]byte{0x15})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		x, _ := gallery.VT().Cursor()
+		joined := strings.Join(rows, "\n")
+		return x == 2 && strings.Contains(joined, strings.Repeat("x", 97)) && strings.Contains(joined, strings.Repeat("x", 26)) && !strings.Contains(joined, wrapped)
+	})
+	gallery.SendRaw([]byte{0x15})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		x, _ := gallery.VT().Cursor()
+		joined := strings.Join(rows, "\n")
+		return x == 2 && strings.Contains(joined, strings.Repeat("x", 26)) && !strings.Contains(joined, strings.Repeat("x", 97))
+	})
+	gallery.Send("x")
+	gallery.WaitForUpdate("x", 3*time.Second)
+	gallery.SendRaw([]byte{0x03})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "x")
+	})
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)
 	gallery.SendRaw([]byte{0x03})
