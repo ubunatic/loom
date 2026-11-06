@@ -89,6 +89,7 @@
 | [studies/2026-11-01-two-agent-lean-sprint-398-alt-enter.md](studies/2026-11-01-two-agent-lean-sprint-398-alt-enter.md) | Lean sprint 398 — Alt+Enter decoding (2026-11-01) |
 | [studies/2026-11-01-two-agent-lean-sprint-403-env-once.md](studies/2026-11-01-two-agent-lean-sprint-403-env-once.md) | Lean Sprint 403: read measure env switches once |
 | [studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md](studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md) | Issue 434 M1: gallery TextEntry Ctrl+C and paste |
+| [studies/2026-11-06-issue-438-ctrl-u.md](studies/2026-11-06-issue-438-ctrl-u.md) | Issue 438: TextEntry Ctrl+U |
 <!-- harnez:end docs-studies-index -->
 
 
