@@ -5,6 +5,7 @@ package loom
 
 import (
 	"math"
+	"reflect"
 	"slices"
 	"strings"
 	"testing"
@@ -19,6 +20,70 @@ func typeEntryText(e *TextEntry, text string) {
 
 func entryKey(e *TextEntry, key string) EventResult {
 	return e.ConsumeKey(KeyEvent{Key: key})
+}
+
+type ctrlDEntryProbe struct {
+	*TextEntry
+	keys []KeyEvent
+}
+
+func (p *ctrlDEntryProbe) ConsumeKey(k KeyEvent) EventResult {
+	p.keys = append(p.keys, k)
+	return p.TextEntry.ConsumeKey(k)
+}
+
+func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
+	for _, event := range []struct {
+		name string
+		key  KeyEvent
+	}{{"named", KeyEvent{Key: "ctrl-d"}}, {"decoded", DecodeKey([]byte{0x04})}} {
+		if event.key != (KeyEvent{Key: "ctrl-d"}) {
+			t.Fatalf("%s event = %+v", event.name, event.key)
+		}
+		for _, state := range []string{"empty", "text", "selected", "placeholder"} {
+			t.Run(event.name+"/"+state, func(t *testing.T) {
+				changes, submits, writes := 0, 0, 0
+				e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }, OnSubmit: func(string) EventResult { submits++; return Handled() }})
+				e.writeClipboard = func(string) { writes++ }
+				typeEntryText(e, "history")
+				entryKey(e, "ctrl-a")
+				entryKey(e, "ctrl-c")
+				entryKey(e, "ctrl-z")
+				if state == "text" || state == "selected" {
+					entryKey(e, "ctrl-y")
+					if state == "selected" {
+						entryKey(e, "ctrl-a")
+					}
+				}
+				if state == "placeholder" {
+					e.SetPlaceholder("hint")
+				}
+				cloneHistory := func(history []textEntrySnapshot) []textEntrySnapshot {
+					out := slices.Clone(history)
+					for i := range out {
+						out[i].units = slices.Clone(out[i].units)
+					}
+					return out
+				}
+				value, caret, anchor, hint, clip := e.Value(), e.caret, e.anchor, e.Placeholder(), e.clipboard
+				undo, redo := cloneHistory(e.undo), cloneHistory(e.redo)
+				beforeChanges, beforeSubmits, beforeWrites := changes, submits, writes
+				result := e.ConsumeKey(event.key)
+				if result != Ignored() || e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
+					t.Fatalf("Ctrl+D changed entry or callbacks: result=%+v value=%q caret=%d anchor=%d hint=%q clipboard=%q changes=%d submits=%d writes=%d", result, e.Value(), e.caret, e.anchor, e.Placeholder(), e.clipboard, changes, submits, writes)
+				}
+				probe := &ctrlDEntryProbe{TextEntry: e}
+				frame := &Frame{Boxes: []Box{{ID: "entry", Child: probe}, {ID: "target", Child: &focusProbe{}}}, Actions: []FrameAction{{Key: "ctrl-d", Action: "toggle", Target: "target"}}}
+				result = frame.ConsumeKey(event.key)
+				if !result.Consumed || result.Quit || !frame.Boxes[1].Hidden || len(probe.keys) != 1 || probe.keys[0] != event.key {
+					t.Fatalf("frame routing: result=%+v hidden=%v child events=%+v", result, frame.Boxes[1].Hidden, probe.keys)
+				}
+				if e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
+					t.Fatal("frame routing changed entry state or callbacks")
+				}
+			})
+		}
+	}
 }
 
 // entryScreenRow returns row y with one entry per display column, so index
