@@ -809,7 +809,7 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 - `Placeholder()` returns the hint, and `SetPlaceholder(s)` replaces it at runtime, for example with a model-proposed next prompt. Setting it does not call `OnChange`, and the next `Draw` shows the new hint.
 - The hint is drawn only while the value is empty, and typing hides it. The hint is never part of `Value()`, and the caret stays at the start of the row while it shows.
 - Only the first line of a multi-line hint is drawn, cut at the row width. Wide runes are never split, so a rune that does not fit is left out.
-- `AcceptPlaceholder()` turns the hint into the value. It works only when the value is empty and the hint is not empty. It inserts the whole hint, including any further lines, puts the caret at its end, makes one undo step, calls `OnChange` once, and returns `true`. Otherwise it returns `false` and changes nothing. It has no key binding of its own, so the host calls it from its own key handler, for example on Tab.
+- `AcceptPlaceholder()` turns the hint into the value. It works only when the value is empty and the hint is not empty. It inserts the whole hint, including any further lines, puts the caret at its end, makes one undo step, calls `OnChange` once, and returns `true`. Otherwise it returns `false` and changes nothing. Tab, End and Ctrl+E also accept it when the value is empty and the caret and anchor are at the start; this consumes the key without submitting. Tab is an intentional widget action in this case.
 
 ### Key handling
 
@@ -817,7 +817,7 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 - **Ctrl+U** deletes from the current visual segment start to the caret, or deletes only the selection. At a hard-line start it moves before the newline without deleting it; at the first start it is ignored. At a soft-wrap boundary it immediately clears the preceding segment. Before layout it uses hard lines; after layout it uses the latest width. Each deletion is one undo step and calls `OnChange`; navigation does neither.
 - **Clipboard keys**: Ctrl+A selects all. Ctrl+C copies, Ctrl+X cuts, and Ctrl+V pastes from the internal clipboard. Copy and cut also write to the host clipboard through the Pane hook (OSC 52). Ctrl+C is ignored when there is no selection. Hosts that handle Ctrl+C before the entry can use `HasSelection()` to route it to the entry when text is selected and otherwise retain their own action. Bracketed paste inserts as one undo step.
 - **Undo**: Ctrl+Z undoes, and Ctrl+Y or Ctrl+Shift+Z redoes. Consecutive typed characters form one undo step.
-- **Host keys** are returned `Ignored`: Tab, Shift+Tab, Ctrl+O, Ctrl+S, Ctrl+G, Ctrl+F, Esc, and F-keys. Up, Down, PageUp and PageDown are ignored at the first or last row so the host can use them for history.
+- **Host keys** are returned `Ignored`: Tab outside placeholder acceptance, Shift+Tab, Ctrl+O, Ctrl+S, Ctrl+G, Ctrl+F, Esc, and F-keys. Up, Down, PageUp and PageDown are ignored at the first or last row so the host can use them for history.
 - **Page keys**: the decoder emits `pgup` and `pgdown`. Bindings also accept `pageup`, `pagedown` and `pgdn`.
 
 ### Mouse

@@ -428,7 +428,7 @@ widgets:
     docs: docs/Widgets.md §9
   - name: loom.TextEntry
     package: loom
-    purpose: Plain-text chat input that soft-wraps, grows to MaxHeight, selects, copies and pastes, clears visual prefixes with Ctrl+U, and leaves host keys to the host; embedded control drawn by its parent.
+    purpose: Plain-text chat input that soft-wraps, grows to MaxHeight, selects, copies and pastes, accepts a placeholder with Tab, End or Ctrl+E when empty, clears visual prefixes with Ctrl+U, and leaves other host keys to the host; embedded control drawn by its parent.
     category: input
     example: |-
       entry := loom.NewTextEntry(loom.TextEntryOptions{Prompt: "> ", OnSubmit: send})
