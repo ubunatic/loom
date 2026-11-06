@@ -1,6 +1,6 @@
 # 421 — syntax: shell lexer, colour the command after if, else, while and !
 
-**Status**: Open
+**Status**: Closed — done: 95ed419 (Jules PR 111, host-checked, 5 cases fail without fix)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
