@@ -1,6 +1,6 @@
 # 439 — TextEntry accepts placeholder with Tab End and Ctrl+E
 
-**Status**: Open
+**Status**: Closed — TextEntry accepts guarded placeholders via Tab End Ctrl+E; independent host test-q1 passed and installed-gallery PTYs verified all three keys accept at end without submission; normal Tab traversal covered.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
