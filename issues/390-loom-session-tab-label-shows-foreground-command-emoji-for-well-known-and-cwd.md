@@ -48,3 +48,11 @@ lines checked 2026-11-05, Jules triage 425). Every shell tab reads
 - PTY test in the full tier: start a shell tab, `cd` and run `sleep`, and assert that the label
   changes.
 - Live check in tmux at 100 and 40 columns (`/tui-check`), then `make test-q1` and `make install`.
+
+## Jules runs (wave 2, 429)
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-390 | 8095101773836538431 | - | failed: AWAITING_USER_FEEDBACK after 2 replies, no PR; stopped |
+
+Lead from its last message (not verified): an `emoji` table and `basename_width` in the spec, and a Linux `getForegroundInfo` using `unix.IoctlGetInt(fd, unix.TIOCGPGRP)` on the tab's PTY master, then `/proc/<pgid>/comm` and `/proc/<pgid>/cwd`.
