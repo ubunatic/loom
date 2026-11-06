@@ -1,6 +1,6 @@
 # 414 — measure: share one grapheme cluster boundary scanner between StringWidthNew and ClustersNew
 
-**Status**: Open
+**Status**: Closed — done: 8397a50 (Jules PR 109, host-checked parity test); lone VS16 width follow-up filed
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Refactor
