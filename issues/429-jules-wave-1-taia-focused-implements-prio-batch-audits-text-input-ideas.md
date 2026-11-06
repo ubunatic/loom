@@ -43,3 +43,17 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 ## Notes for wave 2
 - Owner tip (2026-11-06): open each prompt with a role line, "You are a <role> and use <approach> to run the <task>", e.g. "You are a Go TUI reviewer and use evidence-first code reading to audit these tickets". Compare its results with wave 1.
 - Lesson: 259 was already re-audited (259b, GH #74); wave 1 repeated it. Read the whole `## Jules runs` table before picking a ticket.
+
+## Wave 2 (7 implement runs, role preprompt)
+Role line: "You are a senior Go TUI library developer. You use test-first development: write table tests against the real behaviour, show them failing, then make the smallest change that passes them."
+Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390 (tab label), 397 (view-only attach), 400 (headless keys), 157 (golden comparator rest), 413 (retry after rejected PR 112).
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-432 | - | - | pending |
+| implement | jules-implement-392 | - | - | pending |
+| implement | jules-implement-390 | - | - | pending |
+| implement | jules-implement-397 | - | - | pending |
+| implement | jules-implement-400 | - | - | pending |
+| implement | jules-implement-157 | - | - | pending |
+| implement | jules-implement-413b | - | - | pending |
