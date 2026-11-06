@@ -35,3 +35,7 @@ Tests: regression first, hard-line interiors/starts/empty/first line/trailing an
 ## Goal
 
 /goal Deliver Ctrl+U clearing and previous-line navigation in loom.TextEntry matching Taia #151, including visual-line clearing where feasible, with explicit tested wrap-boundary behavior, gallery/live terminal evidence and passing repository verification; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
+
+## Developer evidence
+
+Regression first: the soft-boundary test failed because Ctrl+U was ignored. Implementation and verification are recorded in the accompanying study; the ticket remains open for host acceptance.
