@@ -64,11 +64,11 @@ func compareANSIReport(wantText, gotText string, width, height int, ignoreColour
 			w, g := want.Cell(x, y), got.Cell(x, y)
 			wfg, wbg := w.Style.Effective()
 			gfg, gbg := g.Style.Effective()
-			if w.Rune == g.Rune && (ignoreColour || (wfg == gfg && wbg == gbg)) {
+			if w.Rune == g.Rune && (ignoreColour || (wfg == gfg && wbg == gbg)) && w.Style.Bold == g.Style.Bold && w.Style.Dim == g.Style.Dim {
 				continue
 			}
 			differences++
-			fmt.Fprintf(&report, "row=%d col=%d want={glyph=%q fg=%s bg=%s} got={glyph=%q fg=%s bg=%s}\n", y+1, x+1, string(w.Rune), formatColor(wfg), formatColor(wbg), string(g.Rune), formatColor(gfg), formatColor(gbg))
+			fmt.Fprintf(&report, "row=%d col=%d want={glyph=%q fg=%s bg=%s bold=%v dim=%v} got={glyph=%q fg=%s bg=%s bold=%v dim=%v}\n", y+1, x+1, string(w.Rune), formatColor(wfg), formatColor(wbg), w.Style.Bold, w.Style.Dim, string(g.Rune), formatColor(gfg), formatColor(gbg), g.Style.Bold, g.Style.Dim)
 		}
 	}
 	fmt.Fprintf(&report, "differences: %d\n", differences)
