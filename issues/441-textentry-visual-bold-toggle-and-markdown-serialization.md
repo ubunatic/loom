@@ -67,6 +67,12 @@ Owner's screenshot showed three input lines but gallery `Submitted Markdown: 123
 - Serialization and plain callback data are unchanged. Exact tests cover raw multiline `1\n2\n3`, quoted visible `\\n`, Unicode, tabs/CR/control escaping, quotes, backslashes, Markdown delimiters, width wrapping, overflow, tiny geometry and no painting outside the rectangle. CLI PTY coverage submits multiline bold content containing tab/CR/control bytes and checks the normalized quoted preview while retaining the existing styling/caret assertions.
 - Focused gallery/PTY tests passed; `go vet ./...` passed; one logged `make test-q1` passed all packages, including `internal/session`; `make install` passed. Log: `/tmp/loom-issue441-m3-test-q1.log`. Implementation commit: `fe83d8f`. Host review and independent installed-binary verification remain required; do not close or push.
 
+## M3 host verification
+
+Host reviewed preview and assertion diffs. Installed-gallery PTY verified exactly `Submitted Markdown: "1\\n2\\n3"` for raw three-line input. A second submission verified existing normalization (tab expands to spaces, CR becomes LF, other control byte is dropped) and quoted `"A\\nB    C\\nD"` preview. Source serialization unchanged; unit tests prove raw submissions, quoting, Unicode/control escaping, bounded wrapping and overflow.
+
+Developer M3 full suite passed. Independent host `make test-q1` failed in a different untouched session test: `TestSessionFailedScreenshotReportedOnStderr`, timeout at session_pty_test.go:836; library/gallery/CLI packages passed. Log `/tmp/loom-issue441-m3-host-test-q1.log`. No retry or unrelated test changes performed. M3 preview is installed and verified, but #441 remains open for full-suite signoff. Earlier session reattach failure did not reproduce in this host run; do not attribute this new screenshot timeout to the bold/preview change without evidence.
+
 ## Goal
 
 /goal Deliver opt-in visual Ctrl+B bold toggling in TextEntry with reliable editing/history, bold-only Markdown serialization and actual gallery Markdown submission, while preserving existing plain APIs and key contracts; prove it in unit/per-cell/terminal tests and install. Stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
