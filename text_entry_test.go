@@ -909,3 +909,98 @@ func TestTextEntryMouseSelectionOverHighlightUsesSelectionStyle(t *testing.T) {
 func bindTextEntryClipboardForTest(e *TextEntry, write func(string)) {
 	bindClipboardTree(e, write)
 }
+
+func TestTextEntryCtrlUVisualAndHardLines(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("abcdefghij")
+	e.Measure(5)
+	e.SetCursorOffset(8)
+	for _, want := range []struct {
+		value  string
+		offset int
+	}{{"abcdij", 4}, {"ij", 0}} {
+		if result := entryKey(e, "ctrl-u"); !result.Consumed || e.Value() != want.value || e.CursorOffset() != want.offset {
+			t.Fatalf("ctrl-u = %+v, value %q offset %d, want %q offset %d", result, e.Value(), e.CursorOffset(), want.value, want.offset)
+		}
+	}
+	e.SetValue("a\n\nb")
+	e.SetCursorOffset(3)
+	if result := entryKey(e, "ctrl-u"); !result.Consumed || e.Value() != "a\n\nb" || e.CursorOffset() != 2 {
+		t.Fatalf("hard start: %+v %q %d", result, e.Value(), e.CursorOffset())
+	}
+}
+
+func TestTextEntryCtrlUEdges(t *testing.T) {
+	for _, tc := range []struct {
+		name, value   string
+		width, offset int
+		want          string
+		pos           int
+		consumed      bool
+	}{
+		{"empty", "", 0, 0, "", 0, false},
+		{"first", "abc", 0, 0, "abc", 0, false},
+		{"unknown layout", "abc\ndef", 0, 6, "abc\nf", 4, true},
+		{"trailing newline", "a\n", 0, 2, "a\n", 1, true},
+		{"interior", "abc\ndef", 0, 6, "abc\nf", 4, true},
+		{"wide", "界界xyz", 5, len("界界x"), "界界yz", len("界界"), true},
+		{"clusters", "á👩‍💻z", 0, len("á👩‍💻"), "z", 0, true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e := NewTextEntry(TextEntryOptions{})
+			e.SetValue(tc.value)
+			if tc.width > 0 {
+				e.Measure(tc.width)
+			}
+			e.SetCursorOffset(tc.offset)
+			got := entryKey(e, "ctrl-u")
+			if got.Consumed != tc.consumed || got.Quit || e.Value() != tc.want || e.CursorOffset() != tc.pos {
+				t.Fatalf("got %+v %q @%d, want %q @%d", got, e.Value(), e.CursorOffset(), tc.want, tc.pos)
+			}
+		})
+	}
+}
+
+func TestTextEntryCtrlUSelectionHistoryAndResize(t *testing.T) {
+	changes := 0
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", OnChange: func(string) { changes++ }})
+	e.SetValue("abcdef\ngh")
+	e.Measure(7)
+	e.SetCursorOffset(5)
+	entryKey(e, "shift-left")
+	entryKey(e, "shift-left")
+	entryKey(e, "ctrl-u")
+	if e.Value() != "abcf\ngh" || changes != 1 {
+		t.Fatalf("selection: %q changes %d", e.Value(), changes)
+	}
+	entryKey(e, "ctrl-z")
+	if e.Value() != "abcdef\ngh" {
+		t.Fatal("undo selection")
+	}
+	e.SetCursorOffset(7)
+	entryKey(e, "ctrl-u")
+	if changes != 2 || e.CursorOffset() != 6 {
+		t.Fatalf("navigation notified or moved incorrectly: %d %d", changes, e.CursorOffset())
+	}
+	entryKey(e, "ctrl-y")
+	if e.Value() != "abcf\ngh" {
+		t.Fatal("navigation lost redo")
+	}
+	e.SetValue("abcdefghij")
+	e.Measure(7)
+	e.Measure(5)
+	e.SetCursorOffset(6)
+	entryKey(e, "ctrl-u")
+	if e.Value() != "abcdghij" {
+		t.Fatalf("resize/prompt: %q", e.Value())
+	}
+	e.SetValue("hello world")
+	e.Draw(NewCanvas(20, 3), Rect{W: 20, H: 3})
+	e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 0})
+	e.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 7, Y: 0})
+	e.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: 7, Y: 0})
+	entryKey(e, "ctrl-u")
+	if e.Value() != " world" {
+		t.Fatalf("mouse selection: %q", e.Value())
+	}
+}

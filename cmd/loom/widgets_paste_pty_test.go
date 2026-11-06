@@ -99,3 +99,21 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 		t.Fatalf("gallery exit status = %v, want success", err)
 	}
 }
+
+func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
+	bin := buildLoomBinary(t)
+	gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")
+	gallery.WaitFor("/topic Draft:", 3*time.Second)
+	gallery.SendRaw([]byte{0x15})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool { return !strings.Contains(strings.Join(rows, "\n"), "/topic Draft:") })
+	gallery.Send("after")
+	gallery.WaitForUpdate("after", 3*time.Second)
+	gallery.SendRaw([]byte{0x15})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool { return !strings.Contains(strings.Join(rows, "\n"), "after") })
+	gallery.SendRaw([]byte{0x03})
+	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)
+	gallery.SendRaw([]byte{0x03})
+	if err := gallery.Wait(3 * time.Second); err != nil {
+		t.Fatalf("exit: %v", err)
+	}
+}

@@ -83,3 +83,11 @@ func TestTextEntryDemoCtrlCPolicy(t *testing.T) {
 		t.Fatalf("paste after empty ctrl-c = %+v, value = %q", result, d.entry.Value())
 	}
 }
+
+func TestTextEntryDemoCtrlUForwarding(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("draft")
+	if result := d.ConsumeKey(loom.KeyEvent{Key: "ctrl-u"}); !result.Consumed || result.Quit || d.entry.Value() != "" {
+		t.Fatalf("ctrl-u = %+v, value %q", result, d.entry.Value())
+	}
+}

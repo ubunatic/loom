@@ -390,6 +390,8 @@ func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult {
 		return e.removeNear(true)
 	case "delete":
 		return e.removeNear(false)
+	case "ctrl-u":
+		return e.clearVisualPrefix()
 	case "ctrl-a":
 		if len(e.units) == 0 {
 			return Ignored()
@@ -724,6 +726,31 @@ func (e *TextEntry) removeNear(backward bool) EventResult {
 	}) {
 		return Ignored()
 	}
+	return Consumed()
+}
+
+func (e *TextEntry) clearVisualPrefix() EventResult {
+	if e.hasSelection() {
+		e.change(false, func() { e.deleteSelection() })
+		return Consumed()
+	}
+	rows := e.rows(e.layoutWidth)
+	row, _ := e.locate(rows, e.caret)
+	start := rows[row].start
+	if start == e.caret {
+		if row == 0 {
+			return Ignored()
+		}
+		if rows[row-1].hard {
+			e.setCaret(e.caret-1, false)
+			return Consumed()
+		}
+		start = rows[row-1].start
+	}
+	e.change(false, func() {
+		e.units = slices.Delete(e.units, start, e.caret)
+		e.caret, e.anchor = start, start
+	})
 	return Consumed()
 }
 
