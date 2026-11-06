@@ -305,6 +305,7 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	if hasHints && r.H >= 2 {
 		content.H--
 	}
+	content.H = max(0, content.H)
 	g.widget.Draw(c, content)
 	if r.H == 0 {
 		return

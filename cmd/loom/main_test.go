@@ -732,6 +732,39 @@ func TestTextEntryQuitConfirmationOptInIsSingleShowOnly(t *testing.T) {
 	}
 }
 
+type drawRectProbeWidget struct {
+	rects []loom.Rect
+	hints bool
+}
+
+func (w *drawRectProbeWidget) Draw(_ *loom.Canvas, r loom.Rect)            { w.rects = append(w.rects, r) }
+func (*drawRectProbeWidget) ConsumeKey(loom.KeyEvent) loom.EventResult     { return loom.Ignored() }
+func (*drawRectProbeWidget) ConsumeMouse(loom.MouseEvent) loom.EventResult { return loom.Ignored() }
+func (w *drawRectProbeWidget) HotkeyHint(int) string {
+	if w.hints {
+		return "F2 Probe"
+	}
+	return ""
+}
+
+func TestThemedGalleryChildHeightNeverNegative(t *testing.T) {
+	for _, hints := range []bool{false, true} {
+		t.Run(fmt.Sprintf("hints=%v", hints), func(t *testing.T) {
+			child := &drawRectProbeWidget{hints: hints}
+			g := newThemedGallery(child, "plain")
+			g.textEntryConfirm = true
+			g.quitConfirm = true
+			for height := 0; height <= 3; height++ {
+				canvas := loom.NewCanvas(40, height)
+				g.Draw(canvas, canvas.Bounds())
+				if got := child.rects[len(child.rects)-1]; got.H < 0 {
+					t.Errorf("height %d hint-bearing=%v child rect=%+v; height must be nonnegative", height, hints, got)
+				}
+			}
+		})
+	}
+}
+
 func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 	widget, err := gallery.New("RichTextEdit")
 	if err != nil {

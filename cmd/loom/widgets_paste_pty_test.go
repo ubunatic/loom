@@ -80,7 +80,9 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 		joined := strings.Join(rows, "\n")
 		return !strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "F2: placeholder")
 	})
-	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[201~"))
+	// Keep a control byte inside the bracketed payload: it must be treated as
+	// pasted text rather than as a terminal clear command.
+	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[2J\x1b[201~"))
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
 		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder") && strings.Contains(joined, "F10")

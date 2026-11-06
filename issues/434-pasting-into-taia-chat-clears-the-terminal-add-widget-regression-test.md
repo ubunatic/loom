@@ -67,6 +67,13 @@ Validate the library contract using the in-repository host `loom widgets --show 
 - Approved write set remains M2's three cmd/loom files, this issue, existing study. No library change or unrelated session fix. Preserve confirmation state/reset/exit coverage.
 - M2 focused tests/vet/install passed, but full `make test-q1` failed in untouched `internal/session/TestSessionDetachPrefixDAndReattach`; record this accurately, do not weaken its assertions or claim a full pass. Source changes in M3 permit the next quota verification. Host will independently verify after review.
 
+#### M3 delivered
+
+- Restored the control-containing `\x1b[2J` sequence inside the bracketed paste sent through the real `loom widgets --show TextEntry` PTY path; the test still verifies pasted lines and surrounding controls, then confirms Ctrl+C handling and process exit.
+- `themedGallery.Draw` now clamps the child rectangle height after all control, confirmation and hint-row reservations. `TestThemedGalleryChildHeightNeverNegative` records child rectangles at heights 0–3 with and without a hint-capable child, and checks the height is nonnegative.
+- Regression-first evidence: before the clamp, the new test failed at height 2 with `H:-1` for both child variants. The PTY control-payload regression passed. After the clamp, `go test ./cmd/loom -count=1`, `go vet ./...`, and the single `make test-q1` all passed. Full quota output: `/tmp/loom-issue434-m3-test-q1.log`.
+- No `internal/session` assertion or unrelated source was changed. M2 behavior and tests remain intact. Host review and independent quota verification remain pending; issue 434 stays open because the original Taia report remains unreproduced and unattributed.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
