@@ -162,11 +162,13 @@ var runWidgetPane = func(widget loom.Widget, width, height int, altScreen bool) 
 	}
 	pane.EnableMouse()
 	pane.DisableDefaultQuit = true
-	if g, ok := widget.(*themedGallery); ok {
-		g.setBackground = func(b loom.Background, onRedraw bool) {
+	if g, ok := widget.(interface {
+		setBackgroundUpdater(func(loom.Background, bool))
+	}); ok {
+		g.setBackgroundUpdater(func(b loom.Background, onRedraw bool) {
 			pane.Background = b
 			pane.BackgroundOnRedraw = onRedraw
-		}
+		})
 	}
 	defer pane.Close()
 	return pane.Run(widget)
@@ -187,7 +189,12 @@ func showWidgetDemos(names []string, demoArgs []string, themeName string, width,
 		if err != nil {
 			return err
 		}
-		return runWidgetPane(newThemedGallery(widget, themeName), width, height, gallery.RequiresAltScreen(names...))
+		g := newThemedGallery(widget, themeName)
+		g.textEntryConfirm = strings.TrimPrefix(names[0], "loom.") == "TextEntry"
+		if g.textEntryConfirm {
+			return runWidgetPane(&textEntryGallery{themedGallery: g}, width, height, gallery.RequiresAltScreen(names...))
+		}
+		return runWidgetPane(g, width, height, gallery.RequiresAltScreen(names...))
 	} else {
 		if len(demoArgs) > 0 {
 			return fmt.Errorf("demo arguments after -- can only be passed when showing a single widget demo")
@@ -210,14 +217,17 @@ func showWidgetDemos(names []string, demoArgs []string, themeName string, width,
 }
 
 type themedGallery struct {
-	widget     loom.Widget
-	themeName  string
-	themeIndex int
-	themes     []string
-	hintBar    *loom.HintBar
-	controls   *loom.HintBar
-	hintRow    int
-	controlRow int
+	widget           loom.Widget
+	themeName        string
+	themeIndex       int
+	themes           []string
+	hintBar          *loom.HintBar
+	controls         *loom.HintBar
+	hintRow          int
+	controlRow       int
+	confirmRow       int
+	textEntryConfirm bool
+	quitConfirm      bool
 
 	bgIndex int
 	// setBackground applies a background to the running pane; nil in tests.
@@ -256,6 +266,28 @@ func (g *themedGallery) applyTheme() {
 
 func (g *themedGallery) Unwrap() loom.Widget { return g.widget }
 
+func (g *themedGallery) setBackgroundUpdater(set func(loom.Background, bool)) {
+	g.setBackground = set
+}
+
+type textEntryGallery struct{ *themedGallery }
+
+func (g *textEntryGallery) Focused() bool {
+	if focusable, ok := g.widget.(loom.Focusable); ok {
+		return focusable.Focused()
+	}
+	return false
+}
+
+func (g *textEntryGallery) SetFocus(focused bool) {
+	if focusable, ok := g.widget.(loom.Focusable); ok {
+		if g.quitConfirm && focusable.Focused() != focused {
+			g.quitConfirm = false
+		}
+		focusable.SetFocus(focused)
+	}
+}
+
 func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	theme := loom.Theme(g.themeName)
 	c.PaintSurface(r, loom.Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()})
@@ -265,6 +297,11 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 	hasHints = hasHints || hasBar
 	g.hintBar, g.controls = nil, nil
 	content.H = max(0, r.H-1)
+	g.confirmRow = -1
+	if g.textEntryConfirm && r.H >= 2 {
+		content.H = max(0, content.H-1)
+		g.confirmRow = r.H - 2
+	}
 	if hasHints && r.H >= 2 {
 		content.H--
 	}
@@ -284,15 +321,39 @@ func (g *themedGallery) Draw(c *loom.Canvas, r loom.Rect) {
 			c.Write(r.X+1, r.Y+g.hintRow, loom.TruncateText(hintWidget.HotkeyHint(max(0, r.W-2)), max(0, r.W-2), ""), style)
 		}
 	}
+	if g.confirmRow >= 0 && g.quitConfirm {
+		style := theme.HintBarStyle().Label
+		c.Write(r.X+1, r.Y+g.confirmRow, loom.TruncateText("Press Ctrl+C again to quit", max(0, r.W-2), ""), style)
+	}
 	entry := func(key, binding, label, detail string) loom.HintEntry {
 		return loom.HintEntry{Key: key, Binding: binding, Label: label, Detail: detail, Action: func() loom.EventResult { return g.ConsumeKey(loom.KeyEvent{Key: binding}) }}
 	}
-	g.controls = loom.NewHintBar(entry("F8", "f8", "BG", galleryBackgrounds[g.bgIndex].name), entry("F9", "f9", "Theme", g.themeName), entry("F10", "f10", "Quit", ""))
+	if g.textEntryConfirm && g.quitConfirm && r.H == 1 {
+		g.controls = loom.NewHintBar(entry("F10", "f10", "Quit; Press Ctrl+C again to quit", ""))
+	} else {
+		g.controls = loom.NewHintBar(entry("F8", "f8", "BG", galleryBackgrounds[g.bgIndex].name), entry("F9", "f9", "Theme", g.themeName), entry("F10", "f10", "Quit", ""))
+	}
 	g.controls.ApplyTheme(theme)
 	g.controls.Draw(c, loom.Rect{X: r.X, Y: r.Y + g.controlRow, W: r.W, H: 1})
 }
 
 func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
+	if g.textEntryConfirm && e.Is("ctrl-c") {
+		result := g.widget.ConsumeKey(e)
+		if result.Consumed {
+			g.quitConfirm = false
+			return result
+		}
+		if g.quitConfirm {
+			return loom.QuitResult()
+		}
+		g.quitConfirm = true
+		return loom.Handled()
+	}
+	wasConfirm := g.textEntryConfirm && g.quitConfirm
+	if g.textEntryConfirm {
+		g.quitConfirm = false
+	}
 	switch {
 	case e.Is("f10", "ctrl-q"):
 		return loom.QuitResult()
@@ -309,10 +370,18 @@ func (g *themedGallery) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		}
 		return loom.Handled()
 	}
-	return g.widget.ConsumeKey(e)
+	result := g.widget.ConsumeKey(e)
+	if wasConfirm && !result.Consumed && !result.Quit {
+		return loom.Handled()
+	}
+	return result
 }
 
 func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	wasConfirm := g.textEntryConfirm && g.quitConfirm
+	if g.textEntryConfirm {
+		g.quitConfirm = false
+	}
 	for _, row := range []struct {
 		y   int
 		bar *loom.HintBar
@@ -323,11 +392,23 @@ func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 			return row.bar.ConsumeMouse(local)
 		}
 	}
-	return g.widget.ConsumeMouse(e)
+	result := g.widget.ConsumeMouse(e)
+	if wasConfirm && !result.Consumed && !result.Quit {
+		return loom.Handled()
+	}
+	return result
 }
 
 func (g *themedGallery) ConsumePaste(e loom.PasteEvent) loom.EventResult {
-	return loom.DispatchPasteEvent(g.widget, e)
+	wasConfirm := g.textEntryConfirm && g.quitConfirm
+	if g.textEntryConfirm {
+		g.quitConfirm = false
+	}
+	result := loom.DispatchPasteEvent(g.widget, e)
+	if wasConfirm && !result.Consumed && !result.Quit {
+		return loom.Handled()
+	}
+	return result
 }
 
 func readWidgetCatalog() (widgetCatalog, error) {

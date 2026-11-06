@@ -565,6 +565,173 @@ func TestGalleryAppKeys(t *testing.T) {
 	}
 }
 
+func TestTextEntryGalleryQuitConfirmation(t *testing.T) {
+	widget, err := gallery.New("TextEntry")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entry, ok := loom.UnwrapWidget(widget).(*loom.TextEntry)
+	if !ok {
+		t.Fatalf("TextEntry gallery unwrap = %T", loom.UnwrapWidget(widget))
+	}
+	g := newThemedGallery(widget, "plain")
+	g.textEntryConfirm = true
+	textEntryApp := &textEntryGallery{themedGallery: g}
+	if !textEntryApp.Focused() {
+		t.Fatal("TextEntry focus was not forwarded through the gallery")
+	}
+
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-a"})
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || result.Quit || g.quitConfirm {
+		t.Fatalf("selected Ctrl+C result=%+v confirmation=%v", result, g.quitConfirm)
+	}
+	if entry.Value() == "" {
+		t.Fatal("selected Ctrl+C cleared the TextEntry")
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "right"})
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || result.Quit || g.quitConfirm || entry.Value() != "" {
+		t.Fatalf("nonempty Ctrl+C result=%+v confirmation=%v value=%q", result, g.quitConfirm, entry.Value())
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || result.Quit || !g.quitConfirm {
+		t.Fatalf("empty Ctrl+C result=%+v confirmation=%v", result, g.quitConfirm)
+	}
+
+	canvas := loom.NewCanvas(80, 8)
+	g.Draw(canvas, canvas.Bounds())
+	if row := canvasPlainRow(canvas, 6); !strings.Contains(row, "Press Ctrl+C again to quit") {
+		t.Fatalf("confirmation row = %q", row)
+	}
+	if row := canvasPlainRow(canvas, 7); !strings.Contains(row, "F10 Quit") {
+		t.Fatalf("control row = %q", row)
+	}
+
+	if result := g.ConsumeKey(loom.KeyEvent{Text: "x"}); result.Quit || g.quitConfirm || !strings.Contains(entry.Value(), "x") {
+		t.Fatalf("typing did not cancel confirmation and reach TextEntry: result=%+v pending=%v value=%q", result, g.quitConfirm, entry.Value())
+	}
+	g.Draw(canvas, canvas.Bounds())
+	if row := canvasPlainRow(canvas, 6); strings.Contains(row, "Press Ctrl+C again to quit") {
+		t.Fatalf("confirmation row retained stale text after cancellation: %q", row)
+	}
+
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || g.quitConfirm {
+		t.Fatalf("clearing typed value armed quit: result=%+v pending=%v", result, g.quitConfirm)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "right"}); result.Quit || g.quitConfirm {
+		t.Fatalf("navigation did not cancel confirmation: result=%+v pending=%v", result, g.quitConfirm)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	if !g.quitConfirm {
+		t.Fatal("empty Ctrl+C did not arm confirmation")
+	}
+	g.ConsumePaste(loom.PasteEvent{Text: "after\nclear"})
+	if g.quitConfirm || !strings.Contains(entry.Value(), "after") {
+		t.Fatalf("paste did not cancel confirmation and reach TextEntry: pending=%v value=%q", g.quitConfirm, entry.Value())
+	}
+
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || g.quitConfirm {
+		t.Fatalf("clearing pasted text armed quit: result=%+v pending=%v", result, g.quitConfirm)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	g.ConsumeMouse(loom.MouseEvent{Action: loom.MouseHover})
+	if g.quitConfirm {
+		t.Fatal("mouse activity did not cancel quit confirmation")
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	textEntryApp.SetFocus(false)
+	if g.quitConfirm || textEntryApp.Focused() {
+		t.Fatalf("focus change left confirmation/focus active: pending=%v focused=%v", g.quitConfirm, textEntryApp.Focused())
+	}
+	textEntryApp.SetFocus(true)
+	if !textEntryApp.Focused() {
+		t.Fatal("TextEntry focus was not restored through the gallery")
+	}
+
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || !g.quitConfirm {
+		t.Fatalf("empty Ctrl+C after refocus result=%+v pending=%v", result, g.quitConfirm)
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "f8"}); !result.Consumed || g.quitConfirm {
+		t.Fatalf("F8 result=%+v pending=%v", result, g.quitConfirm)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "f9"}); !result.Consumed || g.quitConfirm {
+		t.Fatalf("F9 result=%+v pending=%v", result, g.quitConfirm)
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+	for _, key := range []string{"f10", "ctrl-q"} {
+		if result := g.ConsumeKey(loom.KeyEvent{Key: key}); !result.Quit {
+			t.Errorf("%s result=%+v, want immediate quit", key, result)
+		}
+	}
+	g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"})
+
+	for _, rows := range []int{0, 1, 2} {
+		short := loom.NewCanvas(60, rows)
+		g.Draw(short, short.Bounds())
+		if rows > 0 && !strings.Contains(canvasPlainRow(short, rows-1), "F10 Quit") {
+			t.Errorf("%d-row gallery lost F10 control: %q", rows, canvasPlainRow(short, rows-1))
+		}
+		if rows == 2 && !strings.Contains(canvasPlainRow(short, 0), "Press Ctrl+C again to quit") {
+			t.Errorf("2-row gallery confirmation = %q", canvasPlainRow(short, 0))
+		}
+		if rows == 1 {
+			row := canvasPlainRow(short, 0)
+			if !strings.Contains(row, "Press Ctrl+C again to quit") {
+				t.Errorf("1-row gallery confirmation = %q", row)
+			}
+		}
+	}
+	tiny := loom.NewCanvas(12, 1)
+	g.Draw(tiny, tiny.Bounds())
+}
+
+func TestTextEntryQuitConfirmationDoesNotAffectOtherGalleryDemos(t *testing.T) {
+	child := &keyProbeWidget{}
+	g := newThemedGallery(child, "plain")
+	if _, ok := any(g).(loom.Focusable); ok {
+		t.Fatal("non-TextEntry gallery unexpectedly gained focus forwarding")
+	}
+	if result := g.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); result.Quit || result.Consumed || child.keys != 1 || g.quitConfirm {
+		t.Fatalf("non-TextEntry Ctrl+C result=%+v childKeys=%d confirmation=%v", result, child.keys, g.quitConfirm)
+	}
+}
+
+func TestTextEntryQuitConfirmationOptInIsSingleShowOnly(t *testing.T) {
+	previous := runWidgetPane
+	var shown *themedGallery
+	runWidgetPane = func(widget loom.Widget, _, _ int, _ bool) error {
+		switch galleryWidget := widget.(type) {
+		case *themedGallery:
+			shown = galleryWidget
+		case *textEntryGallery:
+			shown = galleryWidget.themedGallery
+		default:
+			t.Fatalf("runWidgetPane widget = %T, want *themedGallery", widget)
+		}
+		return nil
+	}
+	t.Cleanup(func() { runWidgetPane = previous })
+
+	if err := showWidgetDemos([]string{"TextEntry"}, nil, "plain", 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	if shown == nil || !shown.textEntryConfirm {
+		t.Fatal("single TextEntry demo did not enable quit confirmation")
+	}
+	if err := showWidgetDemos([]string{"Chart"}, nil, "plain", 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	if shown == nil || shown.textEntryConfirm {
+		t.Fatal("single Chart demo enabled TextEntry quit confirmation")
+	}
+	if err := showWidgetDemos([]string{"TextEntry", "Chart"}, nil, "plain", 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	if shown == nil || shown.textEntryConfirm {
+		t.Fatal("multi-demo gallery enabled TextEntry quit confirmation")
+	}
+}
+
 func TestRichTextEditGalleryHintsUseLowerRowsAndFitNarrowWidth(t *testing.T) {
 	widget, err := gallery.New("RichTextEdit")
 	if err != nil {

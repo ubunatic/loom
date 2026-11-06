@@ -59,17 +59,41 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 		t.Fatalf("selected Ctrl+C changed gallery display: %q", got)
 	}
 	// Right collapses the selection. The gallery parent then clears nonempty
-	// input; an empty Ctrl+C remains unhandled, so a following paste proves the
-	// actual top-level pane did not assume that it should exit.
+	// input without arming the app-level quit confirmation.
 	gallery.SendRaw([]byte("\x1b[C\x03"))
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
 		return !strings.Contains(joined, "/topic Draft:") && strings.Contains(joined, "F2: placeholder")
 	})
 	gallery.SendRaw([]byte{0x03})
-	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[2J\x1b[201~"))
+	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)
+
+	// Typing cancels confirmation and remains usable. A Ctrl+C that clears this
+	// new value must not count as the first press of the quit sequence.
+	gallery.Send("x")
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder")
+		return strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit")
 	})
+	gallery.SendRaw([]byte{0x03})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return !strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "F2: placeholder")
+	})
+	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[201~"))
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder") && strings.Contains(joined, "F10")
+	})
+	gallery.SendRaw([]byte{0x03})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return !strings.Contains(joined, "after") && !strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder")
+	})
+	gallery.SendRaw([]byte{0x03})
+	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)
+	gallery.SendRaw([]byte{0x03})
+	if err := gallery.Wait(3 * time.Second); err != nil {
+		t.Fatalf("gallery exit status = %v, want success", err)
+	}
 }
