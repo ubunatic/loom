@@ -65,7 +65,7 @@ Owner's screenshot showed three input lines but gallery `Submitted Markdown: 123
 
 - Gallery preview now quotes serialized Markdown with `strconv.Quote`, wraps it to the supplied rectangle, and displays `[overflow]` when the available preview rows cannot show the full value. Tiny-height layouts retain the editor and controls where space permits; preview and controls are clipped to the child width.
 - Serialization and plain callback data are unchanged. Exact tests cover raw multiline `1\n2\n3`, quoted visible `\\n`, Unicode, tabs/CR/control escaping, quotes, backslashes, Markdown delimiters, width wrapping, overflow, tiny geometry and no painting outside the rectangle. CLI PTY coverage submits multiline bold content containing tab/CR/control bytes and checks the normalized quoted preview while retaining the existing styling/caret assertions.
-- Focused gallery/PTY tests passed; `go vet ./...` passed; one logged `make test-q1` passed all packages, including `internal/session`; `make install` passed. Log: `/tmp/loom-issue441-m3-test-q1.log`. Commit: recorded after commit. Host review and independent installed-binary verification remain required; do not close or push.
+- Focused gallery/PTY tests passed; `go vet ./...` passed; one logged `make test-q1` passed all packages, including `internal/session`; `make install` passed. Log: `/tmp/loom-issue441-m3-test-q1.log`. Implementation commit: `fe83d8f`. Host review and independent installed-binary verification remain required; do not close or push.
 
 ## Goal
 
