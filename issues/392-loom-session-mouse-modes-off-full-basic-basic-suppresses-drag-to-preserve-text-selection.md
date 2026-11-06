@@ -44,3 +44,11 @@ Users often want mouse clicking (focus, buttons, cursor placement) and mouse whe
 ## Jules ideas note (2026-11-03)
 
 The session prefix toggle (`internal/session/session.go:1113-1118`) flips `tab.mouseOverride` between -1 and 1, so once toggled a tab can never return to 0 (follow the child's own mouse mode). Consider this when adding modes here. From Jules ideas run session-vt (GitHub #76).
+
+## Jules runs (wave 2, 429)
+
+| kind | session | Jules ID | PR | state |
+| --- | --- | --- | --- | --- |
+| implement | jules-implement-392 | 2798506688453647188 | GH #116 | rejected: weakened TestSessionTabSwitchPrefixNAndP (WaitForUpdate to WaitFor) to dodge 430; drag test cannot fail (looks for `^[<32;6;6M`, `cat -v` prints `^[[<32;6;6M`) and sleeps 1s; renames `bar_labels.mouse_icon` (breaking); no off-mode test; 10 stray scripts; replies: 2 |
+
+Lead from PR 116: spec `session.mouse_mode: "basic"` plus `mouse_icon_basic|full|off`; drag filter keys on SGR button bit 32 (`\x1b[<32;x;yM`); PTY fixture `printf '\033[?1003h\033[?1006hREADY\n'; cat -v` echoes what reaches the child. Decide how `mouse_mode` relates to the existing `session.mouse: "safe"` first. Event routing: codex:sol:med.
