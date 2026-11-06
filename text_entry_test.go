@@ -1057,3 +1057,65 @@ func TestTextEntryCtrlUVisualPrefixSingleUndoRedoAndNotifications(t *testing.T) 
 		t.Fatalf("redo: %q", e.Value())
 	}
 }
+
+func TestTextEntryPlaceholderAcceptanceKeys(t *testing.T) {
+	for _, key := range []string{"tab", "end", "ctrl-e"} {
+		t.Run(key, func(t *testing.T) {
+			var changes []string
+			submits := 0
+			const hint = "界 hello\nworld"
+			e := NewTextEntry(TextEntryOptions{Placeholder: hint, OnChange: func(v string) { changes = append(changes, v) }, OnSubmit: func(string) EventResult { submits++; return Consumed() }})
+			if result := entryKey(e, key); !result.Consumed || e.Value() != hint || e.CursorOffset() != len(hint) || len(changes) != 1 || submits != 0 {
+				t.Fatalf("accept: result=%+v value=%q caret=%d changes=%v submits=%d", result, e.Value(), e.CursorOffset(), changes, submits)
+			}
+			entryKey(e, "ctrl-z")
+			if e.Value() != "" {
+				t.Fatalf("undo = %q", e.Value())
+			}
+			entryKey(e, "ctrl-y")
+			if e.Value() != hint || len(changes) != 3 || submits != 0 {
+				t.Fatalf("redo=%q changes=%v submits=%d", e.Value(), changes, submits)
+			}
+		})
+	}
+}
+
+func TestTextEntryPlaceholderKeyFallback(t *testing.T) {
+	for _, key := range []string{"shift-tab", "home", "shift-end", "ctrl-end"} {
+		e := NewTextEntry(TextEntryOptions{Placeholder: "hint"})
+		entryKey(e, key)
+		if e.Value() != "" {
+			t.Errorf("%s accepted hint", key)
+		}
+	}
+	for _, key := range []string{"tab", "end", "ctrl-e"} {
+		e := NewTextEntry(TextEntryOptions{Placeholder: "hint"})
+		e.SetValue("abc")
+		entryKey(e, "ctrl-a")
+		entryKey(e, key)
+		if e.Value() != "abc" {
+			t.Errorf("%s changed selected input: %q", key, e.Value())
+		}
+	}
+	for _, value := range []string{"", "abc"} {
+		e := NewTextEntry(TextEntryOptions{})
+		e.SetValue(value)
+		if value != "" {
+			e.SetPlaceholder("hint")
+		}
+		other := &focusProbe{}
+		frame := &Frame{Boxes: []Box{{ID: "entry", Child: e}, {ID: "other", Child: other}}}
+		frame.ConsumeKey(KeyEvent{Key: "tab"})
+		if frame.FocusedBox().ID != "other" || !other.Focused() {
+			t.Fatalf("value %q: Tab did not traverse", value)
+		}
+	}
+}
+
+func TestTextEntryPlaceholderCallbackMutationConsumes(t *testing.T) {
+	var e *TextEntry
+	e = NewTextEntry(TextEntryOptions{Placeholder: "hint", OnChange: func(string) { e.SetValue("") }})
+	if result := entryKey(e, "tab"); !result.Consumed || e.Value() != "" {
+		t.Fatalf("result=%+v value=%q", result, e.Value())
+	}
+}

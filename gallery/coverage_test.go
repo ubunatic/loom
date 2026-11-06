@@ -91,3 +91,13 @@ func TestTextEntryDemoCtrlUForwarding(t *testing.T) {
 		t.Fatalf("ctrl-u = %+v, value %q", result, d.entry.Value())
 	}
 }
+
+func TestTextEntryDemoPlaceholderKeys(t *testing.T) {
+	for _, key := range []string{"tab", "end", "ctrl-e"} {
+		d := newTextEntryControls().(*textEntryControls)
+		d.ConsumeKey(loom.KeyEvent{Key: "f2"})
+		if result := d.ConsumeKey(loom.KeyEvent{Key: key}); !result.Consumed || d.entry.Value() != "Write an update…" {
+			t.Errorf("%s: result=%+v value=%q", key, result, d.entry.Value())
+		}
+	}
+}

@@ -185,3 +185,22 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 		t.Fatalf("exit: %v", err)
 	}
 }
+
+func TestTextEntryGalleryPlaceholderKeysPTY(t *testing.T) {
+	bin := buildLoomBinary(t)
+	for _, tc := range []struct{ name, key string }{{"tab", "\x09"}, {"end", "\x1b[F"}, {"ctrl-e", "\x05"}} {
+		t.Run(tc.name, func(t *testing.T) {
+			gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")
+			gallery.WaitFor("/topic Draft:", 3*time.Second)
+			gallery.SendRaw([]byte("\x1bOQ")) // F2 clears the entry and changes its hint.
+			gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+				return strings.Contains(strings.Join(rows, "\n"), "Write an update…") && !strings.Contains(strings.Join(rows, "\n"), "/topic Draft:")
+			})
+			gallery.SendRaw([]byte(tc.key))
+			gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+				x, _ := gallery.VT().Cursor()
+				return strings.Contains(strings.Join(rows, "\n"), "Write an update…") && x == 18
+			})
+		})
+	}
+}

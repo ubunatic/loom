@@ -336,6 +336,9 @@ func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult {
 		return e.insert(ke.Text, true)
 	}
 	name := normalizeTextEntryKey(ke.Key)
+	if (name == "tab" || name == "end" || name == "ctrl-e") && e.caret == 0 && e.anchor == 0 && e.AcceptPlaceholder() {
+		return Consumed()
+	}
 	e.typingRun = false
 	if !isTextEntryVerticalKey(name) {
 		e.goalSet = false

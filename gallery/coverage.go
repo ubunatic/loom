@@ -116,7 +116,7 @@ func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: r.H - 1})
-	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("F2: placeholder  F3: accept  F4: caret start  offset: %d", d.entry.CursorOffset()), loom.Style{})
+	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("F2: placeholder  F3/Tab/End/Ctrl+E: accept  F4: caret start  offset: %d", d.entry.CursorOffset()), loom.Style{})
 }
 func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch e.Key {
