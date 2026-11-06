@@ -54,3 +54,9 @@ Host is sole reviewer; developer terra:med. No known baseline failures (last hos
 - Added tests for mixed and selected bold, typing style, Unicode ranges, Markdown escaping and whitespace, multiline values, Ctrl+U, placeholder acceptance, callback history and highlighted selection rendering.
 - Checks passed: focused bold/Markdown tests, full `TestTextEntry` tests, `go vet ./...`, refreshed public API snapshot, and the single `make test-q1` run (no `--- FAIL` lines). `make install` passed. M1 implementation commit: `22ec2fc`.
 - M1 study: `docs/studies/2026-11-07-issue-441-textentry-bold-m1.md`. M2 gallery submission and terminal proof have not started; host review is required before M2.
+
+## M2 implementation evidence (2026-11-07)
+
+- Restored legacy non-opt-in selection styling and documented the opt-in distinction. Rebuilt Ctrl+D coverage with actual empty/text/selected/placeholder states plus enabled formatting states, comparing bold state and deep history snapshots.
+- Added exact edit-path and serializer assertions. Gallery TextEntry now opts into bold, advertises Ctrl+B and displays the Markdown produced by its submission callback; widget Value and callback input remain plain.
+- Focused core, gallery and PTY checks pass, including selected/typing cell styles, caret, format undo/redo, retained controls, placeholder interactions and `**sent**` submission. Final M2 `make test-q1`, vet, API check and install are pending.

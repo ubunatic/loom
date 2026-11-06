@@ -800,7 +800,7 @@ entry.SetFocus(true)
 | `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
 | `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
 | `OnSubmit` | nil | Called with the current value. Its result is returned to the caller. |
-| `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. Selection adds inversion while retaining span colors and bold. |
+| `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. With bold enabled, selection adds inversion while retaining span colors and bold; otherwise selection keeps the legacy selection-only style. |
 
 The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
 
@@ -831,7 +831,7 @@ Offsets are byte offsets into plain `Value()`. An offset inside a grapheme clust
 
 - `CursorOffset()` returns the caret as a byte offset. `SetCursorOffset(off)` moves the caret and clears the selection. Neither makes an undo step or calls `OnChange`.
 - `ReplaceRange(start, end, s)` replaces the text between two offsets with `s`. A reversed range is swapped. It is one undo step, the caret moves to the end of `s`, and it does not call `OnChange`. Use it for completion: replace the word at the caret.
-- `Highlight` returns `[]TextEntrySpan{Start, End, Style}`. Spans clamp, snap to cluster starts, and a later span wins over an earlier one. A reversed span is ignored. Stored bold is composed with highlight styles. Selection adds inversion while retaining color and bold attributes.
+- `Highlight` returns `[]TextEntrySpan{Start, End, Style}`. Spans clamp, snap to cluster starts, and a later span wins over an earlier one. A reversed span is ignored. With bold enabled, stored bold is composed with highlight styles and selection adds inversion while retaining color and bold attributes. Without bold, selection keeps the legacy selection-only style.
 - `MarkdownValue()` returns escaped Markdown with bold runs wrapped in `**`. Literal ASCII punctuation and backslashes are escaped. Runs close at each hard newline, and the original newline characters are preserved. Leading and trailing whitespace stays outside bold delimiters; whitespace-only bold has no Markdown emphasis semantics. `Value()`, `OnChange`, `OnSubmit`, and clipboard contents remain plain text.
 
 ```go

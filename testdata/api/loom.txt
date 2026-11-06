@@ -4617,9 +4617,10 @@ type TextEntrySpan struct {
 }
     TextEntrySpan styles the bytes from Start to End of the value, End
     exclusive. Offsets snap and clamp as in SetCursorOffset. Overlapping spans
-    take the later one, and a reversed span is ignored. Highlight styles are
-    composed with bold and selection inversion, so selected cells retain their
-    foreground and background colors.
+    take the later one, and a reversed span is ignored. With bold enabled,
+    highlight styles retain their foreground and background colors under
+    selection inversion and compose with bold. Without bold, selection keeps the
+    legacy selection-only style.
 
 type TextInput struct {
 	Prompt      string  // drawn before the value, e.g. "title> "

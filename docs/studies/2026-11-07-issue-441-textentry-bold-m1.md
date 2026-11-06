@@ -1,8 +1,8 @@
-# Issue 441 M1: TextEntry bold state and Markdown serialization
+# Issue 441: TextEntry visual bold and Markdown submission
 
 ## Scope
 
-M1 adds opt-in Ctrl+B bold state to `TextEntry`, tracks formatting with grapheme units through edits and history, draws it with `Style.Bold`, and exposes `MarkdownValue()`. The gallery and actual submission callback remain in M2.
+M1 added opt-in Ctrl+B bold state to `TextEntry`, tracks formatting with grapheme units through edits and history, draws it with `Style.Bold`, and exposes `MarkdownValue()`. M2 adds actual gallery submission and terminal proof while keeping the widget's text callbacks plain.
 
 ## Implementation
 
@@ -10,9 +10,9 @@ M1 adds opt-in Ctrl+B bold state to `TextEntry`, tracks formatting with grapheme
 
 ## Evidence
 
-Regression coverage exercises opt-in routing, mixed selection, typing style, format-only undo/redo and callbacks, grapheme-aligned replacement and paste, multiline typing, Ctrl+U history, placeholder acceptance, plain clipboard text, and style composition with highlight and selection.
+M1 regression coverage exercises opt-in routing, mixed selection, typing style, format-only undo/redo and callbacks, grapheme-aligned replacement and paste, multiline typing, Ctrl+U history, placeholder acceptance, plain clipboard text, and style composition with highlight and selection. M2 adds compatibility tests for legacy selection colors, exact mutation and serialization expectations, and Ctrl+D immutability across enabled and disabled states. The gallery now submits `MarkdownValue()` in its demonstration callback and displays the serialized result while preserving plain `Value()` and callback data. A PTY test checks selected and typing bold cell attributes, caret position, format undo/redo, retained controls, placeholder behavior, and visible Markdown submission.
 
-Focused checks passed: `go test . -run 'TestTextEntry(Bold|Markdown)' -count=1` and `go test . -run '^TestTextEntry' -count=1`. `go vet ./...` passed and the public API snapshot was refreshed. The single final `make test-q1` passed with no `--- FAIL` lines; `make install` passed. Implementation commit: `22ec2fc`.
+M1 focused checks, vet, API snapshot, single `make test-q1` and install passed; implementation commit: `22ec2fc`. M2 focused core, gallery and PTY checks have passed. The required final M2 `make test-q1`, vet, API snapshot check and install are pending.
 
 ## Limits
 
