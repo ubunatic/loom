@@ -50,7 +50,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-432 | - | - | pending |
+| implement | jules-implement-432 | 8759762248526563848 | - | running |
 | implement | jules-implement-392 | - | - | pending |
 | implement | jules-implement-390 | - | - | pending |
 | implement | jules-implement-397 | - | - | pending |
