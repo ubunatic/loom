@@ -44,10 +44,12 @@ func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
 			t.Run(event.name+"/"+state, func(t *testing.T) {
 				changes, submits, writes := 0, 0, 0
 				e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }, OnSubmit: func(string) EventResult { submits++; return Handled() }})
+				e.EnableBold()
 				e.writeClipboard = func(string) { writes++ }
 				typeEntryText(e, "history")
 				entryKey(e, "ctrl-a")
 				entryKey(e, "ctrl-c")
+				entryKey(e, "ctrl-b")
 				entryKey(e, "ctrl-z")
 				if state == "text" || state == "selected" {
 					entryKey(e, "ctrl-y")
@@ -62,6 +64,7 @@ func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
 					out := slices.Clone(history)
 					for i := range out {
 						out[i].units = slices.Clone(out[i].units)
+						out[i].bold = slices.Clone(out[i].bold)
 					}
 					return out
 				}
@@ -887,19 +890,43 @@ func TestTextEntryHighlightColoursSpansAndSelectionWins(t *testing.T) {
 		}
 	}
 
-	// Select "/g" from the start. Selected cells take the selection style alone.
+	// Select "/g" from the start. Selection retains highlight colors and adds inversion.
 	e.SetCursorOffset(0)
 	entryKey(e, "shift-right")
 	entryKey(e, "shift-right")
 	c = NewCanvas(20, 1)
 	e.Draw(c, Rect{W: 20, H: 1})
 	for x := 2; x <= 3; x++ {
-		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
-			t.Fatalf("selected column %d style = %+v, want only Invert", x, cell)
+		if cell := c.Get(x, 0).Style; cell != (Style{FG: red, Invert: true}) {
+			t.Fatalf("selected column %d style = %+v, want red FG and Invert", x, cell)
 		}
 	}
 	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {
 		t.Fatalf("unselected highlighted column 4 style = %+v, want red FG without Invert", got)
+	}
+}
+
+func TestTextEntryBoldRenderingComposesWithHighlightAndSelection(t *testing.T) {
+	red := ColorRGB(255, 0, 0)
+	blue := ColorRGB(0, 0, 255)
+	e := NewTextEntry(TextEntryOptions{Highlight: func(string) []TextEntrySpan {
+		return []TextEntrySpan{{Start: 0, End: 3, Style: Style{FG: red, BG: blue}}}
+	}})
+	e.EnableBold()
+	e.SetValue("abc")
+	e.SetCursorOffset(0)
+	entryKey(e, "shift-right")
+	entryKey(e, "ctrl-b")
+	c := NewCanvas(3, 1)
+	e.Draw(c, Rect{W: 3, H: 1})
+	if got := c.Get(0, 0).Style; got != (Style{FG: red, BG: blue, Invert: true, Bold: true}) {
+		t.Fatalf("selected highlighted bold style = %+v, want red/blue, invert and bold", got)
+	}
+	e.SetCursorOffset(1)
+	c = NewCanvas(3, 1)
+	e.Draw(c, Rect{W: 3, H: 1})
+	if got := c.Get(0, 0).Style; got != (Style{FG: red, BG: blue, Bold: true}) {
+		t.Fatalf("unselected highlighted bold style = %+v, want red/blue and bold", got)
 	}
 }
 
@@ -960,8 +987,8 @@ func TestTextEntryMouseSelectionOverHighlightUsesSelectionStyle(t *testing.T) {
 	c := NewCanvas(20, 1)
 	e.Draw(c, Rect{W: 20, H: 1})
 	for x := 2; x <= 3; x++ {
-		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
-			t.Fatalf("mouse-selected column %d style = %+v, want only Invert", x, cell)
+		if cell := c.Get(x, 0).Style; cell != (Style{FG: red, Invert: true}) {
+			t.Fatalf("mouse-selected column %d style = %+v, want red FG and Invert", x, cell)
 		}
 	}
 	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {

@@ -31,8 +31,9 @@ type TextEntryOptions struct {
 
 // TextEntrySpan styles the bytes from Start to End of the value, End exclusive.
 // Offsets snap and clamp as in SetCursorOffset. Overlapping spans take the
-// later one, and a reversed span is ignored. Highlight styles are drawn under
-// the selection: selected cells always use the selection style.
+// later one, and a reversed span is ignored. Highlight styles are composed with
+// bold and selection inversion, so selected cells retain their foreground and
+// background colors.
 type TextEntrySpan struct {
 	Start, End int // byte offsets into the value, end exclusive
 	Style      Style
@@ -69,12 +70,15 @@ type TextEntry struct {
 	onSubmit    func(string) EventResult
 	highlight   func(string) []TextEntrySpan
 
-	units   []string // one grapheme cluster per element; "\n" is a hard line break
-	caret   int      // unit index in [0, len(units)]
-	anchor  int      // the selection runs between anchor and caret
-	goalCol int      // display column kept across Up and Down
-	goalSet bool
-	scroll  int // first visible visual row
+	units       []string // one grapheme cluster per element; "\n" is a hard line break
+	bold        []bool   // bold formatting aligned with units
+	boldEnabled bool
+	typingBold  bool
+	caret       int // unit index in [0, len(units)]
+	anchor      int // the selection runs between anchor and caret
+	goalCol     int // display column kept across Up and Down
+	goalSet     bool
+	scroll      int // first visible visual row
 
 	focused     bool
 	dragging    bool
@@ -95,9 +99,11 @@ type TextEntry struct {
 }
 
 type textEntrySnapshot struct {
-	units  []string
-	caret  int
-	anchor int
+	units      []string
+	bold       []bool
+	caret      int
+	anchor     int
+	typingBold bool
 }
 
 type textEntryRow struct {
@@ -135,14 +141,21 @@ func (e *TextEntry) Value() string {
 	return strings.Join(e.units, "")
 }
 
+// EnableBold enables Ctrl+B formatting and MarkdownValue serialization.
+// Until enabled, Ctrl+B remains available to the host.
+func (e *TextEntry) EnableBold() { e.boldEnabled = true }
+
 // SetValue replaces the text, puts the caret at the end and clears the
 // selection. The change is one undo step. It does not call OnChange.
 func (e *TextEntry) SetValue(s string) {
 	next := textEntryUnits(s)
-	if !slices.Equal(e.units, next) {
+	if !slices.Equal(e.units, next) || slices.ContainsFunc(e.bold, func(v bool) bool { return v }) || e.typingBold {
 		e.pushUndo(e.snapshot())
+		e.redo = nil
 	}
 	e.units = next
+	e.bold = make([]bool, len(next))
+	e.typingBold = false
 	e.caret = len(next)
 	e.anchor = e.caret
 	e.typingRun = false
@@ -169,6 +182,14 @@ func (e *TextEntry) AcceptPlaceholder() bool {
 	}
 	return e.change(false, func() {
 		e.units = textEntryUnits(e.placeholder)
+		e.bold = make([]bool, len(e.units))
+		if e.typingBold {
+			for i, unit := range e.units {
+				if unit != "\n" {
+					e.bold[i] = true
+				}
+			}
+		}
 		e.caret = len(e.units)
 		e.anchor = e.caret
 		e.goalSet = false
@@ -207,10 +228,17 @@ func (e *TextEntry) ReplaceRange(start, end int, s string) {
 	next = append(next, e.units[:lo]...)
 	next = append(next, ins...)
 	next = append(next, e.units[hi:]...)
-	if !slices.Equal(next, e.units) {
+	formatted := make([]bool, 0, len(next))
+	formatted = append(formatted, e.bold[:lo]...)
+	for _, unit := range ins {
+		formatted = append(formatted, e.typingBold && unit != "\n")
+	}
+	formatted = append(formatted, e.bold[hi:]...)
+	if !slices.Equal(next, e.units) || !slices.Equal(formatted, e.bold) {
 		e.pushUndo(e.snapshot())
 		e.redo = nil
 		e.units = next
+		e.bold = formatted
 	}
 	e.caret = lo + len(ins)
 	e.anchor = e.caret
@@ -312,7 +340,10 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 				style = styles[i]
 			}
 			if e.selected(i) {
-				style = Style{Invert: true}
+				style.Invert = true
+			}
+			if i < len(e.bold) && e.bold[i] {
+				style.Bold = true
 			}
 			x = e.writeClipped(c, x, r.Y+y, right, e.units[i], style)
 		}
@@ -338,6 +369,9 @@ func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult {
 	name := normalizeTextEntryKey(ke.Key)
 	if (name == "tab" || name == "end" || name == "ctrl-e") && e.caret == 0 && e.anchor == 0 && e.AcceptPlaceholder() {
 		return Consumed()
+	}
+	if name == "ctrl-b" && e.boldEnabled {
+		return e.toggleBold()
 	}
 	e.typingRun = false
 	if !isTextEntryVerticalKey(name) {
@@ -702,10 +736,17 @@ func (e *TextEntry) insert(text string, typing bool) EventResult {
 	e.change(typing, func() {
 		e.deleteSelection()
 		next := make([]string, 0, len(e.units)+len(ins))
+		formatted := make([]bool, 0, len(e.units)+len(ins))
 		next = append(next, e.units[:e.caret]...)
+		formatted = append(formatted, e.bold[:e.caret]...)
 		next = append(next, ins...)
+		for _, unit := range ins {
+			formatted = append(formatted, e.typingBold && unit != "\n")
+		}
 		next = append(next, e.units[e.caret:]...)
+		formatted = append(formatted, e.bold[e.caret:]...)
 		e.units = next
+		e.bold = formatted
 		e.caret += len(ins)
 		e.anchor = e.caret
 	})
@@ -720,10 +761,12 @@ func (e *TextEntry) removeNear(backward bool) EventResult {
 		}
 		if backward && e.caret > 0 {
 			e.units = slices.Delete(e.units, e.caret-1, e.caret)
+			e.bold = slices.Delete(e.bold, e.caret-1, e.caret)
 			e.caret--
 		}
 		if !backward && e.caret < len(e.units) {
 			e.units = slices.Delete(e.units, e.caret, e.caret+1)
+			e.bold = slices.Delete(e.bold, e.caret, e.caret+1)
 		}
 		e.anchor = e.caret
 	}) {
@@ -752,6 +795,7 @@ func (e *TextEntry) clearVisualPrefix() EventResult {
 	}
 	e.change(false, func() {
 		e.units = slices.Delete(e.units, start, e.caret)
+		e.bold = slices.Delete(e.bold, start, e.caret)
 		e.caret, e.anchor = start, start
 	})
 	return Consumed()
@@ -763,6 +807,7 @@ func (e *TextEntry) deleteSelection() bool {
 	}
 	lo, hi := e.selectionBounds()
 	e.units = slices.Delete(e.units, lo, hi)
+	e.bold = slices.Delete(e.bold, lo, hi)
 	e.caret, e.anchor = lo, lo
 	return true
 }
@@ -773,7 +818,7 @@ func (e *TextEntry) deleteSelection() bool {
 func (e *TextEntry) change(typing bool, edit func()) bool {
 	before := e.snapshot()
 	edit()
-	if slices.Equal(before.units, e.units) {
+	if slices.Equal(before.units, e.units) && slices.Equal(before.bold, e.bold) && before.typingBold == e.typingBold {
 		return false
 	}
 	if !(typing && e.typingRun) {
@@ -782,7 +827,7 @@ func (e *TextEntry) change(typing bool, edit func()) bool {
 	e.redo = nil
 	e.typingRun = typing
 	e.followCaret = true
-	if e.onChange != nil {
+	if !slices.Equal(before.units, e.units) && e.onChange != nil {
 		e.onChange(e.Value())
 	}
 	return true
@@ -812,7 +857,7 @@ func (e *TextEntry) restoreFrom(history, other *[]textEntrySnapshot) EventResult
 	prev := (*history)[len(*history)-1]
 	*history = (*history)[:len(*history)-1]
 	*other = append(*other, e.snapshot())
-	e.units, e.caret, e.anchor = prev.units, prev.caret, prev.anchor
+	e.units, e.bold, e.caret, e.anchor, e.typingBold = prev.units, prev.bold, prev.caret, prev.anchor, prev.typingBold
 	e.typingRun = false
 	e.followCaret = true
 	if after := e.Value(); after != before && e.onChange != nil {
@@ -822,7 +867,7 @@ func (e *TextEntry) restoreFrom(history, other *[]textEntrySnapshot) EventResult
 }
 
 func (e *TextEntry) snapshot() textEntrySnapshot {
-	return textEntrySnapshot{units: slices.Clone(e.units), caret: e.caret, anchor: e.anchor}
+	return textEntrySnapshot{units: slices.Clone(e.units), bold: slices.Clone(e.bold), caret: e.caret, anchor: e.anchor, typingBold: e.typingBold}
 }
 
 // setClipboard stores text in the internal clipboard and the host clipboard hook.
