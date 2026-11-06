@@ -29,3 +29,4 @@ Verdict: still valid (4/4 refs checked). `ansi.Style` (`ansi/style.go:227`) and 
 | --- | --- | --- | --- | --- |
 | audit | jules-audit-259 | 5441328c-20f4-451e-b921-f67587c9d08d | - | failed: ended AWAITING_USER_FEEDBACK, no PR, not answered |
 | audit | jules-audit-259b | 11861938100957675957 | GH #74 | kept: still valid, 4/4 refs hold; replies: 1 |
+| audit | jules-audit-259 (wave 1, 429) | 11292883786477104415 | GH #108 | duplicate of 259b, same verdict, 4/4 refs hold |
