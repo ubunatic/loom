@@ -38,7 +38,7 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 | audit | jules-audit-259 | 11292883786477104415 | GH #108 | kept: still valid, 4/4 refs hold, OSC 8 absence re-checked; gallery URL correction |
 | batch audit | jules-batch-prio-a | 11899285583632198342 | GH #110 | discarded: ~15/21 refs hold (<80%); priority list kept as lead only (top: 275 274 095 157 312) |
 | batch audit | jules-batch-prio-b | 15741866014100721340 | GH #107 | kept: 7/7 code refs hold, but most evidence cites tickets; 137 "done" corrected to partly done; no merges |
-| ideas | jules-ideas-text-input | 14890562797936204173 | - | running |
+| ideas | jules-ideas-text-input | 14890562797936204173 | GH #113 | kept as leads: 3 confirmed by host probe (filed 432); 2 render-safe (control chars stripped at draw, value keeps them); 1 not a crash; 4 perf only; 5 not verified |
 
 ## Notes for wave 2
 - Owner tip (2026-11-06): open each prompt with a role line, "You are a <role> and use <approach> to run the <task>", e.g. "You are a Go TUI reviewer and use evidence-first code reading to audit these tickets". Compare its results with wave 1.
