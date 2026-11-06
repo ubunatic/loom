@@ -40,6 +40,13 @@ const (
 )
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "-probe" {
+		if err := probe(); err != nil {
+			report("FAIL: %v", err)
+			os.Exit(1)
+		}
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "-child" {
 		runChild()
 		return
@@ -115,29 +122,34 @@ func runCanary() error {
 	_, _ = tty.WriteString("\x1b[?1049h")
 
 	key := relay(tty, master, observer, model)
-	if err := child.Wait(); err != nil {
-		return fmt.Errorf("child: %w", err)
-	}
-
+	err = child.Wait()
 	_ = term.Restore(fd, before)
-	after, err := unix.IoctlGetTermios(fd, unix.TCGETS)
-	if err != nil {
-		return fmt.Errorf("observer termios after restore: %w", err)
+	after, err2 := unix.IoctlGetTermios(fd, unix.TCGETS)
+	if err2 == nil {
+		report("A6 final restore identical: %v (signal path used: %v)", *after == *beforeTermios, restoredOnSignal)
 	}
-	report("A6 final restore identical: %v (signal path used: %v)", *after == *beforeTermios, restoredOnSignal)
 	report("A4 chrome row after render: %q", rowText(observer, 0))
 	report("A4 child frame row through render: %q", rowText(observer, chrome))
 	report("A3 key seen by relay: %q", key)
+	if err != nil {
+		return fmt.Errorf("child: %w", err)
+	}
 	return nil
 }
 
 // relay mirrors child output into the observer cell model and forwards observer
-// keystrokes to the child. It renders chrome plus the frame from the model.
+// keystrokes to the child. Input comes from the process's own terminal fd: a fresh
+// open of /dev/tty takes writes but never sees keystrokes (probe P2, issue 437).
 func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
-	deadline := time.Now().Add(10 * time.Second)
+	input := 0
+	if !term.IsTerminal(0) {
+		input = int(tty.Fd())
+	}
+	deadline := time.Now().Add(15 * time.Second)
 	key := ""
+	report("A3 input fd: %d (stdin terminal: %v)", input, term.IsTerminal(0))
 	for time.Now().Before(deadline) {
-		fds := []int{int(master.Fd()), int(tty.Fd())}
+		fds := []int{int(master.Fd()), input}
 		ready, err := readable(fds, 200*time.Millisecond)
 		if err != nil {
 			report("A3 select failed: %v", err)
@@ -154,12 +166,16 @@ func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
 				return key
 			}
 		}
-		if ready[int(tty.Fd())] {
+		if ready[input] {
 			buf := make([]byte, 64)
-			n, err := tty.Read(buf)
+			n, err := unix.Read(input, buf)
 			if n > 0 {
 				key += string(buf[:n])
 				_, _ = master.Write(buf[:n])
+				if buf[0] == 3 {
+					report("A5 Ctrl-C reaches the relay as byte 0x03 (raw mode has ISIG off)")
+					return key
+				}
 				if strings.Contains(key, "q") {
 					return key
 				}
@@ -169,7 +185,7 @@ func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
 			}
 		}
 	}
-	report("A3 no keystroke arrived within 10s")
+	report("A3 no keystroke arrived within 15s")
 	return key
 }
 
@@ -261,8 +277,20 @@ func openPTY() (*os.File, *os.File, error) {
 	ws := &unix.Winsize{Col: uint16(cols), Row: uint16(rows)}
 	if err := unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, ws); err != nil {
 		master.Close()
-		slave.Close()
 		return nil, nil, fmt.Errorf("winsize: %w", err)
+	}
+	// A5: the relay forwards single keystrokes, so the child side must not sit in
+	// canonical mode - a key is not delivered to the child until Enter.
+	state, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+	if err != nil {
+		master.Close()
+		return nil, nil, fmt.Errorf("slave termios: %w", err)
+	}
+	state.Lflag &= ^(uint32(unix.ICANON) | uint32(unix.ECHO))
+	state.Cflag |= uint32(unix.CSIZE)
+	if err := unix.IoctlSetTermios(fd, unix.TCSETS, state); err != nil {
+		master.Close()
+		return nil, nil, fmt.Errorf("set slave raw: %w", err)
 	}
 	return master, slave, nil
 }

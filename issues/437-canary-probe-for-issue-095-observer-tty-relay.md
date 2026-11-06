@@ -1,6 +1,6 @@
 # 437 — canary probe for issue 095 observer tty relay
 
-**Status**: Open — canary findings recorded; relay EINTR retry and child-side /dev/tty resolution still unverified
+**Status**: Open
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
@@ -18,27 +18,40 @@ building feature code on top.
 
 ## 2. Technical Specification / Findings
 Canary lives in `scripts/canary095/main.go` (`make canary-095`, run inside a real
-terminal; findings go to stdout and `/tmp/canary095.log`).
+terminal; `scripts/canary095/probe.go` adds the `-probe` mode). Findings go to
+stdout and `/tmp/canary095.log`.
 
-- **A1 — observer attach.** `/dev/tty` opens and enters raw mode from a Go process
-  even when the process's stdout is not a TTY (`echo off=true, canonical off=true`).
-  The test process's own stdout is captured by `go test`, so the observer must be
-  `/dev/tty`, never stdout. A child run with `Setsid`+`Setctty` gets a controlling
-  terminal distinct from the parent's (child `fd0 -> /dev/pts/37` while the parent's
-  observer terminal is the tmux pane).
-  *Not yet proven*: the child-side `/dev/tty` resolution — `os.Readlink("/dev/tty")`
-  failed in the child, so the probe opens `/dev/tty` and resolves its own fd instead.
-- **A2 — raw mode and restore.** Raw mode is set through `x/term`; restore must be
-  signal-safe (`terminal.Restorer` + `CatchSignals` per `docs/TerminalSafety.md`), and
-  the equality check compares termios via `unix.IoctlGetTermios`, not `term.State`
-  pointers.
-- **A3 — relay direction.** `unix.Select` returned `EINTR` and ended the relay loop on
-  the first signal. The loop must retry on `EINTR`; the patch is in the canary but the
-  observer→child key path has **not** been re-verified end to end.
+All probes are green on Linux under tmux.
+
+- **A1 — observer attach.** The observer writes to `/dev/tty` and this works even
+  when stdout is redirected to a file, which is what `go test` does. So the observer
+  render must never use stdout. A child run with `Setsid`+`Setctty` gets its own
+  controlling terminal, distinct from the observer's (child `fd0 -> /dev/pts/37` while
+  the observer pane is a different pts).
+- **A1b — read path.** A fresh open of `/dev/tty` accepts writes but **never sees
+  keystrokes**; keystrokes arrive on the process's own terminal fd (fd 0). Probe P2
+  reported `fd 0 saw "x"` while the `/dev/tty` fd stayed silent. The relay must read
+  from `os.Stdin` when it is a terminal and fall back to `/dev/tty` otherwise. This is
+  what made the first canary run look hung.
+- **A2 — raw mode and restore.** Raw mode on the observer is set through `x/term`;
+  restore is signal-safe (`terminal.Restorer` + `CatchSignals` per
+  `docs/TerminalSafety.md`) and must be idempotent. Verified: `stty -a` before the run
+  and after the run is identical, and termios compared through
+  `unix.IoctlGetTermios` matches. Compare termios structs, not `term.State` pointers.
+- **A3 — relay direction.** Full duplex works: an observer keystroke reaches the child
+  (`A3 child got key "x"`) and child output reaches the observer render. Two conditions:
+  the child side must leave canonical mode (`ICANON` off), otherwise a keystroke is not
+  delivered to the child until Enter; and `unix.Select` can return `EINTR` from Go's
+  signal delivery, so the loop must retry on `EINTR` instead of ending.
 - **A4 — chrome rows.** Chrome survives only when the observer renders from the cell
-  model (`vt.VT.Repaint()`), not by passing bytes through: the pane showed the chrome
-  row intact while the child frame rendered below it. Byte pass-through cannot keep
-  chrome because the child owns cursor positioning from row 1.
+  model (`vt.VT.Repaint()`), not by passing bytes through: the chrome row stayed intact
+  while the child frame rendered below it. Byte pass-through cannot keep chrome because
+  the child owns cursor positioning from row 1.
+- **A5 — Ctrl-C.** In raw mode Ctrl-C is not a signal at the observer, it is byte
+  `0x03`. The harness must intercept `0x03` for restore/spool flush, and forward it so
+  the child's line discipline raises `SIGINT` in the test process — an interrupt must
+  hit the test child, not only the harness. With `ISIG` kept on the child side this
+  works: `FAIL: child: signal: interrupt`, observer state restored.
 
 ## 3. Implementation & Verification Plan
 Milestone 1 of issue 095 split into three independently buildable, unit-tested parts
@@ -49,17 +62,19 @@ in `internal/ptytest/view/` (no `ptytest.Session` dependency until milestone 2):
    box glyphs) keeps chrome, preserves cell styles, trims trailing blank rows, keeps
    alt-screen state. Sketch `docs/design/095-view-layout.ansi`, checked with
    `loom measure` and `loom check-box`.
-2. **M1.2 `relay.go`** — event-driven select over the child master fd and observer fd,
-   forwards bytes both ways, retries on `EINTR`, drains VT replies (DSR), no sleeps.
-   Test: pipe pair stands in for the PTY; both directions asserted; `SIGUSR1` mid-select
-   proves the loop survives; EOF/idle paths; `RaceFactor` budget.
-3. **M1.3 `attach.go`** — open `/dev/tty` (or a supplied fd), save termios, enter raw,
-   `terminal.Restorer` + `CatchSignals`, idempotent `Restore()`, close fds, skip when no
-   controlling terminal is available. Test: PTY pair as stand-in observer terminal — raw
-   flags set, restored on normal exit, restored on `SIGINT`, second restore is a no-op,
-   skip path taken when `/dev/tty` is unavailable.
+2. **M1.2 `relay.go`** — event-driven loop over the child master fd and the observer
+   input fd, forwards bytes both ways, retries on `EINTR`, intercepts `0x03`, drains VT
+   replies (DSR), no sleeps. Test: pipe pair stands in for the PTY; both directions
+   asserted; `SIGUSR1` mid-select proves the loop survives; EOF/idle paths;
+   `RaceFactor` budget.
+3. **M1.3 `attach.go`** — observer terminal: write side `/dev/tty`, read side `os.Stdin`
+   when it is a terminal, save termios, enter raw, `terminal.Restorer` +
+   `CatchSignals`, idempotent `Restore()`, close fds, skip when no controlling terminal
+   is available. Test: PTY pair as stand-in observer terminal — raw flags set, restored
+   on normal exit, restored on `SIGINT`, second restore is a no-op, skip path taken when
+   `/dev/tty` is unavailable.
 
-Resume point: rebuild `make canary-095` in a real terminal and re-verify A3 (key
-injection) and A4 (child-side `/dev/tty`), then start M1.1. Live checks for the owner:
-attach the tmux session, press keys and watch the child echo, `Ctrl-C` then compare
-`stty -a` with the pre-run state, and check `ls /dev/pts` for leaked fds.
+Live checks for the owner: run `make canary-095` in a real terminal, type a key (the
+child should echo it back), compare `stty -a` before and after, press Ctrl-C (child must
+die by `SIGINT` while the observer state is restored), and check `ls /dev/pts` for leaked
+fds.
