@@ -53,7 +53,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | implement | jules-implement-432 | 8759762248526563848 | GH #114 | merged reworked: no tests, stray plan.md/run_tests.sh, exported 5-value scanner; host added tests and NextCluster/PrevCluster; skin tones to 433 |
 | implement | jules-implement-392 | - | - | pending |
 | implement | jules-implement-390 | - | - | pending |
-| implement | jules-implement-397 | - | - | pending |
+| implement | jules-implement-397 | 7541561626893540044 | - | failed: Jules "unable to complete the task", no PR; not re-run |
 | implement | jules-implement-400 | - | - | pending |
 | implement | jules-implement-157 | 17239518533138541790 | GH #115 | merged: bold/dim cases fail without fix; continuation claim was already true |
 | implement | jules-implement-413b | - | - | pending |
