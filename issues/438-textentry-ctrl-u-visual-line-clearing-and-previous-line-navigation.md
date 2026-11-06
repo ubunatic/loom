@@ -1,6 +1,6 @@
 # 438 — TextEntry Ctrl+U visual-line clearing and previous-line navigation
 
-**Status**: Open
+**Status**: Closed — Implemented TextEntry Ctrl+U visual-prefix clearing and hard-line navigation with documented soft-boundary behavior; final developer and independent host test-q1 passed, installed-binary PTY smoke verified suffix preservation and Ctrl+C confirmation/exit.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
