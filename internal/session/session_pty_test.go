@@ -1477,8 +1477,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 
 	// Click on row 24 (the tab bar) in the region of Tab 2: col 14, row 24
 	// SGR mouse left press: \x1b[<0;14;24M
-	session.SendRaw([]byte("\x1b[<0;14;24M"))
-	session.SendRaw([]byte("\x1b[<0;14;24m"))
+	session.SendRaw([]byte("\x1b[<0;14;24M\x1b[<0;14;24m"))
 
 	// Verify that active tab switched to Tab 2 (where mouse mode is 0)
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
