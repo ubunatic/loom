@@ -14,6 +14,10 @@ M1 regression coverage exercises opt-in routing, mixed selection, typing style, 
 
 M1 focused checks, vet, API snapshot, single `make test-q1` and install passed; implementation commit: `22ec2fc`. M2 focused core, gallery and PTY checks passed, as did `go vet ./...`, the public API snapshot check, and `make install`. The single M2 `make test-q1` run failed only in unrelated `internal/session/TestSessionDetachPrefixDAndReattach`: its PTY output contained `BASE_SCREEN` and `DETACHED_OUTPUT` instead of the retained screen and tabs. No q1 rerun was made. M2 implementation commit: `a04eb55`; M2 scope/evidence commit: `5f78764`.
 
+## M3: escaped submission preview (2026-11-07)
+
+The gallery now renders the submitted Markdown with `strconv.Quote`, wrapping the display inside its child rectangle and marking overflow. The serialized submission and plain callback value remain unchanged. Tests assert raw `1\n2\n3` submissions, visible quoted `\\n`, Unicode and escaped controls/quotes/backslashes/Markdown, narrow overflow, child bounds, tiny layouts, and a CLI PTY submission with multiline bold text plus tab/CR/control input normalization. Focused gallery/PTY tests, `go vet ./...`, the single logged `make test-q1`, and `make install` passed. Quota log: `/tmp/loom-issue441-m3-test-q1.log`. M3 commit: recorded in the issue after commit.
+
 ## Limits
 
 Whitespace-only emphasis has no Markdown bold semantics. This API serializes current text and formatting; it does not parse Markdown or provide a round trip.

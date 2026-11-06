@@ -1,6 +1,7 @@
 package gallery
 
 import (
+	"strconv"
 	"strings"
 	"testing"
 
@@ -110,8 +111,64 @@ func TestTextEntryDemoMarkdownSubmission(t *testing.T) {
 		t.Fatalf("submission plain=%q markdown=%q remaining=%q", d.lastSubmittedPlain, d.lastSubmittedMD, d.entry.Value())
 	}
 	screen := strings.Join(loom.Render(d, 80, 8), "\n")
-	if !strings.Contains(screen, "Submitted Markdown: **a\\*b**") || !strings.Contains(screen, "Ctrl+B: bold") {
+	if !strings.Contains(screen, `Submitted Markdown: "**a\\*b**"`) || !strings.Contains(screen, "Ctrl+B: bold") {
 		t.Fatalf("gallery does not show serialized submit and bold control: %q", screen)
+	}
+}
+
+func TestTextEntryDemoMarkdownPreviewEscapesWrapsAndBounds(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("1\n2\n3")
+	if got, want := d.entry.MarkdownValue(), "1\n2\n3"; got != want {
+		t.Fatalf("pre-submit markdown = %q, want raw multiline %q", got, want)
+	}
+	d.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if d.lastSubmittedPlain != "1\n2\n3" || d.lastSubmittedMD != "1\n2\n3" {
+		t.Fatalf("submitted plain=%q markdown=%q", d.lastSubmittedPlain, d.lastSubmittedMD)
+	}
+	screen := strings.Join(loom.Render(d, 80, 8), "\n")
+	if !strings.Contains(screen, `Submitted Markdown: "1\n2\n3"`) {
+		t.Fatalf("quoted multiline preview missing: %q", screen)
+	}
+	if strings.Contains(screen, "Submitted Markdown: 123") {
+		t.Fatalf("preview flattened submitted newlines: %q", screen)
+	}
+
+	d.lastSubmittedMD = "界\\\"\t\r\x01 **bold**"
+	wantQuoted := "Submitted Markdown: " + strconv.Quote(d.lastSubmittedMD)
+	if screen := strings.Join(loom.Render(d, 80, 8), "\n"); !strings.Contains(screen, wantQuoted) {
+		t.Fatalf("quoted Unicode/control/quote/backslash/Markdown preview missing %q: %q", wantQuoted, screen)
+	}
+	d.lastSubmittedMD += " " + strings.Repeat("wide界 ", 30)
+	c := loom.NewCanvas(30, 10)
+	r := loom.Rect{X: 4, Y: 2, W: 12, H: 6}
+	d.Draw(c, r)
+	var boundedRows []string
+	for y := 0; y < 10; y++ {
+		for x := 0; x < 30; x++ {
+			cell := c.Get(x, y)
+			if (x < r.X || x >= r.X+r.W || y < r.Y || y >= r.Y+r.H) && cell.Text != " " {
+				t.Fatalf("paint outside child at (%d,%d): %+v", x, y, cell)
+			}
+			if x >= r.X && x < r.X+r.W && y >= r.Y && y < r.Y+r.H && loom.StringWidth(cell.Text) > r.X+r.W-x {
+				t.Fatalf("cell crosses child right edge at (%d,%d): %+v", x, y, cell)
+			}
+		}
+		var row strings.Builder
+		for x := r.X; x < r.X+r.W; x++ {
+			row.WriteString(c.Get(x, y).Text)
+		}
+		boundedRows = append(boundedRows, row.String())
+	}
+	bounded := strings.Join(boundedRows, "\n")
+	if !strings.Contains(bounded, "Submitted") || !strings.Contains(bounded, "[overflow]") {
+		t.Fatalf("narrow preview lacks explicit overflow: %q", bounded)
+	}
+
+	tiny := loom.NewCanvas(5, 2)
+	d.Draw(tiny, loom.Rect{X: 0, Y: 0, W: 5, H: 2})
+	if cell := tiny.Get(0, 1); cell.Text != "C" {
+		t.Fatalf("tiny layout lost controls row: %+v", cell)
 	}
 }
 

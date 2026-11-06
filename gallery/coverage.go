@@ -5,10 +5,12 @@ package gallery
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"ubunatic.com/loom"
 	"ubunatic.com/loom/graph"
+	"ubunatic.com/loom/measure"
 	"ubunatic.com/loom/syntax"
 )
 
@@ -119,19 +121,94 @@ func newTextEntryControls() loom.Widget {
 	return d
 }
 func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
-	entryHeight := r.H - 1
-	if d.lastSubmittedMD != "" && entryHeight > 1 {
-		entryHeight--
+	controlsHeight := min(1, max(0, r.H))
+	previewBudget := max(0, r.H-controlsHeight-1)
+	preview := []string(nil)
+	if d.lastSubmittedMD != "" && r.W > 0 && previewBudget > 0 {
+		preview = wrapGalleryPreview("Submitted Markdown: "+strconv.Quote(d.lastSubmittedMD), r.W)
+		if len(preview) > previewBudget {
+			preview = appendGalleryOverflow(preview[:previewBudget], r.W)
+		}
 	}
+	entryHeight := r.H - controlsHeight - len(preview)
 	if entryHeight < 1 {
-		d.entry.Draw(c, r)
+		if r.H > 0 {
+			d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: 1})
+		}
 		return
 	}
 	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: entryHeight})
-	if d.lastSubmittedMD != "" && r.H > 1 {
-		c.Write(r.X, r.Y+entryHeight, "Submitted Markdown: "+d.lastSubmittedMD, loom.Style{})
+	for i, line := range preview {
+		c.Write(r.X, r.Y+entryHeight+i, line, loom.Style{})
 	}
-	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown  offset: %d", d.entry.CursorOffset()), loom.Style{})
+	if controlsHeight > 0 {
+		writeGalleryClipped(c, r.X, r.Y+r.H-1, r.W, fmt.Sprintf("Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown  offset: %d", d.entry.CursorOffset()))
+	}
+}
+
+func writeGalleryClipped(c *loom.Canvas, x, y, width int, text string) {
+	if width < 1 {
+		return
+	}
+	var clipped strings.Builder
+	used := 0
+	for _, cluster := range measure.Clusters(text) {
+		w := measure.ClusterWidth(cluster)
+		if used+w > width {
+			break
+		}
+		clipped.WriteString(cluster)
+		used += w
+	}
+	c.Write(x, y, clipped.String(), loom.Style{})
+}
+
+func wrapGalleryPreview(text string, width int) []string {
+	if width < 1 {
+		return nil
+	}
+	var lines []string
+	var line strings.Builder
+	lineWidth := 0
+	for _, cluster := range measure.Clusters(text) {
+		clusterWidth := measure.ClusterWidth(cluster)
+		if lineWidth > 0 && lineWidth+clusterWidth > width {
+			lines = append(lines, line.String())
+			line.Reset()
+			lineWidth = 0
+		}
+		if clusterWidth > width {
+			continue
+		}
+		line.WriteString(cluster)
+		lineWidth += clusterWidth
+	}
+	if line.Len() > 0 {
+		lines = append(lines, line.String())
+	}
+	return lines
+}
+
+func appendGalleryOverflow(lines []string, width int) []string {
+	if len(lines) == 0 || width < 1 {
+		return lines
+	}
+	marker := "… [overflow]"
+	markerWidth := loom.StringWidth(marker)
+	if markerWidth > width {
+		marker = "!"
+		markerWidth = 1
+	}
+	last := lines[len(lines)-1]
+	for loom.StringWidth(last)+markerWidth > width {
+		clusters := measure.Clusters(last)
+		if len(clusters) == 0 {
+			break
+		}
+		last = strings.Join(clusters[:len(clusters)-1], "")
+	}
+	lines[len(lines)-1] = last + marker
+	return lines
 }
 func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch e.Key {

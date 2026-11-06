@@ -61,6 +61,12 @@ Owner's screenshot showed three input lines but gallery `Submitted Markdown: 123
 - Exact regression tests for raw `1\n2\n3` plus quoted visible backslash-n output, control/quote/backslash/Unicode and bold Markdown cases, wrapping/overflow/tiny sizes. Actual CLI PTY test must submit multiline/control content and assert escaped preview while retaining existing bold attributes/caret and other key tests. Update existing single-line expectations to quoted output without weakening them to vague substring assertions.
 - Last host q1 failed in known untouched session reattach test; no unrelated fixes authorized. Developer runs one logged quota suite after edits plus focused checks/vet/install; host independently reviews/verifies. No push or closure without host acceptance.
 
+## M3 implementation evidence (2026-11-07)
+
+- Gallery preview now quotes serialized Markdown with `strconv.Quote`, wraps it to the supplied rectangle, and displays `[overflow]` when the available preview rows cannot show the full value. Tiny-height layouts retain the editor and controls where space permits; preview and controls are clipped to the child width.
+- Serialization and plain callback data are unchanged. Exact tests cover raw multiline `1\n2\n3`, quoted visible `\\n`, Unicode, tabs/CR/control escaping, quotes, backslashes, Markdown delimiters, width wrapping, overflow, tiny geometry and no painting outside the rectangle. CLI PTY coverage submits multiline bold content containing tab/CR/control bytes and checks the normalized quoted preview while retaining the existing styling/caret assertions.
+- Focused gallery/PTY tests passed; `go vet ./...` passed; one logged `make test-q1` passed all packages, including `internal/session`; `make install` passed. Log: `/tmp/loom-issue441-m3-test-q1.log`. Commit: recorded after commit. Host review and independent installed-binary verification remain required; do not close or push.
+
 ## Goal
 
 /goal Deliver opt-in visual Ctrl+B bold toggling in TextEntry with reliable editing/history, bold-only Markdown serialization and actual gallery Markdown submission, while preserving existing plain APIs and key contracts; prove it in unit/per-cell/terminal tests and install. Stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.

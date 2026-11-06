@@ -44,7 +44,7 @@ Inventory of the public widget catalog against the live gallery, after issue 423
 | `loom.Table` | Table |  |
 | `loom.Tabs` | Tabs |  |
 | `loom.TextArea` | TextArea |  |
-| `loom.TextEntry` | TextEntry | Wrap, command highlighting, Ctrl+B bold and Markdown submission are shown; F2 changes the placeholder, F3 or Tab, End, and Ctrl+E accept it when empty, and F4 moves the caret. |
+| `loom.TextEntry` | TextEntry | Wrap, command highlighting, Ctrl+B bold and Markdown submission are shown. Submitted Markdown appears as a quoted, escaped, width-wrapped preview so newlines and controls remain visible; overflow is marked. F2 changes the placeholder, F3 or Tab, End, and Ctrl+E accept it when empty, and F4 moves the caret. |
 | `loom.TextInput` | TextInput |  |
 | `loom.Timer` | Timer |  |
 | `loom.Toggle` | Toggle |  |

@@ -100,9 +100,21 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 		t.Fatalf("typing-bold caret x = %d, want prompt plus four characters (6): %q", x, gallery.Text())
 	}
 	gallery.SendRaw([]byte{0x0d})
-	gallery.WaitForUpdate("Submitted Markdown: **sent**", 3*time.Second)
+	gallery.WaitForUpdate(`Submitted Markdown: "**sent**"`, 3*time.Second)
 	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "F2: placeholder") || !strings.Contains(screen, "Ctrl+B: bold") {
 		t.Fatalf("controls did not remain after Markdown submit: %q", screen)
+	}
+
+	// TextEntry normalizes CR to LF, expands tabs, and drops other controls.
+	// Verify the gallery quotes that normalized submission without flattening it.
+	gallery.SendRaw([]byte("\x1b[200~A\nB\tC\rD\x01\x1b[201~"))
+	gallery.WaitForUpdate("A", 3*time.Second)
+	gallery.SendRaw([]byte{0x01, 0x02}) // select all and bold the multiline input
+	gallery.SendRaw([]byte{0x0d})
+	wantPreview := `Submitted Markdown: "**A**\n**B    C**\n**D**"`
+	gallery.WaitForUpdate(wantPreview, 3*time.Second)
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, wantPreview) || !strings.Contains(screen, "F2: placeholder") {
+		t.Fatalf("multiline quoted preview or controls missing: %q", screen)
 	}
 }
 
