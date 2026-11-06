@@ -1,6 +1,6 @@
 # 157 — ANSI Golden Mockup Visual Test Comparator
 
-**Status**: Open
+**Status**: Closed — done: 1304760 bold/dim compare and compare_test.go (Jules PR 115, host-checked); glyph, continuation, FG, BG were already compared
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

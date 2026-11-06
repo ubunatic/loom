@@ -23,7 +23,6 @@ upkeep.
 | 120 | [120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md](120-implement-wazero-backed-tree-sitter-syntax-engine-with-embedded-grammars-and-queries.md) | Implement wazero-backed Tree-Sitter syntax engine with embedded grammars and queries | Open |
 | 137 | [137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md](137-feedback-cli-asset-tools-workflow-and-multi-box-ansi-validation.md) | Feedback: CLI asset tools workflow & multi-box ANSI validation | Open |
 | 139 | [139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md](139-add-loom-play-for-interactive-tui-commands-and-ansi-capture.md) | Add `loom play` for interactive TUI commands and ANSI capture | Open |
-| 157 | [157-ansi-golden-mockup-visual-test-comparator.md](157-ansi-golden-mockup-visual-test-comparator.md) | ANSI Golden Mockup Visual Test Comparator | Open |
 | 161 | [161-align-media-example-with-redesign-005.md](161-align-media-example-with-redesign-005.md) | Align media example with redesign 005 | Open |
 | 241 | [241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md](241-add-public-grab-package-sdl3-transparent-input-grabber-and-examples-grabber-demo.md) | Add public grab package (SDL3 transparent input grabber) and examples/grabber demo | Open |
 | 259 | [259-osc-8-terminal-hyperlink-support-human-assisted.md](259-osc-8-terminal-hyperlink-support-human-assisted.md) | OSC 8 terminal hyperlink support (human-assisted) | Open |
