@@ -32,7 +32,7 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-413 | 18068907042553961998 | - | running |
+| implement | jules-implement-413 | 18068907042553961998 | GH #112 | rejected: no tests, prescan claim false (ansibuffer.go:579 untouched), CSI B unbounded vs prescan, global `:`-to-`;` rewrite; kept as lead in 413 |
 | implement | jules-implement-414 | 2652737723992373498 | GH #109 | merged as 8397a50 after host check (parity test fails without fix); lone VS16 now width 2 |
 | implement | jules-implement-421 | 14083610897382528377 | GH #111 | merged as 95ed419 after host check (5 cases fail without fix) |
 | audit | jules-audit-259 | 11292883786477104415 | GH #108 | kept: still valid, 4/4 refs hold, OSC 8 absence re-checked; gallery URL correction |
