@@ -54,6 +54,11 @@ During development of a split-pane ANSI mockup and TUI prototype in `cati` (`exa
 3. **Interactive Preview in `loom view`**:
    - `loom view` displays `.ansi` files interactively. Supporting a split or ruler inspection overlay in `loom view` to inspect per-column coordinate markers would be a valuable design aid.
 
+## Status 2026-11-06 (Jules batch prio-b, PR 107, host-checked)
+Jules said `close: done` from the tools existing; host check: partly done.
+- Suggestion 3 done: `loom view --ruler` (`cmd/loom/main.go:387`).
+- Suggestion 1 (multi-box rows in `loom format --align-box`) and 2 (inline pointer in `loom check-box` failures) still open: no multi-box or pointer code in `cmd/` or `internal/boxcheck`.
+
 ## Jules runs
 
 | kind | session | Jules ID | PR | state |

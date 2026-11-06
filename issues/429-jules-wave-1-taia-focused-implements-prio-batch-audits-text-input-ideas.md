@@ -37,7 +37,7 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 | implement | jules-implement-421 | 14083610897382528377 | - | running |
 | audit | jules-audit-259 | 11292883786477104415 | - | running |
 | batch audit | jules-batch-prio-a | 11899285583632198342 | - | running |
-| batch audit | jules-batch-prio-b | 15741866014100721340 | - | running |
+| batch audit | jules-batch-prio-b | 15741866014100721340 | GH #107 | kept: 7/7 code refs hold, but most evidence cites tickets; 137 "done" corrected to partly done; no merges |
 | ideas | jules-ideas-text-input | 14890562797936204173 | - | running |
 
 ## Notes for wave 2
