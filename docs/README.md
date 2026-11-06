@@ -91,6 +91,7 @@
 | [studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md](studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md) | Issue 434 M1: gallery TextEntry Ctrl+C and paste |
 | [studies/2026-11-06-issue-438-ctrl-u.md](studies/2026-11-06-issue-438-ctrl-u.md) | Issue 438: TextEntry Ctrl+U |
 | [studies/2026-11-06-issue-440-ctrl-d-routing.md](studies/2026-11-06-issue-440-ctrl-d-routing.md) | Issue 440: TextEntry Ctrl+D routing |
+| [studies/2026-11-07-issue-441-textentry-bold-m1.md](studies/2026-11-07-issue-441-textentry-bold-m1.md) | Issue 441: TextEntry visual bold and Markdown submission |
 | [studies/issue-439-placeholder-keys.md](studies/issue-439-placeholder-keys.md) | Issue 439: placeholder acceptance keys |
 <!-- harnez:end docs-studies-index -->
 
