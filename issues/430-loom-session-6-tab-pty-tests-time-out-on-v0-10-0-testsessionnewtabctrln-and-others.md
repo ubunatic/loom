@@ -19,6 +19,7 @@ TestSessionPrefixNewTabAndCloseTab, TestSessionAltScreenTabSwitch, TestSessionDi
 - Reproduces on the v0.10.0 release commit 7511513, so it is not caused by the wave 1 merges (421, 414).
 - Reproduces with a clean environment (`env -i HOME PATH TERM=xterm-256color SHELL=/bin/bash`).
 - 392f0da (one commit before v0.10.0) reported q1 green, so something outside the code may have changed (machine, shell, bash version), unverified.
+- 2026-11-06: Jules implement run 392 (session 2798506688453647188) hit the same timeouts (TestSessionTabSwitchPrefixNAndP, TestSessionDirectTabSelectAltDigits) in its own VM on GitHub main f720cad, so it is not specific to the owner's machine.
 - The screen dump shows the new tab's output (`$ TAB2_RUNNING`) but `WaitFor` times out at `internal/session/session_pty_test.go:902`; the tab bar reads `1: bash  2: sh`.
 
 ## 3. Next step
