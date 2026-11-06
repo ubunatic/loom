@@ -12,7 +12,7 @@ M1 adds opt-in Ctrl+B bold state to `TextEntry`, tracks formatting with grapheme
 
 Regression coverage exercises opt-in routing, mixed selection, typing style, format-only undo/redo and callbacks, grapheme-aligned replacement and paste, multiline typing, Ctrl+U history, placeholder acceptance, plain clipboard text, and style composition with highlight and selection.
 
-Focused checks passed: `go test . -run 'TestTextEntry(Bold|Markdown)' -count=1` and `go test . -run '^TestTextEntry' -count=1`. `go vet ./...` passed and the public API snapshot was refreshed. The single final `make test-q1`, install and commit remain pending.
+Focused checks passed: `go test . -run 'TestTextEntry(Bold|Markdown)' -count=1` and `go test . -run '^TestTextEntry' -count=1`. `go vet ./...` passed and the public API snapshot was refreshed. The single final `make test-q1` passed with no `--- FAIL` lines; `make install` passed. Implementation commit: `22ec2fc`.
 
 ## Limits
 

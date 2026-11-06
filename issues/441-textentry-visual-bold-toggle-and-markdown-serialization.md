@@ -45,5 +45,5 @@ Host is sole reviewer; developer terra:med. No known baseline failures (last hos
 - Added opt-in `EnableBold()` and plain-text-preserving `MarkdownValue()` APIs; Ctrl+B remains ignored until opted in.
 - Added grapheme-aligned formatting and typing style to edits, replacement, placeholder insertion, undo/redo and drawing. Format-only edits do not notify `OnChange`; clipboard stays plain.
 - Added tests for mixed and selected bold, typing style, Unicode ranges, Markdown escaping and whitespace, multiline values, Ctrl+U, placeholder acceptance, callback history and highlighted selection rendering.
-- Checks passed: focused bold/Markdown tests, full `TestTextEntry` tests, `go vet ./...`, and refreshed public API snapshot. The locked `make test-q1`, install and commit remain pending.
+- Checks passed: focused bold/Markdown tests, full `TestTextEntry` tests, `go vet ./...`, refreshed public API snapshot, and the single `make test-q1` run (no `--- FAIL` lines). `make install` passed. M1 implementation commit: `22ec2fc`.
 - M1 study: `docs/studies/2026-11-07-issue-441-textentry-bold-m1.md`. M2 gallery submission and terminal proof have not started; host review is required before M2.
