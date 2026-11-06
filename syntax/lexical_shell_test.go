@@ -53,12 +53,11 @@ func TestShellTokens(t *testing.T) {
 			},
 		},
 		{
-			// "if" is not a command-position trigger (only then and do are),
-			// so "true" stays plain.
+			// "if" is a command-position trigger, so "true" is a function.
 			name: "keywords and a command after then",
 			src:  "if true; then echo hi; fi",
 			want: []string{
-				"keyword:if", "punctuation:;", "keyword:then", "function:echo",
+				"keyword:if", "function:true", "punctuation:;", "keyword:then", "function:echo",
 				"punctuation:;", "keyword:fi",
 			},
 		},
@@ -130,6 +129,35 @@ func TestShellTokens(t *testing.T) {
 			name: "assignment before a command",
 			src:  "FOO=1 make",
 			want: []string{"function:make"},
+		},
+		{
+			name: "if and grep",
+			src:  "if grep -q x f; then",
+			want: []string{
+				"keyword:if", "function:grep", "punctuation:;", "keyword:then",
+			},
+		},
+		{
+			name: "while read",
+			src:  "while read -r line; do",
+			want: []string{
+				"keyword:while", "function:read", "punctuation:;", "keyword:do",
+			},
+		},
+		{
+			name: "bang test",
+			src:  "! test -f x",
+			want: []string{
+				"keyword:!", "function:test",
+			},
+		},
+		{
+			name: "else echo",
+			src:  "if a; then b; else echo c; fi",
+			want: []string{
+				"keyword:if", "function:a", "punctuation:;", "keyword:then", "function:b",
+				"punctuation:;", "keyword:else", "function:echo", "punctuation:;", "keyword:fi",
+			},
 		},
 	}
 	for _, tc := range cases {
