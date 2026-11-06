@@ -49,6 +49,18 @@ Host reviewed M1/M2 source and assertion diffs and required preserving non-opted
 
 Installed-binary PTY smoke passed: F2 cleared entry, Ctrl+B then `sent` displayed plain text without literal Markdown markers at offset 4; Enter displayed `Submitted Markdown: **sent**`; F10 exited successfully. Developer PTY tests assert selected/typing bold cell attributes, inversion, caret and undo/redo. Final developer install passed. Changes remain local, not pushed. Resume point: investigate the session reattach failure separately with owner authorization, then perform permitted full verification; no further bold implementation is currently required by host review.
 
+## M3 — Faithful escaped gallery submission preview
+
+Owner's screenshot showed three input lines but gallery `Submitted Markdown: 123`; owner asks to double-check code and gallery and show full characters including newlines and others. Read-only developer verified MarkdownValue preserves raw newlines, but Canvas.Write renders the unquoted submission on one row and flattens controls. This is a real gallery display bug, not evidence that serialization lost line breaks.
+
+### Approved pre-work and write set
+
+- `gallery/coverage.go`, `gallery/coverage_test.go`, `cmd/loom/widgets_paste_pty_test.go`, `docs/GalleryCoverage.md` if needed, this ticket and the existing study. No core serializer/API change needed; stop for approval if a true serializer defect is found.
+- Quote/escape display only (prefer standard strconv.Quote semantics): visible `"1\\n2\\n3"`, tabs, carriage returns, controls, quotes/backslashes, readable Unicode and literal Markdown delimiters. Actual submitted/plain values must not change. Distinguish input normalization from serialized value; do not falsely assert original clipboard control bytes survive if TextEntry intentionally normalizes them.
+- Wrap escaped output by display width within the supplied rectangle, reserving editable content and controls. Show full escaped value when space permits, and explicit overflow when it does not; no silent truncation presented as full. Preserve tiny-height safety, selection/bold/caret and controls, no painting outside child bounds or stale preview after redraw.
+- Exact regression tests for raw `1\n2\n3` plus quoted visible backslash-n output, control/quote/backslash/Unicode and bold Markdown cases, wrapping/overflow/tiny sizes. Actual CLI PTY test must submit multiline/control content and assert escaped preview while retaining existing bold attributes/caret and other key tests. Update existing single-line expectations to quoted output without weakening them to vague substring assertions.
+- Last host q1 failed in known untouched session reattach test; no unrelated fixes authorized. Developer runs one logged quota suite after edits plus focused checks/vet/install; host independently reviews/verifies. No push or closure without host acceptance.
+
 ## Goal
 
 /goal Deliver opt-in visual Ctrl+B bold toggling in TextEntry with reliable editing/history, bold-only Markdown serialization and actual gallery Markdown submission, while preserving existing plain APIs and key contracts; prove it in unit/per-cell/terminal tests and install. Stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
