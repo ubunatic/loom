@@ -68,12 +68,20 @@ func LoadEmojiSpecYAML(data []byte) error
     LoadEmojiSpecYAML decodes and activates an emoji specification from YAML
     bytes.
 
+func NextCluster(s string, i int) int
+    NextCluster returns the byte index just past the grapheme cluster that
+    starts at byte index i in s. It uses the same boundaries as StringWidth.
+
 func NonVTEMode(glyph string) string
     NonVTEMode returns the authoritative modern Non-VTE / standard rendering
     mode for a glyph from the spec.
 
 func Pad(text string, width int, right bool) string
     Pad extends text to width terminal cells using spaces.
+
+func PrevCluster(s string, i int) int
+    PrevCluster returns the byte index where the grapheme cluster that ends at
+    byte index i in s starts. It uses the same boundaries as StringWidth.
 
 func ReloadEnvSwitches()
     ReloadEnvSwitches re-reads LOOM_FAST_MEASURE, LOOM_ZWJ and LOOM_RENDER_PATH

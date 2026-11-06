@@ -3,7 +3,12 @@
 
 package loom
 
-import "strings"
+import (
+	"strings"
+	"unicode/utf8"
+
+	"ubunatic.com/loom/measure"
+)
 
 // TextInput is a single-line text editor with a movable caret. It is the shared
 // editing primitive behind Settings KindString rows and wizard value entry: it
@@ -88,13 +93,19 @@ func (t *TextInput) ConsumeKey(e KeyEvent) (consumed EventResult) {
 	switch e.Key {
 	case "left":
 		if t.caret > 0 {
-			t.caret--
+			val := string(t.runes)
+			caretByte := len(string(t.runes[:t.caret]))
+			prevByte := measure.PrevCluster(val, caretByte)
+			t.caret = utf8.RuneCountInString(val[:prevByte])
 		}
 		t.keepCaretInView()
 		return Handled()
 	case "right":
 		if t.caret < len(t.runes) {
-			t.caret++
+			val := string(t.runes)
+			caretByte := len(string(t.runes[:t.caret]))
+			nextByte := measure.NextCluster(val, caretByte)
+			t.caret = utf8.RuneCountInString(val[:nextByte])
 		}
 		t.keepCaretInView()
 		return Handled()
@@ -107,14 +118,22 @@ func (t *TextInput) ConsumeKey(e KeyEvent) (consumed EventResult) {
 		return Handled()
 	case "backspace":
 		if t.caret > 0 {
-			t.runes = append(t.runes[:t.caret-1], t.runes[t.caret:]...)
-			t.caret--
+			val := string(t.runes)
+			caretByte := len(string(t.runes[:t.caret]))
+			prevByte := measure.PrevCluster(val, caretByte)
+			prevCaret := utf8.RuneCountInString(val[:prevByte])
+			t.runes = append(t.runes[:prevCaret], t.runes[t.caret:]...)
+			t.caret = prevCaret
 		}
 		t.keepCaretInView()
 		return Handled()
 	case "delete":
 		if t.caret < len(t.runes) {
-			t.runes = append(t.runes[:t.caret], t.runes[t.caret+1:]...)
+			val := string(t.runes)
+			caretByte := len(string(t.runes[:t.caret]))
+			nextByte := measure.NextCluster(val, caretByte)
+			nextCaret := utf8.RuneCountInString(val[:nextByte])
+			t.runes = append(t.runes[:t.caret], t.runes[nextCaret:]...)
 		}
 		t.keepCaretInView()
 		return Handled()

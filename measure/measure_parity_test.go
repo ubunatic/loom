@@ -6,13 +6,13 @@ import (
 
 func TestClustersWidthParity(t *testing.T) {
 	corpus := []string{
-		"こんにちは", // CJK
-		"👨‍👩‍👧‍👦", // Emoji ZWJ sequence
-		"🏳️‍🌈", // Emoji ZWJ sequence with VS16
-		"❤️", // VS16
-		"\uFE0F", // Isolated VS16 (disagreed previously)
+		"こんにちは",      // CJK
+		"👨‍👩‍👧‍👦",    // Emoji ZWJ sequence
+		"🏳️‍🌈",       // Emoji ZWJ sequence with VS16
+		"❤️",         // VS16
+		"\uFE0F",     // Isolated VS16 (disagreed previously)
 		"Text\uFE0E", // VS15
-		"🤷🏽‍♂️", // Emoji with skin tone modifier and ZWJ
+		"🤷🏽‍♂️",      // Emoji with skin tone modifier and ZWJ
 	}
 
 	for _, text := range corpus {

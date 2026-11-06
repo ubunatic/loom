@@ -6,6 +6,7 @@ package loom
 import (
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"ubunatic.com/loom/measure"
 	"ubunatic.com/loom/syntax"
@@ -345,7 +346,10 @@ func (t *TextArea) ConsumeKey(e KeyEvent) (consumed EventResult) {
 func (t *TextArea) moveLeft() {
 	switch {
 	case t.col > 0:
-		t.col--
+		val := string(t.lines[t.row])
+		caretByte := len(string(t.lines[t.row][:t.col]))
+		prevByte := measure.PrevCluster(val, caretByte)
+		t.col = utf8.RuneCountInString(val[:prevByte])
 	case t.row > 0:
 		t.row--
 		t.col = len(t.lines[t.row])
@@ -355,7 +359,10 @@ func (t *TextArea) moveLeft() {
 func (t *TextArea) moveRight() {
 	switch {
 	case t.col < len(t.lines[t.row]):
-		t.col++
+		val := string(t.lines[t.row])
+		caretByte := len(string(t.lines[t.row][:t.col]))
+		nextByte := measure.NextCluster(val, caretByte)
+		t.col = utf8.RuneCountInString(val[:nextByte])
 	case t.row < len(t.lines)-1:
 		t.row++
 		t.col = 0
@@ -486,14 +493,18 @@ func (t *TextArea) splitLine() {
 
 func (t *TextArea) backspace() {
 	if t.col > 0 {
-		delRune := t.lines[t.row][t.col-1]
-		delBytes := len(string(delRune))
-		startByte := t.caretByteOffset(t.row, t.col-1)
-		startColBytes := t.caretColBytes(t.row, t.col-1)
+		val := string(t.lines[t.row])
+		caretByte := len(string(t.lines[t.row][:t.col]))
+		prevByte := measure.PrevCluster(val, caretByte)
+		prevCol := utf8.RuneCountInString(val[:prevByte])
+
+		delBytes := caretByte - prevByte
+		startByte := t.caretByteOffset(t.row, prevCol)
+		startColBytes := t.caretColBytes(t.row, prevCol)
 
 		line := t.lines[t.row]
-		t.lines[t.row] = append(line[:t.col-1], line[t.col:]...)
-		t.col--
+		t.lines[t.row] = append(line[:prevCol], line[t.col:]...)
+		t.col = prevCol
 
 		if t.highlighter != nil {
 			t.highlighter.NotifyEdit(syntax.Edit{
@@ -536,12 +547,16 @@ func (t *TextArea) backspace() {
 func (t *TextArea) deleteForward() {
 	line := t.lines[t.row]
 	if t.col < len(line) {
-		delRune := line[t.col]
-		delBytes := len(string(delRune))
+		val := string(line)
+		caretByte := len(string(line[:t.col]))
+		nextByte := measure.NextCluster(val, caretByte)
+		nextCol := utf8.RuneCountInString(val[:nextByte])
+
+		delBytes := nextByte - caretByte
 		startByte := t.caretByteOffset(t.row, t.col)
 		startColBytes := t.caretColBytes(t.row, t.col)
 
-		t.lines[t.row] = append(line[:t.col], line[t.col+1:]...)
+		t.lines[t.row] = append(line[:t.col], line[nextCol:]...)
 
 		if t.highlighter != nil {
 			t.highlighter.NotifyEdit(syntax.Edit{

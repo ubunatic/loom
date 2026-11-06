@@ -184,6 +184,32 @@ func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, ha
 	return i, false, hasZWJ, hasVS16, hasVS15
 }
 
+// NextCluster returns the byte index just past the grapheme cluster that
+// starts at byte index i in s. It uses the same boundaries as StringWidth.
+func NextCluster(s string, i int) int {
+	if i >= len(s) {
+		return len(s)
+	}
+	next, _, _, _, _ := nextClusterBoundary(s, max(i, 0))
+	return next
+}
+
+// PrevCluster returns the byte index where the grapheme cluster that ends at
+// byte index i in s starts. It uses the same boundaries as StringWidth.
+func PrevCluster(s string, i int) int {
+	if i <= 0 {
+		return 0
+	}
+	start := 0
+	for {
+		next := NextCluster(s, start)
+		if next >= i || next <= start {
+			return start
+		}
+		start = next
+	}
+}
+
 // JoinsAfterZWJ reports whether r may extend a grapheme cluster after a
 // zero-width joiner (U+200D). Only printable grapheme starts (letters,
 // numbers, punctuation, symbols such as emoji) join. Controls (C0, C1, DEL,
