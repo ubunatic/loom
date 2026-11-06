@@ -32,6 +32,18 @@ Searcher and read-only developer plan confirmed the missing handler and shared s
 
 Tests: regression first, hard-line interiors/starts/empty/first line/trailing and consecutive newlines, repeated visual clearing with retained suffix, prompt width, CJK/combining/emoji graphemes, selection by keys/mouse, undo/redo/notifications/EventResult, unknown layout and resize. Exercise actual CLI via byte 0x15 and state-based cursor/screen/exit assertions, retaining paste and Ctrl+C tests. Developer runs one logged `make test-q1`, installs, commits evidence; host reviews and independently verifies. No known baseline failure: previous host full quota run passed. Tree was clean; preserve any concurrent unrelated work. Model changed by owner to terra:med in AGENTS.md, commit e60554f.
 
+## M2 — Host review coverage hardening
+
+### Pre-Work / Required Refinements
+
+Host reviewed all M1 source and assertion diffs. Implementation matches the chosen bounded semantics; existing assertions were preserved. Complete the following acceptance gaps before signoff:
+
+- Add explicit clipboard preservation tests for deletion and hard-start navigation: seed internal clipboard through supported key behavior, bind a recording host hook, and prove Ctrl+U neither changes clipboard nor emits a host write. Prove paste still inserts the original copied text.
+- Add explicit single-step undo/redo and exact OnChange assertions for visual-prefix deletion (not only selected-range deletion), including retained suffix/newlines and repeated clearing.
+- Strengthen real gallery PTY coverage: drive multiline input, assert cursor coordinates before and after Ctrl+U at a hard-line start and inside a line, and retained surrounding display. Also verify repeated clearing of a known-width soft-wrapped suffix with actual cursor/screen state where feasible; do not claim text-only screen checks prove caret navigation. State-based waits only.
+- Preserve Ctrl+C exit confirmation coverage. Approved writes: existing M1 core/test/PT Y files only as required, this ticket and existing study; no caller workarounds or unrelated session changes.
+- M1 focused packages/vet/install passed; its full quota run failed in untouched `internal/session/TestSessionDetachPrefixDAndReattach`, also intermittently seen in previous ticket. Record actual results, do not weaken or fix that unrelated test. After test/source edits run one quota suite, install, update evidence and commit. Leave ticket open pending host review/verification.
+
 ## Goal
 
 /goal Deliver Ctrl+U clearing and previous-line navigation in loom.TextEntry matching Taia #151, including visual-line clearing where feasible, with explicit tested wrap-boundary behavior, gallery/live terminal evidence and passing repository verification; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
