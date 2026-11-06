@@ -101,57 +101,15 @@ func StringWidthNew(text string) int {
 			continue
 		}
 
-		// Check for regional indicator pair (flag)
-		if isRegionalIndicator(r) {
-			nextIdx := i + sz
-			if nextIdx < n {
-				r2, sz2 := utf8.DecodeRuneInString(text[nextIdx:])
-				if isRegionalIndicator(r2) {
-					w += ActiveEmojiSpec().FlagDefaultWidth
-					i = nextIdx + sz2
-					continue
-				}
-			}
-		}
-
-		// Check for base rune + modifiers / ZWJ / VS16
 		start := i
 		clusterWidth := RuneWidth(r)
-		hasVS16 := false
-		hasVS15 := false
-		hasZWJ := false
 
-		i += sz
-		for i < n {
-			if text[i] == 27 {
-				break
-			}
-			nr, nsz := utf8.DecodeRuneInString(text[i:])
-			if nr == 0x200D {
-				hasZWJ = true
-				i += nsz
-				if i < n {
-					if jr, jsz := utf8.DecodeRuneInString(text[i:]); JoinsAfterZWJ(jr) {
-						i += jsz
-					}
-				}
-				continue
-			}
-			if nr == 0xFE0F {
-				hasVS16 = true
-				i += nsz
-				continue
-			}
-			if nr == 0xFE0E {
-				hasVS15 = true
-				i += nsz
-				continue
-			}
-			if unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !isFormatRune(nr)) {
-				i += nsz
-				continue
-			}
-			break
+		var isFlag, hasZWJ, hasVS16, hasVS15 bool
+		i, isFlag, hasZWJ, hasVS16, hasVS15 = nextClusterBoundary(text, start)
+
+		if isFlag {
+			w += ActiveEmojiSpec().FlagDefaultWidth
+			continue
 		}
 
 		if hasZWJ {
@@ -167,6 +125,63 @@ func StringWidthNew(text string) int {
 		}
 	}
 	return w
+}
+
+func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, hasVS15 bool) {
+	n := len(s)
+	r, sz := utf8.DecodeRuneInString(s[i:])
+
+	if isRegionalIndicator(r) {
+		nextIdx := i + sz
+		if nextIdx < n {
+			r2, sz2 := utf8.DecodeRuneInString(s[nextIdx:])
+			if isRegionalIndicator(r2) {
+				return nextIdx + sz2, true, false, false, false
+			}
+		}
+	}
+
+	if r == 0x200D {
+		hasZWJ = true
+	} else if r == 0xFE0F {
+		hasVS16 = true
+	} else if r == 0xFE0E {
+		hasVS15 = true
+	}
+
+	i += sz
+	for i < n {
+		if s[i] == 27 {
+			break
+		}
+		nr, nsz := utf8.DecodeRuneInString(s[i:])
+		if nr == 0x200D {
+			hasZWJ = true
+			i += nsz
+			if i < n {
+				if jr, jsz := utf8.DecodeRuneInString(s[i:]); JoinsAfterZWJ(jr) {
+					i += jsz
+				}
+			}
+			continue
+		}
+		if nr == 0xFE0F {
+			hasVS16 = true
+			i += nsz
+			continue
+		}
+		if nr == 0xFE0E {
+			hasVS15 = true
+			i += nsz
+			continue
+		}
+		if unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !isFormatRune(nr)) {
+			i += nsz
+			continue
+		}
+		break
+	}
+	return i, false, hasZWJ, hasVS16, hasVS15
 }
 
 // JoinsAfterZWJ reports whether r may extend a grapheme cluster after a
@@ -324,39 +339,21 @@ func ClustersNew(text string) []string {
 	}
 
 	var result []string
-	rs := []rune(plain)
-	n := len(rs)
+	n := len(plain)
 	for i := 0; i < n; {
-		if (unicode.Is(unicode.Mn, rs[i]) || unicode.Is(unicode.Me, rs[i])) && !isFormatRune(rs[i]) {
+		r, _ := utf8.DecodeRuneInString(plain[i:])
+		if (unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r)) && !isFormatRune(r) {
+			end, _, _, _, _ := nextClusterBoundary(plain, i)
 			if len(result) > 0 {
-				result[len(result)-1] += string(rs[i])
+				result[len(result)-1] += plain[i:end]
 			}
-			i++
+			i = end
 			continue
 		}
-		if isRegionalIndicator(rs[i]) && i+1 < n && isRegionalIndicator(rs[i+1]) {
-			result = append(result, string(rs[i:i+2]))
-			i += 2
-			continue
-		}
-		start := i
-		i++
-		for i < n {
-			r := rs[i]
-			if r == 0x200D {
-				i++
-				if i < n && JoinsAfterZWJ(rs[i]) {
-					i++
-				}
-				continue
-			}
-			if r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
-				i++
-				continue
-			}
-			break
-		}
-		result = append(result, string(rs[start:i]))
+
+		end, _, _, _, _ := nextClusterBoundary(plain, i)
+		result = append(result, plain[i:end])
+		i = end
 	}
 	return result
 }
