@@ -44,6 +44,10 @@ Host reviewed all M1 source and assertion diffs. Implementation matches the chos
 - Preserve Ctrl+C exit confirmation coverage. Approved writes: existing M1 core/test/PT Y files only as required, this ticket and existing study; no caller workarounds or unrelated session changes.
 - M1 focused packages/vet/install passed; its full quota run failed in untouched `internal/session/TestSessionDetachPrefixDAndReattach`, also intermittently seen in previous ticket. Record actual results, do not weaken or fix that unrelated test. After test/source edits run one quota suite, install, update evidence and commit. Leave ticket open pending host review/verification.
 
+## Host acceptance
+
+Host reviewed M1/M2 implementation and every changed assertion, then independently ran `make test-q1`: exit 0 (log `/tmp/loom-issue438-host-test-q1.log`). Host also exercised the installed `loom widgets --show TextEntry` under a real PTY: Ctrl+U inside `prefixZZ` retained `ZZ`; Ctrl+C then cleared input, showed confirmation, and exited successfully. The first smoke probe's raw-output marker was split by ANSI styling; stripping styling fixed the probe, not product code. The developer's multiline cursor-coordinate tests, repeated soft-wrap clearing, clipboard preservation and exact undo notifications passed in both final full runs. No Taia edits or Ctrl+L changes. Ready to close with the documented soft-boundary behavior.
+
 ## Goal
 
 /goal Deliver Ctrl+U clearing and previous-line navigation in loom.TextEntry matching Taia #151, including visual-line clearing where feasible, with explicit tested wrap-boundary behavior, gallery/live terminal evidence and passing repository verification; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
