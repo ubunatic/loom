@@ -22,5 +22,9 @@ TestSessionPrefixNewTabAndCloseTab, TestSessionAltScreenTabSwitch, TestSessionDi
 - 2026-11-06: Jules implement run 392 (session 2798506688453647188) hit the same timeouts (TestSessionTabSwitchPrefixNAndP, TestSessionDirectTabSelectAltDigits) in its own VM on GitHub main f720cad, so it is not specific to the owner's machine.
 - The screen dump shows the new tab's output (`$ TAB2_RUNNING`) but `WaitFor` times out at `internal/session/session_pty_test.go:902`; the tab bar reads `1: bash  2: sh`.
 
+- Host 2026-11-06: not one bad commit. 392f0da, ca9de98, 8407f31, 3b420cd and ccb53f9^ all fail; 8d4e839 passed once, then failed 3 of 3. A bisect is misled by the flakiness.
+- The failing step in TestSessionNewTabCtrlN is the tab close: after `ctrl-b x` the tab bar still shows `1: bash  2: sh` (`WaitForUpdateState` at `internal/session/session_pty_test.go:907`). The close path (`internal/session/session.go:1217`) sends SIGHUP and SIGTERM through `killProcessGroup` (`:1510`) and closes the master; tab 2 runs `/bin/sh`.
+- `WaitForUpdateState` lacks `t.Helper()`, so failures report `session.go:239` instead of the test line.
+
 ## 3. Next step
-Bisect between 392f0da and 7511513 if the tree differs; otherwise compare the shell the new tab starts (`sh` vs `bash`) and what `WaitFor` matches.
+Check why tab 2 survives the close: whether `/bin/sh` (dash) gets the signals (process group set up for the tab child?), and whether the tab is removed only on reader EOF. Add `t.Helper()` to `WaitForUpdateState` first. Event and session code: start on codex:sol:med.
