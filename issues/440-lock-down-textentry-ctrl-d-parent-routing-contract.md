@@ -1,6 +1,6 @@
 # 440 — Lock down TextEntry Ctrl+D parent routing contract
 
-**Status**: Open
+**Status**: Closed — Existing Ctrl+D ignored contract documented and locked by decoded/named state-preservation and child-first Frame parent tests; developer and independent host test-q1 passed.
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Test
