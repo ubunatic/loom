@@ -47,11 +47,14 @@ All probes are green on Linux under tmux.
   model (`vt.VT.Repaint()`), not by passing bytes through: the chrome row stayed intact
   while the child frame rendered below it. Byte pass-through cannot keep chrome because
   the child owns cursor positioning from row 1.
-- **A5 — Ctrl-C.** In raw mode Ctrl-C is not a signal at the observer, it is byte
-  `0x03`. The harness must intercept `0x03` for restore/spool flush, and forward it so
-  the child's line discipline raises `SIGINT` in the test process — an interrupt must
-  hit the test child, not only the harness. With `ISIG` kept on the child side this
-  works: `FAIL: child: signal: interrupt`, observer state restored.
+- **A5 — Ctrl-C.** `term.MakeRaw` clears `ISIG`, so Ctrl-C arrived as byte `0x03`
+  and the probe looked hung with no way to stop it — this is the bug the owner hit.
+  Raw mode must keep `ISIG` (clear only `ICANON`/`ECHO`), plus a signal path that
+  restores the terminal and ends the loop. Verified with `ISIG` kept: Ctrl-C interrupts
+  the harness, `stty -a` before and after is identical, the signal path is the one used,
+  and forwarding `0x03` afterwards still interrupts the test child
+  (`FAIL: child: signal: interrupt`). Rule recorded in `docs/TerminalSafety.md`
+  ("Raw mode must stay interruptible") with a matching checklist item.
 
 ## 3. Implementation & Verification Plan
 Milestone 1 of issue 095 split into three independently buildable, unit-tested parts
@@ -75,6 +78,6 @@ in `internal/ptytest/view/` (no `ptytest.Session` dependency until milestone 2):
    `/dev/tty` is unavailable.
 
 Live checks for the owner: run `make canary-095` in a real terminal, type a key (the
-child should echo it back), compare `stty -a` before and after, press Ctrl-C (child must
-die by `SIGINT` while the observer state is restored), and check `ls /dev/pts` for leaked
-fds.
+child should echo it back), compare `stty -a` before and after, press Ctrl-C (must stop
+the app, restore the terminal, and interrupt the test child), and check `ls /dev/pts` for
+leaked fds.

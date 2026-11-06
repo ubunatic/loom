@@ -88,20 +88,13 @@ func runCanary() error {
 	}
 
 	restoredOnSignal := false
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
-	defer signal.Stop(signals)
-	go func() {
-		<-signals
-		_ = term.Restore(fd, before)
-		restoredOnSignal = true
-	}()
+	stop := make(chan struct{})
 
-	if _, err := term.MakeRaw(fd); err != nil {
+	if err := rawKeepingISIG(fd); err != nil {
 		return fmt.Errorf("raw mode: %w", err)
 	}
-	report("A2 raw mode on /dev/tty: echo off=%v, canonical off=%v",
-		flagOff(fd, unix.ECHO), flagOff(fd, unix.ICANON))
+	report("A2 observer raw mode: echo off=%v, canonical off=%v, ISIG kept=%v",
+		flagOff(fd, unix.ECHO), flagOff(fd, unix.ICANON), flagOn(fd, unix.ISIG))
 
 	master, slave, err := openPTY()
 	if err != nil {
@@ -109,6 +102,18 @@ func runCanary() error {
 	}
 	defer master.Close()
 	defer slave.Close()
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(signals)
+	go func() {
+		<-signals
+		_ = term.Restore(fd, before)
+		restoredOnSignal = true
+		// An interrupt must reach the test child as well, so forward the character.
+		_, _ = master.Write([]byte{3})
+		close(stop)
+	}()
 
 	child := exec.Command(os.Args[0], "-child")
 	child.Stdin, child.Stdout, child.Stderr = slave, slave, slave
@@ -121,7 +126,7 @@ func runCanary() error {
 	model := vt.NewVT(cols, rows)
 	_, _ = tty.WriteString("\x1b[?1049h")
 
-	key := relay(tty, master, observer, model)
+	key := relay(tty, master, observer, model, stop)
 	err = child.Wait()
 	_ = term.Restore(fd, before)
 	after, err2 := unix.IoctlGetTermios(fd, unix.TCGETS)
@@ -140,7 +145,7 @@ func runCanary() error {
 // relay mirrors child output into the observer cell model and forwards observer
 // keystrokes to the child. Input comes from the process's own terminal fd: a fresh
 // open of /dev/tty takes writes but never sees keystrokes (probe P2, issue 437).
-func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
+func relay(tty *os.File, master *os.File, observer, model *vt.VT, stop chan struct{}) string {
 	input := 0
 	if !term.IsTerminal(0) {
 		input = int(tty.Fd())
@@ -149,6 +154,11 @@ func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
 	key := ""
 	report("A3 input fd: %d (stdin terminal: %v)", input, term.IsTerminal(0))
 	for time.Now().Before(deadline) {
+		select {
+		case <-stop:
+			return key
+		default:
+		}
 		fds := []int{int(master.Fd()), input}
 		ready, err := readable(fds, 200*time.Millisecond)
 		if err != nil {
@@ -173,7 +183,7 @@ func relay(tty *os.File, master *os.File, observer, model *vt.VT) string {
 				key += string(buf[:n])
 				_, _ = master.Write(buf[:n])
 				if buf[0] == 3 {
-					report("A5 Ctrl-C reaches the relay as byte 0x03 (raw mode has ISIG off)")
+					report("A5 relay received 0x03 as a byte (only possible when ISIG is off)")
 					return key
 				}
 				if strings.Contains(key, "q") {
@@ -252,6 +262,25 @@ func flagOff(fd int, flag uint32) bool {
 		return false
 	}
 	return state.Lflag&flag == 0
+}
+
+func flagOn(fd int, flag uint32) bool {
+	return !flagOff(fd, flag)
+}
+
+// rawKeepingISIG enters raw mode without clearing ISIG. term.MakeRaw clears ISIG,
+// which turns Ctrl-C into a plain byte and makes the app uninterruptible: the observer
+// must always be interruptible (docs/TerminalSafety.md, issue 437).
+func rawKeepingISIG(fd int) error {
+	state, err := unix.IoctlGetTermios(fd, unix.TCGETS)
+	if err != nil {
+		return err
+	}
+	state.Lflag &= ^(uint32(unix.ICANON) | uint32(unix.ECHO))
+	state.Cflag |= uint32(unix.CSIZE)
+	state.Cc[unix.VMIN] = 1
+	state.Cc[unix.VTIME] = 0
+	return unix.IoctlSetTermios(fd, unix.TCSETS, state)
 }
 
 func openPTY() (*os.File, *os.File, error) {

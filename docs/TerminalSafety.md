@@ -113,6 +113,18 @@ a blocking `Read` cancelable). Before hand-rolling a new raw syscall
 against a tty fd, check whether `x/term` already covers it — but don't
 assume every terminal-adjacent thing belongs there either.
 
+## Raw mode must stay interruptible
+
+`term.MakeRaw` clears `ISIG`, which turns Ctrl-C into a plain byte: the app
+becomes uninterruptible and the user can only kill it from outside. An
+interactive or observer-facing program must clear only `ICANON`/`ECHO` and keep
+`ISIG`, so Ctrl-C still raises `SIGINT`, and must pair that with a signal path
+that restores the terminal and ends the loop (see `terminal.Restorer` +
+`CatchSignals`). A relay that swallows `0x03` instead of honouring `ISIG` is a
+bug, not a feature — verified by the issue 437 canary (`scripts/canary095`,
+probe A2/A5/A6). Forwarding `0x03` to the child PTY is fine *after* the
+interrupt is handled, so the test process is interrupted too.
+
 ## Checklist for any new raw-ANSI terminal writer
 
 - [ ] Does it need to redraw the same region repeatedly (`--watch`), or
@@ -129,3 +141,6 @@ assume every terminal-adjacent thing belongs there either.
       prior content (a PTY, not a blank buffer) before checking that
       prior content survives? A blank-terminal test cannot catch either
       the auto-wrap-cascade bug or the one-shot-clobbers-scrollback bug.
+- [ ] If it enters raw mode, is Ctrl-C still an interrupt (`ISIG` kept, not the
+      `MakeRaw` default), and does the signal path restore the terminal before
+      exiting?
