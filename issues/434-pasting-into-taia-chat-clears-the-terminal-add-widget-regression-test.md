@@ -12,6 +12,22 @@
 
 The user reports that copying and pasting into the chat input in taia clears the terminal. The cause is unknown and may lie in loom; do not assume it does. Bracketed paste support was previously delivered in issue 181.
 
+## Decision
+
+Validate the library contract using the in-repository host `loom widgets --show TextEntry`; external application code remains read-only. The owner proposed clear-on-first-Ctrl+C and parent handling on the next press. Demonstrate this as input-state-based gallery policy, not a new TextEntry library contract: offer the key to TextEntry first (selected text copies), otherwise clear nonempty input and consume it, and leave an empty input's Ctrl+C unhandled for the existing parent behavior. This reversible example preserves the current selection-copy contract and needs no library API change.
+
+## Milestones
+
+### M1 — Gallery host regression and Ctrl+C example
+
+- Searcher and terra:low developer inspected current code/history read-only. Existing commit `49e5bad` already covers modeled chat canvas preservation and Pane.run PTY paste. Neither worker reproduced the original Taia report or established the responsible layer.
+- Approved write set: `gallery/coverage.go`, `gallery/coverage_test.go`, `cmd/loom/widgets_paste_pty_test.go`, this ticket, and one bounded sprint study in `docs/studies/`. No library semantic/API change, no external repository edits, no changes to issue 436.
+- Add regression-first gallery routing coverage: selected Ctrl+C copies before parent handling; unselected nonempty Ctrl+C clears only the entry; empty Ctrl+C remains ignored by the wrapper. Verify following keys and paste remain usable, including multiline/control payloads where supported.
+- Exercise the real `loom widgets --show TextEntry` command via PTY and assert surrounding display is retained after paste and clearing. Preserve all existing assertions. Separate clipboard-protocol evidence from real desktop clipboard delivery; do not claim the latter from unit or PTY tests alone.
+- Verify actual top-level parent routing rather than assuming an empty-input Ctrl+C exits. Record concrete expected manual steps and any unsupported part.
+- Developer runs one `make test-q1` after checking for unrelated work; host reviews and independently verifies before acceptance. Install before reporting final results.
+- Record verified evidence honestly. Keep this ticket open if the original report cannot be reproduced or attributed; gallery coverage alone does not establish a Taia fix.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
