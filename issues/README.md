@@ -50,5 +50,5 @@ upkeep.
 | 434 | [434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md](434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md) | Pasting into taia chat clears the terminal: add widget regression test | Open |
 | 435 | [435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md](435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md) | Multiline paste into chat submits each line instead of inserting text | Open |
 | 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
-| 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Draft |
+| 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open — canary findings recorded; relay EINTR retry and child-side /dev/tty resolution still unverified |
 <!-- harnez:end issues-active-index -->

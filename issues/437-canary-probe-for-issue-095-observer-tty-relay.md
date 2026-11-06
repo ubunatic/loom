@@ -1,6 +1,6 @@
 # 437 — canary probe for issue 095 observer tty relay
 
-**Status**: Open
+**Status**: Open — canary findings recorded; relay EINTR retry and child-side /dev/tty resolution still unverified
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Enhancement
