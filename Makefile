@@ -59,6 +59,9 @@ validate-spec: ⚙️  ## validate YAML specs against JSON Schema (Go jsonschema
 geometry-replay: ⚙️  ## verify saved ANSI replay bytes against geometry goldens
 	python3 scripts/check-geometry-replay.py
 
+canary-095: ⚙️  ## probe issue 095 mechanisms: observer TTY, raw restore, relay, chrome rows
+	go run ./scripts/canary095
+
 watch-pty: ⚙️  ## verify monitor watch mode through a Linux PTY
 	GOWORK=off go build -o /tmp/loom-monitor-pty ./examples/monitor
 	LOOM_TEST_RESPONSIVE=1 LOOM_TEST_TOGGLES=1 python3 scripts/check-watch-pty.py /tmp/loom-monitor-pty --watch
