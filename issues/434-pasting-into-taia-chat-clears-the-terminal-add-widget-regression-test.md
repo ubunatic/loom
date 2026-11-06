@@ -37,6 +37,17 @@ Validate the library contract using the in-repository host `loom widgets --show 
 - Manual checklist: run `loom widgets --show TextEntry`; press Ctrl+A then Ctrl+C and confirm the draft remains; press Right then Ctrl+C and confirm the input clears while the gallery controls remain; press Ctrl+C again and confirm the gallery stays open; paste `after\nclear` and confirm it appears without losing the F2/F9/F10 controls. Desktop clipboard receipt remains a separate manual check.
 - The reported Taia terminal clearing was not reproduced or attributed in M1. No Taia fix is claimed; keep this issue open pending a reproduction and layer attribution.
 
+### M2 — App-level quit confirmation (owner clarification)
+
+#### Pre-Work / Required Refinements
+
+- M1 host diff review: the demo clears unselected text correctly, but empty Ctrl+C stays unhandled and never exits. The owner explicitly requires the outer gallery app to show a hint on the first empty-input Ctrl+C and quit on the next. M1's empty-Ctrl+C-stays-open assertions must be extended, not simply removed.
+- Required sequence from nonempty unselected input: clear entry (stay running, no quit arm), Ctrl+C on empty input shows a visible "Press Ctrl+C again to quit" hint, next Ctrl+C exits. From initially empty input it takes two presses. Keep existing selection-copy precedence; this clarification does not authorize replacing selection-copy with destructive clearing.
+- Confirmation belongs to the in-repo outer app, not the TextEntry library. Ordinary typing, paste, focus/navigation or another action cancels pending confirmation; clearing text itself must not arm it. Prefer a simple consecutive-press state machine without sleeps/timers.
+- Preserve F10 and other existing gallery quit behavior. Test the actual command's process exit and the visible hint, not only EventResult or retained draft. Preserve paste/display regressions and assert continued input after cancellation.
+- Before writing, developer must inspect and return the exact additional app file/write set needed for the outer confirmation and hint, along with reset cases and PTY exit-check approach. Host must approve this expansion. No library API/semantic change or external edits authorized.
+- Clipboard limitation from M1 remains explicit: preserving selected text does not itself prove copy delivery. Do not label that PTY assertion a clipboard-delivery test.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
