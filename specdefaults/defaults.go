@@ -673,6 +673,7 @@ func (d SettingsDefaults) Validate() error {
 // SessionDefaults defines specced defaults for the Loom session command.
 type SessionDefaults struct {
 	Mouse           string                `yaml:"mouse"`
+	MouseMode       string                `yaml:"mouse_mode"`
 	Bar             string                `yaml:"bar"`
 	ScrollbackLines int                   `yaml:"scrollback_lines"`
 	BarLabels       SessionBarLabels      `yaml:"bar_labels"`
@@ -688,7 +689,9 @@ type SessionBarLabels struct {
 	Help        string   `yaml:"help"`
 	Quit        string   `yaml:"quit"`
 	Screenshot  string   `yaml:"screenshot"`
-	MouseIcon   string   `yaml:"mouse_icon"`
+	MouseIconBasic string   `yaml:"mouse_icon_basic"`
+	MouseIconFull  string   `yaml:"mouse_icon_full"`
+	MouseIconOff   string   `yaml:"mouse_icon_off"`
 	Separator   string   `yaml:"separator"`
 	NewTab      string   `yaml:"new_tab"`
 	NextTab     string   `yaml:"next_tab"`
@@ -745,10 +748,13 @@ func (d SessionDefaults) Validate() error {
 	if d.Mouse != "safe" {
 		return fmt.Errorf("session.mouse must be 'safe'")
 	}
+	if d.MouseMode != "off" && d.MouseMode != "basic" && d.MouseMode != "full" {
+		return fmt.Errorf("session.mouse_mode must be 'off', 'basic', or 'full'")
+	}
 	if d.Bar != "always" && d.Bar != "tabs" {
 		return fmt.Errorf("session.bar must be 'always' or 'tabs'")
 	}
-	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIcon == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || d.BarLabels.Search == "" || d.BarLabels.Detach == "" || len(d.BarLabels.DropOrder) != 5 {
+	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIconBasic == "" || d.BarLabels.MouseIconFull == "" || d.BarLabels.MouseIconOff == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || d.BarLabels.Search == "" || d.BarLabels.Detach == "" || len(d.BarLabels.DropOrder) != 5 {
 		return fmt.Errorf("session.bar_labels must configure all labels, glyphs, and five hint drop priorities")
 	}
 	dropNames := map[string]bool{"tools": true, "help": true, "screenshot": true, "quit": true, "search": true}

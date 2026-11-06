@@ -975,11 +975,11 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 
 	// Switch to previous tab with ctrl-b p (2, 'p')
 	session.SendRaw([]byte{2, 'p'})
-	session.WaitForUpdate("SCREEN1_CONTENT", time.Second*5)
+	session.WaitFor("SCREEN1_CONTENT", time.Second*5)
 
 	// Switch to next tab with ctrl-b n (2, 'n')
 	session.SendRaw([]byte{2, 'n'})
-	session.WaitForUpdate("SCREEN2_CONTENT", time.Second*5)
+	session.WaitFor("SCREEN2_CONTENT", time.Second*5)
 
 	// Close tab 2 and finish tab 1
 	session.SendRaw([]byte{2, 'x'})
@@ -1538,7 +1538,7 @@ func TestSessionBarAlwaysAndNarrowDoesNotWrap(t *testing.T) {
 	assertSessionBarCellStyle(t, session, 0, barY, loom.DefaultTabsStyle().Active)
 	capCol := displayColumnOf(bar, "⌃B…")
 	labelCol := displayColumnOf(bar, "Tools")
-	iconCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.MouseIcon)
+	iconCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.MouseIconBasic)
 	// The hint now advertises the direct binding instead of the prefix sequence.
 	searchCapCol := displayColumnOf(bar, "⌃F")
 	searchLabelCol := displayColumnOf(bar, loom.SpeccedDefaults.Session.BarLabels.Search)
@@ -1912,6 +1912,66 @@ func TestSessionSearchKeepsGlobalQuitBinding(t *testing.T) {
 	session.WaitFor("Search", time.Second*5)
 	session.SendRaw([]byte{2, 'f'})
 	session.WaitFor("Find:", time.Second*5)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionMouseModeBasicFiltersDrag(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := clitest.BuildLoomBinary(t)
+	// Output current mouse mode logic. We can test that mouse click and wheel reach the app, but drag does not.
+	fixture := "printf '\\033[?1003h\\033[?1006hREADY\\n'; cat -v"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
+	session.WaitFor("READY", time.Second*5)
+
+	// Send mouse click
+	session.SendRaw([]byte("\x1b[<0;5;5M"))
+	// cat -v will print ESC as ^[
+	session.WaitFor("^[[<0;5;5M", time.Second*5)
+
+	// Send mouse drag (should be filtered)
+	session.SendRaw([]byte("\x1b[<32;6;6M"))
+
+	// Wait for a bit
+	time.Sleep(1 * time.Second)
+	// Verify it's not in screen
+	if strings.Contains(strings.Join(session.Screen(), "\n"), "^[<32;6;6M") {
+		t.Fatalf("Drag event was not filtered in basic mode!")
+	}
+
+	// Quit with ctrl-q (17)
+	session.SendRaw([]byte{17})
+	_ = session.Wait(time.Second * 5)
+}
+
+func TestSessionMouseModeFullPassesDrag(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+
+	bin := clitest.BuildLoomBinary(t)
+	fixture := "printf '\\033[?1003h\\033[?1006hREADY\\n'; cat -v"
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
+	session.WaitFor("READY", time.Second*5)
+
+	// Toggle mode to Full
+	session.SendRaw([]byte{2, 'm'})
+
+	// Send mouse click
+	session.SendRaw([]byte("\x1b[<0;5;5M"))
+	// Should see the click returned since bash prints it
+	session.WaitFor("^[[<0;5;5M", time.Second*5)
+
+	// Send mouse drag
+	session.SendRaw([]byte("\x1b[<32;6;6M"))
+
+	// Verify it is printed.
+	session.WaitFor("^[[<32;6;6M", time.Second*5)
+
+	// Quit with ctrl-q (17)
 	session.SendRaw([]byte{17})
 	_ = session.Wait(time.Second * 5)
 }

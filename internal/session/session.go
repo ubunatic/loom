@@ -160,7 +160,7 @@ type sessionTab struct {
 	vt               *vt.VT
 	exitCode         int
 	waitErr          error
-	mouseOverride    int // -1 disabled, 0 follows child, 1 enabled
+	mouseMode MouseMode
 	done             chan struct{}
 	debugRing        *debugRing
 	debugDetector    *debugDetector
@@ -181,7 +181,7 @@ func drawSessionTabBar(out io.Writer, tabs []*sessionTab, activeIndex, cols, row
 	if barCols < 0 {
 		barCols = 0
 	}
-	bar, _, _ := sessionBarContent(tabs, activeIndex, barCols, activeIndex >= 0 && activeIndex < len(tabs) && sessionTabMouseOn(tabs[activeIndex]))
+	bar, _, _ := sessionBarContent(tabs, activeIndex, barCols, activeIndex >= 0 && activeIndex < len(tabs) && (sessionTabMouseMode(tabs[activeIndex]) == MouseModeBasic || sessionTabMouseMode(tabs[activeIndex]) == MouseModeFull))
 	b.WriteString(bar)
 	b.WriteString("\x1b[0m\x1b8") // reset style and restore cursor
 	_, _ = out.Write([]byte(b.String()))
@@ -213,7 +213,19 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 	if mouseOn {
 		mouseStyle = capStyle
 	}
-	icon := labels.Separator + labels.MouseIcon
+	iconGlyph := labels.MouseIconBasic
+	if activeIndex >= 0 && activeIndex < len(tabs) {
+		switch sessionTabMouseMode(tabs[activeIndex]) {
+		case MouseModeFull:
+			iconGlyph = labels.MouseIconFull
+		case MouseModeOff:
+			iconGlyph = labels.MouseIconOff
+			mouseStyle = labelStyle
+		default:
+			iconGlyph = labels.MouseIconBasic
+		}
+	}
+	icon := labels.Separator + iconGlyph
 	iconWidth := loom.StringWidth(icon)
 	alert := activeIndex >= 0 && activeIndex < len(tabs) && tabs[activeIndex].debugAlert
 	alertWidth := 0
@@ -313,23 +325,76 @@ func sessionHint(capStyle, labelStyle, key, label string) string {
 	return capStyle + " " + key + " " + labelStyle + " " + label + " "
 }
 
-func sessionTabMouseOn(tab *sessionTab) bool {
-	return tab != nil && (tab.mouseOverride > 0 || (tab.mouseOverride == 0 && tab.vt.MouseMode != 0))
+func sessionTabMouseMode(tab *sessionTab) MouseMode {
+	if tab == nil {
+		return MouseModeFollow
+	}
+	if tab.mouseMode == MouseModeFollow {
+		if tab.vt != nil && tab.vt.MouseMode != 0 {
+			switch loom.SpeccedDefaults.Session.MouseMode {
+			case "full":
+				return MouseModeFull
+			case "off":
+				return MouseModeOff
+			default:
+				return MouseModeBasic
+			}
+		}
+		return MouseModeFollow
+	}
+	return tab.mouseMode
 }
 
 func syncSessionMouse(out io.Writer, tab *sessionTab) {
-	if tab == nil || tab.mouseOverride == 0 {
+	if tab == nil || tab.mouseMode == MouseModeFollow {
 		return
 	}
-	if tab.mouseOverride < 0 {
+	if tab.mouseMode == MouseModeOff {
 		_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l")
 		return
 	}
-	_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l\x1b[?1000h\x1b[?1006h")
+
+	// Basic mode passes click & scroll, filtering drag events
+	if tab.mouseMode == MouseModeBasic {
+		_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l\x1b[?1000h\x1b[?1006h")
+		return
+	}
+
+	if tab.mouseMode == MouseModeFull {
+		var b strings.Builder
+		if tab.vt != nil && tab.vt.MouseMode != 0 {
+			fmt.Fprintf(&b, "\x1b[?%dh", tab.vt.MouseMode)
+			if tab.vt.MouseSGR {
+				b.WriteString("\x1b[?1006h")
+			}
+			if tab.vt.MouseUTF8 {
+				b.WriteString("\x1b[?1005h")
+			}
+			if tab.vt.MouseURXVT {
+				b.WriteString("\x1b[?1015h")
+			}
+		}
+		if b.Len() > 0 {
+			_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l"+b.String())
+		} else {
+			_, _ = io.WriteString(out, "\x1b[?9l\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1005l\x1b[?1006l\x1b[?1015l")
+		}
+		return
+	}
 }
 
-func sessionMouseIconRange(cols int) (int, int) {
-	icon := loom.SpeccedDefaults.Session.BarLabels.Separator + loom.SpeccedDefaults.Session.BarLabels.MouseIcon
+func sessionMouseIconRange(cols int, tabs []*sessionTab, activeIndex int) (int, int) {
+	labels := loom.SpeccedDefaults.Session.BarLabels
+	iconGlyph := labels.MouseIconBasic
+	if activeIndex >= 0 && activeIndex < len(tabs) {
+		switch sessionTabMouseMode(tabs[activeIndex]) {
+		case MouseModeFull:
+			iconGlyph = labels.MouseIconFull
+		case MouseModeOff:
+			iconGlyph = labels.MouseIconOff
+		}
+	}
+	icon := labels.Separator + iconGlyph
 	return cols - 1 - loom.StringWidth(icon), cols - 1
 }
 
@@ -431,6 +496,19 @@ func tabIndexAtCol(tabs []*sessionTab, col, cols int) int {
 	return -1
 }
 
+
+
+
+
+type MouseMode int
+
+const (
+	MouseModeOff MouseMode = -1
+	MouseModeFollow MouseMode = 0
+	MouseModeBasic MouseMode = 1
+	MouseModeFull MouseMode = 2
+)
+
 func applyTabModes(out io.Writer, oldTab, newTab *sessionTab) {
 	if out == nil || newTab == nil {
 		return
@@ -451,6 +529,19 @@ func applyTabModes(out io.Writer, oldTab, newTab *sessionTab) {
 	newSGR := newTab.vt.MouseSGR
 	newUTF8 := newTab.vt.MouseUTF8
 	newURXVT := newTab.vt.MouseURXVT
+	if sessionTabMouseMode(newTab) == MouseModeBasic {
+		if newMouse != 0 {
+			newMouse = 1000
+			newSGR = true
+			newUTF8 = false
+			newURXVT = false
+		}
+	} else if sessionTabMouseMode(newTab) == MouseModeOff {
+		newMouse = 0
+		newSGR = false
+		newUTF8 = false
+		newURXVT = false
+	}
 
 	if oldMouse != newMouse || oldSGR != newSGR || oldUTF8 != newUTF8 || oldURXVT != newURXVT {
 		if oldMouse != 0 || oldSGR || oldUTF8 || oldURXVT {
@@ -643,7 +734,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 	var tabs []*sessionTab
 	activeIndex := 0
 	barDrawn := false
-	barMouseState := false
+	barMouseState := MouseModeFollow
 	barAlertState := false
 	nextTabID := 1
 	lastDebugAction := time.Time{}
@@ -783,7 +874,7 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						_, _ = out.Write(frame)
 						syncSessionMouse(out, t)
 						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
-							mouseState := sessionTabMouseOn(t)
+							mouseState := sessionTabMouseMode(t)
 							if len(tabs) > 1 || !barDrawn || mouseState != barMouseState || t.debugAlert != barAlertState {
 								drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 								barDrawn = true
@@ -1005,6 +1096,12 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 
 					// SGR Mouse event (\x1b[<...M or \x1b[<...m)
 					if ev, used, ok := loom.ScanMouse(pending); ok {
+						if sessionTabMouseMode(tabs[activeIndex]) == MouseModeBasic && ev.Action == loom.MouseDrag {
+							pending = pending[used:]
+							prefixMode = false
+							sessionMu.Unlock()
+							continue
+						}
 						if searchActive {
 							pending = pending[used:]
 							sessionMu.Unlock()
@@ -1012,9 +1109,16 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						}
 						if sessionBarVisible(sessionDefs, len(tabs)) && ev.Y == rows {
 							if ev.Action == loom.MousePress && ev.Button == loom.MouseLeft {
-								iconStart, iconEnd := sessionMouseIconRange(cols)
-								if sessionTabMouseOn(tabs[activeIndex]) && ev.X-1 >= iconStart && ev.X-1 < iconEnd {
-									tabs[activeIndex].mouseOverride = -1
+								iconStart, iconEnd := sessionMouseIconRange(cols, tabs, activeIndex)
+								if (sessionTabMouseMode(tabs[activeIndex]) == MouseModeBasic || sessionTabMouseMode(tabs[activeIndex]) == MouseModeFull) && ev.X-1 >= iconStart && ev.X-1 < iconEnd {
+									switch sessionTabMouseMode(tabs[activeIndex]) {
+									case MouseModeBasic:
+										tabs[activeIndex].mouseMode = MouseModeFull
+									case MouseModeFull:
+										tabs[activeIndex].mouseMode = MouseModeOff
+									default:
+										tabs[activeIndex].mouseMode = MouseModeBasic
+									}
 									syncSessionMouse(out, tabs[activeIndex])
 									drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 								} else {
@@ -1041,6 +1145,13 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 
 					// Standard X10 mouse event (\x1b[M + 3 bytes)
 					if len(pending) >= 6 && pending[0] == 0x1b && pending[1] == '[' && pending[2] == 'M' {
+						btn := int(pending[3]) - 32
+						if sessionTabMouseMode(tabs[activeIndex]) == MouseModeBasic && btn&32 != 0 {
+							pending = pending[6:]
+							prefixMode = false
+							sessionMu.Unlock()
+							continue
+						}
 						if searchActive {
 							pending = pending[6:]
 							sessionMu.Unlock()
@@ -1048,12 +1159,18 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						}
 						col := int(pending[4]) - 32
 						row := int(pending[5]) - 32
-						btn := int(pending[3]) - 32
 						if sessionBarVisible(sessionDefs, len(tabs)) && row == rows {
 							if btn&3 == 0 {
-								iconStart, iconEnd := sessionMouseIconRange(cols)
-								if sessionTabMouseOn(tabs[activeIndex]) && col-1 >= iconStart && col-1 < iconEnd {
-									tabs[activeIndex].mouseOverride = -1
+								iconStart, iconEnd := sessionMouseIconRange(cols, tabs, activeIndex)
+								if (sessionTabMouseMode(tabs[activeIndex]) == MouseModeBasic || sessionTabMouseMode(tabs[activeIndex]) == MouseModeFull) && col-1 >= iconStart && col-1 < iconEnd {
+									switch sessionTabMouseMode(tabs[activeIndex]) {
+									case MouseModeBasic:
+										tabs[activeIndex].mouseMode = MouseModeFull
+									case MouseModeFull:
+										tabs[activeIndex].mouseMode = MouseModeOff
+									default:
+										tabs[activeIndex].mouseMode = MouseModeBasic
+									}
 									syncSessionMouse(out, tabs[activeIndex])
 									drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 								} else {
@@ -1127,10 +1244,13 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						switch {
 						case key.Is(sessionDefs.PrefixBindings.ToggleMouse...):
 							tab := tabs[activeIndex]
-							if sessionTabMouseOn(tab) {
-								tab.mouseOverride = -1
-							} else {
-								tab.mouseOverride = 1
+							switch sessionTabMouseMode(tab) {
+							case MouseModeBasic:
+								tab.mouseMode = MouseModeFull
+							case MouseModeFull:
+								tab.mouseMode = MouseModeOff
+							default:
+								tab.mouseMode = MouseModeBasic
 							}
 							syncSessionMouse(out, tab)
 							drawSessionTabBar(out, tabs, activeIndex, cols, rows)

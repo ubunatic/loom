@@ -591,6 +591,7 @@ rich_text_edit:
 
 session:
   mouse: "safe"
+  mouse_mode: "basic"
   bar: "always"
   scrollback_lines: 5000
   bar_labels:
@@ -598,7 +599,9 @@ session:
     help: "Help"
     quit: "Quit"
     screenshot: "📷"
-    mouse_icon: "🖱︎"
+    mouse_icon_basic: "🖱︎"
+    mouse_icon_full: "🖰"
+    mouse_icon_off: "·"
     separator: "▏"
     new_tab: "New tab"
     next_tab: "Next tab"

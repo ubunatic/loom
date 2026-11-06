@@ -821,21 +821,24 @@
     "session": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mouse", "bar", "scrollback_lines", "bar_labels", "prefix", "bindings", "prefix_bindings", "search"],
+      "required": ["mouse", "mouse_mode", "bar", "scrollback_lines", "bar_labels", "prefix", "bindings", "prefix_bindings", "search"],
       "properties": {
         "mouse": { "type": "string", "enum": ["safe"] },
+        "mouse_mode": { "type": "string", "enum": ["off", "basic", "full"] },
         "bar": { "type": "string", "enum": ["always", "tabs"] },
         "scrollback_lines": { "type": "integer", "minimum": 0 },
         "bar_labels": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["tools", "help", "quit", "screenshot", "mouse_icon", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "search", "detach", "drop_order"],
+          "required": ["tools", "help", "quit", "screenshot", "mouse_icon_basic", "mouse_icon_full", "mouse_icon_off", "separator", "new_tab", "next_tab", "previous_tab", "close_tab", "send_prefix", "toggle_mouse", "search", "detach", "drop_order"],
           "properties": {
             "tools": { "type": "string", "minLength": 1 },
             "help": { "type": "string", "minLength": 1 },
             "quit": { "type": "string", "minLength": 1 },
             "screenshot": { "type": "string", "minLength": 1 },
-            "mouse_icon": { "type": "string", "minLength": 1 },
+            "mouse_icon_basic": { "type": "string", "minLength": 1 },
+            "mouse_icon_full": { "type": "string", "minLength": 1 },
+            "mouse_icon_off": { "type": "string", "minLength": 1 },
             "separator": { "type": "string", "minLength": 1 },
             "new_tab": { "type": "string", "minLength": 1 },
             "next_tab": { "type": "string", "minLength": 1 },
