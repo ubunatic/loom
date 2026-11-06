@@ -4,7 +4,7 @@
 **Priority**: P1
 **Severity**: Major
 **Category**: Enhancement
-**Related**: Issues 088–094
+**Related**: Issues 088–094, 437
 
 ---
 
@@ -31,6 +31,10 @@ observations into tracker drafts.
 
 Define interruption, timeout, empty-feedback, cancellation, and failed-test
 behavior, and ensure raw observer comments are not lost.
+
+Milestone 1 is split into three independently buildable and unit-testable parts
+in `internal/ptytest/view/` (frame renderer, relay loop, observer attach/restore);
+the split and the canary findings live in issue 437.
 
 ## Goal
 
