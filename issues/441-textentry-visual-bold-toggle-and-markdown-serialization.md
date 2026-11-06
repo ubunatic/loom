@@ -43,6 +43,12 @@ After M1 host review, approved candidate files: `gallery/coverage.go`, `gallery/
 
 Host is sole reviewer; developer terra:med. No known baseline failures (last host q1 green). Preserve unrelated changes. No pushes; leaf agents only; do not close until host independently verifies final source and installed binary. Report any unsupported Markdown representation honestly, do not claim a full Markdown round-trip parser.
 
+## Host review and verification — delivered, full-suite blocker
+
+Host reviewed M1/M2 source and assertion diffs and required preserving non-opted-in selection styling, repairing true Ctrl+D test states and strengthening mutation/serialization coverage. Those refinements and gallery Markdown submission are committed. Independent host `make test-q1` failed only at untouched `internal/session/TestSessionDetachPrefixDAndReattach`: retained output appeared but tabs did not repaint (log `/tmp/loom-issue441-host-test-q1.log`). This also failed in the developer M2 run and intermittently before this feature; no rerun or unrelated test weakening performed. Other logged packages passed. Full green verification remains owed, so leave this issue open.
+
+Installed-binary PTY smoke passed: F2 cleared entry, Ctrl+B then `sent` displayed plain text without literal Markdown markers at offset 4; Enter displayed `Submitted Markdown: **sent**`; F10 exited successfully. Developer PTY tests assert selected/typing bold cell attributes, inversion, caret and undo/redo. Final developer install passed. Changes remain local, not pushed. Resume point: investigate the session reattach failure separately with owner authorization, then perform permitted full verification; no further bold implementation is currently required by host review.
+
 ## Goal
 
 /goal Deliver opt-in visual Ctrl+B bold toggling in TextEntry with reliable editing/history, bold-only Markdown serialization and actual gallery Markdown submission, while preserving existing plain APIs and key contracts; prove it in unit/per-cell/terminal tests and install. Stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
