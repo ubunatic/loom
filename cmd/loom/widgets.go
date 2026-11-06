@@ -326,6 +326,10 @@ func (g *themedGallery) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return g.widget.ConsumeMouse(e)
 }
 
+func (g *themedGallery) ConsumePaste(e loom.PasteEvent) loom.EventResult {
+	return loom.DispatchPasteEvent(g.widget, e)
+}
+
 func readWidgetCatalog() (widgetCatalog, error) {
 	data, err := spec.WidgetsYAML()
 	if err != nil {
