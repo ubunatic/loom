@@ -48,4 +48,5 @@ upkeep.
 | 431 | [431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md](431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md) | measure: width of a lone VS16 (U+FE0F) is 2, should probably be 0 | Open |
 | 433 | [433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md](433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md) | measure: skin-tone modifier splits from its emoji (👍🏽 = 2 clusters, width 4) | Open |
 | 434 | [434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md](434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md) | Pasting into taia chat clears the terminal: add widget regression test | Open |
+| 435 | [435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md](435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md) | Multiline paste into chat submits each line instead of inserting text | Open |
 <!-- harnez:end issues-active-index -->
