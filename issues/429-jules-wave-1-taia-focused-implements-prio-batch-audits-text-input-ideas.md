@@ -32,10 +32,10 @@ Left out: 401 (deferred by the owner, port of 7.3k lines), 408 and 274/275/277 i
 
 | kind | session | Jules ID | PR | state |
 | --- | --- | --- | --- | --- |
-| implement | jules-implement-413 | - | - | pending |
-| implement | jules-implement-414 | - | - | pending |
-| implement | jules-implement-421 | - | - | pending |
-| audit | jules-audit-259 | - | - | pending |
-| batch audit | jules-batch-prio-a | - | - | pending |
-| batch audit | jules-batch-prio-b | - | - | pending |
-| ideas | jules-ideas-text-input | - | - | pending |
+| implement | jules-implement-413 | 18068907042553961998 | - | running |
+| implement | jules-implement-414 | 2652737723992373498 | - | running |
+| implement | jules-implement-421 | 14083610897382528377 | - | running |
+| audit | jules-audit-259 | 11292883786477104415 | - | running |
+| batch audit | jules-batch-prio-a | 11899285583632198342 | - | running |
+| batch audit | jules-batch-prio-b | 15741866014100721340 | - | running |
+| ideas | jules-ideas-text-input | 14890562797936204173 | - | running |
