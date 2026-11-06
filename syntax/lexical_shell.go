@@ -10,7 +10,7 @@ var shellKeywords = map[string]bool{
 	"if": true, "then": true, "else": true, "elif": true, "fi": true,
 	"for": true, "while": true, "until": true, "do": true, "done": true,
 	"case": true, "esac": true, "in": true, "function": true, "select": true,
-	"return": true, "local": true, "export": true,
+	"return": true, "local": true, "export": true, "!": true,
 }
 
 // isShellLanguage reports whether lang names the shell lexer.
@@ -87,7 +87,12 @@ func lexShellLine(src []byte, base, end int) []Span {
 			switch {
 			case shellKeywords[word]:
 				add(i, j, "keyword")
-				cmdPos = word == "then" || word == "do"
+				switch word {
+				case "if", "elif", "else", "while", "until", "then", "do", "!":
+					cmdPos = true
+				default:
+					cmdPos = false
+				}
 			case strings.Contains(word, "="):
 				// An assignment such as FOO=1 keeps the command position open.
 			case word[0] == '-':
