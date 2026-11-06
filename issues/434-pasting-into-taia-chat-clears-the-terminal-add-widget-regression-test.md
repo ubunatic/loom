@@ -58,6 +58,15 @@ Validate the library contract using the in-repository host `loom widgets --show 
 - Manual checklist: run `loom widgets --show TextEntry`. Press Ctrl+A, Ctrl+C and check the selected draft remains (this does not establish desktop clipboard delivery). Press Right, Ctrl+C and check the entry clears while F2/F9/F10 remain. Press Ctrl+C and check the hint appears; type `x` and check the hint clears and typing works. Ctrl+C clears `x` without quitting or arming; paste `after\nclear` and check both lines and surrounding controls remain; Ctrl+C clears the paste, Ctrl+C shows the hint, and another Ctrl+C exits. In a fresh run with an initially empty entry, two Ctrl+C presses exit. Check F10 and Ctrl+Q exit immediately.
 - M2 validates this in-repository gallery behavior only. The original Taia terminal-clearing report remains unreproduced and unattributed; this issue remains open. Desktop clipboard receipt still requires a separate manual check.
 
+### M3 — Host review hardening
+
+#### Pre-Work / Required Refinements
+
+- Host reviewed every changed assertion in M1/M2. M2 removed the embedded `ESC[2J` payload from the existing Ctrl+C/paste PTY test. Restore that control-containing payload or retain it in an equally strong explicit real-command test; do not reduce the original display-preservation coverage to plain text alone.
+- In `themedGallery.Draw`, subtracting a hint row after reserving controls and confirmation can make `content.H` negative at height 2. Clamp the final content height to zero before drawing the child; add a child-rectangle assertion for heights 0, 1, 2, 3, including a hint-bearing child. Do not claim no-panic alone proves valid geometry.
+- Approved write set remains M2's three cmd/loom files, this issue, existing study. No library change or unrelated session fix. Preserve confirmation state/reset/exit coverage.
+- M2 focused tests/vet/install passed, but full `make test-q1` failed in untouched `internal/session/TestSessionDetachPrefixDAndReattach`; record this accurately, do not weaken its assertions or claim a full pass. Source changes in M3 permit the next quota verification. Host will independently verify after review.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
