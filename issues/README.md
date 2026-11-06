@@ -49,4 +49,5 @@ upkeep.
 | 414 | [414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md](414-measure-share-one-grapheme-cluster-boundary-scanner-between-stringwidthnew-and-clustersnew.md) | measure: share one grapheme cluster boundary scanner between StringWidthNew and ClustersNew | Open |
 | 421 | [421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md](421-syntax-shell-lexer-colour-command-after-if-else-while-and-bang.md) | syntax: shell lexer, colour the command after if, else, while and ! | Open |
 | 429 | [429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md](429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md) | Jules wave 1: taia-focused implements, prio batch audits, text-input ideas | Open |
+| 430 | [430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md](430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md) | loom session: 6 tab PTY tests time out on v0.10.0 (TestSessionNewTabCtrlN and others) | Open |
 <!-- harnez:end issues-active-index -->
