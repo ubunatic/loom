@@ -57,3 +57,10 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | implement | jules-implement-400 | - | - | pending |
 | implement | jules-implement-157 | - | - | pending |
 | implement | jules-implement-413b | - | - | pending |
+
+## Wrap 2026-11-06 (owner timer)
+- Wave 1 done: 421, 414 merged and closed; 413 rejected (PR 112); prio-b kept, prio-a discarded (<80% refs); ideas run gave 432; 259 audit was a duplicate.
+- New: 430 (P1, session tab PTY tests time out on v0.10.0, q1 red), 431 (lone VS16 width), 432 (grapheme backspace).
+- Wave 2 running: implements 432 392 390 397 400 157 413b with role preprompt. Check each PR (tests run by host, new tests fail without fix), merge by cherry-pick with a conventional message, close ticket.
+- Hand-off verdict: Jules audits and ideas are useful leads; implements need a full host check (2 of 3 usable in wave 1).
+- Resume: read this table, `harnez agent list`, `harnez agent resume --model jules --id <id> wait` per running row. Jules stops new work 2026-11-11.
