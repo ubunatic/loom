@@ -49,6 +49,5 @@ upkeep.
 | 429 | [429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md](429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md) | Jules wave 1: taia-focused implements, prio batch audits, text-input ideas | Open |
 | 430 | [430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md](430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md) | loom session: 6 tab PTY tests time out on v0.10.0 (TestSessionNewTabCtrlN and others) | Open |
 | 431 | [431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md](431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md) | measure: width of a lone VS16 (U+FE0F) is 2, should probably be 0 | Open |
-| 432 | [432-textinput-and-textarea-backspace-and-delete-remove-one-rune-splitting-grapheme-clusters.md](432-textinput-and-textarea-backspace-and-delete-remove-one-rune-splitting-grapheme-clusters.md) | TextInput and TextArea: backspace and delete remove one rune, splitting grapheme clusters | Open |
 | 433 | [433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md](433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md) | measure: skin-tone modifier splits from its emoji (👍🏽 = 2 clusters, width 4) | Open |
 <!-- harnez:end issues-active-index -->

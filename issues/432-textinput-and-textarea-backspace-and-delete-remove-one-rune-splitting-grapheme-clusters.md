@@ -1,6 +1,6 @@
 # 432 — TextInput and TextArea: backspace and delete remove one rune, splitting grapheme clusters
 
-**Status**: Open
+**Status**: Closed — done: 84f56ea (Jules PR 114 reworked by host; skin tones split out to 433)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
