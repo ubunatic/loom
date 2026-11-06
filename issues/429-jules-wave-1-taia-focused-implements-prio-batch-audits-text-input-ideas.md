@@ -54,7 +54,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | implement | jules-implement-392 | 2798506688453647188 | GH #116 | rejected (see 392): vacuous drag test, weakened existing test, breaking spec rename, stray scripts |
 | implement | jules-implement-390 | 8095101773836538431 | - | failed: asked twice after 2 replies, no PR; lead in 390 |
 | implement | jules-implement-397 | 7541561626893540044 | - | failed: Jules "unable to complete the task", no PR; not re-run |
-| implement | jules-implement-400 | - | - | pending |
+| implement | jules-implement-400 | 7061190759503336593 | - | failed: still IN_PROGRESS after about 4h, no PR (asked once how to test a headless hang); stopped |
 | implement | jules-implement-157 | 17239518533138541790 | GH #115 | merged: bold/dim cases fail without fix; continuation claim was already true |
 | implement | jules-implement-413b | 10998755120330844800 | - | failed: AWAITING_USER_FEEDBACK, stalled after 2 replies, no PR; stopped |
 
@@ -64,3 +64,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 - Wave 2 running: implements 432 392 390 397 400 157 413b with role preprompt. Check each PR (tests run by host, new tests fail without fix), merge by cherry-pick with a conventional message, close ticket.
 - Hand-off verdict: Jules audits and ideas are useful leads; implements need a full host check (2 of 3 usable in wave 1).
 - Resume: read this table, `harnez agent list`, `harnez agent resume --model jules --id <id> wait` per running row. Jules stops new work 2026-11-11.
+
+## Wave 2 result
+2 of 7 usable: 157 merged as is, 432 merged after host rework (tests added, API kept private). 392 rejected (vacuous test, weakened existing test). 390, 397, 400, 413b failed without a PR: three asked questions despite the role line, one ran 4h. The role preprompt did not reduce questions; it may have helped test focus (157, 432 code).
+Verdict: Jules implement runs are not worth handing more work to before the 2026-11-11 cut-off; the useful output was leads and small, well-specified changes. Remaining taia work (433, 431, 392, 390) goes to local developers, event and session code to codex:sol:med.
