@@ -136,7 +136,15 @@ func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 		d.entry.SetCursorOffset(0)
 		return loom.Handled()
 	}
-	return d.entry.ConsumeKey(e)
+	result := d.entry.ConsumeKey(e)
+	if result.Consumed {
+		return result
+	}
+	if e.Key == "ctrl-c" && d.entry.Value() != "" {
+		d.entry.SetValue("")
+		return loom.Handled()
+	}
+	return result
 }
 func (d *textEntryControls) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
 	return d.entry.ConsumeMouse(e)

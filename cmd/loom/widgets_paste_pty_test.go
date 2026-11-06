@@ -44,3 +44,32 @@ func TestTextEntryGalleryBracketedPastePTY(t *testing.T) {
 		})
 	}
 }
+
+func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
+	bin := buildLoomBinary(t)
+	gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")
+	gallery.WaitFor("/topic Draft:", 3*time.Second)
+
+	// Ctrl+A selects the draft. Ctrl+C must preserve it rather than clear it.
+	gallery.SendRaw([]byte{0x01, 0x03})
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "/topic Draft:")
+	})
+	if got := strings.Join(gallery.Screen(), "\n"); !strings.Contains(got, "/topic Draft:") || !strings.Contains(got, "F2: placeholder") {
+		t.Fatalf("selected Ctrl+C changed gallery display: %q", got)
+	}
+	// Right collapses the selection. The gallery parent then clears nonempty
+	// input; an empty Ctrl+C remains unhandled, so a following paste proves the
+	// actual top-level pane did not assume that it should exit.
+	gallery.SendRaw([]byte("\x1b[C\x03"))
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return !strings.Contains(joined, "/topic Draft:") && strings.Contains(joined, "F2: placeholder")
+	})
+	gallery.SendRaw([]byte{0x03})
+	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[2J\x1b[201~"))
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		joined := strings.Join(rows, "\n")
+		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder")
+	})
+}

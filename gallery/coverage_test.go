@@ -51,3 +51,35 @@ func TestTextEntryDemoControls(t *testing.T) {
 		t.Fatal("mouse caret movement failed")
 	}
 }
+
+func TestTextEntryDemoCtrlCPolicy(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("selected draft")
+
+	// TextEntry gets first refusal so copying a selection never clears input.
+	if !d.ConsumeKey(loom.KeyEvent{Key: "ctrl-a"}).Consumed {
+		t.Fatal("select all was not consumed")
+	}
+	if result := d.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || result.Quit || d.entry.Value() != "selected draft" {
+		t.Fatalf("selected ctrl-c = %+v, value = %q", result, d.entry.Value())
+	}
+
+	// Collapse selection, then the gallery parent clears nonempty input.
+	if !d.ConsumeKey(loom.KeyEvent{Key: "right"}).Consumed {
+		t.Fatal("right arrow did not collapse selection")
+	}
+	if result := d.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); !result.Consumed || result.Quit || d.entry.Value() != "" {
+		t.Fatalf("unselected nonempty ctrl-c = %+v, value = %q", result, d.entry.Value())
+	}
+
+	// Empty input stays unhandled by the wrapper, preserving parent routing.
+	if result := d.ConsumeKey(loom.KeyEvent{Key: "ctrl-c"}); result.Consumed || result.Quit {
+		t.Fatalf("empty ctrl-c = %+v, want ignored", result)
+	}
+	if result := d.ConsumeKey(loom.KeyEvent{Text: "x"}); !result.Consumed || d.entry.Value() != "x" {
+		t.Fatalf("typing after empty ctrl-c = %+v, value = %q", result, d.entry.Value())
+	}
+	if result := d.ConsumePaste(loom.PasteEvent{Text: "\n[y]"}); !result.Consumed || d.entry.Value() != "x\n[y]" {
+		t.Fatalf("paste after empty ctrl-c = %+v, value = %q", result, d.entry.Value())
+	}
+}

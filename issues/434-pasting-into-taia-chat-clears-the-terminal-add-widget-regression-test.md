@@ -28,6 +28,15 @@ Validate the library contract using the in-repository host `loom widgets --show 
 - Developer runs one `make test-q1` after checking for unrelated work; host reviews and independently verifies before acceptance. Install before reporting final results.
 - Record verified evidence honestly. Keep this ticket open if the original report cannot be reproduced or attributed; gallery coverage alone does not establish a Taia fix.
 
+#### M1 delivered
+
+- The TextEntry gallery parent offers Ctrl+C to `TextEntry` first. A selected range remains selected/copied; otherwise nonempty input is cleared and consumed; empty input remains ignored by the wrapper.
+- Gallery unit coverage checks selection precedence, clearing, empty routing, and continued typing/paste. The real `loom widgets --show TextEntry` PTY test checks selected and unselected Ctrl+C, confirms the top-level gallery stays running after empty Ctrl+C, and verifies paste still works with surrounding gallery controls visible.
+- Regression-first evidence: `go test ./gallery -run '^TestTextEntryDemoCtrlCPolicy$' -count=1` failed before the gallery parent implementation at the unselected nonempty Ctrl+C case. The targeted tests and full changed-package tests passed after implementation.
+- Existing library tests cover OSC 52 encoding and TextEntry clipboard-hook behavior. The gallery PTY does not establish desktop clipboard delivery; the gallery wrapper does not expose the private clipboard binding path.
+- Manual checklist: run `loom widgets --show TextEntry`; press Ctrl+A then Ctrl+C and confirm the draft remains; press Right then Ctrl+C and confirm the input clears while the gallery controls remain; press Ctrl+C again and confirm the gallery stays open; paste `after\nclear` and confirm it appears without losing the F2/F9/F10 controls. Desktop clipboard receipt remains a separate manual check.
+- The reported Taia terminal clearing was not reproduced or attributed in M1. No Taia fix is claimed; keep this issue open pending a reproduction and layer attribution.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
