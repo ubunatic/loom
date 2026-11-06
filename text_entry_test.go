@@ -40,25 +40,42 @@ func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
 		if event.key != (KeyEvent{Key: "ctrl-d"}) {
 			t.Fatalf("%s event = %+v", event.name, event.key)
 		}
-		for _, state := range []string{"empty", "text", "selected", "placeholder"} {
+		for _, state := range []string{"empty", "text", "selected", "placeholder", "enabled-typing-style", "enabled-selected-format"} {
 			t.Run(event.name+"/"+state, func(t *testing.T) {
 				changes, submits, writes := 0, 0, 0
 				e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }, OnSubmit: func(string) EventResult { submits++; return Handled() }})
-				e.EnableBold()
 				e.writeClipboard = func(string) { writes++ }
-				typeEntryText(e, "history")
-				entryKey(e, "ctrl-a")
-				entryKey(e, "ctrl-c")
-				entryKey(e, "ctrl-b")
-				entryKey(e, "ctrl-z")
-				if state == "text" || state == "selected" {
-					entryKey(e, "ctrl-y")
-					if state == "selected" {
-						entryKey(e, "ctrl-a")
-					}
-				}
-				if state == "placeholder" {
+				var wantValue, wantPlaceholder string
+				wantCaret, wantAnchor := 0, 0
+				switch state {
+				case "empty":
+				case "text":
+					e.SetValue("history")
+					wantValue, wantCaret, wantAnchor = "history", len("history"), len("history")
+				case "selected":
+					e.SetValue("history")
+					e.SetCursorOffset(0)
+					entryKey(e, "shift-right")
+					wantValue, wantCaret, wantAnchor = "history", 1, 0
+				case "placeholder":
 					e.SetPlaceholder("hint")
+					wantPlaceholder = "hint"
+				case "enabled-typing-style":
+					e.EnableBold()
+					entryKey(e, "ctrl-b")
+				case "enabled-selected-format":
+					e.EnableBold()
+					e.SetValue("history")
+					e.SetCursorOffset(0)
+					entryKey(e, "shift-right")
+					entryKey(e, "ctrl-b")
+					wantValue, wantCaret, wantAnchor = "history", 1, 0
+				}
+				if e.Value() != wantValue || e.caret != wantCaret || e.anchor != wantAnchor || e.Placeholder() != wantPlaceholder {
+					t.Fatalf("bad %s setup: value=%q caret=%d anchor=%d placeholder=%q", state, e.Value(), e.caret, e.anchor, e.Placeholder())
+				}
+				if e.boldEnabled != strings.HasPrefix(state, "enabled-") {
+					t.Fatalf("bad %s bold opt-in state: %v", state, e.boldEnabled)
 				}
 				cloneHistory := func(history []textEntrySnapshot) []textEntrySnapshot {
 					out := slices.Clone(history)
@@ -69,10 +86,11 @@ func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
 					return out
 				}
 				value, caret, anchor, hint, clip := e.Value(), e.caret, e.anchor, e.Placeholder(), e.clipboard
+				bold, typingBold, boldEnabled := slices.Clone(e.bold), e.typingBold, e.boldEnabled
 				undo, redo := cloneHistory(e.undo), cloneHistory(e.redo)
 				beforeChanges, beforeSubmits, beforeWrites := changes, submits, writes
 				result := e.ConsumeKey(event.key)
-				if result != Ignored() || e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
+				if result != Ignored() || e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !slices.Equal(e.bold, bold) || e.typingBold != typingBold || e.boldEnabled != boldEnabled || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
 					t.Fatalf("Ctrl+D changed entry or callbacks: result=%+v value=%q caret=%d anchor=%d hint=%q clipboard=%q changes=%d submits=%d writes=%d", result, e.Value(), e.caret, e.anchor, e.Placeholder(), e.clipboard, changes, submits, writes)
 				}
 				probe := &ctrlDEntryProbe{TextEntry: e}
@@ -81,7 +99,7 @@ func TestTextEntryCtrlDParentRoutingIssue440(t *testing.T) {
 				if !result.Consumed || result.Quit || !frame.Boxes[1].Hidden || len(probe.keys) != 1 || probe.keys[0] != event.key {
 					t.Fatalf("frame routing: result=%+v hidden=%v child events=%+v", result, frame.Boxes[1].Hidden, probe.keys)
 				}
-				if e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
+				if e.Value() != value || e.caret != caret || e.anchor != anchor || e.Placeholder() != hint || e.clipboard != clip || !slices.Equal(e.bold, bold) || e.typingBold != typingBold || e.boldEnabled != boldEnabled || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges || submits != beforeSubmits || writes != beforeWrites {
 					t.Fatal("frame routing changed entry state or callbacks")
 				}
 			})
@@ -897,8 +915,8 @@ func TestTextEntryHighlightColoursSpansAndSelectionWins(t *testing.T) {
 	c = NewCanvas(20, 1)
 	e.Draw(c, Rect{W: 20, H: 1})
 	for x := 2; x <= 3; x++ {
-		if cell := c.Get(x, 0).Style; cell != (Style{FG: red, Invert: true}) {
-			t.Fatalf("selected column %d style = %+v, want red FG and Invert", x, cell)
+		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
+			t.Fatalf("selected column %d style = %+v, want legacy selection-only style", x, cell)
 		}
 	}
 	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {
@@ -987,8 +1005,8 @@ func TestTextEntryMouseSelectionOverHighlightUsesSelectionStyle(t *testing.T) {
 	c := NewCanvas(20, 1)
 	e.Draw(c, Rect{W: 20, H: 1})
 	for x := 2; x <= 3; x++ {
-		if cell := c.Get(x, 0).Style; cell != (Style{FG: red, Invert: true}) {
-			t.Fatalf("mouse-selected column %d style = %+v, want red FG and Invert", x, cell)
+		if cell := c.Get(x, 0).Style; cell != (Style{Invert: true}) {
+			t.Fatalf("mouse-selected column %d style = %+v, want legacy selection-only style", x, cell)
 		}
 	}
 	if got := c.Get(4, 0).Style; got.FG != red || got.Invert {

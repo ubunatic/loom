@@ -1,7 +1,9 @@
 package gallery
 
 import (
+	"strings"
 	"testing"
+
 	"ubunatic.com/loom"
 )
 
@@ -89,6 +91,27 @@ func TestTextEntryDemoCtrlUForwarding(t *testing.T) {
 	d.entry.SetValue("draft")
 	if result := d.ConsumeKey(loom.KeyEvent{Key: "ctrl-u"}); !result.Consumed || result.Quit || d.entry.Value() != "" {
 		t.Fatalf("ctrl-u = %+v, value %q", result, d.entry.Value())
+	}
+}
+
+func TestTextEntryDemoMarkdownSubmission(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("a*b")
+	d.entry.SetCursorOffset(0)
+	d.ConsumeKey(loom.KeyEvent{Key: "ctrl-a"})
+	d.ConsumeKey(loom.KeyEvent{Key: "ctrl-b"})
+	if d.entry.Value() != "a*b" || d.entry.MarkdownValue() != "**a\\*b**" {
+		t.Fatalf("pre-submit entry value=%q markdown=%q", d.entry.Value(), d.entry.MarkdownValue())
+	}
+	if result := d.ConsumeKey(loom.KeyEvent{Key: "enter"}); !result.Consumed || result.Quit {
+		t.Fatalf("submit result = %+v", result)
+	}
+	if d.lastSubmittedPlain != "a*b" || d.lastSubmittedMD != "**a\\*b**" || d.entry.Value() != "" {
+		t.Fatalf("submission plain=%q markdown=%q remaining=%q", d.lastSubmittedPlain, d.lastSubmittedMD, d.entry.Value())
+	}
+	screen := strings.Join(loom.Render(d, 80, 8), "\n")
+	if !strings.Contains(screen, "Submitted Markdown: **a\\*b**") || !strings.Contains(screen, "Ctrl+B: bold") {
+		t.Fatalf("gallery does not show serialized submit and bold control: %q", screen)
 	}
 }
 

@@ -91,8 +91,10 @@ func graphDemo() loom.Widget {
 }
 
 type textEntryControls struct {
-	entry     *loom.TextEntry
-	alternate bool
+	entry              *loom.TextEntry
+	alternate          bool
+	lastSubmittedPlain string
+	lastSubmittedMD    string
 }
 
 func (d *textEntryControls) Unwrap() loom.Widget { return d.entry }
@@ -105,18 +107,31 @@ func newTextAreaDemo() loom.Widget {
 
 func newTextEntryControls() loom.Widget {
 	d := &textEntryControls{}
-	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: "> ", MaxHeight: 4, Highlight: leadingCommandSpans, OnSubmit: func(string) loom.EventResult { d.entry.SetValue(""); return loom.Handled() }})
+	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: "> ", MaxHeight: 4, Highlight: leadingCommandSpans, OnSubmit: func(value string) loom.EventResult {
+		d.lastSubmittedPlain = value
+		d.lastSubmittedMD = d.entry.MarkdownValue()
+		d.entry.SetValue("")
+		return loom.Handled()
+	}})
+	d.entry.EnableBold()
 	d.entry.SetValue("/topic Draft: a longer message that wraps across several rows of the chat input.")
 	d.entry.SetFocus(true)
 	return d
 }
 func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
-	if r.H < 2 {
+	entryHeight := r.H - 1
+	if d.lastSubmittedMD != "" && entryHeight > 1 {
+		entryHeight--
+	}
+	if entryHeight < 1 {
 		d.entry.Draw(c, r)
 		return
 	}
-	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: r.H - 1})
-	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("F2: placeholder  F3/Tab/End/Ctrl+E: accept  F4: caret start  offset: %d", d.entry.CursorOffset()), loom.Style{})
+	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: entryHeight})
+	if d.lastSubmittedMD != "" && r.H > 1 {
+		c.Write(r.X, r.Y+entryHeight, "Submitted Markdown: "+d.lastSubmittedMD, loom.Style{})
+	}
+	c.Write(r.X, r.Y+r.H-1, fmt.Sprintf("Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown  offset: %d", d.entry.CursorOffset()), loom.Style{})
 }
 func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	switch e.Key {

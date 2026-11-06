@@ -31,9 +31,10 @@ type TextEntryOptions struct {
 
 // TextEntrySpan styles the bytes from Start to End of the value, End exclusive.
 // Offsets snap and clamp as in SetCursorOffset. Overlapping spans take the
-// later one, and a reversed span is ignored. Highlight styles are composed with
-// bold and selection inversion, so selected cells retain their foreground and
-// background colors.
+// later one, and a reversed span is ignored. With bold enabled, highlight
+// styles retain their foreground and background colors under selection
+// inversion and compose with bold. Without bold, selection keeps the legacy
+// selection-only style.
 type TextEntrySpan struct {
 	Start, End int // byte offsets into the value, end exclusive
 	Style      Style
@@ -151,8 +152,8 @@ func (e *TextEntry) SetValue(s string) {
 	next := textEntryUnits(s)
 	if !slices.Equal(e.units, next) || slices.ContainsFunc(e.bold, func(v bool) bool { return v }) || e.typingBold {
 		e.pushUndo(e.snapshot())
-		e.redo = nil
 	}
+	e.redo = nil
 	e.units = next
 	e.bold = make([]bool, len(next))
 	e.typingBold = false
@@ -340,7 +341,11 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 				style = styles[i]
 			}
 			if e.selected(i) {
-				style.Invert = true
+				if e.boldEnabled {
+					style.Invert = true
+				} else {
+					style = Style{Invert: true}
+				}
 			}
 			if i < len(e.bold) && e.bold[i] {
 				style.Bold = true

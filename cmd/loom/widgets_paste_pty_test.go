@@ -45,6 +45,67 @@ func TestTextEntryGalleryBracketedPastePTY(t *testing.T) {
 	}
 }
 
+func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
+	bin := buildLoomBinary(t)
+	gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")
+	gallery.WaitFor("/topic Draft:", 3*time.Second)
+	cellFor := func(want rune, bold, reverse bool) (ptytest.Cell, bool) {
+		for _, row := range gallery.Cells() {
+			for _, cell := range row {
+				if cell.Rune == want && cell.Style.Bold == bold && cell.Style.Reverse == reverse {
+					return cell, true
+				}
+			}
+		}
+		return ptytest.Cell{}, false
+	}
+	gallery.SendRaw([]byte{0x01}) // select the complete plain draft
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		_, ok := cellFor('D', false, true)
+		return ok
+	})
+	selectedCursorX, selectedCursorY := gallery.VT().Cursor()
+	gallery.SendRaw([]byte{0x02}) // Ctrl+B formats the selection without moving it
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		cell, ok := cellFor('D', true, true)
+		return ok && cell.Style.Bold && cell.Style.Reverse
+	})
+	if x, y := gallery.VT().Cursor(); x != selectedCursorX || y != selectedCursorY {
+		t.Fatalf("formatting moved selected caret from (%d,%d) to (%d,%d)", selectedCursorX, selectedCursorY, x, y)
+	}
+	gallery.SendRaw([]byte{0x1a}) // undo the format-only change without collapsing selection
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		_, ok := cellFor('D', false, true)
+		return ok
+	})
+	gallery.SendRaw([]byte{0x19}) // redo bold
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		_, ok := cellFor('D', true, true)
+		return ok
+	})
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "Ctrl+B: bold") || !strings.Contains(screen, "F2: placeholder") || !strings.Contains(screen, "Enter: submit Markdown") {
+		t.Fatalf("gallery controls disappeared while bolding: %q", screen)
+	}
+	gallery.SendRaw([]byte{0x1b, 'O', 'Q'}) // F2 clears the selection and changes the placeholder
+	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "Write an update…")
+	})
+	gallery.SendRaw([]byte{0x02})
+	gallery.Send("sent")
+	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
+		_, ok := cellFor('s', true, false)
+		return ok
+	})
+	if x, _ := gallery.VT().Cursor(); x != 6 {
+		t.Fatalf("typing-bold caret x = %d, want prompt plus four characters (6): %q", x, gallery.Text())
+	}
+	gallery.SendRaw([]byte{0x0d})
+	gallery.WaitForUpdate("Submitted Markdown: **sent**", 3*time.Second)
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "F2: placeholder") || !strings.Contains(screen, "Ctrl+B: bold") {
+		t.Fatalf("controls did not remain after Markdown submit: %q", screen)
+	}
+}
+
 func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 	bin := buildLoomBinary(t)
 	gallery := ptytest.Start(t, 100, 24, bin, "widgets", "--show", "TextEntry")

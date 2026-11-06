@@ -3,7 +3,11 @@
 
 package loom
 
-import "testing"
+import (
+	"reflect"
+	"slices"
+	"testing"
+)
 
 func TestTextEntryBoldOptInAndMarkdown(t *testing.T) {
 	e := NewTextEntry(TextEntryOptions{})
@@ -136,6 +140,150 @@ func TestTextEntryBoldNewlineCtrlUPlaceholderAndClipboard(t *testing.T) {
 	entryKey(p, "ctrl-b")
 	if !p.AcceptPlaceholder() || p.MarkdownValue() != "**hint**" {
 		t.Fatalf("placeholder did not inherit typing style: %q", p.MarkdownValue())
+	}
+}
+
+func TestTextEntryBoldExactMutationPaths(t *testing.T) {
+	t.Run("backspace-and-delete", func(t *testing.T) {
+		e := NewTextEntry(TextEntryOptions{})
+		e.EnableBold()
+		e.SetValue("abcd")
+		entryKey(e, "ctrl-a")
+		entryKey(e, "ctrl-b")
+		e.SetCursorOffset(2)
+		entryKey(e, "backspace")
+		if e.Value() != "acd" || e.MarkdownValue() != "**acd**" || e.CursorOffset() != 1 {
+			t.Fatalf("Backspace result: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+		entryKey(e, "delete")
+		if e.Value() != "ad" || e.MarkdownValue() != "**ad**" || e.CursorOffset() != 1 {
+			t.Fatalf("Delete result: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+		entryKey(e, "ctrl-z")
+		if e.Value() != "acd" || e.MarkdownValue() != "**acd**" || e.CursorOffset() != 1 {
+			t.Fatalf("Delete undo: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+	})
+
+	t.Run("cut-plain-and-undo", func(t *testing.T) {
+		e := NewTextEntry(TextEntryOptions{})
+		e.EnableBold()
+		e.SetValue("left MID right")
+		e.SetCursorOffset(5)
+		for range "MID" {
+			entryKey(e, "shift-right")
+		}
+		entryKey(e, "ctrl-b")
+		entryKey(e, "ctrl-x")
+		if e.Value() != "left  right" || e.MarkdownValue() != "left  right" || e.clipboard != "MID" || e.CursorOffset() != 5 {
+			t.Fatalf("cut result: value=%q markdown=%q clipboard=%q caret=%d", e.Value(), e.MarkdownValue(), e.clipboard, e.CursorOffset())
+		}
+		entryKey(e, "ctrl-z")
+		if e.Value() != "left MID right" || e.MarkdownValue() != "left **MID** right" || e.clipboard != "MID" || e.CursorOffset() != 8 {
+			t.Fatalf("cut undo: value=%q markdown=%q clipboard=%q caret=%d", e.Value(), e.MarkdownValue(), e.clipboard, e.CursorOffset())
+		}
+	})
+
+	t.Run("internal-and-bracketed-paste", func(t *testing.T) {
+		e := NewTextEntry(TextEntryOptions{})
+		e.EnableBold()
+		e.clipboard = "x*y"
+		entryKey(e, "ctrl-b")
+		entryKey(e, "ctrl-v")
+		if e.Value() != "x*y" || e.MarkdownValue() != "**x\\*y**" || e.CursorOffset() != len("x*y") {
+			t.Fatalf("internal paste: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+		e.ConsumePaste(PasteEvent{Text: "界\\"})
+		if e.Value() != "x*y界\\" || e.MarkdownValue() != "**x\\*y界\\\\**" || e.CursorOffset() != len("x*y界\\") {
+			t.Fatalf("bracketed paste: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+		entryKey(e, "ctrl-z")
+		if e.Value() != "x*y" || e.MarkdownValue() != "**x\\*y**" || e.CursorOffset() != len("x*y") {
+			t.Fatalf("bracketed paste undo: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+	})
+
+	t.Run("selection-replacement-and-setvalue-reset", func(t *testing.T) {
+		e := NewTextEntry(TextEntryOptions{})
+		e.EnableBold()
+		e.SetValue("one TWO three")
+		e.SetCursorOffset(len(e.Value()))
+		entryKey(e, "ctrl-b")
+		e.SetCursorOffset(4)
+		for range "TWO" {
+			entryKey(e, "shift-right")
+		}
+		typeEntryText(e, "new")
+		if e.Value() != "one new three" || e.MarkdownValue() != "one **new** three" || e.CursorOffset() != 7 {
+			t.Fatalf("selection replacement: value=%q markdown=%q caret=%d", e.Value(), e.MarkdownValue(), e.CursorOffset())
+		}
+		e.SetValue("replacement")
+		if e.Value() != "replacement" || e.MarkdownValue() != "replacement" || e.typingBold || slices.Contains(e.bold, true) || e.CursorOffset() != len("replacement") {
+			t.Fatalf("SetValue did not reset format: value=%q markdown=%q typingBold=%v bold=%v caret=%d", e.Value(), e.MarkdownValue(), e.typingBold, e.bold, e.CursorOffset())
+		}
+	})
+
+	t.Run("setvalue-clears-format-redo", func(t *testing.T) {
+		e := NewTextEntry(TextEntryOptions{})
+		e.EnableBold()
+		e.SetValue("xy")
+		entryKey(e, "ctrl-a")
+		entryKey(e, "ctrl-b")
+		entryKey(e, "ctrl-z")
+		if len(e.redo) == 0 || e.MarkdownValue() != "xy" {
+			t.Fatalf("setup did not create formatting redo: markdown=%q redo=%d", e.MarkdownValue(), len(e.redo))
+		}
+		e.SetValue("xy")
+		if len(e.redo) != 0 || entryKey(e, "ctrl-y") != Ignored() || e.MarkdownValue() != "xy" {
+			t.Fatalf("SetValue retained stale formatting redo: markdown=%q redo=%d", e.MarkdownValue(), len(e.redo))
+		}
+	})
+}
+
+func TestTextEntryBoldMarkdownExactWhitespaceAdjacentAndPure(t *testing.T) {
+	changes := 0
+	e := NewTextEntry(TextEntryOptions{OnChange: func(string) { changes++ }})
+	e.EnableBold()
+	e.SetValue("  a#b!c_(x)[y]\\z  plain界 c  \n    \nΩ")
+	plain := e.Value()
+	e.SetCursorOffset(0)
+	for range "  a#b!c_(x)[y]\\z  " {
+		entryKey(e, "shift-right")
+	}
+	entryKey(e, "ctrl-b")
+	// Add a second bold run after unbolded text, and bold only the final Unicode unit.
+	e.SetCursorOffset(len("  a#b!c_(x)[y]\\z  plain界 "))
+	entryKey(e, "shift-right")
+	entryKey(e, "ctrl-b")
+	want := "  **a\\#b\\!c\\_\\(x\\)\\[y\\]\\\\z**  plain界 **c**  \n    \nΩ"
+	if got := e.MarkdownValue(); got != want {
+		t.Fatalf("MarkdownValue() = %q, want %q", got, want)
+	}
+	before := e.snapshot()
+	undo, redo := slices.Clone(e.undo), slices.Clone(e.redo)
+	beforeChanges := changes
+	if got := e.MarkdownValue(); got != want || e.Value() != plain || !reflect.DeepEqual(e.snapshot(), before) || !reflect.DeepEqual(e.undo, undo) || !reflect.DeepEqual(e.redo, redo) || changes != beforeChanges {
+		t.Fatalf("serialization mutated state: markdown=%q value=%q changes=%d", got, e.Value(), changes)
+	}
+}
+
+func TestTextEntryBoldWhitespaceOnlySelectionIsHarmless(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.EnableBold()
+	e.SetValue(" \n  ")
+	entryKey(e, "ctrl-a")
+	undoLen := len(e.undo)
+	entryKey(e, "ctrl-b")
+	if e.MarkdownValue() != " \n  " || len(e.undo) != undoLen+1 || !slices.Contains(e.bold, true) {
+		t.Fatalf("whitespace-only formatting result: markdown=%q undo=%d bold=%v", e.MarkdownValue(), len(e.undo), e.bold)
+	}
+	entryKey(e, "ctrl-z")
+	e.SetCursorOffset(1)
+	entryKey(e, "shift-right") // select the newline only
+	undoLen = len(e.undo)
+	entryKey(e, "ctrl-b")
+	if e.MarkdownValue() != " \n  " || len(e.undo) != undoLen || slices.Contains(e.bold, true) {
+		t.Fatalf("newline-only formatting changed state: markdown=%q undo=%d bold=%v", e.MarkdownValue(), len(e.undo), e.bold)
 	}
 }
 
