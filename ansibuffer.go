@@ -643,11 +643,26 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 				params := string(rs[i+2 : j])
 				cmd := rs[j]
 				switch cmd {
+				case 'A':
+					num := parseAnsiCSINum(params, 1)
+					y -= num
+					if y < 0 {
+						y = 0
+					}
+				case 'B':
+					num := parseAnsiCSINum(params, 1)
+					y += num
 				case 'm':
 					curStyle = parseAnsiSGR(curStyle, params)
 				case 'C':
 					num := parseAnsiCSINum(params, 1)
 					x += num
+				case 'D':
+					num := parseAnsiCSINum(params, 1)
+					x -= num
+					if x < 0 {
+						x = 0
+					}
 				case 'H', 'f':
 					row, col := parseAnsiCSIPos(params)
 					y = row - 1
@@ -730,6 +745,11 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 			cell := curStyle
 			cell.Rune = r
 			buf.cells[y][x] = cell
+			if w == 2 && x+1 < buf.cols {
+				contCell := curStyle
+				contCell.Rune = 0
+				buf.cells[y][x+1] = contCell
+			}
 			x += w
 			printedCols = max(printedCols, x)
 		}
@@ -756,6 +776,7 @@ func parseAnsiCSINum(params string, def int) int {
 }
 
 func parseAnsiCSIPos(params string) (int, int) {
+	params = strings.ReplaceAll(params, ":", ";")
 	parts := strings.Split(params, ";")
 	r, c := 1, 1
 	if len(parts) > 0 && parts[0] != "" {
@@ -776,7 +797,8 @@ func parseAnsiSGR(style AnsiCell, params string) AnsiCell {
 		}
 	}
 
-	parts := strings.Split(params, ";")
+	params2 := strings.ReplaceAll(params, ":", ";")
+	parts := strings.Split(params2, ";")
 	for i := 0; i < len(parts); i++ {
 		p := parts[i]
 		code := 0
@@ -836,23 +858,37 @@ func parseAnsiSGR(style AnsiCell, params string) AnsiCell {
 			}
 			i += 2
 		case code == 38 && i+4 < len(parts) && parts[i+1] == "2":
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
+			idxR := i + 2
+			if strings.Contains(params, ":") && i+5 < len(parts) && parts[i+2] == "" {
+				idxR = i + 3
+			}
+			if idxR+2 >= len(parts) {
+				break
+			}
+			r, errR := strconv.Atoi(parts[idxR])
+			g, errG := strconv.Atoi(parts[idxR+1])
+			b, errB := strconv.Atoi(parts[idxR+2])
 			if errR == nil && errG == nil && errB == nil &&
 				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.FG = ColorRGB(uint8(r), uint8(g), uint8(b))
 			}
-			i += 4
+			i += (idxR - i) + 2
 		case code == 48 && i+4 < len(parts) && parts[i+1] == "2":
-			r, errR := strconv.Atoi(parts[i+2])
-			g, errG := strconv.Atoi(parts[i+3])
-			b, errB := strconv.Atoi(parts[i+4])
+			idxR := i + 2
+			if strings.Contains(params, ":") && i+5 < len(parts) && parts[i+2] == "" {
+				idxR = i + 3
+			}
+			if idxR+2 >= len(parts) {
+				break
+			}
+			r, errR := strconv.Atoi(parts[idxR])
+			g, errG := strconv.Atoi(parts[idxR+1])
+			b, errB := strconv.Atoi(parts[idxR+2])
 			if errR == nil && errG == nil && errB == nil &&
 				r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255 {
 				style.BG = ColorRGB(uint8(r), uint8(g), uint8(b))
 			}
-			i += 4
+			i += (idxR - i) + 2
 		}
 	}
 	return style
