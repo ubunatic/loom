@@ -171,8 +171,11 @@ func (w *serverOutput) Write(p []byte) (int, error) {
 // serveSession owns a detached session until its last tab exits or ctx ends.
 func serveSession(ctx context.Context, name string, options Options, command string, args ...string) error {
 	// The server is independent from its clients and must survive their terminal hangups.
-	signal.Ignore(syscall.SIGHUP)
-	defer signal.Reset(syscall.SIGHUP)
+	// Catch rather than ignore HUP: ignored dispositions survive exec, leaving
+	// interactive tab shells immune to both our HUP and their ignored TERM.
+	hangups := make(chan os.Signal, 1)
+	signal.Notify(hangups, syscall.SIGHUP)
+	defer signal.Stop(hangups)
 	listener, err := listenSessionSocket(name)
 	if err != nil {
 		return err
