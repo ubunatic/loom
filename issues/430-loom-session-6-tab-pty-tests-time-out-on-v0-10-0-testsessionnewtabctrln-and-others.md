@@ -1,6 +1,6 @@
 # 430 — loom session: 6 tab PTY tests time out on v0.10.0 (TestSessionNewTabCtrlN and others)
 
-**Status**: Open
+**Status**: Closed — Session tab tests pass in owner make test; inherited ignored SIGHUP fixed and mouse test passed 100 repetitions
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
