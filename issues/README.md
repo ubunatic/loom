@@ -51,4 +51,5 @@ upkeep.
 | 435 | [435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md](435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md) | Multiline paste into chat submits each line instead of inserting text | Open |
 | 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
+| 438 | [438-textentry-ctrl-u-visual-line-clearing-and-previous-line-navigation.md](438-textentry-ctrl-u-visual-line-clearing-and-previous-line-navigation.md) | TextEntry Ctrl+U visual-line clearing and previous-line navigation | Open |
 <!-- harnez:end issues-active-index -->
