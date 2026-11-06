@@ -52,7 +52,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | --- | --- | --- | --- | --- |
 | implement | jules-implement-432 | 8759762248526563848 | GH #114 | merged reworked: no tests, stray plan.md/run_tests.sh, exported 5-value scanner; host added tests and NextCluster/PrevCluster; skin tones to 433 |
 | implement | jules-implement-392 | 2798506688453647188 | GH #116 | rejected (see 392): vacuous drag test, weakened existing test, breaking spec rename, stray scripts |
-| implement | jules-implement-390 | 8095101773836538431 | - | failed: asked twice after 2 replies, no PR; lead in 390 |
+| implement | jules-implement-390 | 8095101773836538431 | GH #117 (empty) | failed: asked twice after 2 replies, then an empty PR (0 files); lead in 390 |
 | implement | jules-implement-397 | 7541561626893540044 | - | failed: Jules "unable to complete the task", no PR; not re-run |
 | implement | jules-implement-400 | 7061190759503336593 | - | failed: still IN_PROGRESS after about 4h, no PR (asked once how to test a headless hang); stopped |
 | implement | jules-implement-157 | 17239518533138541790 | GH #115 | merged: bold/dim cases fail without fix; continuation claim was already true |
