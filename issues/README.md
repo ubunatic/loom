@@ -48,4 +48,5 @@ upkeep.
 | 413 | [413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md](413-ansibuffer-parser-misses-csi-a-b-d-colon-truecolor-wide-char-continuation-and-relative-move-prescan.md) | ansibuffer: parser misses CSI A/B/D, colon truecolor, wide-char continuation and relative-move prescan | Open |
 | 429 | [429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md](429-jules-wave-1-taia-focused-implements-prio-batch-audits-text-input-ideas.md) | Jules wave 1: taia-focused implements, prio batch audits, text-input ideas | Open |
 | 430 | [430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md](430-loom-session-6-tab-pty-tests-time-out-on-v0-10-0-testsessionnewtabctrln-and-others.md) | loom session: 6 tab PTY tests time out on v0.10.0 (TestSessionNewTabCtrlN and others) | Open |
+| 431 | [431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md](431-measure-width-of-a-lone-vs16-u-fe0f-is-2-should-probably-be-0.md) | measure: width of a lone VS16 (U+FE0F) is 2, should probably be 0 | Open |
 <!-- harnez:end issues-active-index -->
