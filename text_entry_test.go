@@ -150,6 +150,53 @@ func TestTextEntryShiftSelectionCutAndPaste(t *testing.T) {
 	}
 }
 
+func TestTextEntryHasSelectionHostCopyRouting(t *testing.T) {
+	var clip []string
+	e := NewTextEntry(TextEntryOptions{})
+	bindTextEntryClipboardForTest(e, func(text string) { clip = append(clip, text) })
+	hostActions := 0
+	routeCopy := func() {
+		if e.HasSelection() {
+			if r := entryKey(e, "ctrl-c"); !r.Consumed {
+				t.Fatal("selected copy was not consumed")
+			}
+		} else {
+			hostActions++
+		}
+	}
+	if e.HasSelection() {
+		t.Fatal("empty entry has a selection")
+	}
+	routeCopy()
+	typeEntryText(e, "hello")
+	if e.HasSelection() {
+		t.Fatal("typed text has a selection")
+	}
+	routeCopy()
+	entryKey(e, "shift-left")
+	if !e.HasSelection() {
+		t.Fatal("shift-left did not select text")
+	}
+	routeCopy()
+	if want := []string{"o"}; !slices.Equal(clip, want) {
+		t.Fatalf("clipboard = %q, want %q", clip, want)
+	}
+	entryKey(e, "right")
+	if e.HasSelection() {
+		t.Fatal("collapsed selection still reported")
+	}
+	routeCopy()
+	entryKey(e, "ctrl-a")
+	e.SetValue("")
+	if e.HasSelection() {
+		t.Fatal("cleared entry still has a selection")
+	}
+	routeCopy()
+	if hostActions != 4 || len(clip) != 1 {
+		t.Fatalf("host actions = %d, clipboard = %q", hostActions, clip)
+	}
+}
+
 func TestTextEntrySelectAllCopyAndNoSelectionCopyIgnored(t *testing.T) {
 	var clip []string
 	e := NewTextEntry(TextEntryOptions{})

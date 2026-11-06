@@ -252,6 +252,9 @@ func (e *TextEntry) Measure(width int) measure.Size {
 // Focused reports whether the entry shows the caret.
 func (e *TextEntry) Focused() bool { return e.focused }
 
+// HasSelection reports whether the entry has a nonempty text selection.
+func (e *TextEntry) HasSelection() bool { return e.hasSelection() }
+
 // SetFocus sets whether the entry shows the caret and takes editing input. Losing
 // focus ends a mouse drag and the current typing run.
 func (e *TextEntry) SetFocus(focused bool) {

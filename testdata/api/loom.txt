@@ -4546,6 +4546,9 @@ func (e *TextEntry) Draw(c *Canvas, r Rect)
 func (e *TextEntry) Focused() bool
     Focused reports whether the entry shows the caret.
 
+func (e *TextEntry) HasSelection() bool
+    HasSelection reports whether the entry has a nonempty text selection.
+
 func (e *TextEntry) Measure(width int) measure.Size
     Measure reports the soft-wrapped size at width, with height between one row
     and MaxHeight. A width of zero or less measures the text on its own lines.

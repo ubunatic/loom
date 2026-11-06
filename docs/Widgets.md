@@ -814,7 +814,7 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 ### Key handling
 
 - **Editing keys** are consumed: printable text, Backspace and Delete, the arrow keys with Home, End, and Ctrl+Left and Ctrl+Right, and Shift with any of them to extend a selection.
-- **Clipboard keys**: Ctrl+A selects all. Ctrl+C copies, Ctrl+X cuts, and Ctrl+V pastes from the internal clipboard. Copy and cut also write to the host clipboard through the Pane hook (OSC 52). Bracketed paste inserts as one undo step.
+- **Clipboard keys**: Ctrl+A selects all. Ctrl+C copies, Ctrl+X cuts, and Ctrl+V pastes from the internal clipboard. Copy and cut also write to the host clipboard through the Pane hook (OSC 52). Ctrl+C is ignored when there is no selection. Hosts that handle Ctrl+C before the entry can use `HasSelection()` to route it to the entry when text is selected and otherwise retain their own action. Bracketed paste inserts as one undo step.
 - **Undo**: Ctrl+Z undoes, and Ctrl+Y or Ctrl+Shift+Z redoes. Consecutive typed characters form one undo step.
 - **Host keys** are returned `Ignored`: Tab, Shift+Tab, Ctrl+O, Ctrl+S, Ctrl+G, Ctrl+F, Esc, and F-keys. Up, Down, PageUp and PageDown are ignored at the first or last row so the host can use them for history.
 - **Page keys**: the decoder emits `pgup` and `pgdown`. Bindings also accept `pageup`, `pagedown` and `pgdn`.
