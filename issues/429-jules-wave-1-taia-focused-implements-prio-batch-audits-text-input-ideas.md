@@ -55,7 +55,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | implement | jules-implement-390 | - | - | pending |
 | implement | jules-implement-397 | - | - | pending |
 | implement | jules-implement-400 | - | - | pending |
-| implement | jules-implement-157 | - | - | pending |
+| implement | jules-implement-157 | 17239518533138541790 | GH #115 | merged: bold/dim cases fail without fix; continuation claim was already true |
 | implement | jules-implement-413b | - | - | pending |
 
 ## Wrap 2026-11-06 (owner timer)
