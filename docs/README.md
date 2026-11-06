@@ -88,6 +88,7 @@
 | [studies/2026-10-30-two-agent-lean-sprint-issues-287-393.md](studies/2026-10-30-two-agent-lean-sprint-issues-287-393.md) | Two-Agent Lean Sprint Study: Issues 287 and 393 |
 | [studies/2026-11-01-two-agent-lean-sprint-398-alt-enter.md](studies/2026-11-01-two-agent-lean-sprint-398-alt-enter.md) | Lean sprint 398 — Alt+Enter decoding (2026-11-01) |
 | [studies/2026-11-01-two-agent-lean-sprint-403-env-once.md](studies/2026-11-01-two-agent-lean-sprint-403-env-once.md) | Lean Sprint 403: read measure env switches once |
+| [studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md](studies/2026-11-06-issue-434-gallery-ctrl-c-and-paste.md) | Issue 434 M1: gallery TextEntry Ctrl+C and paste |
 <!-- harnez:end docs-studies-index -->
 
 
