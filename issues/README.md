@@ -49,4 +49,5 @@ upkeep.
 | 433 | [433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md](433-measure-skin-tone-modifier-splits-from-its-emoji-2-clusters-width-4.md) | measure: skin-tone modifier splits from its emoji (👍🏽 = 2 clusters, width 4) | Open |
 | 434 | [434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md](434-pasting-into-taia-chat-clears-the-terminal-add-widget-regression-test.md) | Pasting into taia chat clears the terminal: add widget regression test | Open |
 | 435 | [435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md](435-multiline-paste-into-chat-submits-each-line-instead-of-inserting-text.md) | Multiline paste into chat submits each line instead of inserting text | Open |
+| 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
 <!-- harnez:end issues-active-index -->
