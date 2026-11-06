@@ -105,7 +105,7 @@ func StringWidthNew(text string) int {
 		clusterWidth := RuneWidth(r)
 
 		var isFlag, hasZWJ, hasVS16, hasVS15 bool
-		i, isFlag, hasZWJ, hasVS16, hasVS15 = nextClusterBoundary(text, start)
+		i, isFlag, hasZWJ, hasVS16, hasVS15 = NextClusterBoundary(text, start)
 
 		if isFlag {
 			w += ActiveEmojiSpec().FlagDefaultWidth
@@ -127,7 +127,9 @@ func StringWidthNew(text string) int {
 	return w
 }
 
-func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, hasVS15 bool) {
+// NextClusterBoundary returns the end index of the cluster starting at index i
+// and flags about its content.
+func NextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, hasVS15 bool) {
 	n := len(s)
 	r, sz := utf8.DecodeRuneInString(s[i:])
 
@@ -182,6 +184,25 @@ func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, ha
 		break
 	}
 	return i, false, hasZWJ, hasVS16, hasVS15
+}
+
+// PreviousClusterBoundary finds the start index of the cluster that ends at index i.
+func PreviousClusterBoundary(s string, i int) int {
+	if i <= 0 {
+		return 0
+	}
+	start := 0
+	for {
+		next, _, _, _, _ := NextClusterBoundary(s, start)
+		if next >= i {
+			return start
+		}
+		if next == start {
+			// Prevent infinite loop if something goes wrong
+			return i - 1
+		}
+		start = next
+	}
 }
 
 // JoinsAfterZWJ reports whether r may extend a grapheme cluster after a
@@ -343,7 +364,7 @@ func ClustersNew(text string) []string {
 	for i := 0; i < n; {
 		r, _ := utf8.DecodeRuneInString(plain[i:])
 		if (unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r)) && !isFormatRune(r) {
-			end, _, _, _, _ := nextClusterBoundary(plain, i)
+			end, _, _, _, _ := NextClusterBoundary(plain, i)
 			if len(result) > 0 {
 				result[len(result)-1] += plain[i:end]
 			}
@@ -351,7 +372,7 @@ func ClustersNew(text string) []string {
 			continue
 		}
 
-		end, _, _, _, _ := nextClusterBoundary(plain, i)
+		end, _, _, _, _ := NextClusterBoundary(plain, i)
 		result = append(result, plain[i:end])
 		i = end
 	}
