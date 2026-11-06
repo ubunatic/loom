@@ -74,6 +74,10 @@ Validate the library contract using the in-repository host `loom widgets --show 
 - Regression-first evidence: before the clamp, the new test failed at height 2 with `H:-1` for both child variants. The PTY control-payload regression passed. After the clamp, `go test ./cmd/loom -count=1`, `go vet ./...`, and the single `make test-q1` all passed. Full quota output: `/tmp/loom-issue434-m3-test-q1.log`.
 - No `internal/session` assertion or unrelated source was changed. M2 behavior and tests remain intact. Host review and independent quota verification remain pending; issue 434 stays open because the original Taia report remains unreproduced and unattributed.
 
+### Host verification
+
+Host reviewed M1/M2/M3 source and assertion diffs, required restoration of the terminal-clear paste payload and a nonnegative-height regression, and independently ran `make test-q1` after M3. The host run passed (exit 0); full log: `/tmp/loom-issue434-host-test-q1.log`. Developer install passed on final source. Gallery behavior is delivered; original Taia report and desktop clipboard receipt remain unverified, so this issue stays open. No push performed.
+
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
