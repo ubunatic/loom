@@ -4,6 +4,8 @@ How to move a project that imports loom to a newer release, and the breaking cha
 changes. Field data: the 2026-10-01 migration of 8 workspace repos
 ([study](studies/2026-10-01-loom-module-migration.md), issue 235).
 
+`TextEntry.EnableBold` and `TextEntry.MarkdownValue` are additive APIs. Bold is opt-in, so existing hosts keep their Ctrl+B routing and plain-text `Value`, callbacks and clipboard behavior.
+
 ## Breaking changes by release
 
 | Release | Change | What callers do |

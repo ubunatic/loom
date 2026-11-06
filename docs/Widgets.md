@@ -774,7 +774,7 @@ type ModalTarget interface {
 
 ## 18. Plain-Text Entry (`loom.TextEntry`)
 
-`loom.TextEntry` is a multi-line plain-text input for chat-style lines. The host embeds it, gives it a width and height through `Draw` or `Measure`, and receives the text through `OnChange` and `OnSubmit`. It is plain text only: no syntax highlighting, no folding, and tabs become four spaces.
+`loom.TextEntry` is a multi-line text input for chat-style lines. The host embeds it, gives it a width and height through `Draw` or `Measure`, and receives plain text through `Value`, `OnChange`, and `OnSubmit`. Optional bold formatting is enabled with `EnableBold`; `MarkdownValue` serializes that formatting for hosts that submit Markdown. There is no folding, and tabs become four spaces.
 
 ```go
 entry := loom.NewTextEntry(loom.TextEntryOptions{
@@ -800,7 +800,7 @@ entry.SetFocus(true)
 | `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
 | `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
 | `OnSubmit` | nil | Called with the current value. Its result is returned to the caller. |
-| `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. Selected cells keep the selection style. |
+| `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. Selection adds inversion while retaining span colors and bold. |
 
 The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
 
@@ -817,6 +817,7 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 - **Ctrl+U** deletes from the current visual segment start to the caret, or deletes only the selection. At a hard-line start it moves before the newline without deleting it; at the first start it is ignored. At a soft-wrap boundary it immediately clears the preceding segment. Before layout it uses hard lines; after layout it uses the latest width. Each deletion is one undo step and calls `OnChange`; navigation does neither.
 - **Clipboard keys**: Ctrl+A selects all. Ctrl+C copies, Ctrl+X cuts, and Ctrl+V pastes from the internal clipboard. Copy and cut also write to the host clipboard through the Pane hook (OSC 52). Ctrl+C is ignored when there is no selection. Hosts that handle Ctrl+C before the entry can use `HasSelection()` to route it to the entry when text is selected and otherwise retain their own action. Bracketed paste inserts as one undo step.
 - **Undo**: Ctrl+Z undoes, and Ctrl+Y or Ctrl+Shift+Z redoes. Consecutive typed characters form one undo step.
+- **Bold**: call `EnableBold()` to make Ctrl+B available to the entry. With a selection it toggles all selected non-newline graphemes together: a mixed selection becomes bold, and an all-bold selection becomes plain. Without a selection it toggles the style for later typing. Formatting and typing-style changes participate in undo/redo without calling `OnChange`; inserted text, newlines, paste, range replacement and accepted placeholders use the current typing style. SetValue clears stored formatting and typing style. Formatting changes never change copied or cut text.
 - **Host keys** are returned `Ignored`: Tab outside placeholder acceptance, Shift+Tab, Ctrl+D, Ctrl+O, Ctrl+S, Ctrl+G, Ctrl+F, Esc, and F-keys. Ctrl+D does not edit, submit, or quit the entry; a parent can handle it to move focus or exit. A Frame offers it to the focused child before its own bindings. Up, Down, PageUp and PageDown are ignored at the first or last row so the host can use them for history.
 - **Page keys**: the decoder emits `pgup` and `pgdown`. Bindings also accept `pageup`, `pagedown` and `pgdn`.
 
@@ -826,11 +827,12 @@ Coordinates are 0-based and relative to the widget. A press places the caret, an
 
 ### Offsets, replacement and highlight
 
-Offsets are byte offsets into `Value()`. An offset inside a grapheme cluster snaps to the start of that cluster, and an offset outside the text clamps to `[0, len(Value())]`.
+Offsets are byte offsets into plain `Value()`. An offset inside a grapheme cluster snaps to the start of that cluster, and an offset outside the text clamps to `[0, len(Value())]`.
 
 - `CursorOffset()` returns the caret as a byte offset. `SetCursorOffset(off)` moves the caret and clears the selection. Neither makes an undo step or calls `OnChange`.
 - `ReplaceRange(start, end, s)` replaces the text between two offsets with `s`. A reversed range is swapped. It is one undo step, the caret moves to the end of `s`, and it does not call `OnChange`. Use it for completion: replace the word at the caret.
-- `Highlight` returns `[]TextEntrySpan{Start, End, Style}`. Spans clamp, snap to cluster starts, and a later span wins over an earlier one. A reversed span is ignored. Highlight styles sit under the selection, so a selected cell always shows the selection style.
+- `Highlight` returns `[]TextEntrySpan{Start, End, Style}`. Spans clamp, snap to cluster starts, and a later span wins over an earlier one. A reversed span is ignored. Stored bold is composed with highlight styles. Selection adds inversion while retaining color and bold attributes.
+- `MarkdownValue()` returns escaped Markdown with bold runs wrapped in `**`. Literal ASCII punctuation and backslashes are escaped. Runs close at each hard newline, and the original newline characters are preserved. Leading and trailing whitespace stays outside bold delimiters; whitespace-only bold has no Markdown emphasis semantics. `Value()`, `OnChange`, `OnSubmit`, and clipboard contents remain plain text.
 
 ```go
 entry := loom.NewTextEntry(loom.TextEntryOptions{
@@ -846,5 +848,5 @@ entry := loom.NewTextEntry(loom.TextEntryOptions{
 ### Known limits
 
 - Ctrl+J and Shift+Enter are distinct from Enter only when the terminal sends the kitty keyboard protocol (CSI u). In legacy terminals, Ctrl+J arrives as plain LF, which the decoder reports as `enter`, and Shift+Enter arrives as Enter. Alt+Enter works in both.
-- There is no design sketch for this widget yet, so the per-cell checks in its tests assert the contract directly: Invert on selected cells, Dim on the placeholder, the prompt on row 0, and the hardware cursor at the caret.
+- There is no design sketch for this widget yet, so the per-cell checks in its tests assert the contract directly: selection inversion, bold and highlight colors, Dim on the placeholder, the prompt on row 0, and the hardware cursor at the caret.
 

@@ -4543,11 +4543,22 @@ func (e *TextEntry) Draw(c *Canvas, r Rect)
     focused, it places the hardware cursor at the caret and keeps the caret row
     visible. Mouse wheel scrolling is kept until the caret moves again.
 
+func (e *TextEntry) EnableBold()
+    EnableBold enables Ctrl+B formatting and MarkdownValue serialization.
+    Until enabled, Ctrl+B remains available to the host.
+
 func (e *TextEntry) Focused() bool
     Focused reports whether the entry shows the caret.
 
 func (e *TextEntry) HasSelection() bool
     HasSelection reports whether the entry has a nonempty text selection.
+
+func (e *TextEntry) MarkdownValue() string
+    MarkdownValue returns the plain entry text with bold spans marked using
+    Markdown strong delimiters. Literal Markdown punctuation is backslash
+    escaped. Existing newlines are preserved, and each hard line closes bold
+    spans. Leading and trailing whitespace in a bold span remains outside the
+    delimiters because Markdown does not render whitespace-only emphasis.
 
 func (e *TextEntry) Measure(width int) measure.Size
     Measure reports the soft-wrapped size at width, with height between one row
@@ -4607,7 +4618,8 @@ type TextEntrySpan struct {
     TextEntrySpan styles the bytes from Start to End of the value, End
     exclusive. Offsets snap and clamp as in SetCursorOffset. Overlapping spans
     take the later one, and a reversed span is ignored. Highlight styles are
-    drawn under the selection: selected cells always use the selection style.
+    composed with bold and selection inversion, so selected cells retain their
+    foreground and background colors.
 
 type TextInput struct {
 	Prompt      string  // drawn before the value, e.g. "title> "

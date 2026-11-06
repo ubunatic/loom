@@ -39,3 +39,11 @@ Host is sole reviewer; developer terra:med. No known baseline failures (last hos
 ## Goal
 
 /goal Deliver opt-in visual Ctrl+B bold toggling in TextEntry with reliable editing/history, bold-only Markdown serialization and actual gallery Markdown submission, while preserving existing plain APIs and key contracts; prove it in unit/per-cell/terminal tests and install. Stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
+
+## M1 implementation evidence (2026-11-07)
+
+- Added opt-in `EnableBold()` and plain-text-preserving `MarkdownValue()` APIs; Ctrl+B remains ignored until opted in.
+- Added grapheme-aligned formatting and typing style to edits, replacement, placeholder insertion, undo/redo and drawing. Format-only edits do not notify `OnChange`; clipboard stays plain.
+- Added tests for mixed and selected bold, typing style, Unicode ranges, Markdown escaping and whitespace, multiline values, Ctrl+U, placeholder acceptance, callback history and highlighted selection rendering.
+- Checks passed: focused bold/Markdown tests, full `TestTextEntry` tests, `go vet ./...`, and refreshed public API snapshot. The locked `make test-q1`, install and commit remain pending.
+- M1 study: `docs/studies/2026-11-07-issue-441-textentry-bold-m1.md`. M2 gallery submission and terminal proof have not started; host review is required before M2.
