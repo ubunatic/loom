@@ -151,6 +151,8 @@ func redrawTabChild(t *sessionTab) {
 }
 
 type sessionTab struct {
+	fgCmd            string
+	cwd              string
 	id               int
 	title            string
 	command          string
@@ -230,7 +232,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 		if i > 0 {
 			sep = 1
 		}
-		tabWidth += sep + loom.StringWidth(fmt.Sprintf(" %d: %s ", i+1, tab.title))
+		tabWidth += sep + loom.StringWidth(fmt.Sprintf(" %s ", formatTabLabel(i, tab.title, tab.fgCmd, tab.cwd, loom.SpeccedDefaults.Session)))
 	}
 	dropIndices := map[string]int{"tools": 0, "help": 1, "screenshot": 2, "quit": 3, "search": 4}
 	for _, name := range labels.DropOrder {
@@ -268,7 +270,7 @@ func sessionBarContent(tabs []*sessionTab, activeIndex, cols int, mouseOn bool) 
 			b.WriteString(" ")
 			x++
 		}
-		text := fmt.Sprintf(" %d: %s ", i+1, tab.title)
+		text := fmt.Sprintf(" %s ", formatTabLabel(i, tab.title, tab.fgCmd, tab.cwd, loom.SpeccedDefaults.Session))
 		if x+loom.StringWidth(text) > remainingTabs {
 			text = loom.TruncateText(text, remainingTabs-x, "…")
 		}
@@ -1405,7 +1407,16 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 			sessionMu.Unlock()
 		case now := <-debugTick.C:
 			sessionMu.Lock()
+			barDirty := false
 			for _, tab := range tabs {
+				if tab.master != nil {
+					fgCmd, cwd := getForegroundInfo(tab.master.Fd())
+					if fgCmd != tab.fgCmd || cwd != tab.cwd {
+						tab.fgCmd = fgCmd
+						tab.cwd = cwd
+						barDirty = true
+					}
+				}
 				if tab.debugDetector == nil {
 					continue
 				}
@@ -1419,6 +1430,9 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						barAlertState = false
 					}
 				}
+			}
+			if barDirty && len(tabs) > 0 && sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+				drawSessionTabBar(out, tabs, activeIndex, cols, rows)
 			}
 			sessionMu.Unlock()
 		case sig := <-sigTerm:

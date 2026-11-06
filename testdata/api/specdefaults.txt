@@ -577,6 +577,8 @@ type SessionDefaults struct {
 	Bar             string                `yaml:"bar"`
 	ScrollbackLines int                   `yaml:"scrollback_lines"`
 	BarLabels       SessionBarLabels      `yaml:"bar_labels"`
+	Emoji           map[string]string     `yaml:"emoji"`
+	BasenameWidth   int                   `yaml:"basename_width"`
 	Prefix          string                `yaml:"prefix"`
 	Bindings        SessionBindings       `yaml:"bindings"`
 	PrefixBindings  SessionPrefixBindings `yaml:"prefix_bindings"`

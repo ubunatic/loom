@@ -609,6 +609,25 @@ session:
     search: "Search"
     detach: "Detach"
     drop_order: ["quit", "screenshot", "help", "tools", "search"]
+  emoji:
+    bash: "🐚"
+    sh: "🐚"
+    zsh: "🐚"
+    fish: "🐚"
+    vim: "📝"
+    nvim: "📝"
+    vi: "📝"
+    nano: "📝"
+    git: "🐙"
+    go: "🐹"
+    make: "🛠"
+    htop: "📊"
+    btop: "📊"
+    ssh: "🔑"
+    man: "📖"
+    less: "📖"
+    loom: "🧶"
+  basename_width: 15
   prefix: "ctrl-b"
   bindings:
     screenshot: [*hotkey_screenshot_binding]

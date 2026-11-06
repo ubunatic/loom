@@ -895,7 +895,7 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 	session.SendRaw([]byte{14})
 
 	// Wait for tab bar to appear
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// In new tab, print TAB2_RUNNING
 	session.Send("printf 'TAB2_RUNNING\\n'\n")
@@ -906,7 +906,7 @@ func TestSessionNewTabCtrlN(t *testing.T) {
 
 	// Wait for tab bar to disappear (only tab 1 remains)
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 
 	// Finish tab 1
@@ -968,7 +968,7 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	session.Send("printf 'SCREEN2_CONTENT\\n'\n")
 	session.WaitFor("SCREEN2_CONTENT", time.Second*5)
@@ -984,7 +984,7 @@ func TestSessionTabSwitchPrefixNAndP(t *testing.T) {
 	// Close tab 2 and finish tab 1
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 	session.Send("done\n")
 	if err := session.Wait(time.Second * 5); err != nil {
@@ -1004,7 +1004,7 @@ func TestSessionTabSwitchPrefixSelect(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	session.Send("printf 'TAB_TWO_MARKER\\n'\n")
 	session.WaitFor("TAB_TWO_MARKER", time.Second*5)
@@ -1020,7 +1020,7 @@ func TestSessionTabSwitchPrefixSelect(t *testing.T) {
 	// Close tab 2 and finish tab 1
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 	session.Send("done\n")
 	if err := session.Wait(time.Second * 5); err != nil {
@@ -1040,7 +1040,7 @@ func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
 
 	// Open tab 2 with prefix c (2, 'c')
 	session.SendRaw([]byte{2, 'c'})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	session.Send("printf 'TAB_TO_CLOSE\\n'\n")
 	session.WaitFor("TAB_TO_CLOSE", time.Second*5)
@@ -1048,7 +1048,7 @@ func TestSessionPrefixNewTabAndCloseTab(t *testing.T) {
 	// Close tab 2 with prefix x (2, 'x')
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 
 	// Finish tab 1
@@ -1070,12 +1070,12 @@ func TestSessionLastTabExitCode(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Exit tab 2 with code 0
 	session.Send("exit 0\n")
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 
 	// Finish tab 1 which exits 42
@@ -1101,7 +1101,7 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// In tab 2, enter alt screen and print text
 	session.Send("printf '\\033[?1049h\\033[1;1HALT_SCREEN_TAB\\033[0m\\n'\n")
@@ -1118,7 +1118,7 @@ func TestSessionAltScreenTabSwitch(t *testing.T) {
 	// Close tab 2 with ctrl-b x
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session")
 	})
 
 	// Finish tab 1
@@ -1140,7 +1140,7 @@ func TestSessionQuitErasesTabBarOnOuterScreen(t *testing.T) {
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Send ctrl-q (17) to quit session while bar is shown
 	session.SendRaw([]byte{17})
@@ -1168,7 +1168,7 @@ func TestSessionQuitInAltScreenErasesTabBarOnOuterScreen(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Enter alt screen in tab 2
 	session.Send("printf '\\033[?1049h\\033[1;1HALT\\033[0m\\n'\n")
@@ -1200,15 +1200,15 @@ func TestSessionHideBarErasesBottomRow(t *testing.T) {
 
 	// Open tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Close tab 2 with ctrl-b x; the configured bar remains with one tab.
 	session.SendRaw([]byte{2, 'x'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "2: ") && strings.Contains(strings.Join(rows, "\n"), "1: bash")
+		return !strings.Contains(strings.Join(rows, "\n"), "²🐚session") && strings.Contains(strings.Join(rows, "\n"), "¹🐚bash")
 	})
 
-	if !strings.Contains(session.Screen()[len(session.Screen())-1], "1: bash") {
+	if !strings.Contains(session.Screen()[len(session.Screen())-1], "¹🐚bash") {
 		t.Fatalf("single-tab bar missing after closing tab: %q", session.Screen()[len(session.Screen())-1])
 	}
 
@@ -1347,7 +1347,7 @@ func TestSessionPerTabModes(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n (14)
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// In Tab 2, mouse tracking in outer VT must be OFF
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -1381,7 +1381,7 @@ func TestSessionDirectTabSelectAltDigits(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Send alt-1 (\x1b1) to switch to Tab 1
 	session.SendRaw([]byte{27, '1'})
@@ -1425,7 +1425,7 @@ func TestSessionCleanOuterScreenAfterQuitWithTabs(t *testing.T) {
 
 	// Open tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Print unique text in Tab 2
 	session.Send("printf 'TAB2_ISOLATED\\n'\n")
@@ -1467,7 +1467,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// Switch back to Tab 1 so active tab has mouse tracking on
 	session.SendRaw([]byte{27, '1'})
@@ -1506,7 +1506,7 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 
 	// Open Tab 2 with ctrl-n so tab bar appears
 	session.SendRaw([]byte{14})
-	session.WaitFor("2: ", time.Second*5)
+	session.WaitFor("²🐚session", time.Second*5)
 
 	// In safe mode, plain shells must NOT cause mouse tracking to be enabled on the outer VT
 	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
@@ -1629,7 +1629,11 @@ func TestSessionBarGoldens(t *testing.T) {
 			t.Fatal(err)
 		}
 		if !bytes.Equal(golden, output.Bytes()) {
-			t.Fatalf("%s differs from rendered session bar", fixture.name)
+			if os.Getenv("UPDATE_GOLDEN") != "" {
+				os.WriteFile(path, output.Bytes(), 0o644)
+			} else {
+				t.Fatalf("%s differs from rendered session bar", fixture.name)
+			}
 		}
 	}
 }

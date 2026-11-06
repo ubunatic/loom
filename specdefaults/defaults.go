@@ -676,6 +676,8 @@ type SessionDefaults struct {
 	Bar             string                `yaml:"bar"`
 	ScrollbackLines int                   `yaml:"scrollback_lines"`
 	BarLabels       SessionBarLabels      `yaml:"bar_labels"`
+	Emoji           map[string]string     `yaml:"emoji"`
+	BasenameWidth   int                   `yaml:"basename_width"`
 	Prefix          string                `yaml:"prefix"`
 	Bindings        SessionBindings       `yaml:"bindings"`
 	PrefixBindings  SessionPrefixBindings `yaml:"prefix_bindings"`
@@ -747,6 +749,9 @@ func (d SessionDefaults) Validate() error {
 	}
 	if d.Bar != "always" && d.Bar != "tabs" {
 		return fmt.Errorf("session.bar must be 'always' or 'tabs'")
+	}
+	if d.BasenameWidth <= 0 {
+		return fmt.Errorf("session.basename_width must be positive")
 	}
 	if d.BarLabels.Tools == "" || d.BarLabels.Help == "" || d.BarLabels.Quit == "" || d.BarLabels.Screenshot == "" || d.BarLabels.MouseIcon == "" || d.BarLabels.Separator == "" || d.BarLabels.NewTab == "" || d.BarLabels.NextTab == "" || d.BarLabels.PreviousTab == "" || d.BarLabels.CloseTab == "" || d.BarLabels.SendPrefix == "" || d.BarLabels.ToggleMouse == "" || d.BarLabels.Search == "" || d.BarLabels.Detach == "" || len(d.BarLabels.DropOrder) != 5 {
 		return fmt.Errorf("session.bar_labels must configure all labels, glyphs, and five hint drop priorities")
