@@ -12,7 +12,7 @@ M1 added opt-in Ctrl+B bold state to `TextEntry`, tracks formatting with graphem
 
 M1 regression coverage exercises opt-in routing, mixed selection, typing style, format-only undo/redo and callbacks, grapheme-aligned replacement and paste, multiline typing, Ctrl+U history, placeholder acceptance, plain clipboard text, and style composition with highlight and selection. M2 adds compatibility tests for legacy selection colors, exact mutation and serialization expectations, and Ctrl+D immutability across enabled and disabled states. The gallery now submits `MarkdownValue()` in its demonstration callback and displays the serialized result while preserving plain `Value()` and callback data. A PTY test checks selected and typing bold cell attributes, caret position, format undo/redo, retained controls, placeholder behavior, and visible Markdown submission.
 
-M1 focused checks, vet, API snapshot, single `make test-q1` and install passed; implementation commit: `22ec2fc`. M2 focused core, gallery and PTY checks have passed. The required final M2 `make test-q1`, vet, API snapshot check and install are pending.
+M1 focused checks, vet, API snapshot, single `make test-q1` and install passed; implementation commit: `22ec2fc`. M2 focused core, gallery and PTY checks passed, as did `go vet ./...`, the public API snapshot check, and `make install`. The single M2 `make test-q1` run failed only in unrelated `internal/session/TestSessionDetachPrefixDAndReattach`: its PTY output contained `BASE_SCREEN` and `DETACHED_OUTPUT` instead of the retained screen and tabs. No q1 rerun was made. M2 implementation commit: `a04eb55`; M2 scope/evidence commit: `5f78764`.
 
 ## Limits
 
