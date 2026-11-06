@@ -1,6 +1,6 @@
 # 429 — Jules wave 1: taia-focused implements, prio batch audits, text-input ideas
 
-**Status**: Open
+**Status**: Closed — done: 2 Jules waves, 14 runs; merged 421 414 432 157; filed 430 431 432 433; verdict in ticket
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Chore
