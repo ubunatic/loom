@@ -231,11 +231,13 @@ func (s *Session) WaitForUpdate(want string, timeout time.Duration) {
 // rather than polling, so race-instrumented tests do not depend on scheduler
 // timing or arbitrary sleeps.
 func (s *Session) WaitForState(timeout time.Duration, predicate func([]string) bool) {
+	s.t.Helper()
 	s.waitForState(timeout, false, predicate)
 }
 
 // WaitForUpdateState waits for a screen predicate after the latest input.
 func (s *Session) WaitForUpdateState(timeout time.Duration, predicate func([]string) bool) {
+	s.t.Helper()
 	s.waitForState(timeout, true, predicate)
 }
 
