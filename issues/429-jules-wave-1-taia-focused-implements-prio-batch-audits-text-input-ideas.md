@@ -56,7 +56,7 @@ Picks: 432 (grapheme backspace, taia), 392 (mouse modes, Jules #1 and taia), 390
 | implement | jules-implement-397 | 7541561626893540044 | - | failed: Jules "unable to complete the task", no PR; not re-run |
 | implement | jules-implement-400 | - | - | pending |
 | implement | jules-implement-157 | 17239518533138541790 | GH #115 | merged: bold/dim cases fail without fix; continuation claim was already true |
-| implement | jules-implement-413b | - | - | pending |
+| implement | jules-implement-413b | 10998755120330844800 | - | failed: AWAITING_USER_FEEDBACK, stalled after 2 replies, no PR; stopped |
 
 ## Wrap 2026-11-06 (owner timer)
 - Wave 1 done: 421, 414 merged and closed; 413 rejected (PR 112); prio-b kept, prio-a discarded (<80% refs); ideas run gave 432; 259 audit was a duplicate.
