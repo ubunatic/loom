@@ -48,9 +48,7 @@ func (w *colorPickerDemo) Draw(c *loom.Canvas, r loom.Rect) {
 	}
 	pickerHeight := min(r.H, w.picker.Measure(r.W).Height)
 	w.pickerRect = loom.Rect{W: r.W, H: pickerHeight}
-	pickerCanvas := c.SubCanvas(loom.Rect{X: r.X, Y: r.Y, W: r.W, H: pickerHeight})
-	w.picker.Draw(pickerCanvas, loom.Rect{W: r.W, H: pickerHeight})
-	c.Blit(pickerCanvas, r.X, r.Y)
+	w.picker.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: pickerHeight})
 
 	sampleY := r.Y + pickerHeight
 	if sampleY < r.Y+r.H {

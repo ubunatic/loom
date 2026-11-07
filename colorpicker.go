@@ -167,10 +167,13 @@ func (p *ColorPicker) Measure(width int) measure.Size {
 
 // Draw renders independent foreground and background palettes and their preview.
 func (p *ColorPicker) Draw(c *Canvas, r Rect) {
-	if c == nil || p == nil || r.W <= 0 || r.H <= 0 {
+	if c == nil || p == nil {
 		return
 	}
 	p.lastRect = r
+	if r.W <= 0 || r.H <= 0 {
+		return
+	}
 	panelHeight := min(r.H, 4)
 	defs := SpeccedDefaults.ColorPicker
 	panelBG := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
@@ -205,7 +208,7 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 				text = defs.Glyphs.Swatch
 			}
 			writeColorPickerText(c, r, x, y, text, style)
-			for pad := measure.StringWidth(text); pad < defs.SwatchWidth && x+pad < r.W; pad++ {
+			for pad := measure.StringWidth(text); y < r.H && pad < defs.SwatchWidth && x+pad < r.W; pad++ {
 				c.Set(r.X+x+pad, r.Y+y, Cell{Text: " ", Style: style})
 			}
 		}
@@ -232,7 +235,7 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 		bgAppliedMarker := colorPickerMarkerAt(x, bgAppliedX, defs.SwatchWidth)
 		bgCursorMarker := colorPickerMarkerAt(x, bgCursorX, defs.SwatchWidth)
 		if x < defs.PreviewWidth && !bgAppliedMarker && !bgCursorMarker {
-			c.Set(r.X+x, r.Y+3, Cell{Text: " ", Style: panelStyle})
+			writeColorPickerText(c, r, x, 3, " ", panelStyle)
 			continue
 		}
 		style := Style{FG: panelBG, BG: p.Style.BG}

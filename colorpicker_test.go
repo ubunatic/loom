@@ -3,7 +3,10 @@
 
 package loom
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestColorPickerRowsShareCursorAndApplyOnlyActiveRow(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
@@ -210,5 +213,55 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	defer func() { SpeccedDefaults.ColorPicker.ShowPreview = old }()
 	if got := picker.Measure(0); got.Height != 4 {
 		t.Fatalf("hidden preview measure=%+v", got)
+	}
+}
+
+func TestColorPickerDrawStaysWithinSuppliedBounds(t *testing.T) {
+	defs := SpeccedDefaults.ColorPicker
+	SpeccedDefaults.ColorPicker.Glyphs.EdgeLower = "界"
+	SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper = "界"
+	defer func() { SpeccedDefaults.ColorPicker = defs }()
+
+	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
+	rects := []Rect{
+		{X: 4, Y: 2, W: 0, H: 3},
+		{X: 4, Y: 2, W: 3, H: 0},
+		{X: 4, Y: 2, W: 1, H: 1},
+		{X: 4, Y: 2, W: 2, H: 2},
+		{X: 4, Y: 2, W: 1, H: 6},
+		{X: 4, Y: 2, W: 6, H: 1},
+		{X: 4, Y: 2, W: 36, H: 6},
+	}
+	for _, rect := range rects {
+		t.Run(fmt.Sprintf("%dx%d-offset", rect.W, rect.H), func(t *testing.T) {
+			canvas := NewCanvas(48, 12)
+			before := make([]Cell, canvas.Cols()*canvas.Rows())
+			for y := 0; y < canvas.Rows(); y++ {
+				for x := 0; x < canvas.Cols(); x++ {
+					cell := Cell{Text: "s", Style: Style{FG: ColorIndex(uint8(x)), BG: ColorIndex(uint8(y))}, Claim: true}
+					canvas.Set(x, y, cell)
+					before[y*canvas.Cols()+x] = cell
+				}
+			}
+			picker.Draw(canvas, rect)
+			for y := 0; y < canvas.Rows(); y++ {
+				for x := 0; x < canvas.Cols(); x++ {
+					inside := x >= rect.X && x < rect.X+rect.W && y >= rect.Y && y < rect.Y+rect.H
+					if !inside && canvas.Get(x, y) != before[y*canvas.Cols()+x] {
+						t.Errorf("draw at %+v changed outside cell (%d,%d): got %+v, want %+v", rect, x, y, canvas.Get(x, y), before[y*canvas.Cols()+x])
+					}
+				}
+			}
+		})
+	}
+
+	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 36, H: 6})
+	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 0, H: 6})
+	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 1}); got != Ignored() {
+		t.Fatalf("mouse after empty draw=%+v, want ignored", got)
+	}
+	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 3, H: 1})
+	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 2, Y: 1}); got != Ignored() {
+		t.Fatalf("mouse outside offset tiny draw=%+v, want ignored", got)
 	}
 }
