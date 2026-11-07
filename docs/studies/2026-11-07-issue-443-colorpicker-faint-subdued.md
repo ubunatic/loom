@@ -19,5 +19,7 @@ Following the gallery comparison in Issue 442, the owner requested selectable fa
   - Subdued background verified as an architectural limitation (ANSI SGR 2 is text faint; theme `NormalBG` is surface color, not dimmed BG). Limitation will be documented in `docs/Widgets.md`.
   - `RichTextEdit` connects `OnDimChange` to `ActiveStyle` and selected spans.
   - M2 approved write set and regression-first testing plan established.
-- **M2 (Implementation & Verification):** Implementation of faint toggle in `colorpicker.go`, `richtextedit_style.go`, tests in `colorpicker_test.go` and `richtextedit_test.go`, documentation in `docs/Widgets.md`, gallery/PTY updates, ANSI validation, and full `make test-q1` verification.
+- **M2 (Implementation & Verification):** Delivered in `5a1d09d`: Faint toggle control, `OnDimChange`, RichTextEdit integration, subdued background limitation documented in `docs/Widgets.md`. One-shot review by `rev443` found Home not clearing Faint focus and preview color substitution while Faint focused.
+- **M3 (Refinements):** Resolve Home clearing `FaintSelected`, fix `PreviewStyle()` to keep applied FG/BG when focusing Faint, add targeted unit and PTY regression tests, and verify with `make test-q1`.
+
 

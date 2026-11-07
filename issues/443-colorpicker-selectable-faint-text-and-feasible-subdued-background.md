@@ -32,13 +32,20 @@ After reviewing the comparison in issue 442, the owner wants faint text to be se
   - RichTextEdit: Connect `OnDimChange` to `ActiveStyle` / selection spans, preserving other style attributes.
   - Test strategy: TDD regression tests for keyboard/mouse toggling, preview styling, reset preservation, RichTextEdit undo/serialization, and gallery PTY verification.
 
-- **M2 — Implementation & Verification (Pre-Work / Scope)**:
-  - Implement regression-first tests in `colorpicker_test.go` and `richtextedit_test.go` that demonstrate failure before the fix.
-  - Implement `Dim`, `OnDimChange`, navigation, rendering, and mouse handling in `colorpicker.go`.
-  - Wire `OnDimChange` in `richtextedit_style.go` with undo/span preservation.
-  - Update `docs/Widgets.md` documenting faint text selection and the architectural limitation of subdued background.
-  - Update `gallery/colorpicker.go`, `docs/progress/ColorPicker.ansi`, and validate ANSI design (`loom eval`, `loom measure`).
-  - Refresh public API test snapshot (`go test ./internal/apitest -run '^TestPublicAPI$' -update`) if exported API changes.
-  - Run `go vet ./...`, package tests, and logged `make test-q1`. Run `make install`.
+- **M2 — Implementation & Verification (Delivered)**:
+  - Delivered in commit `5a1d09d`: Faint toggle added to `ColorPicker`, RichTextEdit `ActiveStyle` and span integration with undo, `docs/Widgets.md` limitation documented, gallery/PTY coverage, and ANSI verification.
+  - Reviewer findings (`rev443`) identified two state/preview bugs and test gaps.
+
+- **M3 — Host & Reviewer Refinements (Pre-Work / Scope)**:
+  - **Pre-Work / Required Refinements**:
+    1. In `colorpicker.go`:
+       - `Home` key: ensure `p.FaintSelected = false` when resetting cursor to terminal-default/reset.
+       - `PreviewStyle()`: When `p.FaintSelected` is true, do not substitute the last palette swatch for applied FG. The preview must preserve the currently applied FG and BG colors and only reflect candidate `Dim`.
+    2. Regression tests in `colorpicker_test.go`:
+       - Focus Faint -> Home -> Space verifies terminal-default reset FG is applied and Dim is not toggled.
+       - Focus Faint does not change preview FG color; toggling Dim updates preview Dim without altering colors.
+       - Strengthen PTY test to verify interactive preview cell Dim attribute on `[x]`.
+    3. Run `go vet ./...`, unit tests, `HTO=0 make test-q1`, `make install`, and commit.
+
 
 
