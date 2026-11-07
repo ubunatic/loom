@@ -25,22 +25,20 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	cellForSample := func(label string) ptytest.Cell {
 		t.Helper()
 		for y, line := range s.Screen() {
-			if x := strings.Index(line, label); x >= 0 {
-				return s.Cell(x, y+1)
+			if at := strings.Index(line, label); at >= 0 {
+				return s.Cell(loom.StringWidth(line[:at]), y+1)
 			}
 		}
 		t.Fatalf("sample label %q not found:\n%s", label, strings.Join(s.Screen(), "\n"))
 		return ptytest.Cell{}
 	}
-	cellOnLabel := func(label string) ptytest.Cell {
-		t.Helper()
-		for y, line := range s.Screen() {
-			if x := strings.Index(line, label); x >= 0 {
-				return s.Cell(x, y)
+	labelPosition := func(rows []string, label string) (int, int, bool) {
+		for y, line := range rows {
+			if at := strings.Index(line, label); at >= 0 {
+				return loom.StringWidth(line[:at]), y, true
 			}
 		}
-		t.Fatalf("label %q not found:\n%s", label, strings.Join(s.Screen(), "\n"))
-		return ptytest.Cell{}
+		return 0, 0, false
 	}
 	defaultCell := cellForSample("Default")
 	if defaultCell.Style.FG != ptytest.ColorReset() || defaultCell.Style.BG != ptytest.ColorReset() || defaultCell.Style.Dim {
@@ -54,20 +52,43 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	if initialSubdued.Style.FG != ptytest.ColorReset() || initialSubdued.Style.BG != ptytest.ColorReset() {
 		t.Fatalf("plain theme sample = %+v, want reset FG/BG", initialSubdued)
 	}
-	previewCell := cellOnLabel("Preview")
-	initialPreviewFG := previewCell.Style.FG
+	palette := loom.SpeccedDefaults.ColorPicker.Palette
+	initialSelected := -1
+	for i, color := range palette {
+		if color == 4 {
+			initialSelected = i
+			break
+		}
+	}
+	if initialSelected < 0 || initialSelected+1 >= len(palette) {
+		t.Fatalf("palette %v cannot support the expected Right navigation", palette)
+	}
+	selectedColor := loom.ColorIndex(uint8(palette[initialSelected+1]))
+	cursorColumn := loom.SpeccedDefaults.ColorPicker.LeadingPadding + (initialSelected+2)*loom.SpeccedDefaults.ColorPicker.SwatchWidth
+	pickerState := func(rows []string, selectionColor loom.Color) bool {
+		labelX, labelY, ok := labelPosition(rows, "Preview")
+		if !ok {
+			return false
+		}
+		cursorX := labelX - loom.SpeccedDefaults.ColorPicker.PreviewPadding + cursorColumn
+		cursorY := labelY - 4
+		cells := s.Cells()
+		if cursorY < 0 || cursorY >= len(cells) || cursorX < 0 || cursorX >= len(cells[cursorY]) {
+			return false
+		}
+		cursor := cells[cursorY][cursorX]
+		preview := cells[labelY][labelX]
+		return cursor.Text == loom.SpeccedDefaults.ColorPicker.Glyphs.EdgeLower &&
+			ptyColorMatches(cursor.Style.FG, selectionColor) && ptyColorMatches(preview.Style.FG, selectedColor)
+	}
 	s.Send("\x1b[C") // Right moves the picker cursor one palette entry.
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
-		return strings.Contains(strings.Join(rows, "\n"), "Preview")
+		return pickerState(rows, loom.Theme("plain").Selection.Color())
 	})
 	s.Send("\r") // Apply the moved selection so it is visible in the preview.
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
-		return strings.Contains(strings.Join(rows, "\n"), "Preview")
+		return pickerState(rows, loom.Theme("plain").Selection.Color())
 	})
-	navigatedPreview := cellOnLabel("Preview")
-	if navigatedPreview.Style.FG == initialPreviewFG {
-		t.Fatalf("Right + Enter left preview FG unchanged at %+v", initialPreviewFG)
-	}
 
 	names := loom.ThemeNames()
 	next := ""
@@ -81,14 +102,23 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 		t.Fatal("plain theme is missing")
 	}
 	s.Send("\x1b[20~") // F9
-	s.WaitFor("Theme "+next, 5*time.Second)
+	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "Theme "+next) && pickerState(rows, loom.Theme(next).Selection.Color())
+	})
 	updatedSubdued := cellForSample("Subdued BG (theme)")
 	if updatedSubdued.Style.FG != ptytest.ColorReset() || !ptyColorsMatch(updatedSubdued.Style.BG, loom.Theme(next).NormalBG.Color()) {
 		t.Fatalf("%s theme sample = %+v, want reset FG and NormalBG", next, updatedSubdued)
 	}
-	if got := cellOnLabel("Preview").Style.FG; got != navigatedPreview.Style.FG {
-		t.Fatalf("F9 changed navigated picker selection in preview: got %+v, want %+v", got, navigatedPreview.Style.FG)
+}
+
+func ptyColorMatches(got ptytest.Color, want loom.Color) bool {
+	if want == loom.ColorReset() {
+		return got == ptytest.ColorReset()
 	}
+	if index, ok := want.Index(); ok {
+		return got.Type == ptytest.ColorIndexed && got.Index == index
+	}
+	return ptyColorsMatch(got, want)
 }
 
 func ptyColorsMatch(got ptytest.Color, want loom.Color) bool {
