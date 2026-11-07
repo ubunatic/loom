@@ -47,6 +47,11 @@ M2 focused tests, vet, the full quota run and installation are pending in the im
 - Strengthen the CLI PTY test to navigate the picker and verify selection survives F9 theme refresh. Keep all existing assertions.
 - M2 focused tests, vet and install passed; quota suite was blocked before tests by bubblewrap. Full suite and visual acceptance remain owed.
 
+## M4 — PTY review refinements
+
+- Assert the navigation cursor itself survives F9, not only the applied preview color. Wait for the expected cursor and preview states rather than the already-visible Preview label, avoiding partial-redraw races. Preserve all existing assertions.
+- The sandbox now permits bwrap and the install directory; run the required full quota suite and installation after the fixes.
+
 ## Goal
 
 /goal Add an honest default/faint/theme-background visual comparison to the ColorPicker gallery, preserving one interactive picker and all existing color semantics, with per-cell/layout/input/theme and live terminal evidence; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
