@@ -662,7 +662,7 @@ type SettingsDefaults struct {
 
 // Validate checks the configured defaults.
 func (d SettingsDefaults) Validate() error {
-	for _, action := range []string{"quit", "up", "down", "activate", "previous", "step_minus", "step_plus"} {
+	for _, action := range []string{"quit", "up", "down", "activate", "previous", "step_minus", "step_plus", "search"} {
 		if len(d.Bindings[action]) == 0 {
 			return fmt.Errorf("settings.bindings.%s must not be empty", action)
 		}

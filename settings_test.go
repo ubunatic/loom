@@ -157,3 +157,67 @@ func TestSettingsNumberCustomFormattingAndPositiveKeys(t *testing.T) {
 		t.Errorf("minus value = %g, want 3.5", value)
 	}
 }
+
+func TestSettingsSearchFiltersAndEditsUnderlyingItems(t *testing.T) {
+	var enabled bool
+	name := "old"
+	settings := loom.NewSettings([]loom.Setting{
+		{Label: "Color mode", Kind: loom.KindBool, Bool: &enabled},
+		{Label: "User name", Kind: loom.KindString, Str: &name},
+		{Label: "Other", Kind: loom.KindBool, Bool: new(bool)},
+	})
+	settings.ConsumeKey(loom.KeyEvent{Text: "/"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "u"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "S"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "E"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "R"})
+	settings.ConsumeKey(loom.KeyEvent{Text: " "})
+	settings.ConsumeKey(loom.KeyEvent{Text: "N"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "A"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "M"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "E"})
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if got := settings.ContentHeight(); got != 1 {
+		t.Fatalf("filtered ContentHeight = %d, want 1", got)
+	}
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "!"})
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if name != "old!" {
+		t.Fatalf("edited underlying value = %q, want old!", name)
+	}
+	settings.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if got := settings.ContentHeight(); got != 3 {
+		t.Fatalf("cleared ContentHeight = %d, want 3", got)
+	}
+	settings.ConsumeKey(loom.KeyEvent{Text: "/"})
+	for _, r := range "color" {
+		settings.ConsumeKey(loom.KeyEvent{Text: string(r)})
+	}
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if !enabled {
+		t.Fatal("filtered setting activation did not update underlying bool")
+	}
+}
+
+func TestSettingsSearchEmptyResultsAreSafe(t *testing.T) {
+	value := false
+	settings := loom.NewSettings([]loom.Setting{{Label: "Available", Kind: loom.KindBool, Bool: &value}})
+	settings.ConsumeKey(loom.KeyEvent{Key: "ctrl-f"})
+	settings.ConsumeKey(loom.KeyEvent{Text: "missing"})
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if got := settings.ContentHeight(); got != 0 {
+		t.Fatalf("empty filtered ContentHeight = %d, want 0", got)
+	}
+	settings.ConsumeKey(loom.KeyEvent{Key: "enter"})
+	if value {
+		t.Fatal("activation changed value with no matching setting")
+	}
+	canvas := loom.NewCanvas(40, 2)
+	settings.Draw(canvas, canvas.Bounds())
+	settings.ConsumeKey(loom.KeyEvent{Key: "esc"})
+	if got := settings.ContentHeight(); got != 1 {
+		t.Fatalf("restored ContentHeight = %d, want 1", got)
+	}
+}

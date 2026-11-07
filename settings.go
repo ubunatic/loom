@@ -5,6 +5,7 @@ package loom
 
 import (
 	"fmt"
+	"strings"
 )
 
 // SettingKind identifies how a Setting is rendered and edited.
@@ -111,6 +112,9 @@ type Settings struct {
 	Items       []Setting
 	Prompt      string // header line; empty = no header
 	sel         int
+	searching   bool
+	searchBar   *SearchBar
+	filtered    []int      // indexes into Items
 	editing     bool       // a KindString or KindNumber row is in inline edit mode
 	editOrig    string     // value captured at edit start, restored on cancel
 	editor      *TextInput // active line editor while editing a KindString row
@@ -119,7 +123,34 @@ type Settings struct {
 
 // NewSettings creates a Settings widget.
 func NewSettings(items []Setting) *Settings {
-	return &Settings{Items: items}
+	s := &Settings{Items: items}
+	s.searchBar = NewSearchBar()
+	s.searchBar.Prompt = SpeccedDefaults.SearchBar.Prompt
+	s.searchBar.Placeholder = SpeccedDefaults.SearchBar.Placeholder
+	s.searchBar.Focused = false
+	s.searchBar.OnChange = func(string) { s.refilter() }
+	s.refilter()
+	return s
+}
+
+func (s *Settings) refilter() {
+	query := strings.ToLower(s.searchBar.Query)
+	s.filtered = s.filtered[:0]
+	for i := range s.Items {
+		if query == "" || strings.Contains(strings.ToLower(s.Items[i].Label), query) {
+			s.filtered = append(s.filtered, i)
+		}
+	}
+	if s.sel >= len(s.filtered) {
+		s.sel = max(0, len(s.filtered)-1)
+	}
+}
+
+func (s *Settings) selectedItem() int {
+	if s.sel < 0 || s.sel >= len(s.filtered) {
+		return -1
+	}
+	return s.filtered[s.sel]
 }
 
 // Draw renders each setting as a labeled row with its current value.
@@ -130,7 +161,12 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 		c.Write(r.X, r.Y, s.Prompt, Style{Dim: true})
 		start = 1
 	}
-	for i, item := range s.Items {
+	if s.searching {
+		s.searchBar.Draw(c, Rect{r.X, r.Y + start, r.W, 1})
+		start++
+	}
+	for i, original := range s.filtered {
+		item := s.Items[original]
 		y := r.Y + start + i
 		if y >= r.Y+r.H {
 			break
@@ -158,8 +194,8 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 			c.Write(r.X+n, y, item.value(), valueStyle)
 		}
 	}
-	if s.numberInput != nil && s.numberInput.Error() != "" && len(s.Items) > 0 {
-		y := r.Y + start + len(s.Items)
+	if s.numberInput != nil && s.numberInput.Error() != "" && len(s.filtered) > 0 {
+		y := r.Y + start + len(s.filtered)
 		if y < r.Y+r.H {
 			c.Write(r.X, y, s.numberInput.Error(), Style{Dim: true})
 		}
@@ -168,20 +204,44 @@ func (s *Settings) Draw(c *Canvas, r Rect) {
 
 // ConsumeKey navigates settings and edits values.
 func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
-	n := len(s.Items)
 	bindings := SpeccedDefaults.Settings.Bindings
-	if n == 0 {
-		if e.Is(bindings["quit"]...) {
-			return QuitResult()
-		}
-		return Ignored()
-	}
 	if s.editing {
 		if s.handleEditKey(e) {
 			return Handled()
 		}
 		return Ignored()
 	}
+	if s.searching {
+		switch e.Key {
+		case "esc", "ctrl-c", "ctrl-d", "ctrl-q":
+			s.searchBar.Clear()
+			s.searching = false
+			s.searchBar.Focused = false
+			return Handled()
+		case "enter":
+			s.searching = false
+			s.searchBar.Focused = false
+			return Handled()
+		default:
+			return s.searchBar.ConsumeKey(e)
+		}
+	}
+	if e.Is(bindings["search"]...) {
+		s.searching = true
+		s.searchBar.Focused = true
+		return Handled()
+	}
+	if e.Is(bindings["quit"]...) && s.searchBar.Query != "" {
+		s.searchBar.Clear()
+		return Handled()
+	}
+	if len(s.filtered) == 0 {
+		if e.Is(bindings["quit"]...) {
+			return QuitResult()
+		}
+		return Ignored()
+	}
+	n := len(s.filtered)
 	switch {
 	case e.Is(bindings["quit"]...):
 		return QuitResult()
@@ -198,36 +258,38 @@ func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 			s.sel = 0
 		}
 	case e.Is(bindings["activate"]...):
-		if s.Items[s.sel].Kind == KindNumber && e.Key == "right" {
-			s.Items[s.sel].stepNumber(1)
-		} else if s.Items[s.sel].Kind == KindString {
+		item := s.Items[s.selectedItem()]
+		if item.Kind == KindNumber && e.Key == "right" {
+			item.stepNumber(1)
+		} else if item.Kind == KindString {
 			s.beginEdit()
-		} else if s.Items[s.sel].Kind == KindNumber {
+		} else if item.Kind == KindNumber {
 			s.beginNumberEdit()
 		} else {
-			s.Items[s.sel].activate()
+			item.activate()
 		}
 	case e.Is(bindings["previous"]...):
-		if s.Items[s.sel].Kind == KindNumber {
-			s.Items[s.sel].stepNumber(-1)
+		item := s.Items[s.selectedItem()]
+		if item.Kind == KindNumber {
+			item.stepNumber(-1)
 		} else {
-			s.Items[s.sel].prev()
+			item.prev()
 		}
 	case e.Is(bindings["step_minus"]...):
-		if s.Items[s.sel].Kind == KindNumber {
-			s.Items[s.sel].stepNumber(-1)
+		if item := s.Items[s.selectedItem()]; item.Kind == KindNumber {
+			item.stepNumber(-1)
 		}
 	case e.Is(bindings["step_plus"]...):
-		if s.Items[s.sel].Kind == KindNumber {
-			s.Items[s.sel].stepNumber(1)
+		if item := s.Items[s.selectedItem()]; item.Kind == KindNumber {
+			item.stepNumber(1)
 		}
 	default:
-		if s.Items[s.sel].Kind == KindNumber && (e.Text == "+" || e.Text == "-") {
+		if item := s.Items[s.selectedItem()]; item.Kind == KindNumber && (e.Text == "+" || e.Text == "-") {
 			direction := 1.0
 			if e.Text == "-" {
 				direction = -1
 			}
-			s.Items[s.sel].stepNumber(direction)
+			item.stepNumber(direction)
 		}
 	}
 	return Ignored()
@@ -236,7 +298,11 @@ func (s *Settings) ConsumeKey(e KeyEvent) (quit EventResult) {
 // beginEdit puts the selected KindString row into edit mode, capturing the
 // current value so Esc can restore it. No-op for other kinds or a nil pointer.
 func (s *Settings) beginEdit() {
-	item := s.Items[s.sel]
+	index := s.selectedItem()
+	if index < 0 {
+		return
+	}
+	item := s.Items[index]
 	if item.Kind != KindString || item.Str == nil {
 		return
 	}
@@ -246,7 +312,11 @@ func (s *Settings) beginEdit() {
 }
 
 func (s *Settings) beginNumberEdit() {
-	item := s.Items[s.sel]
+	index := s.selectedItem()
+	if index < 0 {
+		return
+	}
+	item := s.Items[index]
 	if item.Kind != KindNumber || item.Num == nil {
 		return
 	}
@@ -260,7 +330,11 @@ func (s *Settings) beginNumberEdit() {
 // commits the editor's value into Str, Esc cancels (restoring the captured
 // value); neither quits the widget. All other editing keys go to the editor.
 func (s *Settings) handleEditKey(e KeyEvent) (quit bool) {
-	item := s.Items[s.sel]
+	index := s.selectedItem()
+	if index < 0 {
+		return false
+	}
+	item := s.Items[index]
 	if item.Kind == KindNumber {
 		if s.numberInput != nil {
 			s.numberInput.ConsumeKey(e)
@@ -316,11 +390,14 @@ func (s *Settings) Sel() int { return s.sel }
 
 // ContentHeight estimates the required height for this settings list.
 func (s *Settings) ContentHeight() int {
-	h := len(s.Items)
+	h := len(s.filtered)
 	if s.numberInput != nil && s.numberInput.Error() != "" {
 		h++
 	}
 	if s.Prompt != "" {
+		h++
+	}
+	if s.searching {
 		h++
 	}
 	return h

@@ -395,6 +395,7 @@ settings:
     previous: ["left"]
     step_minus: ["-", "minus"]
     step_plus: ["+", "plus"]
+    search: ["/", "ctrl-f"]
 
 rich_text_edit:
   bindings:
