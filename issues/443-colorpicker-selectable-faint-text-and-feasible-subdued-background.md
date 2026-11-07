@@ -36,16 +36,17 @@ After reviewing the comparison in issue 442, the owner wants faint text to be se
   - Delivered in commit `5a1d09d`: Faint toggle added to `ColorPicker`, RichTextEdit `ActiveStyle` and span integration with undo, `docs/Widgets.md` limitation documented, gallery/PTY coverage, and ANSI verification.
   - Reviewer findings (`rev443`) identified two state/preview bugs and test gaps.
 
-- **M3 — Host & Reviewer Refinements (Pre-Work / Scope)**:
-  - **Pre-Work / Required Refinements**:
+- **M3 — Host & Reviewer Refinements (Delivered)**:
+  - Delivered in commit `7c16f63`:
     1. In `colorpicker.go`:
-       - `Home` key: ensure `p.FaintSelected = false` when resetting cursor to terminal-default/reset.
-       - `PreviewStyle()`: When `p.FaintSelected` is true, do not substitute the last palette swatch for applied FG. The preview must preserve the currently applied FG and BG colors and only reflect candidate `Dim`.
-    2. Regression tests in `colorpicker_test.go`:
-       - Focus Faint -> Home -> Space verifies terminal-default reset FG is applied and Dim is not toggled.
-       - Focus Faint does not change preview FG color; toggling Dim updates preview Dim without altering colors.
-       - Strengthen PTY test to verify interactive preview cell Dim attribute on `[x]`.
-    3. Run `go vet ./...`, unit tests, `HTO=0 make test-q1`, `make install`, and commit.
+       - `Home` key resets `p.FaintSelected = false` so Home -> Space applies reset FG without toggling Dim.
+       - `PreviewStyle()` preserves applied FG and BG colors when `FaintSelected` is true instead of substituting the last swatch.
+    2. Regression tests in `colorpicker_test.go` and `cmd/loom/widgets_colorpicker_pty_test.go`:
+       - Verified Focus Faint -> Home -> Space applies reset FG and leaves Dim unchanged.
+       - Verified preview FG color preservation while focusing Faint.
+       - Verified interactive preview cell Dim attribute on `[x]` in PTY test.
+    3. `HTO=0 make test-q1` passed with no `--- FAIL` lines; `make install` updated the installed binary.
+
 
 
 

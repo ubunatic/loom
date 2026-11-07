@@ -20,6 +20,12 @@ Following the gallery comparison in Issue 442, the owner requested selectable fa
   - `RichTextEdit` connects `OnDimChange` to `ActiveStyle` and selected spans.
   - M2 approved write set and regression-first testing plan established.
 - **M2 (Implementation & Verification):** Delivered in `5a1d09d`: Faint toggle control, `OnDimChange`, RichTextEdit integration, subdued background limitation documented in `docs/Widgets.md`. One-shot review by `rev443` found Home not clearing Faint focus and preview color substitution while Faint focused.
-- **M3 (Refinements):** Resolve Home clearing `FaintSelected`, fix `PreviewStyle()` to keep applied FG/BG when focusing Faint, add targeted unit and PTY regression tests, and verify with `make test-q1`.
+- **M3 (Refinements):** Delivered in `7c16f63`:
+  - Resolved Home clearing `FaintSelected` so Home followed by Space resets FG instead of toggling Dim.
+  - Fixed `PreviewStyle()` so focusing Faint retains applied FG/BG colors rather than falling back to the last palette swatch.
+  - Added unit regression tests (`TestColorPickerHomeFromFaintResetsForegroundWithoutTogglingDim` and preview color checks) and PTY interactive preview Dim assertion.
+  - `HTO=0 make test-q1` passed with no `--- FAIL` lines.
+  - Installed binary refreshed with `make install`.
+
 
 
