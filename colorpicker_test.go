@@ -265,3 +265,25 @@ func TestColorPickerDrawStaysWithinSuppliedBounds(t *testing.T) {
 		t.Fatalf("mouse outside offset tiny draw=%+v, want ignored", got)
 	}
 }
+
+func TestColorPickerDrawPreservesWideGlyphsCrossingHorizontalBounds(t *testing.T) {
+	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
+	canvas := NewCanvas(12, 8)
+	left := Cell{Text: "界", Style: Style{FG: ColorIndex(2), BG: ColorIndex(3)}}
+	right := Cell{Text: "界", Style: Style{FG: ColorIndex(5), BG: ColorIndex(6)}}
+	canvas.Set(2, 1, left)
+	canvas.Set(3, 1, Cell{Continuation: true, Style: left.Style})
+	canvas.Set(7, 2, right)
+	canvas.Set(8, 2, Cell{Continuation: true, Style: right.Style})
+	leftBefore := []Cell{canvas.Get(2, 1), canvas.Get(3, 1)}
+	rightBefore := []Cell{canvas.Get(7, 2), canvas.Get(8, 2)}
+
+	picker.Draw(canvas, Rect{X: 3, Y: 1, W: 5, H: 4})
+
+	if got := []Cell{canvas.Get(2, 1), canvas.Get(3, 1)}; got[0] != leftBefore[0] || got[1] != leftBefore[1] {
+		t.Fatalf("left crossing glyph changed: got %+v, want %+v", got, leftBefore)
+	}
+	if got := []Cell{canvas.Get(7, 2), canvas.Get(8, 2)}; got[0] != rightBefore[0] || got[1] != rightBefore[1] {
+		t.Fatalf("right crossing glyph changed: got %+v, want %+v", got, rightBefore)
+	}
+}

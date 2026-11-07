@@ -32,6 +32,16 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 		t.Fatalf("sample label %q not found:\n%s", label, strings.Join(s.Screen(), "\n"))
 		return ptytest.Cell{}
 	}
+	cellOnLabel := func(label string) ptytest.Cell {
+		t.Helper()
+		for y, line := range s.Screen() {
+			if x := strings.Index(line, label); x >= 0 {
+				return s.Cell(x, y)
+			}
+		}
+		t.Fatalf("label %q not found:\n%s", label, strings.Join(s.Screen(), "\n"))
+		return ptytest.Cell{}
+	}
 	defaultCell := cellForSample("Default")
 	if defaultCell.Style.FG != ptytest.ColorReset() || defaultCell.Style.BG != ptytest.ColorReset() || defaultCell.Style.Dim {
 		t.Fatalf("Default PTY cell = %+v, want reset FG/BG without Dim", defaultCell)
@@ -43,6 +53,20 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	initialSubdued := cellForSample("Subdued BG (theme)")
 	if initialSubdued.Style.FG != ptytest.ColorReset() || initialSubdued.Style.BG != ptytest.ColorReset() {
 		t.Fatalf("plain theme sample = %+v, want reset FG/BG", initialSubdued)
+	}
+	previewCell := cellOnLabel("Preview")
+	initialPreviewFG := previewCell.Style.FG
+	s.Send("\x1b[C") // Right moves the picker cursor one palette entry.
+	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "Preview")
+	})
+	s.Send("\r") // Apply the moved selection so it is visible in the preview.
+	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "Preview")
+	})
+	navigatedPreview := cellOnLabel("Preview")
+	if navigatedPreview.Style.FG == initialPreviewFG {
+		t.Fatalf("Right + Enter left preview FG unchanged at %+v", initialPreviewFG)
 	}
 
 	names := loom.ThemeNames()
@@ -61,6 +85,9 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	updatedSubdued := cellForSample("Subdued BG (theme)")
 	if updatedSubdued.Style.FG != ptytest.ColorReset() || !ptyColorsMatch(updatedSubdued.Style.BG, loom.Theme(next).NormalBG.Color()) {
 		t.Fatalf("%s theme sample = %+v, want reset FG and NormalBG", next, updatedSubdued)
+	}
+	if got := cellOnLabel("Preview").Style.FG; got != navigatedPreview.Style.FG {
+		t.Fatalf("F9 changed navigated picker selection in preview: got %+v, want %+v", got, navigatedPreview.Style.FG)
 	}
 }
 

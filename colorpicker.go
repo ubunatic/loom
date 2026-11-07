@@ -178,9 +178,9 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	defs := SpeccedDefaults.ColorPicker
 	panelBG := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
 	panelStyle := Style{FG: p.Style.FG, BG: panelBG}
-	c.PaintSurface(Rect{X: r.X, Y: r.Y, W: r.W, H: panelHeight}, panelStyle)
+	paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y, W: r.W, H: panelHeight}, panelStyle)
 	if defs.ShowPreview && r.H >= 6 {
-		c.PaintSurface(Rect{X: r.X, Y: r.Y + 4, W: min(r.W, defs.PreviewWidth), H: 2}, panelStyle)
+		paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y + 4, W: min(r.W, defs.PreviewWidth), H: 2}, panelStyle)
 	}
 	paletteX := defs.LeadingPadding
 	for row, target := range []ColorPickerTarget{ColorPickerFG, ColorPickerBG} {
@@ -209,7 +209,7 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 			writeColorPickerText(c, r, x, y, text, style)
 			for pad := measure.StringWidth(text); y < r.H && pad < defs.SwatchWidth && x+pad < r.W; pad++ {
-				c.Set(r.X+x+pad, r.Y+y, Cell{Text: " ", Style: style})
+				setColorPickerCell(c, r, r.X+x+pad, r.Y+y, Cell{Text: " ", Style: style})
 			}
 		}
 	}
@@ -267,6 +267,34 @@ func writeColorPickerText(c *Canvas, r Rect, x, y int, text string, style Style)
 	writeColorPickerCells(c, r, x, y, text, Cell{Style: style})
 }
 
+func paintColorPickerSurface(c *Canvas, bounds, area Rect, style Style) {
+	for y := area.Y; y < area.Y+area.H; y++ {
+		for x := area.X; x < area.X+area.W; x++ {
+			setColorPickerCell(c, bounds, x, y, Cell{Text: " ", Style: style, Surface: true})
+		}
+	}
+}
+
+func setColorPickerCell(c *Canvas, bounds Rect, x, y int, cell Cell) {
+	if x < bounds.X || x >= bounds.X+bounds.W || y < bounds.Y || y >= bounds.Y+bounds.H {
+		return
+	}
+	// Canvas.Set clears both halves of a touched wide glyph. Preserve a glyph
+	// that crosses either horizontal edge instead of mutating its outside cell.
+	width := max(1, StringWidth(cell.Text))
+	if x == bounds.X && c.Get(x, y).Continuation {
+		return
+	}
+	lastX := x + width - 1
+	if lastX >= bounds.X+bounds.W {
+		return
+	}
+	if lastX == bounds.X+bounds.W-1 && StringWidth(c.Get(lastX, y).Text) >= 2 {
+		return
+	}
+	c.Set(x, y, cell)
+}
+
 func writeColorPickerCells(c *Canvas, r Rect, x, y int, text string, cell Cell) {
 	if y < 0 || y >= r.H || x < 0 || x >= r.W {
 		return
@@ -283,7 +311,7 @@ func writeColorPickerCells(c *Canvas, r Rect, x, y int, text string, cell Cell) 
 	}
 	for _, cluster := range textClusters(clipped.String()) {
 		cell.Text = cluster
-		c.Set(r.X+x, r.Y+y, cell)
+		setColorPickerCell(c, r, r.X+x, r.Y+y, cell)
 		x += measure.StringWidth(cluster)
 	}
 }
