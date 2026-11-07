@@ -26,8 +26,19 @@ After reviewing the comparison in issue 442, the owner wants faint text to be se
 ## Milestones
 
 - **M1 — Developer Plan & Feasibility Analysis**:
-  - Live code inspection of `colorpicker.go`, `richtextedit_style.go`, `gallery/colorpicker.go`.
-  - Design selectable faint text option in ColorPicker without breaking existing color or reset behavior.
-  - Document subdued background limitation.
-  - Establish proposed write set and regression-first test strategy.
+  - Live code inspection completed by `dev443` (`terra:med`).
+  - ColorPicker faint text design: Add `Dim bool` and `OnDimChange func(bool)` to `ColorPicker`, retaining `OnChange` and constructor signature. Display a labeled toggle control after the FG palette row. Right from last FG swatch navigates to Faint, Left returns; Space or click toggles, Enter toggles and closes. Preview reflects candidate `Dim`. BG row does not offer faint.
+  - Subdued background: Confirm ANSI/Loom limitation (`Style.Dim` is text SGR 2; `NormalBG` is a surface, not a dimmed background). Document in `docs/Widgets.md` and keep theme sample as comparison only.
+  - RichTextEdit: Connect `OnDimChange` to `ActiveStyle` / selection spans, preserving other style attributes.
+  - Test strategy: TDD regression tests for keyboard/mouse toggling, preview styling, reset preservation, RichTextEdit undo/serialization, and gallery PTY verification.
+
+- **M2 — Implementation & Verification (Pre-Work / Scope)**:
+  - Implement regression-first tests in `colorpicker_test.go` and `richtextedit_test.go` that demonstrate failure before the fix.
+  - Implement `Dim`, `OnDimChange`, navigation, rendering, and mouse handling in `colorpicker.go`.
+  - Wire `OnDimChange` in `richtextedit_style.go` with undo/span preservation.
+  - Update `docs/Widgets.md` documenting faint text selection and the architectural limitation of subdued background.
+  - Update `gallery/colorpicker.go`, `docs/progress/ColorPicker.ansi`, and validate ANSI design (`loom eval`, `loom measure`).
+  - Refresh public API test snapshot (`go test ./internal/apitest -run '^TestPublicAPI$' -update`) if exported API changes.
+  - Run `go vet ./...`, package tests, and logged `make test-q1`. Run `make install`.
+
 

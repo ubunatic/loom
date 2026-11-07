@@ -13,4 +13,11 @@ Following the gallery comparison in Issue 442, the owner requested selectable fa
 
 ## Milestones
 
-- **M1 (Plan & Investigation):** Developer inspects live contracts, designs faint-text selection in ColorPicker and its integration with `RichTextEdit` / consumers, documents the subdued background limitation, and outlines regression tests.
+- **M1 (Plan & Investigation):** Developer `dev443` (`terra:med`) inspected live code and delivered concrete design:
+  - Add `Dim bool` and `OnDimChange func(bool)` to `ColorPicker`, preserving `NewColorPicker` signature and `OnChange`.
+  - FG row navigation extends to faint toggle control on the right; Space/click toggles, Enter toggles and closes. BG row does not offer faint.
+  - Subdued background verified as an architectural limitation (ANSI SGR 2 is text faint; theme `NormalBG` is surface color, not dimmed BG). Limitation will be documented in `docs/Widgets.md`.
+  - `RichTextEdit` connects `OnDimChange` to `ActiveStyle` and selected spans.
+  - M2 approved write set and regression-first testing plan established.
+- **M2 (Implementation & Verification):** Implementation of faint toggle in `colorpicker.go`, `richtextedit_style.go`, tests in `colorpicker_test.go` and `richtextedit_test.go`, documentation in `docs/Widgets.md`, gallery/PTY updates, ANSI validation, and full `make test-q1` verification.
+
