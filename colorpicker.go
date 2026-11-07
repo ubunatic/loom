@@ -145,9 +145,9 @@ func (p *ColorPicker) PreviewStyle() Style {
 	}
 	style := Style{FG: p.FG, BG: p.BG, Dim: p.Dim}
 	if p.FaintSelected {
-		style.Dim = !style.Dim
+		style.Dim = true
 	}
-	if color, ok := p.cursorColor(); ok {
+	if color, ok := p.cursorColor(); ok && !p.FaintSelected {
 		if p.Target == ColorPickerFG {
 			style.FG = color
 		} else {
@@ -402,6 +402,7 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		return Handled()
 	case p.matches(e, "home"):
 		p.Selected, p.ResetSelected = 0, true
+		p.FaintSelected = false
 		return Handled()
 	case p.matches(e, "left"):
 		if p.FaintSelected {

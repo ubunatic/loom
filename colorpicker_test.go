@@ -91,6 +91,9 @@ func TestColorPickerFaintToggleKeyboardMouseAndPreview(t *testing.T) {
 	if got := picker.ConsumeKey(KeyEvent{Key: "right"}); got != Handled() || !picker.FaintSelected {
 		t.Fatalf("Right from final FG swatch = %+v faint-selected=%v", got, picker.FaintSelected)
 	}
+	if got := picker.PreviewStyle().FG; got != picker.FG {
+		t.Fatalf("focusing Faint changed preview FG to %v, want applied FG %v", got, picker.FG)
+	}
 	if !picker.PreviewStyle().Dim {
 		t.Fatal("faint preview should include Dim")
 	}
@@ -125,6 +128,21 @@ func TestColorPickerFaintToggleKeyboardMouseAndPreview(t *testing.T) {
 	picker.OnClose = func() { closed++ }
 	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || !picker.Dim || len(changes) != 3 || !changes[2] || closed != 1 {
 		t.Fatalf("Enter faint toggle result/dim/callbacks/close = %+v/%v/%v/%d", got, picker.Dim, changes, closed)
+	}
+}
+
+func TestColorPickerHomeFromFaintResetsForegroundWithoutTogglingDim(t *testing.T) {
+	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
+	picker.Selected = len(picker.Palette) - 1
+	picker.ConsumeKey(KeyEvent{Key: "right"})
+	if !picker.FaintSelected {
+		t.Fatal("Right from final FG swatch did not focus Faint")
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "home"}); got != Handled() || picker.FaintSelected || !picker.ResetSelected {
+		t.Fatalf("Home result/faint/reset = %+v/%v/%v", got, picker.FaintSelected, picker.ResetSelected)
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || picker.FG != ColorReset() || picker.Dim {
+		t.Fatalf("Space after Home result/FG/Dim = %+v/%v/%v, want reset FG without Dim", got, picker.FG, picker.Dim)
 	}
 }
 

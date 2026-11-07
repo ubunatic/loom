@@ -89,6 +89,10 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
 		return strings.Contains(strings.Join(rows, "\n"), "Faint: [x]")
 	})
+	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
+		labelX, labelY, ok := labelPosition(rows, "Preview")
+		return ok && s.Cells()[labelY][labelX].Style.Dim
+	})
 
 	names := loom.ThemeNames()
 	next := ""
