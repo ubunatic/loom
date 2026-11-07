@@ -52,4 +52,5 @@ upkeep.
 | 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
+| 446 | [446-loom-widgets-add-controls-and-headless-snapshot-mode-for-agent-verification.md](446-loom-widgets-add-controls-and-headless-snapshot-mode-for-agent-verification.md) | loom widgets: add controls and headless snapshot mode for agent verification | Open |
 <!-- harnez:end issues-active-index -->
