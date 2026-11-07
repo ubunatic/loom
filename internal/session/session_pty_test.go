@@ -922,7 +922,8 @@ func TestSessionSplitEscapeAcrossTabBarRedraw(t *testing.T) {
 	}
 	t.Setenv("SHELL", "/bin/sh")
 	bin := clitest.BuildLoomBinary(t)
-	child := "stty -echo; printf 'FRAME_PREFIX_READY\\n'; printf '\\033[38;2;10;'; IFS= read -r release; printf '20;30mFRAME_SAFE\\n'"
+	// Keep the first tab alive until its screen and cells have been checked.
+	child := "stty -echo; printf 'FRAME_PREFIX_READY\\n'; printf '\\033[38;2;10;'; IFS= read -r release; printf '20;30mFRAME_SAFE\\n'; IFS= read -r done"
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", child)
 	session.WaitFor("FRAME_PREFIX_READY", 5*time.Second)
 
