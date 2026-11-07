@@ -37,22 +37,56 @@ type widgetEntry struct {
 }
 
 func widgetsCommand() *cobra.Command {
-	var show, list, debug bool
+	var show, render, list, debug, searching, editing bool
+	var query string
+	sel := -1
 	var themeName string
 	var width, height int
 	command := &cobra.Command{
 		Use:   "widgets [name] [-- <demo-args>]",
-		Short: "List library widgets, show usage, or run live demos",
+		Short: "List widgets, render a static snapshot, or run live demos",
 		ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 			return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
 		},
 		Args: func(cmd *cobra.Command, args []string) error {
-			if show {
+			if show || render {
 				return nil
 			}
 			return cobra.MaximumNArgs(1)(cmd, args)
 		},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if render {
+				if len(args) != 1 {
+					return fmt.Errorf("--render requires exactly one widget name")
+				}
+				if !loom.ThemeExists(themeName) {
+					return fmt.Errorf("unknown theme %q (available: %s)", themeName, strings.Join(loom.ThemeNames(), ", "))
+				}
+				widget, err := gallery.New(args[0])
+				if err != nil {
+					return err
+				}
+				settings, ok := widget.(*loom.Settings)
+				if searching || query != "" || editing || sel >= 0 {
+					if !ok {
+						return fmt.Errorf("--searching, --query, --editing, and --sel require the Settings widget")
+					}
+				}
+				if ok {
+					settings.SetSearching(searching)
+					settings.SetQuery(query)
+					if sel >= 0 && !settings.SetSel(sel) {
+						return fmt.Errorf("--sel %d is outside the visible Settings rows", sel)
+					}
+					if editing && !settings.SetEditing(true) {
+						return fmt.Errorf("selected Settings row cannot be edited")
+					}
+				}
+				if themeable, ok := loom.UnwrapWidget(widget).(loom.Themeable); ok {
+					themeable.ApplyTheme(loom.Theme(themeName))
+				}
+				return renderWidget(cmd.OutOrStdout(), widget, width, height)
+			}
 			if show {
 				if !loom.ThemeExists(themeName) {
 					return fmt.Errorf("unknown theme %q (available: %s)", themeName, strings.Join(loom.ThemeNames(), ", "))
@@ -109,14 +143,53 @@ func widgetsCommand() *cobra.Command {
 	}
 	command.Flags().BoolVar(&list, "list", false, "print the widget catalog and exit")
 	command.Flags().BoolVar(&show, "show", false, "run live widget demos")
+	command.Flags().BoolVar(&render, "render", false, "render a static widget snapshot and exit")
 	command.Flags().BoolVar(&debug, "debug", false, "show debug cell outlines in live widget demos")
+	command.Flags().BoolVar(&searching, "searching", false, "show the Settings search bar")
+	command.Flags().StringVar(&query, "query", "", "filter Settings rows by query")
+	command.Flags().BoolVar(&editing, "editing", false, "edit the selected Settings row")
+	command.Flags().IntVar(&sel, "sel", -1, "select a visible Settings row by index")
 	command.Flags().StringVar(&themeName, "theme", loom.SpeccedDefaults.Editor.Theme, "gallery color theme")
 	command.Flags().IntVarP(&width, "width", "W", 0, "maximum gallery width in columns")
 	command.Flags().IntVarP(&height, "height", "H", 0, "gallery height in rows")
 	_ = command.RegisterFlagCompletionFunc("show", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
 	})
+	_ = command.RegisterFlagCompletionFunc("render", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return completeWidgetNames(toComplete), cobra.ShellCompDirectiveNoFileComp
+	})
+	_ = command.RegisterFlagCompletionFunc("theme", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		var names []string
+		for _, name := range loom.ThemeNames() {
+			if strings.HasPrefix(name, toComplete) {
+				names = append(names, name)
+			}
+		}
+		return names, cobra.ShellCompDirectiveNoFileComp
+	})
 	return command
+}
+
+func renderWidget(out io.Writer, widget loom.Widget, width, height int) error {
+	if width <= 0 {
+		width = 80
+	}
+	if height <= 0 {
+		if sized, ok := widget.(interface{ ContentHeight() int }); ok {
+			height = sized.ContentHeight()
+		}
+		if height <= 0 {
+			height = 24
+		}
+	}
+	canvas := loom.NewCanvas(width, height)
+	widget.Draw(canvas, canvas.Bounds())
+	for row := 0; row < canvas.Rows(); row++ {
+		if _, err := fmt.Fprintln(out, canvas.Row(row)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func completeWidgetNames(prefix string) []string {

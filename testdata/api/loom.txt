@@ -3768,6 +3768,18 @@ func (s *Settings) Editing() bool
 func (s *Settings) Sel() int
     Sel returns the index of the currently selected setting.
 
+func (s *Settings) SetEditing(editing bool) bool
+    SetEditing enters inline edit mode for the selected editable row.
+
+func (s *Settings) SetQuery(query string)
+    SetQuery sets the search query and updates the visible settings.
+
+func (s *Settings) SetSearching(searching bool)
+    SetSearching enables or disables the inline search bar.
+
+func (s *Settings) SetSel(index int) bool
+    SetSel selects a visible row. It returns false when index is out of range.
+
 type SettingsDefaults = specdefaults.SettingsDefaults
     SettingsDefaults defines specced navigation and editing defaults for
     Settings.

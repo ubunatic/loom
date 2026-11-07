@@ -39,10 +39,6 @@ func init() {
 	demos["Rows"] = func() loom.Widget {
 		return &loom.Rows{Columns: []loom.RowColumn{{Width: 16, Bold: true}, {Width: 8, Align: "right"}}, Gap: 2, Values: [][]string{{"Requests", "1200"}, {"Errors", "4"}}}
 	}
-	demos["Settings"] = func() loom.Widget {
-		enabled, name, index, retries := true, "Loom", 0, 2.0
-		return loom.NewSettings([]loom.Setting{{Label: "Enabled", Kind: loom.KindBool, Bool: &enabled}, {Label: "Name", Kind: loom.KindString, Str: &name}, {Label: "Theme", Kind: loom.KindChoice, Options: []string{"Light", "Dark"}, Index: &index}, {Label: "Retries", Kind: loom.KindNumber, Num: &retries, Min: 0, Max: 5}})
-	}
 	demos["SplashView"] = func() loom.Widget {
 		s := loom.NewSplashView("Starting Loom", loom.ProviderPill{Name: "API", Symbol: "✓", State: loom.ProviderDone})
 		s.Progress = 65

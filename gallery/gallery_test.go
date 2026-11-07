@@ -63,6 +63,39 @@ func TestNewUnknownDemo(t *testing.T) {
 	}
 }
 
+func TestSettingsDemoSupportsInspectionStates(t *testing.T) {
+	widget, err := New("Settings")
+	if err != nil {
+		t.Fatal(err)
+	}
+	settings, ok := widget.(*loom.Settings)
+	if !ok {
+		t.Fatalf("Settings demo = %T, want *loom.Settings", widget)
+	}
+	wantKinds := []loom.SettingKind{loom.KindBool, loom.KindString, loom.KindChoice, loom.KindNumber}
+	for i, want := range wantKinds {
+		if settings.Items[i].Kind != want {
+			t.Errorf("setting %q kind = %v, want %v", settings.Items[i].Label, settings.Items[i].Kind, want)
+		}
+	}
+
+	settings.SetSearching(true)
+	settings.SetQuery("Profile")
+	if !settings.SetSel(0) || !settings.SetEditing(true) {
+		t.Fatal("could not select and edit the filtered Profile row")
+	}
+	if !settings.Editing() || settings.ContentHeight() != 3 {
+		t.Fatalf("editing/searching state = editing %v, height %d", settings.Editing(), settings.ContentHeight())
+	}
+	rows := loom.Render(settings, 50, settings.ContentHeight())
+	output := strings.Join(rows, "\n")
+	for _, want := range []string{"Widget settings", "Profile", "Default"} {
+		if !strings.Contains(output, want) {
+			t.Errorf("Settings inspection render %q omits %q", output, want)
+		}
+	}
+}
+
 func TestGalleryChoiceQuitContractPTY(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY, media or subprocess integration test")

@@ -344,6 +344,47 @@ func TestWidgetsShowFlagsKeepCatalogAndRunGallery(t *testing.T) {
 	}
 }
 
+func TestWidgetsRenderSettingsSnapshots(t *testing.T) {
+	var defaultRender bytes.Buffer
+	if err := execute([]string{"widgets", "Settings", "--render", "--width", "50"}, &defaultRender); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Enabled", "Profile", "Default", "Mode", "Advanced", "Volume", "7.5", "\x1b[0m"} {
+		if !strings.Contains(defaultRender.String(), want) {
+			t.Errorf("default render %q omits %q", defaultRender.String(), want)
+		}
+	}
+	if lines := strings.Split(strings.TrimSuffix(defaultRender.String(), "\n"), "\n"); len(lines) != 5 {
+		t.Errorf("default render has %d rows, want 5: %q", len(lines), defaultRender.String())
+	}
+
+	var searching bytes.Buffer
+	if err := execute([]string{"widgets", "--render", "Settings", "--searching", "--query", "Vol"}, &searching); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(searching.String(), "Vol") || !strings.Contains(searching.String(), "Volume") || strings.Contains(searching.String(), "Profile") {
+		t.Errorf("searching render does not show only filtered Settings row: %q", searching.String())
+	}
+
+	var editing bytes.Buffer
+	if err := execute([]string{"widgets", "Settings", "--render", "--sel", "1", "--editing"}, &editing); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(editing.String(), "Default") || !strings.Contains(editing.String(), "Profile") {
+		t.Errorf("editing render = %q, want selected Profile value", editing.String())
+	}
+
+	for _, args := range [][]string{
+		{"widgets", "--render"},
+		{"widgets", "--render", "Chart", "--editing"},
+		{"widgets", "--render", "Settings", "--query", "missing", "--sel", "0"},
+	} {
+		if err := execute(args, &bytes.Buffer{}); err == nil {
+			t.Errorf("widgets command %v unexpectedly succeeded", args)
+		}
+	}
+}
+
 func TestWidgetsThemeFlagAndF9Cycle(t *testing.T) {
 	if len(loom.ThemeNames()) < 2 {
 		t.Fatal("theme cycling requires at least two themes")
@@ -952,6 +993,7 @@ func TestWidgetsCompletions(t *testing.T) {
 	}{
 		{name: "positional", args: nil},
 		{name: "show flag", args: []string{"--show"}},
+		{name: "render flag", args: []string{"--render"}},
 	} {
 		got, directive := command.ValidArgsFunction(command, tc.args, "")
 		if directive != cobra.ShellCompDirectiveNoFileComp {
@@ -975,6 +1017,22 @@ func TestWidgetsCompletions(t *testing.T) {
 	if directive != cobra.ShellCompDirectiveNoFileComp || !slices.Contains(got, "Chart") || !slices.Contains(got, "loom.Chart") {
 		t.Errorf("--show completions = %v, directive %v", got, directive)
 	}
+	renderCompletion, ok := command.GetFlagCompletionFunc("render")
+	if !ok {
+		t.Fatal("--render has no flag completion function")
+	}
+	got, directive = renderCompletion(command, nil, "Set")
+	if directive != cobra.ShellCompDirectiveNoFileComp || !slices.Contains(got, "Settings") || slices.Contains(got, "Chart") {
+		t.Errorf("--render completions = %v, directive %v", got, directive)
+	}
+	themeCompletion, ok := command.GetFlagCompletionFunc("theme")
+	if !ok {
+		t.Fatal("--theme has no flag completion function")
+	}
+	got, directive = themeCompletion(command, nil, "")
+	if directive != cobra.ShellCompDirectiveNoFileComp || len(got) != len(loom.ThemeNames()) {
+		t.Errorf("--theme completions = %v, directive %v", got, directive)
+	}
 
 	var out bytes.Buffer
 	if err := execute([]string{"__complete", "widgets", "--show", ""}, &out); err != nil {
@@ -982,6 +1040,15 @@ func TestWidgetsCompletions(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), "Chart") || !strings.Contains(out.String(), "loom.Chart") {
 		t.Errorf("shell completion output = %q", out.String())
+	}
+	out.Reset()
+	if err := execute([]string{"__complete", "widgets", "--theme", ""}, &out); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range loom.ThemeNames() {
+		if !strings.Contains(out.String(), name) {
+			t.Errorf("theme shell completion %q omits %q", out.String(), name)
+		}
 	}
 }
 

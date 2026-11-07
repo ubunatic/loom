@@ -181,6 +181,20 @@ var demos = map[string]constructor{
 		sb.Controls = "4/12"
 		return sb
 	},
+	"Settings": func() loom.Widget {
+		enabled := true
+		profile := "Default"
+		mode := 1
+		volume := 7.5
+		settings := loom.NewSettings([]loom.Setting{
+			{Label: "Enabled", Kind: loom.KindBool, Bool: &enabled},
+			{Label: "Profile", Kind: loom.KindString, Str: &profile},
+			{Label: "Mode", Kind: loom.KindChoice, Options: []string{"Basic", "Advanced", "Expert"}, Index: &mode},
+			{Label: "Volume", Kind: loom.KindNumber, Num: &volume, Min: 0, Max: 10, Step: 0.5, Format: "%.1f"},
+		})
+		settings.Prompt = "Widget settings"
+		return settings
+	},
 	"Spinner": func() loom.Widget {
 		spinner := loom.NewSpinner("Syncing workspace")
 		spinner.Start()

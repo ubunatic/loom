@@ -382,6 +382,45 @@ func (s *Settings) endEdit() {
 // Editing reports whether a KindString row is currently being edited.
 func (s *Settings) Editing() bool { return s.editing }
 
+// SetSearching enables or disables the inline search bar.
+func (s *Settings) SetSearching(searching bool) {
+	s.searching = searching
+	s.searchBar.Focused = searching
+}
+
+// SetQuery sets the search query and updates the visible settings.
+func (s *Settings) SetQuery(query string) { s.searchBar.SetQuery(query) }
+
+// SetSel selects a visible row. It returns false when index is out of range.
+func (s *Settings) SetSel(index int) bool {
+	if index < 0 || index >= len(s.filtered) {
+		return false
+	}
+	s.sel = index
+	return true
+}
+
+// SetEditing enters inline edit mode for the selected editable row.
+func (s *Settings) SetEditing(editing bool) bool {
+	if !editing {
+		s.endEdit()
+		return true
+	}
+	index := s.selectedItem()
+	if index < 0 {
+		return false
+	}
+	switch s.Items[index].Kind {
+	case KindString:
+		s.beginEdit()
+	case KindNumber:
+		s.beginNumberEdit()
+	default:
+		return false
+	}
+	return s.editing
+}
+
 // ConsumeMouse is a no-op for now.
 func (s *Settings) ConsumeMouse(MouseEvent) (quit EventResult) { return Ignored() }
 
