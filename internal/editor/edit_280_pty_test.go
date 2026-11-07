@@ -22,7 +22,7 @@ func TestEditPTYMouseGrabFlag(t *testing.T) {
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab", path)
 	s.WaitFor("Ln 1, Col 1", 3*time.Second*ptytest.RaceFactor)
 
-	if mode := s.VT().MouseMode; mode != 1002 && mode != 1003 {
+	if mode := s.MouseMode(); mode != 1002 && mode != 1003 {
 		t.Fatalf("expected mouse grab to be enabled (1002 or 1003), got %v", mode)
 	}
 
@@ -32,7 +32,7 @@ func TestEditPTYMouseGrabFlag(t *testing.T) {
 		t.Fatalf("child exit: %v", err)
 	}
 
-	if mode := s.VT().MouseMode; mode != 0 {
+	if mode := s.MouseMode(); mode != 0 {
 		t.Fatalf("expected mouse grab to be disabled on exit (0), got %v", mode)
 	}
 }
@@ -50,7 +50,7 @@ func TestEditPTYMouseGrabDisabledFlag(t *testing.T) {
 	s := ptytest.Start(t, 100, 24, buildLoomBinary(t), "edit", "--mousegrab=false", path)
 	s.WaitFor("Ln 1, Col 1", 3*time.Second*ptytest.RaceFactor)
 
-	if mode := s.VT().MouseMode; mode != 0 {
+	if mode := s.MouseMode(); mode != 0 {
 		t.Fatalf("expected mouse grab to be disabled (0), got %v", mode)
 	}
 
@@ -60,7 +60,7 @@ func TestEditPTYMouseGrabDisabledFlag(t *testing.T) {
 		t.Fatalf("child exit: %v", err)
 	}
 
-	if mode := s.VT().MouseMode; mode != 0 {
+	if mode := s.MouseMode(); mode != 0 {
 		t.Fatalf("expected mouse grab to be disabled on exit (0), got %v", mode)
 	}
 }

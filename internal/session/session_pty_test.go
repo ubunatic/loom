@@ -166,7 +166,7 @@ func TestSessionDetachPrefixDAndReattach(t *testing.T) {
 	if !strings.Contains(reattached.Text(), "BASE_SCREEN") || !strings.Contains(reattached.Text(), "2: ") {
 		t.Fatalf("reattach did not repaint retained screen and tabs:\n%s", reattached.Text())
 	}
-	if x, y := reattached.VT().Cursor(); x != 16 || y != 5 {
+	if x, y := reattached.Cursor(); x != 16 || y != 5 {
 		t.Fatalf("reattached cursor = (%d,%d), want preserved position (16,5)", x, y)
 	}
 	reattached.Send("probe\n")
@@ -1229,8 +1229,8 @@ func TestSessionSafeRestoreOnCtrlQ(t *testing.T) {
 	session.WaitFor("READY", time.Second*5)
 
 	// Child turned tracking on; verify it was active
-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
-		t.Fatalf("expected child to enable mouse, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	if session.MouseMode() != 1000 || !session.MouseSGR() {
+		t.Fatalf("expected child to enable mouse, got mode=%d sgr=%v", session.MouseMode(), session.MouseSGR())
 	}
 
 	// Quit with ctrl-q (17)
@@ -1342,8 +1342,8 @@ func TestSessionPerTabModes(t *testing.T) {
 	session.WaitFor("TAB1_READY", time.Second*5)
 
 	// Tab 1 turned mouse on in outer VT
-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
-		t.Fatalf("Tab 1 expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	if session.MouseMode() != 1000 || !session.MouseSGR() {
+		t.Fatalf("Tab 1 expected mouse on, got mode=%d sgr=%v", session.MouseMode(), session.MouseSGR())
 	}
 
 	// Open Tab 2 with ctrl-n (14)
@@ -1351,18 +1351,18 @@ func TestSessionPerTabModes(t *testing.T) {
 	session.WaitFor("2: ", time.Second*5)
 
 	// In Tab 2, mouse tracking in outer VT must be OFF
-	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
-		t.Fatalf("Tab 2 expected mouse off, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	if session.MouseMode() != 0 || session.MouseSGR() {
+		t.Fatalf("Tab 2 expected mouse off, got mode=%d sgr=%v", session.MouseMode(), session.MouseSGR())
 	}
 
 	// Switch back to Tab 1 using prefix 1 (ctrl-b 1) or alt-1 (\x1b1)
 	session.SendRaw([]byte{2, '1'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return session.VT().MouseMode == 1000
+		return session.MouseMode() == 1000
 	})
 
-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
-		t.Fatalf("Tab 1 switch-back expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	if session.MouseMode() != 1000 || !session.MouseSGR() {
+		t.Fatalf("Tab 1 switch-back expected mouse on, got mode=%d sgr=%v", session.MouseMode(), session.MouseSGR())
 	}
 
 	// Quit with ctrl-q
@@ -1473,7 +1473,7 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 	// Switch back to Tab 1 so active tab has mouse tracking on
 	session.SendRaw([]byte{27, '1'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return session.VT().MouseMode == 1000
+		return session.MouseMode() == 1000
 	})
 
 	// Click on row 24 (the tab bar) in the region of Tab 2: col 14, row 24
@@ -1482,11 +1482,11 @@ func TestSessionTabBarClickSwitchesTabWhenChildMouseOn(t *testing.T) {
 
 	// Verify that active tab switched to Tab 2 (where mouse mode is 0)
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
-		return session.VT().MouseMode == 0
+		return session.MouseMode() == 0
 	})
 
-	if session.VT().MouseMode != 0 {
-		t.Fatalf("expected active tab to switch to Tab 2 (MouseMode=0), got %d", session.VT().MouseMode)
+	if session.MouseMode() != 0 {
+		t.Fatalf("expected active tab to switch to Tab 2 (MouseMode=0), got %d", session.MouseMode())
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
@@ -1509,8 +1509,8 @@ func TestSessionTabBarClicksSafeModePlainShellDoesNotEnableMouse(t *testing.T) {
 	session.WaitFor("2: ", time.Second*5)
 
 	// In safe mode, plain shells must NOT cause mouse tracking to be enabled on the outer VT
-	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
-		t.Fatalf("expected outer VT mouse tracking to stay OFF in safe mode for plain shells, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
+	if session.MouseMode() != 0 || session.MouseSGR() {
+		t.Fatalf("expected outer VT mouse tracking to stay OFF in safe mode for plain shells, got mode=%d sgr=%v", session.MouseMode(), session.MouseSGR())
 	}
 
 	session.SendRaw([]byte{17}) // ctrl-q
@@ -1646,21 +1646,21 @@ func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
 	session.SendRaw([]byte{'z'})
 	session.WaitFor("HELP_READY", time.Second*5)
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
-		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.VT().MouseMode, session.VT().MouseSGR)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 1000 })
+	if session.MouseMode() != 1000 || !session.MouseSGR() {
+		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.MouseMode(), session.MouseSGR())
 	}
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
-	if session.VT().MouseMode != 0 {
-		t.Fatalf("mouse mode = %d, want disabled", session.VT().MouseMode)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 0 })
+	if session.MouseMode() != 0 {
+		t.Fatalf("mouse mode = %d, want disabled", session.MouseMode())
 	}
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 1000 })
 	session.SendRaw([]byte("\x1b[<0;78;24M"))
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
-	if session.VT().MouseMode != 0 {
-		t.Fatalf("mouse click left mode %d enabled", session.VT().MouseMode)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 0 })
+	if session.MouseMode() != 0 {
+		t.Fatalf("mouse click left mode %d enabled", session.MouseMode())
 	}
 	session.SendRaw([]byte{17})
 	_ = session.Wait(time.Second * 5)
@@ -1701,7 +1701,7 @@ func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
 	session.WaitFor("ALT_RUNNING", time.Second*5)
 
-	if !session.VT().AltScreen() {
+	if !session.AltScreen() {
 		t.Fatalf("expected child to enter alternate screen")
 	}
 
@@ -1712,7 +1712,7 @@ func TestSessionSingleTabAltScreenChildQuitCtrlQ(t *testing.T) {
 	}
 
 	// The outer VT must NOT be left in alternate screen
-	if session.VT().AltScreen() {
+	if session.AltScreen() {
 		t.Fatalf("outer VT left in alternate screen after ctrl-q with alt-screen child")
 	}
 }
@@ -1728,7 +1728,7 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 	session := ptytest.Start(t, 80, 24, bin, "session", "--", "/bin/bash", "-c", fixture)
 	session.WaitFor("ALT_RUNNING", time.Second*5)
 
-	if !session.VT().AltScreen() {
+	if !session.AltScreen() {
 		t.Fatalf("expected child to enter alternate screen")
 	}
 
@@ -1746,7 +1746,7 @@ func TestSessionSingleTabAltScreenChildSIGTERM(t *testing.T) {
 	}
 
 	// The outer VT must NOT be left in alternate screen
-	if session.VT().AltScreen() {
+	if session.AltScreen() {
 		t.Fatalf("outer VT left in alternate screen after SIGTERM with alt-screen child")
 	}
 }
@@ -1896,7 +1896,7 @@ func TestSessionSearchAltScreenOnlySearchesVisibleScreen(t *testing.T) {
 		}
 		return true
 	})
-	if !session.VT().AltScreen() {
+	if !session.AltScreen() {
 		t.Fatal("closing search left the child alternate screen")
 	}
 	session.SendRaw([]byte{17})

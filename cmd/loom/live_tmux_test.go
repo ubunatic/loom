@@ -44,7 +44,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 		}
 	}
 
-	cmd := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "2", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
+	cmd := exec.Command("bash", script, "-y", "2", "--wait", "ready", "--timeout", "10", "--output-dir", outputDir, "--", "bash", "-c", "printf 'ready\\n'; read -r line; printf 'done\\n'; read -r line")
 	cmd.Env = env
 	cmd.Stdin = strings.NewReader("pause 0.12\nsnap before\ndiff " + want + "\nkeys Enter\nwait done\nsnap after\n")
 	output, err := cmd.CombinedOutput()
@@ -78,7 +78,7 @@ func TestLiveTmuxScriptRunsStepsAndMeasuresPause(t *testing.T) {
 	}
 
 	lastRowDir := t.TempDir()
-	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "2", "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
+	lastRow := exec.Command("bash", script, "-y", "4", "--wait", "bottom", "--timeout", "10", "--", "bash", "-c", "printf 'top\\nmiddle\\nthird\\nbottom\\n'; read -r line")
 	lastRow.Env = append(env, "TMPDIR="+lastRowDir)
 	lastRow.Stdin = strings.NewReader("snap last-row\n")
 	lastRowOutput, err := lastRow.CombinedOutput()

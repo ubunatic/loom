@@ -296,3 +296,31 @@ func (s *Session) Close() {
 	}
 	s.master.Close()
 }
+
+// Cursor returns the virtual terminal's cursor position under the session lock.
+func (s *Session) Cursor() (int, int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.Cursor()
+}
+
+// MouseMode returns the virtual terminal's mouse mode under the session lock.
+func (s *Session) MouseMode() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.MouseMode
+}
+
+// MouseSGR reports whether SGR mouse encoding is enabled, under the session lock.
+func (s *Session) MouseSGR() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.MouseSGR
+}
+
+// AltScreen reports whether the alternate screen is active, under the session lock.
+func (s *Session) AltScreen() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.vt.AltScreen()
+}

@@ -64,13 +64,13 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 		_, ok := cellFor('D', false, true)
 		return ok
 	})
-	selectedCursorX, selectedCursorY := gallery.VT().Cursor()
+	selectedCursorX, selectedCursorY := gallery.Cursor()
 	gallery.SendRaw([]byte{0x02}) // Ctrl+B formats the selection without moving it
 	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
 		cell, ok := cellFor('D', true, true)
 		return ok && cell.Style.Bold && cell.Style.Reverse
 	})
-	if x, y := gallery.VT().Cursor(); x != selectedCursorX || y != selectedCursorY {
+	if x, y := gallery.Cursor(); x != selectedCursorX || y != selectedCursorY {
 		t.Fatalf("formatting moved selected caret from (%d,%d) to (%d,%d)", selectedCursorX, selectedCursorY, x, y)
 	}
 	gallery.SendRaw([]byte{0x1a}) // undo the format-only change without collapsing selection
@@ -96,7 +96,7 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 		_, ok := cellFor('s', true, false)
 		return ok
 	})
-	if x, _ := gallery.VT().Cursor(); x != 6 {
+	if x, _ := gallery.Cursor(); x != 6 {
 		t.Fatalf("typing-bold caret x = %d, want prompt plus four characters (6): %q", x, gallery.Text())
 	}
 	gallery.SendRaw([]byte{0x0d})
@@ -183,18 +183,18 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 		joined := strings.Join(rows, "\n")
 		return strings.Contains(joined, "aa") && strings.Contains(joined, "bbbb")
 	})
-	endX, endY := gallery.VT().Cursor()
+	endX, endY := gallery.Cursor()
 	if endX != 6 {
 		t.Fatalf("multiline end cursor x = %d, want prompt plus bbbb (6); screen: %q", endX, gallery.Text())
 	}
 	gallery.SendRaw([]byte("\x1b[H")) // Home: start of the current hard line
 	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
-		x, y := gallery.VT().Cursor()
+		x, y := gallery.Cursor()
 		return x == 2 && y == endY
 	})
 	gallery.SendRaw([]byte{0x15})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-		x, y := gallery.VT().Cursor()
+		x, y := gallery.Cursor()
 		joined := strings.Join(rows, "\n")
 		return x == 4 && y == endY-1 && strings.Contains(joined, "aa") && strings.Contains(joined, "bbbb")
 	})
@@ -207,16 +207,16 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 	gallery.WaitForUpdate("xyzz", 3*time.Second)
 	gallery.SendRaw([]byte("\x1b[D\x1b[D"))
 	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
-		x, _ := gallery.VT().Cursor()
+		x, _ := gallery.Cursor()
 		return x == 4
 	})
-	insideX, insideY := gallery.VT().Cursor()
+	insideX, insideY := gallery.Cursor()
 	if insideX != 4 {
 		t.Fatalf("cursor before interior Ctrl+U = (%d,%d), want x=4: %q", insideX, insideY, gallery.Text())
 	}
 	gallery.SendRaw([]byte{0x15})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-		x, y := gallery.VT().Cursor()
+		x, y := gallery.Cursor()
 		joined := strings.Join(rows, "\n")
 		return x == 2 && y == insideY && strings.Contains(joined, "abcdef") && strings.Contains(joined, "zz") && !strings.Contains(joined, "xyzz")
 	})
@@ -230,18 +230,18 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 	})
 	gallery.SendRaw([]byte(strings.Repeat("\x1b[D", 26)))
 	gallery.WaitForUpdateState(3*time.Second, func([]string) bool {
-		x, _ := gallery.VT().Cursor()
+		x, _ := gallery.Cursor()
 		return x == 2
 	})
 	gallery.SendRaw([]byte{0x15})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-		x, _ := gallery.VT().Cursor()
+		x, _ := gallery.Cursor()
 		joined := strings.Join(rows, "\n")
 		return x == 2 && strings.Contains(joined, strings.Repeat("x", 97)) && strings.Contains(joined, strings.Repeat("x", 26)) && !strings.Contains(joined, wrapped)
 	})
 	gallery.SendRaw([]byte{0x15})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-		x, _ := gallery.VT().Cursor()
+		x, _ := gallery.Cursor()
 		joined := strings.Join(rows, "\n")
 		return x == 2 && strings.Contains(joined, strings.Repeat("x", 26)) && !strings.Contains(joined, strings.Repeat("x", 97))
 	})
@@ -271,7 +271,7 @@ func TestTextEntryGalleryPlaceholderKeysPTY(t *testing.T) {
 			})
 			gallery.SendRaw([]byte(tc.key))
 			gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-				x, _ := gallery.VT().Cursor()
+				x, _ := gallery.Cursor()
 				return strings.Contains(strings.Join(rows, "\n"), "Write an update…") && x == 18
 			})
 		})
