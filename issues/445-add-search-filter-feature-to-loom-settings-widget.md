@@ -1,6 +1,7 @@
 # 445 — Add search/filter feature to loom.Settings widget
 
-**Status**: In Progress
+**Status**: Closed — M1 delivered search filtering in loom.Settings with case-insensitive label matching, index mapping, and unit tests (commit 3e800d7)
+**Closed-By**: session 25f2a8e0-914e-47e2-9d37-740f360d3ca2
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
