@@ -35,6 +35,12 @@ Host reviewed implementation and assertions. Developer reported ColorPicker itse
 - Preserve all comparison exact styles, labels and F9 theme behavior. Check the CLI color comparator handles the actual expected theme color representation honestly; do not infer arbitrary indexed/reset colors are RGB.
 - One full logged quota run after source edits, focused checks/vet/install, update issue/study and commit. M1 developer final suite passed but no host full verification yet. No unrelated session fixes, pushes or closure. Host independently verifies final source and installed binary.
 
+### Regression-First Evidence
+
+Before library edits, the standalone sentinel-canvas test reproduced `ColorPicker.Draw` clearing cells below supplied offset rectangles of height 1 and 2. A zero-width draw also retained the prior mouse hitbox. The M2 patch bounds the preview-gap and swatch-padding writes to the local height and records empty draw geometry. The gallery's `SubCanvas`/`Blit` workaround has been removed; its direct-child tiny/offset assertions remain strict.
+
+M2 focused tests, vet, the full quota run and installation are pending in the implementation commit. The ANSI PTY comparator checks RGB only when both expected and observed colors expose RGB, and fails rather than treating indexed or reset colors as RGB.
+
 ## Goal
 
 /goal Add an honest default/faint/theme-background visual comparison to the ColorPicker gallery, preserving one interactive picker and all existing color semantics, with per-cell/layout/input/theme and live terminal evidence; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
