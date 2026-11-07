@@ -41,6 +41,12 @@ Before library edits, the standalone sentinel-canvas test reproduced `ColorPicke
 
 M2 focused tests, vet, the full quota run and installation are pending in the implementation commit. The ANSI PTY comparator checks RGB only when both expected and observed colors expose RGB, and fails rather than treating indexed or reset colors as RGB.
 
+## M3 — Review refinements
+
+- Reproduce and resolve boundary writes when a pre-existing wide glyph straddles either horizontal edge of the picker; preserve outside cells and avoid a gallery-only workaround. Verify the canvas contract and avoid introducing invalid wide-cell state.
+- Strengthen the CLI PTY test to navigate the picker and verify selection survives F9 theme refresh. Keep all existing assertions.
+- M2 focused tests, vet and install passed; quota suite was blocked before tests by bubblewrap. Full suite and visual acceptance remain owed.
+
 ## Goal
 
 /goal Add an honest default/faint/theme-background visual comparison to the ColorPicker gallery, preserving one interactive picker and all existing color semantics, with per-cell/layout/input/theme and live terminal evidence; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
