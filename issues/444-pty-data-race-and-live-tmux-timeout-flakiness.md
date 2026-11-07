@@ -1,6 +1,7 @@
 # 444 — PTY data race and live tmux timeout flakiness
 
-**Status**: Open
+**Status**: Closed — Thread-safe ptytest Session accessors eliminate data race; live tmux timeout increased; verified with go test -race and full uncached go test ./...
+**Closed-By**: session abe69541-ef92-47e9-b3da-b8dbf42f4cde
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
