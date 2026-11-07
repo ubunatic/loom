@@ -1,6 +1,7 @@
 # 443 — ColorPicker selectable faint text and feasible subdued background
 
-**Status**: Open
+**Status**: Closed — Selectable faint text implemented in ColorPicker with RichTextEdit undo and persistence; subdued background limitation documented in docs/Widgets.md; verified with Q1 suite and PTY tests
+**Closed-By**: session abe69541-ef92-47e9-b3da-b8dbf42f4cde
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

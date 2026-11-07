@@ -52,5 +52,4 @@ upkeep.
 | 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
-| 443 | [443-colorpicker-selectable-faint-text-and-feasible-subdued-background.md](443-colorpicker-selectable-faint-text-and-feasible-subdued-background.md) | ColorPicker selectable faint text and feasible subdued background | Open |
 <!-- harnez:end issues-active-index -->
