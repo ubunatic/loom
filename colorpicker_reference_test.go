@@ -12,7 +12,7 @@ import (
 )
 
 func TestColorPickerReference(t *testing.T) {
-	const width, height = 36, 6
+	const width, height = 36, 7
 	for _, state := range []struct {
 		name string
 		keys []string

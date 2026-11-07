@@ -21,7 +21,7 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 		t.Fatalf("build loom binary: %v\n%s", err, output)
 	}
 	s := ptytest.Start(t, 100, 30, bin, "widgets", "--show", "--theme", "plain", "ColorPicker")
-	s.WaitFor("Subdued BG (theme)", 5*time.Second)
+	s.WaitFor("Theme surface (BG)", 5*time.Second)
 	cellForSample := func(label string) ptytest.Cell {
 		t.Helper()
 		for y, line := range s.Screen() {
@@ -48,7 +48,7 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	if faintCell.Style.FG != ptytest.ColorReset() || faintCell.Style.BG != ptytest.ColorReset() || !faintCell.Style.Dim {
 		t.Fatalf("Faint text PTY cell = %+v, want reset FG/BG with Dim", faintCell)
 	}
-	initialSubdued := cellForSample("Subdued BG (theme)")
+	initialSubdued := cellForSample("Theme surface (BG)")
 	if initialSubdued.Style.FG != ptytest.ColorReset() || initialSubdued.Style.BG != ptytest.ColorReset() {
 		t.Fatalf("plain theme sample = %+v, want reset FG/BG", initialSubdued)
 	}
@@ -71,7 +71,7 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 			return false
 		}
 		cursorX := labelX - loom.SpeccedDefaults.ColorPicker.PreviewPadding + cursorColumn
-		cursorY := labelY - 4
+		cursorY := labelY - 5
 		cells := s.Cells()
 		if cursorY < 0 || cursorY >= len(cells) || cursorX < 0 || cursorX >= len(cells[cursorY]) {
 			return false
@@ -85,9 +85,9 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
 		return pickerState(rows, loom.Theme("plain").Selection.Color())
 	})
-	s.Send("\r") // Apply the moved selection so it is visible in the preview.
+	s.Send(strings.Repeat("\x1b[C", len(palette)-initialSelected-2) + "\x1b[C\r") // Reach Faint and apply it.
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
-		return pickerState(rows, loom.Theme("plain").Selection.Color())
+		return strings.Contains(strings.Join(rows, "\n"), "Faint: [x]")
 	})
 
 	names := loom.ThemeNames()
@@ -103,9 +103,9 @@ func TestWidgetsColorPickerGalleryComparisonPTY(t *testing.T) {
 	}
 	s.Send("\x1b[20~") // F9
 	s.WaitForUpdateState(5*time.Second, func(rows []string) bool {
-		return strings.Contains(strings.Join(rows, "\n"), "Theme "+next) && pickerState(rows, loom.Theme(next).Selection.Color())
+		return strings.Contains(strings.Join(rows, "\n"), "Theme "+next) && strings.Contains(strings.Join(rows, "\n"), "Faint: [x]")
 	})
-	updatedSubdued := cellForSample("Subdued BG (theme)")
+	updatedSubdued := cellForSample("Theme surface (BG)")
 	if updatedSubdued.Style.FG != ptytest.ColorReset() || !ptyColorsMatch(updatedSubdued.Style.BG, loom.Theme(next).NormalBG.Color()) {
 		t.Fatalf("%s theme sample = %+v, want reset FG and NormalBG", next, updatedSubdued)
 	}

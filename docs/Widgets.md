@@ -595,13 +595,17 @@ drag to connect points, and press `c` or Ctrl-L to clear the drawing.
 
 ### Color Picker (`loom.ColorPicker`)
 
-`ColorPicker` exposes its current `FG`, `BG`, active row as `Target`, and the
+`ColorPicker` exposes its current `FG`, `BG`, text `Dim` attribute, active row as `Target`, and the
 shared cursor's `Selected` palette index. `FG` and `BG` hold the applied
 values independently of cursor movement. `ResetSelected` focuses the
 terminal-default cell while keeping
 `Selected` valid for `Palette`. `PreviewStyle()` combines the applied values
 with the cursor cell on the active row.
 `OnChange` reports each channel applied through Space, a swatch click or Enter;
+`OnDimChange` reports changes from the Faint control. Faint is available after
+the FG palette row, where Right from its last swatch focuses it; Left returns
+to that swatch and Down moves to the final BG swatch. Space, Enter, or a left
+click toggles the ANSI faint text attribute. It never changes either color.
 `OnClose` runs after Enter, Esc or Ctrl+Space, with `DoneResult` so an embedded
 host keeps running. Palette, edge glyphs, preview dimensions and key bindings
 come from `spec/defaults.yaml`. The panel uses the rich text toolbar background
@@ -640,17 +644,24 @@ containing focus container, and right-click has no picker action.
 
 The `🮂` upper edge marks the BG selection beneath its swatch, including palette
 15 at columns 33–34 beyond the 9-column preview rug, with panel padding at
-column 35. The preview label sits on
-the preview FG/BG pair, with its 9-column rug and the bottom edge. Edge cells
+column 35. Row 4 contains the Faint toggle. The preview label sits on
+the preview FG/BG pair on row 5, with its 9-column rug and the bottom edge on
+row 6. Edge cells
 paint the panel background to clear text beneath the popup. Use `▁` and `▔` as
 the lower and upper edge glyphs in fonts without `🮂` (Symbols for Legacy
 Computing, Unicode 13). These glyphs and their padding come from
 `spec/defaults.yaml`. Set `color_picker.show_preview` to false to remove the
 preview rug.
 
+ANSI SGR 2 represents faint text, not a subdued background. Loom's `Style.Dim`
+therefore affects text foreground rendering only; `ThemeColors.NormalBG` is a
+theme surface color and cannot represent a dimmed version of an arbitrary
+background. Loom has no semantic dim-background style attribute, so a subdued
+background option cannot be offered without inventing a color blend.
+
 The `loom widgets ColorPicker` gallery keeps one interactive picker and shows
 three static comparisons below it: Default uses terminal-reset foreground and
-background, Faint text adds the ANSI dim text attribute, and Subdued BG (theme)
+background, Faint text adds the ANSI dim text attribute, and Theme surface (BG)
 uses terminal-reset foreground with the current theme's `NormalBG`. The last
 sample illustrates a theme surface only; it is not a semantic dim-background
 color, and themes whose `NormalBG` is terminal reset may render it like Default.

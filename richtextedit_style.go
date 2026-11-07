@@ -29,13 +29,36 @@ func (e *RichTextEdit) openPopoverColorPicker() {
 		style = e.insertionStyle(left, right)
 	}
 	picker := NewColorPicker(style.FG, style.BG)
+	picker.Dim = style.Dim
 	picker.OnChange = func(target ColorPickerTarget, color Color) {
 		e.applyPopoverColor(target, color)
+	}
+	picker.OnDimChange = func(dim bool) {
+		e.applyPopoverDim(dim)
 	}
 	picker.OnClose = func() {
 		e.cancelPopover()
 	}
 	e.popoverColorPicker = picker
+}
+
+func (e *RichTextEdit) applyPopoverDim(dim bool) {
+	if !e.HasSelection {
+		e.ActiveStyle.Dim = dim
+		e.activeStyleSet = true
+		return
+	}
+	e.mutate(false, false, func() {
+		lines := e.documentLines()
+		from, to := e.selectionBounds()
+		e.clampPosition(&from, lines)
+		e.clampPosition(&to, lines)
+		from, to = expandRangeForPills(lines, from, to)
+		for lineIndex := from.Line; lineIndex <= to.Line; lineIndex++ {
+			start, end := e.selectionLineBoundsForRange(lineIndex, from, to)
+			lines[lineIndex].Spans = styleRichLine(lines[lineIndex], start, end, dim, func(style *Style, state bool) { style.Dim = state })
+		}
+	})
 }
 
 func (e *RichTextEdit) applyPopoverColor(target ColorPickerTarget, color Color) {

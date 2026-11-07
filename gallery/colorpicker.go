@@ -22,7 +22,7 @@ var colorPickerSamples = []struct {
 	{"Faint text", func(loom.ThemeColors) loom.Style {
 		return loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset(), Dim: true}
 	}},
-	{"Subdued BG (theme)", func(theme loom.ThemeColors) loom.Style {
+	{"Theme surface (BG)", func(theme loom.ThemeColors) loom.Style {
 		return loom.Style{FG: loom.ColorReset(), BG: theme.NormalBG.Color()}
 	}},
 }

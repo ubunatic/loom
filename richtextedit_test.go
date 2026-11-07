@@ -936,6 +936,51 @@ func TestRichTextEditEmbeddedColorPickerMouseAndTypingStyle(t *testing.T) {
 	}
 }
 
+func TestRichTextEditColorPickerFaintUpdatesActiveStyleAndANSI(t *testing.T) {
+	edit := richTestEditor(RichSpan{Text: "plain"})
+	edit.openPopoverColorPicker()
+	if edit.popoverColorPicker == nil {
+		t.Fatal("picker did not open")
+	}
+	edit.popoverColorPicker.OnDimChange(true)
+	if !edit.ActiveStyle.Dim {
+		t.Fatal("faint toggle did not update active typing style")
+	}
+	edit.popoverColorPicker = nil
+	edit.Cursor = RichPosition{Offset: len([]rune("plain"))}
+	edit.ConsumeKey(KeyEvent{Text: "f"})
+	edit.ConsumeKey(KeyEvent{Text: "!"})
+	last := edit.Document.Lines[0].Spans[len(edit.Document.Lines[0].Spans)-1]
+	if !strings.HasSuffix(last.Text, "!") || !last.Style.Dim {
+		t.Fatalf("typed faint span = %+v", last)
+	}
+	ansi := edit.Document.ToANSI()
+	if !strings.Contains(ansi, "\x1b[2m") {
+		t.Fatalf("serialized ANSI lacks faint SGR: %q", ansi)
+	}
+	var restored RichDocument
+	restored.FromANSI(ansi)
+	if len(restored.Lines[0].Spans) == 0 || !restored.Lines[0].Spans[len(restored.Lines[0].Spans)-1].Style.Dim {
+		t.Fatalf("ANSI round-trip lost faint: %+v", restored.Lines[0].Spans)
+	}
+}
+
+func TestRichTextEditColorPickerFaintSelectionSupportsUndo(t *testing.T) {
+	edit := richTestEditor(RichSpan{Text: "pre"}, RichSpan{Text: "selected", Style: Style{Italic: true}}, RichSpan{Text: "post"})
+	edit.HasSelection = true
+	edit.SelectionFrom = RichPosition{Offset: 3}
+	edit.SelectionTo = RichPosition{Offset: 11}
+	edit.openPopoverColorPicker()
+	edit.popoverColorPicker.OnDimChange(true)
+	if len(edit.Document.Lines[0].Spans) != 3 || !edit.Document.Lines[0].Spans[1].Style.Dim || !edit.Document.Lines[0].Spans[1].Style.Italic || edit.Document.Lines[0].Spans[0].Style.Dim || edit.Document.Lines[0].Spans[2].Style.Dim {
+		t.Fatalf("faint selection spans = %+v", edit.Document.Lines[0].Spans)
+	}
+	edit.undo()
+	if edit.Document.Lines[0].Spans[1].Style.Dim {
+		t.Fatalf("undo did not restore selection style: %+v", edit.Document.Lines[0].Spans)
+	}
+}
+
 func richTestEditor(spans ...RichSpan) *RichTextEdit {
 	return NewRichTextEdit(&RichDocument{Lines: []RichLine{{Spans: spans}}})
 }

@@ -49,8 +49,8 @@ func TestColorPickerRowsShareCursorAndApplyOnlyActiveRow(t *testing.T) {
 func TestColorPickerResetAndMouseRows(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
 	size := picker.Measure(0)
-	if size.Width != 36 || size.Height != 6 {
-		t.Fatalf("picker measure=%+v, want 36x6", size)
+	if size.Width != 36 || size.Height != 7 {
+		t.Fatalf("picker measure=%+v, want 36x7", size)
 	}
 	picker.Draw(NewCanvas(40, 8), Rect{W: size.Width, H: size.Height})
 	var changed []ColorPickerTarget
@@ -73,7 +73,7 @@ func TestColorPickerResetAndMouseRows(t *testing.T) {
 	for _, mouse := range []MouseEvent{
 		{Action: MousePress, Button: MouseRight, X: 4, Y: 1},
 		{Action: MousePress, Button: MouseLeft, X: 4, Y: 0},
-		{Action: MousePress, Button: MouseLeft, X: 4, Y: 4},
+		{Action: MousePress, Button: MouseLeft, X: 4, Y: 5},
 	} {
 		if got := picker.ConsumeMouse(mouse); got != Ignored() {
 			t.Errorf("mouse %+v result=%+v, want ignored", mouse, got)
@@ -81,11 +81,58 @@ func TestColorPickerResetAndMouseRows(t *testing.T) {
 	}
 }
 
+func TestColorPickerFaintToggleKeyboardMouseAndPreview(t *testing.T) {
+	picker := NewColorPicker(ColorIndex(7), ColorIndex(4))
+	picker.Selected = len(picker.Palette) - 1
+	var changes []bool
+	colorChanges := 0
+	picker.OnDimChange = func(dim bool) { changes = append(changes, dim) }
+	picker.OnChange = func(ColorPickerTarget, Color) { colorChanges++ }
+	if got := picker.ConsumeKey(KeyEvent{Key: "right"}); got != Handled() || !picker.FaintSelected {
+		t.Fatalf("Right from final FG swatch = %+v faint-selected=%v", got, picker.FaintSelected)
+	}
+	if !picker.PreviewStyle().Dim {
+		t.Fatal("faint preview should include Dim")
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "left"}); got != Handled() || picker.FaintSelected || picker.Selected != len(picker.Palette)-1 {
+		t.Fatalf("Left from faint = %+v faint-selected=%v selected=%d", got, picker.FaintSelected, picker.Selected)
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "right"}); got != Handled() || !picker.FaintSelected {
+		t.Fatalf("Right to faint = %+v faint-selected=%v", got, picker.FaintSelected)
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "space"}); got != Handled() || !picker.Dim || len(changes) != 1 || !changes[0] {
+		t.Fatalf("Space faint toggle result/dim/callbacks = %+v/%v/%v", got, picker.Dim, changes)
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "down"}); got != Handled() || picker.Target != ColorPickerBG || picker.FaintSelected || picker.Selected != len(picker.Palette)-1 {
+		t.Fatalf("Down from faint = %+v target=%v faint-selected=%v selected=%d", got, picker.Target, picker.FaintSelected, picker.Selected)
+	}
+	size := picker.Measure(0)
+	picker.Draw(NewCanvas(size.Width, size.Height), Rect{W: size.Width, H: size.Height})
+	defs := SpeccedDefaults.ColorPicker
+	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: defs.LeadingPadding, Y: 4}); got != Handled() || picker.Dim || len(changes) != 2 || changes[1] {
+		t.Fatalf("click faint toggle result/dim/callbacks = %+v/%v/%v", got, picker.Dim, changes)
+	}
+	if picker.FG != ColorIndex(7) || picker.BG != ColorIndex(4) {
+		t.Fatalf("faint toggle changed colors: FG=%v BG=%v", picker.FG, picker.BG)
+	}
+	if colorChanges != 0 {
+		t.Fatalf("faint toggles triggered %d color callbacks", colorChanges)
+	}
+	if got := picker.ConsumeKey(KeyEvent{Key: "right"}); got != Handled() || !picker.FaintSelected {
+		t.Fatalf("Right to faint before Enter = %+v faint-selected=%v", got, picker.FaintSelected)
+	}
+	closed := 0
+	picker.OnClose = func() { closed++ }
+	if got := picker.ConsumeKey(KeyEvent{Key: "enter"}); got != DoneResult() || !picker.Dim || len(changes) != 3 || !changes[2] || closed != 1 {
+		t.Fatalf("Enter faint toggle result/dim/callbacks/close = %+v/%v/%v/%d", got, picker.Dim, changes, closed)
+	}
+}
+
 func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	picker := NewColorPicker(ColorIndex(11), ColorIndex(4))
 	canvas := NewCanvas(40, 8)
 	canvas.Write(20, 5, "Z", Style{FG: ColorIndex(2), BG: ColorIndex(3)})
-	picker.Draw(canvas, Rect{W: 36, H: 6})
+	picker.Draw(canvas, Rect{W: 36, H: 7})
 	panelBG := ColorIndex(uint8(SpeccedDefaults.RichTextEdit.ToolbarBG))
 	for i, color := range picker.Palette {
 		fg := canvas.Get(3+(i*2), 1)
@@ -103,7 +150,7 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	if got := canvas.Get(1, 2); got.Style.FG != picker.Style.FG || got.Style.BG != panelBG {
 		t.Errorf("BG reset cell style=%+v", got.Style)
 	}
-	for _, pos := range [][2]int{{0, 1}, {0, 2}, {0, 4}, {8, 4}} {
+	for _, pos := range [][2]int{{0, 1}, {0, 2}, {0, 5}, {8, 5}} {
 		if got := canvas.Get(pos[0], pos[1]); got.Style.BG != panelBG {
 			t.Errorf("panel padding at (%d,%d) style=%+v, want panel BG %v", pos[0], pos[1], got.Style, panelBG)
 		}
@@ -160,28 +207,28 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 			}
 		}
 		for x := 0; x < SpeccedDefaults.ColorPicker.PreviewWidth; x++ {
-			if got := frame.Get(x, 5); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != panelBG || got.Style.BG != editorBG {
-				t.Errorf("bottom edge cell (%d,5)=%+v, want FG %v BG %v", x, got, panelBG, editorBG)
+			if got := frame.Get(x, 6); got.Text != SpeccedDefaults.ColorPicker.Glyphs.EdgeUpper || got.Style.FG != panelBG || got.Style.BG != editorBG {
+				t.Errorf("bottom edge cell (%d,6)=%+v, want FG %v BG %v", x, got, panelBG, editorBG)
 			}
 		}
 	}
 	assertEdges(picker, canvas)
-	if got := canvas.Get(1, 4); got.Text != "P" || got.Style.FG != picker.FG || got.Style.BG != picker.BG {
+	if got := canvas.Get(1, 5); got.Text != "P" || got.Style.FG != picker.FG || got.Style.BG != picker.BG {
 		t.Fatalf("preview label cell=%+v", got)
 	}
-	if got := canvas.Get(9, 5); got.Text != " " {
+	if got := canvas.Get(9, 6); got.Text != " " {
 		t.Fatalf("preview rug extends past column 8: %+v", got)
 	}
 	if got := canvas.Get(20, 5); got.Text != "Z" || got.Style.FG != ColorIndex(2) || got.Style.BG != ColorIndex(3) {
 		t.Fatalf("preview rug cleared content outside its 9 columns: %+v", got)
 	}
 	markerPicker := NewColorPicker(ColorIndex(1), ColorIndex(15))
-	markerCanvas := NewCanvas(36, 6)
-	markerPicker.Draw(markerCanvas, Rect{W: 36, H: 6})
+	markerCanvas := NewCanvas(36, 7)
+	markerPicker.Draw(markerCanvas, Rect{W: 36, H: 7})
 	assertEdges(markerPicker, markerCanvas)
 	markerInsidePicker := NewColorPicker(ColorIndex(1), ColorIndex(0))
-	markerInsideCanvas := NewCanvas(36, 6)
-	markerInsidePicker.Draw(markerInsideCanvas, Rect{W: 36, H: 6})
+	markerInsideCanvas := NewCanvas(36, 7)
+	markerInsidePicker.Draw(markerInsideCanvas, Rect{W: 36, H: 7})
 	assertEdges(markerInsidePicker, markerInsideCanvas)
 	if got := canvas.Get(35, 2); got.Text != " " || got.Style.BG != panelBG {
 		t.Fatalf("right padding should use panel background: %+v", got)
@@ -192,26 +239,26 @@ func TestColorPickerDrawUsesStaticSwatchesAndSlimEdges(t *testing.T) {
 	if picker.ConsumeKey(KeyEvent{Key: "down"}) != Handled() {
 		t.Fatal("Down should activate the BG row")
 	}
-	activeBGCanvas := NewCanvas(36, 6)
-	picker.Draw(activeBGCanvas, Rect{W: 36, H: 6})
+	activeBGCanvas := NewCanvas(36, 7)
+	picker.Draw(activeBGCanvas, Rect{W: 36, H: 7})
 	assertEdges(picker, activeBGCanvas)
 	if markerPicker.ConsumeKey(KeyEvent{Key: "down"}) != Handled() {
 		t.Fatal("Down should activate BG row for marker right of preview rug")
 	}
-	activeBGRightCanvas := NewCanvas(36, 6)
-	markerPicker.Draw(activeBGRightCanvas, Rect{W: 36, H: 6})
+	activeBGRightCanvas := NewCanvas(36, 7)
+	markerPicker.Draw(activeBGRightCanvas, Rect{W: 36, H: 7})
 	assertEdges(markerPicker, activeBGRightCanvas)
 	if markerInsidePicker.ConsumeKey(KeyEvent{Key: "down"}) != Handled() {
 		t.Fatal("Down should activate BG row for marker inside preview rug")
 	}
-	activeBGInsideCanvas := NewCanvas(36, 6)
-	markerInsidePicker.Draw(activeBGInsideCanvas, Rect{W: 36, H: 6})
+	activeBGInsideCanvas := NewCanvas(36, 7)
+	markerInsidePicker.Draw(activeBGInsideCanvas, Rect{W: 36, H: 7})
 	assertEdges(markerInsidePicker, activeBGInsideCanvas)
 	defs := SpeccedDefaults.ColorPicker
 	old := defs.ShowPreview
 	SpeccedDefaults.ColorPicker.ShowPreview = false
 	defer func() { SpeccedDefaults.ColorPicker.ShowPreview = old }()
-	if got := picker.Measure(0); got.Height != 4 {
+	if got := picker.Measure(0); got.Height != 5 {
 		t.Fatalf("hidden preview measure=%+v", got)
 	}
 }
@@ -230,7 +277,7 @@ func TestColorPickerDrawStaysWithinSuppliedBounds(t *testing.T) {
 		{X: 4, Y: 2, W: 2, H: 2},
 		{X: 4, Y: 2, W: 1, H: 6},
 		{X: 4, Y: 2, W: 6, H: 1},
-		{X: 4, Y: 2, W: 36, H: 6},
+		{X: 4, Y: 2, W: 36, H: 7},
 	}
 	for _, rect := range rects {
 		t.Run(fmt.Sprintf("%dx%d-offset", rect.W, rect.H), func(t *testing.T) {
@@ -255,7 +302,7 @@ func TestColorPickerDrawStaysWithinSuppliedBounds(t *testing.T) {
 		})
 	}
 
-	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 36, H: 6})
+	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 36, H: 7})
 	picker.Draw(NewCanvas(48, 12), Rect{X: 4, Y: 2, W: 0, H: 6})
 	if got := picker.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: 1, Y: 1}); got != Ignored() {
 		t.Fatalf("mouse after empty draw=%+v, want ignored", got)

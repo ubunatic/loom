@@ -88,7 +88,7 @@ func Test361ColorPickerMarkerStatesAndPreview(t *testing.T) {
 				}
 			}
 
-			if got := canvas.Get(1, 4); got.Text != "P" || got.Style != tc.preview {
+			if got := canvas.Get(1, 5); got.Text != "P" || got.Style != tc.preview {
 				t.Errorf("rendered preview=%+v, want %+v", got, tc.preview)
 			}
 		})

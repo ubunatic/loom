@@ -19,9 +19,11 @@ const (
 
 // ColorPicker selects foreground and background colors and previews their pair.
 type ColorPicker struct {
-	FG, BG   Color
-	Target   ColorPickerTarget
-	Selected int
+	FG, BG        Color
+	Dim           bool
+	Target        ColorPickerTarget
+	Selected      int
+	FaintSelected bool
 	// ResetSelected focuses the terminal-default/no-color cell. Selected remains
 	// a valid index into Palette for callers that use it to inspect the palette.
 	ResetSelected bool
@@ -29,6 +31,7 @@ type ColorPicker struct {
 	Style         Style
 	FocusStyle    Style
 	OnChange      func(ColorPickerTarget, Color)
+	OnDimChange   func(bool)
 	OnClose       func()
 
 	focused   bool
@@ -140,7 +143,10 @@ func (p *ColorPicker) PreviewStyle() Style {
 	if p == nil {
 		return Style{}
 	}
-	style := Style{FG: p.FG, BG: p.BG}
+	style := Style{FG: p.FG, BG: p.BG, Dim: p.Dim}
+	if p.FaintSelected {
+		style.Dim = !style.Dim
+	}
 	if color, ok := p.cursorColor(); ok {
 		if p.Target == ColorPickerFG {
 			style.FG = color
@@ -158,7 +164,7 @@ func (p *ColorPicker) Measure(width int) measure.Size {
 	if width > 0 && width < w {
 		w = width
 	}
-	h := 4
+	h := 5
 	if defs.ShowPreview {
 		h += 2
 	}
@@ -180,7 +186,10 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	panelStyle := Style{FG: p.Style.FG, BG: panelBG}
 	paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y, W: r.W, H: panelHeight}, panelStyle)
 	if defs.ShowPreview && r.H >= 6 {
-		paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y + 4, W: min(r.W, defs.PreviewWidth), H: 2}, panelStyle)
+		paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y + 5, W: min(r.W, defs.PreviewWidth), H: min(2, r.H-5)}, panelStyle)
+	}
+	if r.H > 4 {
+		paintColorPickerSurface(c, r, Rect{X: r.X, Y: r.Y + 4, W: r.W, H: 1}, panelStyle)
 	}
 	paletteX := defs.LeadingPadding
 	for row, target := range []ColorPickerTarget{ColorPickerFG, ColorPickerBG} {
@@ -213,6 +222,16 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 			}
 		}
 	}
+	faintLabel := "Faint: [ ]"
+	if p.Dim {
+		faintLabel = "Faint: [x]"
+	}
+	faintStyle := panelStyle
+	if p.FaintSelected {
+		faintStyle = p.FocusStyle
+		faintStyle.Dim = p.Dim
+	}
+	writeColorPickerText(c, r, defs.LeadingPadding, 4, faintLabel, faintStyle)
 	fgAppliedX := p.appliedMarkerColumn(ColorPickerFG)
 	bgAppliedX := p.appliedMarkerColumn(ColorPickerBG)
 	cursorX := p.cursorMarkerColumn()
@@ -256,9 +275,11 @@ func (p *ColorPicker) Draw(c *Canvas, r Rect) {
 	if defs.ShowPreview && r.H >= 6 {
 		previewX := defs.PreviewPadding
 		// The sample must keep a terminal-default BG rather than inherit the panel.
-		writeColorPickerCells(c, r, previewX, 4, defs.Labels.Preview, Cell{Style: p.PreviewStyle(), Claim: true})
-		for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
-			writeColorPickerText(c, r, x, 5, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: p.Style.BG})
+		writeColorPickerCells(c, r, previewX, 5, defs.Labels.Preview, Cell{Style: p.PreviewStyle(), Claim: true})
+		if r.H >= 7 {
+			for x := 0; x < min(r.W, defs.PreviewWidth); x++ {
+				writeColorPickerText(c, r, x, 6, defs.Glyphs.EdgeUpper, Style{FG: panelBG, BG: p.Style.BG})
+			}
 		}
 	}
 }
@@ -327,6 +348,13 @@ func (p *ColorPicker) matches(e KeyEvent, action string) bool {
 }
 
 func (p *ColorPicker) applyCursor() {
+	if p.FaintSelected {
+		p.Dim = !p.Dim
+		if p.OnDimChange != nil {
+			p.OnDimChange(p.Dim)
+		}
+		return
+	}
 	color, ok := p.cursorColor()
 	if !ok {
 		return
@@ -360,6 +388,11 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		return DoneResult()
 	case p.matches(e, "row_bg"):
 		p.Target = ColorPickerBG
+		if p.FaintSelected {
+			p.Selected = len(p.Palette) - 1
+			p.ResetSelected = false
+			p.FaintSelected = false
+		}
 		return Handled()
 	case p.matches(e, "row_fg"):
 		p.Target = ColorPickerFG
@@ -371,6 +404,13 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		p.Selected, p.ResetSelected = 0, true
 		return Handled()
 	case p.matches(e, "left"):
+		if p.FaintSelected {
+			p.FaintSelected = false
+			p.Target = ColorPickerFG
+			p.Selected = len(p.Palette) - 1
+			p.ResetSelected = false
+			return Handled()
+		}
 		if p.ResetSelected {
 			return Handled()
 		}
@@ -381,6 +421,10 @@ func (p *ColorPicker) ConsumeKey(e KeyEvent) EventResult {
 		}
 		return Handled()
 	case p.matches(e, "right"):
+		if p.Target == ColorPickerFG && !p.FaintSelected && !p.ResetSelected && p.Selected == len(p.Palette)-1 {
+			p.FaintSelected = true
+			return Handled()
+		}
 		if p.ResetSelected {
 			p.ResetSelected = false
 		} else if p.Selected+1 < len(p.Palette) {
@@ -397,10 +441,20 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	if p == nil || e.Action != MousePress || e.X < 0 || e.X >= p.lastRect.W || e.Y < 0 || e.Y >= p.lastRect.H {
 		return Ignored()
 	}
-	if e.Button != MouseLeft || e.Y < 1 || e.Y > 2 {
+	if e.Button != MouseLeft {
 		return Ignored()
 	}
 	defs := SpeccedDefaults.ColorPicker
+	if e.Y == 4 && e.X >= defs.LeadingPadding && e.X < defs.LeadingPadding+len("Faint: [x]") {
+		p.Target = ColorPickerFG
+		p.FaintSelected = true
+		p.applyCursor()
+		p.FaintSelected = false
+		return Handled()
+	}
+	if e.Y < 1 || e.Y > 2 {
+		return Ignored()
+	}
 	x := e.X - defs.LeadingPadding
 	if x < 0 {
 		return Ignored()
@@ -415,8 +469,10 @@ func (p *ColorPicker) ConsumeMouse(e MouseEvent) EventResult {
 	}
 	if e.Y == 1 {
 		p.Target = ColorPickerFG
+		p.FaintSelected = false
 	} else {
 		p.Target = ColorPickerBG
+		p.FaintSelected = false
 	}
 	p.applyCursor()
 	return Handled()

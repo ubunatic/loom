@@ -1928,17 +1928,17 @@ func TestColorPickerGallerySamplesAndResponsiveLayout(t *testing.T) {
 	}{
 		{4, "Default", loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset()}},
 		{31, "Faint text", loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset(), Dim: true}},
-		{58, "Subdued BG (theme)", loom.Style{FG: loom.ColorReset(), BG: theme.NormalBG.Color()}},
+		{58, "Theme surface (BG)", loom.Style{FG: loom.ColorReset(), BG: theme.NormalBG.Color()}},
 	}
 	for _, sample := range wideSamples {
 		for i, char := range sample.label {
-			cell := wide.Get(sample.x+i, 10)
+			cell := wide.Get(sample.x+i, 11)
 			if cell.Text != string(char) || !cell.Claim {
 				t.Errorf("wide label cell at (%d,10) = %+v, want %q with explicit ownership", sample.x+i, cell, string(char))
 			}
 		}
 		for i, char := range "Aa sample text" {
-			cell := wide.Get(sample.x+i, 11)
+			cell := wide.Get(sample.x+i, 12)
 			if cell.Text != string(char) || cell.Style != sample.style || !cell.Claim {
 				t.Errorf("wide sample cell at (%d,11) = %+v, want %q with style %+v and explicit ownership", sample.x+i, cell, string(char), sample.style)
 			}
@@ -1947,8 +1947,8 @@ func TestColorPickerGallerySamplesAndResponsiveLayout(t *testing.T) {
 
 	narrow := loom.NewCanvas(50, 24)
 	demo.Draw(narrow, loom.Rect{X: 2, Y: 3, W: 40, H: 18})
-	for i, label := range []string{"Default", "Faint text", "Subdued BG (theme)"} {
-		y := 10 + i*colorPickerSampleHeight
+	for i, label := range []string{"Default", "Faint text", "Theme surface (BG)"} {
+		y := 11 + i*colorPickerSampleHeight
 		for x, char := range label {
 			cell := narrow.Get(2+x, y)
 			if cell.Text != string(char) || !cell.Claim {
@@ -1962,11 +1962,11 @@ func TestColorPickerGallerySamplesAndResponsiveLayout(t *testing.T) {
 			}
 		}
 	}
-	if got := demo.Measure(80).Height; got != 9 {
-		t.Errorf("wide measure height = %d, want 9", got)
+	if got := demo.Measure(80).Height; got != 10 {
+		t.Errorf("wide measure height = %d, want 10", got)
 	}
-	if got := demo.Measure(40).Height; got != 13 {
-		t.Errorf("narrow measure height = %d, want 13", got)
+	if got := demo.Measure(40).Height; got != 14 {
+		t.Errorf("narrow measure height = %d, want 14", got)
 	}
 
 	selected, resetSelected, target := demo.picker.Selected, demo.picker.ResetSelected, demo.picker.Target
@@ -1978,7 +1978,7 @@ func TestColorPickerGallerySamplesAndResponsiveLayout(t *testing.T) {
 	}
 	fallback := loom.NewCanvas(100, 24)
 	demo.Draw(fallback, loom.Rect{X: 4, Y: 3, W: 80, H: 18})
-	cell := fallback.Get(58, 11)
+	cell := fallback.Get(58, 12)
 	wantFallback := loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset()}
 	if cell.Style != wantFallback || !cell.Claim {
 		t.Errorf("reset NormalBG fallback = %+v, want %+v with explicit ownership", cell, wantFallback)

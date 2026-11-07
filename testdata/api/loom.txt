@@ -1165,9 +1165,11 @@ func ColorReset() Color
     ColorReset is the default terminal foreground or background color.
 
 type ColorPicker struct {
-	FG, BG   Color
-	Target   ColorPickerTarget
-	Selected int
+	FG, BG        Color
+	Dim           bool
+	Target        ColorPickerTarget
+	Selected      int
+	FaintSelected bool
 	// ResetSelected focuses the terminal-default/no-color cell. Selected remains
 	// a valid index into Palette for callers that use it to inspect the palette.
 	ResetSelected bool
@@ -1175,6 +1177,7 @@ type ColorPicker struct {
 	Style         Style
 	FocusStyle    Style
 	OnChange      func(ColorPickerTarget, Color)
+	OnDimChange   func(bool)
 	OnClose       func()
 
 	// Has unexported fields.
