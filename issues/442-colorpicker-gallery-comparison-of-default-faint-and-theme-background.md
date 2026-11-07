@@ -1,6 +1,6 @@
 # 442 — ColorPicker gallery comparison of default faint and theme background
 
-**Status**: Open
+**Status**: Closed — Owner approved comparison; selectable faint and possible subdued background tracked in 443
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
