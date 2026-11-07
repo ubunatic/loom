@@ -648,6 +648,14 @@ Computing, Unicode 13). These glyphs and their padding come from
 `spec/defaults.yaml`. Set `color_picker.show_preview` to false to remove the
 preview rug.
 
+The `loom widgets ColorPicker` gallery keeps one interactive picker and shows
+three static comparisons below it: Default uses terminal-reset foreground and
+background, Faint text adds the ANSI dim text attribute, and Subdued BG (theme)
+uses terminal-reset foreground with the current theme's `NormalBG`. The last
+sample illustrates a theme surface only; it is not a semantic dim-background
+color, and themes whose `NormalBG` is terminal reset may render it like Default.
+The samples sit side by side when there is room and stack at narrower widths.
+
 ### Standalone Form Controls
 
 `NumberInput` and `Toggle` can be used outside a `Settings` list. Both bind to
