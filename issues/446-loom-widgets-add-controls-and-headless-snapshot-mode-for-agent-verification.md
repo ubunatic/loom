@@ -1,6 +1,7 @@
 # 446 — loom widgets: add controls and headless snapshot mode for agent verification
 
-**Status**: Open
+**Status**: Closed — M1 delivered --render mode, Settings demo, state inspection flags, and full shell completion (commit 16b1c6d)
+**Closed-By**: session 25f2a8e0-914e-47e2-9d37-740f360d3ca2
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
