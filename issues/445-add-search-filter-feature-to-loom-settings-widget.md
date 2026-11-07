@@ -1,6 +1,6 @@
 # 445 — Add search/filter feature to loom.Settings widget
 
-**Status**: Open
+**Status**: In Progress
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
@@ -16,19 +16,22 @@
 Other widgets in loom, such as `loom.Choice` and `loom.View`, support search/filter using `loom.SearchBar` (triggered by `/` or `ctrl-f` per key policy in issue 407/408). Adding search/filter to `loom.Settings` improves UX and consistency across compound widgets.
 
 ## 2. Technical Specification / Findings
-- **Key Binding**: Follow key conventions (e.g. `/` or `ctrl-f` to open search prompt, Esc to close/cancel search). When filtering is active, only matching items are shown and navigable.
-- **Components**: Integrate or reuse `loom.SearchBar` (or `loom.TextInput`) similar to how `loom.Choice` embeds search/filtering.
+- **Key Binding**: Follow key conventions (`/` or `ctrl-f` to open search prompt, Esc to close/cancel search). While searching or when filter query is active, typing updates query; Enter retains filtered list or confirms; Esc clears/closes search and restores full view.
+- **Components**: Embed `loom.SearchBar` (or integrate consistent search prompt) in `Settings`.
 - **Selection & Filtering**:
-  - Filter items by `Label` (case-insensitive substring or fuzzy match matching loom standards).
+  - Filter items by `Label` (case-insensitive substring match).
   - Track mapping between filtered indices and the original `Items` slice so activating/editing an option operates on the true underlying `Setting`.
   - Esc or clearing search restores full view.
-- **Drawing**: Render search bar / filter prompt either in the header or prompt area of `Settings.Draw`.
+- **Drawing**: Render search bar cleanly (e.g. above items or below prompt), accounting for dimensions in `ContentHeight` and `Draw`.
 
 ## 3. Implementation & Verification Plan
-- Add search activation key binding in `spec/defaults.yaml` under settings (if appropriate) or follow `loom.Choice` defaults.
-- Implement search filtering and search bar embedding in `settings.go`.
-- Add unit tests in `settings_test.go` covering:
-  - Activating search, typing filter query, navigating filtered results, editing/toggling an item, and cancelling/clearing search.
-- Verification:
-  - `make test-q1` passes.
-  - `go test -race ./...` passes.
+
+### M1: Core Search Filtering and Bindings in Settings
+- Update `spec/defaults.yaml` under `settings.bindings` with `search: ["/", "ctrl-f"]` (run `make generate` if schema/spec code requires it).
+- In `settings.go`:
+  - Integrate `SearchBar` into `Settings` with filtered index mapping.
+  - Implement search mode activation, typing/backspace handling in `ConsumeKey`.
+  - Maintain correct selection mapping between filtered indices and underlying `Items`.
+  - Render search bar in `Draw` when active/configured.
+- Add unit tests in `settings_test.go` verifying search filtering, navigation across filtered items, inline editing of filtered items, clearing search, and empty match handling.
+- Verify with `make test-q1` and `go test -race ./...`.
