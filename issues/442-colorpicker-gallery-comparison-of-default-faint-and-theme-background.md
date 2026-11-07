@@ -52,6 +52,10 @@ M2 focused tests, vet, the full quota run and installation are pending in the im
 - Assert the navigation cursor itself survives F9, not only the applied preview color. Wait for the expected cursor and preview states rather than the already-visible Preview label, avoiding partial-redraw races. Preserve all existing assertions.
 - The sandbox now permits bwrap and the install directory; run the required full quota suite and installation after the fixes.
 
+## Handoff
+
+M2–M4 fixes are committed through `95d10cc`; focused PTY checks and installation passed. A subsequent full `make test` passed after the unrelated session test synchronization fix `7d6982d` (developer-reported). Owner visual acceptance of the ColorPicker comparison remains outstanding; keep this ticket open until checked. Earlier quota-managed attempts were blocked before tests by bubblewrap.
+
 ## Goal
 
 /goal Add an honest default/faint/theme-background visual comparison to the ColorPicker gallery, preserving one interactive picker and all existing color semantics, with per-cell/layout/input/theme and live terminal evidence; stop and report when blocked on a user decision or denied permission. On a loop, hard architectural or OS blocker, or no progress, clear the goal and record a failure report explaining why.
