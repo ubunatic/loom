@@ -92,6 +92,8 @@
 | [studies/2026-11-06-issue-438-ctrl-u.md](studies/2026-11-06-issue-438-ctrl-u.md) | Issue 438: TextEntry Ctrl+U |
 | [studies/2026-11-06-issue-440-ctrl-d-routing.md](studies/2026-11-06-issue-440-ctrl-d-routing.md) | Issue 440: TextEntry Ctrl+D routing |
 | [studies/2026-11-07-issue-441-textentry-bold-m1.md](studies/2026-11-07-issue-441-textentry-bold-m1.md) | Issue 441: TextEntry visual bold and Markdown submission |
+| [studies/2026-11-07-issue-442-colorpicker-gallery-comparison.md](studies/2026-11-07-issue-442-colorpicker-gallery-comparison.md) | Issue 442: ColorPicker gallery comparison |
+| [studies/2026-11-07-issue-443-colorpicker-faint-subdued.md](studies/2026-11-07-issue-443-colorpicker-faint-subdued.md) | Issue 443: ColorPicker selectable faint text and feasible subdued background |
 | [studies/issue-439-placeholder-keys.md](studies/issue-439-placeholder-keys.md) | Issue 439: placeholder acceptance keys |
 <!-- harnez:end docs-studies-index -->
 
