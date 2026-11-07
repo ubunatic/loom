@@ -1906,3 +1906,129 @@ func TestAllGalleryNumberInputEditCursor(t *testing.T) {
 		t.Fatalf("after Esc cursor = (%d,%d), want (-1,-1)", c.CursorX, c.CursorY)
 	}
 }
+
+func TestColorPickerGallerySamplesAndResponsiveLayout(t *testing.T) {
+	demo := newColorPickerDemo()
+	theme := loom.Theme("julia256")
+	demo.ApplyTheme(theme)
+	demo.picker.Selected = 3
+	demo.picker.ResetSelected = false
+	demo.picker.Target = loom.ColorPickerBG
+
+	wide := loom.NewCanvas(100, 24)
+	wide.CursorX, wide.CursorY = -1, -1
+	demo.Draw(wide, loom.Rect{X: 4, Y: 3, W: 80, H: 18})
+	if wide.CursorX != -1 || wide.CursorY != -1 {
+		t.Fatalf("gallery set hardware cursor to (%d,%d)", wide.CursorX, wide.CursorY)
+	}
+	wideSamples := []struct {
+		x     int
+		label string
+		style loom.Style
+	}{
+		{4, "Default", loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset()}},
+		{31, "Faint text", loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset(), Dim: true}},
+		{58, "Subdued BG (theme)", loom.Style{FG: loom.ColorReset(), BG: theme.NormalBG.Color()}},
+	}
+	for _, sample := range wideSamples {
+		for i, char := range sample.label {
+			cell := wide.Get(sample.x+i, 10)
+			if cell.Text != string(char) || !cell.Claim {
+				t.Errorf("wide label cell at (%d,10) = %+v, want %q with explicit ownership", sample.x+i, cell, string(char))
+			}
+		}
+		for i, char := range "Aa sample text" {
+			cell := wide.Get(sample.x+i, 11)
+			if cell.Text != string(char) || cell.Style != sample.style || !cell.Claim {
+				t.Errorf("wide sample cell at (%d,11) = %+v, want %q with style %+v and explicit ownership", sample.x+i, cell, string(char), sample.style)
+			}
+		}
+	}
+
+	narrow := loom.NewCanvas(50, 24)
+	demo.Draw(narrow, loom.Rect{X: 2, Y: 3, W: 40, H: 18})
+	for i, label := range []string{"Default", "Faint text", "Subdued BG (theme)"} {
+		y := 10 + i*colorPickerSampleHeight
+		for x, char := range label {
+			cell := narrow.Get(2+x, y)
+			if cell.Text != string(char) || !cell.Claim {
+				t.Errorf("stacked label %d cell at (%d,%d) = %+v, want %q with explicit ownership", i, 2+x, y, cell, string(char))
+			}
+		}
+		for x, char := range "Aa sample text" {
+			cell := narrow.Get(2+x, y+1)
+			if cell.Text != string(char) || cell.Style != wideSamples[i].style || !cell.Claim {
+				t.Errorf("stacked sample %d cell at (%d,%d) = %+v, want %q with style %+v and explicit ownership", i, 2+x, y+1, cell, string(char), wideSamples[i].style)
+			}
+		}
+	}
+	if got := demo.Measure(80).Height; got != 9 {
+		t.Errorf("wide measure height = %d, want 9", got)
+	}
+	if got := demo.Measure(40).Height; got != 13 {
+		t.Errorf("narrow measure height = %d, want 13", got)
+	}
+
+	selected, resetSelected, target := demo.picker.Selected, demo.picker.ResetSelected, demo.picker.Target
+	fallbackTheme := theme
+	fallbackTheme.NormalBG = loom.DefaultThemeColor()
+	demo.ApplyTheme(fallbackTheme)
+	if demo.picker.Selected != selected || demo.picker.ResetSelected != resetSelected || demo.picker.Target != target {
+		t.Fatalf("theme refresh changed picker selection: selected=%d reset=%v target=%v", demo.picker.Selected, demo.picker.ResetSelected, demo.picker.Target)
+	}
+	fallback := loom.NewCanvas(100, 24)
+	demo.Draw(fallback, loom.Rect{X: 4, Y: 3, W: 80, H: 18})
+	cell := fallback.Get(58, 11)
+	wantFallback := loom.Style{FG: loom.ColorReset(), BG: loom.ColorReset()}
+	if cell.Style != wantFallback || !cell.Claim {
+		t.Errorf("reset NormalBG fallback = %+v, want %+v with explicit ownership", cell, wantFallback)
+	}
+}
+
+func TestColorPickerGalleryMouseFocusAndTinyBounds(t *testing.T) {
+	demo := newColorPickerDemo()
+	canvas := loom.NewCanvas(30, 16)
+	demo.Draw(canvas, loom.Rect{X: 5, Y: 3, W: 20, H: 8})
+	if !demo.Focused() {
+		t.Fatal("picker focus was not delegated")
+	}
+	if got := demo.ConsumeKey(loom.KeyEvent{Key: "right"}); !got.Consumed {
+		t.Fatalf("picker right result = %+v, want consumed", got)
+	}
+	fg := demo.picker.FG
+	if got := demo.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 7}); got.Consumed {
+		t.Fatal("sample click was consumed")
+	}
+	if demo.picker.FG != fg {
+		t.Fatalf("sample click changed picker FG from %v to %v", fg, demo.picker.FG)
+	}
+	if got := demo.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 1}); !got.Consumed {
+		t.Fatalf("picker reset click result = %+v, want consumed", got)
+	}
+	if demo.picker.FG != loom.ColorReset() {
+		t.Fatalf("picker reset click FG = %v, want terminal reset", demo.picker.FG)
+	}
+	demo.SetFocus(false)
+	if demo.Focused() {
+		t.Fatal("picker lost delegated focus state")
+	}
+
+	tiny := loom.NewCanvas(20, 12)
+	before := make([]loom.Cell, 20*12)
+	for y := 0; y < 12; y++ {
+		for x := 0; x < 20; x++ {
+			before[y*20+x] = tiny.Get(x, y)
+		}
+	}
+	demo.Draw(tiny, loom.Rect{X: 4, Y: 3, W: 2, H: 1})
+	for y := 0; y < 12; y++ {
+		for x := 0; x < 20; x++ {
+			if (x < 4 || x >= 6 || y != 3) && tiny.Get(x, y) != before[y*20+x] {
+				t.Fatalf("tiny draw wrote outside its rect at (%d,%d): %+v", x, y, tiny.Get(x, y))
+			}
+		}
+	}
+	if got := demo.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: 1, Y: 2}); got.Consumed {
+		t.Fatal("mouse event below clipped picker rect was consumed")
+	}
+}
