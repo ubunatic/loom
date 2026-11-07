@@ -16,5 +16,6 @@ Add a gallery-only visual comparison below the existing interactive ColorPicker.
 
 - Focused gallery and CLI PTY tests check per-cell FG/BG/Dim/claim, reset fallback, layout, bounds, theme refresh, picker state, mouse locality, and sample noninteraction.
 - `go vet ./gallery ./cmd/loom` passed after fixing the gallery constructor's concrete return type.
-- Remaining: run the single authorized `make test-q1`, run `make install`, record its result and commit implementation.
+- `make test-q1` passed; the complete output is logged at `/tmp/loom-issue442-test-q1-final.log`. The gallery package and CLI PTY package passed, along with the rest of the suite.
+- Remaining: run `make install`, record its result and commit implementation.
 - Known baseline: a prior full suite hit an unrelated `internal/session` screenshot timeout. If it recurs, leave that code and assertions untouched.
