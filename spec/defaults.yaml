@@ -69,6 +69,17 @@ pane:
   max_height: 20
   # Opt-in kitty keyboard protocol (flag 1) so shift-enter, ctrl-enter, ctrl-i differ.
   kitty_keyboard: false
+  # Mouse-wheel acceleration (issue 451). A burst is same-direction wheel reports
+  # whose gaps are under burst_gap_ms. Gain is 1 while the burst holds at most
+  # ramp_after reports; after that it rises by 1 for every ramp_step further
+  # reports, up to max_gain. A pause or a direction change starts a new burst.
+  # UNVERIFIED feel values: starting points, not measured curves. Spec-only: Go
+  # reads them from here, so do not copy them into code.
+  wheel:
+    burst_gap_ms: 150
+    ramp_after: 6
+    ramp_step: 6
+    max_gain: 8
 
 scrollbar:
   mode: auto

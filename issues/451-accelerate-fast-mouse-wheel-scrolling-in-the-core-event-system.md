@@ -24,3 +24,6 @@ Owner report (Viewport demo, foot): scrolling with the wheel feels slow. `View` 
 - Run `loom-probe mouse` in foot, kitty, ghostty (and ptyxis if used); record gap and burst numbers in this ticket.
 - Tests: a slow notch scrolls 1 line; a fast burst scrolls more than the same count of slow notches; a pause and a direction change reset the gain; the cap holds; the clock is injected.
 - Docs: `docs/TuiInput.md` (wheel behavior) and `docs/Widgets.md`; check in `loom widgets --show Viewport` (100 lines).
+
+## 4. Status (first version)
+Implemented in `Pane` (`pane_wheel.go`): a burst counts same-direction reports with gaps under `burst_gap_ms`; gain is 1 up to `ramp_after` reports, then +1 per `ramp_step` further reports, capped at `max_gain`; a pause or a direction change resets; each report is delivered `gain` times. The values live in `spec/defaults.yaml` under `pane.wheel`: `burst_gap_ms` 150, `ramp_after` 6, `ramp_step` 6, `max_gain` 8. They are **unverified starting values** derived from the owner's burst counts (3 reports per notch in foot, fast bursts of 21-30), not from measured gaps; tune them by feel. `loom-probe mouse` keeps its own 150 ms constant as a measurement threshold only.

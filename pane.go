@@ -162,6 +162,10 @@ type Pane struct {
 	postClosed  bool
 	tickerReset chan struct{}
 	help        *Popup
+	// now is the clock for wheel bursts; nil means time.Now. Tests set it.
+	now func() time.Time
+	// wheel is the current burst of wheel reports (issue 451).
+	wheel wheelBurst
 }
 
 // CloseReason tells OnCloseRequest why the pane wants to close.

@@ -2859,6 +2859,9 @@ type PaneRequester interface {
     PaneRequester optionally lets a widget declare terminal capabilities to its
     host pane. Pane reads the request once before starting its event loop.
 
+type PaneWheelDefaults = specdefaults.PaneWheelDefaults
+    PaneWheelDefaults is the mouse-wheel acceleration curve in pane.wheel.
+
 type Paneable interface {
 	Widget
 	ContentHeighter

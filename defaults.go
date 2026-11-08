@@ -119,6 +119,9 @@ type ScrollbarDefaults = specdefaults.ScrollbarDefaults
 // PaneDefaults defines specced defaults for Pane.
 type PaneDefaults = specdefaults.PaneDefaults
 
+// PaneWheelDefaults is the mouse-wheel acceleration curve in pane.wheel.
+type PaneWheelDefaults = specdefaults.PaneWheelDefaults
+
 // SplashDefaults defines specced defaults for splash lifecycle and widgets.
 type SplashDefaults = specdefaults.SplashDefaults
 
