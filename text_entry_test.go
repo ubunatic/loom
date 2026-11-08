@@ -1229,3 +1229,63 @@ func TestTextEntryPlaceholderCallbackMutationConsumes(t *testing.T) {
 		t.Fatalf("result=%+v value=%q", result, e.Value())
 	}
 }
+
+// rowTexts returns the text of each soft-wrapped row at width (taia#164).
+func rowTexts(e *TextEntry, width int) []string {
+	var out []string
+	for _, r := range e.rows(width) {
+		out = append(out, strings.Join(e.units[r.start:r.end], ""))
+	}
+	return out
+}
+
+func TestTextEntryWrapsAtWordBoundaries(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("hello brave new world")
+	// Width 12 leaves 11 cells per row; "hello brave n" would split "new".
+	got := rowTexts(e, 12)
+	want := []string{"hello brave ", "new world"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("rows = %q, want %q", got, want)
+	}
+	if e.Value() != "hello brave new world" {
+		t.Fatalf("wrapping changed the value: %q", e.Value())
+	}
+	// A word that fits on a full row is never split, at any width.
+	for width := 8; width <= 30; width++ {
+		for _, row := range rowTexts(e, width) {
+			for _, word := range strings.Fields(row) {
+				if !strings.Contains("hello brave new world", word) || len(word) > 5 {
+					t.Fatalf("width %d split a word: row %q", width, row)
+				}
+			}
+		}
+	}
+}
+
+func TestTextEntryWrapKeepsLongTokenAndNewlines(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("ab " + strings.Repeat("x", 25) + "\nend")
+	got := rowTexts(e, 12)
+	want := []string{"ab ", strings.Repeat("x", 11), strings.Repeat("x", 11), "xxx", "end"}
+	if strings.Join(got, "|") != strings.Join(want, "|") {
+		t.Fatalf("rows = %q, want %q", got, want)
+	}
+}
+
+func TestTextEntryWordWrapCaretAndNavigation(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{})
+	e.SetValue("hello brave new world")
+	e.Measure(12)
+	if row, col := e.Cursor(); row != 1 || col != 9 {
+		t.Fatalf("end cursor = (%d,%d), want (1,9)", row, col)
+	}
+	e.SetCursorOffset(len("hello brave "))
+	if row, col := e.Cursor(); row != 1 || col != 0 {
+		t.Fatalf("caret after the wrap space = (%d,%d), want (1,0)", row, col)
+	}
+	entryKey(e, "up")
+	if row, _ := e.Cursor(); row != 0 {
+		t.Fatalf("up landed on row %d, want 0", row)
+	}
+}

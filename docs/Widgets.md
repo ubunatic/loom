@@ -830,6 +830,13 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 - Only the first line of a multi-line hint is drawn, cut at the row width. Wide runes are never split, so a rune that does not fit is left out.
 - `AcceptPlaceholder()` turns the hint into the value. It works only when the value is empty and the hint is not empty. It inserts the whole hint, including any further lines, puts the caret at its end, makes one undo step, calls `OnChange` once, and returns `true`. Otherwise it returns `false` and changes nothing. Tab, End and Ctrl+E also accept it when the value is empty and the caret and anchor are at the start; this consumes the key without submitting. Tab is an intentional widget action in this case.
 
+
+### Soft wrap
+
+- Rows wrap at word boundaries (issue 447): a word that fits on a row is not split, and the space after a word stays at the end of its row. A word with no earlier space on its row, or wider than a row, still breaks at the row edge, so no text is lost. The value and its explicit newlines are unchanged.
+- The last cell of each row stays free for the caret. A space that ends a full row may use that cell, except at the end of a line.
+- The caret after a wrap space belongs to the start of the next row, as at any soft wrap. Up, Down, mouse placement, selection and `Cursor()` follow the rendered rows.
+
 ### Key handling
 
 - **Editing keys** are consumed: printable text, Backspace and Delete, the arrow keys with Home, End, and Ctrl+Left and Ctrl+Right, and Shift with any of them to extend a selection.

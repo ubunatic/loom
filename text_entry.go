@@ -514,8 +514,9 @@ func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
 func (e *TextEntry) promptWidth() int { return StringWidth(e.prompt) }
 
 // rows lays the text out at width. The last display cell is kept free so the
-// caret at the end of a full row stays visible. A width of zero or less means
-// the text is not wrapped.
+// caret at the end of a full row stays visible. Rows break after a space so a
+// word that fits on a row is not split; a word wider than a row still breaks at
+// the edge. A width of zero or less means the text is not wrapped.
 func (e *TextEntry) rows(width int) []textEntryRow {
 	avail := textEntryUnbounded
 	if width > 0 {
@@ -528,6 +529,14 @@ func (e *TextEntry) rows(width int) []textEntryRow {
 		for i < len(e.units) && e.units[i] != "\n" {
 			w := measure.ClusterWidth(e.units[i])
 			if used+w > avail && i > start {
+				// A space that ends a full row hangs into the reserved caret
+				// cell, so the next word starts its row; the caret after it
+				// belongs to the next row. Not at the end of a line, where the
+				// caret needs that cell.
+				if e.units[i] == " " && used+w == avail+1 && i+1 < len(e.units) && e.units[i+1] != "\n" {
+					used += w
+					i++
+				}
 				break
 			}
 			used += w
@@ -540,6 +549,18 @@ func (e *TextEntry) rows(width int) []textEntryRow {
 			out = append(out, textEntryRow{start: start, end: i, hard: true})
 			start = i + 1
 			continue
+		}
+		// Wrap at a word boundary: when the unit that does not fit continues a
+		// word, the row ends after the last space on it and the word moves down.
+		// A word with no earlier space on the row, or one wider than a row,
+		// still breaks at the edge.
+		if e.units[i] != " " {
+			for j := i - 1; j >= start; j-- {
+				if e.units[j] == " " {
+					i = j + 1
+					break
+				}
+			}
 		}
 		out = append(out, textEntryRow{start: start, end: i})
 		start = i
