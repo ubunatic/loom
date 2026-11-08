@@ -175,6 +175,11 @@ func (s *Split) ConsumeMouse(e MouseEvent) EventResult {
 		return result
 	}
 	x, y := e.X+s.lastRect.X, e.Y+s.lastRect.Y
+	if e.Action == MousePress {
+		// A press starts a new gesture; drags held by the pane capture never
+		// reach here to clear the state of an earlier press.
+		s.mouseCapture = nil
+	}
 	if e.Action == MousePress && e.Button == MouseLeft && s.dividerContains(x, y) {
 		s.dragging = true
 		return Handled()

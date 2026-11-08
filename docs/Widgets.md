@@ -785,6 +785,7 @@ type ModalTarget interface {
   - In `RichTextEdit`, clicking outside an open popover dismisses the popover without leaking the mouse press, drag, or release into document text, selection logic, or cursor movement.
 - **Retained Gesture Handling**: Gestures (press-drag-release) started on an overlay or backdrop are retained until release, guaranteeing trailing release/drag events never bleed into underlying widgets.
 - **Modeless Popups/Dialogs**: Embedded or static previews in demo galleries can opt out using `Modeless: true` to prevent unintended modal capture.
+- **Pane-Level Drag Capture (issue 449)**: A scrollbar drag in `View` or `Viewport` claims the pointer until release. While the claim holds, `Pane` routes drag and release events to the claiming widget, even when the pointer leaves its bounds or returns. Containers (`Stack`, `Grid`, `Split`, `Tabs`, `Frame`, `Form`, `Box`, `Viewport`) forward the claim query to their children, so a drag survives leaving the widget. Coordinates reaching the claimant are 0-based and child-local. A press or a hover ends the claim, as does `Esc`, which also restores the offset from before the press. Widgets that never claim keep hit-test routing. The claim contract is unexported, so only loom widgets claim captures.
 
 ### Temporary Mouse Grab in Mouse-Off Mode (`"m"`)
 - **Base Mode**: In `"m"` mode, terminal mouse tracking is fully disabled (`\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l`), allowing unobstructed native terminal drag-to-select and copy.

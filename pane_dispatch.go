@@ -15,6 +15,9 @@ func (p *Pane) dispatchKey(root Widget, ke KeyEvent) bool {
 		p.DebugMode = !p.DebugMode
 		return false
 	}
+	if ke.Key == "esc" && cancelCapturedMouse(root) {
+		return false
+	}
 	res := DispatchKeyEvent(root, ke)
 	if res.Consumed {
 		return res.Quit
@@ -37,6 +40,9 @@ func (p *Pane) dispatchMouse(root Widget, me MouseEvent) EventResult {
 		if p.help != nil && !p.help.Open {
 			p.help = nil
 		}
+		return result
+	}
+	if result, captured := dispatchCapturedMouse(root, me); captured {
 		return result
 	}
 	return DispatchMouseEvent(root, me)

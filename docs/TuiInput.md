@@ -131,6 +131,7 @@ consumed when the editor is nested in Frame, Split, or Tabs.
 - **Mouse-off mode (`"m"`)**: Terminal mouse tracking sequences are fully disabled (`\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l`). Native terminal text selection and copying operate without app interference.
 - **Temporary modal grab**: Opening a modal overlay (`Popup`, `Dialog`, context menu, F1 Help, `RichTextEdit` format popover) temporarily engages mouse tracking (`\x1b[?1000h\x1b[?1006h` / `1003h`). When the overlay closes or the backdrop is clicked, mouse-off mode is automatically restored.
 - **Persistent mouse grab (`"M"`)**: Explicit global mouse grab maintains persistent mouse tracking across all screens and overlays.
+- **Pane-level drag capture**: A widget that starts a drag (the `View` and `Viewport` scrollbar thumb) holds the pointer until release. Drag and release reach it even outside its bounds or the window, and the drag resumes when the pointer returns. A press or a hover ends the capture, so terminals that report hover instead of drag once the pointer leaves (foot) end the drag there. `Esc` ends it and restores the offset from before the press. Capture follows the widget tree through containers and never changes routing for widgets that do not claim one (see `docs/Widgets.md`, section 17).
 
 RichTextEdit uses a bar terminal cursor for normal typing and a block cursor
 while box drawing mode is active. Pane sends DECSCUSR only when the requested

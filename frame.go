@@ -675,6 +675,11 @@ func (f *Frame) ConsumeMouse(e MouseEvent) EventResult {
 		f.mouseCaptured = false
 		return result
 	}
+	if e.Action == MousePress {
+		// A press starts a new gesture. Drags held by the pane capture never
+		// reach here to clear the state of an earlier press.
+		f.mouseCaptured = false
+	}
 	x, y := e.X, e.Y
 	if f.mouseCaptured && (e.Action == MouseDrag || e.Action == MouseRelease) {
 		index := f.mouseCapture
