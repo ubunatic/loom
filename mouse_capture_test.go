@@ -205,8 +205,11 @@ func TestPaneMouseCaptureViewportScrollbarLeavesAndReturns(t *testing.T) {
 	}
 	press(MousePress, 11, 0)
 	press(MouseDrag, 11, 5)
-	if vp.ScrollY != 16 {
-		t.Fatalf("drag inside: ScrollY=%d, want 16", vp.ScrollY)
+	// The 3-row thumb has 7 rows of travel; the thumb follows the pointer
+	// (5 rows down = 5*30/7 rows of content). The old 16 came from mapping the
+	// pointer straight onto the whole track, ignoring the thumb length.
+	if vp.ScrollY != 21 {
+		t.Fatalf("drag inside: ScrollY=%d, want 21", vp.ScrollY)
 	}
 	press(MouseDrag, 5, 25)
 	if vp.ScrollY != 30 {
@@ -262,5 +265,32 @@ func TestPaneMouseCaptureEndedOutsideDoesNotLeakIntoFrame(t *testing.T) {
 	press(MouseDrag, 20, 3)
 	if len(probe.mouse) != 1 || probe.mouse[0].Action != MouseDrag {
 		t.Fatalf("drag after a border press: probe events=%v, want one drag", probe.mouse)
+	}
+}
+
+func TestViewportScrollbarPressOnThumbKeepsOffset(t *testing.T) {
+	p, root, vp, _ := newViewportCaptureFixture(t)
+	vp.ScrollY = 15 // thumb start 4 (15*7/30 rounded), rows 4..6
+	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 6})
+	if vp.ScrollY != 15 {
+		t.Fatalf("press on thumb moved ScrollY to %d, want 15", vp.ScrollY)
+	}
+}
+
+func TestViewportScrollbarTrackPressCentersThumb(t *testing.T) {
+	p, root, vp, _ := newViewportCaptureFixture(t)
+	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 8})
+	// thumb centered on row 8: start 7 (clamped to travel 7) -> max offset.
+	if vp.ScrollY != 30 || !vp.dragging {
+		t.Fatalf("track press: ScrollY=%d dragging=%v, want 30 true", vp.ScrollY, vp.dragging)
+	}
+}
+
+func TestViewportScrollbarThumbTravelReachesEnd(t *testing.T) {
+	p, root, vp, _ := newViewportCaptureFixture(t)
+	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 1}) // middle of rows 0..2
+	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 8})  // 7 rows of travel
+	if vp.ScrollY != 30 {
+		t.Fatalf("after 7 rows of travel ScrollY=%d, want the end (30)", vp.ScrollY)
 	}
 }
