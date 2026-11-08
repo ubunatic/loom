@@ -206,7 +206,7 @@ func TestThemeMCHasExpectedColors(t *testing.T) {
 		t.Errorf("mc placeholder: got %+v, want fixed medium grey on panel", cs.Placeholder)
 	}
 	if cs.Scrollbar.Track != (loom.Style{FG: loom.ColorIndex(69), BG: loom.ColorIndex(69), Dim: true}) ||
-		cs.Scrollbar.Thumb != (loom.Style{FG: loom.ColorIndex(75), BG: loom.ColorIndex(69)}) {
+		cs.Scrollbar.Thumb != (loom.Style{FG: loom.ColorIndex(75), BG: loom.ColorIndex(75)}) {
 		t.Errorf("mc scrollbar: got %+v", cs.Scrollbar)
 	}
 	if got := mc.FrameStyle().Status; got != (loom.Style{FG: loom.ColorIndex(252), BG: loom.ColorIndex(69)}) {
