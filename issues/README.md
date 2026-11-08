@@ -55,5 +55,4 @@ upkeep.
 | 448 | [448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md](448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md) | TextEntry shows a scrollbar when its content scrolls past MaxHeight | Open |
 | 450 | [450-half-block-scrollbar-thumbs-on-a-themed-track-background.md](450-half-block-scrollbar-thumbs-on-a-themed-track-background.md) | Half-block scrollbar thumbs on a themed track background | Open |
 | 451 | [451-accelerate-fast-mouse-wheel-scrolling-in-the-core-event-system.md](451-accelerate-fast-mouse-wheel-scrolling-in-the-core-event-system.md) | Accelerate fast mouse-wheel scrolling in the core event system | Open |
-| 452 | [452-middle-button-drag-scrolls-view-and-viewport-content.md](452-middle-button-drag-scrolls-view-and-viewport-content.md) | Middle-button drag scrolls View and Viewport content | Open |
 <!-- harnez:end issues-active-index -->

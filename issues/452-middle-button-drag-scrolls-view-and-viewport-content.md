@@ -1,6 +1,6 @@
 # 452 — Middle-button drag scrolls View and Viewport content
 
-**Status**: Open
+**Status**: Closed — middle-button drag pan delivered in dcb3de70; make test-q1 passed (developer run on the same tree; host re-ran go vet, go test . and apitest)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
