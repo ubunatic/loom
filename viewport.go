@@ -22,6 +22,7 @@ type Viewport struct {
 	childH     int
 	dragging   bool
 	dragStart  int // ScrollY at the scrollbar press, restored on cancel
+	dragGrab   int // thumb row under the pointer at the press
 	modalMouse ModalMouseCapture
 }
 
@@ -167,9 +168,7 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	}
 	maxY := max(0, v.childH-v.lastRect.H)
 	if e.Action == MousePress && e.Button == MouseLeft && e.X == v.lastRect.W-1 && maxY > 0 {
-		v.dragging = true
-		v.dragStart = v.ScrollY
-		v.dragTo(e.Y, maxY)
+		v.pressScrollbar(e.Y, maxY)
 		return Handled()
 	}
 	if e.Action == MousePress && e.Button == MouseLeft {
@@ -208,8 +207,24 @@ func (v *Viewport) endMouseCapture(cancel bool) {
 	v.dragging = false
 }
 
+// pressScrollbar starts a thumb drag. A press on the thumb keeps the thumb row
+// under the pointer; a press on the track moves the thumb to the pointer and
+// drags from there.
+func (v *Viewport) pressScrollbar(row, maxY int) {
+	track := v.lastRect.H
+	thumb := max(1, scrollbarThumbLength(track, v.childH, track))
+	start := scrollbarThumbStart(track, thumb, v.ScrollY, maxY)
+	v.dragging = true
+	v.dragStart = v.ScrollY
+	v.dragGrab = row - start
+	if row < start || row >= start+thumb {
+		v.dragGrab = thumb / 2
+		v.dragTo(row, maxY)
+	}
+}
+
 func (v *Viewport) dragTo(y, maxY int) {
-	track := max(1, v.lastRect.H-1)
-	y = min(max(0, y), track)
-	v.ScrollY = y * maxY / track
+	track := v.lastRect.H
+	thumb := max(1, scrollbarThumbLength(track, v.childH, track))
+	v.ScrollY = scrollbarOffset(track, thumb, y, v.dragGrab, maxY)
 }
