@@ -43,24 +43,24 @@ func newPanFixture(t *testing.T) captureFixture {
 func TestPaneMiddlePanDragsViewContent(t *testing.T) {
 	f := newPanFixture(t)
 	f.button(MousePress, MouseMiddle, 3, 5)
-	// The pointer row maps onto the whole range (10 rows, offsets 0..90) and
-	// the press row (5) keeps offset 20: dragging up scrolls toward the top,
-	// dragging down toward the end.
+	// The pointer row maps onto the whole range (10 rows, offsets 0..90, stops
+	// at rows 1 and 8) and the press row (5) keeps offset 20: dragging up
+	// scrolls toward the top, dragging down toward the end.
 	f.button(MouseDrag, MouseMiddle, 3, 2)
-	if f.view.Scroll != 8 {
-		t.Fatalf("pan up to row 2: scroll=%d, want 8", f.view.Scroll)
+	if f.view.Scroll != 5 {
+		t.Fatalf("pan up to row 2: scroll=%d, want 5", f.view.Scroll)
 	}
-	f.button(MouseDrag, MouseMiddle, 3, 8)
-	if f.view.Scroll != 73 {
-		t.Fatalf("pan down to row 8: scroll=%d, want 73", f.view.Scroll)
+	f.button(MouseDrag, MouseMiddle, 3, 7)
+	if f.view.Scroll != 67 {
+		t.Fatalf("pan down to row 7: scroll=%d, want 67", f.view.Scroll)
 	}
 	f.button(MouseRelease, MouseMiddle, 3, 8)
 	if f.view.pan.active || len(f.probe.mouse) != 0 {
 		t.Fatalf("release: active=%v probe=%d, want false 0", f.view.pan.active, len(f.probe.mouse))
 	}
 	f.button(MouseDrag, MouseLeft, 3, 2)
-	if f.view.Scroll != 73 {
-		t.Fatalf("drag after release: scroll=%d, want 73 unchanged", f.view.Scroll)
+	if f.view.Scroll != 67 {
+		t.Fatalf("drag after release: scroll=%d, want 67 unchanged", f.view.Scroll)
 	}
 }
 
@@ -73,8 +73,8 @@ func TestPaneMiddlePanLeavesViewAndReturns(t *testing.T) {
 		t.Fatalf("drag below the view: scroll=%d, want the end (90)", f.view.Scroll)
 	}
 	f.button(MouseDrag, MouseMiddle, 3, 4)
-	if f.view.Scroll != 16 {
-		t.Fatalf("drag back inside: scroll=%d, want 16", f.view.Scroll)
+	if f.view.Scroll != 15 {
+		t.Fatalf("drag back inside: scroll=%d, want 15", f.view.Scroll)
 	}
 	f.button(MouseDrag, MouseMiddle, 3, -3)
 	if f.view.Scroll != 0 {
@@ -151,8 +151,8 @@ func TestPaneMiddlePanSurvivesRedraw(t *testing.T) {
 	f.button(MouseDrag, MouseMiddle, 3, 2)
 	f.redraw()
 	f.button(MouseDrag, MouseMiddle, 3, 1)
-	if f.view.Scroll != 4 || !f.view.pan.active {
-		t.Fatalf("pan across redraws: scroll=%d active=%v, want 4 true", f.view.Scroll, f.view.pan.active)
+	if f.view.Scroll != 0 || !f.view.pan.active {
+		t.Fatalf("pan across redraws: scroll=%d active=%v, want 0 true", f.view.Scroll, f.view.pan.active)
 	}
 }
 
@@ -208,12 +208,12 @@ func TestPaneMiddlePanDragsViewportContent(t *testing.T) {
 	}
 	press(MousePress, 3, 5)
 	press(MouseDrag, 3, 2)
-	if vp.ScrollY != 8 {
-		t.Fatalf("pan up to row 2: ScrollY=%d, want 8", vp.ScrollY)
+	if vp.ScrollY != 5 {
+		t.Fatalf("pan up to row 2: ScrollY=%d, want 5", vp.ScrollY)
 	}
-	press(MouseDrag, 3, 8)
-	if vp.ScrollY != 28 {
-		t.Fatalf("pan down to row 8: ScrollY=%d, want 28", vp.ScrollY)
+	press(MouseDrag, 3, 7)
+	if vp.ScrollY != 27 {
+		t.Fatalf("pan down to row 7: ScrollY=%d, want 27", vp.ScrollY)
 	}
 	press(MouseRelease, 3, 8)
 	if vp.pan.active || len(probe.mouse) != 0 {
@@ -235,8 +235,8 @@ func TestPaneMiddlePanLeavesViewportAndReturns(t *testing.T) {
 		t.Fatalf("drag below viewport: ScrollY=%d, want the end (30)", vp.ScrollY)
 	}
 	press(MouseDrag, 3, 4)
-	if vp.ScrollY != 16 {
-		t.Fatalf("drag back inside: ScrollY=%d, want 16", vp.ScrollY)
+	if vp.ScrollY != 15 {
+		t.Fatalf("drag back inside: ScrollY=%d, want 15", vp.ScrollY)
 	}
 	press(MouseRelease, 3, 4)
 	if len(probe.mouse) != 0 {
@@ -298,10 +298,10 @@ func TestViewportFocusLossEndsPanAndRestores(t *testing.T) {
 }
 
 func TestMiddlePanOffsetMapsWholeRange(t *testing.T) {
-	// 10 rows, offsets 0..90, pressed at row 5 holding offset 20.
+	// 10 rows, offsets 0..90, stops at rows 1 and 8, pressed at row 5 holding offset 20.
 	p := contentPan{start: 20, anchor: 5, rows: 10}
 	for _, c := range []struct{ row, want int }{
-		{-4, 0}, {0, 0}, {5, 20}, {9, 90}, {14, 90},
+		{-4, 0}, {0, 0}, {1, 0}, {5, 20}, {8, 90}, {9, 90}, {14, 90},
 	} {
 		if got := p.offset(c.row, 90); got != c.want {
 			t.Errorf("row %d: offset=%d, want %d", c.row, got, c.want)
@@ -314,5 +314,21 @@ func TestMiddlePanOffsetMapsWholeRange(t *testing.T) {
 	}
 	if got := (contentPan{start: 90, anchor: 9, rows: 10}).offset(9, 90); got != 90 {
 		t.Errorf("press on the last row: offset=%d, want 90", got)
+	}
+}
+
+func TestMiddlePanStopsOneRowInside(t *testing.T) {
+	// Without leaving the widget: row 1 is the top and row rows-2 the end.
+	p := contentPan{start: 40, anchor: 5, rows: 12}
+	if got := p.offset(1, 90); got != 0 {
+		t.Errorf("row 1: offset=%d, want 0", got)
+	}
+	if got := p.offset(10, 90); got != 90 {
+		t.Errorf("row 10 (rows-2): offset=%d, want 90", got)
+	}
+	// A view under 4 rows keeps the full-height map.
+	small := contentPan{start: 5, anchor: 1, rows: 3}
+	if got := small.offset(2, 10); got != 10 {
+		t.Errorf("3-row view, last row: offset=%d, want 10", got)
 	}
 }
