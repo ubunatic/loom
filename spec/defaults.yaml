@@ -76,10 +76,10 @@ pane:
   # UNVERIFIED feel values: starting points, not measured curves. Spec-only: Go
   # reads them from here, so do not copy them into code.
   wheel:
-    burst_gap_ms: 150
-    ramp_after: 6
-    ramp_step: 6
-    max_gain: 8
+    burst_gap_ms: 250
+    ramp_after: 3
+    ramp_step: 3
+    max_gain: 10
 
 scrollbar:
   mode: auto
