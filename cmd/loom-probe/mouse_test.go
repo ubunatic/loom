@@ -58,3 +58,18 @@ func TestMouseStateDragWithoutPressIsInferred(t *testing.T) {
 		t.Fatalf("down=%v inferred=%v noPress=%d", s.down, s.inferred, s.noPress)
 	}
 }
+
+func TestMouseStateWheelBurstAndGap(t *testing.T) {
+	s := newTestMouseState()
+	t0 := time.Now()
+	s.apply(mouseEvent(loom.MouseScrollDown, loom.MouseNone, 3, 3), t0, 80, 24)
+	s.apply(mouseEvent(loom.MouseScrollDown, loom.MouseNone, 3, 3), t0.Add(20*time.Millisecond), 80, 24)
+	s.apply(mouseEvent(loom.MouseScrollDown, loom.MouseNone, 3, 3), t0.Add(50*time.Millisecond), 80, 24)
+	if s.wheelRun != 3 || s.wheelRunMax != 3 || s.wheelMinGap != 20*time.Millisecond || s.wheelGap != 30*time.Millisecond {
+		t.Fatalf("run=%d max=%d min=%v gap=%v", s.wheelRun, s.wheelRunMax, s.wheelMinGap, s.wheelGap)
+	}
+	s.apply(mouseEvent(loom.MouseScrollUp, loom.MouseNone, 3, 3), t0.Add(time.Second), 80, 24)
+	if s.wheelRun != 1 || s.wheelRunMax != 3 {
+		t.Fatalf("after a pause: run=%d max=%d, want 1 3", s.wheelRun, s.wheelRunMax)
+	}
+}
