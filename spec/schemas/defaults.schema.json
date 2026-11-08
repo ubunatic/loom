@@ -534,7 +534,7 @@
     "pane": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["max_cols", "esc_key_timeout", "guard_duration", "view_pan_step", "min_height", "max_height"],
+      "required": ["max_cols", "esc_key_timeout", "guard_duration", "view_pan_step", "min_height", "max_height", "wheel"],
       "properties": {
         "max_cols": { "type": "integer", "minimum": 1 },
         "esc_key_timeout": { "type": "string", "pattern": "^[0-9]+(ms|s)$" },
@@ -542,7 +542,18 @@
         "view_pan_step": { "type": "integer", "minimum": 1 },
         "min_height": { "type": "integer", "minimum": 1 },
         "max_height": { "type": "integer", "minimum": 1 },
-        "kitty_keyboard": { "type": "boolean" }
+        "kitty_keyboard": { "type": "boolean" },
+        "wheel": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["burst_gap_ms", "ramp_after", "ramp_step", "max_gain"],
+          "properties": {
+            "burst_gap_ms": { "type": "integer", "minimum": 1 },
+            "ramp_after": { "type": "integer", "minimum": 1 },
+            "ramp_step": { "type": "integer", "minimum": 1 },
+            "max_gain": { "type": "integer", "minimum": 1 }
+          }
+        }
       }
     },
     "scrollbar": {

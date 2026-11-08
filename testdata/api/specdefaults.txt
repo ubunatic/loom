@@ -405,18 +405,36 @@ type PaintCanvasDefaults struct {
     PaintCanvasDefaults defines stroke tuning controls.
 
 type PaneDefaults struct {
-	MaxCols       int           `yaml:"max_cols"`
-	EscKeyTimeout time.Duration `yaml:"esc_key_timeout"`
-	GuardDuration time.Duration `yaml:"guard_duration"`
-	ViewPanStep   int           `yaml:"view_pan_step"`
-	KittyKeyboard bool          `yaml:"kitty_keyboard"`
-	MinHeight     int           `yaml:"min_height"`
-	MaxHeight     int           `yaml:"max_height"`
+	MaxCols       int               `yaml:"max_cols"`
+	EscKeyTimeout time.Duration     `yaml:"esc_key_timeout"`
+	GuardDuration time.Duration     `yaml:"guard_duration"`
+	ViewPanStep   int               `yaml:"view_pan_step"`
+	KittyKeyboard bool              `yaml:"kitty_keyboard"`
+	MinHeight     int               `yaml:"min_height"`
+	MaxHeight     int               `yaml:"max_height"`
+	Wheel         PaneWheelDefaults `yaml:"wheel"`
 }
     PaneDefaults defines specced defaults for Pane.
 
 func (d PaneDefaults) Validate() error
     Validate checks the configured defaults.
+
+type PaneWheelDefaults struct {
+	// BurstGapMS is the longest gap, in milliseconds, between same-direction
+	// wheel reports that still counts as one burst.
+	BurstGapMS int `yaml:"burst_gap_ms"`
+	// RampAfter is how many reports a burst may hold at gain 1.
+	RampAfter int `yaml:"ramp_after"`
+	// RampStep is how many further reports raise the gain by one.
+	RampStep int `yaml:"ramp_step"`
+	// MaxGain caps how many times one wheel report is delivered.
+	MaxGain int `yaml:"max_gain"`
+}
+    PaneWheelDefaults holds the mouse-wheel acceleration curve (issue 451). The
+    values are unverified starting points; Pane reads them, Go holds no copy.
+
+func (d PaneWheelDefaults) Validate() error
+    Validate checks the wheel curve.
 
 type ProgressBarDefaults struct {
 	FallbackInterval time.Duration `yaml:"fallback_interval"`

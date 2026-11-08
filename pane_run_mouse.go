@@ -35,8 +35,15 @@ func (p *Pane) dispatchMouseRead(root Widget, canvas *Canvas, raw []byte, redraw
 				p.triggerCursorPulse(time.Now())
 			}
 		}
-		if p.dispatchMouse(root, me).Quit {
-			return raw, true
+		// A fast wheel burst delivers each report more than once (issue 451).
+		times := 1
+		if me.Action == MouseScrollUp || me.Action == MouseScrollDown {
+			times = p.wheelRepeat(me.Action)
+		}
+		for range times {
+			if p.dispatchMouse(root, me).Quit {
+				return raw, true
+			}
 		}
 		raw = raw[used:]
 		redraw(false)

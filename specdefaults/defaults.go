@@ -908,13 +908,28 @@ func (d ScrollbarDefaults) Validate() error {
 
 // PaneDefaults defines specced defaults for Pane.
 type PaneDefaults struct {
-	MaxCols       int           `yaml:"max_cols"`
-	EscKeyTimeout time.Duration `yaml:"esc_key_timeout"`
-	GuardDuration time.Duration `yaml:"guard_duration"`
-	ViewPanStep   int           `yaml:"view_pan_step"`
-	KittyKeyboard bool          `yaml:"kitty_keyboard"`
-	MinHeight     int           `yaml:"min_height"`
-	MaxHeight     int           `yaml:"max_height"`
+	MaxCols       int               `yaml:"max_cols"`
+	EscKeyTimeout time.Duration     `yaml:"esc_key_timeout"`
+	GuardDuration time.Duration     `yaml:"guard_duration"`
+	ViewPanStep   int               `yaml:"view_pan_step"`
+	KittyKeyboard bool              `yaml:"kitty_keyboard"`
+	MinHeight     int               `yaml:"min_height"`
+	MaxHeight     int               `yaml:"max_height"`
+	Wheel         PaneWheelDefaults `yaml:"wheel"`
+}
+
+// PaneWheelDefaults holds the mouse-wheel acceleration curve (issue 451). The
+// values are unverified starting points; Pane reads them, Go holds no copy.
+type PaneWheelDefaults struct {
+	// BurstGapMS is the longest gap, in milliseconds, between same-direction
+	// wheel reports that still counts as one burst.
+	BurstGapMS int `yaml:"burst_gap_ms"`
+	// RampAfter is how many reports a burst may hold at gain 1.
+	RampAfter int `yaml:"ramp_after"`
+	// RampStep is how many further reports raise the gain by one.
+	RampStep int `yaml:"ramp_step"`
+	// MaxGain caps how many times one wheel report is delivered.
+	MaxGain int `yaml:"max_gain"`
 }
 
 // Validate checks the configured defaults.
@@ -924,6 +939,14 @@ func (d PaneDefaults) Validate() error {
 	}
 	if d.MinHeight > d.MaxHeight {
 		return fmt.Errorf("pane.min_height must not exceed pane.max_height")
+	}
+	return d.Wheel.Validate()
+}
+
+// Validate checks the wheel curve.
+func (d PaneWheelDefaults) Validate() error {
+	if d.BurstGapMS <= 0 || d.RampAfter <= 0 || d.RampStep <= 0 || d.MaxGain <= 0 {
+		return fmt.Errorf("pane.wheel burst_gap_ms, ramp_after, ramp_step and max_gain must be positive")
 	}
 	return nil
 }
