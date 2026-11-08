@@ -211,21 +211,26 @@ func (p *contentPan) press(row, offset, rows int) {
 
 func (p *contentPan) end() { p.active = false }
 
-// offset maps the pointer row onto the whole scroll range: the top row is the
-// first offset, the last row is maxOffset, and the press row keeps the offset
-// the press found (no jump). Rows outside the widget clamp to the ends. The
-// map is linear on each side of the press row.
+// offset maps the pointer row onto the whole scroll range: the first stop row
+// is the first offset, the last stop row is maxOffset, and the press row keeps
+// the offset the press found (no jump). The stops sit one row inside the widget
+// (when it has at least 4 rows), so the pointer need not leave the widget to
+// reach either end; rows beyond a stop clamp to it. The map is linear on each
+// side of the press row.
 func (p contentPan) offset(row, maxOffset int) int {
-	last := max(1, p.rows-1)
-	row = min(max(row, 0), last)
-	anchor := min(max(p.anchor, 0), last)
+	lo, hi := 0, max(1, p.rows-1)
+	if p.rows >= 4 {
+		lo, hi = 1, p.rows-2
+	}
+	row = min(max(row, lo), hi)
+	anchor := min(max(p.anchor, lo), hi)
 	if row <= anchor {
-		if anchor == 0 {
+		if anchor == lo {
 			return p.start
 		}
-		return (p.start*row + anchor/2) / anchor
+		return (p.start*(row-lo) + (anchor-lo)/2) / (anchor - lo)
 	}
-	span := last - anchor
+	span := hi - anchor
 	return min(maxOffset, p.start+((maxOffset-p.start)*(row-anchor)+span/2)/span)
 }
 
