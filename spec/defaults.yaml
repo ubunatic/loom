@@ -72,8 +72,8 @@ pane:
 
 scrollbar:
   mode: auto
-  foreground_char: "▓" # position marker (thumb)
-  background_char: "░" # clickable track
+  foreground_char: "▓" # no-colour fallback: whole-cell thumb (colour output paints the thumb background)
+  background_char: "░" # no-colour fallback: whole-cell track (colour output paints the track background)
 
 mouse:
   double_click_interval: 400ms

@@ -90,7 +90,7 @@ themes:
     scrollbar_track_bg: 69 # panel blue
     scrollbar_track_dim: true
     scrollbar_thumb_fg: 75 # muted cyan
-    scrollbar_thumb_bg: 69 # panel blue
+    scrollbar_thumb_bg: 75 # muted cyan, distinct from the track so half-row thumbs show
     scrollbar_thumb_bold: false
     status_fg:        252 # soft white
     status_bg:        69  # panel blue
@@ -136,7 +136,7 @@ themes:
     scrollbar_track_bg: 27
     scrollbar_track_dim: false
     scrollbar_thumb_fg: 51
-    scrollbar_thumb_bg: 27
+    scrollbar_thumb_bg: 39
     scrollbar_thumb_bold: false
     status_fg:        231
     status_bg:        27
@@ -182,7 +182,7 @@ themes:
     scrollbar_track_bg: 19
     scrollbar_track_dim: false
     scrollbar_thumb_fg: 37
-    scrollbar_thumb_bg: 19
+    scrollbar_thumb_bg: 37
     scrollbar_thumb_bold: false
     status_fg:        252
     status_bg:        19
@@ -236,7 +236,7 @@ themes:
     scrollbar_track_bg: 237
     scrollbar_track_dim: true
     scrollbar_thumb_fg: 51
-    scrollbar_thumb_bg: 237
+    scrollbar_thumb_bg: 245
     scrollbar_thumb_bold: false
     status_fg:        250
     status_bg:        237

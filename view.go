@@ -134,10 +134,10 @@ func (v *View) Draw(c *Canvas, r Rect) {
 	}
 	v.OffsetY = v.Scroll
 
-	// Pre-compute indicator row (proportional to scroll position).
-	indicatorRow := 0
-	if scrollable && total > r.H {
-		indicatorRow = scrollbarThumbStart(r.H, scrollbarThumbLength(r.H, total, r.H), v.Scroll, total-r.H)
+	// Thumb position in half-row units, proportional to the scroll position.
+	thumbStart, thumbLen := 0, 0
+	if scrollable {
+		thumbStart, thumbLen = scrollbarUnitThumb(r.H, total, r.H, v.Scroll, total-r.H)
 	}
 
 	contentW := r.W
@@ -157,9 +157,10 @@ func (v *View) Draw(c *Canvas, r Rect) {
 		if lineIdx >= 0 && lineIdx < total {
 			drawViewLine(c, r.X, y, contentW, v.Lines[lineIdx], v.OffsetX, lineStyle)
 		}
-		if scrollable {
-			thumb := max(1, scrollbarThumbLength(r.H, total, r.H))
-			c.Set(r.X+r.W-1, y, scrollbarCell(v.Scrollbar, row >= indicatorRow && row < indicatorRow+thumb))
+	}
+	if scrollable {
+		for row, cell := range scrollbarColumn(v.Scrollbar, c.ColorProfile, r.H, thumbStart, thumbLen) {
+			c.Set(r.X+r.W-1, r.Y+row, cell)
 		}
 	}
 }
@@ -295,10 +296,9 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 			e.X == v.lastRect.W-1 &&
 			e.Y >= 0 && e.Y < v.lastRect.H {
 			row := e.Y
-			thumb := scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH)
-			start := scrollbarThumbStart(v.lastRect.H, thumb, v.Scroll, maxScroll)
-			if row >= start && row < start+thumb {
-				v.drag.press(row, start, v.Scroll)
+			start, thumb := scrollbarUnitThumb(v.lastRect.H, len(v.Lines), v.lastH, v.Scroll, maxScroll)
+			if scrollbarRowTouchesThumb(row, start, thumb) {
+				v.drag.press(scrollbarUnitPointer(row), start, v.Scroll)
 			} else {
 				v.Scroll = scrollTrackPosition(row, v.lastRect.H, maxScroll)
 				v.OffsetY = v.Scroll
@@ -307,7 +307,8 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 		}
 	case MouseDrag:
 		if v.drag.active {
-			v.Scroll = scrollbarOffset(v.lastRect.H, scrollbarThumbLength(v.lastRect.H, len(v.Lines), v.lastH), e.Y, v.drag.grab, maxScroll)
+			_, thumb := scrollbarUnitThumb(v.lastRect.H, len(v.Lines), v.lastH, v.Scroll, maxScroll)
+			v.Scroll = scrollbarUnitOffset(v.lastRect.H, thumb, scrollbarUnitPointer(e.Y), v.drag.grab, maxScroll)
 			v.OffsetY = v.Scroll
 			return Handled()
 		}

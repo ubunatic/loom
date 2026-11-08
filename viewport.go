@@ -35,7 +35,14 @@ func NewViewport(child Widget) *Viewport {
 func (v *Viewport) ApplyTheme(theme ThemeColors) {
 	v.Style = Style{FG: theme.NormalFG.Color(), BG: theme.NormalBG.Color()}
 	v.Scrollbar = theme.ScrollbarStyle()
-	v.Scrollbar.Track.BG, v.Scrollbar.Thumb.BG = v.Style.BG, v.Style.BG
+	// A default track or thumb colour takes the surface background. Themed
+	// colours stay, so a distinct thumb shows (issue 450).
+	if v.Scrollbar.Track.BG == ColorReset() {
+		v.Scrollbar.Track.BG = v.Style.BG
+	}
+	if v.Scrollbar.Thumb.BG == ColorReset() {
+		v.Scrollbar.Thumb.BG = v.Style.BG
+	}
 	if child, ok := UnwrapWidget(v.Child).(Themeable); ok {
 		child.ApplyTheme(theme)
 	}
@@ -98,11 +105,9 @@ func (v *Viewport) Draw(c *Canvas, r Rect) {
 	window := offscreen.SubCanvas(Rect{X: v.ScrollX, Y: v.ScrollY, W: contentW, H: r.H})
 	c.Blit(window, r.X, r.Y)
 	if showBar && r.W > 0 {
-		maxOffset := max(0, h-r.H)
-		thumb := max(1, scrollbarThumbLength(r.H, h, r.H))
-		start := scrollbarThumbStart(r.H, thumb, v.ScrollY, maxOffset)
-		for row := 0; row < r.H; row++ {
-			c.Set(r.X+r.W-1, r.Y+row, scrollbarCell(v.Scrollbar, row >= start && row < start+thumb))
+		start, thumb := scrollbarUnitThumb(r.H, h, r.H, v.ScrollY, max(0, h-r.H))
+		for row, cell := range scrollbarColumn(v.Scrollbar, c.ColorProfile, r.H, start, thumb) {
+			c.Set(r.X+r.W-1, r.Y+row, cell)
 		}
 	}
 }
@@ -212,12 +217,12 @@ func (v *Viewport) endMouseCapture(cancel bool) {
 // drags from there.
 func (v *Viewport) pressScrollbar(row, maxY int) {
 	track := v.lastRect.H
-	thumb := max(1, scrollbarThumbLength(track, v.childH, track))
-	start := scrollbarThumbStart(track, thumb, v.ScrollY, maxY)
+	start, thumb := scrollbarUnitThumb(track, v.childH, track, v.ScrollY, maxY)
 	v.dragging = true
 	v.dragStart = v.ScrollY
-	v.dragGrab = row - start
-	if row < start || row >= start+thumb {
+	v.dragGrab = scrollbarUnitPointer(row) - start
+	if !scrollbarRowTouchesThumb(row, start, thumb) {
+		// A track click centres the thumb on the pointer's row centre.
 		v.dragGrab = thumb / 2
 		v.dragTo(row, maxY)
 	}
@@ -225,6 +230,6 @@ func (v *Viewport) pressScrollbar(row, maxY int) {
 
 func (v *Viewport) dragTo(y, maxY int) {
 	track := v.lastRect.H
-	thumb := max(1, scrollbarThumbLength(track, v.childH, track))
-	v.ScrollY = scrollbarOffset(track, thumb, y, v.dragGrab, maxY)
+	_, thumb := scrollbarUnitThumb(track, v.childH, track, v.ScrollY, maxY)
+	v.ScrollY = scrollbarUnitOffset(track, thumb, scrollbarUnitPointer(y), v.dragGrab, maxY)
 }

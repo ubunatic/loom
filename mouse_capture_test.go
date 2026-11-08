@@ -205,11 +205,12 @@ func TestPaneMouseCaptureViewportScrollbarLeavesAndReturns(t *testing.T) {
 	}
 	press(MousePress, 11, 0)
 	press(MouseDrag, 11, 5)
-	// The 3-row thumb has 7 rows of travel; the thumb follows the pointer
-	// (5 rows down = 5*30/7 rows of content). The old 16 came from mapping the
-	// pointer straight onto the whole track, ignoring the thumb length.
-	if vp.ScrollY != 21 {
-		t.Fatalf("drag inside: ScrollY=%d, want 21", vp.ScrollY)
+	// Issue 450: the thumb is 5 half-row units (2.5 rows), so its travel is 15
+	// units (7.5 rows). Five rows of pointer travel from the grab at row 0 move
+	// the thumb 10 units, which maps to 10*30/15 = 20 rows of content. The old
+	// whole-row thumb (3 rows, 7 rows of travel) gave 21.
+	if vp.ScrollY != 20 {
+		t.Fatalf("drag inside: ScrollY=%d, want 20", vp.ScrollY)
 	}
 	press(MouseDrag, 5, 25)
 	if vp.ScrollY != 30 {
@@ -280,17 +281,27 @@ func TestViewportScrollbarPressOnThumbKeepsOffset(t *testing.T) {
 func TestViewportScrollbarTrackPressCentersThumb(t *testing.T) {
 	p, root, vp, _ := newViewportCaptureFixture(t)
 	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 8})
-	// thumb centered on row 8: start 7 (clamped to travel 7) -> max offset.
+	// Half-row units (issue 450): a 5-unit thumb centred on row 8's middle
+	// (unit 17) starts at unit 15, the travel end -> max offset.
 	if vp.ScrollY != 30 || !vp.dragging {
 		t.Fatalf("track press: ScrollY=%d dragging=%v, want 30 true", vp.ScrollY, vp.dragging)
 	}
 }
 
+// Issue 450 changed the expectation: the thumb is 5 half-row units (2.5 rows)
+// on a 20-unit track, so its travel is 15 units (7.5 rows), not 7 whole rows.
+// The press grabs the thumb at row 1's lower half (unit 3); the pointer is
+// reported at row centres (2r+1). Dragging to row 8 (unit 17) leaves the
+// thumb one unit short of the end (offset 28); row 9 (unit 19) reaches it.
 func TestViewportScrollbarThumbTravelReachesEnd(t *testing.T) {
 	p, root, vp, _ := newViewportCaptureFixture(t)
 	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseLeft, X: 11, Y: 1}) // middle of rows 0..2
-	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 8})  // 7 rows of travel
+	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 8})
+	if vp.ScrollY != 28 {
+		t.Fatalf("drag to row 8: ScrollY=%d, want 28 (one half-row short of the end)", vp.ScrollY)
+	}
+	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseLeft, X: 11, Y: 9})
 	if vp.ScrollY != 30 {
-		t.Fatalf("after 7 rows of travel ScrollY=%d, want the end (30)", vp.ScrollY)
+		t.Fatalf("drag to row 9: ScrollY=%d, want the end (30)", vp.ScrollY)
 	}
 }

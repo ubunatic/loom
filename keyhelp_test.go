@@ -71,6 +71,9 @@ func TestKeyHelpAndViewportThemeSurfaces(t *testing.T) {
 				entry.widget.Draw(c, r)
 				for y := r.Y; y < r.Y+r.H; y++ {
 					for x := r.X; x < r.X+r.W; x++ {
+						if x == r.X+r.W-1 && entry.name == "Viewport" {
+							continue // the scrollbar column has its own track and thumb colours
+						}
 						if got := c.Get(x, y).Style.BG; got != theme.NormalBG.Color() {
 							t.Fatalf("background at (%d,%d) = %v, want %v", x, y, got, theme.NormalBG.Color())
 						}
