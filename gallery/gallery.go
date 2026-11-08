@@ -256,7 +256,7 @@ var demos = map[string]constructor{
 		return toggle
 	},
 	"Viewport": func() loom.Widget {
-		lines := make([]string, 30)
+		lines := make([]string, 100)
 		for i := range lines {
 			lines[i] = fmt.Sprintf("%02d  scrollable child content", i+1)
 		}
