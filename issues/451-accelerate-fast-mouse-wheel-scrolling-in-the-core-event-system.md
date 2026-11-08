@@ -1,6 +1,6 @@
 # 451 — Accelerate fast mouse-wheel scrolling in the core event system
 
-**Status**: Open
+**Status**: Closed — wheel acceleration delivered in 3c3c1400, retuned to 250 ms / 3 / 3 / 10 in PR 71; owner confirmed it feels good in foot (values remain feel-tuned, spec-only; other terminals unmeasured)
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature
