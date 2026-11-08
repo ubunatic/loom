@@ -1,6 +1,6 @@
 # 447 — TextEntry soft-wrap at word boundaries (taia#164)
 
-**Status**: In Progress
+**Status**: Closed — TextEntry wraps rows at word boundaries; tests and docs added, make test-q1 passed
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Bug
