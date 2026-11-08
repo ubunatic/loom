@@ -24,6 +24,7 @@ type Viewport struct {
 	dragStart  int // ScrollY at the scrollbar press, restored on cancel
 	dragGrab   int // thumb row under the pointer at the press
 	modalMouse ModalMouseCapture
+	pan        contentPan
 }
 
 // NewViewport wraps child in a scrollable viewport.
@@ -117,6 +118,11 @@ func (v *Viewport) Focused() bool { return v.focused }
 
 // SetFocus updates focus and forwards it to a focusable child.
 func (v *Viewport) SetFocus(focused bool) {
+	// As for View, only a real focus loss ends a capture; containers re-apply
+	// focus on every draw.
+	if !focused && v.focused {
+		v.endMouseCapture(true)
+	}
 	v.focused = focused
 	if child, ok := v.Child.(Focusable); ok {
 		child.SetFocus(focused)
@@ -172,6 +178,9 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 		return result
 	}
 	maxY := max(0, v.childH-v.lastRect.H)
+	if e.Action == MousePress {
+		v.pan.end()
+	}
 	if e.Action == MousePress && e.Button == MouseLeft && e.X == v.lastRect.W-1 && maxY > 0 {
 		v.pressScrollbar(e.Y, maxY)
 		return Handled()
@@ -188,6 +197,16 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 		v.dragTo(e.Y, maxY)
 		return Handled()
 	}
+	if v.pan.active {
+		switch e.Action {
+		case MouseDrag:
+			v.ScrollY = v.pan.offset(e.Y, maxY)
+			return Handled()
+		case MouseRelease:
+			v.pan.end()
+			return Handled()
+		}
+	}
 	switch e.Action {
 	case MouseScrollUp:
 		v.ScrollY = max(0, v.ScrollY-1)
@@ -199,17 +218,29 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	if v.Child == nil || e.X < 0 || e.Y < 0 || e.X >= v.content.W || e.Y >= v.lastRect.H {
 		return Ignored()
 	}
-	e.X += v.ScrollX
-	e.Y += v.ScrollY
-	return v.Child.ConsumeMouse(e)
+	// The child sees the press first. Only a press it does not consume starts
+	// a middle-button pan.
+	childEvent := e
+	childEvent.X += v.ScrollX
+	childEvent.Y += v.ScrollY
+	result := v.Child.ConsumeMouse(childEvent)
+	if !result.Consumed && !result.Quit && panStarts(e, false, v.content.W, v.lastRect.H, maxY) {
+		v.pan.press(e.Y, v.ScrollY, v.lastRect.H)
+		return Handled()
+	}
+	return result
 }
 
-// endMouseCapture ends a scrollbar drag. cancel restores the offset from before the press.
+// endMouseCapture ends a scrollbar drag or a pan. cancel restores the offset from before the press.
 func (v *Viewport) endMouseCapture(cancel bool) {
 	if cancel && v.dragging {
 		v.ScrollY = v.dragStart
 	}
+	if cancel && v.pan.active {
+		v.ScrollY = v.pan.start
+	}
 	v.dragging = false
+	v.pan.end()
 }
 
 // pressScrollbar starts a thumb drag. A press on the thumb keeps the thumb row

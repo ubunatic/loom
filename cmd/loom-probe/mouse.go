@@ -39,7 +39,16 @@ type mouseState struct {
 		at          time.Time
 	}
 	history []string // finished gestures, newest last
+
+	wheelAt     time.Time     // time of the previous wheel report
+	wheelGap    time.Duration // gap before the latest wheel report
+	wheelMinGap time.Duration // smallest gap seen between two wheel reports
+	wheelRun    int           // reports in the current burst (gaps under wheelBurstGap)
+	wheelRunMax int           // longest burst seen
 }
+
+// wheelBurstGap is the longest pause that still counts as one continuous scroll.
+const wheelBurstGap = 150 * time.Millisecond
 
 func (s *mouseState) anyDown() bool { return s.down[0] || s.down[1] || s.down[2] }
 
@@ -76,6 +85,8 @@ func (s *mouseState) apply(me loom.MouseEvent, now time.Time, cols, rows int) {
 			where = "OUTSIDE"
 		}
 		s.lastDrag = fmt.Sprintf("x=%d y=%d %s", me.X, me.Y, where)
+	case loom.MouseScrollUp, loom.MouseScrollDown:
+		s.wheel(now)
 	case loom.MouseHover:
 		if s.anyDown() {
 			s.lostRel++
@@ -96,6 +107,23 @@ func (s *mouseState) apply(me loom.MouseEvent, now time.Time, cols, rows int) {
 			}
 		}
 	}
+}
+
+// wheel tracks how fast wheel reports arrive, to see what a scroll gesture
+// looks like at the terminal before any acceleration is designed.
+func (s *mouseState) wheel(now time.Time) {
+	if !s.wheelAt.IsZero() {
+		s.wheelGap = now.Sub(s.wheelAt)
+		if s.wheelMinGap == 0 || s.wheelGap < s.wheelMinGap {
+			s.wheelMinGap = s.wheelGap
+		}
+	}
+	if s.wheelAt.IsZero() || s.wheelGap > wheelBurstGap {
+		s.wheelRun = 0
+	}
+	s.wheelRun++
+	s.wheelRunMax = max(s.wheelRunMax, s.wheelRun)
+	s.wheelAt = now
 }
 
 // buttons draws one box per button; a held one is reverse video (red with ! when the terminal ended its drag), and one held
@@ -151,6 +179,9 @@ func (s *mouseState) render(w io.Writer, cols, rows int, now time.Time) {
 		fmt.Sprintf("outside      %d reports with coordinates outside the window", s.outside),
 		fmt.Sprintf("anomalies    no-press %d, drag->hover without release %d", s.noPress, s.lostRel),
 		"last such    " + s.lostNote,
+		fmt.Sprintf("wheel        up %d  down %d  last gap %d ms  min gap %d ms  burst %d (max %d)",
+			s.counts[loom.MouseScrollUp], s.counts[loom.MouseScrollDown],
+			s.wheelGap.Milliseconds(), s.wheelMinGap.Milliseconds(), s.wheelRun, s.wheelRunMax),
 		"verdict      " + verdict,
 		"",
 		"gestures (last 3)",

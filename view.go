@@ -64,6 +64,7 @@ type View struct {
 	lastH         int // height from last Draw; gates scroll in ConsumeKey
 	lastRect      Rect
 	drag          scrollbarDrag
+	pan           contentPan
 }
 
 // Pan moves the view by display columns and lines, clamping at the origin.
@@ -93,28 +94,37 @@ func (v *View) Focused() bool { return v.focused }
 
 // SetFocus sets whether the view currently has input focus.
 func (v *View) SetFocus(focused bool) {
-	if !focused {
+	// Only a real focus loss ends a capture. Containers re-apply focus on every
+	// draw, so an unfocused View would otherwise lose its drag on each redraw.
+	if !focused && v.focused {
 		v.endMouseCapture(true)
 	}
 	v.focused = focused
 }
 
-// mouseCaptureTarget claims the pointer while the scrollbar thumb is dragged,
-// so the drag survives leaving the view (see mouse_capture.go).
+// mouseCaptureTarget claims the pointer while the scrollbar thumb is dragged
+// or the content is panned, so the drag survives leaving the view (see
+// mouse_capture.go).
 func (v *View) mouseCaptureTarget() (Widget, Rect) {
-	if v.drag.active {
+	if v.drag.active || v.pan.active {
 		return v, Rect{}
 	}
 	return nil, Rect{}
 }
 
-// endMouseCapture ends a thumb drag. cancel restores the offset from before the press.
+// endMouseCapture ends a thumb drag or a pan. cancel restores the offset from
+// before the press.
 func (v *View) endMouseCapture(cancel bool) {
 	if cancel && v.drag.active {
 		v.Scroll = v.drag.start
 		v.OffsetY = v.Scroll
 	}
+	if cancel && v.pan.active {
+		v.Scroll = v.pan.start
+		v.OffsetY = v.Scroll
+	}
 	v.drag.cancel()
+	v.pan.end()
 }
 
 // Draw renders visible lines into r. When scrollable, the rightmost column is
@@ -292,6 +302,7 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 			v.OffsetY = v.Scroll
 		}
 	case MousePress:
+		v.pan.end()
 		if e.Button == MouseLeft && maxScroll > 0 && scrollbarVisible(v.ScrollbarMode, true) && v.lastRect.W > 0 &&
 			e.X == v.lastRect.W-1 &&
 			e.Y >= 0 && e.Y < v.lastRect.H {
@@ -305,6 +316,11 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 			}
 			return Handled()
 		}
+		reserve := scrollbarVisible(v.ScrollbarMode, len(v.Lines) > v.lastH)
+		if panStarts(e, reserve, v.lastRect.W, v.lastRect.H, maxScroll) {
+			v.pan.press(e.Y, v.Scroll, v.lastRect.H)
+			return Handled()
+		}
 	case MouseDrag:
 		if v.drag.active {
 			_, thumb := scrollbarUnitThumb(v.lastRect.H, len(v.Lines), v.lastH, v.Scroll, maxScroll)
@@ -312,9 +328,18 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 			v.OffsetY = v.Scroll
 			return Handled()
 		}
+		if v.pan.active {
+			v.Scroll = v.pan.offset(e.Y, maxScroll)
+			v.OffsetY = v.Scroll
+			return Handled()
+		}
 	case MouseRelease:
 		if v.drag.active {
 			v.drag.cancel()
+			return Handled()
+		}
+		if v.pan.active {
+			v.pan.end()
 			return Handled()
 		}
 	}

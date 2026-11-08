@@ -132,10 +132,10 @@ func (t *Tabs) mouseCaptureTarget() (Widget, Rect) {
 	return childMouseCapture(t.active(), t.childRect(t.lastRect), t.lastRect)
 }
 
-// mouseCaptureTarget reports a scrollbar drag, or the capture of the child
-// translated through the current scroll position.
+// mouseCaptureTarget reports a scrollbar drag or a pan, or the capture of the
+// child translated through the current scroll position.
 func (v *Viewport) mouseCaptureTarget() (Widget, Rect) {
-	if v.dragging {
+	if v.dragging || v.pan.active {
 		return v, Rect{}
 	}
 	if v.content.W <= 0 || v.content.H <= 0 {
@@ -190,4 +190,54 @@ func (b *Box) mouseCaptureTarget() (Widget, Rect) {
 		origin.Y += b.childRect.Y
 	}
 	return target, origin
+}
+
+// contentPan is a middle-button pan of scrollable content (issue 452). The
+// content follows the pointer one line per row: the offset is the offset at
+// the press minus the rows the pointer moved down.
+type contentPan struct {
+	active bool
+	start  int // offset at the press, restored on Esc
+	anchor int // pointer row at the press
+	rows   int // visible rows of the widget
+}
+
+func (p *contentPan) press(row, offset, rows int) {
+	p.active = true
+	p.start = offset
+	p.anchor = row
+	p.rows = rows
+}
+
+func (p *contentPan) end() { p.active = false }
+
+// offset maps the pointer row onto the whole scroll range: the top row is the
+// first offset, the last row is maxOffset, and the press row keeps the offset
+// the press found (no jump). Rows outside the widget clamp to the ends. The
+// map is linear on each side of the press row.
+func (p contentPan) offset(row, maxOffset int) int {
+	last := max(1, p.rows-1)
+	row = min(max(row, 0), last)
+	anchor := min(max(p.anchor, 0), last)
+	if row <= anchor {
+		if anchor == 0 {
+			return p.start
+		}
+		return (p.start*row + anchor/2) / anchor
+	}
+	span := last - anchor
+	return min(maxOffset, p.start+((maxOffset-p.start)*(row-anchor)+span/2)/span)
+}
+
+// panStarts reports whether e starts a middle-button pan over content with
+// rows to scroll. Pan starts on the content, never the scrollbar column, which
+// is the last column when reserve is true.
+func panStarts(e MouseEvent, reserve bool, width, height, maxOffset int) bool {
+	if e.Action != MousePress || e.Button != MouseMiddle || maxOffset <= 0 {
+		return false
+	}
+	if reserve {
+		width--
+	}
+	return e.X >= 0 && e.X < width && e.Y >= 0 && e.Y < height
 }
