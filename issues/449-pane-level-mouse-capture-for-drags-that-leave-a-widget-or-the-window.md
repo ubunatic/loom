@@ -1,6 +1,6 @@
 # 449 — Pane-level mouse capture for drags that leave a widget or the window
 
-**Status**: Open
+**Status**: Closed — pane-level mouse capture delivered in 5547167a; View and Viewport drags use it; make test-q1 passed (developer run on the same tree, host re-ran go vet, go test . and apitest)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

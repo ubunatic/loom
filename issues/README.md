@@ -53,5 +53,4 @@ upkeep.
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
 | 448 | [448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md](448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md) | TextEntry shows a scrollbar when its content scrolls past MaxHeight | Open |
-| 449 | [449-pane-level-mouse-capture-for-drags-that-leave-a-widget-or-the-window.md](449-pane-level-mouse-capture-for-drags-that-leave-a-widget-or-the-window.md) | Pane-level mouse capture for drags that leave a widget or the window | Open |
 <!-- harnez:end issues-active-index -->
