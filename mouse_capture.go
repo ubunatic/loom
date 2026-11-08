@@ -132,10 +132,10 @@ func (t *Tabs) mouseCaptureTarget() (Widget, Rect) {
 	return childMouseCapture(t.active(), t.childRect(t.lastRect), t.lastRect)
 }
 
-// mouseCaptureTarget reports a scrollbar drag, or the capture of the child
-// translated through the current scroll position.
+// mouseCaptureTarget reports a scrollbar drag or a pan, or the capture of the
+// child translated through the current scroll position.
 func (v *Viewport) mouseCaptureTarget() (Widget, Rect) {
-	if v.dragging {
+	if v.dragging || v.pan.active {
 		return v, Rect{}
 	}
 	if v.content.W <= 0 || v.content.H <= 0 {
@@ -190,4 +190,39 @@ func (b *Box) mouseCaptureTarget() (Widget, Rect) {
 		origin.Y += b.childRect.Y
 	}
 	return target, origin
+}
+
+// contentPan is a middle-button pan of scrollable content (issue 452). The
+// content follows the pointer one line per row: the offset is the offset at
+// the press minus the rows the pointer moved down.
+type contentPan struct {
+	active bool
+	start  int // offset at the press, restored on Esc
+	anchor int // pointer row at the press
+}
+
+func (p *contentPan) press(row, offset int) {
+	p.active = true
+	p.start = offset
+	p.anchor = row
+}
+
+func (p *contentPan) end() { p.active = false }
+
+// offset returns the content offset for pointer row, clamped to [0, maxOffset].
+func (p contentPan) offset(row, maxOffset int) int {
+	return min(max(p.start-(row-p.anchor), 0), maxOffset)
+}
+
+// panStarts reports whether e starts a middle-button pan over content with
+// rows to scroll. Pan starts on the content, never the scrollbar column, which
+// is the last column when reserve is true.
+func panStarts(e MouseEvent, reserve bool, width, height, maxOffset int) bool {
+	if e.Action != MousePress || e.Button != MouseMiddle || maxOffset <= 0 {
+		return false
+	}
+	if reserve {
+		width--
+	}
+	return e.X >= 0 && e.X < width && e.Y >= 0 && e.Y < height
 }
