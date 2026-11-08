@@ -18,6 +18,8 @@ Owner report (Viewport demo, foot): scrolling with the wheel feels slow. `View` 
 - Time comes from an injectable clock on `Pane` so tests need no sleeps (docs/TestTiers.md).
 - Mouse-path only (wheel has no key twin); document the keys that already scroll by page.
 
+- Measurement 1 (owner, foot, `loom-probe mouse`, burst = reports with gaps under 150 ms): slow scrolling climbs from burst 3 to 21 in steps; medium scrolling reaches 21 quickly (sometimes above); fast scrolling reaches 21 at once and often 24 or 30. Reading: the steps of 3 suggest foot sends 3 wheel reports per notch, so each notch already moves 3 lines. Unverified: the gap values (last gap, min gap) were not reported, so the gap inside a notch versus between notches is still unknown. A notch of 3 reports must count as one step in the curve, not as a fast scroll.
+
 ## 3. Implementation & Verification Plan
 - Run `loom-probe mouse` in foot, kitty, ghostty (and ptyxis if used); record gap and burst numbers in this ticket.
 - Tests: a slow notch scrolls 1 line; a fast burst scrolls more than the same count of slow notches; a pause and a direction change reset the gain; the cap holds; the clock is injected.
