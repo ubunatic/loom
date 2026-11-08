@@ -112,7 +112,7 @@ modifyOtherKeys modes (384). To check how a terminal reports a drag that leaves
 its window, run `loom-probe mouse`: it shows each button as held or released, the
 pointer position, and flags a drag that turns into hover reports without a release.
 kitty, alacritty and ghostty keep reporting the drag and send the release at the
-edge; foot 1.28 switches to hover once the pointer is outside.
+edge, as does ptyxis (VTE); foot 1.28 switches to hover once the pointer is outside.
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Left/Right move along the bar, and Enter or Space activates the focused action.
