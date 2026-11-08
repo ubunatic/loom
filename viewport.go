@@ -225,7 +225,7 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	childEvent.Y += v.ScrollY
 	result := v.Child.ConsumeMouse(childEvent)
 	if !result.Consumed && !result.Quit && panStarts(e, false, v.content.W, v.lastRect.H, maxY) {
-		v.pan.press(e.Y, v.ScrollY)
+		v.pan.press(e.Y, v.ScrollY, v.lastRect.H)
 		return Handled()
 	}
 	return result

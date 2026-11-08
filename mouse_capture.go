@@ -199,19 +199,34 @@ type contentPan struct {
 	active bool
 	start  int // offset at the press, restored on Esc
 	anchor int // pointer row at the press
+	rows   int // visible rows of the widget
 }
 
-func (p *contentPan) press(row, offset int) {
+func (p *contentPan) press(row, offset, rows int) {
 	p.active = true
 	p.start = offset
 	p.anchor = row
+	p.rows = rows
 }
 
 func (p *contentPan) end() { p.active = false }
 
-// offset returns the content offset for pointer row, clamped to [0, maxOffset].
+// offset maps the pointer row onto the whole scroll range: the top row is the
+// first offset, the last row is maxOffset, and the press row keeps the offset
+// the press found (no jump). Rows outside the widget clamp to the ends. The
+// map is linear on each side of the press row.
 func (p contentPan) offset(row, maxOffset int) int {
-	return min(max(p.start-(row-p.anchor), 0), maxOffset)
+	last := max(1, p.rows-1)
+	row = min(max(row, 0), last)
+	anchor := min(max(p.anchor, 0), last)
+	if row <= anchor {
+		if anchor == 0 {
+			return p.start
+		}
+		return (p.start*row + anchor/2) / anchor
+	}
+	span := last - anchor
+	return min(maxOffset, p.start+((maxOffset-p.start)*(row-anchor)+span/2)/span)
 }
 
 // panStarts reports whether e starts a middle-button pan over content with

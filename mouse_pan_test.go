@@ -43,22 +43,24 @@ func newPanFixture(t *testing.T) captureFixture {
 func TestPaneMiddlePanDragsViewContent(t *testing.T) {
 	f := newPanFixture(t)
 	f.button(MousePress, MouseMiddle, 3, 5)
-	// Content follows the pointer one line per row: up moves the content up.
+	// The pointer row maps onto the whole range (10 rows, offsets 0..90) and
+	// the press row (5) keeps offset 20: dragging up scrolls toward the top,
+	// dragging down toward the end.
 	f.button(MouseDrag, MouseMiddle, 3, 2)
-	if f.view.Scroll != 23 {
-		t.Fatalf("pan up 3 rows: scroll=%d, want 23", f.view.Scroll)
+	if f.view.Scroll != 8 {
+		t.Fatalf("pan up to row 2: scroll=%d, want 8", f.view.Scroll)
 	}
 	f.button(MouseDrag, MouseMiddle, 3, 8)
-	if f.view.Scroll != 17 {
-		t.Fatalf("pan down 3 rows from the press: scroll=%d, want 17", f.view.Scroll)
+	if f.view.Scroll != 73 {
+		t.Fatalf("pan down to row 8: scroll=%d, want 73", f.view.Scroll)
 	}
 	f.button(MouseRelease, MouseMiddle, 3, 8)
 	if f.view.pan.active || len(f.probe.mouse) != 0 {
 		t.Fatalf("release: active=%v probe=%d, want false 0", f.view.pan.active, len(f.probe.mouse))
 	}
 	f.button(MouseDrag, MouseLeft, 3, 2)
-	if f.view.Scroll != 17 {
-		t.Fatalf("drag after release: scroll=%d, want 17 unchanged", f.view.Scroll)
+	if f.view.Scroll != 73 {
+		t.Fatalf("drag after release: scroll=%d, want 73 unchanged", f.view.Scroll)
 	}
 }
 
@@ -67,18 +69,18 @@ func TestPaneMiddlePanLeavesViewAndReturns(t *testing.T) {
 	f.button(MousePress, MouseMiddle, 3, 5)
 	// Below the View the pan keeps the pointer and never reaches the probe.
 	f.button(MouseDrag, MouseMiddle, 3, 15)
-	if f.view.Scroll != 10 {
-		t.Fatalf("drag outside view: scroll=%d, want 10", f.view.Scroll)
+	if f.view.Scroll != 90 {
+		t.Fatalf("drag below the view: scroll=%d, want the end (90)", f.view.Scroll)
 	}
 	f.button(MouseDrag, MouseMiddle, 3, 4)
-	if f.view.Scroll != 21 {
-		t.Fatalf("drag back inside: scroll=%d, want 21", f.view.Scroll)
+	if f.view.Scroll != 16 {
+		t.Fatalf("drag back inside: scroll=%d, want 16", f.view.Scroll)
 	}
-	f.button(MouseDrag, MouseMiddle, 3, 100)
+	f.button(MouseDrag, MouseMiddle, 3, -3)
 	if f.view.Scroll != 0 {
-		t.Fatalf("drag far past the top: scroll=%d, want clamped 0", f.view.Scroll)
+		t.Fatalf("drag above the view: scroll=%d, want the top (0)", f.view.Scroll)
 	}
-	f.button(MouseRelease, MouseMiddle, 3, 100)
+	f.button(MouseRelease, MouseMiddle, 3, -3)
 	if len(f.probe.mouse) != 0 {
 		t.Fatalf("pan reached the probe: %d events", len(f.probe.mouse))
 	}
@@ -88,8 +90,8 @@ func TestPaneMiddlePanEscRestoresScroll(t *testing.T) {
 	f := newPanFixture(t)
 	f.button(MousePress, MouseMiddle, 3, 5)
 	f.button(MouseDrag, MouseMiddle, 3, 0)
-	if f.view.Scroll != 25 {
-		t.Fatalf("pan before esc: scroll=%d, want 25", f.view.Scroll)
+	if f.view.Scroll != 0 {
+		t.Fatalf("pan before esc: scroll=%d, want 0 (top row)", f.view.Scroll)
 	}
 	if f.pane.dispatchKey(f.root, KeyEvent{Key: "esc"}) {
 		t.Fatal("esc during a middle pan requested quit")
@@ -113,8 +115,8 @@ func TestViewMiddlePanEscKeyCancelsWithoutPane(t *testing.T) {
 	v.Draw(NewCanvas(12, 10), Rect{W: 12, H: 10})
 	v.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 5})
 	v.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseMiddle, X: 3, Y: 0})
-	if v.Scroll != 25 {
-		t.Fatalf("pan: scroll=%d, want 25", v.Scroll)
+	if v.Scroll != 0 {
+		t.Fatalf("pan: scroll=%d, want 0 (top row)", v.Scroll)
 	}
 	v.ConsumeKey(KeyEvent{Key: "esc"})
 	if v.Scroll != 20 || v.pan.active {
@@ -149,8 +151,8 @@ func TestPaneMiddlePanSurvivesRedraw(t *testing.T) {
 	f.button(MouseDrag, MouseMiddle, 3, 2)
 	f.redraw()
 	f.button(MouseDrag, MouseMiddle, 3, 1)
-	if f.view.Scroll != 24 || !f.view.pan.active {
-		t.Fatalf("pan across redraws: scroll=%d active=%v, want 24 true", f.view.Scroll, f.view.pan.active)
+	if f.view.Scroll != 4 || !f.view.pan.active {
+		t.Fatalf("pan across redraws: scroll=%d active=%v, want 4 true", f.view.Scroll, f.view.pan.active)
 	}
 }
 
@@ -171,8 +173,8 @@ func TestViewFocusLossEndsPanAndRestores(t *testing.T) {
 	f.view.SetFocus(true)
 	f.button(MousePress, MouseMiddle, 3, 5)
 	f.button(MouseDrag, MouseMiddle, 3, 0)
-	if !f.view.pan.active || f.view.Scroll != 25 {
-		t.Fatalf("pan before focus loss: active=%v scroll=%d, want true 25", f.view.pan.active, f.view.Scroll)
+	if !f.view.pan.active || f.view.Scroll != 0 {
+		t.Fatalf("pan before focus loss: active=%v scroll=%d, want true 0", f.view.pan.active, f.view.Scroll)
 	}
 	f.view.SetFocus(false)
 	if f.view.pan.active || f.view.Scroll != 20 {
@@ -206,12 +208,12 @@ func TestPaneMiddlePanDragsViewportContent(t *testing.T) {
 	}
 	press(MousePress, 3, 5)
 	press(MouseDrag, 3, 2)
-	if vp.ScrollY != 23 {
-		t.Fatalf("pan up 3 rows: ScrollY=%d, want 23", vp.ScrollY)
+	if vp.ScrollY != 8 {
+		t.Fatalf("pan up to row 2: ScrollY=%d, want 8", vp.ScrollY)
 	}
 	press(MouseDrag, 3, 8)
-	if vp.ScrollY != 17 {
-		t.Fatalf("pan down 3 rows from the press: ScrollY=%d, want 17", vp.ScrollY)
+	if vp.ScrollY != 28 {
+		t.Fatalf("pan down to row 8: ScrollY=%d, want 28", vp.ScrollY)
 	}
 	press(MouseRelease, 3, 8)
 	if vp.pan.active || len(probe.mouse) != 0 {
@@ -229,12 +231,12 @@ func TestPaneMiddlePanLeavesViewportAndReturns(t *testing.T) {
 	}
 	press(MousePress, 3, 5)
 	press(MouseDrag, 3, 15)
-	if vp.ScrollY != 10 {
-		t.Fatalf("drag below viewport: ScrollY=%d, want 10", vp.ScrollY)
+	if vp.ScrollY != 30 {
+		t.Fatalf("drag below viewport: ScrollY=%d, want the end (30)", vp.ScrollY)
 	}
 	press(MouseDrag, 3, 4)
-	if vp.ScrollY != 21 {
-		t.Fatalf("drag back inside: ScrollY=%d, want 21", vp.ScrollY)
+	if vp.ScrollY != 16 {
+		t.Fatalf("drag back inside: ScrollY=%d, want 16", vp.ScrollY)
 	}
 	press(MouseRelease, 3, 4)
 	if len(probe.mouse) != 0 {
@@ -246,8 +248,8 @@ func TestPaneMiddlePanEscRestoresViewportScroll(t *testing.T) {
 	p, root, vp, probe := newViewportPanFixture(t, &ignoringTall{})
 	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 5})
 	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseMiddle, X: 3, Y: 0})
-	if vp.ScrollY != 25 {
-		t.Fatalf("pan before esc: ScrollY=%d, want 25", vp.ScrollY)
+	if vp.ScrollY != 0 {
+		t.Fatalf("pan before esc: ScrollY=%d, want 0 (top row)", vp.ScrollY)
 	}
 	if p.dispatchKey(root, KeyEvent{Key: "esc"}) {
 		t.Fatal("esc during a viewport pan requested quit")
@@ -286,11 +288,31 @@ func TestViewportFocusLossEndsPanAndRestores(t *testing.T) {
 	vp.SetFocus(true)
 	p.dispatchMouse(root, MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 5})
 	p.dispatchMouse(root, MouseEvent{Action: MouseDrag, Button: MouseMiddle, X: 3, Y: 0})
-	if !vp.pan.active || vp.ScrollY != 25 {
-		t.Fatalf("pan before focus loss: active=%v ScrollY=%d, want true 25", vp.pan.active, vp.ScrollY)
+	if !vp.pan.active || vp.ScrollY != 0 {
+		t.Fatalf("pan before focus loss: active=%v ScrollY=%d, want true 0", vp.pan.active, vp.ScrollY)
 	}
 	vp.SetFocus(false)
 	if vp.pan.active || vp.ScrollY != 20 {
 		t.Fatalf("focus loss: active=%v ScrollY=%d, want false 20", vp.pan.active, vp.ScrollY)
+	}
+}
+
+func TestMiddlePanOffsetMapsWholeRange(t *testing.T) {
+	// 10 rows, offsets 0..90, pressed at row 5 holding offset 20.
+	p := contentPan{start: 20, anchor: 5, rows: 10}
+	for _, c := range []struct{ row, want int }{
+		{-4, 0}, {0, 0}, {5, 20}, {9, 90}, {14, 90},
+	} {
+		if got := p.offset(c.row, 90); got != c.want {
+			t.Errorf("row %d: offset=%d, want %d", c.row, got, c.want)
+		}
+	}
+	// A press on the first row cannot go further up and a press on the last row
+	// cannot go further down: no division by zero.
+	if got := (contentPan{start: 7, anchor: 0, rows: 10}).offset(0, 90); got != 7 {
+		t.Errorf("press on the top row: offset=%d, want 7", got)
+	}
+	if got := (contentPan{start: 90, anchor: 9, rows: 10}).offset(9, 90); got != 90 {
+		t.Errorf("press on the last row: offset=%d, want 90", got)
 	}
 }

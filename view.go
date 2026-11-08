@@ -318,7 +318,7 @@ func (v *View) ConsumeMouse(e MouseEvent) (quit EventResult) {
 		}
 		reserve := scrollbarVisible(v.ScrollbarMode, len(v.Lines) > v.lastH)
 		if panStarts(e, reserve, v.lastRect.W, v.lastRect.H, maxScroll) {
-			v.pan.press(e.Y, v.Scroll)
+			v.pan.press(e.Y, v.Scroll, v.lastRect.H)
 			return Handled()
 		}
 	case MouseDrag:
