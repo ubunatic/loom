@@ -785,6 +785,7 @@ type ModalTarget interface {
   - In `RichTextEdit`, clicking outside an open popover dismisses the popover without leaking the mouse press, drag, or release into document text, selection logic, or cursor movement.
 - **Retained Gesture Handling**: Gestures (press-drag-release) started on an overlay or backdrop are retained until release, guaranteeing trailing release/drag events never bleed into underlying widgets.
 - **Modeless Popups/Dialogs**: Embedded or static previews in demo galleries can opt out using `Modeless: true` to prevent unintended modal capture.
+- **Pane-Level Drag Capture (issue 449)**: A scrollbar drag in `View` or `Viewport` claims the pointer until release. While the claim holds, `Pane` routes drag and release events to the claiming widget, even when the pointer leaves its bounds or returns. Containers (`Stack`, `Grid`, `Split`, `Tabs`, `Frame`, `Form`, `Box`, `Viewport`) forward the claim query to their children, so a drag survives leaving the widget. Coordinates reaching the claimant are 0-based and child-local. A press or a hover ends the claim, as does `Esc`, which also restores the offset from before the press. Widgets that never claim keep hit-test routing. The claim contract is unexported, so only loom widgets claim captures.
 
 ### Temporary Mouse Grab in Mouse-Off Mode (`"m"`)
 - **Base Mode**: In `"m"` mode, terminal mouse tracking is fully disabled (`\x1b[?1000l\x1b[?1002l\x1b[?1003l\x1b[?1006l`), allowing unobstructed native terminal drag-to-select and copy.
@@ -829,6 +830,13 @@ The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API 
 - The hint is drawn only while the value is empty, and typing hides it. The hint is never part of `Value()`, and the caret stays at the start of the row while it shows.
 - Only the first line of a multi-line hint is drawn, cut at the row width. Wide runes are never split, so a rune that does not fit is left out.
 - `AcceptPlaceholder()` turns the hint into the value. It works only when the value is empty and the hint is not empty. It inserts the whole hint, including any further lines, puts the caret at its end, makes one undo step, calls `OnChange` once, and returns `true`. Otherwise it returns `false` and changes nothing. Tab, End and Ctrl+E also accept it when the value is empty and the caret and anchor are at the start; this consumes the key without submitting. Tab is an intentional widget action in this case.
+
+
+### Soft wrap
+
+- Rows wrap at word boundaries (issue 447): a word that fits on a row is not split, and the space after a word stays at the end of its row. A word with no earlier space on its row, or wider than a row, still breaks at the row edge, so no text is lost. The value and its explicit newlines are unchanged.
+- The last cell of each row stays free for the caret. A space that ends a full row may use that cell, except at the end of a line.
+- The caret after a wrap space belongs to the start of the next row, as at any soft wrap. Up, Down, mouse placement, selection and `Cursor()` follow the rendered rows.
 
 ### Key handling
 

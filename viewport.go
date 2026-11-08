@@ -21,6 +21,7 @@ type Viewport struct {
 	childW     int
 	childH     int
 	dragging   bool
+	dragStart  int // ScrollY at the scrollbar press, restored on cancel
 	modalMouse ModalMouseCapture
 }
 
@@ -167,6 +168,7 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	maxY := max(0, v.childH-v.lastRect.H)
 	if e.Action == MousePress && e.Button == MouseLeft && e.X == v.lastRect.W-1 && maxY > 0 {
 		v.dragging = true
+		v.dragStart = v.ScrollY
 		v.dragTo(e.Y, maxY)
 		return Handled()
 	}
@@ -196,6 +198,14 @@ func (v *Viewport) ConsumeMouse(e MouseEvent) EventResult {
 	e.X += v.ScrollX
 	e.Y += v.ScrollY
 	return v.Child.ConsumeMouse(e)
+}
+
+// endMouseCapture ends a scrollbar drag. cancel restores the offset from before the press.
+func (v *Viewport) endMouseCapture(cancel bool) {
+	if cancel && v.dragging {
+		v.ScrollY = v.dragStart
+	}
+	v.dragging = false
 }
 
 func (v *Viewport) dragTo(y, maxY int) {

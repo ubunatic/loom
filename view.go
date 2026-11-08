@@ -93,12 +93,28 @@ func (v *View) Focused() bool { return v.focused }
 
 // SetFocus sets whether the view currently has input focus.
 func (v *View) SetFocus(focused bool) {
-	if !focused && v.drag.active {
-		v.Scroll = v.drag.start
-		v.OffsetY = v.Scroll
-		v.drag.cancel()
+	if !focused {
+		v.endMouseCapture(true)
 	}
 	v.focused = focused
+}
+
+// mouseCaptureTarget claims the pointer while the scrollbar thumb is dragged,
+// so the drag survives leaving the view (see mouse_capture.go).
+func (v *View) mouseCaptureTarget() (Widget, Rect) {
+	if v.drag.active {
+		return v, Rect{}
+	}
+	return nil, Rect{}
+}
+
+// endMouseCapture ends a thumb drag. cancel restores the offset from before the press.
+func (v *View) endMouseCapture(cancel bool) {
+	if cancel && v.drag.active {
+		v.Scroll = v.drag.start
+		v.OffsetY = v.Scroll
+	}
+	v.drag.cancel()
 }
 
 // Draw renders visible lines into r. When scrollable, the rightmost column is
@@ -237,11 +253,7 @@ func (v *View) ConsumeKey(e KeyEvent) (quit EventResult) {
 		v.Scroll = maxScroll
 		v.OffsetY = v.Scroll
 	case e.Is(bindings["quit"]...):
-		if v.drag.active {
-			v.Scroll = v.drag.start
-			v.OffsetY = v.Scroll
-			v.drag.cancel()
-		}
+		v.endMouseCapture(true)
 		return QuitResult()
 	default:
 		return Ignored()

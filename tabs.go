@@ -421,6 +421,11 @@ func (t *Tabs) ConsumeMouse(e MouseEvent) EventResult {
 		t.mouseCapture = nil
 		return result
 	}
+	if e.Action == MousePress {
+		// A press starts a new gesture; drags held by the pane capture never
+		// reach here to clear the state of an earlier press.
+		t.mouseCapture = nil
+	}
 	if child := t.mouseCapture; child != nil && (e.Action == MouseDrag || e.Action == MouseRelease) {
 		e.X -= t.mouseCaptureRect.X
 		e.Y -= t.mouseCaptureRect.Y

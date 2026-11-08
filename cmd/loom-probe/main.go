@@ -35,6 +35,7 @@ type result struct {
 const usage = `Usage:
   loom-probe                    measure emoji cursor advances
   loom-probe keys               report kitty support and echo key bytes
+  loom-probe mouse              print raw mouse reports (drag out of the window)
   loom-probe mods [--path FILE] echo keys with the voxi modifier mask
                                 (default FILE ` + defaultModsPath + `)
 `
@@ -45,6 +46,8 @@ func main() {
 		switch os.Args[1] {
 		case "keys":
 			probe = runKeys
+		case "mouse":
+			probe = runMouse
 		case "mods":
 			fs := flag.NewFlagSet("mods", flag.ExitOnError)
 			fs.Usage = func() { fmt.Fprint(os.Stderr, usage) }
