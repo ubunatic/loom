@@ -53,4 +53,5 @@ upkeep.
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
 | 448 | [448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md](448-textentry-shows-a-scrollbar-when-its-content-scrolls-past-maxheight.md) | TextEntry shows a scrollbar when its content scrolls past MaxHeight | Open |
+| 450 | [450-half-block-scrollbar-thumbs-on-a-themed-track-background.md](450-half-block-scrollbar-thumbs-on-a-themed-track-background.md) | Half-block scrollbar thumbs on a themed track background | Open |
 <!-- harnez:end issues-active-index -->
