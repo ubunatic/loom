@@ -108,7 +108,11 @@ other private-use codes as `key-<code>`. Super, Hyper and Meta add `super-`,
 without the protocol ignore the push and behave as before (issue 321). To check a
 terminal, run `loom-probe keys`: it sends `CSI ? u` + DA1 (a `CSI ? <flags> u` reply
 before DA1 means supported) and echoes raw bytes per key in legacy, kitty and
-modifyOtherKeys modes (384).
+modifyOtherKeys modes (384). To check how a terminal reports a drag that leaves
+its window, run `loom-probe mouse`: it shows each button as held or released, the
+pointer position, and flags a drag that turns into hover reports without a release.
+kitty, alacritty and ghostty keep reporting the drag and send the release at the
+edge; foot 1.28 switches to hover once the pointer is outside.
 
 With a RichTextEdit selection, Tab and Shift+Tab cycle enabled popover actions;
 Left/Right move along the bar, and Enter or Space activates the focused action.
