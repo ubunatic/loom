@@ -4597,6 +4597,9 @@ func (e *TextEntry) Measure(width int) measure.Size
 func (e *TextEntry) Placeholder() string
     Placeholder returns the hint drawn dim while the entry is empty.
 
+func (e *TextEntry) Prompt() string
+    Prompt returns the first-row prefix.
+
 func (e *TextEntry) ReplaceRange(start, end int, s string)
     ReplaceRange replaces the text from byte offset start to end of Value()
     with s. Offsets snap and clamp as in SetCursorOffset, and a reversed range
@@ -4630,6 +4633,12 @@ func (e *TextEntry) SetPlaceholder(s string)
     SetPlaceholder replaces the hint drawn while the entry is empty. The next
     Draw shows it. The value does not change, so OnChange is not called.
     Only the first line of a multi-line hint is drawn.
+
+func (e *TextEntry) SetPrompt(s string)
+    SetPrompt replaces the first-row prefix at runtime, for example when a mode
+    changes the indicator. Continuation rows are indented by its display width,
+    and the text re-wraps at the next Measure or Draw. It does not call
+    OnChange.
 
 func (e *TextEntry) SetSendButton(on bool, label string)
     SetSendButton shows or hides the send button; label "" takes the spec label.

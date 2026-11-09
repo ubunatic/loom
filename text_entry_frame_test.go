@@ -189,3 +189,29 @@ func TestTextEntryScrollbarSitsAboveSendButton(t *testing.T) {
 		t.Fatal("one row: the bar must stay beside the text")
 	}
 }
+
+func TestTextEntrySetPromptReindentsAndRewraps(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", MaxHeight: -1})
+	e.SetValue("aaaa bbbb cccc")
+	c := NewCanvas(12, 3)
+	e.Draw(c, Rect{W: 12, H: 3})
+	if got := frameRow(c, 0, 12); !strings.HasPrefix(got, "> aaaa") {
+		t.Fatalf("row 0 = %q", got)
+	}
+	e.SetPrompt("‼︎ !! ")
+	if e.Prompt() != "‼︎ !! " {
+		t.Fatalf("Prompt() = %q", e.Prompt())
+	}
+	c = NewCanvas(12, 3)
+	e.Draw(c, Rect{W: 12, H: 3})
+	w := StringWidth("‼︎ !! ")
+	if got := c.Get(w, 0).Text; got != "a" {
+		t.Fatalf("text starts at column %d with %q, want a", w, got)
+	}
+	if row, col := e.Cursor(); row < 0 || col < w {
+		t.Fatalf("cursor = %d,%d, want it right of the prompt", row, col)
+	}
+	if e.Measure(12).Height < 2 {
+		t.Fatal("a wider prompt must wrap the text onto more rows")
+	}
+}

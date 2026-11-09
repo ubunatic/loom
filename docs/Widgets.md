@@ -817,7 +817,7 @@ entry.SetFocus(true)
 | Field | Default | Meaning |
 |---|---|---|
 | `Placeholder` | empty | Dimmed text shown while the entry is empty. Only its first line is drawn. |
-| `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. |
+| `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. `SetPrompt` changes it at runtime (issue 455); the text re-wraps at the next `Measure` or `Draw`. |
 | `Height`, `MinHeight`, `MaxHeight` | 1, 1, automatic | Text rows shown while short, the fewest rows, and the most before the entry scrolls. Automatic is 30% of the app height (the canvas height at the latest `Draw`; the terminal height before one; 24 rows without a terminal), from `text_entry.*` in `spec/defaults.yaml`. A negative `MaxHeight` is unbounded. `MinHeight` wins over `MaxHeight`. `SetHeights` changes them at runtime. |
 | `Frame` | none | Border decoration, see Frame below. |
 | `SendButton`, `SendLabel` | off, `" ➔ "` | A clickable send button at the right of the last row. A left click calls `OnSubmit` like a submit key. |
