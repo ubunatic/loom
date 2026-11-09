@@ -818,7 +818,9 @@ entry.SetFocus(true)
 |---|---|---|
 | `Placeholder` | empty | Dimmed text shown while the entry is empty. Only its first line is drawn. |
 | `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. |
-| `MaxHeight` | 0 (unbounded) | Visual rows before the entry scrolls. |
+| `Height`, `MinHeight`, `MaxHeight` | 1, 1, automatic | Text rows shown while short, the fewest rows, and the most before the entry scrolls. Automatic is 30% of the app height (the canvas height at the latest `Draw`; the terminal height before one; 24 rows without a terminal), from `text_entry.*` in `spec/defaults.yaml`. A negative `MaxHeight` is unbounded. `MinHeight` wins over `MaxHeight`. `SetHeights` changes them at runtime. |
+| `Frame` | none | Border decoration, see Frame below. |
+| `SendButton`, `SendLabel` | off, `" ➔ "` | A clickable send button at the right of the last row. A left click calls `OnSubmit` like a submit key. |
 | `SubmitKeys` | `["enter", "ctrl-enter"]` | Keys that call `OnSubmit`. Ctrl+Enter is only reported by terminals with the kitty keyboard protocol (or modifyOtherKeys); elsewhere it arrives as Enter or Ctrl+J. Without `OnSubmit`, they are ignored. |
 | `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
 | `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
@@ -826,6 +828,24 @@ entry.SetFocus(true)
 | `Highlight` | nil | Called on each draw with the value; returns `TextEntrySpan`s that style byte ranges. With bold enabled, selection adds inversion while retaining span colors and bold; otherwise selection keeps the legacy selection-only style. |
 
 The defaults live in Go, not in `spec/defaults.yaml`, so the `specdefaults` API stays unchanged.
+
+### Frame and send button (issue 454)
+
+`Frame` (or `SetFrame`) wraps the entry; `Measure` includes it and `Cursor()` is relative to the whole widget. Styles:
+
+```
+box (the taia.legacy look)          simple (full-width rule)
+╭─ title ──────── hint ─╮           ── title ─────── hint ──
+│ ❯ message             │           ❯ message
+│   more         ➔      │             more         ➔
+╰─────────────── footer ─╯           ─────────────── footer ──
+```
+
+- `Title` and `Hint` sit in the top border (left, right), `Footer` in the bottom border (right); `SetTitle`, `SetHint` and `SetFooter` change them. A label that does not fit is cut, and the hint goes first.
+- `BorderColor` and `LabelColor` take `""` or `dim` (default), `default`, `#RRGGBB`, a palette index, or a theme color name such as `border_fg` or `status_fg` (the yaml names of `ThemeColors`, resolved against the theme from `ApplyTheme`). Unknown names are dim.
+- A rect too small for the frame (under three rows or too narrow for its corners) draws the content only.
+- A press on the border does nothing. The send button is hidden when the width is too small for it.
+- The gallery TextEntry demo switches the frame (Alt+F), the send button (Alt+B), the border color (Alt+C) and the height, min and max rows (Alt+G, Alt+M, Alt+X).
 
 ### Placeholder
 

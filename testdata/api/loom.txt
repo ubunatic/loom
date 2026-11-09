@@ -4537,7 +4537,8 @@ func (e *TextEntry) AcceptPlaceholder() bool
     otherwise the call does nothing and returns false.
 
 func (e *TextEntry) ApplyTheme(theme ThemeColors)
-    ApplyTheme sets the scrollbar colours from the theme.
+    ApplyTheme sets the scrollbar colours from the theme and the colours that
+    frame colors can name.
 
 func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult
     ConsumeKey applies an editing key. Keys it does not use are returned
@@ -4572,8 +4573,14 @@ func (e *TextEntry) EnableBold()
 func (e *TextEntry) Focused() bool
     Focused reports whether the entry shows the caret.
 
+func (e *TextEntry) Frame() TextEntryFrame
+    Frame returns the current frame.
+
 func (e *TextEntry) HasSelection() bool
     HasSelection reports whether the entry has a nonempty text selection.
+
+func (e *TextEntry) Heights() (height, minHeight, maxHeight int)
+    Heights returns the row bounds as set, before defaults apply.
 
 func (e *TextEntry) MarkdownValue() string
     MarkdownValue returns the plain entry text with bold spans marked using
@@ -4583,8 +4590,9 @@ func (e *TextEntry) MarkdownValue() string
     delimiters because Markdown does not render whitespace-only emphasis.
 
 func (e *TextEntry) Measure(width int) measure.Size
-    Measure reports the soft-wrapped size at width, with height between one row
-    and MaxHeight. A width of zero or less measures the text on its own lines.
+    Measure reports the soft-wrapped size at width, including the frame and the
+    send button. The text height is clamped to the height bounds. A width of
+    zero or less measures the text on its own lines.
 
 func (e *TextEntry) Placeholder() string
     Placeholder returns the hint drawn dim while the entry is empty.
@@ -4605,15 +4613,34 @@ func (e *TextEntry) SetFocus(focused bool)
     SetFocus sets whether the entry shows the caret and takes editing input.
     Losing focus ends a mouse drag and the current typing run.
 
+func (e *TextEntry) SetFooter(s string)
+    SetFooter sets the text in the bottom border, right.
+
+func (e *TextEntry) SetFrame(f TextEntryFrame)
+    SetFrame replaces the frame.
+
+func (e *TextEntry) SetHeights(height, minHeight, maxHeight int)
+    SetHeights sets the row bounds (see TextEntryOptions). Zero takes the
+    default; a negative max is unbounded.
+
+func (e *TextEntry) SetHint(s string)
+    SetHint sets the text in the top border, right.
+
 func (e *TextEntry) SetPlaceholder(s string)
     SetPlaceholder replaces the hint drawn while the entry is empty. The next
     Draw shows it. The value does not change, so OnChange is not called.
     Only the first line of a multi-line hint is drawn.
 
+func (e *TextEntry) SetSendButton(on bool, label string)
+    SetSendButton shows or hides the send button; label "" takes the spec label.
+
 func (e *TextEntry) SetSubmitKeys(submit, newline []string)
     SetSubmitKeys replaces the Submit and Newline key bindings, for example
     to swap Enter and Alt+Enter at run time. A nil or empty list restores that
     list's default (see TextEntryOptions).
+
+func (e *TextEntry) SetTitle(s string)
+    SetTitle sets the text in the top border, left.
 
 func (e *TextEntry) SetValue(s string)
     SetValue replaces the text, puts the caret at the end and clears the
@@ -4625,10 +4652,59 @@ func (e *TextEntry) Value() string
 type TextEntryDefaults = specdefaults.TextEntryDefaults
     TextEntryDefaults holds the recommended TextEntry prompt.
 
+type TextEntryFrame struct {
+	Style                   TextEntryFrameStyle
+	Title, Hint, Footer     string
+	BorderColor, LabelColor string
+}
+    TextEntryFrame is the decoration of a TextEntry. Title and Hint sit in
+    the top border (left and right), Footer in the bottom border (right).
+    Empty texts leave plain border.
+
+    BorderColor and LabelColor (for Title, Hint and Footer) accept "" or "dim"
+    (dimmed default color, the default), "default" (the terminal default color),
+    "#RRGGBB", a palette index "0".."255", or the name of a theme color such as
+    "border_fg" or "status_fg" (the yaml names in ThemeColors, resolved against
+    the theme given to ApplyTheme). An unknown name falls back to dim.
+
+type TextEntryFrameStyle int
+    TextEntryFrameStyle selects the decoration around a TextEntry.
+
+const (
+	// TextEntryFrameNone draws no decoration. It is the zero value.
+	TextEntryFrameNone TextEntryFrameStyle = iota
+	// TextEntryFrameBox draws a rounded box with the title and hint in the top
+	// border and the footer in the bottom border (the taia.legacy look):
+	//
+	//	╭─ title ──────── hint ─╮
+	//	│ ❯ text                │
+	//	╰─────────────── footer ─╯
+	TextEntryFrameBox
+	// TextEntryFrameSimple draws a full-width rule above and below the text:
+	//
+	//	── title ─────── hint ──
+	//	❯ text
+	//	─────────────── footer ──
+	TextEntryFrameSimple
+)
+func (s TextEntryFrameStyle) String() string
+    String returns "none", "box" or "simple".
+
 type TextEntryOptions struct {
 	Placeholder string
-	Prompt      string   // first-row prefix, e.g. "> "
-	MaxHeight   int      // visual rows before scrolling; 0 = unbounded
+	Prompt      string // first-row prefix, e.g. "> "
+	// Height is the number of rows shown while the text is short, MinHeight the
+	// fewest rows ever shown and MaxHeight the most before the text scrolls.
+	// Zero takes the spec defaults: 1, 1 and automatic (a share of the app
+	// height, see spec text_entry). A negative MaxHeight means unbounded.
+	Height, MinHeight, MaxHeight int
+	// Frame draws a border, title, hint and footer around the entry. The zero
+	// value draws none.
+	Frame TextEntryFrame
+	// SendButton shows a clickable send button on the last row. Clicking it
+	// calls OnSubmit like a submit key. SendLabel overrides the spec label.
+	SendButton  bool
+	SendLabel   string
 	SubmitKeys  []string // default ["enter", "ctrl-enter"]
 	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
 	OnChange    func(value string)

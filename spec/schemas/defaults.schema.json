@@ -559,9 +559,14 @@
     "text_entry": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["prompt"],
+      "required": ["prompt", "height", "min_height", "max_height_percent", "fallback_terminal_rows", "send_label"],
       "properties": {
-        "prompt": { "type": "string", "minLength": 1 }
+        "prompt": { "type": "string", "minLength": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "min_height": { "type": "integer", "minimum": 1 },
+        "max_height_percent": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "fallback_terminal_rows": { "type": "integer", "minimum": 1 },
+        "send_label": { "type": "string", "minLength": 1 }
       }
     },
     "scrollbar": {
