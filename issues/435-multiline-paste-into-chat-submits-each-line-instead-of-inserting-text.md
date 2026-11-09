@@ -1,6 +1,6 @@
 # 435 — Multiline paste into chat submits each line instead of inserting text
 
-**Status**: Open
+**Status**: Closed — not loom: Tilix terminal settings caused per-line submission (owner)
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
