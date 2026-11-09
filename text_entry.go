@@ -304,7 +304,7 @@ func (e *TextEntry) ConsumePaste(event PasteEvent) EventResult {
 
 // Draw paints the prompt, the wrapped text or the placeholder into r. When
 // focused, it places the hardware cursor at the caret and keeps the caret row
-// visible. Mouse wheel scrolling is kept until the caret moves again.
+// visible; the prompt stays on the first visible row. Mouse wheel scrolling is kept until the caret moves again.
 func (e *TextEntry) Draw(c *Canvas, r Rect) {
 	c.PaintSurface(r, Style{})
 	e.layoutWidth, e.layoutHeight = r.W, r.H
@@ -327,7 +327,7 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 	for y := 0; y < r.H && e.scroll+y < len(rows); y++ {
 		row := rows[e.scroll+y]
 		x := r.X
-		if e.scroll+y == 0 {
+		if y == 0 { // the prompt stays on the first visible row while the text scrolls
 			x = e.writeClipped(c, x, r.Y+y, right, e.prompt, Style{})
 		}
 		x = r.X + promptW
