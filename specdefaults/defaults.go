@@ -29,6 +29,7 @@ type LibDefaults struct {
 	QuitKeys       []string             `yaml:"quit_keys"`
 	EscapeQuits    bool                 `yaml:"escape_quits"`
 	Pane           PaneDefaults         `yaml:"pane"`
+	TextEntry      TextEntryDefaults    `yaml:"text_entry"`
 	Scrollbar      ScrollbarDefaults    `yaml:"scrollbar"`
 	Mouse          MouseDefaults        `yaml:"mouse"`
 	Splash         SplashDefaults       `yaml:"splash"`
@@ -871,6 +872,19 @@ func (d MouseDefaults) Validate() error {
 	return nil
 }
 
+// TextEntryDefaults holds the recommended TextEntry prompt.
+type TextEntryDefaults struct {
+	Prompt string `yaml:"prompt"`
+}
+
+// Validate requires a non-empty prompt.
+func (d TextEntryDefaults) Validate() error {
+	if strings.TrimSpace(d.Prompt) == "" {
+		return fmt.Errorf("text_entry.prompt must not be blank")
+	}
+	return nil
+}
+
 // ScrollbarMode controls when a widget displays its scrollbar.
 type ScrollbarMode string
 
@@ -1014,6 +1028,9 @@ var SpeccedDefaults = func() LibDefaults {
 		panic(fmt.Sprintf("loom: parse spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Pane.Validate(); err != nil {
+		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
+	}
+	if err := defs.TextEntry.Validate(); err != nil {
 		panic(fmt.Sprintf("loom: spec/defaults.yaml: %v", err))
 	}
 	if err := defs.Scrollbar.Validate(); err != nil {

@@ -81,6 +81,9 @@ pane:
     ramp_step: 3
     max_gain: 10
 
+text_entry:
+  prompt: "❯ " # recommended prompt; hosts pass it as TextEntryOptions.Prompt (empty Prompt stays no prompt)
+
 scrollbar:
   mode: auto
   foreground_char: "▓" # no-colour fallback: whole-cell thumb (colour output paints the thumb background)

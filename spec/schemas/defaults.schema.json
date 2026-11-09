@@ -3,7 +3,7 @@
   "title": "Loom runtime defaults specification",
   "type": "object",
   "additionalProperties": false,
-  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "key_help", "form", "settings", "key_conventions", "collector", "session"],
+  "required": ["keycaps", "quit_keys", "escape_quits", "pane", "text_entry", "scrollbar", "mouse", "splash", "spinner", "graph", "progress_bar", "media", "clock", "paint_canvas", "search_bar", "color_picker", "rich_text_edit", "editor", "number_input", "toggle", "paginator", "tree", "split", "choice", "table", "tabs", "view", "menu", "key_help", "form", "settings", "key_conventions", "collector", "session"],
   "properties": {
     "collector": {
       "type": "object",
@@ -554,6 +554,14 @@
             "max_gain": { "type": "integer", "minimum": 1 }
           }
         }
+      }
+    },
+    "text_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["prompt"],
+      "properties": {
+        "prompt": { "type": "string", "minLength": 1 }
       }
     },
     "scrollbar": {

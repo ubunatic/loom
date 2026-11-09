@@ -431,7 +431,7 @@ widgets:
     purpose: Chat input with plain Value and optional visual bold enabled by EnableBold; soft-wraps, grows to MaxHeight, selects, copies and pastes, accepts a placeholder with Tab, End or Ctrl+E when empty, clears visual prefixes with Ctrl+U, and leaves other host keys to the host; embedded control drawn by its parent.
     category: input
     example: |-
-      entry := loom.NewTextEntry(loom.TextEntryOptions{Prompt: "> ", OnSubmit: send})
+      entry := loom.NewTextEntry(loom.TextEntryOptions{Prompt: loom.SpeccedDefaults.TextEntry.Prompt, OnSubmit: send})
       entry.SetFocus(true)
       entry.Draw(canvas, rect)
     source: text_entry.go

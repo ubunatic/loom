@@ -108,7 +108,7 @@ func newTextAreaDemo() loom.Widget {
 
 func newTextEntryControls() loom.Widget {
 	d := &textEntryControls{}
-	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: "> ", MaxHeight: 4, Highlight: leadingCommandSpans, OnSubmit: func(value string) loom.EventResult {
+	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: loom.SpeccedDefaults.TextEntry.Prompt, MaxHeight: 4, Highlight: leadingCommandSpans, OnSubmit: func(value string) loom.EventResult {
 		d.lastSubmittedPlain = value
 		d.lastSubmittedMD = d.entry.MarkdownValue()
 		d.entry.SetValue("")
