@@ -4559,7 +4559,8 @@ func (e *TextEntry) CursorOffset() int
 func (e *TextEntry) Draw(c *Canvas, r Rect)
     Draw paints the prompt, the wrapped text or the placeholder into r. When
     focused, it places the hardware cursor at the caret and keeps the caret row
-    visible. Mouse wheel scrolling is kept until the caret moves again.
+    visible; the prompt stays on the first visible row. Mouse wheel scrolling is
+    kept until the caret moves again.
 
 func (e *TextEntry) EnableBold()
     EnableBold enables Ctrl+B formatting and MarkdownValue serialization.

@@ -1289,3 +1289,17 @@ func TestTextEntryWordWrapCaretAndNavigation(t *testing.T) {
 		t.Fatalf("up landed on row %d, want 0", row)
 	}
 }
+
+func TestTextEntryPromptStaysOnFirstVisibleRowWhenScrolled(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{Prompt: "> ", MaxHeight: 4})
+	e.SetValue("1\n2\n3\n4\n5")
+	e.SetFocus(true)
+	c := NewCanvas(20, 4)
+	e.Draw(c, Rect{W: 20, H: 4})
+	if row := c.Row(0); !strings.HasPrefix(row, "> 2") {
+		t.Fatalf("scrolled first row lost the prompt: %q", row)
+	}
+	if row := c.Row(3); !strings.HasPrefix(row, "  5") {
+		t.Fatalf("continuation row not indented: %q", row)
+	}
+}
