@@ -172,7 +172,7 @@ func (d *textEntryControls) sendKey(key func(k, binding, label string, drop int,
 func (d *textEntryControls) toggleSendKey() {
 	d.altEnterSends = !d.altEnterSends
 	if d.altEnterSends {
-		d.entry.SetSubmitKeys([]string{"alt-enter"}, []string{"enter", "shift-enter", "ctrl-j"})
+		d.entry.SetSubmitKeys([]string{"alt-enter", "ctrl-enter"}, []string{"enter", "shift-enter", "ctrl-j"})
 	} else {
 		d.entry.SetSubmitKeys(nil, nil)
 	}

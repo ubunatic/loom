@@ -155,3 +155,15 @@ func TestTextEntrySetSubmitKeysSwapsEnter(t *testing.T) {
 		t.Fatalf("alt-enter submitted %q, want %q", got, "a\n")
 	}
 }
+
+func TestTextEntryCtrlEnterSubmitsInBothModes(t *testing.T) {
+	var got []string
+	e := NewTextEntry(TextEntryOptions{OnSubmit: func(v string) EventResult { got = append(got, v); return Handled() }})
+	e.SetValue("a")
+	entryKey(e, "ctrl-enter")
+	e.SetSubmitKeys([]string{"alt-enter", "ctrl-enter"}, []string{"enter"})
+	entryKey(e, "ctrl-enter")
+	if len(got) != 2 {
+		t.Fatalf("ctrl-enter submitted %d times, want 2 (default and swapped mode)", len(got))
+	}
+}

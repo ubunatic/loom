@@ -14,13 +14,13 @@ import (
 )
 
 // TextEntryOptions configures a TextEntry. The zero value gives a plain entry
-// that grows without a height limit, submits on Enter and breaks lines on
+// that grows without a height limit, submits on Enter or Ctrl+Enter and breaks lines on
 // Shift+Enter, Ctrl+J or Alt+Enter.
 type TextEntryOptions struct {
 	Placeholder string
 	Prompt      string   // first-row prefix, e.g. "> "
 	MaxHeight   int      // visual rows before scrolling; 0 = unbounded
-	SubmitKeys  []string // default ["enter"]
+	SubmitKeys  []string // default ["enter", "ctrl-enter"]
 	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
 	OnChange    func(value string)
 	OnSubmit    func(value string) EventResult
@@ -42,7 +42,7 @@ type TextEntrySpan struct {
 
 // Default key bindings, used when TextEntryOptions leaves a list empty.
 var (
-	textEntrySubmitDefault  = []string{"enter"}
+	textEntrySubmitDefault  = []string{"enter", "ctrl-enter"}
 	textEntryNewlineDefault = []string{"shift-enter", "ctrl-j", "alt-enter"}
 )
 
