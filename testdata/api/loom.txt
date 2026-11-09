@@ -4614,6 +4614,9 @@ func (e *TextEntry) SetValue(s string)
 func (e *TextEntry) Value() string
     Value returns the entry text with line breaks as "\n".
 
+type TextEntryDefaults = specdefaults.TextEntryDefaults
+    TextEntryDefaults holds the recommended TextEntry prompt.
+
 type TextEntryOptions struct {
 	Placeholder string
 	Prompt      string   // first-row prefix, e.g. "> "

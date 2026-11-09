@@ -113,6 +113,9 @@ type MediaDefaults = specdefaults.MediaDefaults
 // MouseDefaults defines specced defaults for mouse gestures.
 type MouseDefaults = specdefaults.MouseDefaults
 
+// TextEntryDefaults holds the recommended TextEntry prompt.
+type TextEntryDefaults = specdefaults.TextEntryDefaults
+
 // ScrollbarDefaults defines scrollbar visibility and its one-cell glyphs.
 type ScrollbarDefaults = specdefaults.ScrollbarDefaults
 
