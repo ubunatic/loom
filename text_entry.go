@@ -199,6 +199,14 @@ func (e *TextEntry) SetValue(s string) {
 	e.followCaret = true
 }
 
+// Prompt returns the first-row prefix.
+func (e *TextEntry) Prompt() string { return e.prompt }
+
+// SetPrompt replaces the first-row prefix at runtime, for example when a mode
+// changes the indicator. Continuation rows are indented by its display width,
+// and the text re-wraps at the next Measure or Draw. It does not call OnChange.
+func (e *TextEntry) SetPrompt(s string) { e.prompt = s }
+
 // Placeholder returns the hint drawn dim while the entry is empty.
 func (e *TextEntry) Placeholder() string { return e.placeholder }
 
