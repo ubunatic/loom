@@ -1,6 +1,6 @@
 # 441 — TextEntry visual bold toggle and Markdown serialization
 
-**Status**: Closed — done: bold toggle + MarkdownValue delivered, gallery verified by owner, q1 green
+**Status**: Open — q1 signoff never ran (sandbox bwrap)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
