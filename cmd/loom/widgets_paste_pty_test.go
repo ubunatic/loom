@@ -83,7 +83,7 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 		_, ok := cellFor('D', true, true)
 		return ok
 	})
-	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "Ctrl+B: bold") || !strings.Contains(screen, "F2: placeholder") || !strings.Contains(screen, "Enter: submit Markdown") {
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "Ctrl+B") || !strings.Contains(screen, "Placeholder") || !strings.Contains(screen, "Submit") {
 		t.Fatalf("gallery controls disappeared while bolding: %q", screen)
 	}
 	gallery.SendRaw([]byte{0x1b, 'O', 'Q'}) // F2 clears the selection and changes the placeholder
@@ -101,7 +101,7 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 	}
 	gallery.SendRaw([]byte{0x0d})
 	gallery.WaitForUpdate(`Submitted Markdown: "**sent**"`, 3*time.Second)
-	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "F2: placeholder") || !strings.Contains(screen, "Ctrl+B: bold") {
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, "Placeholder") || !strings.Contains(screen, "Ctrl+B") {
 		t.Fatalf("controls did not remain after Markdown submit: %q", screen)
 	}
 
@@ -113,7 +113,7 @@ func TestTextEntryGalleryBoldAndMarkdownSubmitPTY(t *testing.T) {
 	gallery.SendRaw([]byte{0x0d})
 	wantPreview := `Submitted Markdown: "**A**\n**B    C**\n**D**"`
 	gallery.WaitForUpdate(wantPreview, 3*time.Second)
-	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, wantPreview) || !strings.Contains(screen, "F2: placeholder") {
+	if screen := strings.Join(gallery.Screen(), "\n"); !strings.Contains(screen, wantPreview) || !strings.Contains(screen, "Placeholder") {
 		t.Fatalf("multiline quoted preview or controls missing: %q", screen)
 	}
 }
@@ -128,7 +128,7 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		return strings.Contains(strings.Join(rows, "\n"), "/topic Draft:")
 	})
-	if got := strings.Join(gallery.Screen(), "\n"); !strings.Contains(got, "/topic Draft:") || !strings.Contains(got, "F2: placeholder") {
+	if got := strings.Join(gallery.Screen(), "\n"); !strings.Contains(got, "/topic Draft:") || !strings.Contains(got, "Placeholder") {
 		t.Fatalf("selected Ctrl+C changed gallery display: %q", got)
 	}
 	// Right collapses the selection. The gallery parent then clears nonempty
@@ -136,7 +136,7 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 	gallery.SendRaw([]byte("\x1b[C\x03"))
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return !strings.Contains(joined, "/topic Draft:") && strings.Contains(joined, "F2: placeholder")
+		return !strings.Contains(joined, "/topic Draft:") && strings.Contains(joined, "Placeholder")
 	})
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)
@@ -151,19 +151,19 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return !strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "F2: placeholder")
+		return !strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "Placeholder")
 	})
 	// Keep a control byte inside the bracketed payload: it must be treated as
 	// pasted text rather than as a terminal clear command.
 	gallery.SendRaw([]byte("\x1b[200~after\nclear\x1b[2J\x1b[201~"))
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder") && strings.Contains(joined, "F10")
+		return strings.Contains(joined, "after") && strings.Contains(joined, "clear") && strings.Contains(joined, "Placeholder") && strings.Contains(joined, "F10")
 	})
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return !strings.Contains(joined, "after") && !strings.Contains(joined, "clear") && strings.Contains(joined, "F2: placeholder")
+		return !strings.Contains(joined, "after") && !strings.Contains(joined, "clear") && strings.Contains(joined, "Placeholder")
 	})
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)

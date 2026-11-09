@@ -44,7 +44,7 @@ Inventory of the public widget catalog against the live gallery, after issue 423
 | `loom.Table` | Table |  |
 | `loom.Tabs` | Tabs |  |
 | `loom.TextArea` | TextArea |  |
-| `loom.TextEntry` | TextEntry | Wrap, command highlighting, Ctrl+B bold and Markdown submission are shown. Submitted Markdown appears as a quoted, escaped, width-wrapped preview so newlines and controls remain visible; overflow is marked. F2 changes the placeholder, F3 or Tab, End, and Ctrl+E accept it when empty, and F4 moves the caret. The entry is four rows high so a few lines already scroll; a debug view below it shows length, lines, caret and selection; F5-F8 insert a short, multi-line, long wrapping and wide-character sample at the caret. |
+| `loom.TextEntry` | TextEntry | Wrap, command highlighting, Ctrl+B bold and Markdown submission are shown. Submitted Markdown appears as a quoted, escaped, width-wrapped preview so newlines and controls remain visible; overflow is marked. F2 changes the placeholder, F3 or Tab, End, and Ctrl+E accept it when empty, and F4 moves the caret. The entry is four rows high so a few lines already scroll. Below it, between two separator lines, a debug view shows length, lines, caret and selection (it yields first on small windows). One `HintBar` is the only key bar: Ctrl+B and Enter are labels, F2-F4 are the controls above, F5-F7 insert a short, multi-line and long (wrapping, wide-character) sample at the caret; keys and clicks run the same actions. F8-F10 belong to the gallery. |
 | `loom.TextInput` | TextInput |  |
 | `loom.Timer` | Timer |  |
 | `loom.Toggle` | Toggle |  |

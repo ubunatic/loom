@@ -1,6 +1,7 @@
 package gallery
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"testing"
@@ -111,7 +112,7 @@ func TestTextEntryDemoMarkdownSubmission(t *testing.T) {
 		t.Fatalf("submission plain=%q markdown=%q remaining=%q", d.lastSubmittedPlain, d.lastSubmittedMD, d.entry.Value())
 	}
 	screen := strings.Join(loom.Render(d, 80, 8), "\n")
-	if !strings.Contains(screen, `Submitted Markdown: "**a\\*b**"`) || !strings.Contains(screen, "Ctrl+B: bold") {
+	if !strings.Contains(screen, `Submitted Markdown: "**a\\*b**"`) || !strings.Contains(screen, "Ctrl+B") {
 		t.Fatalf("gallery does not show serialized submit and bold control: %q", screen)
 	}
 }
@@ -167,8 +168,8 @@ func TestTextEntryDemoMarkdownPreviewEscapesWrapsAndBounds(t *testing.T) {
 
 	tiny := loom.NewCanvas(5, 2)
 	d.Draw(tiny, loom.Rect{X: 0, Y: 0, W: 5, H: 2})
-	if cell := tiny.Get(0, 1); cell.Text != "C" {
-		t.Fatalf("tiny layout lost controls row: %+v", cell)
+	if cell := tiny.Get(0, 1); d.barRow != 1 || cell.Style.BG == (loom.Style{}).BG {
+		t.Fatalf("tiny layout lost the key bar row: row %d cell %+v", d.barRow, cell)
 	}
 }
 
@@ -185,19 +186,44 @@ func TestTextEntryDemoPlaceholderKeys(t *testing.T) {
 func TestTextEntryDemoSampleKeysAndDebugView(t *testing.T) {
 	d := newTextEntryControls().(*textEntryControls)
 	d.entry.SetValue("")
-	for _, key := range []string{"f5", "f6", "f7", "f8"} {
+	for _, key := range []string{"f5", "f6", "f7"} {
 		before := d.entry.Value()
 		if !d.ConsumeKey(loom.KeyEvent{Key: key}).Consumed || d.entry.Value() != before+textEntrySamples[key] {
 			t.Fatalf("%s did not insert its sample at the caret: %q", key, d.entry.Value())
 		}
 	}
-	c := loom.NewCanvas(80, 10)
-	d.Draw(c, loom.Rect{W: 80, H: 10})
+	c := loom.NewCanvas(120, 12)
+	d.Draw(c, loom.Rect{W: 120, H: 12})
 	var screen string
 	for y := range c.Rows() {
 		screen += c.Row(y) + "\n"
 	}
-	if !strings.Contains(screen, "debug: ") || !strings.Contains(screen, "F8 wide characters") {
+	if !strings.Contains(screen, "debug: ") || !strings.Contains(screen, "Long") {
 		t.Fatalf("debug view or sample keys missing:\n%s", screen)
+	}
+}
+
+func TestTextEntryDemoDebugCaretStaysVisibleAndBarClicks(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("")
+	d.ConsumeKey(loom.KeyEvent{Key: "f6"})
+	c := loom.NewCanvas(120, 14)
+	d.Draw(c, loom.Rect{W: 120, H: 14})
+	if row, _ := d.entry.Cursor(); row < 0 || row >= textEntryDemoRows || c.CursorY >= textEntryDemoRows {
+		t.Fatalf("caret left the %d entry rows: row %d, cursor y %d", textEntryDemoRows, row, c.CursorY)
+	}
+	if !strings.Contains(c.Row(textEntryDemoRows+1), fmt.Sprintf("caret row %d", c.CursorY)) {
+		t.Fatalf("debug view is a frame behind the caret: %q", c.Row(textEntryDemoRows+1))
+	}
+	// A click on the F5 cap of the key bar inserts its sample, like the key.
+	before := d.entry.Value()
+	for x := 0; x < 120; x++ {
+		if c.Get(x, d.barRow).Text == "F" && c.Get(x+1, d.barRow).Text == "5" {
+			d.ConsumeMouse(loom.MouseEvent{Action: loom.MousePress, Button: loom.MouseLeft, X: x, Y: d.barRow})
+			break
+		}
+	}
+	if d.entry.Value() != before+textEntrySamples["f5"] {
+		t.Fatalf("bar click did not insert the short sample: %q", d.entry.Value())
 	}
 }
