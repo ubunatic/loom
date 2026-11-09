@@ -10,6 +10,7 @@ changes. Field data: the 2026-10-01 migration of 8 workspace repos
 
 | Release | Change | What callers do |
 |---|---|---|
+| next | `loom.TextEntryOptions.MaxHeight` 0 now means automatic (30% of the app height, spec `text_entry.max_height_percent`), no longer unbounded (issue 454). `Height` and `MinHeight` default to 1 | Pass `MaxHeight: -1` for the old unbounded growth, or a row count |
 | next | `loom.TextEntry` consumes Tab, End and Ctrl+E to accept a nonempty placeholder when empty with caret and anchor at zero (issue 439) | Route host shortcuts first if they must take precedence over placeholder acceptance |
 | next | `loom.TextEntry` handles Ctrl+U for visual-line clearing and hard-line navigation (issue 438); it previously ignored the key | Route a host Ctrl+U shortcut before the entry if the host needs it |
 | next | `loom.View` and `loom view` no longer page with Ctrl+F or Ctrl+B; `view.bindings.page_down`/`page_up` dropped them (issue 407). Ctrl+F is reserved for find, Ctrl+B is the session prefix, and View now returns `Ignored` for both | Page with PgUp/PgDn or Space/`b`. A host that wants the old keys adds them to `view.bindings` in its spec override |

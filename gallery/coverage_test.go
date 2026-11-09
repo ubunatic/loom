@@ -227,3 +227,34 @@ func TestTextEntryDemoDebugCaretStaysVisibleAndBarClicks(t *testing.T) {
 		t.Fatalf("bar click did not insert the short sample: %q", d.entry.Value())
 	}
 }
+
+func TestTextEntryDemoFrameButtonAndHeightControls(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("hi")
+	draw := func() string {
+		c := loom.NewCanvas(100, 14)
+		d.Draw(c, loom.Rect{W: 100, H: 14})
+		var screen string
+		for y := range c.Rows() {
+			screen += c.Row(y) + "\n"
+		}
+		return screen
+	}
+	if s := draw(); strings.Contains(s, "╭") {
+		t.Fatalf("the demo starts without a frame:\n%s", s)
+	}
+	d.ConsumeKey(loom.KeyEvent{Key: "alt-f"})
+	d.ConsumeKey(loom.KeyEvent{Key: "alt-b"})
+	s := draw()
+	if !strings.Contains(s, "╭─ Chat") || !strings.Contains(s, "➔") {
+		t.Fatalf("box frame and send button missing:\n%s", s)
+	}
+	d.ConsumeKey(loom.KeyEvent{Key: "alt-f"})
+	if s := draw(); strings.Contains(s, "╭") || !strings.Contains(s, "── Chat") {
+		t.Fatalf("simple frame missing:\n%s", s)
+	}
+	d.ConsumeKey(loom.KeyEvent{Key: "alt-m"}) // min 2
+	if got := d.entry.Measure(100).Height; got != 2+2 {
+		t.Fatalf("height with min 2 and a simple frame = %d, want 4", got)
+	}
+}

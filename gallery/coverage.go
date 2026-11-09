@@ -93,6 +93,13 @@ type textEntryControls struct {
 	entry              *loom.TextEntry
 	alternate          bool
 	altEnterSends      bool // Alt+Enter submits and Enter breaks the line
+	frame              loom.TextEntryFrameStyle
+	button             bool
+	colorIdx           int // index into textEntryBorderColors
+	heightIdx          int // indexes into the height cycles
+	minIdx             int
+	maxIdx             int
+	entryW             int // width of the latest Draw, for the debug rows
 	lastSubmittedPlain string
 	lastSubmittedMD    string
 	bar                *loom.HintBar
@@ -109,7 +116,7 @@ func newTextAreaDemo() loom.Widget {
 
 func newTextEntryControls() loom.Widget {
 	d := &textEntryControls{}
-	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: loom.SpeccedDefaults.TextEntry.Prompt, MaxHeight: 4, Highlight: leadingCommandSpans, OnSubmit: func(value string) loom.EventResult {
+	d.entry = loom.NewTextEntry(loom.TextEntryOptions{Placeholder: "Message the team…", Prompt: loom.SpeccedDefaults.TextEntry.Prompt, MaxHeight: textEntryMaxCycle[0], Highlight: leadingCommandSpans, OnSubmit: func(value string) loom.EventResult {
 		d.lastSubmittedPlain = value
 		d.lastSubmittedMD = d.entry.MarkdownValue()
 		d.entry.SetValue("")
@@ -123,9 +130,20 @@ func newTextEntryControls() loom.Widget {
 	return d
 }
 
-// textEntryDemoRows is the entry height in the demo. It is small on purpose, so
-// a few lines of text already make the entry scroll.
+// textEntryDemoRows is the entry height in the demo before the controls change
+// it. It is small on purpose, so a few lines of text already make the entry
+// scroll.
 const textEntryDemoRows = 4
+
+// Cycles of the frame and height controls. 0 takes the spec default (height 1,
+// min 1, max automatic); -1 as a maximum is unbounded.
+var (
+	textEntryHeightCycle     = []int{0, 2, 3}
+	textEntryMinCycle        = []int{0, 2, 3}
+	textEntryMaxCycle        = []int{textEntryDemoRows, 0, 2, 8, -1}
+	textEntryBorderColors    = []string{"", "border_fg", "status_fg", "#ff8800", "default"}
+	textEntryFrameStyleCycle = []loom.TextEntryFrameStyle{loom.TextEntryFrameNone, loom.TextEntryFrameBox, loom.TextEntryFrameSimple}
+)
 
 // textEntrySamples are inserted at the caret by the F5-F7 keys (F8-F10 belong to
 // the gallery).
@@ -151,6 +169,12 @@ func (d *textEntryControls) newBar() *loom.HintBar {
 		key("Ctrl+B", "", "Bold", 0, nil),
 		d.sendKey(key),
 		key("Ctrl+T", "ctrl-t", "Send key", 7, d.toggleSendKey),
+		key("Alt+F", "alt-f", "Frame "+d.frame.String(), 8, d.cycleFrame),
+		key("Alt+B", "alt-b", "Button "+onOff(d.button), 9, d.toggleButton),
+		key("Alt+C", "alt-c", "Color", 10, d.cycleColor),
+		key("Alt+G", "alt-g", fmt.Sprintf("Height %d", textEntryHeightCycle[d.heightIdx]), 11, d.cycleHeight),
+		key("Alt+M", "alt-m", fmt.Sprintf("Min %d", textEntryMinCycle[d.minIdx]), 12, d.cycleMin),
+		key("Alt+X", "alt-x", "Max "+maxLabel(textEntryMaxCycle[d.maxIdx]), 13, d.cycleMax),
 		key("F2", "f2", "Placeholder", 1, d.togglePlaceholder),
 		key("F3", "f3", "Accept", 2, func() { d.entry.AcceptPlaceholder() }),
 		key("F4", "f4", "Caret", 3, func() { d.entry.SetCursorOffset(0) }),
@@ -179,6 +203,60 @@ func (d *textEntryControls) toggleSendKey() {
 	d.bar = d.newBar()
 }
 
+func onOff(b bool) string {
+	if b {
+		return "on"
+	}
+	return "off"
+}
+
+func maxLabel(n int) string {
+	switch {
+	case n == 0:
+		return "auto"
+	case n < 0:
+		return "none"
+	}
+	return strconv.Itoa(n)
+}
+
+// applyFrame pushes the frame, button and height controls into the entry and
+// rebuilds the key bar so its labels follow.
+func (d *textEntryControls) applyFrame() {
+	d.entry.SetFrame(loom.TextEntryFrame{
+		Style:       d.frame,
+		Title:       "Chat",
+		Hint:        "F1 help",
+		Footer:      "Enter sends",
+		BorderColor: textEntryBorderColors[d.colorIdx],
+	})
+	d.entry.SetSendButton(d.button, "")
+	d.entry.SetHeights(textEntryHeightCycle[d.heightIdx], textEntryMinCycle[d.minIdx], textEntryMaxCycle[d.maxIdx])
+	d.bar = d.newBar()
+}
+
+func (d *textEntryControls) cycleFrame() {
+	d.frame = textEntryFrameStyleCycle[(int(d.frame)+1)%len(textEntryFrameStyleCycle)]
+	d.applyFrame()
+}
+func (d *textEntryControls) toggleButton() { d.button = !d.button; d.applyFrame() }
+func (d *textEntryControls) cycleColor() {
+	d.colorIdx = (d.colorIdx + 1) % len(textEntryBorderColors)
+	d.applyFrame()
+}
+func (d *textEntryControls) cycleHeight() {
+	d.heightIdx = (d.heightIdx + 1) % len(textEntryHeightCycle)
+	d.applyFrame()
+}
+func (d *textEntryControls) cycleMin() {
+	d.minIdx = (d.minIdx + 1) % len(textEntryMinCycle)
+	d.applyFrame()
+}
+func (d *textEntryControls) cycleMax() {
+	d.maxIdx = (d.maxIdx + 1) % len(textEntryMaxCycle)
+	d.applyFrame()
+}
+
 func (d *textEntryControls) togglePlaceholder() {
 	d.alternate = !d.alternate
 	if d.alternate {
@@ -193,13 +271,14 @@ func (d *textEntryControls) togglePlaceholder() {
 // submission and the key bar. The debug block yields first when space is short.
 func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
 	d.barRow = -1
+	d.entryW = r.W
 	barH := min(1, max(0, r.H))
 	avail := r.H - barH
 	reserve := 0 // a submitted preview keeps two rows, so its overflow mark stays readable
 	if d.lastSubmittedMD != "" {
 		reserve = 2
 	}
-	entryHeight := min(textEntryDemoRows, max(1, avail-reserve))
+	entryHeight := min(d.entry.Measure(r.W).Height, max(1, avail-reserve))
 	entryHeight = min(entryHeight, avail)
 	if entryHeight < 1 {
 		if r.H > 0 {
@@ -246,7 +325,7 @@ func (d *textEntryControls) debugLines() []string {
 	row, col := d.entry.Cursor()
 	return []string{
 		fmt.Sprintf("debug: %d runes, %d lines, offset %d, caret row %d col %d", utf8.RuneCountInString(v), strings.Count(v, "\n")+1, d.entry.CursorOffset(), row, col),
-		fmt.Sprintf("debug: selection %v, focused %v, entry rows %d", d.entry.HasSelection(), d.entry.Focused(), textEntryDemoRows),
+		fmt.Sprintf("debug: selection %v, focused %v, entry rows %d", d.entry.HasSelection(), d.entry.Focused(), d.entry.Measure(d.entryW).Height),
 	}
 }
 

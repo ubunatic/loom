@@ -18,8 +18,19 @@ import (
 // Shift+Enter, Ctrl+J or Alt+Enter.
 type TextEntryOptions struct {
 	Placeholder string
-	Prompt      string   // first-row prefix, e.g. "> "
-	MaxHeight   int      // visual rows before scrolling; 0 = unbounded
+	Prompt      string // first-row prefix, e.g. "> "
+	// Height is the number of rows shown while the text is short, MinHeight the
+	// fewest rows ever shown and MaxHeight the most before the text scrolls.
+	// Zero takes the spec defaults: 1, 1 and automatic (a share of the app
+	// height, see spec text_entry). A negative MaxHeight means unbounded.
+	Height, MinHeight, MaxHeight int
+	// Frame draws a border, title, hint and footer around the entry. The zero
+	// value draws none.
+	Frame TextEntryFrame
+	// SendButton shows a clickable send button on the last row. Clicking it
+	// calls OnSubmit like a submit key. SendLabel overrides the spec label.
+	SendButton  bool
+	SendLabel   string
 	SubmitKeys  []string // default ["enter", "ctrl-enter"]
 	NewlineKeys []string // default ["shift-enter", "ctrl-j", "alt-enter"]
 	OnChange    func(value string)
@@ -64,7 +75,18 @@ var (
 type TextEntry struct {
 	placeholder string
 	prompt      string
+	height      int
+	minHeight   int
 	maxHeight   int
+	frame       TextEntryFrame
+	sendButton  bool
+	sendLabel   string
+	theme       ThemeColors // for named frame colors; the default theme until ApplyTheme
+	appRows     int         // canvas height at the latest Draw, 0 before one
+	offX, offY  int         // content origin inside the widget at the latest Draw
+	innerW      int         // content width and height inside the frame at the latest Draw
+	innerH      int
+	sendRect    Rect // send button cells, widget-local; empty when hidden
 	submitKeys  []string
 	newlineKeys []string
 	onChange    func(string)
@@ -124,7 +146,13 @@ func NewTextEntry(opts TextEntryOptions) *TextEntry {
 	e := &TextEntry{
 		placeholder: opts.Placeholder,
 		prompt:      opts.Prompt,
+		height:      opts.Height,
+		minHeight:   opts.MinHeight,
 		maxHeight:   opts.MaxHeight,
+		frame:       opts.Frame,
+		sendButton:  opts.SendButton,
+		sendLabel:   opts.SendLabel,
+		theme:       DefaultTheme(),
 		submitKeys:  slices.Clone(opts.SubmitKeys),
 		newlineKeys: slices.Clone(opts.NewlineKeys),
 		onChange:    opts.OnChange,
@@ -259,28 +287,30 @@ func (e *TextEntry) ReplaceRange(start, end int, s string) {
 func (e *TextEntry) Cursor() (row, col int) {
 	rows := e.rows(e.layoutWidth)
 	r, c := e.locate(rows, e.caret)
-	return r - e.scroll, e.promptWidth() + c
+	return r - e.scroll + e.offY, e.offX + e.promptWidth() + c
 }
 
-// Measure reports the soft-wrapped size at width, with height between one row
-// and MaxHeight. A width of zero or less measures the text on its own lines.
+// Measure reports the soft-wrapped size at width, including the frame and the
+// send button. The text height is clamped to the height bounds. A width of zero
+// or less measures the text on its own lines.
 func (e *TextEntry) Measure(width int) measure.Size {
-	rows := e.rows(width)
-	height := len(rows)
-	if e.maxHeight > 0 {
-		height = min(height, e.maxHeight)
-	}
+	cw, ch := e.chromeSize()
+	btn := e.buttonWidth()
+	avail := width
 	if width > 0 {
-		e.layoutWidth, _ = e.textWidth(width, height)
+		avail = max(1, width-cw-btn)
 	}
+	rows := e.rows(avail)
+	height := e.boundedRows(len(rows))
 	if width > 0 {
-		return measure.Size{Width: width, Height: height}
+		e.layoutWidth, _ = e.textWidth(avail, height)
+		return measure.Size{Width: width, Height: height + ch}
 	}
 	widest := 0
 	for _, row := range rows {
 		widest = max(widest, e.widthBetween(row.start, row.end))
 	}
-	return measure.Size{Width: e.promptWidth() + widest, Height: height}
+	return measure.Size{Width: e.promptWidth() + widest + cw + btn, Height: height + ch}
 }
 
 // Focused reports whether the entry shows the caret.
@@ -314,6 +344,25 @@ func (e *TextEntry) ConsumePaste(event PasteEvent) EventResult {
 // focused, it places the hardware cursor at the caret and keeps the caret row
 // visible; the prompt stays on the first visible row. Mouse wheel scrolling is kept until the caret moves again.
 func (e *TextEntry) Draw(c *Canvas, r Rect) {
+	c.PaintSurface(r, Style{})
+	e.appRows = c.Bounds().H
+	inner := e.drawFrame(c, r)
+	e.offX, e.offY = inner.X-r.X, inner.Y-r.Y
+	e.innerW, e.innerH = inner.W, inner.H
+	e.sendRect = Rect{}
+	btn := e.buttonWidth()
+	if btn == 0 || inner.W <= btn+2 || inner.H <= 0 {
+		e.drawText(c, inner)
+		return
+	}
+	inner.W -= btn
+	e.sendRect = Rect{X: e.offX + inner.W, Y: e.offY + inner.H - 1, W: btn, H: 1}
+	e.drawText(c, inner)
+	c.Write(r.X+e.sendRect.X, r.Y+e.sendRect.Y, e.buttonLabel(), Style{Invert: true})
+}
+
+// drawText paints the prompt and text into r.
+func (e *TextEntry) drawText(c *Canvas, r Rect) {
 	c.PaintSurface(r, Style{})
 	e.layoutWidth, e.bar = e.textWidth(r.W, r.H)
 	e.layoutHeight = r.H
@@ -399,10 +448,7 @@ func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult {
 		e.goalSet = false
 	}
 	if textEntryBound(name, e.submitKeys) {
-		if e.onSubmit == nil {
-			return Ignored()
-		}
-		return e.onSubmit(e.Value())
+		return e.submit()
 	}
 	if textEntryBound(name, e.newlineKeys) {
 		return e.insert("\n", false)
@@ -486,6 +532,21 @@ func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult {
 // selects a word on a double click and a line on a triple click, and scrolls
 // the wheel. Coordinates are 0-based and relative to the widget.
 func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
+	if me.Action == MousePress {
+		r := e.sendRect
+		if r.W > 0 && me.X >= r.X && me.X < r.X+r.W && me.Y >= r.Y && me.Y < r.Y+r.H {
+			if me.Button != MouseLeft {
+				return Ignored()
+			}
+			return e.submit()
+		}
+		// A press on the frame is not a press on the text.
+		if e.frame.Style != TextEntryFrameNone && (me.X < e.offX || me.Y < e.offY || me.X >= e.offX+e.innerW || me.Y >= e.offY+e.innerH) {
+			return Ignored()
+		}
+	}
+	me.X -= e.offX
+	me.Y -= e.offY
 	switch me.Action {
 	case MouseScrollUp:
 		return e.scrollBy(-1)
@@ -1163,8 +1224,18 @@ func (e *TextEntry) endMouseCapture(cancel bool) {
 	e.pan.end()
 }
 
-// ApplyTheme sets the scrollbar colours from the theme.
+// submit calls OnSubmit with the value; without one it ignores the request.
+func (e *TextEntry) submit() EventResult {
+	if e.onSubmit == nil {
+		return Ignored()
+	}
+	return e.onSubmit(e.Value())
+}
+
+// ApplyTheme sets the scrollbar colours from the theme and the colours that
+// frame colors can name.
 func (e *TextEntry) ApplyTheme(theme ThemeColors) {
+	e.theme = theme
 	e.scrollbar = theme.ScrollbarStyle()
 	if e.scrollbar.Track.BG == ColorReset() {
 		e.scrollbar.Track.BG = theme.NormalBG.Color()

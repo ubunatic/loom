@@ -709,12 +709,18 @@ type TabsKeys struct {
     Bindings match either KeyEvent.Key or KeyEvent.Text.
 
 type TextEntryDefaults struct {
-	Prompt string `yaml:"prompt"`
+	Prompt               string `yaml:"prompt"`
+	Height               int    `yaml:"height"`
+	MinHeight            int    `yaml:"min_height"`
+	MaxHeightPercent     int    `yaml:"max_height_percent"`
+	FallbackTerminalRows int    `yaml:"fallback_terminal_rows"`
+	SendLabel            string `yaml:"send_label"`
 }
-    TextEntryDefaults holds the recommended TextEntry prompt.
+    TextEntryDefaults holds the recommended TextEntry prompt, its row bounds and
+    the send button label.
 
 func (d TextEntryDefaults) Validate() error
-    Validate requires a non-empty prompt.
+    Validate requires a non-empty prompt and send label and positive row bounds.
 
 type ToggleDefaults struct {
 	OnMark  string `yaml:"on_mark"`

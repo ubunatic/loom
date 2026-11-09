@@ -872,15 +872,30 @@ func (d MouseDefaults) Validate() error {
 	return nil
 }
 
-// TextEntryDefaults holds the recommended TextEntry prompt.
+// TextEntryDefaults holds the recommended TextEntry prompt, its row bounds and
+// the send button label.
 type TextEntryDefaults struct {
-	Prompt string `yaml:"prompt"`
+	Prompt               string `yaml:"prompt"`
+	Height               int    `yaml:"height"`
+	MinHeight            int    `yaml:"min_height"`
+	MaxHeightPercent     int    `yaml:"max_height_percent"`
+	FallbackTerminalRows int    `yaml:"fallback_terminal_rows"`
+	SendLabel            string `yaml:"send_label"`
 }
 
-// Validate requires a non-empty prompt.
+// Validate requires a non-empty prompt and send label and positive row bounds.
 func (d TextEntryDefaults) Validate() error {
 	if strings.TrimSpace(d.Prompt) == "" {
 		return fmt.Errorf("text_entry.prompt must not be blank")
+	}
+	if strings.TrimSpace(d.SendLabel) == "" {
+		return fmt.Errorf("text_entry.send_label must not be blank")
+	}
+	if d.Height < 1 || d.MinHeight < 1 || d.FallbackTerminalRows < 1 {
+		return fmt.Errorf("text_entry.height, min_height and fallback_terminal_rows must be at least 1")
+	}
+	if d.MaxHeightPercent < 1 || d.MaxHeightPercent > 100 {
+		return fmt.Errorf("text_entry.max_height_percent must be in 1..100")
 	}
 	return nil
 }
