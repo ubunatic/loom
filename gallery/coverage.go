@@ -167,11 +167,16 @@ func (d *textEntryControls) newBar() *loom.HintBar {
 	}
 	return loom.NewHintBar(
 		key("Ctrl+B", "", "Bold", 0, nil),
+		key("Ctrl+Z", "", "Undo", 14, nil),
+		key("Ctrl+Y", "", "Redo", 15, nil),
+		key("Ctrl+A", "", "Select all", 16, nil),
+		key("Ctrl+C", "", "Copy/Clear", 17, nil),
+		key("Shift+Enter", "", "New line", 18, nil),
 		d.sendKey(key),
 		key("Ctrl+T", "ctrl-t", "Send key", 7, d.toggleSendKey),
 		key("Alt+F", "alt-f", "Frame "+d.frame.String(), 8, d.cycleFrame),
 		key("Alt+B", "alt-b", "Button "+onOff(d.button), 9, d.toggleButton),
-		key("Alt+C", "alt-c", "Color", 10, d.cycleColor),
+		key("Alt+C", "alt-c", "Color "+textEntryColorLabel(textEntryBorderColors[d.colorIdx]), 10, d.cycleColor),
 		key("Alt+G", "alt-g", fmt.Sprintf("Height %d", textEntryHeightCycle[d.heightIdx]), 11, d.cycleHeight),
 		key("Alt+M", "alt-m", fmt.Sprintf("Min %d", textEntryMinCycle[d.minIdx]), 12, d.cycleMin),
 		key("Alt+X", "alt-x", "Max "+maxLabel(textEntryMaxCycle[d.maxIdx]), 13, d.cycleMax),
@@ -182,6 +187,14 @@ func (d *textEntryControls) newBar() *loom.HintBar {
 		key("F6", "f6", "Lines", 5, sample("f6")),
 		key("F7", "f7", "Long", 6, sample("f7")),
 	)
+}
+
+// sendKeyName names the key that submits in the current mode.
+func (d *textEntryControls) sendKeyName() string {
+	if d.altEnterSends {
+		return "Alt+Enter"
+	}
+	return "Enter"
 }
 
 // sendKey is the bar entry that names the key that submits in the current mode.
@@ -200,7 +213,14 @@ func (d *textEntryControls) toggleSendKey() {
 	} else {
 		d.entry.SetSubmitKeys(nil, nil)
 	}
-	d.bar = d.newBar()
+	d.applyFrame()
+}
+
+func textEntryColorLabel(name string) string {
+	if name == "" {
+		return "dim"
+	}
+	return name
 }
 
 func onOff(b bool) string {
@@ -227,7 +247,7 @@ func (d *textEntryControls) applyFrame() {
 		Style:       d.frame,
 		Title:       "Chat",
 		Hint:        "F1 help",
-		Footer:      "Enter sends",
+		Footer:      d.sendKeyName() + " sends",
 		BorderColor: textEntryBorderColors[d.colorIdx],
 	})
 	d.entry.SetSendButton(d.button, "")
@@ -323,9 +343,11 @@ func (d *textEntryControls) separator(c *loom.Canvas, r loom.Rect, y int) {
 func (d *textEntryControls) debugLines() []string {
 	v := d.entry.Value()
 	row, col := d.entry.Cursor()
+	h, mn, mx := d.entry.Heights()
 	return []string{
 		fmt.Sprintf("debug: %d runes, %d lines, offset %d, caret row %d col %d", utf8.RuneCountInString(v), strings.Count(v, "\n")+1, d.entry.CursorOffset(), row, col),
 		fmt.Sprintf("debug: selection %v, focused %v, entry rows %d", d.entry.HasSelection(), d.entry.Focused(), d.entry.Measure(d.entryW).Height),
+		fmt.Sprintf("debug: heights set height %d, min %d, max %s, frame %v, send button %v", h, mn, maxLabel(mx), d.frame, d.button),
 	}
 }
 
