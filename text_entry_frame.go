@@ -251,3 +251,7 @@ func (e *TextEntry) drawRule(c *Canvas, x, y, w int, cl, cr, fill string, lead i
 	col += c.Write(col, y, strings.Repeat(fill, lead), border)
 	c.Write(col, y, cr, border)
 }
+
+// barAboveButton reports whether a scrollbar sits over the send button: there
+// is a button and a row above it. Otherwise the bar takes the text's last column.
+func (e *TextEntry) barAboveButton(rows int) bool { return e.buttonWidth() > 0 && rows >= 2 }

@@ -117,8 +117,10 @@ type TextEntry struct {
 	clipboard      string
 	writeClipboard func(string)
 
-	layoutWidth  int // width of the latest Draw or Measure, 0 before either
-	layoutHeight int // visible rows at the latest Draw
+	layoutWidth  int  // width of the latest Draw or Measure, 0 before either
+	layoutHeight int  // visible rows at the latest Draw
+	barAbove     bool // the scrollbar sits above the send button instead of beside the text
+	barX, barH   int  // scrollbar column (content-local) and track rows at the latest Draw
 	clickCount   int
 	lastClick    time.Time
 	lastX, lastY int
@@ -303,7 +305,11 @@ func (e *TextEntry) Measure(width int) measure.Size {
 	rows := e.rows(avail)
 	height := e.boundedRows(len(rows))
 	if width > 0 {
-		e.layoutWidth, _ = e.textWidth(avail, height)
+		if e.barAboveButton(height) {
+			e.layoutWidth = avail
+		} else {
+			e.layoutWidth, _ = e.textWidth(avail, height)
+		}
 		return measure.Size{Width: width, Height: height + ch}
 	}
 	widest := 0
@@ -351,11 +357,13 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 	e.innerW, e.innerH = inner.W, inner.H
 	e.sendRect = Rect{}
 	btn := e.buttonWidth()
+	e.barAbove = false
 	if btn == 0 || inner.W <= btn+2 || inner.H <= 0 {
 		e.drawText(c, inner)
 		return
 	}
 	inner.W -= btn
+	e.barAbove = e.barAboveButton(inner.H)
 	e.sendRect = Rect{X: e.offX + inner.W, Y: e.offY + inner.H - 1, W: btn, H: 1}
 	e.drawText(c, inner)
 	c.Write(r.X+e.sendRect.X, r.Y+e.sendRect.Y, e.buttonLabel(), Style{Invert: true})
@@ -364,8 +372,19 @@ func (e *TextEntry) Draw(c *Canvas, r Rect) {
 // drawText paints the prompt and text into r.
 func (e *TextEntry) drawText(c *Canvas, r Rect) {
 	c.PaintSurface(r, Style{})
-	e.layoutWidth, e.bar = e.textWidth(r.W, r.H)
 	e.layoutHeight = r.H
+	e.barX, e.barH = r.W-1, r.H
+	if e.barAbove {
+		// The text keeps its width; the bar sits over the send button, one
+		// cell from its middle, on the rows above it.
+		e.layoutWidth = r.W
+		e.bar = scrollbarVisible("", len(e.rows(r.W)) > r.H)
+		e.barH = r.H - 1
+		e.barX = r.W + e.buttonWidth()/2
+	} else {
+		e.layoutWidth, e.bar = e.textWidth(r.W, r.H)
+		e.barX = e.layoutWidth
+	}
 	rows := e.rows(e.layoutWidth)
 	caretRow, caretCol := e.locate(rows, e.caret)
 	if e.followCaret && r.H > 0 {
@@ -413,9 +432,9 @@ func (e *TextEntry) drawText(c *Canvas, r Rect) {
 	}
 	if e.bar {
 		maxScroll := len(rows) - r.H
-		start, length := scrollbarUnitThumb(r.H, len(rows), r.H, e.scroll, maxScroll)
-		for y, cell := range scrollbarColumn(e.scrollbar, c.ColorProfile, r.H, start, length) {
-			c.Set(right, r.Y+y, cell)
+		start, length := scrollbarUnitThumb(e.barH, len(rows), r.H, e.scroll, maxScroll)
+		for y, cell := range scrollbarColumn(e.scrollbar, c.ColorProfile, e.barH, start, length) {
+			c.Set(r.X+e.barX, r.Y+y, cell)
 		}
 	}
 	if e.focused {
@@ -555,14 +574,18 @@ func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
 	case MousePress:
 		e.barDrag.cancel()
 		e.pan.end()
-		if panStarts(me, e.bar, e.layoutWidth+1, e.layoutHeight, e.maxScroll()) {
+		panW, reserve := e.layoutWidth+1, e.bar
+		if e.barAbove {
+			panW, reserve = e.layoutWidth, false
+		}
+		if panStarts(me, reserve, panW, e.layoutHeight, e.maxScroll()) {
 			e.pan.press(me.Y, e.scroll, e.layoutHeight)
 			return Consumed()
 		}
 		if me.Button != MouseLeft {
 			return Ignored()
 		}
-		if e.bar && me.X == e.layoutWidth && me.Y >= 0 && me.Y < e.layoutHeight {
+		if e.bar && me.X == e.barX && me.Y >= 0 && me.Y < e.barH {
 			return e.pressScrollbar(me.Y)
 		}
 		e.goalSet = false
@@ -1186,11 +1209,11 @@ func (e *TextEntry) scrollTo(row int) {
 // track position.
 func (e *TextEntry) pressScrollbar(row int) EventResult {
 	rows, maxScroll := e.scrollRange()
-	start, length := scrollbarUnitThumb(e.layoutHeight, rows, e.layoutHeight, e.scroll, maxScroll)
+	start, length := scrollbarUnitThumb(e.barH, rows, e.layoutHeight, e.scroll, maxScroll)
 	if scrollbarRowTouchesThumb(row, start, length) {
 		e.barDrag.press(scrollbarUnitPointer(row), start, e.scroll)
 	} else {
-		e.scrollTo(scrollTrackPosition(row, e.layoutHeight, maxScroll))
+		e.scrollTo(scrollTrackPosition(row, e.barH, maxScroll))
 	}
 	e.dragging = false
 	return Consumed()
@@ -1199,8 +1222,8 @@ func (e *TextEntry) pressScrollbar(row int) EventResult {
 // pointerOffset maps a pointer row to the scroll offset of the dragged thumb.
 func (d *scrollbarDrag) pointerOffset(e *TextEntry, row int) int {
 	rows, maxScroll := e.scrollRange()
-	_, length := scrollbarUnitThumb(e.layoutHeight, rows, e.layoutHeight, e.scroll, maxScroll)
-	return scrollbarUnitOffset(e.layoutHeight, length, scrollbarUnitPointer(row), d.grab, maxScroll)
+	_, length := scrollbarUnitThumb(e.barH, rows, e.layoutHeight, e.scroll, maxScroll)
+	return scrollbarUnitOffset(e.barH, length, scrollbarUnitPointer(row), d.grab, maxScroll)
 }
 
 // mouseCaptureTarget claims the pointer while the scrollbar thumb is dragged,

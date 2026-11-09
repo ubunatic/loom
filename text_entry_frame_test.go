@@ -156,3 +156,36 @@ func TestTextEntrySendButtonOffByDefault(t *testing.T) {
 		t.Fatal("no send button unless asked for")
 	}
 }
+
+func TestTextEntryScrollbarSitsAboveSendButton(t *testing.T) {
+	e := NewTextEntry(TextEntryOptions{MaxHeight: 3, SendButton: true, SendLabel: " go "})
+	e.SetValue("a\nb\nc\nd\ne\nf")
+	c := NewCanvas(20, 3)
+	e.Draw(c, Rect{W: 20, H: 3})
+	if !e.bar || !e.barAbove || e.layoutWidth != 16 {
+		t.Fatalf("bar=%v above=%v text width=%d, want a bar above the button and an unreduced width 16", e.bar, e.barAbove, e.layoutWidth)
+	}
+	x := 16 + 2 // middle of the 4-cell button
+	if e.barX != x || e.barH != 2 {
+		t.Fatalf("bar column %d rows %d, want %d and 2", e.barX, e.barH, x)
+	}
+	if c.Get(x, 0).Text == " " && c.Get(x, 0).Style == (Style{}) {
+		t.Fatal("no bar cell above the button")
+	}
+	if c.Get(x, 2).Text != "o" && c.Get(x, 2).Text != "g" {
+		t.Fatalf("button row cell = %q, want the label", c.Get(x, 2).Text)
+	}
+	// Dragging the bar scrolls; a click on the button still sends.
+	e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseLeft, X: x, Y: 0})
+	e.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseLeft, X: x, Y: 0})
+	if e.scroll == 3 {
+		t.Fatal("a track click above the button did not scroll")
+	}
+	// A one-row entry has no row above the button: the bar stays beside the text.
+	one := NewTextEntry(TextEntryOptions{MaxHeight: 1, SendButton: true, SendLabel: " go "})
+	one.SetValue("a\nb\nc")
+	one.Draw(NewCanvas(20, 1), Rect{W: 20, H: 1})
+	if one.barAbove {
+		t.Fatal("one row: the bar must stay beside the text")
+	}
+}

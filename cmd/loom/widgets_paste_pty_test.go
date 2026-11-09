@@ -151,7 +151,7 @@ func TestTextEntryGalleryCtrlCAndParentRoutingPTY(t *testing.T) {
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
 		joined := strings.Join(rows, "\n")
-		return !strings.Contains(joined, "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "Placeholder")
+		return !strings.Contains(rows[0], "x") && !strings.Contains(joined, "Press Ctrl+C again to quit") && strings.Contains(joined, "Placeholder")
 	})
 	// Keep a control byte inside the bracketed payload: it must be treated as
 	// pasted text rather than as a terminal clear command.
@@ -249,7 +249,8 @@ func TestTextEntryGalleryCtrlUPTY(t *testing.T) {
 	gallery.WaitForUpdate("x", 3*time.Second)
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdateState(3*time.Second, func(rows []string) bool {
-		return !strings.Contains(strings.Join(rows, "\n"), "x")
+		// Only the entry row: the demo's debug rows and key bar contain an "x" (max, Alt+X).
+		return !strings.Contains(rows[0], "x")
 	})
 	gallery.SendRaw([]byte{0x03})
 	gallery.WaitForUpdate("Press Ctrl+C again to quit", 3*time.Second)

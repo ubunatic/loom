@@ -844,8 +844,9 @@ box (the taia.legacy look)          simple (full-width rule)
 - `Title` and `Hint` sit in the top border (left, right), `Footer` in the bottom border (right); `SetTitle`, `SetHint` and `SetFooter` change them. A label that does not fit is cut, and the hint goes first.
 - `BorderColor` and `LabelColor` take `""` or `dim` (default), `default`, `#RRGGBB`, a palette index, or a theme color name such as `border_fg` or `status_fg` (the yaml names of `ThemeColors`, resolved against the theme from `ApplyTheme`). Unknown names are dim.
 - A rect too small for the frame (under three rows or too narrow for its corners) draws the content only.
+- With a send button and at least two text rows, the scrollbar sits above the button (over its middle cell) and the text keeps its full width; with one row it stays beside the text.
 - A press on the border does nothing. The send button is hidden when the width is too small for it.
-- The gallery TextEntry demo switches the frame (Alt+F), the send button (Alt+B), the border color (Alt+C) and the height, min and max rows (Alt+G, Alt+M, Alt+X).
+- The gallery TextEntry demo switches the frame (Alt+F), the send button (Alt+B), the border color (Alt+C) and the height, min and max rows (Alt+G, Alt+M, Alt+X). Its footer names the send key ("Enter sends" or "Alt+Enter sends", following Ctrl+T), and the debug rows show the height settings.
 
 ### Placeholder
 
