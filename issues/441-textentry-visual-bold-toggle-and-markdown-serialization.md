@@ -90,3 +90,7 @@ Developer M3 full suite passed. Independent host `make test-q1` failed in a diff
 - Restored legacy non-opt-in selection styling and documented the opt-in distinction. Rebuilt Ctrl+D coverage with actual empty/text/selected/placeholder states plus enabled formatting states, comparing bold state and deep history snapshots.
 - Added exact edit-path and serializer assertions. Gallery TextEntry now opts into bold, advertises Ctrl+B and displays the Markdown produced by its submission callback; widget Value and callback input remain plain.
 - Focused core, gallery and PTY checks pass, including selected/typing cell styles, caret, format undo/redo, retained controls, placeholder interactions and `**sent**` submission. `go vet ./...`, the public API snapshot check and `make install` passed. The single `make test-q1` run failed only at unrelated `internal/session/TestSessionDetachPrefixDAndReattach`; its PTY output showed `BASE_SCREEN` and `DETACHED_OUTPUT` instead of the retained screen and tabs. No q1 rerun was made.
+
+## Final signoff (2026-11-09)
+
+Host `make test-q1` on HEAD bc3e8228 passed (exit 0, no `--- FAIL`); log `/tmp/loom-issue441-signoff-test-q1.log`. Owner confirmed bold and Markdown submission in the gallery demo. Closing.
