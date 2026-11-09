@@ -83,6 +83,7 @@ type TextEntry struct {
 	scrollbar   ScrollbarStyle
 	bar         bool // the latest layout reserves the last column for a scrollbar
 	barDrag     scrollbarDrag
+	pan         contentPan
 
 	focused     bool
 	dragging    bool
@@ -492,6 +493,11 @@ func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
 		return e.scrollBy(1)
 	case MousePress:
 		e.barDrag.cancel()
+		e.pan.end()
+		if panStarts(me, e.bar, e.layoutWidth+1, e.layoutHeight, e.maxScroll()) {
+			e.pan.press(me.Y, e.scroll, e.layoutHeight)
+			return Consumed()
+		}
 		if me.Button != MouseLeft {
 			return Ignored()
 		}
@@ -519,6 +525,10 @@ func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
 			e.scrollTo(e.barDrag.pointerOffset(e, me.Y))
 			return Consumed()
 		}
+		if e.pan.active {
+			e.scrollTo(e.pan.offset(me.Y, e.maxScroll()))
+			return Consumed()
+		}
 		if !e.dragging {
 			return Ignored()
 		}
@@ -527,6 +537,10 @@ func (e *TextEntry) ConsumeMouse(me MouseEvent) EventResult {
 	case MouseRelease:
 		if e.barDrag.active {
 			e.barDrag.cancel()
+			return Consumed()
+		}
+		if e.pan.active {
+			e.pan.end()
 			return Consumed()
 		}
 		if !e.dragging {
@@ -1061,6 +1075,20 @@ func isTextEntryWord(unit string) bool {
 	return unicode.IsLetter(r) || unicode.IsDigit(r) || r == '_'
 }
 
+// SetSubmitKeys replaces the Submit and Newline key bindings, for example to
+// swap Enter and Alt+Enter at run time. A nil or empty list restores that
+// list's default (see TextEntryOptions).
+func (e *TextEntry) SetSubmitKeys(submit, newline []string) {
+	e.submitKeys = slices.Clone(submit)
+	e.newlineKeys = slices.Clone(newline)
+	if len(e.submitKeys) == 0 {
+		e.submitKeys = slices.Clone(textEntrySubmitDefault)
+	}
+	if len(e.newlineKeys) == 0 {
+		e.newlineKeys = slices.Clone(textEntryNewlineDefault)
+	}
+}
+
 // textWidth returns the width the text wraps at in a widget of width by height
 // cells, and whether a scrollbar takes the last column. The bar shows when the
 // text at the full width needs more than height rows (see scrollbarVisible), and
@@ -1079,6 +1107,11 @@ func (e *TextEntry) textWidth(width, height int) (text int, bar bool) {
 func (e *TextEntry) scrollRange() (rows, maxScroll int) {
 	rows = len(e.rows(e.layoutWidth))
 	return rows, max(0, rows-max(1, e.layoutHeight))
+}
+
+func (e *TextEntry) maxScroll() int {
+	_, m := e.scrollRange()
+	return m
 }
 
 // scrollTo sets the first visible row, clamped. The caret is not followed.
@@ -1112,7 +1145,7 @@ func (d *scrollbarDrag) pointerOffset(e *TextEntry, row int) int {
 // mouseCaptureTarget claims the pointer while the scrollbar thumb is dragged,
 // so the drag survives leaving the entry (see mouse_capture.go).
 func (e *TextEntry) mouseCaptureTarget() (Widget, Rect) {
-	if e.barDrag.active {
+	if e.barDrag.active || e.pan.active {
 		return e, Rect{}
 	}
 	return nil, Rect{}
@@ -1123,7 +1156,11 @@ func (e *TextEntry) endMouseCapture(cancel bool) {
 	if cancel && e.barDrag.active {
 		e.scroll = e.barDrag.start
 	}
+	if cancel && e.pan.active {
+		e.scroll = e.pan.start
+	}
 	e.barDrag.cancel()
+	e.pan.end()
 }
 
 // ApplyTheme sets the scrollbar colours from the theme.

@@ -92,6 +92,7 @@ func graphDemo() loom.Widget {
 type textEntryControls struct {
 	entry              *loom.TextEntry
 	alternate          bool
+	altEnterSends      bool // Alt+Enter submits and Enter breaks the line
 	lastSubmittedPlain string
 	lastSubmittedMD    string
 	bar                *loom.HintBar
@@ -148,7 +149,8 @@ func (d *textEntryControls) newBar() *loom.HintBar {
 	}
 	return loom.NewHintBar(
 		key("Ctrl+B", "", "Bold", 0, nil),
-		key("Enter", "", "Submit", 0, nil),
+		d.sendKey(key),
+		key("Ctrl+T", "ctrl-t", "Send key", 7, d.toggleSendKey),
 		key("F2", "f2", "Placeholder", 1, d.togglePlaceholder),
 		key("F3", "f3", "Accept", 2, func() { d.entry.AcceptPlaceholder() }),
 		key("F4", "f4", "Caret", 3, func() { d.entry.SetCursorOffset(0) }),
@@ -156,6 +158,25 @@ func (d *textEntryControls) newBar() *loom.HintBar {
 		key("F6", "f6", "Lines", 5, sample("f6")),
 		key("F7", "f7", "Long", 6, sample("f7")),
 	)
+}
+
+// sendKey is the bar entry that names the key that submits in the current mode.
+func (d *textEntryControls) sendKey(key func(k, binding, label string, drop int, do func()) loom.HintEntry) loom.HintEntry {
+	if d.altEnterSends {
+		return key("Alt+Enter", "", "Submit", 0, nil)
+	}
+	return key("Enter", "", "Submit", 0, nil)
+}
+
+// toggleSendKey swaps Enter and Alt+Enter between submit and new line.
+func (d *textEntryControls) toggleSendKey() {
+	d.altEnterSends = !d.altEnterSends
+	if d.altEnterSends {
+		d.entry.SetSubmitKeys([]string{"alt-enter"}, []string{"enter", "shift-enter", "ctrl-j"})
+	} else {
+		d.entry.SetSubmitKeys(nil, nil)
+	}
+	d.bar = d.newBar()
 }
 
 func (d *textEntryControls) togglePlaceholder() {

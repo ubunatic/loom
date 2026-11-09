@@ -4610,6 +4610,11 @@ func (e *TextEntry) SetPlaceholder(s string)
     Draw shows it. The value does not change, so OnChange is not called.
     Only the first line of a multi-line hint is drawn.
 
+func (e *TextEntry) SetSubmitKeys(submit, newline []string)
+    SetSubmitKeys replaces the Submit and Newline key bindings, for example
+    to swap Enter and Alt+Enter at run time. A nil or empty list restores that
+    list's default (see TextEntryOptions).
+
 func (e *TextEntry) SetValue(s string)
     SetValue replaces the text, puts the caret at the end and clears the
     selection. The change is one undo step. It does not call OnChange.
