@@ -94,6 +94,8 @@ type textEntryControls struct {
 	alternate          bool
 	lastSubmittedPlain string
 	lastSubmittedMD    string
+	bar                *loom.HintBar
+	barRow             int // row of the bar in the last Draw, relative to the demo; -1 when hidden
 }
 
 func (d *textEntryControls) Unwrap() loom.Widget { return d.entry }
@@ -115,6 +117,8 @@ func newTextEntryControls() loom.Widget {
 	d.entry.EnableBold()
 	d.entry.SetValue("/topic Draft: a longer message that wraps across several rows of the chat input.")
 	d.entry.SetFocus(true)
+	d.bar = d.newBar()
+	d.barRow = -1
 	return d
 }
 
@@ -122,17 +126,54 @@ func newTextEntryControls() loom.Widget {
 // a few lines of text already make the entry scroll.
 const textEntryDemoRows = 4
 
-// textEntrySamples are inserted at the caret by the F5-F8 keys.
+// textEntrySamples are inserted at the caret by the F5-F7 keys (F8-F10 belong to
+// the gallery).
 var textEntrySamples = map[string]string{
 	"f5": "A short sample.",
 	"f6": "line one\nline two\nline three\nline four\nline five\nline six",
-	"f7": "A long sample without any line breaks that has to wrap across several rows of the entry, so the soft wrap and the scroll position can be watched. ",
-	"f8": "wide: 日本語のテキスト 🙂 e\u0301 emoji and combining marks",
+	"f7": "A long sample that has to wrap across several rows, so soft wrap and scrolling can be watched, with wide: 日本語 🙂 e\u0301 ",
 }
 
+// newBar builds the demo's one key bar; keys the entry handles itself have no action.
+func (d *textEntryControls) newBar() *loom.HintBar {
+	key := func(k, binding, label string, drop int, do func()) loom.HintEntry {
+		e := loom.HintEntry{Key: k, Binding: binding, Label: label, DropPriority: drop}
+		if do != nil {
+			e.Action = func() loom.EventResult { do(); return loom.Handled() }
+		}
+		return e
+	}
+	sample := func(k string) func() {
+		return func() { d.entry.ConsumePaste(loom.PasteEvent{Text: textEntrySamples[k]}) }
+	}
+	return loom.NewHintBar(
+		key("Ctrl+B", "", "Bold", 0, nil),
+		key("Enter", "", "Submit", 0, nil),
+		key("F2", "f2", "Placeholder", 1, d.togglePlaceholder),
+		key("F3", "f3", "Accept", 2, func() { d.entry.AcceptPlaceholder() }),
+		key("F4", "f4", "Caret", 3, func() { d.entry.SetCursorOffset(0) }),
+		key("F5", "f5", "Short", 4, sample("f5")),
+		key("F6", "f6", "Lines", 5, sample("f6")),
+		key("F7", "f7", "Long", 6, sample("f7")),
+	)
+}
+
+func (d *textEntryControls) togglePlaceholder() {
+	d.alternate = !d.alternate
+	if d.alternate {
+		d.entry.SetPlaceholder("Write an update…")
+	} else {
+		d.entry.SetPlaceholder("Message the team…")
+	}
+	d.entry.SetValue("")
+}
+
+// Draw stacks the entry, a separator, the debug view, a separator, the last
+// submission and the key bar. The debug block yields first when space is short.
 func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
-	controlsHeight := min(1, max(0, r.H))
-	avail := r.H - controlsHeight
+	d.barRow = -1
+	barH := min(1, max(0, r.H))
+	avail := r.H - barH
 	reserve := 0 // a submitted preview keeps two rows, so its overflow mark stays readable
 	if d.lastSubmittedMD != "" {
 		reserve = 2
@@ -146,31 +187,36 @@ func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
 		return
 	}
 	rest := avail - entryHeight
-	debug := d.debugLines()
-	if len(debug) > rest-reserve {
-		debug = debug[:max(0, rest-reserve)]
-	}
-	previewBudget := rest - len(debug)
-	preview := []string(nil)
-	if d.lastSubmittedMD != "" && r.W > 0 && previewBudget > 0 {
-		preview = wrapGalleryPreview("Submitted Markdown: "+strconv.Quote(d.lastSubmittedMD), r.W)
-		if len(preview) > previewBudget {
-			preview = appendGalleryOverflow(preview[:previewBudget], r.W)
-		}
-	}
 	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: entryHeight})
 	y := r.Y + entryHeight
-	for _, line := range debug {
-		writeGalleryClipped(c, r.X, y, r.W, line)
-		y++
+	// The debug view reads the caret after Draw, which has scrolled it into view.
+	if debug := d.debugLines(); rest-reserve >= len(debug)+2 {
+		d.separator(c, r, y)
+		for i, line := range debug {
+			writeGalleryClipped(c, r.X, y+1+i, r.W, line)
+		}
+		d.separator(c, r, y+1+len(debug))
+		y += len(debug) + 2
+		rest -= len(debug) + 2
 	}
-	for _, line := range preview {
-		c.Write(r.X, y, line, loom.Style{})
-		y++
+	if d.lastSubmittedMD != "" && r.W > 0 && rest > 0 {
+		preview := wrapGalleryPreview("Submitted Markdown: "+strconv.Quote(d.lastSubmittedMD), r.W)
+		if len(preview) > rest {
+			preview = appendGalleryOverflow(preview[:rest], r.W)
+		}
+		for _, line := range preview {
+			c.Write(r.X, y, line, loom.Style{})
+			y++
+		}
 	}
-	if controlsHeight > 0 {
-		writeGalleryClipped(c, r.X, r.Y+r.H-1, r.W, "Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown")
+	if barH > 0 {
+		d.barRow = r.H - 1
+		d.bar.Draw(c, loom.Rect{X: r.X, Y: r.Y + d.barRow, W: r.W, H: 1})
 	}
+}
+
+func (d *textEntryControls) separator(c *loom.Canvas, r loom.Rect, y int) {
+	c.Write(r.X, y, strings.Repeat("─", max(0, r.W)), loom.Style{Dim: true})
 }
 
 // debugLines describes the entry state shown below it.
@@ -180,7 +226,6 @@ func (d *textEntryControls) debugLines() []string {
 	return []string{
 		fmt.Sprintf("debug: %d runes, %d lines, offset %d, caret row %d col %d", utf8.RuneCountInString(v), strings.Count(v, "\n")+1, d.entry.CursorOffset(), row, col),
 		fmt.Sprintf("debug: selection %v, focused %v, entry rows %d", d.entry.HasSelection(), d.entry.Focused(), textEntryDemoRows),
-		"insert at caret: F5 short  F6 lines  F7 long wrapping  F8 wide characters",
 	}
 }
 
@@ -249,24 +294,8 @@ func appendGalleryOverflow(lines []string, width int) []string {
 	return lines
 }
 func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
-	switch e.Key {
-	case "f2":
-		d.alternate = !d.alternate
-		if d.alternate {
-			d.entry.SetPlaceholder("Write an update…")
-		} else {
-			d.entry.SetPlaceholder("Message the team…")
-		}
-		d.entry.SetValue("")
-		return loom.Handled()
-	case "f3":
-		d.entry.AcceptPlaceholder()
-		return loom.Handled()
-	case "f4":
-		d.entry.SetCursorOffset(0)
-		return loom.Handled()
-	case "f5", "f6", "f7", "f8":
-		return d.entry.ConsumePaste(loom.PasteEvent{Text: textEntrySamples[e.Key]})
+	if result := d.bar.ConsumeKey(e); result.Consumed {
+		return result
 	}
 	result := d.entry.ConsumeKey(e)
 	if result.Consumed {
@@ -279,6 +308,10 @@ func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	return result
 }
 func (d *textEntryControls) ConsumeMouse(e loom.MouseEvent) loom.EventResult {
+	if d.barRow >= 0 && e.Y == d.barRow {
+		e.Y = 0
+		return d.bar.ConsumeMouse(e)
+	}
 	return d.entry.ConsumeMouse(e)
 }
 func (d *textEntryControls) ConsumePaste(e loom.PasteEvent) loom.EventResult {
