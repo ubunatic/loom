@@ -4536,6 +4536,9 @@ func (e *TextEntry) AcceptPlaceholder() bool
     one undo step and calls OnChange. It reports whether the value changed;
     otherwise the call does nothing and returns false.
 
+func (e *TextEntry) ApplyTheme(theme ThemeColors)
+    ApplyTheme sets the scrollbar colours from the theme.
+
 func (e *TextEntry) ConsumeKey(ke KeyEvent) EventResult
     ConsumeKey applies an editing key. Keys it does not use are returned
     Ignored.
