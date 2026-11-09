@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"ubunatic.com/loom"
 	"ubunatic.com/loom/graph"
@@ -116,9 +117,40 @@ func newTextEntryControls() loom.Widget {
 	d.entry.SetFocus(true)
 	return d
 }
+
+// textEntryDemoRows is the entry height in the demo. It is small on purpose, so
+// a few lines of text already make the entry scroll.
+const textEntryDemoRows = 4
+
+// textEntrySamples are inserted at the caret by the F5-F8 keys.
+var textEntrySamples = map[string]string{
+	"f5": "A short sample.",
+	"f6": "line one\nline two\nline three\nline four\nline five\nline six",
+	"f7": "A long sample without any line breaks that has to wrap across several rows of the entry, so the soft wrap and the scroll position can be watched. ",
+	"f8": "wide: 日本語のテキスト 🙂 e\u0301 emoji and combining marks",
+}
+
 func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
 	controlsHeight := min(1, max(0, r.H))
-	previewBudget := max(0, r.H-controlsHeight-1)
+	avail := r.H - controlsHeight
+	reserve := 0 // a submitted preview keeps two rows, so its overflow mark stays readable
+	if d.lastSubmittedMD != "" {
+		reserve = 2
+	}
+	entryHeight := min(textEntryDemoRows, max(1, avail-reserve))
+	entryHeight = min(entryHeight, avail)
+	if entryHeight < 1 {
+		if r.H > 0 {
+			d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: 1})
+		}
+		return
+	}
+	rest := avail - entryHeight
+	debug := d.debugLines()
+	if len(debug) > rest-reserve {
+		debug = debug[:max(0, rest-reserve)]
+	}
+	previewBudget := rest - len(debug)
 	preview := []string(nil)
 	if d.lastSubmittedMD != "" && r.W > 0 && previewBudget > 0 {
 		preview = wrapGalleryPreview("Submitted Markdown: "+strconv.Quote(d.lastSubmittedMD), r.W)
@@ -126,19 +158,29 @@ func (d *textEntryControls) Draw(c *loom.Canvas, r loom.Rect) {
 			preview = appendGalleryOverflow(preview[:previewBudget], r.W)
 		}
 	}
-	entryHeight := r.H - controlsHeight - len(preview)
-	if entryHeight < 1 {
-		if r.H > 0 {
-			d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: 1})
-		}
-		return
-	}
 	d.entry.Draw(c, loom.Rect{X: r.X, Y: r.Y, W: r.W, H: entryHeight})
-	for i, line := range preview {
-		c.Write(r.X, r.Y+entryHeight+i, line, loom.Style{})
+	y := r.Y + entryHeight
+	for _, line := range debug {
+		writeGalleryClipped(c, r.X, y, r.W, line)
+		y++
+	}
+	for _, line := range preview {
+		c.Write(r.X, y, line, loom.Style{})
+		y++
 	}
 	if controlsHeight > 0 {
-		writeGalleryClipped(c, r.X, r.Y+r.H-1, r.W, fmt.Sprintf("Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown  offset: %d", d.entry.CursorOffset()))
+		writeGalleryClipped(c, r.X, r.Y+r.H-1, r.W, "Ctrl+B: bold  F2: placeholder  F3 accept  F4 caret  Enter: submit Markdown")
+	}
+}
+
+// debugLines describes the entry state shown below it.
+func (d *textEntryControls) debugLines() []string {
+	v := d.entry.Value()
+	row, col := d.entry.Cursor()
+	return []string{
+		fmt.Sprintf("debug: %d runes, %d lines, offset %d, caret row %d col %d", utf8.RuneCountInString(v), strings.Count(v, "\n")+1, d.entry.CursorOffset(), row, col),
+		fmt.Sprintf("debug: selection %v, focused %v, entry rows %d", d.entry.HasSelection(), d.entry.Focused(), textEntryDemoRows),
+		"insert at caret: F5 short  F6 lines  F7 long wrapping  F8 wide characters",
 	}
 }
 
@@ -223,6 +265,8 @@ func (d *textEntryControls) ConsumeKey(e loom.KeyEvent) loom.EventResult {
 	case "f4":
 		d.entry.SetCursorOffset(0)
 		return loom.Handled()
+	case "f5", "f6", "f7", "f8":
+		return d.entry.ConsumePaste(loom.PasteEvent{Text: textEntrySamples[e.Key]})
 	}
 	result := d.entry.ConsumeKey(e)
 	if result.Consumed {
