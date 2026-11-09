@@ -1,6 +1,6 @@
 # 450 — Half-block scrollbar thumbs on a themed track background
 
-**Status**: Open
+**Status**: Closed — half-block thumbs delivered for View and Viewport; TextEntry reuses them (448)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature

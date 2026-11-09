@@ -1,6 +1,6 @@
 # 448 — TextEntry shows a scrollbar when its content scrolls past MaxHeight
 
-**Status**: Open
+**Status**: Closed — bar in the last column, text wraps one column narrower while it shows; thumb drag with pane capture, track click, Esc restore; middle scrub left out
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Feature

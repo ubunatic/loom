@@ -935,14 +935,14 @@ func TestTextEntryBoldRenderingComposesWithHighlightAndSelection(t *testing.T) {
 	e.SetCursorOffset(0)
 	entryKey(e, "shift-right")
 	entryKey(e, "ctrl-b")
-	c := NewCanvas(3, 1)
-	e.Draw(c, Rect{W: 3, H: 1})
+	c := NewCanvas(4, 1)
+	e.Draw(c, Rect{W: 4, H: 1})
 	if got := c.Get(0, 0).Style; got != (Style{FG: red, BG: blue, Invert: true, Bold: true}) {
 		t.Fatalf("selected highlighted bold style = %+v, want red/blue, invert and bold", got)
 	}
 	e.SetCursorOffset(1)
-	c = NewCanvas(3, 1)
-	e.Draw(c, Rect{W: 3, H: 1})
+	c = NewCanvas(4, 1)
+	e.Draw(c, Rect{W: 4, H: 1})
 	if got := c.Get(0, 0).Style; got != (Style{FG: red, BG: blue, Bold: true}) {
 		t.Fatalf("unselected highlighted bold style = %+v, want red/blue and bold", got)
 	}
