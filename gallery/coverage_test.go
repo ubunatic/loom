@@ -181,3 +181,23 @@ func TestTextEntryDemoPlaceholderKeys(t *testing.T) {
 		}
 	}
 }
+
+func TestTextEntryDemoSampleKeysAndDebugView(t *testing.T) {
+	d := newTextEntryControls().(*textEntryControls)
+	d.entry.SetValue("")
+	for _, key := range []string{"f5", "f6", "f7", "f8"} {
+		before := d.entry.Value()
+		if !d.ConsumeKey(loom.KeyEvent{Key: key}).Consumed || d.entry.Value() != before+textEntrySamples[key] {
+			t.Fatalf("%s did not insert its sample at the caret: %q", key, d.entry.Value())
+		}
+	}
+	c := loom.NewCanvas(80, 10)
+	d.Draw(c, loom.Rect{W: 80, H: 10})
+	var screen string
+	for y := range c.Rows() {
+		screen += c.Row(y) + "\n"
+	}
+	if !strings.Contains(screen, "debug: ") || !strings.Contains(screen, "F8 wide characters") {
+		t.Fatalf("debug view or sample keys missing:\n%s", screen)
+	}
+}
