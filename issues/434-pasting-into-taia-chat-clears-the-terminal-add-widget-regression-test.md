@@ -81,3 +81,7 @@ Host reviewed M1/M2/M3 source and assertion diffs, required restoration of the t
 ## Goal
 
 /goal Re-verify the report against current taia and loom code and recent history; reproduce and identify the responsible layer. Add a loom chat-input widget regression test exercising paste and asserting the text is inserted without clearing the terminal or losing the surrounding display, and fix any confirmed loom defect. Verify the fix and report any taia-side follow-up needed. Stop and report if blocked by a user decision or denied permission; on a loop, hard architectural or OS blocker, or no progress, clear the goal and write a failure report explaining why.
+
+## Owner manual check (2026-11-09)
+
+Owner pasted `/tmp/loom-434-paste.txt` (three lines, `ESC[2J` inside line two) into `loom widgets --show TextEntry`. No screen clear in either terminal. foot showed `line [2J two`; gnome-terminal (VTE; Tilix also uses VTE) showed `line ␛[2J two`. The escape byte never reached the screen as a control sequence: foot or TextEntry drops it, and VTE appears to replace it with U+241B before delivery (not verified at byte level). Original Taia report not reproduced; the clearing is attributed to neither loom nor a current terminal. Gallery coverage and the real-command PTY test with the `\x1b[2J` payload remain as regression guards. Closing as not reproducible.
