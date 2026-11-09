@@ -819,7 +819,7 @@ entry.SetFocus(true)
 | `Placeholder` | empty | Dimmed text shown while the entry is empty. Only its first line is drawn. |
 | `Prompt` | empty | Prefix on the first row. Continuation rows are indented by its width. |
 | `MaxHeight` | 0 (unbounded) | Visual rows before the entry scrolls. |
-| `SubmitKeys` | `["enter"]` | Keys that call `OnSubmit`. Without `OnSubmit`, they are ignored. |
+| `SubmitKeys` | `["enter", "ctrl-enter"]` | Keys that call `OnSubmit`. Ctrl+Enter is only reported by terminals with the kitty keyboard protocol (or modifyOtherKeys); elsewhere it arrives as Enter or Ctrl+J. Without `OnSubmit`, they are ignored. |
 | `NewlineKeys` | `["shift-enter", "ctrl-j", "alt-enter"]` | Keys that insert a line break. |
 | `OnChange` | nil | Called with the new value after each text change. Not called by `SetValue`. |
 | `OnSubmit` | nil | Called with the current value. Its result is returned to the caller. |
