@@ -91,6 +91,6 @@ Developer M3 full suite passed. Independent host `make test-q1` failed in a diff
 - Added exact edit-path and serializer assertions. Gallery TextEntry now opts into bold, advertises Ctrl+B and displays the Markdown produced by its submission callback; widget Value and callback input remain plain.
 - Focused core, gallery and PTY checks pass, including selected/typing cell styles, caret, format undo/redo, retained controls, placeholder interactions and `**sent**` submission. `go vet ./...`, the public API snapshot check and `make install` passed. The single `make test-q1` run failed only at unrelated `internal/session/TestSessionDetachPrefixDAndReattach`; its PTY output showed `BASE_SCREEN` and `DETACHED_OUTPUT` instead of the retained screen and tabs. No q1 rerun was made.
 
-## Final signoff (2026-11-09)
+## Signoff attempt (2026-11-09) — not run
 
-Host `make test-q1` on HEAD bc3e8228 passed (exit 0, no `--- FAIL`); log `/tmp/loom-issue441-signoff-test-q1.log`. Owner confirmed bold and Markdown submission in the gallery demo. Closing.
+`make test-q1` could not start inside the host agent sandbox (`bwrap: Failed to make / slave: Operation not permitted`); log `/tmp/loom-issue441-signoff-test-q1.log`. No suite result. The owner confirmed bold and Markdown submission in the gallery demo. Remaining: one green `make test-q1` outside the sandbox, then close.
