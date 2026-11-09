@@ -107,3 +107,51 @@ func TestTextEntryMeasureMatchesDrawWrapWidthWithBar(t *testing.T) {
 		t.Fatalf("bar=%v width=%d, want bar and width 9", e.bar, e.layoutWidth)
 	}
 }
+
+func TestTextEntryMiddleScrubScrollsAndEscRestores(t *testing.T) {
+	e, _ := scrollbarEntry(10)
+	e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 3})
+	if w, _ := e.mouseCaptureTarget(); w != e {
+		t.Fatal("a middle press on the text must claim the capture")
+	}
+	e.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseMiddle, X: 3, Y: 0})
+	if e.scroll >= 6 {
+		t.Fatalf("scroll after dragging up = %d, want less than 6", e.scroll)
+	}
+	e.endMouseCapture(true)
+	if e.scroll != 6 {
+		t.Fatalf("scroll after Esc = %d, want 6", e.scroll)
+	}
+	e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 3})
+	e.ConsumeMouse(MouseEvent{Action: MouseDrag, Button: MouseMiddle, X: 3, Y: 0})
+	e.ConsumeMouse(MouseEvent{Action: MouseRelease, Button: MouseMiddle, X: 3, Y: 0})
+	if e.pan.active || e.scroll == 6 {
+		t.Fatalf("pan active=%v scroll=%d, want released and scrolled", e.pan.active, e.scroll)
+	}
+}
+
+func TestTextEntryMiddlePressIgnoredWithoutScrollbarOrOnBar(t *testing.T) {
+	e, _ := scrollbarEntry(4)
+	if r := e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseMiddle, X: 3, Y: 1}); r.Consumed {
+		t.Fatal("no bar: a middle press must stay ignored")
+	}
+	e, _ = scrollbarEntry(10)
+	if r := e.ConsumeMouse(MouseEvent{Action: MousePress, Button: MouseMiddle, X: 19, Y: 1}); r.Consumed {
+		t.Fatal("a middle press on the bar column must not pan")
+	}
+}
+
+func TestTextEntrySetSubmitKeysSwapsEnter(t *testing.T) {
+	var got string
+	e := NewTextEntry(TextEntryOptions{OnSubmit: func(v string) EventResult { got = v; return Handled() }})
+	e.SetValue("a")
+	e.SetSubmitKeys([]string{"alt-enter"}, []string{"enter"})
+	entryKey(e, "enter")
+	if got != "" || e.Value() != "a\n" {
+		t.Fatalf("enter: submitted %q value %q, want a line break", got, e.Value())
+	}
+	entryKey(e, "alt-enter")
+	if got != "a\n" {
+		t.Fatalf("alt-enter submitted %q, want %q", got, "a\n")
+	}
+}
