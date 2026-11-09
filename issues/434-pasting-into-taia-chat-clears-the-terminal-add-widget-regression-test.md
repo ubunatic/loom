@@ -1,6 +1,6 @@
 # 434 — Pasting into taia chat clears the terminal: add widget regression test
 
-**Status**: Open
+**Status**: Closed — not reproducible: owner paste with ESC[2J in foot and gnome-terminal did not clear; PTY regression test kept
 **Priority**: P1 (High)
 **Severity**: Major
 **Category**: Bug
