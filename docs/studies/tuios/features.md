@@ -47,7 +47,7 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | session | VT scrollback API | vt.scrollback-api (UNVER) | has | `Scrollback` in `pane_screen.go` |
 | model | Leader-key modal design | tuios.leader-key-model | n/a | loom is non-modal by design |
 | test | Headless model test harness | bt.test.teatest-wait | has | `loomtest.VT`, `CompareWidget`; teatest polls with sleep, loom forbids that |
-| status | Ultraviolet API still unstable | uv.status-active-dev | n/a | quality note |
+| status | Ultraviolet API still unstable | uv.status-active-dev | n/a | P3 note: API stability is not a goal while loom is alpha |
 
 ## P2 and P3 highlights (not verified against loom)
 

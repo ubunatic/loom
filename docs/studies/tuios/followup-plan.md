@@ -24,7 +24,8 @@ Stop S (every batch): finish each assigned feature as proved/partial/disproved/u
 
 Flow fixes after the batch 1 trial (apply to every batch):
 - **Same matrix on both sides:** run each canary matrix through one shared harness against Loom and against every compared library (pinned), with named measurement boundaries (for render: Canvas flush alone, and Pane including ancillary writes). A Loom-only number is not a comparison.
-- **Deployed pins for TUIOS claims:** for any claim about TUIOS behavior, use the dependency versions in TUIOS's pinned `go.mod`/`go.sum`; the newer pins in the table below are separate comparisons.
+- **Latest versions only (owner, 2026-11-10):** compare against the latest release (or latest commit when there is no release) of each library, pinned by SHA. Do not research old majors (Bubble Tea v1) or TUIOS's older deployed dependency versions; drop v1 rows to P3 notes. Re-resolve the pins in the table below to latest before use.
+- **API stability is not a goal:** loom is alpha. Stability and breaking-change rows of other libs are P3 notes at most; nothing about API stability is P1 until loom v1.
 - **Loom permalinks:** cite Loom as `https://codeberg.org/ubunatic/loom/src/commit/<SHA>/<file>#L<x>-L<y>` at a revision pushed to `origin`; the GitHub mirror is not kept current.
 - **Finish the batch:** use the full time budget to close the comparison; "unknown" is only for blocked sources or failed canaries, not for skipped steps.
 

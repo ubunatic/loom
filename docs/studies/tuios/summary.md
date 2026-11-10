@@ -27,6 +27,9 @@ by seven haiku:med searchers. The host checked the P1 rows against loom code at 
 loom's main lead: desktop-like editing, mouse capture, claim-cell composition and its test tiers.
 loom's main lag: output efficiency and terminal capability detection.
 
+Scope rule (owner, 2026-11-10): only the latest version of each library counts; API stability and
+breaking changes are P3 notes while loom is alpha.
+
 ## Top gaps for loom (P1 first)
 
 1. **Write only changed rows or cells.** loom redraws all rows on a dirty flush; idle panes write
