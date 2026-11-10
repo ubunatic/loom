@@ -58,4 +58,5 @@ upkeep.
 | 459 | [459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md](459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md) | Canvas flush writes only changed cells, measured against Bubble Tea v2 | Open |
 | 460 | [460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md](460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md) | measure: Indic conjuncts split into two clusters, follow current UAX 29 segmentation | Open |
 | 461 | [461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md](461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md) | Negotiate mode 2027 and use one width policy in measure, canvas and VT | Open |
+| 462 | [462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md](462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md) | Pane consumes terminal replies centrally instead of dispatching them as key events | Open |
 <!-- harnez:end issues-active-index -->
