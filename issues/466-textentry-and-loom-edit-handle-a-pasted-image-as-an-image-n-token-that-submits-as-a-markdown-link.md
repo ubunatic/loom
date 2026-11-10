@@ -36,9 +36,25 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
   (`wl-paste --list-types`, then `--type image/png` or `text/html`), opt-in, local sessions only
   (not over SSH; OSC 52 carries text only), which belongs to the 465 clipboard layer. kitty OSC
   5522 stays unverified.
-- **Detect**: a paste that is one image path (quoted or bare) or `file://` URI, by extension,
-  becomes an image token instead of raw text; with the 465 opt-in, an empty paste or an explicit
-  "paste image" action reads the image clip.
+- **Owner design (2026-11-10): two paste paths, kept apart.**
+  - **Ctrl+Shift+V is the terminal's paste.** The terminal sends text as a bracketed paste;
+    loom inserts it as text and does not reinterpret it (no path-to-token guessing). Works
+    everywhere, including over SSH.
+  - **Ctrl+V is loom's paste.** Today it pastes only the widget's internal clip
+    (`text_entry.go` ~L546, `spec/defaults.yaml` `paste: ctrl-v, shift-insert`). New: when a
+    desktop clipboard is reachable, loom reads it itself, lists the offered types and picks one:
+    an image type (`image/png` first) → image token via the app hook; `text/uri-list` with image
+    files → token with the path; otherwise `text/plain` → text. This works the same in foot,
+    kitty and any other terminal, since the terminal is not involved.
+  - **Desktop session detection**: e.g. `WAYLAND_DISPLAY` set and `wl-paste --list-types`
+    succeeds (X11 with `xclip`/`xsel` is a later option); not over SSH (`SSH_CONNECTION`).
+    Unverified on X11 and inside `loom session`.
+  - **No desktop session (likely a server)**: Ctrl+V cannot reach the user's clipboard, so loom
+    shows a short notice: "Ctrl+V can't read your clipboard here; use Ctrl+Shift+V to paste
+    from your terminal." Open: whether Ctrl+V still pastes loom's own last copy (internal clip)
+    there and shows the notice only when that is empty (recommended), or always shows it.
+  - The 465 paste rule (internal rich clip if it still matches the system clipboard) uses this
+    Ctrl+V clipboard read.
 - **Represent**: one token per image, label `[Image #n]` (n per widget, counting up), data holds
   the target (path, URI or a saved file the app chooses) and alt text. RichTextEdit reuses
   `RichPill{Kind: "image"}`; TextEntry needs the same atomic token (edit, select, delete and
@@ -51,13 +67,16 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
   short notice and inserts nothing.
 
 ## 3. Implementation & Verification Plan
-/goal Pasting an image path or image clip into TextEntry or `loom edit` inserts one atomic
-`[Image #n]` token, and submit or save yields the Markdown image link with the surrounding text;
-plain text pastes are unchanged. Stop and report when blocked on an API or storage decision or a
+/goal In a desktop session, Ctrl+V of an image clip or image file into TextEntry or `loom edit`
+inserts one atomic `[Image #n]` token, and submit or save yields the Markdown image link with the
+surrounding text; without a desktop session Ctrl+V shows the Ctrl+Shift+V notice; terminal
+(bracketed) pastes stay plain text. Stop and report when blocked on an API or storage decision or a
 denied permission; on a loop or no progress, clear the goal and write a failure report.
 
-- Canary done (table above). Path detection (quoted and bare) needs no clipboard access and can
-  land first; the clip read waits for 465.
+- Canary done (table above): it shows why terminal paste cannot carry images. Next canary:
+  `wl-paste` type listing and read from inside a Pane in foot and kitty, and its behaviour over
+  SSH (detection must say "no desktop").
+- Clipboard read is shared with 465; build it once (no shell, size cap, timeout).
 - Shared token type for TextEntry and RichTextEdit; table tests for detect, edit-as-unit,
   undo, submit expansion; Pane paste route test.
 - Re-check live code first; 464 and 465 may have changed the paste and clipboard paths.
