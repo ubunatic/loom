@@ -1,6 +1,6 @@
 # 457 — Research TUIOS and the Charm stack against loom
 
-**Status**: Draft
+**Status**: In Progress — owner said go; 7 haiku:med searchers started
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research

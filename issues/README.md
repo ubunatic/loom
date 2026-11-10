@@ -53,5 +53,5 @@ upkeep.
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
 | 456 | [456-textentry-passes-through-keys-that-have-no-effect.md](456-textentry-passes-through-keys-that-have-no-effect.md) | TextEntry passes through keys that have no effect | Open |
-| 457 | [457-research-tuios-and-the-charm-stack-against-loom.md](457-research-tuios-and-the-charm-stack-against-loom.md) | Research TUIOS and the Charm stack against loom | Draft |
+| 457 | [457-research-tuios-and-the-charm-stack-against-loom.md](457-research-tuios-and-the-charm-stack-against-loom.md) | Research TUIOS and the Charm stack against loom | In Progress — owner said go; 7 haiku:med searchers started |
 <!-- harnez:end issues-active-index -->
