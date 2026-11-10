@@ -60,4 +60,5 @@ upkeep.
 | 461 | [461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md](461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md) | Negotiate mode 2027 and use one width policy in measure, canvas and VT | Open |
 | 462 | [462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md](462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md) | Pane consumes terminal replies centrally instead of dispatching them as key events | Open |
 | 463 | [463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md](463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md) | TextEntry: completion popup with a suggestion source and key routing | Draft |
+| 464 | [464-text-widgets-share-one-paste-sanitiser-and-richtextedit-accepts-paste.md](464-text-widgets-share-one-paste-sanitiser-and-richtextedit-accepts-paste.md) | Text widgets share one paste sanitiser and RichTextEdit accepts paste | Open |
 <!-- harnez:end issues-active-index -->
