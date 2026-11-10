@@ -74,4 +74,5 @@ upkeep.
 | 480 | [480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md](480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md) | Replace timing sleeps in pane PTY tests with condition waits | Open |
 | 481 | [481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md](481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md) | Jules sweep 2026-11-10: 22 bundled sessions in small waves | In Progress — wave 1 started one session at a time (owner: Jules is busy) |
 | 482 | [482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md](482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md) | vt.VT ignores ICH, DCH, IL, DL, ECH and scroll regions (DECSTBM) | Open |
+| 483 | [483-measure-vs16-after-a-non-emoji-letter-marks-inside-indic-conjuncts-vt-fuzz-cursor-bound.md](483-measure-vs16-after-a-non-emoji-letter-marks-inside-indic-conjuncts-vt-fuzz-cursor-bound.md) | measure: VS16 after a non-emoji letter, marks inside Indic conjuncts, vt fuzz cursor bound | Open |
 <!-- harnez:end issues-active-index -->
