@@ -1,6 +1,6 @@
 # 481 — Jules sweep 2026-11-10: 22 bundled sessions in small waves
 
-**Status**: Open — waiting for owner sign-off (session 2 width targets, sessions 18/19)
+**Status**: In Progress — wave 1 started one session at a time (owner: Jules is busy)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research
@@ -56,7 +56,7 @@ research (pinned-SHA permalinks, report only).
 | wave | # | slug | items (kind) | files |
 |---|---|---|---|---|
 | 1 | 1 | render-diff | 459 (implement): flush only changed cells; bytes and ns per frame vs full repaint on 3 examples | canvas.go, pane_screen.go |
-| 1 | 2 | unicode-width | 431, 433, 460 (implement), targets pending owner sign-off: lone U+FE0F width 0, `a`+U+FE0F width 1; 👍🏽 one cluster width 2; क्ष one cluster (GB9c, own table) width 1 | measure/ |
+| 1 | 2 | unicode-width | 431, 433, 460 (implement): lone U+FE0F width 0, `a`+U+FE0F width 1; 👍🏽 one cluster width 2; क्ष one cluster (GB9c, own table) width 2 (owner: VTE/Tilix shows 👍 and क्ष as 2 columns; width 1 only under mode 2027, 461) | measure/ |
 | 1 | 3 | fuzz | new (test-draft): fuzz ScanKey/DecodeMouse, vt.Write, ParseAnsiBuffer, measure (only `FuzzMarkupParse` exists, `markup_test.go:203`), 15 s each; crashers as failing seeds | new *_fuzz_test.go |
 | 1 | 4 | ansibuffer | 413 (implement; lead in the ticket) | ansibuffer.go |
 | 2 | 5 | vt-diff | new (test-draft): loom vt vs charmbracelet/x vt, split-every-byte streams, separate module | experiments/vtdiff |
@@ -75,8 +75,8 @@ research (pinned-SHA permalinks, report only).
 | 5 | 18 | clipboard | 465 M1 + 466 non-key parts (implement): injectable clipboard reader/writer, OSC 52 write, `[Image #n]` token model; key bindings as test-draft | clipboard code, text_entry token code |
 | 5 | 19 | coverage | new (test-draft): 3 lowest-covered public packages, tests in new `*_cover_test.go` | new test files |
 | 5 | 20 | examples | new (implement): `Example*` tests for the 10 most-used public types | new example_test.go files |
-| 6 | 21 | sel-core | 470 option A (experiment, pending owner sign-off): shared selection/undo core under TextInput, TextArea, TextEntry | text widgets |
-| 6 | 22 | sel-wrap | 470 option B (experiment, pending owner sign-off): wrappers reusing TextEntry; same tests as 21 | text widgets |
+| 6 | 21 | sel-core | 470 option A (experiment; kept as last wave, decided 2026-11-10): shared selection/undo core under TextInput, TextArea, TextEntry | text widgets |
+| 6 | 22 | sel-wrap | 470 option B (experiment; evidence only, does not decide 470): wrappers reusing TextEntry; same tests as 21 | text widgets |
 
 Dropped after review: three audit sweeps of old tickets (most already audited in `reports/jules/`,
 others are epics or manual checklists), widget-gap research (done in 458; MenuBar, Tree, Tabs, Dialog,
@@ -113,3 +113,4 @@ progress, clear the goal and write a failure report here.
 
 | wave | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|---|
+| 1 | implement | jules-render-diff | pending | none yet | running (started 2026-11-10 20:03, only session started; owner asked for one at a time) |

@@ -73,5 +73,5 @@ upkeep.
 | 478 | [478-measure-and-bound-key-latency-and-memory-under-post-load.md](478-measure-and-bound-key-latency-and-memory-under-post-load.md) | Measure and bound key latency and memory under Post load | Open |
 | 479 | [479-document-post-drop-on-close-and-the-caller-owned-close-contract.md](479-document-post-drop-on-close-and-the-caller-owned-close-contract.md) | Document Post drop-on-Close and the caller-owned Close contract | Open |
 | 480 | [480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md](480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md) | Replace timing sleeps in pane PTY tests with condition waits | Open |
-| 481 | [481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md](481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md) | Jules sweep 2026-11-10: 22 bundled sessions in small waves | Open — waiting for owner sign-off (session 2 width targets, sessions 18/19) |
+| 481 | [481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md](481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md) | Jules sweep 2026-11-10: 22 bundled sessions in small waves | In Progress — wave 1 started one session at a time (owner: Jules is busy) |
 <!-- harnez:end issues-active-index -->
