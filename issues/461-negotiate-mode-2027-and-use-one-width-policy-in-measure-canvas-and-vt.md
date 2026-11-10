@@ -30,8 +30,10 @@ Evidence: 458 batch 2, `docs/studies/tuios/report-width.md` (V1, V3, V6).
   0.47.1 answers 0 (not recognised) yet uses grapheme widths. So DECRQM is the first step and
   the CPR probe stays the fallback; extend the probe to the samples where terminals differ
   (ZWJ family, Indic conjunct: foot 2, kitty 1). Ghostty not checked (not installed).
-- Coordinate with 458 batch 3 (terminal queries), which covers query-before-enable for 2026 and
-  kitty flags.
+- 458 batch 3 (report-queries.md): build the startup query as one batch ending with DA1, as tcell
+  (1 s backstop) and TUIOS (300 ms) do, and include DECRQM 2026 and the kitty `CSI ? u` query, so
+  2026 wrapping and kitty push follow the reply instead of opt-in switches. Depends on 462 (Pane
+  must consume replies, not pass them to widgets as keys).
 
 ## 3. Implementation & Verification Plan
 /goal Pane queries 2027, selects one width policy from the reply, applies it to measure, Canvas

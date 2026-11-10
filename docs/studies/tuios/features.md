@@ -15,14 +15,16 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | render | Within-frame style transitions (SGR only on change) | tuios.uv-style-diff (SGR pair cache) | has | `Canvas.Row` emits SGR on style change |
 | render | One writer call per canvas frame | uv.render-flush-split | has | `ResizeConfig.AtomicFlush`; Pane ancillary writes separate, unmeasured |
 | render | Mode 2026 synchronized output | bt.sync-output-2026, uv.sync-output-2026, term.sync-output-2026 | has | `ResizeConfig.SynchronizedOutput`: configured output, not capability detection or whole-redraw atomicity |
-| render | Query DECRQM 2026 before using it | term.decrqm-2026-replies | unchecked | config switch only, no query found |
+| render | Query DECRQM 2026 before using it | term.decrqm-2026-replies | **missing** | Pane wraps 2026 by config, never queries; Bubble Tea v2 queries and enables on reset; loom VT answers 0 (report-queries.md V1, V3, V4) |
+| input | Terminal replies kept out of widget key input | uv decoder typed events, tcell initQ | **partial** | Pane forwards replies as `KeyEvent{Report}`; kitty `CSI ? u` and `CSI 48 t` arrive as plain empty keys; late fragments become text keys (report-queries.md matrix; ticket 462) |
+| input | Startup query batch ended by DA1 with a backstop | tcell (1 s), TUIOS (300 ms) | **missing** | only `loom-probe keys` does query + DA1 (1 s); Pane has no startup query |
 | width | Mode 2027 grapheme width, queried by DECRQM | term.grapheme-2027, ansi.width-method, vt.widthmethod-mode-2027, tuios.width-mode-2027 | **missing** | no 2027 query or state; loom VT answers DECRQM 2027 with 0 (unknown). `measure` probes only ZWJ width by CPR (`LOOM_ZWJ` override). ultraviolet queries 2027 at start and switches buffer and renderer width (report-width.md V6) |
 | width | Grapheme segmentation matches current Unicode | ansi.stringwidth-grapheme-default, tcell.cell.put-grapheme | partial | loom splits Indic conjunct `क्ष` into two clusters (width 2); x/ansi and tcell v3 keep one cluster (width 1). Flags, marks, ZWJ handled (report-width.md V1) |
 | width | Cell buffer stores grapheme clusters | tcell.cell.put-grapheme | partial | leading cell plus continuations, using loom's own segmentation; a wide glyph crossing the right edge is rejected whole (report-width.md V2) |
 | input | Partial escape stays buffered until complete | input.parsesequence-consumed | has | `esc_key_timeout` 50 ms (`docs/TuiInput.md:56`) |
 | input | Kitty keyboard flags beyond 1 (event types, alternate keys) | ansi.kitty-keyboard-flags, term.kitty-keyboard.flags (UNVER) | partial | loom pushes flag 1 only (`docs/TuiInput.md:96`) |
 | input | Query kitty support (`CSI ? u`) before enabling | tcell.kitty-keyboard.enable | partial | only in `loom-probe keys`, not in `Pane` (opt-in flag) |
-| input | In-band resize, mode 2048 | term.inband-resize-2048 | **missing** | only in `internal/session`; Pane uses SIGWINCH |
+| input | In-band resize, mode 2048 | term.inband-resize-2048 | **missing** | Pane uses SIGWINCH; a 2048 report becomes an empty key; loom VT does not recognise 2048. tcell queries, enables, decodes (with pixels) and disables it (report-queries.md V6). Not ticketed: SIGWINCH works |
 | input | Paste sanitised of control chars | tuios.bracketed-paste-sanitize | unchecked | |
 | input | Paste never triggers shortcuts or navigation | tview.application.paste-no-navigation | has | `ConsumePaste` path (TextEntry) |
 | events | High-rate producers: `Send`/`Post` without blocking | bt.send-blocks | has | `Pane.Post` appends under a mutex and invalidates; no block, but no cap |

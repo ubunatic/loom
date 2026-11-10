@@ -44,8 +44,11 @@ breaking changes are P3 notes while loom is alpha.
    today). TUIOS's emulator reports 2027 as permanently set. Real-terminal replies are unmeasured
    (owner check in report-width.md). Separately, loom splits Indic conjuncts (`क्ष`) that current
    Unicode keeps as one cluster.
-3. **Ask before enabling.** Query DECRQM 2026 and `CSI ? u` (kitty) at start, as tcell does,
-   instead of only opt-in switches.
+3. **Ask before enabling, and keep replies out of key input.** Query DECRQM 2026, 2027 and
+   `CSI ? u` (kitty) at start in one batch ended by DA1, as tcell (1 s backstop) and TUIOS
+   (300 ms) do. First Pane must consume replies itself: today it forwards them to widgets as
+   `KeyEvent{Report}`, some reply forms are not even marked, and a late fragment becomes text
+   keys (458 batch 3, ticket 462; 2027 part in 461).
 4. **Drag auto-scroll.** While a captured drag is held outside the content, keep scrolling on a
    tick (TUIOS: 50 ms). Fits the existing pane capture.
 5. **In-band resize (mode 2048)** in Pane, with SIGWINCH as the fallback.
