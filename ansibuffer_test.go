@@ -549,3 +549,32 @@ func TestParseAnsiBufferMCTopBarReachesRightEdge(t *testing.T) {
 		})
 	}
 }
+
+// TestParseAnsiBufferCursorAddressedWidth: a screen drawn with cursor moves
+// and no newlines is as wide as its widest row, not as all rows together
+// (a 200x60 Canvas.Flush parsed to 12000 columns and took 47 ms).
+func TestParseAnsiBufferCursorAddressedWidth(t *testing.T) {
+	cases := []struct {
+		in         string
+		cols, rows int
+		last       rune // rune at the last column of row 0
+	}{
+		{"\x1b[1;1Habc\x1b[2;1Hdef", 3, 2, 'c'},
+		{"\x1b[?2026h\x1b[1;1H\x1b[K╔═╗\x1b[2;1H\x1b[K╚═╝\x1b[?2026l", 3, 2, '╗'},
+		{"ab\ncd", 2, 2, 'b'},
+		{"a世", 3, 1, 0}, // wide rune: continuation cell at the end
+	}
+	for _, c := range cases {
+		buf, err := ParseAnsiBuffer(c.in, 1, 1)
+		if err != nil {
+			t.Fatalf("%q: %v", c.in, err)
+		}
+		if buf.Cols() != c.cols || buf.Rows() != c.rows {
+			t.Errorf("%q: size %dx%d, want %dx%d", c.in, buf.Cols(), buf.Rows(), c.cols, c.rows)
+			continue
+		}
+		if got := buf.Get(c.cols-1, 0).Rune; got != c.last {
+			t.Errorf("%q: last cell of row 0 = %q, want %q", c.in, got, c.last)
+		}
+	}
+}

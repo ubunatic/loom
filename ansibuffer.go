@@ -563,15 +563,11 @@ func LoadAnsiBuffer(path string, defaultCols, defaultRows int) (*AnsiBuffer, err
 // ParseAnsiBuffer parses an ANSI string into a 2D AnsiBuffer.
 func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) {
 	lines := strings.Split(strings.ReplaceAll(content, "\r\n", "\n"), "\n")
+	// The width comes from the pre-scan below, which follows cursor moves.
+	// Measuring each newline-separated line instead made a cursor-addressed
+	// screen (no newlines) as wide as all its rows together.
 	maxCols := minCols
 	maxRows := max(minRows, len(lines))
-
-	for _, line := range lines {
-		w := measure.StringWidth(stripANSI(line))
-		if w > maxCols {
-			maxCols = w
-		}
-	}
 
 	// Pre-scan CSI positioning sequences (A, B, C, D, H, f, d, G, r) to ensure the
 	// buffer is large enough to hold all cursor-addressed content.
