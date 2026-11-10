@@ -426,4 +426,5 @@
 | 454 | [454-textentry-frame-send-button-and-height-bounds.md](454-textentry-frame-send-button-and-height-bounds.md) | TextEntry frame, send button and height bounds | Closed — delivered with the frame, send button, row bounds and gallery controls (owner request, taia wants these in loom) |
 | 455 | [455-textentry-setprompt.md](455-textentry-setprompt.md) | TextEntry SetPrompt | Closed — SetPrompt and Prompt added; taia asked for it (taia#104) |
 | 458 | [458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md](458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md) | Follow-up research for 457: per-feature code comparison in nine batches | Closed — M2 integrated in docs/studies/tuios (report-integration.md); 2 API rows unchecked with reasons |
+| 477 | [477-vt-vt-drops-a-combining-mark-when-a-write-splits-between-base-and-mark.md](477-vt-vt-drops-a-combining-mark-when-a-write-splits-between-base-and-mark.md) | vt.VT drops a combining mark when a write splits between base and mark | Closed — fixed by PR 91 (c81475bf); autoWrap-off gap noted |
 <!-- harnez:end issues-closed-index -->

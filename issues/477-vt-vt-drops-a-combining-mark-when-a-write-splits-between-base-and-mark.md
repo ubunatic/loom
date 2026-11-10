@@ -1,6 +1,6 @@
 # 477 — vt.VT drops a combining mark when a write splits between base and mark
 
-**Status**: Open
+**Status**: Closed — fixed by PR 91 (c81475bf); autoWrap-off gap noted
 **Priority**: P2 (Medium)
 **Severity**: Major
 **Category**: Bug
@@ -56,3 +56,10 @@ Lead from the failed run, checked by the host: a mark that starts a new write fo
 cluster, and `putCluster` returns early for `w <= 0` (`vt/vt.go:600-603`), so the mark is dropped.
 Fix direction: append an extending cluster to the cell before the cursor (or the last column while a
 wrap is pending).
+
+## Resolution (2026-11-10)
+Done by Codeberg PR 91 (merge `c81475bf`): Jules commit from GH #119 plus host commit `88dc8563`
+(`extendCluster` rewrites the cell when the joined cluster changes width, drops it at column 0) and
+`b9c349b2` (byte-by-byte variant). `vt/split_every_byte_test.go` passes for all 9 streams (6 failed
+on the old main); `make test-q1` passed. Known gap from the agy:flash38 review, not fixed: with
+autoWrap off, a mark written after the last column attaches to the cell before it.
