@@ -11,9 +11,10 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 
 | Area | Feature | Where seen | loom | Evidence in loom |
 |---|---|---|---|---|
-| render | Cell or row diff: write only changed cells/rows | uv.transformline-diff, uv.line-hash-diff, bt.renderer.cell-based, tuios.uv-style-diff | **missing** | `canvas.go` `FlushWithConfig` writes every row on every frame (`pane_run.go:299`) |
-| render | Render into a buffer, one write per frame | uv.render-flush-split | has | `ResizeConfig.AtomicFlush` in `canvas.go` |
-| render | Mode 2026 synchronized output | bt.sync-output-2026, uv.sync-output-2026, term.sync-output-2026 | has | `ResizeConfig.SynchronizedOutput` |
+| render | Temporal row/cell diff: write only changed rows/cells | uv.transformline-diff, uv.line-hash-diff, bt.renderer.cell-based, bt.renderer.v1-string-diff | **missing** | `canvas.go` `FlushWithConfig` writes every row on a dirty flush; redraw is dirty-gated (`pane_run.go:432`). Canvas canary: ~2270 bytes per 80×20 frame, same for unchanged and one-cell frames (report-render.md) |
+| render | Within-frame style transitions (SGR only on change) | tuios.uv-style-diff (SGR pair cache) | has | `Canvas.Row` emits SGR on style change |
+| render | One writer call per canvas frame | uv.render-flush-split | has | `ResizeConfig.AtomicFlush`; Pane ancillary writes separate, unmeasured |
+| render | Mode 2026 synchronized output | bt.sync-output-2026, uv.sync-output-2026, term.sync-output-2026 | has | `ResizeConfig.SynchronizedOutput`: configured output, not capability detection or whole-redraw atomicity |
 | render | Query DECRQM 2026 before using it | term.decrqm-2026-replies | unchecked | config switch only, no query found |
 | width | Mode 2027 grapheme width, queried by DECRQM | term.grapheme-2027, ansi.width-method, vt.widthmethod-mode-2027 (UNVER), tuios.width-mode-2027 | **missing** | no `2027` in loom; `measure` probes ZWJ width by terminal instead |
 | width | Cell buffer stores grapheme clusters | tcell.cell.put-grapheme | has | cluster-aware editing (`text_cluster_edit_test.go`) |

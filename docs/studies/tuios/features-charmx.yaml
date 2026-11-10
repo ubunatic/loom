@@ -12,7 +12,7 @@
   symbol: uv.TerminalScreen.Render / uv.TerminalScreen.Flush
   source_url: https://pkg.go.dev/github.com/charmbracelet/ultraviolet
   evidence_quote: "(s) Flush()"
-  verified: true
+  verified: partial  # 458 b1: index entry only, execution path not traced
   loom: unknown
   priority: P1
   note: Index lists Render and Flush; the doc prose for Flush was not verbatim-fetched, only the index entry.
@@ -25,7 +25,7 @@
   symbol: TerminalRenderer.paintLine, oldhash/newhash []uint64
   source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_renderer.go (line n/a)
   evidence_quote: "A drift-prone row, or any row when force is set, is repainted; every other row is diffed."
-  verified: true
+  verified: partial  # 458 b1: hash path not traced to the final write
   loom: unknown
   priority: P1
   note: "Drift" (rows whose on-screen state may differ from the model, e.g. after wide-character or width mismatches) is the key idea; read the whole function before copying the rule.
@@ -36,10 +36,10 @@
   lib: ultraviolet/TerminalRenderer
   version: ultraviolet
   symbol: TerminalRenderer.transformLine
-  source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_renderer.go (line n/a)
+  source_url: https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L890-L949
   evidence_quote: "transformLine diffs row y against the model and writes only what changed,"
   verified: true
-  loom: unknown
+  loom: missing  # 458 b1: canvas.go FlushWithConfig L576-L599 writes every row on a dirty flush (rev 38618963)
   priority: P1
   note: Same file as uv.line-hash-diff; baseline for a loom minimal-diff comparison.
 
@@ -51,7 +51,7 @@
   symbol: TerminalScreen.SetSynchronizedUpdates, syncUpdates, ansi.SetModeSynchronizedOutput
   source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_screen.go (line n/a)
   evidence_quote: "buf.WriteString(ansi.SetModeSynchronizedOutput)"
-  verified: true
+  verified: partial  # 458 b1: Flush not traced
   loom: unknown
   priority: P1
   note: Setter only stores a bool; the sequence is written in Flush and only when the buffer is non-empty. Default-off is from the code reading, not a doc quote.

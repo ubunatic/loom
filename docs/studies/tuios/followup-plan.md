@@ -22,6 +22,12 @@ Models for every batch: **haiku:med** fetches pinned files, quotes and inventori
 Verification V (applies to every batch): quote verbatim (raw YAML excerpts ≤120 characters); report excerpts 3–8 relevant lines with a brief annotation explaining mechanism and limit. Use immutable `blob/<SHA>/file#Lx-Ly` permalinks, never repo-root/pkg-index URLs or raw-URL pseudo line fragments. Follow declarations to executing callers; label inference, absence search scope and unrun checks. Store Loom revision, file/symbol/lines, terminal versions, commands, expected/actual bytes and limitations. Respect source quotation limits.
 Stop S (every batch): finish each assigned feature as proved/partial/disproved/unknown; cap at two fetch attempts per unavailable source and one canary per behavior matrix entry. Default deadlines: 5 seconds per synthetic check, 2 seconds per live query, 60 seconds per manual trial; record any justified adjustment before running. Leave timeout results unknown with reason; never substitute a guessed quotation or pin. No implementation, tickets or adoption recommendation before evidence.
 
+Flow fixes after the batch 1 trial (apply to every batch):
+- **Same matrix on both sides:** run each canary matrix through one shared harness against Loom and against every compared library (pinned), with named measurement boundaries (for render: Canvas flush alone, and Pane including ancillary writes). A Loom-only number is not a comparison.
+- **Deployed pins for TUIOS claims:** for any claim about TUIOS behavior, use the dependency versions in TUIOS's pinned `go.mod`/`go.sum`; the newer pins in the table below are separate comparisons.
+- **Loom permalinks:** cite Loom as `https://codeberg.org/ubunatic/loom/src/commit/<SHA>/<file>#L<x>-L<y>` at a revision pushed to `origin`; the GitHub mirror is not kept current.
+- **Finish the batch:** use the full time budget to close the comparison; "unknown" is only for blocked sources or failed canaries, not for skipped steps.
+
 Exact repository aliases below use `github.com/` unless stated; new HEAD pins were resolved read-only on 2026-11-10. They freeze follow-up inputs, not retroactive proof of original rows. For moving-source rows, record the version change. Resolve module dependencies from the relevant pinned `go.mod`/`go.sum`; do not compare TUIOS's deployment against a different dependency silently.
 
 | Alias | Repository and immutable revision/tag |

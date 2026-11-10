@@ -17,7 +17,7 @@ by seven haiku:med searchers. The host checked the P1 rows against loom code at 
 
 | Library | Strengths | Weaknesses | Against loom |
 |---|---|---|---|
-| Bubble Tea v2 | cell renderer, mode 2026, kitty flags with reported support, typed mouse and paste messages | `Send` blocks; `teatest` polls with sleeps; v1 to v2 broke most APIs | loom has a richer widget and routing model; Bubble Tea renders more efficiently |
+| Bubble Tea v2 | cell renderer, mode 2026, kitty flags with reported support, typed mouse and paste messages | `Send` blocks; `teatest` polls with sleeps; v1 to v2 broke most APIs | loom has a richer widget and routing model; Bubble Tea diffs frames, loom does not (cost difference not measured) |
 | ultraviolet | row hash diff, writes changed cells only, grapheme width | marked as in active development, API may change | loom has no diff yet |
 | Bubbles / Huh | pinned, clean sources; virtualised table; fuzzy list; accessible forms; `$EDITOR` | no undo/redo in text inputs; select-all on Ctrl+G; Tab accepts suggestions; table has no sort or filter | loom widgets are more desktop-like (undo, Ctrl+A/C/V/X, mouse) |
 | Lip Gloss v2 | Z-ordered layers, hit test | no focus, click-through or modal handling | loom's claim-cell routing does more |
@@ -29,9 +29,10 @@ loom's main lag: output efficiency and terminal capability detection.
 
 ## Top gaps for loom (P1 first)
 
-1. **Write only changed rows or cells.** `Canvas.FlushWithConfig` repaints every row on each frame.
-   ultraviolet and Bubble Tea v2 diff by row hash and cell. This costs bandwidth over SSH and in
-   `loom session`. Start with a canary that measures the bytes per frame for a one-cell change.
+1. **Write only changed rows or cells.** loom redraws all rows on a dirty flush; idle panes write
+   nothing. ultraviolet compares old and new lines from the first changed cell; Bubble Tea v1 skips
+   unchanged frames and lines. TUIOS's "style diff" is an SGR cache, not a frame diff. Comparative
+   cost is not measured yet (458 batch 1 rerun); do not pick an implementation from this alone.
 2. **Mode 2027 grapheme width.** Ask the terminal with DECRQM and switch it on when supported,
    instead of guessing from the terminal name in `measure`. TUIOS forces 2027 on in its emulator.
 3. **Ask before enabling.** Query DECRQM 2026 and `CSI ? u` (kitty) at start, as tcell does,

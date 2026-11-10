@@ -142,7 +142,7 @@
   verified: true
   loom: unknown
   priority: P1
-  note: ticket lists mode 2026 as P1; the cursor-only update is not wrapped (comment at cursed_renderer.go#L561-L570).
+  note: v2.1.1 wraps non-empty updates when enabled; the cursor-only update is not wrapped (cursed_renderer.go#L561-L570). TUIOS deployment (v2.0.10) behaviour unknown (458 b1).
 
 - id: bt.renderer.cell-based
   area: render
@@ -155,7 +155,7 @@
   verified: true
   loom: unknown
   priority: P1
-  note: compare with loom cell canvas and minimal diff; deeper cell-diff detail belongs to topic 5 (not checked here).
+  note: v2.0.10 (TUIOS dependency) and v2.1.1 are separate; v2.0.10 passes its buffer to UV and flushes (cursed_renderer.go#L477-L496, 458 b1).
 
 - id: bt.renderer.v1-string-diff
   area: render
@@ -168,7 +168,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: whole-frame comparison, not per-cell; a v1 limitation worth noting in the comparison.
+  note: whole-frame comparison, plus an unchanged-line skip for changed frames (standard_renderer.go#L198-L208, 458 b1); not per-cell.
 
 - id: bt.fps.cap
   area: perf

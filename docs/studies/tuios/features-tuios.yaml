@@ -196,11 +196,11 @@
   verified: true
   loom: unknown
   priority: P1
-  note: grep of internal/app, internal/terminal, internal/session and internal/served found no other 2026 wrapper. Loom's frame-level 2026 is a real difference.
+  note: Passthrough wrapper proved. Main-frame 2026 is unknown until the Bubble Tea v2.0.10 renderer state and output are traced (458 b1); the earlier grep does not cover Bubble Tea.
 
 - id: tuios.uv-style-diff
   area: render
-  feature: Frame is rendered from ultraviolet cells; style changes are diffed and cached per style pair
+  feature: Style-pair SGR cache (not a temporal cell diff); see frame_render.go#L38-L49 (458 b1)
   lib: ultraviolet
   version: ultraviolet
   symbol: "uv.StyleDiff; frameRenderer.diff"
