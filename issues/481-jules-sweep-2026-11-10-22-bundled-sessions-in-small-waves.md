@@ -120,13 +120,19 @@ progress, clear the goal and write a failure report here.
   the cluster before it. The report quotes the wrong input (`"\x1b[31ma"`); the seed is `"0\xc2"`.
 - F3 (#118, not a bug): `measure.Clusters("\b")` is empty because Clusters drops control
   characters by design; the fuzz invariant must skip them.
+- F4 (#120, deviation from the owner's decision): the PR makes `क्ष` one cluster but width 1;
+  the target is width 2 (sum of the consonant widths; main gives 2 today, as VTE/Tilix and foot
+  draw it). Fix at adoption in the conjunct branch of the width code (PR head `measure.go:152-191`).
+  Host probe on the PR head: lone U+FE0F 0, `a`+U+FE0F 1, `#`/`❤`+U+FE0F 2, `👍🏽` 1 cluster width 2,
+  `a👍🏽b` 3 clusters; `🤷🏽‍♂️` 1 cluster width 4 and the family emoji width 6 follow the default
+  `LOOM_ZWJ` split mode (main gives 6 for both), so not a regression.
 
 ## Jules runs
 
 | wave | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|---|
 | 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03) |
-| 1 | implement | jules-unicode-width | 14705779270409174332 | none yet | running (started 2026-11-10, owner: slots free) |
+| 1 | implement | jules-unicode-width | 14705779270409174332 | GH #120 | checked: scope clean (measure/, tests, report); `go test -short ./...` and `-race ./measure/ .` pass on the PR head; targets hold except F4; report shows no before-run, but every target fails on main (host probe); adopt in PR A with F4 fixed |
 | 1 | implement | jules-ansibuffer | 13101811809704567128 | none yet | running (started 2026-11-10; owner made the host the loom Jules manager) |
 | 1 | test-draft | jules-fuzz | 1079445786546642272 | GH #118 | checked: scope clean (4 fuzz tests, 3 seeds, report); 3 failing seeds reproduced; findings F1-F3 below; tests to adopt in PR A with the measure invariant fixed |
 | 2 | test-draft | jules-routing-tests-a | pending | none yet | running (rolling start: one wave-2 session per finished wave-1 session, because of the 2026-11-11 cutoff) |
