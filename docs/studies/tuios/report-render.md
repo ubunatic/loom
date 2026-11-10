@@ -1,152 +1,128 @@
 # Render and diff follow-up (458, batch 1)
 
-Status: **partial**. Loom source and a headless Canvas matrix were checked;
-the comparable upstream runtime matrix and actual Pane terminal lifecycle were
-not run. No comparative speed or actual terminal-display conclusion follows.
-Loom revision: `3861896304162a742f6f03e9378bbf7afd1173aa`.
-Graph coverage for the five Loom source paths used was best-effort clean; source
-was also read directly. No terminal was opened; terminal version: not applicable.
+Status: **partial**. The same six sequential frames were measured in a shared
+headless harness for Loom Canvas, Loom Pane and Bubble Tea v2. Pane write-call
+counts and actual alternate-screen correctness remain unknown. The numbers are
+single observations, not benchmark estimates or visual correctness evidence.
 
-## Findings and evidence
+Pins rechecked 2026-11-10: Loom `e9af2380deddb53e2f72a935763774b4e2c71fbc`;
+Bubble Tea latest release v2.1.1, commit `67b4c7a8a2b34a0b1ce15261b0c705bc7e1a04b7`,
+with its required UV `6b8d4baf91b4`; UV latest commit
+`a45b7c86333f9dfedb95f81064e80259b02937f0`; TUIOS latest commit
+`6fe2c0df9922b2eec28f392fee4e196efd86be36`. `go list -m ...@latest` and
+`git ls-remote ... HEAD` resolved the moving names. Latest UV is traced below;
+the Bubble Tea runtime uses its own required UV, not the newer commit. No
+terminal application was opened; the Pane fixture uses a disposable PTY.
 
-- **Loom temporal diff: disproved for Canvas flush; dirty gating proved.**
-  [FlushWithConfig](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/canvas.go#L576-L599)
-  loops over every row, positions, optionally clears and serializes it. There
-  is no previous-frame comparison in that function. The caller
-  [redraw](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/pane_run.go#L260-L305)
-  clears and redraws the canvas; the
-  [loop](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/pane_run.go#L432-L457)
-  invokes it when dirty. Thus forced unchanged flush and idle Pane are different
-  cases. Animation, ticks and invalidations can set dirty.
-- **Style runs: proved.** [Row](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/canvas.go#L521-L556)
-  emits SGR on style transitions, handles continuation cells and resets at each
-  row. This is within-frame style serialization, not temporal diff.
-- **Atomic Canvas write and synchronization: proved with limits.**
-  [FlushWithConfig](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/canvas.go#L576-L612)
-  conditionally buffers and performs one `WriteString`; its independent 2026
-  flag surrounds canvas output. Pane can write auto-wrap, screen and cursor
-  controls separately; [metrics](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/pane_metrics.go#L70-L77)
-  count successful bytes routed through that writer, not all terminal traffic.
-  One call is not a guarantee of an atomic kernel write or tear-free display.
-- **Resize, clearing and suspend: partial.** Flush emits explicit erase-line
-  sequences for requested stale rows. Redraw replaces the canvas on size change
-  and after resume; [resumeTerminal](https://github.com/ubunatic/loom/blob/3861896304162a742f6f03e9378bbf7afd1173aa/pane_suspend.go#L235-L265)
-  sets repaint and invalidates. Full Pane resize/screen-switch correctness and
-  ancillary bytes were not exercised.
+## Cross-library canary
 
-### Upstream mechanisms
+Harness: `/tmp/claude-1000/-home-uwe-projects-loom/9e4d0913-fa4b-4cb2-aec0-0c51a6bd4a87/scratchpad/b1-canary`.
+Run `go build -o canary .` and `timeout 35s ./canary`; the PTY harness has a
+five-second deadline per entry. The entire successful matrix completed in under
+one second. `go.mod` records the release, required UV and Loom replacement;
+the latest UV pin is recorded in a comment because Go selects only one version
+of a module. The harness copies the release's Go files without changes (verified
+byte-for-byte) and adds `tea/canary_bridge.go` to call its otherwise private
+renderer and synchronous flush. This includes Bubble Tea's renderer and its
+UV dependency, but excludes its program event loop and frame ticker.
 
-Bubble Tea v1.3.10 skips identical whole frames and, for changed frames, can
-skip equal individual lines:
-[`flush`](https://github.com/charmbracelet/bubbletea/blob/v1.3.10/standard_renderer.go#L151-L158),
-[line comparison](https://github.com/charmbracelet/bubbletea/blob/v1.3.10/standard_renderer.go#L198-L208).
-The latter does not mean each cell is diffed.
+All start with an 80×24 blank inline region and run, in order, blank, forced
+unchanged, X at (4,4), bold X, `界` at that position, then blank 80×20 with
+four abandoned rows. Animation is off, cursor hidden, true color selected.
+Canvas and Pane enable atomic flush, row clear and 2026; Bubble Tea has no
+negotiated 2026 reply and thus does not wrap updates. The Pane uses `New`,
+`Run`, `Post`, `Resize`, an 80-column cap and a controlling PTY; its first
+reported frame includes writes from entering `Run` up to the 2026 end marker,
+excluding the earlier `New` startup. Pane bytes therefore include ancillary
+writes within that boundary. The other two boundaries are one forced Canvas
+flush and Bubble Tea's render/flush including content construction. Shrink is
+inline region shrink, not a physical screen resize.
 
-Ultraviolet at `a45b7c86333f9dfedb95f81064e80259b02937f0` compares old
-and new lines in
-[`transformLine`](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L890-L893)
-and finds the first differing cell:
+Each cell below is **bytes / writes / allocations / microseconds**. Allocations
+are process-wide `runtime.MemStats.Mallocs` deltas and include harness activity;
+Pane spans control/PTY scheduling and Bubble Tea includes input-string
+construction. Elapsed time has the same boundary differences. They cannot rank
+renderer CPU cost. The PTY counts bytes read, not child write calls; `?` is
+unknown, not zero. Canvas and Bubble Tea count calls to their output writer.
+
+| Frame | Loom Canvas | Loom Pane | Bubble Tea v2.1.1 |
+|---|---:|---:|---:|
+| blank | 2269 / 1 / 156 / 80 | 2277 / ? / 227 / 290 | 18 / 1 / 95 / 351 |
+| unchanged | 2269 / 1 / 156 / 81 | 2269 / ? / 159 / 145 | 0 / 0 / 3 / 2 |
+| one cell | 2269 / 1 / 156 / 86 | 2269 / ? / 160 / 137 | 9 / 1 / 27 / 255 |
+| style only | 2301 / 1 / 156 / 84 | 2301 / ? / 160 / 128 | 11 / 1 / 21 / 275 |
+| wide cell | 2270 / 1 / 156 / 78 | 2270 / ? / 161 / 141 | 25 / 1 / 18 / 1516 |
+| shrink | 1937 / 1 / 136 / 70 | 1937 / ? / 183 / 149 | 27 / 1 / 43 / 246 |
+
+Expected: full Canvas rows on each forced flush, no Bubble Tea bytes for an
+unchanged view, and stale-row clearing on shrink. The byte counts and
+unchanged zero match those expectations; the harness did not replay the streams
+into a terminal model, so visual equivalence, clipping and shrink correctness
+are not established. The first attempted PTY fixture used Pane's default width
+cap and was discarded before this corrected 80-column run. Forced unchanged
+Pane is deliberately invalidated: an idle Pane need not redraw. The previously
+reported Canvas origin-7 and non-atomic measurements were synthetic only;
+actual alternate-screen switching, inline offset and suspend restoration were
+not exercised in this rerun.
+
+## Loom implementation
+
+**Proved:** [Canvas flush](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/canvas.go#L576-L613) serializes every row, optionally clears stale rows, wraps configured 2026, and makes one output call when `AtomicFlush` is enabled. It has no previous-frame comparison in this function:
 
 ```go
-for firstCell < newbuf.Width() &&
-    cellEqual(oldLine.At(firstCell), newLine.At(firstCell)) {
-    firstCell++
+for y := 0; y < c.rows; y++ {
+    sink.WriteString(fmt.Sprintf("\x1b[%d;1H", startRow+y)) // move to row //nolint:errcheck
+    if cfg.RowClear {
+```
+
+[Row](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/canvas.go#L521-L556) emits styles on within-row transitions and resets at row end; this is not temporal diff. [Pane redraw](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/pane_run.go#L260-L305) clears, draws, composes and flushes; its [loop gates redraw on dirty](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/pane_run.go#L429-L455). [Shrink accumulates stale rows](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/pane_screen.go#L34-L50). [Resume](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/pane_run.go#L226-L241) rebuilds after invalidation, and auto-wrap can be a separate write. [Metrics](https://codeberg.org/ubunatic/loom/src/commit/e9af2380deddb53e2f72a935763774b4e2c71fbc/pane_metrics.go#L68-L77) count that writer's bytes, not every terminal write. One writer call does not prove kernel atomicity or tear-free display. Graph coverage of the cited Loom files was best-effort clean; source was also read directly.
+
+## Upstream mechanisms and mode 2026
+
+TUIOS [serializes style-pair transitions through a cache](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_render.go#L38-L49), then [returns composed content as a Bubble Tea view](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/render.go#L1318-L1330). The cache memoizes SGR transitions, not previous screen cells. Its separate [text-sizing passthrough wrapper](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/text_sizing_passthrough.go#L270-L283) is not the main-frame renderer.
+
+TUIOS's [pinned go.mod](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/go.mod#L5-L19) uses an older Bubble Tea than the latest-release canary. Reusing the previous report's source trace of that deployed dependency, its [environment-gated query](https://github.com/charmbracelet/bubbletea/blob/d5bfd5c2ff7480a6b94536c1cf4e73569b8d523e/tea.go#L1115-L1124) and [ModeReset handling](https://github.com/charmbracelet/bubbletea/blob/d5bfd5c2ff7480a6b94536c1cf4e73569b8d523e/tea.go#L794-L801) enable synchronized updates; the renderer [wraps nonempty updates](https://github.com/charmbracelet/bubbletea/blob/d5bfd5c2ff7480a6b94536c1cf4e73569b8d523e/cursed_renderer.go#L576-L602) and [copies to output](https://github.com/charmbracelet/bubbletea/blob/d5bfd5c2ff7480a6b94536c1cf4e73569b8d523e/cursed_renderer.go#L608-L617). Thus main frames **can** carry 2026 when the query is sent and the reply says supported and reset; it is not unconditional. No reply or another state does not prove that enable path ran. This is source evidence, not an observed TUIOS session. No old dependency was used in the comparative canary.
+
+At the current release, the [query gate](https://github.com/charmbracelet/bubbletea/blob/67b4c7a8a2b34a0b1ce15261b0c705bc7e1a04b7/tea.go#L991-L1017) depends on environment, and the [reply handler](https://github.com/charmbracelet/bubbletea/blob/67b4c7a8a2b34a0b1ce15261b0c705bc7e1a04b7/tea.go#L814-L821) enables the renderer only for `ModeReset`:
+
+```go
+case ansi.ModeSynchronizedOutput:
+    if msg.Value == ansi.ModeReset {
+        // The terminal supports synchronized output and it's
+        // currently disabled, so we can enable it on the renderer.
+        p.renderer.setSyncdUpdates(true)
+```
+
+Its [renderer wraps nonempty updates and copies the output buffer](https://github.com/charmbracelet/bubbletea/blob/67b4c7a8a2b34a0b1ce15261b0c705bc7e1a04b7/cursed_renderer.go#L591-L632). The canary leaves this flag off; adding wrappers would change byte counts.
+
+## Latest Ultraviolet line-hash path
+
+At `a45b7c86333f9dfedb95f81064e80259b02937f0`, [Render calls scrollOptimize](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L1493-L1519) only when scroll optimization and fullscreen are both enabled. [scrollOptimize](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer_hardscroll.go#L9-L42) invokes updateHashmap and then attempts shifts. [hash](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer_hashmap.go#L5-L13) hashes cell content; [updateHashmap](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer_hashmap.go#L26-L51) updates old/new hashes and [maps unique displaced pairs](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer_hashmap.go#L88-L96). Content hashes alone are not style-aware equality:
+
+```go
+h.Reset()
+for _, c := range l {
+    // maphash writes can not fail
+    _, _ = h.WriteString(c.Content)
 }
 ```
 
-The [following branch](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L940-L949)
-returns when there is no difference. Drift-prone rows can instead be repainted;
-hash behavior and final TerminalScreen write were not fully traced, so their
-existing detailed claims remain **partial**, not verified.
-
-TUIOS [memoizes style-pair transitions](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_render.go#L38-L49):
-
-```go
-key := [2]uv.Style{*from, *to}
-if s, ok := r.diffs[key]; ok {
-    return s
-}
-```
-
-This cache stores SGR strings, not old screen cells. Its
-[`render`](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_render.go#L52-L64)
-serializes the lines to a string. TUIOS pins Bubble Tea v2.0.10 and UV
-`0277a179edd9` in its [go.mod](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/go.mod#L5-L16);
-the separately pinned UV source above is a newer comparison, not proof of the
-deployed UV implementation. Bubble Tea v2.0.10 passes its cell buffer to UV
-and flushes it ([source](https://github.com/charmbracelet/bubbletea/blob/v2.0.10/cursed_renderer.go#L477-L496)).
-TUIOS text-sizing passthrough has its own
-[2026 wrapper](https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/text_sizing_passthrough.go#L270-L283).
-Bubble Tea v2.1.1 separately wraps nonempty updates when synchronized updates
-are enabled ([source](https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L554-L578))
-and copies its buffer to the writer ([source](https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L583-L593)).
-Main-frame TUIOS synchronization and exact v2.0.10 final output remain **unknown**
-until its caller and negotiated state are traced; the passthrough-only claim is
-not established.
-
-## Headless Canvas canary
-
-Harness: `/tmp/claude-1000/-home-uwe-projects-loom/9e4d0913-fa4b-4cb2-aec0-0c51a6bd4a87/scratchpad/b1-canary`,
-`go mod tidy`, `go build -o canary .`, `timeout 5s ./canary`.
-No animation or Pane was involved. True-color profile; explicit row clear and
-2026 on; hidden cursor. Cases are sequential: blank, same canvas, X at (4,4),
-bold X, wide 界, then blank 80×20 with four stale rows. Origin 1 simulates
-alternate origin; origin 7 simulates a nonzero inline origin, without actually
-switching screens. Each entry is one observation, not a benchmark.
-
-| Frame | origin 1 bytes | origin 7 bytes | writes atomic / non-atomic | allocations atomic / non-atomic (origin 1) |
-|---|---:|---:|---:|---:|
-| blank | 2269 | 2275 | 1 / 75 | 160 / 155 |
-| unchanged forced flush | 2269 | 2275 | 1 / 75 | 156 / 155 |
-| one cell | 2269 | 2275 | 1 / 75 | 156 / 155 |
-| style only | 2301 | 2307 | 1 / 75 | 156 / 155 |
-| wide cell | 2270 | 2276 | 1 / 75 | 156 / 155 |
-| shrink | 1937 | 1943 | 1 / 67 | 136 / 135 |
-
-All 24 runs completed within the 5 s process deadline; observed individual
-flush times ranged 129–345 µs. First CUP matched the requested origin; the
-shrink included erase at the last stale row; all began and ended with expected
-2026 controls. Expected full-frame byte behavior was observed. Allocations
-include the counting writer and process-wide allocator noise. This checks
-serialized controls, not visual correctness, clipping, screen transitions, or
-the separately requested Pane ancillary write counts; those are **unknown**.
-Identical upstream frame updates were not measured; no cross-library byte,
-write, allocation or timing comparison is claimed.
+[scrolln](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer_hardscroll.go#L70-L119) queues scroll operations and updates the prior-screen model. Remaining touched or damaged rows go through [paintLine](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L864-L883), which may repaint drift-prone rows or use [cell comparison](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L953-L982). Finally [Flush writes its buffer to the configured writer](https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L1313-L1324). Hashing is a conditional scroll optimization, not the general unchanged-line test. Latest UV was not separately benchmarked; the inline Bubble Tea canary does not exercise this fullscreen hash path.
 
 ## Stage 4 proposals
 
-- `features.md`: split the combined render row into temporal row/cell diff
-  (Loom missing on forced flush, dirty-gated), within-frame style transitions
-  (Loom has), and atomic Canvas writer call (Loom has when enabled). Remove
-  `tuios.uv-style-diff` from temporal diff. Qualify 2026 as configured output,
-  not capability detection or whole-redraw atomicity.
-- `features-charmx.yaml`: for `uv.transformline-diff` pin the URL to the
-  UV SHA and cite lines 890–949; set Loom evidence to revision above,
-  `canvas.go:576-599`. Mark `uv.line-hash-diff` and
-  `uv.render-flush-split` partial pending execution-path verification;
-  `uv.sync-output-2026` remains partial pending Flush tracing. Replace moving
-  links only when the exact claims are verified.
-- `features-tuios.yaml`: `tuios.uv-style-diff` is a style-pair SGR cache;
-  cite `frame_render.go:38-49` and remove temporal-diff implication.
-  `tuios.sync-2026-scope`: retain proved passthrough wrapper but change
-  main-frame negative to unknown pending Bubble Tea v2.0.10 state/output trace.
-- `features-bubbletea.yaml`: `bt.renderer.v1-string-diff` add the
-  unchanged-line skip at `standard_renderer.go:198-208`;
-  `bt.renderer.cell-based` identify the separate v2 tags and dependency
-  versions; `bt.sync-output-2026` retain v2.1.1 conditional wrapper and
-  mark TUIOS deployment behavior unknown.
-- `summary.md`: replace “Bubble Tea renders more efficiently” and asserted
-  SSH/session cost with “Loom redraws all rows on a dirty flush; comparative
-  cost has not been measured.” Separate temporal diff from SGR memo and
-  Canvas buffering. Do not recommend an implementation based on this canary.
+- Split temporal cell/row diff, within-frame style transition caching, and buffered output calls in `features.md` and raw YAML. Qualify Loom as full-row serialization on dirty redraw, not continuous idle repaint; distinguish Canvas buffering from the whole Pane.
+- Correct `tuios.uv-style-diff` to SGR memoization; describe main-frame 2026 as negotiated and conditional, separate from text-sizing passthrough. Retain actual deployment pin separately from the latest-release comparison.
+- Pin `uv.line-hash-diff`, `uv.transformline-diff` and `uv.render-flush-split` to the latest UV source path above; describe hashing as fullscreen scroll optimization and note drift repaint.
+- Update `summary.md` with the measured byte observations and their differing boundaries, without claiming general speed or network savings. API stability and old-major comparisons belong at P3 at most.
 
 ## Flow notes
 
-The plan does not specify whether the matrix measures Canvas alone or the
-entire Pane and all competing libraries, nor a headless fixture for private
-renderers and mode transitions. The source lock pins UV separately from
-TUIOS's UV dependency, requiring a second dependency trace. This run did not
-complete that trace, upstream matrix, or Pane ancillary counts; they remain
-explicitly unknown rather than inferred. Time spent: a few minutes; token usage
-not exposed to this agent. A reusable pinned harness and named measurement
-boundaries would reduce cost for the remaining batches.
+The same matrix now covers Canvas, Pane and the latest Bubble Tea, but PTY
+bytes do not reveal child write-call counts; a syscall-aware recorder or a
+counting-writer injection fixture is still needed. Actual alternate-screen and
+nonzero inline origin checks, stream replay, and independent latest-UV runtime
+measurements remain unrun. The five-second bound was not exceeded. The source
+comparison cannot establish terminal display behavior or real workload cost.
+No Loom source or other tracked study files were edited, and no tickets or
+commits were made.

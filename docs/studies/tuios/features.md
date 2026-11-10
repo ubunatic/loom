@@ -11,7 +11,7 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 
 | Area | Feature | Where seen | loom | Evidence in loom |
 |---|---|---|---|---|
-| render | Temporal row/cell diff: write only changed rows/cells | uv.transformline-diff, uv.line-hash-diff, bt.renderer.cell-based, bt.renderer.v1-string-diff | **missing** | `canvas.go` `FlushWithConfig` writes every row on a dirty flush; redraw is dirty-gated (`pane_run.go:432`). Canvas canary: ~2270 bytes per 80×20 frame, same for unchanged and one-cell frames (report-render.md) |
+| render | Temporal row/cell diff: write only changed rows/cells | uv.transformline-diff (cell comparison), bt.renderer.cell-based; uv.line-hash-diff is only a fullscreen scroll optimisation | **missing** | `canvas.go` `FlushWithConfig` writes every row on a dirty flush; redraw is dirty-gated (`pane_run.go:432`). Canary 80×24 (report-render.md): one changed cell costs Canvas and Pane 2269 bytes, Bubble Tea v2.1.1 9 bytes; a forced unchanged frame costs 2269 vs 0 |
 | render | Within-frame style transitions (SGR only on change) | tuios.uv-style-diff (SGR pair cache) | has | `Canvas.Row` emits SGR on style change |
 | render | One writer call per canvas frame | uv.render-flush-split | has | `ResizeConfig.AtomicFlush`; Pane ancillary writes separate, unmeasured |
 | render | Mode 2026 synchronized output | bt.sync-output-2026, uv.sync-output-2026, term.sync-output-2026 | has | `ResizeConfig.SynchronizedOutput`: configured output, not capability detection or whole-redraw atomicity |

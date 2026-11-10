@@ -33,9 +33,11 @@ breaking changes are P3 notes while loom is alpha.
 ## Top gaps for loom (P1 first)
 
 1. **Write only changed rows or cells.** loom redraws all rows on a dirty flush; idle panes write
-   nothing. ultraviolet compares old and new lines from the first changed cell; Bubble Tea v1 skips
-   unchanged frames and lines. TUIOS's "style diff" is an SGR cache, not a frame diff. Comparative
-   cost is not measured yet (458 batch 1 rerun); do not pick an implementation from this alone.
+   nothing. ultraviolet compares old and new cells per touched line (its line hash is only a
+   fullscreen scroll optimisation). TUIOS's "style diff" is an SGR cache, not a frame diff.
+   Measured (458 batch 1, 80×24, one run, boundaries differ): one changed cell costs loom Canvas
+   and Pane 2269 bytes and Bubble Tea v2.1.1 9 bytes; a bold change 2301 vs 11; a wide cell
+   2270 vs 25. Not measured: Pane write calls, replay into a terminal model, real workloads.
 2. **Mode 2027 grapheme width.** Ask the terminal with DECRQM and switch it on when supported,
    instead of guessing from the terminal name in `measure`. TUIOS forces 2027 on in its emulator.
 3. **Ask before enabling.** Query DECRQM 2026 and `CSI ? u` (kitty) at start, as tcell does,
@@ -56,4 +58,4 @@ breaking changes are P3 notes while loom is alpha.
 - Some line numbers are approximate (Lip Gloss rows, ±3), and many low-level rows lack line numbers.
 - P2 and P3 rows were not checked against loom.
 - Not researched: TUIOS session attach code, Bubble Tea issue threads, ratatui.
-- No canary was run; mode 2026 and kitty behaviour in real terminals is unmeasured.
+- Only the headless render canary was run (report-render.md); mode 2026 and kitty behaviour in real terminals is unmeasured.
