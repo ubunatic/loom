@@ -1,6 +1,6 @@
 # 458 — Follow-up research for 457: per-feature code comparison in nine batches
 
-**Status**: In Progress — owner: run batch 1 (render) alone to check the flow
+**Status**: Closed — M2 integrated in docs/studies/tuios (report-integration.md); 2 API rows unchecked with reasons
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research
