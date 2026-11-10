@@ -40,7 +40,9 @@ PTY canary at `7ecfba5e`) found:
   never arrived (foot logged "stray button release event"); held still at the edge, no report
   comes for 0.4-0.6 s. So auto-scroll needs the tick, an edge cell counts as "outside" for a
   widget at the window edge, and a lost release must not leave the drag on: the next hover
-  without a button (cb 35) ends it.
+  without a button (cb 35) ends it. Confirmed the same day with `loom-probe mouse` in foot: the
+  owner saw the drag lost, and foot logged five "stray button release event" warnings; kitty and
+  the other terminals in 449 keep the drag.
 - Event-routing ticket: start on terra:med (project rule).
 
 ## 3. Implementation & Verification Plan
