@@ -37,5 +37,18 @@ func TestSplitEveryByteMatchesWholeWrite(t *testing.T) {
 				t.Errorf("%s split %d: %q cursor %d,%d; whole write %q cursor %d,%d", name, i, got, x, y, ws, wx, wy)
 			}
 		}
+		v := NewVT(5, 3)
+		for i := 0; i < len(s); i++ {
+			v.Write([]byte{s[i]})
+		}
+		x, y := v.Cursor()
+		got := v.Screen()
+		same := x == wx && y == wy
+		for k := range ws {
+			same = same && ws[k] == got[k]
+		}
+		if !same {
+			t.Errorf("%s byte by byte: %q cursor %d,%d; whole write %q cursor %d,%d", name, got, x, y, ws, wx, wy)
+		}
 	}
 }
