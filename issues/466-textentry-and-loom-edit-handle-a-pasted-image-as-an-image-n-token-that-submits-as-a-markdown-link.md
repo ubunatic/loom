@@ -20,13 +20,25 @@ Today (checked at `7ecfba5e`): pastes are text only. TextEntry inserts the paste
 as one unit (`expandRangeForPills`). TextEntry has no such tokens.
 
 ## 2. Technical Specification / Findings
-- **What a terminal delivers (unverified, check first)**: a bracketed paste carries text only.
-  An image copied from a file manager likely arrives as a path or `file://` URI (text/uri-list);
-  a pure image clip (screenshot) likely arrives as nothing. Image bytes need a local clipboard
-  read (`wl-paste --list-types`, then `--type image/png`), which belongs to the 465 clipboard
-  layer, or a terminal protocol (kitty OSC 5522, unverified).
-- **Detect**: a paste that is one image path/URI (by extension or MIME type), or an image clip
-  read through 465, becomes an image token instead of raw text.
+- **What a terminal delivers (owner check 2026-11-10, foot and kitty on Wayland, raw bytes and
+  `wl-paste --list-types`; probe `scratchpad/manual-paste.py`, not in the repo)**: never image
+  bytes.
+
+  | Copied from | Clipboard offers | foot sends | kitty sends |
+  |---|---|---|---|
+  | file manager, image file | text/uri-list, gnome-copied-files, text/plain | path in single quotes: `'/home/…/Screenshot From ….png'` | bare path, unquoted |
+  | screenshot | image/png only | empty paste `\e[200~\e[201~` | not recorded (no event, or step skipped) |
+  | browser "Copy Image" | image/* (14 types), text/html | empty paste | nothing, no paste event |
+
+  So: a path paste must accept both forms (shell-quoted and bare, spaces inside). An empty
+  bracketed paste in foot signals "clipboard holds a non-text clip"; kitty gives no signal at
+  all. Image bytes or the browser's `<img src>` (text/html) need a local clipboard read
+  (`wl-paste --list-types`, then `--type image/png` or `text/html`), opt-in, local sessions only
+  (not over SSH; OSC 52 carries text only), which belongs to the 465 clipboard layer. kitty OSC
+  5522 stays unverified.
+- **Detect**: a paste that is one image path (quoted or bare) or `file://` URI, by extension,
+  becomes an image token instead of raw text; with the 465 opt-in, an empty paste or an explicit
+  "paste image" action reads the image clip.
 - **Represent**: one token per image, label `[Image #n]` (n per widget, counting up), data holds
   the target (path, URI or a saved file the app chooses) and alt text. RichTextEdit reuses
   `RichPill{Kind: "image"}`; TextEntry needs the same atomic token (edit, select, delete and
@@ -44,8 +56,8 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
 plain text pastes are unchanged. Stop and report when blocked on an API or storage decision or a
 denied permission; on a loop or no progress, clear the goal and write a failure report.
 
-- Canary first: record what foot 1.27.0 and kitty 0.47.1 send when pasting (a) an image file
-  copied in the file manager, (b) a screenshot clip; an owner check, one step at a time.
+- Canary done (table above). Path detection (quoted and bare) needs no clipboard access and can
+  land first; the clip read waits for 465.
 - Shared token type for TextEntry and RichTextEdit; table tests for detect, edit-as-unit,
   undo, submit expansion; Pane paste route test.
 - Re-check live code first; 464 and 465 may have changed the paste and clipboard paths.
