@@ -1,0 +1,354 @@
+# Topic 7 (contrast): tview/tcell, gocui, Textual. Source snapshot: master/main on 2026-11-10.
+# Line numbers come from raw files downloaded on that date; they can drift when upstream changes.
+# loom is "unknown" everywhere: the host fills it from docs/, spec/ and code.
+
+- id: tview.textarea.undo-redo
+  area: widgets
+  feature: Ctrl-Z undo and Ctrl-Y redo in a multi-line text area
+  lib: tview/TextArea
+  version: main@master
+  symbol: tview.TextArea (undoStack, nextUndo)
+  source_url: https://github.com/rivo/tview/blob/master/textarea.go#L179-L180
+  evidence_quote: "Ctrl-Z: Undo the last change."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Undo and redo are a stack with an index. Redo is Ctrl-Y, not Ctrl-Shift-Z.
+
+- id: tview.textarea.shift-select
+  area: events
+  feature: Text selection by holding Shift while moving the cursor
+  lib: tview/TextArea
+  version: main@master
+  symbol: tview.TextArea (selection via Shift)
+  source_url: https://github.com/rivo/tview/blob/master/textarea.go#L145-L146
+  evidence_quote: "Text can be selected by moving the cursor while holding the Shift key, to the"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The doc adds "to the extent that this is supported by the user's terminal", so Shift-select depends on the terminal.
+
+- id: tview.textarea.copy-is-ctrl-q
+  area: desktop
+  feature: Copy is Ctrl-Q, because Ctrl-C quits the app
+  lib: tview/TextArea
+  version: main@master
+  symbol: tview.TextArea (clipboard keys)
+  source_url: https://github.com/rivo/tview/blob/master/textarea.go#L154-L159
+  evidence_quote: "Ctrl-Q: Copy the selected text into the clipboard, unselect the text."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Copy uses a widget-internal clipboard by default. Line 160 says Ctrl-C is the default key to stop the application. loom uses Ctrl+C for copy, so this is a deliberate contrast.
+
+- id: tview.textarea.word-jump
+  area: widgets
+  feature: Alt-B and Ctrl-Left jump to the previous word start
+  lib: tview/TextArea
+  version: main@master
+  symbol: tview.TextArea (word keys)
+  source_url: https://github.com/rivo/tview/blob/master/textarea.go#L118
+  evidence_quote: "Alt-B, Ctrl-Left arrow: Jump to the beginning of the current or previous"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Alt-F and Ctrl-Right jump forward. The Ctrl-Left line also carries a comment about some systems capturing it (line 1977).
+
+- id: tview.textarea.double-click-word
+  area: events
+  feature: Left double-click selects the word under the cursor
+  lib: tview/TextArea
+  version: main@master
+  symbol: tview.TextArea (mouse)
+  source_url: https://github.com/rivo/tview/blob/master/textarea.go#L188
+  evidence_quote: "Left double-click: Select the word under the cursor."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Double-click word select is documented in the widget's key list. Triple-click was not checked.
+
+- id: tview.application.mouse-capture
+  area: events
+  feature: Application-wide mouse capture hook that can consume or rewrite events
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application.SetMouseCapture
+  source_url: https://github.com/rivo/tview/blob/master/application.go#L172-L178
+  evidence_quote: "SetMouseCapture sets a function which captures mouse events (consisting of"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Returning a nil event consumes it and triggers a redraw. This is a global routing point, similar to loom's pane mouse capture; compare the design.
+
+- id: tview.application.mouse-off-by-default
+  area: events
+  feature: Mouse support is opt-in and off by default
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application.EnableMouse
+  source_url: https://github.com/rivo/tview/blob/master/doc.go#L165
+  evidence_quote: "with your terminal's default mouse behavior. Mouse support is disabled by"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The doc warns that enabling mouse can change the terminal's own mouse behaviour such as text selection.
+
+- id: tview.application.enable-mouse
+  area: events
+  feature: EnableMouse switches terminal mouse reporting on or off at runtime
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application.EnableMouse
+  source_url: https://github.com/rivo/tview/blob/master/application.go#L233-L234
+  evidence_quote: 'EnableMouse enables mouse events or disables them (if "false" is provided).'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Toggling at runtime is only applied when the screen exists (a.screen != nil).
+
+- id: tview.application.paste-no-navigation
+  area: events
+  feature: Paste events never drive navigation or selection in widgets
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application.EnablePaste
+  source_url: https://github.com/rivo/tview/blob/master/application.go#L251-L254
+  evidence_quote: "Widgets won't interpret paste events for navigation or selection purposes."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Paste is for inserting a block of text into InputField or TextArea only. Relevant to loom's bracketed paste and huge paste handling.
+
+- id: tview.application.paste-keys-not-captured
+  area: events
+  feature: Pasted key events skip the global input capture while pasting
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application (input capture during paste)
+  source_url: https://github.com/rivo/tview/blob/master/application.go#L159
+  evidence_quote: "Pasted key events are not forwarded to the input capture function if pasting"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Global key handlers never see pasted text. Check whether loom's global key routing sees paste bytes.
+
+- id: tview.application.suspend
+  area: session
+  feature: Suspend leaves terminal UI mode, runs a callback, then resumes
+  lib: tview/Application
+  version: main@master
+  symbol: tview.Application.Suspend
+  source_url: https://github.com/rivo/tview/blob/master/application.go#L642
+  evidence_quote: "func (a *Application) Suspend(f func()) bool {"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Returns false when already suspended, and then does not call f. Compare with loom Pane.Suspend.
+
+- id: tcell.mouse.drag-motion
+  area: events
+  feature: Click-drag is reported as a motion event while a button is held
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.EventMouse
+  source_url: https://github.com/gdamore/tcell/blob/main/mouse.go#L20-L22
+  evidence_quote: "Hence, click drag can be identified by a motion event with the mouse down,"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Some terminals only send press and release, not motion. Drags that leave the bounds depend on this; compare with loom pane drag capture.
+
+- id: tcell.screen.mouse-motion-flag
+  area: events
+  feature: MouseMotionEvents flag enables all motion, click and drag events
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.MouseFlags, tcell.MouseMotionEvents
+  source_url: https://github.com/gdamore/tcell/blob/main/screen.go#L315
+  evidence_quote: "MouseMotionEvents = MouseFlags(4) // All mouse events (includes click and drag events)"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Mouse reporting is a set of flags, not a single on/off switch. A MousePixelEvents flag also exists at screen.go#L324.
+
+- id: tcell.mouse.wheel-button
+  area: events
+  feature: Wheel reported as a button bit (WheelUp, WheelDown), not a release event
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.ButtonMask (WheelUp, WheelDown)
+  source_url: https://github.com/gdamore/tcell/blob/main/mouse.go#L88-L89
+  evidence_quote: "WheelUp                   // Wheel motion up/away from user."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The doc at mouse.go#L24-L26 says wheel impulses normally have no release event, so wheel code must not wait for one.
+
+- id: tcell.screen.paste
+  area: events
+  feature: EnablePaste turns on bracketed paste if the terminal supports it
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.Screen.EnablePaste
+  source_url: https://github.com/gdamore/tcell/blob/main/screen.go#L133-L134
+  evidence_quote: "EnablePaste enables bracketed paste mode, if supported."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Implementation is tScreen.EnablePaste at tscreen.go#L1291. Paste is off unless the app calls it.
+
+- id: tcell.kitty-keyboard.enable
+  area: events
+  feature: Kitty keyboard enabled by query first (CSI ?u), then push with flags
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.tScreen (queryKittyKbd, enableKittyKbdAdv)
+  source_url: https://github.com/gdamore/tcell/blob/main/tscreen.go#L203-L205
+  evidence_quote: "// Technically this pushes"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: tcell first queries support, then sends CSI =31u (disambiguation, events, alternate keys, all keys, text). loom uses CSI >1u. Compare the flag sets and the query step.
+
+- id: tcell.kitty-keyboard.protocol-env
+  area: events
+  feature: TCELL_KEYBOARD_PROTOCOL env var forces legacy, kitty, win32 or xterm
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.OptKeyboardProtocol, TCELL_KEYBOARD_PROTOCOL
+  source_url: https://github.com/gdamore/tcell/blob/main/tscreen.go#L376
+  evidence_quote: "switch os.Getenv(\"TCELL_KEYBOARD_PROTOCOL\") {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Useful for tests on a known protocol. The env name is in the README too, but this line is the code.
+
+- id: tcell.kitty-keyboard.kind
+  area: events
+  feature: KeyProtocol type with LegacyKeyboard and KittyKeyboard values
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.KeyProtocol, tcell.KittyKeyboard
+  source_url: https://github.com/gdamore/tcell/blob/main/key.go#L120
+  evidence_quote: "kitty supports events, unambiguous keys modulo left/right modifiers"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The comment reads "modulo left/right modifiers"; the meaning is terse, so read the code before relying on it. Check loom's Ctrl/Alt handling.
+
+- id: tcell.cell.put-grapheme
+  area: render
+  feature: CellBuffer.Put writes one grapheme cluster, not a bare rune
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell.CellBuffer.Put
+  source_url: https://github.com/gdamore/tcell/blob/main/cell.go#L60-L63
+  evidence_quote: "at the same location.  Note that only the first grapheme in the string"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Only the first grapheme of the string is written. The doc does not state how many cells a ZWJ emoji takes; compare with loom measure ZWJ probes and test it.
+
+- id: tcell.width.dependency
+  area: render
+  feature: Width uses clipperhouse/displaywidth and uax29, not x/ansi or runewidth
+  lib: gdamore/tcell v3
+  version: main@main
+  symbol: tcell module deps
+  source_url: https://github.com/gdamore/tcell/blob/main/go.mod#L6
+  evidence_quote: "github.com/clipperhouse/displaywidth v0.11.0"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: go.mod also requires clipperhouse/uax29/v2 at line 14. tcell v3 is a different module path (tcell/v3) from v2, so pin one.
+
+- id: gocui.keys-and-mouse-share-keycodes
+  area: events
+  feature: Mouse buttons are Key constants; MouseLeft and KeyShiftArrowDown collide
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.MouseLeft, gocui.KeyShiftArrowDown
+  source_url: https://github.com/jesseduffield/gocui/blob/master/keybinding.go#L279
+  evidence_quote: "MouseLeft         = Key(tcell.KeyF63)"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: keybinding.go#L229 has KeyShiftArrowDown = Key(tcell.KeyF63) too, so both share one F-key code. Shows the cost of a single key enum for keys and mouse.
+
+- id: gocui.mouse-opt-in
+  area: events
+  feature: Gui.Mouse field enables mouse events at startup
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.Gui.Mouse
+  source_url: https://github.com/jesseduffield/gocui/blob/master/gui.go#L167-L168
+  evidence_quote: "If Mouse is true then mouse events will be enabled."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: MainLoop calls Screen.EnableMouse() at gui.go#L770. Mouse is a boolean, unlike tcell's flag set.
+
+- id: gocui.update-threading
+  area: other
+  feature: Gui.Update runs a function safely from another goroutine
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.Gui.Update, gocui.Gui.UpdateAsync
+  source_url: https://github.com/jesseduffield/gocui/blob/master/gui.go#L662
+  evidence_quote: "func (g *Gui) Update(f func(*Gui) error) {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The doc comment (fetched, line not confirmed) says Update can be called from other goroutines; UpdateAsync does not spawn one. Compare with loom Pane.Post.
+
+- id: gocui.textarea.internal-clipboard
+  area: desktop
+  feature: TextArea keeps an internal clipboard string (no OS clipboard)
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.TextArea.DeleteToEndOfLine (clipboard field)
+  source_url: https://github.com/jesseduffield/gocui/blob/master/text_area.go#L452
+  evidence_quote: "self.clipboard = self.content[self.cursor:lineEndIndex]"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: clipboard string is at text_area.go#L36. No undo, redo or Shift-select was found in text_area.go, so this is a weaker widget than tview TextArea.
+
+- id: gocui.view.range-select-by-line
+  area: events
+  feature: Range selection on a view is by line (y range), not by character
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.View.SetRangeSelectStart, gocui.View.CancelRangeSelect
+  source_url: https://github.com/jesseduffield/gocui/blob/master/view.go#L396
+  evidence_quote: "func (v *View) SetRangeSelectStart(rangeSelectStartY int) {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Selection is row-wise. loom Shift-select is character-wise.
+
+- id: gocui.editor-interface
+  area: input
+  feature: Pluggable Editor interface receives key, char and modifier per keystroke
+  lib: jesseduffield/gocui
+  version: main@master
+  symbol: gocui.Editor, gocui.EditorFunc, gocui.SimpleEditor
+  source_url: https://github.com/jesseduffield/gocui/blob/master/edit.go#L8-L9
+  evidence_quote: "Edit(v *View, key Key, ch rune, mod Modifier) bool"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Editing is a per-view hook; Edit returns a bool. Similar to loom's event routing, but per view, not global. Return meaning not checked in code.
+
+- id: textual.command-palette.fuzzy
+  area: other
+  feature: Command palette on Ctrl+P with fuzzy match over commands and providers
+  lib: Textual (Python)
+  version: main@main
+  symbol: textual.command.Provider, COMMAND_PALETTE_BINDING
+  source_url: https://github.com/Textualize/textual/blob/main/docs/guide/command_palette.md#L13
+  evidence_quote: "Commands are looked up via a *fuzzy* search"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Python library, so it is not a Go candidate. Open gap, not checked, whether a Go lib (Bubbles, Huh, others) has an equivalent.

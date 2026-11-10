@@ -1,0 +1,496 @@
+# Topic 2: Bubble Tea v1 and v2. Evidence fetched from GitHub raw files at the tags
+# v2.1.1 (charm.land/bubbletea/v2) and v1.3.10 (github.com/charmbracelet/bubbletea).
+# teatest: charmbracelet/x at c83711a1 (exp/teatest/v2). loom: unknown for every row (host fills).
+- id: bt.send-blocks
+  area: events
+  feature: Program.Send blocks until the event loop receives the message (unbuffered msgs channel)
+  lib: bubbletea
+  version: v2
+  symbol: tea.Program.Send
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1215-L1220
+  evidence_quote: "case p.msgs <- msg:"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: high-rate producers stall on Send; compare with Pane.Post (msgs is make(chan Msg), tea.go#L620).
+
+- id: bt.send-blocks.v1
+  area: events
+  feature: Program.Send blocks on the same unbuffered channel in v1
+  lib: bubbletea
+  version: v1
+  symbol: tea.Program.Send
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/tea.go#L774-L779
+  evidence_quote: "case p.msgs <- msg:"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: same backpressure model as v2; coalescing of high-rate messages not checked.
+
+- id: bt.model-view-returns-struct
+  area: render
+  feature: View() returns a tea.View struct; terminal modes are set as fields, not commands
+  lib: bubbletea
+  version: v2
+  symbol: tea.Model.View, tea.View
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L53-L65
+  evidence_quote: "View() View"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: declarative mode state, rendered after every Update; loom equivalent is Pane/RootOverlays state (host to check).
+
+- id: bt.view.onmouse
+  area: events
+  feature: View.OnMouse intercepts mouse events using the content of the last render
+  lib: bubbletea
+  version: v2
+  symbol: tea.View.OnMouse
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L126
+  evidence_quote: "OnMouse func(msg MouseMsg) Cmd"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: per-view hit handler returning a Cmd; a candidate pattern for claim-cell hit testing. Comment at tea.go#L98-L102.
+
+- id: bt.view.mouse-mode
+  area: events
+  feature: Mouse mode per view: MouseModeNone, MouseModeCellMotion, MouseModeAllMotion
+  lib: bubbletea
+  version: v2
+  symbol: tea.View.MouseMode
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L191
+  evidence_quote: "MouseMode MouseMode"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: AllMotion is needed for drags leaving the pane; the choice is per view, not per program (doc at tea.go#L189-L190).
+
+- id: bt.mouse-mode.v1
+  area: events
+  feature: Mouse mode set as a program option (WithMouseCellMotion) in v1
+  lib: bubbletea
+  version: v1
+  symbol: tea.WithMouseCellMotion
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/options.go#L137
+  evidence_quote: "func WithMouseCellMotion() ProgramOption {"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: program-wide switch in v1; v2 moved it to View.MouseMode (UPGRADE_GUIDE_V2.md#L286-L298).
+
+- id: bt.kitty.enable-on-start
+  area: input
+  feature: Renderer pushes the Kitty keyboard protocol and sets modifyOtherKeys 2 on start
+  lib: bubbletea
+  version: v2
+  symbol: cursedRenderer (internal), ansi.PushKittyKeyboard
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L163-L170
+  evidence_quote: "Enable modifyOtherKeys and Kitty keyboard protocol."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: skipped when no input (noInput); popped again on release. loom already sends ESC[>1u (ticket baseline).
+
+- id: bt.kitty.flags
+  area: input
+  feature: Kitty flags: disambiguation always on; event types, alternate keys, all-keys-as-escapes, associated text opt-in
+  lib: bubbletea
+  version: v2
+  symbol: tea.KeyboardEnhancements (View.KeyboardEnhancements)
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L932-L933
+  evidence_quote: "flags := 1 // always enable basic key disambiguation"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: opt-in fields are View.KeyboardEnhancements (tea.go#L203); KeyboardEnhancementsMsg reports support (keyboard.go#L7-L9).
+
+- id: bt.kitty.keyboard-enhancements-msg
+  area: input
+  feature: KeyboardEnhancementsMsg tells the app which Kitty flags the terminal accepted
+  lib: bubbletea
+  version: v2
+  symbol: tea.KeyboardEnhancementsMsg, SupportsEventTypes()
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/keyboard.go#L7-L40
+  evidence_quote: "func (k KeyboardEnhancementsMsg) SupportsEventTypes() bool {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: lets an app degrade when the terminal ignores a flag; loom detection path to compare.
+
+- id: bt.kitty.v1-absent
+  area: input
+  feature: v1 has no Kitty keyboard protocol and no mode 2026 or 2027 handling in the renderer
+  lib: bubbletea
+  version: v1
+  symbol: none (negative finding)
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/standard_renderer.go#L161-L165
+  evidence_quote: "if r.buf.Len() == 0 || r.buf.String() == r.lastRender {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: negative found by grep -i 'kitty|2026|2027' over v1.3.10 *.go, no matches; quote shows the whole-frame string compare that the v1 renderer uses instead of a cell diff.
+
+- id: bt.sync-output-2026
+  area: render
+  feature: Synchronized output (mode 2026) wraps frame updates when the terminal supports it
+  lib: bubbletea
+  version: v2
+  symbol: cursedRenderer.setSyncdUpdates (internal), ansi.SetModeSynchronizedOutput
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L561-L594
+  evidence_quote: "1. Synchronized output updates are supported. In this case, we want to"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: ticket lists mode 2026 as P1; the cursor-only update is not wrapped (comment at cursed_renderer.go#L561-L570).
+
+- id: bt.renderer.cell-based
+  area: render
+  feature: v2 renderer is built on ultraviolet (cell screen) rather than string diff
+  lib: bubbletea
+  version: v2
+  symbol: uv (github.com/charmbracelet/ultraviolet)
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L13
+  evidence_quote: 'uv "github.com/charmbracelet/ultraviolet"'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: compare with loom cell canvas and minimal diff; deeper cell-diff detail belongs to topic 5 (not checked here).
+
+- id: bt.renderer.v1-string-diff
+  area: render
+  feature: v1 standard renderer skips a flush when the whole frame string equals the last one
+  lib: bubbletea
+  version: v1
+  symbol: standardRenderer.flush (internal)
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/standard_renderer.go#L161-L165
+  evidence_quote: "if r.buf.Len() == 0 || r.buf.String() == r.lastRender {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: whole-frame comparison, not per-cell; a v1 limitation worth noting in the comparison.
+
+- id: bt.fps.cap
+  area: perf
+  feature: Render rate: default 60 FPS, capped at 120; WithFPS sets it
+  lib: bubbletea
+  version: v2
+  symbol: tea.WithFPS
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L496-L499
+  evidence_quote: "the default value of 60 will be used. If over 120, the fps will"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: WithFPS itself is at options.go#L149 (func WithFPS(fps int) ProgramOption); v1 defaults are standard_renderer.go#L18 (defaultFPS = 60).
+
+- id: bt.paste.separate-msgs
+  area: input
+  feature: Paste arrives as PasteStartMsg, PasteMsg and PasteEndMsg, not as KeyMsg with a flag
+  lib: bubbletea
+  version: v2
+  symbol: tea.PasteMsg, tea.PasteStartMsg, tea.PasteEndMsg
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/paste.go#L14-L16
+  evidence_quote: "type PasteStartMsg struct{}"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: v2 upgrade guide says paste is no longer a KeyMsg with Paste flag (UPGRADE_GUIDE_V2.md#L195-L213). Paste size limits not checked.
+
+- id: bt.paste.v1-flag
+  area: input
+  feature: v1 marks pasted runes with a Paste flag on Key, so shortcuts do not fire on pasted text
+  lib: bubbletea
+  version: v1
+  symbol: tea.Key.Paste
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/key.go#L54-L58
+  evidence_quote: "Paste bool"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: key.go#L73-L78 wraps pasted text so bubbles key bindings do not match shortcuts (comment says so).
+
+- id: bt.mouse.typed-msgs
+  area: events
+  feature: Mouse events are split into MouseClickMsg, MouseReleaseMsg, MouseWheelMsg, MouseMotionMsg, read through Mouse()
+  lib: bubbletea
+  version: v2
+  symbol: tea.MouseClickMsg, tea.MouseWheelMsg, tea.MouseMotionMsg
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/mouse.go#L83-L86
+  evidence_quote: "type MouseClickMsg Mouse"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: MouseMsg is an interface in v2 (UPGRADE_GUIDE_V2.md#L215-L231); v1 MouseMsg is a struct with Ctrl/Shift/Alt fields (mouse.go#L8, #L20-L30).
+
+- id: bt.focus.msgs
+  area: a11y
+  feature: Focus and blur messages, enabled per view with ReportFocus
+  lib: bubbletea
+  version: v2
+  symbol: tea.FocusMsg, tea.BlurMsg, tea.View.ReportFocus
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/focus.go#L5-L9
+  evidence_quote: "type FocusMsg struct{}"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: ReportFocus is a View field (tea.go#L184); v1 used WithReportFocus (options.go#L248).
+
+- id: bt.key.keystroke-canonical
+  area: input
+  feature: Keystroke() gives a canonical modifier order, e.g. ctrl+shift+alt+a
+  lib: bubbletea
+  version: v2
+  symbol: tea.KeyPressMsg.Keystroke
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/key.go#L211
+  evidence_quote: "you'll always see \"ctrl+shift+alt+a\" and never"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: lets key compares be plain strings; modifier order list is at key.go#L203-L210 (ctrl, shift, alt, meta, hyper, super).
+
+- id: bt.key.press-release
+  area: input
+  feature: Key press and key release are separate message types
+  lib: bubbletea
+  version: v2
+  symbol: tea.KeyPressMsg, tea.KeyReleaseMsg
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/key.go#L191
+  evidence_quote: "type KeyPressMsg Key"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: KeyReleaseMsg at key.go#L224 needs Kitty event types; v1 has a single KeyMsg (key.go#L45).
+
+- id: bt.key.isrepeat-basecode
+  area: input
+  feature: Key.IsRepeat and Key.BaseCode (US PC-101 key code) for international layouts
+  lib: bubbletea
+  version: v2
+  symbol: tea.Key.IsRepeat, tea.Key.BaseCode
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/UPGRADE_GUIDE_V2.md#L190-L192
+  evidence_quote: "whether the key is auto-repeating (Kitty protocol / Windows Console only)"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: IsRepeat is only reported with the Kitty protocol or Windows console.
+
+- id: bt.key.ctrl-matching
+  area: input
+  feature: Ctrl+C is matched by string ("ctrl+c") or Code plus Mod; v1 KeyCtrlC constants are gone
+  lib: bubbletea
+  version: v2
+  symbol: tea.KeyCtrlC (removed), tea.KeyPressMsg.String
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/UPGRADE_GUIDE_V2.md#L149
+  evidence_quote: 'Use `msg.String() == "ctrl+c"` or check `msg.Code` + `msg.Mod`'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: migration detail for any TUIOS/loom key table; default Ctrl+C quit behaviour not checked.
+
+- id: bt.suspend
+  area: session
+  feature: Suspend command (SIGTSTP-style) that the loop handles by suspending the process
+  lib: bubbletea
+  version: v2
+  symbol: tea.Suspend, tea.SuspendMsg
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L586-L587
+  evidence_quote: "return SuspendMsg{}"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: loom has Pane.Suspend; compare restore behaviour. Loop handles SuspendMsg at tea.go#L799-L801.
+
+- id: bt.suspend.v1
+  area: session
+  feature: Suspend command in v1 with the same shape
+  lib: bubbletea
+  version: v1
+  symbol: tea.Suspend
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v1.3.10/tea.go#L210
+  evidence_quote: "func Suspend() Msg {"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: v1 SuspendMsg comment at tea.go#L214 is copied; loop handling at tea.go#L408.
+
+- id: bt.terminal.release-restore
+  area: session
+  feature: ReleaseTerminal restores the terminal and stops input; RestoreTerminal reattaches it (for handing off to an editor or child)
+  lib: bubbletea
+  version: v2
+  symbol: tea.Program.ReleaseTerminal, tea.Program.RestoreTerminal
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1365-L1392
+  evidence_quote: "ReleaseTerminal restores the original terminal state and cancels the input"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: needed for external-program handoff; compare with loom Pane.Suspend and exec paths.
+
+- id: bt.crash.recover
+  area: session
+  feature: Panics in the event loop are recovered and the terminal is restored; opt-out with WithoutCatchPanics
+  lib: bubbletea
+  version: v2
+  symbol: tea.Program.recoverFromPanic, tea.WithoutCatchPanics
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1317
+  evidence_quote: "func (p *Program) recoverFromPanic(r interface{}) {"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: crash restore is in the ticket's P1 list; the WithoutCatchPanics option is at options.go#L83.
+
+- id: bt.signals.interrupt
+  area: session
+  feature: SIGINT and SIGTERM become InterruptMsg or QuitMsg when input is not a TTY; in raw mode Ctrl+C is a key
+  lib: bubbletea
+  version: v2
+  symbol: tea.InterruptMsg, tea.ErrInterrupted
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L670-L671
+  evidence_quote: "In most cases ^C will not send an interrupt because the terminal will be"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: InterruptMsg type at tea.go#L608-L614; Run returns ErrInterrupted (v1 same, tea.go#L35-L37).
+
+- id: bt.resize.sigwinch
+  area: session
+  feature: Resize handling goroutine (SIGWINCH) feeds WindowSizeMsg into the loop; RequestWindowSize asks for it
+  lib: bubbletea
+  version: v2
+  symbol: tea.Program.handleResize, tea.RequestWindowSize
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L709
+  evidence_quote: "func (p *Program) handleResize() chan struct{} {"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: ticket P1 lists SIGWINCH robustness; RequestWindowSize is at commands.go#L173 (v1 WindowSize renamed, upgrade guide).
+
+- id: bt.clipboard.osc52-read-primary
+  area: desktop
+  feature: OSC 52 clipboard set and read, plus primary selection set and read
+  lib: bubbletea
+  version: v2
+  symbol: tea.SetClipboard, tea.ReadClipboard, tea.SetPrimaryClipboard, tea.ReadPrimaryClipboard
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/clipboard.go#L55
+  evidence_quote: "func SetPrimaryClipboard(s string) Cmd {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: loom has OSC 52 write; read and primary selection are the gap to check. ClipboardMsg at clipboard.go#L5.
+
+- id: bt.theme.background-color
+  area: theme
+  feature: View.BackgroundColor and ForegroundColor set the terminal default colours; ColorProfile can be forced
+  lib: bubbletea
+  version: v2
+  symbol: tea.View.BackgroundColor, tea.WithColorProfile
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L135
+  evidence_quote: "BackgroundColor color.Color"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: WithColorProfile at options.go#L160; dark/light detection is not in Bubble Tea itself (checked tea.go fields only).
+
+- id: bt.cursor.view
+  area: render
+  feature: View.Cursor sets position, shape and visibility; nil hides the cursor
+  lib: bubbletea
+  version: v2
+  symbol: tea.View.Cursor, tea.NewCursor
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L131
+  evidence_quote: "Cursor *Cursor"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: cursor shape type is CursorShape (cursor.go#L12); upgrade guide maps HideCursor to Cursor = nil.
+
+- id: bt.progress.view
+  area: desktop
+  feature: View.ProgressBar and ProgramStatus report progress to the host (taskbar-style status)
+  lib: bubbletea
+  version: v2
+  symbol: tea.View.ProgressBar, tea.ProgramStatus
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L147
+  evidence_quote: "ProgressBar *ProgressBar"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: escape sequence used on the wire was not checked (ProgramStatus is an alias of uv.ProgramStatus, programstatus.go#L12).
+
+- id: bt.test.teatest-wait
+  area: test
+  feature: teatest NewTestModel runs a model in a test and captures its output
+  lib: x/exp/teatest/v2
+  version: main@c83711a1
+  symbol: teatest.NewTestModel, teatest.WaitFor, teatest.RequireEqualOutput
+  source_url: https://github.com/charmbracelet/x/blob/c83711a11ffab1031f5f055645bb9ac48e2cadc4/exp/teatest/v2/teatest.go#L129
+  evidence_quote: "func NewTestModel(tb testing.TB, m tea.Model, options ...TestOption) *TestModel {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: golden output via RequireEqualOutput (teatest.go#L291); compare with loomtest.VT and CompareWidget.
+
+- id: bt.test.teatest-polling
+  area: test
+  feature: teatest WaitFor polls the output with a sleep between checks
+  lib: x/exp/teatest/v2
+  version: main@c83711a1
+  symbol: teatest.WaitFor, teatest.WithCheckInterval
+  source_url: https://github.com/charmbracelet/x/blob/c83711a11ffab1031f5f055645bb9ac48e2cadc4/exp/teatest/v2/teatest.go#L109
+  evidence_quote: "time.Sleep(wf.CheckInterval)"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: conflicts with loom's no-sleep test rule (TestTiers); use it as a contrast, not as a model.
+
+- id: bt.test.size-and-profile
+  area: test
+  feature: Test-only options: fixed window size and forced colour profile
+  lib: bubbletea
+  version: v2
+  symbol: tea.WithWindowSize, tea.WithColorProfile
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/options.go#L170
+  evidence_quote: "func WithWindowSize(width, height int) ProgramOption {"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: upgrade guide calls it "great for testing" (UPGRADE_GUIDE_V2.md#L553-L557); makes goldens deterministic.
+
+- id: bt.cmd.tick-every
+  area: other
+  feature: Tick and Every commands for timed messages
+  lib: bubbletea
+  version: v2
+  symbol: tea.Tick, tea.Every
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/commands.go#L154
+  evidence_quote: "func Tick(d time.Duration, fn func(time.Time) Msg) Cmd {"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Every at commands.go#L102; tick coalescing not checked.
+
+- id: bt.cmd.batch-sequence
+  area: other
+  feature: Batch runs commands concurrently; Sequence runs them in order
+  lib: bubbletea
+  version: v2
+  symbol: tea.Batch, tea.Sequence
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/commands.go#L15
+  evidence_quote: "func Batch(cmds ...Cmd) Cmd {"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Sequence at commands.go#L25; v1 Sequentially is renamed to Sequence (UPGRADE_GUIDE_V2.md#L335-L340).
+
+- id: bt.api.removed-options
+  area: other
+  feature: v1 options and commands (AltScreen, mouse, focus, bracketed paste, cursor) were removed in favour of View fields
+  lib: bubbletea
+  version: v2
+  symbol: tea.WithAltScreen (removed), tea.View.AltScreen
+  source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/UPGRADE_GUIDE_V2.md#L286-L298
+  evidence_quote: "These options no longer exist. They all moved to View fields."
+  verified: true
+  loom: unknown
+  priority: P3
+  note: migration table only; the upgrade guide is the source for the mapping.

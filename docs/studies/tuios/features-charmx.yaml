@@ -1,0 +1,278 @@
+# Topic 5 (Charm low-level) feature rows for ticket 457.
+# Source convention: GitHub file URL on main, with line numbers where the fetch gave them ("line n/a" otherwise).
+# Quotes were copied by a web-fetch subagent from the fetched page; the host has not re-fetched them.
+# loom: unknown on every row (host fills from docs/, spec/ and code).
+# version: "ultraviolet" for github.com/charmbracelet/ultraviolet; "main@unpinned" for charmbracelet/x/* (no commit pinned).
+
+- id: uv.render-flush-split
+  area: render
+  feature: Render builds a diff into an internal buffer; Flush is the only call that writes to the terminal
+  lib: ultraviolet/TerminalScreen
+  version: ultraviolet
+  symbol: uv.TerminalScreen.Render / uv.TerminalScreen.Flush
+  source_url: https://pkg.go.dev/github.com/charmbracelet/ultraviolet
+  evidence_quote: "(s) Flush()"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Index lists Render and Flush; the doc prose for Flush was not verbatim-fetched, only the index entry.
+
+- id: uv.line-hash-diff
+  area: render
+  feature: Per-line hash diff; rows marked drift-prone are always repainted, others are diffed
+  lib: ultraviolet/TerminalRenderer
+  version: ultraviolet
+  symbol: TerminalRenderer.paintLine, oldhash/newhash []uint64
+  source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_renderer.go (line n/a)
+  evidence_quote: "A drift-prone row, or any row when force is set, is repainted; every other row is diffed."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: "Drift" (rows whose on-screen state may differ from the model, e.g. after wide-character or width mismatches) is the key idea; read the whole function before copying the rule.
+
+- id: uv.transformline-diff
+  area: render
+  feature: transformLine diffs one row against the model and writes only the changed cells
+  lib: ultraviolet/TerminalRenderer
+  version: ultraviolet
+  symbol: TerminalRenderer.transformLine
+  source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_renderer.go (line n/a)
+  evidence_quote: "transformLine diffs row y against the model and writes only what changed,"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Same file as uv.line-hash-diff; baseline for a loom minimal-diff comparison.
+
+- id: uv.sync-output-2026
+  area: render
+  feature: Synchronized output (mode 2026) wraps each Flush; off unless the flag is set
+  lib: ultraviolet/TerminalScreen
+  version: ultraviolet
+  symbol: TerminalScreen.SetSynchronizedUpdates, syncUpdates, ansi.SetModeSynchronizedOutput
+  source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_screen.go (line n/a)
+  evidence_quote: "buf.WriteString(ansi.SetModeSynchronizedOutput)"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Setter only stores a bool; the sequence is written in Flush and only when the buffer is non-empty. Default-off is from the code reading, not a doc quote.
+
+- id: cellbuf.flush-no-2026
+  area: render
+  feature: cellbuf Screen.Flush writes buffered output directly, with no mode 2026 wrapping
+  lib: x/cellbuf
+  version: main@unpinned
+  symbol: cellbuf.Screen.Flush, cellbuf.Screen.Render
+  source_url: https://github.com/charmbracelet/x/blob/main/cellbuf/screen.go (line n/a)
+  evidence_quote: "// Flush flushes the buffer to the screen."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Raw file searched for "2026": no match. Render only fills the internal buffer; Flush does the I/O. Lower-level than uv, so mode 2026 is the caller's job here.
+
+- id: cellbuf.render-fills-buffer
+  area: render
+  feature: cellbuf Screen.Render writes changes into an internal buffer; caller must call Flush
+  lib: x/cellbuf
+  version: main@unpinned
+  symbol: cellbuf.Screen.Render
+  source_url: https://github.com/charmbracelet/x/blob/main/cellbuf/screen.go (line n/a)
+  evidence_quote: "// Render renders changes of the screen to the internal buffer. Call"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Same two-step model as uv.render-flush-split. Quote is cut at 120 chars by the fetch.
+
+- id: uv.status-active-dev
+  area: other
+  feature: Ultraviolet is in active development; the API may change
+  lib: ultraviolet
+  version: ultraviolet
+  symbol: n/a (README)
+  source_url: https://github.com/charmbracelet/ultraviolet (README)
+  evidence_quote: "Note: Ultraviolet is in active development. The API may change."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Dependency risk for loom if it were ever to build on uv directly. Pseudo-version seen on pkg.go.dev: v0.0.0-20261023060817-a45b7c86333f (not a release tag).
+
+- id: uv.used-by-bubbletea-v2
+  area: other
+  feature: Ultraviolet is the renderer/primitive layer under Bubble Tea v2 and Lip Gloss v2
+  lib: ultraviolet
+  version: ultraviolet
+  symbol: n/a (README)
+  source_url: https://github.com/charmbracelet/ultraviolet (README)
+  evidence_quote: "Ultraviolet powers Bubble Tea v2 and Lip Gloss v2."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Bubble Tea v2 only. Bubble Tea v1 has its own renderer; do not mix the two when comparing.
+
+- id: ansi.width-method
+  area: render
+  feature: Two width methods for cell width: WcWidth (classic wcwidth) and GraphemeWidth (grapheme clusters)
+  lib: x/ansi
+  version: main@unpinned
+  symbol: ansi.Method, ansi.WcWidth, ansi.GraphemeWidth
+  source_url: https://github.com/charmbracelet/x/blob/main/ansi/method.go (line n/a)
+  evidence_quote: "type Method uint8"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: loom measure package uses ZWJ probes; compare the two width rules and where each one is chosen.
+
+- id: ansi.stringwidth-grapheme-default
+  area: render
+  feature: StringWidth counts with GraphemeWidth; StringWidthWc counts with WcWidth
+  lib: x/ansi
+  version: main@unpinned
+  symbol: ansi.StringWidth, ansi.StringWidthWc, stringWidth(m Method, s string)
+  source_url: https://github.com/charmbracelet/x/blob/main/ansi/width.go#L64-L80
+  evidence_quote: "// StringWidth returns the width of a string in cells. This is the number of"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Line range is approximate (about L64-L80, from the fetch). Default API is the grapheme rule, so callers must opt into wcwidth explicitly.
+
+- id: vt.widthmethod-mode-2027
+  area: session
+  feature: vt emulator reports GraphemeWidth as its width method when the Unicode core mode (2027) is set
+  lib: x/vt
+  version: main@unpinned
+  symbol: vt.Emulator.WidthMethod, ansi.ModeUnicodeCore
+  source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
+  evidence_quote: "(not verbatim: WidthMethod returns ansi.GraphemeWidth when ModeUnicodeCore is set)"
+  verified: false
+  loom: unknown
+  priority: P1
+  note: Read from code by a subagent, no verbatim quote. Verify before relying on it; the 2027 numeric value was not seen.
+
+- id: vt.emulator-api
+  area: session
+  feature: vt.Emulator API: NewEmulator, Write, Resize, Render, Scrollback, Paste, SendKeys, SetCallbacks
+  lib: x/vt
+  version: main@unpinned
+  symbol: vt.NewEmulator, vt.Emulator.Write, Resize, Render, SetCallbacks
+  source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
+  evidence_quote: "// Write writes data to the terminal output buffer."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Direct peer of loom's internal vt.VT used by loom session. Package doc in vt.go: "a virtual terminal emulator that can be used to emulate a". Status "experimental" not found on the pages read.
+
+- id: vt.altscreen-1047-1048
+  area: session
+  feature: Alternate screen with save cursor (modes 1047 and 1048) is handled
+  lib: x/vt
+  version: main@unpinned
+  symbol: vt.setAltScreenMode, ModeAltScreenSaveCursor
+  source_url: https://github.com/charmbracelet/x/blob/main/vt/csi_mode.go (line n/a)
+  evidence_quote: "// Alternate Screen Save Cursor (1047 & 1048)"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Mode 1049 and mouse modes were not checked in this fetch.
+
+- id: vt.scrollback-api
+  area: session
+  feature: Scrollback buffer: ScrollbackLen, ScrollbackCellAt, SetScrollbackSize, ClearScrollback
+  lib: x/vt
+  version: main@unpinned
+  symbol: vt.Emulator.Scrollback, ScrollbackLen, SetScrollbackSize, ClearScrollback
+  source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
+  evidence_quote: "(not verbatim: Scrollback doc says nil in alt screen; body returns scrs[0] regardless)"
+  verified: false
+  loom: unknown
+  priority: P1
+  note: Doc comment and body disagree per subagent reading. Verify in code before citing. Relevant to loom session scrollback parity.
+
+- id: vt.insert-mode-irm
+  area: session
+  feature: Insert/Replace mode (IRM) support in the upstream emulator
+  lib: x/vt
+  version: main@unpinned
+  symbol: n/a (claimed missing)
+  source_url: https://github.com/unixshells/vt-go (README, not charmbracelet)
+  evidence_quote: "(not verbatim: a fork says upstream does not implement Insert/Replace Mode)"
+  verified: false
+  loom: unknown
+  priority: P2
+  note: Seen only in a search snippet about a fork. Not verified against charmbracelet/x. Check before using as a gap.
+
+- id: ansi.kitty-keyboard-flags
+  area: input
+  feature: Kitty keyboard protocol flags and push/pop/request helpers
+  lib: x/ansi
+  version: main@unpinned
+  symbol: ansi.KittyDisambiguateEscapeCodes, KittyReportEventTypes, KittyAllFlags, PushKittyKeyboard, PopKittyKeyboard, DisableKittyKeyboard
+  source_url: https://github.com/charmbracelet/x/blob/main/ansi/kitty.go#L8-L90
+  evidence_quote: "// Kitty keyboard protocol progressive enhancement flags."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Loom sends ESC[>1u. Check whether loom's flags match these named constants (1 = disambiguate). Line range approximate.
+
+- id: input.parsesequence-consumed
+  area: input
+  feature: Parser returns the number of bytes consumed with each event, so partial input stays in the buffer
+  lib: x/input
+  version: main@unpinned
+  symbol: input.Parser.parseSequence (n int, Event Event)
+  source_url: https://github.com/charmbracelet/x/blob/main/input/parse.go (line n/a)
+  evidence_quote: "// parseSequence finds the first recognized event sequence and returns it along with its length."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Lone ESC (len 1) is returned as KeyEscape at once, per code reading, so a split CSI may become a bare Esc. Canary needed before claiming a bug.
+
+- id: term.raw-and-size
+  area: session
+  feature: Raw mode, state save/restore and window size helpers for a file descriptor
+  lib: x/term
+  version: main@unpinned
+  symbol: term.MakeRaw (L18), term.GetState (L24), term.SetState (L29), term.Restore (L35), term.GetSize (L42), term.IsTerminal (L11)
+  source_url: https://github.com/charmbracelet/x/blob/main/term/term.go#L11-L42
+  evidence_quote: "GetSize returns the visible dimensions of the given terminal."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Line numbers exact per fetch. SIGWINCH handling is not in term.go; it is in a platform file not fetched (gap).
+
+- id: colorprofile.detect-env
+  area: desktop
+  feature: Detect color profile from the writer and environment; NO_COLOR and CLICOLOR_FORCE handled
+  lib: colorprofile
+  version: main@unpinned
+  symbol: colorprofile.Detect(output io.Writer, env []string) Profile; envNoColor; cliColorForced
+  source_url: https://github.com/charmbracelet/colorprofile/blob/main/env.go#L32-L122
+  evidence_quote: "NO_COLOR takes precedence over CLICOLOR/CLICOLOR_FORCE, and will disable"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Line numbers from a rendered view, approximate (Detect L32, colorProfile L72, NO_COLOR branch L85, CLICOLOR_FORCE L92). Not-a-TTY rule: "If output is not a TTY ANSI will be dropped entirely."
+
+- id: colorprofile.profile-constants
+  area: desktop
+  feature: Profile values NoTTY, ASCII, ANSI, ANSI256, TrueColor
+  lib: colorprofile
+  version: main@unpinned
+  symbol: colorprofile.Profile constants (profile.go)
+  source_url: https://github.com/charmbracelet/colorprofile/blob/main/profile.go (not fetched)
+  evidence_quote: "(not fetched)"
+  verified: false
+  loom: unknown
+  priority: P3
+  note: Names taken from the env.go listing and README; README writes colorprofile.Ascii while env.go writes ASCII. Check profile.go.
+
+- id: uv.key-kitty-fields
+  area: input
+  feature: uv.Key carries ShiftedCode, BaseCode (PC-101 layout) and IsRepeat for kitty key events
+  lib: ultraviolet
+  version: ultraviolet
+  symbol: uv.Key.ShiftedCode, uv.Key.BaseCode, uv.Key.IsRepeat
+  source_url: https://github.com/charmbracelet/ultraviolet/blob/main/key.go (line n/a)
+  evidence_quote: "BaseCode is the key pressed according to the standard PC-101 key layout."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: ShiftedCode and IsRepeat are kitty-only per the doc comments. Layout-independent shortcuts (Ctrl+C on any layout) depend on BaseCode.

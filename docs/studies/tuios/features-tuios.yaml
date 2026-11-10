@@ -1,0 +1,303 @@
+# Ticket 457, topic 1 (TUIOS). Source of every row: github.com/Gaurav-Gosain/tuios at
+# commit 6fe2c0df9922b2eec28f392fee4e196efd86be36 (cloned, grepped, line numbers taken from the clone).
+# verified: true means the quote was read from that commit. loom: unknown is for the host to fill.
+# version: TUIOS uses Bubble Tea v2 only (charm.land/bubbletea/v2 v2.0.10). No v1 import found.
+
+- id: tuios.frame-ticker-cap
+  area: perf
+  feature: Frame ticker is fixed by Bubble Tea and clamped to 120; TUIOS sets it past the clamp
+  lib: bubbletea
+  version: v2
+  symbol: "tea.WithFPS; (*OS).BindProgram"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_rate.go#L99-L104
+  evidence_quote: "Bubble Tea fixes its frame ticker at NewProgram and clamps it to 120. Here"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Their comment says a standing ticker costs idle wake-ups (590/s at 120 vs 370/s at 60). Not measured here.
+
+- id: tuios.program-options-shared
+  area: events
+  feature: One shared list of program options spread into every tea.NewProgram, checked by a source test
+  lib: bubbletea
+  version: v2
+  symbol: "app.ProgramOptions; TestEveryProgramTakesTheSharedOptions"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/program_options.go#L13-L15
+  evidence_quote: "ProgramOptions is the one list of Bubble Tea options a tuios client runs"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Test at internal/app/program_options_test.go#L30 scans every tea.NewProgram call. Matches the testability priority.
+
+- id: tuios.filter-single-slot
+  area: events
+  feature: tea.WithFilter is one slot, so the last filter set wins; TUIOS sets its own last
+  lib: bubbletea
+  version: v2
+  symbol: "tea.WithFilter; sizeFilter"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/program_options.go#L36-L38
+  evidence_quote: "order matters for one option: WithFilter is a single slot, both wish and sip"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Relevant to cascading event capture. Wish and sip each install their own filter; TUIOS overrides both.
+
+- id: tuios.motion-whitelist
+  area: events
+  feature: Mouse motion is dropped before Update unless a clause names the feature that needs it
+  lib: bubbletea
+  version: v2
+  symbol: "app.FilterMouseMotion"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/program_options.go#L164-L166
+  evidence_quote: "It is a whitelist: a motion event reaches Update only through a clause here"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Keeps an idle pointer sweep from composing frames. A new hover or drag is dead until it has a clause.
+
+- id: tuios.osc52-write-policy
+  area: desktop
+  feature: OSC 52 clipboard writes from a pane are gated by a setting (off, ask, focused, on)
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "appearance.selection.osc52_write; clipboardAsk"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/clipboard_osc52.go#L13-L29
+  evidence_quote: "The reason for a setting at all is that OSC 52 is output, and any output can"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Default is focused: only the focused pane writes, others ask. A click must wait clipboardAskSettle before it allows a write.
+
+- id: tuios.osc52-query-empty
+  area: desktop
+  feature: OSC 52 read query from a pane gets empty content back, as in xterm
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "clipboardAsk (OSC 52 query path)"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/clipboard_osc52.go#L13-L14
+  evidence_quote: "an OSC 52 query gets empty content back, as in xterm, because the answer is"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The pane keeps no copy of the clipboard. Host clipboard read for paste is not checked here (clipboard_paste.go not read).
+
+- id: tuios.kitty-keyboard-stack
+  area: input
+  feature: Kitty keyboard flag stack, separate for main and alternate screen, max 8 entries, oldest evicted
+  lib: tuios (vt)
+  version: main@6fe2c0df
+  symbol: "vt.kittyKeyboardState; maxKittyKeyboardStack; Push"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/vt/kitty_keyboard.go#L14-L24
+  evidence_quote: "maxKittyKeyboardStack is how many entries one screen's flag stack holds."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Mirrors kitty and ghostty. A full-screen program that exits without popping cannot change the shell's keyboard mode.
+
+- id: tuios.bracketed-paste-sanitize
+  area: input
+  feature: Paste is sanitised of control characters, then wrapped in DECSET 2004 markers if the app enabled them
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "(*terminal.Window).PastePayload; vt.SanitizePaste"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/terminal/paste.go#L14-L23
+  evidence_quote: "the text without control characters, wrapped in the bracketed"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Every paste path goes through here. No size cap seen in this function; huge-paste handling is in vt.SanitizePaste, not read.
+
+- id: tuios.drag-autoscroll
+  area: input
+  feature: While a drag is held outside the content area, a 50 ms tick keeps scrolling
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "autoScrollTick; AutoScrollTickMsg"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/update.go#L715-L721
+  evidence_quote: "while a drag is held outside the content area."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Answers the "drag leaves bounds" question for scrolling. Whether a drag is captured by the pane is not shown here.
+
+- id: tuios.leader-key-model
+  area: input
+  feature: Modal design with a leader key (ctrl+b) that routes keys to Terminal, Window Management or Copy Mode
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "config Keybindings.LeaderKey; input mode routing"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/config/userconfig.go#L1333
+  evidence_quote: 'LeaderKey: "ctrl+b",'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: The main design contrast with loom's desktop keys (Ctrl+C/V/X/Z, no leader). Mode routing is in docs/ARCHITECTURE.md#L159 and #L225-L229.
+
+- id: tuios.copy-mode-vim
+  area: input
+  feature: Copy mode with vim motions, search, visual selection
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "internal/input/copymode_*.go"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/docs/ARCHITECTURE.md#L661
+  evidence_quote: "50+ vim motions, search, visual selection, character search"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Vim-style. The ticket says loom is not vim-like, so this is a contrast row, not a target. Copy file names not opened.
+
+- id: tuios.session-daemon
+  area: session
+  feature: Daemon owns sessions, PTYs and one VT emulator per pane; clients attach and detach
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "internal/session (daemon); internal/server"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/docs/ARCHITECTURE.md#L23
+  evidence_quote: "The daemon (`internal/session`) owns the sessions, the PTYs and one VT emulator per pane,"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Main gap for loom session parity. Each pane has a 64 KB ring with stream positions (docs/ARCHITECTURE.md#L75).
+
+- id: tuios.vt-backend-ghostty
+  area: render
+  feature: Emulator is pure Go by default, or libghostty-vt behind a build tag; exactly one backs a binary
+  lib: tuios (vt)
+  version: main@6fe2c0df
+  symbol: "vt.Terminal; build tag ghostty; go.mitchellh.com/libghostty"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/docs/ARCHITECTURE.md#L25
+  evidence_quote: "Exactly one of them backs the panes of a binary."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: vt/go.mod requires libghostty (indirect in root go.mod). Ghostty backend is a second implementation to test against.
+
+- id: tuios.width-mode-2027
+  area: render
+  feature: Grapheme clustering (DEC 2027) is forced on and reported as permanently set
+  lib: tuios (vt)
+  version: main@6fe2c0df
+  symbol: "ansi.ModeUnicodeCore; ansi.ModePermanentlySet; WidthMethod"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/vt/mode.go#L51
+  evidence_quote: "{ansi.ModeUnicodeCore, ansi.ModePermanentlySet}, // ?2027, see WidthMethod"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Compare with loom measure.DetectZWJMode probes. Whether TUIOS detects terminals without 2027 is not read (vt/reports.go not opened).
+
+- id: tuios.sync-2026-scope
+  area: render
+  feature: Synchronized output (DEC 2026) wraps text-sizing passthrough output only, not the main frame
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "ansi ?2026h / ?2026l in text-sizing flush"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/text_sizing_passthrough.go#L292-L295
+  evidence_quote: 'buf = append(buf, "\x1b[?2026h"...)'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: grep of internal/app, internal/terminal, internal/session and internal/served found no other 2026 wrapper. Loom's frame-level 2026 is a real difference.
+
+- id: tuios.uv-style-diff
+  area: render
+  feature: Frame is rendered from ultraviolet cells; style changes are diffed and cached per style pair
+  lib: ultraviolet
+  version: ultraviolet
+  symbol: "uv.StyleDiff; frameRenderer.diff"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_render.go#L52
+  evidence_quote: "s := uv.StyleDiff(from, to)"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Their own renderer, byte-for-byte equal to uv.TrimSpace(uv.Lines(...).Render()) (frame_render.go#L57). go.mod pins a 2026-09 pseudo-version.
+
+- id: tuios.lipgloss-v2
+  area: render
+  feature: Lip Gloss v2 used for styling and tables (193 Go files import lipgloss/v2, 12 import lipgloss/v2/table)
+  lib: lipgloss
+  version: v2
+  symbol: "charm.land/lipgloss/v2"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/go.mod#L9
+  evidence_quote: "charm.land/lipgloss/v2 v2.0.6"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Counted with grep over the clone (non-test and test files). Bubbles and Huh are not in go.mod.
+
+- id: tuios.glamour-avoided
+  area: compose
+  feature: Markdown is parsed by an in-house package, not Glamour, to keep the binary small
+  lib: glamour
+  version: none
+  symbol: "internal/markdown"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/markdown/markdown.go#L12-L13
+  evidence_quote: "It is small on purpose. goldmark with its GFM extensions adds about 480 KB"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Their numbers: goldmark about 480 KB, Glamour about 8.8 MB, own package about 94 KB. Not re-measured here.
+
+- id: tuios.wheel-gesture-axis
+  area: input
+  feature: Wheel gesture: 250 ms gap ends a gesture; the majority axis wins, sideways drift is dropped
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "WheelGestureGap; wheelAxis"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/wheel_axis.go#L5-L10
+  evidence_quote: "continuous stream while the fingers are on the glass and then a momentum tail,"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Compare with loom's wheel acceleration curve. TUIOS has no acceleration curve in this file.
+
+- id: tuios.run-before-init-gap
+  area: session
+  feature: Bubble Tea gap: Run can fail before Init, so the cleanup in tuios-web never runs; waits for upstream
+  lib: bubbletea
+  version: v2
+  symbol: "(*tea.Program).Run; programStart"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/cmd/tuios-web/main.go#L517-L520
+  evidence_quote: "bubbletea can do. See the note on Wait in the upstream report."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: A real workaround-gap. The upstream report is not fetched, so its number and status are unknown. Relevant to crash restore.
+
+- id: tuios.bubbletea-v2-pin
+  area: events
+  feature: Bubble Tea is pinned to v2 only; no v1 path in the root module
+  lib: bubbletea
+  version: v2
+  symbol: "charm.land/bubbletea/v2 v2.0.10"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/go.mod#L8
+  evidence_quote: "charm.land/bubbletea/v2 v2.0.10"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: No replace directive in root, vt, loom or tml go.mod (grep). No fork is in use.
+
+- id: tuios.layout-modes
+  area: layout
+  feature: Tiling modes: BSP (default), master-stack, scrolling (niri-style), or tiling off; per-workspace layout data
+  lib: tuios (app)
+  version: main@6fe2c0df
+  symbol: "internal/layout (bsp.go, master.go, scrolling.go)"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/docs/LAYOUT_MODES.md#L24-L29
+  evidence_quote: "Layout: Scrolling (niri-style)"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Floating, zoom and nine workspaces come from the site index and docs; zoom not traced in code.
+
+- id: tuios.loom-tml-renderer
+  area: compose
+  feature: tuios.dev/loom draws TML documents into a cell buffer (ANSI or plain text); it is not a widget SDK
+  lib: tuios.dev/loom
+  version: main@6fe2c0df
+  symbol: "loom.New; (*Surface).Render"
+  source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/loom/README.md#L5-L8
+  evidence_quote: 'draws [TML](https://pkg.go.dev/tuios.dev/tml) documents into'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Name clash. Its module is tuios.dev/loom; ours is ubunatic.com/loom. Flex layout and patch-only redraw are its selling points.

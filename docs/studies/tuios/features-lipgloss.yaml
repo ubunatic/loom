@@ -1,0 +1,289 @@
+# Topic 4: Lip Gloss v2 + Glamour. Searcher output for ticket 457.
+# Quotes come from primary sources fetched on 2026-11-10 (raw.githubusercontent.com of charmbracelet/lipgloss and charmbracelet/glamour, main/master branches, unpinned).
+# Line numbers are estimates (+-3) because the fetch returned converted text; re-check before citing in a PR.
+
+- id: lipgloss.layer.z-order
+  area: render
+  feature: Layers sorted by absolute z-index before drawing
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Compositor.flatten
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L214-L232
+  evidence_quote: '// Sort by absolute z-index (lowest to highest for drawing)'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Z is absolute per layer after flattening the tree; loom RootOverlays/astra order is the comparison point.
+
+- id: lipgloss.layer.z-setter
+  area: render
+  feature: Per-layer Z setter (chainable X/Y/Z placement)
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Layer.Z
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L65-L69
+  evidence_quote: 'func (l *Layer) Z(z int) *Layer'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Chainable X(), Y(), Z() builders; loom has no equivalent value type, so popovers need explicit coordinates.
+
+- id: lipgloss.layer.nested-tree
+  area: render
+  feature: Layers nest as a tree (children placed relative to parent offset)
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Layer.AddLayers
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L85-L98
+  evidence_quote: 'func (l *Layer) AddLayers(layers ...*Layer) *Layer'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Compositor flattens the tree with absolute offsets (flattenRecursive, layer.go ~L234-262).
+
+- id: lipgloss.layer.id-lookup
+  area: render
+  feature: Find layers by ID (Layer.GetLayer, Compositor.GetLayer)
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Compositor.GetLayer
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L294-L300
+  evidence_quote: 'func (c *Compositor) GetLayer(id string) *Layer'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Lets an app update one overlay without rebuilding the layer list.
+
+- id: lipgloss.compositor.hit-test
+  area: events
+  feature: Hit test returns topmost layer under a cell (highest z first)
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Compositor.Hit
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L277-L292
+  evidence_quote: '// Check from highest z to lowest (reverse order)'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Returns LayerHit{id, layer, bounds}. Compare with loom claim-cell routing (astra); a mouse-first SDK needs this for popover click-through rules.
+
+- id: lipgloss.canvas.compose-order
+  area: render
+  feature: Canvas draws composed drawables in call order (later on top)
+  lib: lipgloss/canvas
+  version: v2
+  symbol: lipgloss.Canvas.Compose
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/canvas.go#L8-L9
+  evidence_quote: '// composed, meaning later drawables will appear "on top" of earlier ones.'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Lower-level cell buffer (wraps uv.ScreenBuffer) for any uv.Drawable; overlaps the Compositor path.
+
+- id: lipgloss.canvas.screen-buffer
+  area: render
+  feature: Canvas is a uv.Screen backed by ultraviolet ScreenBuffer with grapheme width
+  lib: lipgloss/canvas
+  version: v2
+  symbol: lipgloss.Canvas
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/canvas.go#L17-L26
+  evidence_quote: 'type Canvas struct { scr uv.ScreenBuffer }'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: NewCanvas sets c.scr.Method = ansi.GraphemeWidth (~L26). Width method is a per-canvas setting; compare with loom measure.DetectZWJMode.
+
+- id: lipgloss.compositor.constructor
+  area: render
+  feature: NewCompositor(layers...) then Render() produces the composed string
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.NewCompositor
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/examples/canvas/main.go#L76
+  evidence_quote: 'comp := lipgloss.NewCompositor(layers...)'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Canvas example uses only Compositor; Render() output is a plain string, so the caller still writes the frame.
+
+- id: lipgloss.compositor.hit-and-render-api
+  area: render
+  feature: Compositor exposes Bounds, Draw(scr, area), Hit, Refresh, Render
+  lib: lipgloss/layer
+  version: v2
+  symbol: lipgloss.Compositor.Draw
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L264-L313
+  evidence_quote: 'func (c *Compositor) Draw(scr uv.Screen, area image.Rectangle)'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Draw takes a uv.Screen, so compositing can target a diffed screen instead of a string. Relevant to minimal diff and mode 2026.
+
+- id: lipgloss.compositing.readme
+  area: render
+  feature: README positions compositing as the cell-based layered renderer (no Canvas named)
+  lib: lipgloss/readme
+  version: v2
+  symbol: lipgloss.NewLayer
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/README.md#utilities--compositing
+  evidence_quote: 'Lip Gloss includes a powerful, cell-based compositor for rendering layered'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Section anchor only, line not resolved. README example uses NewLayer(...).X(4).Y(2).Z(1) and compositor.Compose(a, b, c).Render(), without showing how compositor is built.
+
+- id: lipgloss.v2.import-path
+  area: other
+  feature: Lip Gloss v2 module path charm.land/lipgloss/v2
+  lib: lipgloss
+  version: v2
+  symbol: charm.land/lipgloss/v2
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/UPGRADE_GUIDE_V2.md#module-path
+  evidence_quote: 'The import path has changed.'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Section anchor, line not resolved. Breaking change from github.com/charmbracelet/lipgloss; v1 and v2 must not be mixed in one module.
+
+- id: lipgloss.v2.color-compat
+  area: theme
+  feature: Adaptive colors moved to compat package (AdaptiveColor, CompleteColor, CompleteAdaptiveColor)
+  lib: lipgloss/compat
+  version: v2
+  symbol: compat.AdaptiveColor
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/README.md#migrating-from-v1
+  evidence_quote: 'The `compat` package provides `AdaptiveColor`, `CompleteColor`, and'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: compat reads stdin/stdout globally, like v1. README says it is not recommended for new code (purity). Section anchor, line not resolved.
+
+- id: lipgloss.v2.hasdark-explicit
+  area: theme
+  feature: Explicit background detection, HasDarkBackground(in, out) and LightDark
+  lib: lipgloss
+  version: v2
+  symbol: lipgloss.HasDarkBackground
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/UPGRADE_GUIDE_V2.md#removed-apis
+  evidence_quote: '`HasDarkBackground()` (no args) | `lipgloss.HasDarkBackground(in, out)`'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: v1 global detection removed. The guide and README disagree on the output stream (stdout vs stderr) in the standalone example.
+
+- id: lipgloss.v2.bubbletea-bg-msg
+  area: theme
+  feature: Light/dark follows Bubble Tea background message (tea.BackgroundColorMsg, IsDark())
+  lib: bubbletea
+  version: v2
+  symbol: tea.BackgroundColorMsg
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/README.md#advanced-color-usage
+  evidence_quote: 'case tea.BackgroundColorMsg:'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: App requests the background color and re-renders on the message. Cross-lib: Bubble Tea v2 API, see topic 2. Section anchor, line not resolved.
+
+- id: lipgloss.v2.render-full-fidelity
+  area: render
+  feature: Render() always emits full-fidelity ANSI; downsampling is an explicit step
+  lib: lipgloss
+  version: v2
+  symbol: lipgloss.Render
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/UPGRADE_GUIDE_V2.md#printing-and-color-downsampling
+  evidence_quote: 'In v2, `Render()` always emits full-fidelity ANSI. Downsampling happens when you'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Color profile decisions move to the caller (Print/writer helpers). Compare with loom colour detection in topic 5. Quote is truncated at the sentence boundary in the fetched text.
+
+- id: lipgloss.v2.no-renderer
+  area: other
+  feature: NewStyle() no longer tied to a Renderer
+  lib: lipgloss
+  version: v2
+  symbol: lipgloss.NewStyle
+  source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/UPGRADE_GUIDE_V2.md#style-api-changes
+  evidence_quote: '`NewStyle()` is no longer tied to a Renderer'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Styles are plain values in v2. Lower relevance to loom, which has its own cell style model.
+
+- id: glamour.v2.import-path
+  area: other
+  feature: Glamour v2 module path charm.land/glamour/v2
+  lib: glamour
+  version: v2
+  symbol: charm.land/glamour/v2
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/README.md#L20
+  evidence_quote: 'import "charm.land/glamour/v2"'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Line is approximate (+-3). Older github.com/charmbracelet/glamour path is v1.
+
+- id: glamour.v2.render-api
+  area: render
+  feature: Glamour NewTermRenderer(options...) and package-level Render(in, stylePath)
+  lib: glamour
+  version: v2
+  symbol: glamour.NewTermRenderer
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/glamour.go
+  evidence_quote: 'NewTermRenderer returns a new TermRenderer the given options.'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Options include WithWordWrap, WithTableWrap, WithPreservedNewLines, WithEmoji, WithChromaFormatter, WithStylesFromJSONFile. Fetched as converted text; line not resolved.
+
+- id: glamour.v2.env-style
+  area: theme
+  feature: GLAMOUR_STYLE environment variable via WithEnvironmentConfig()
+  lib: glamour
+  version: v2
+  symbol: glamour.WithEnvironmentConfig
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/README.md#L95
+  evidence_quote: 'Set the `GLAMOUR_STYLE` environment variable and pass `glamour.WithEnvironmentConfig()` to your custom renderer'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Fetched glamour.go says the default is styles.DarkStyle when unset (per the fetch summary, not a verbatim line).
+
+- id: glamour.v2.builtin-styles
+  area: theme
+  feature: Built-in Markdown styles: ascii, dark, light, notty, pink, dracula, tokyo-night
+  lib: glamour/styles
+  version: v2
+  symbol: styles.TokyoNightStyle
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/styles/styles.go#L12-L20
+  evidence_quote: 'TokyoNightStyle = "tokyo-night"'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Constants and DefaultStyles map (~L22-end). Dracula and TokyoNight config vars are defined in files not fetched.
+
+- id: glamour.v2.with-standard-style
+  area: theme
+  feature: WithStandardStyle(style) picks a named built-in style explicitly
+  lib: glamour
+  version: v2
+  symbol: glamour.WithStandardStyle
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/glamour.go
+  evidence_quote: 'WithStandardStyle(style string)'
+  verified: false
+  loom: unknown
+  priority: P3
+  note: Signature was reported from converted text, not a verbatim source line. Re-verify with the exact file lines before use.
+
+- id: glamour.v2.auto-style
+  area: theme
+  feature: WithAutoStyle() picks dark or light Markdown style from terminal background
+  lib: glamour
+  version: v1
+  symbol: glamour.WithAutoStyle
+  source_url: https://raw.githubusercontent.com/charmbracelet/glamour/master/glamour.go
+  evidence_quote: 'WithAutoStyle'
+  verified: false
+  loom: unknown
+  priority: P2
+  note: Named only in third-party mirrors and skill docs. Not in glamour.go, README or styles.go (options.go returned 404). Likely v1 API; confirm in the v2 options.go before any use.

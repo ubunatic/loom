@@ -1,0 +1,263 @@
+# Topic 6: modern terminal best practices (terminal specs, not Go libraries).
+# version is "spec" for terminal documentation; the Bubble Tea v1/v2 split does not apply here.
+# loom column is left unknown for the host to fill.
+
+- id: term.kitty-keyboard.flags
+  area: input
+  feature: Progressive kitty keyboard flags (disambiguate, event types, alternate keys, all keys, text)
+  lib: terminal/kitty-spec
+  version: spec
+  symbol: CSI > flags u (push), CSI = flags ; mode u (set), CSI ? u (query), CSI < number u (pop)
+  source_url: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
+  evidence_quote: "0b1000 (8) Report all keys as escape codes"
+  verified: false
+  loom: unknown
+  priority: P1
+  note: Loom sends CSI > 1 u only; flags 2/4/8/16, mode bits and a push/pop stack are not covered. Quote from fetcher summary, page truncated.
+
+- id: term.kitty-keyboard.legacy-exceptions
+  area: input
+  feature: Under disambiguate, Enter, Tab, Backspace stay legacy bytes; Ctrl+C no longer raises SIGINT
+  lib: terminal/kitty-spec
+  version: spec
+  symbol: CSI u for ctrl+key; legacy bytes for Enter/Tab/Backspace
+  source_url: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#disambiguate-escape-codes
+  evidence_quote: "The only exceptions are the Enter, Tab and Backspace keys which still generate the same bytes"
+  verified: false
+  loom: unknown
+  priority: P1
+  note: Ctrl+Z handling not stated in fetched text (inferred only). Quote from fetcher summary, page truncated.
+
+- id: term.sync-output-2026
+  area: render
+  feature: Synchronized output: batch a frame between BSU and ESU
+  lib: terminal/contour-vt-extensions
+  version: spec
+  symbol: CSI ? 2026 h (begin), CSI ? 2026 l (end), CSI ? 2026 $ p (DECRQM)
+  source_url: https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
+  evidence_quote: "Use `CSI ? 2026 h` to enable batching output commands into a command queue."
+  verified: true
+  loom: unknown
+  priority: P1
+  note: DECRPM 0 or 4 means unsupported. No consensus on a timeout if ESU is never sent (spec text). Probe with DECRQM before relying on it.
+
+- id: term.decrqm-2026-replies
+  area: render
+  feature: DECRPM reply values for mode 2026 (0 unsupported, 1 set, 2 reset, 3/4 permanent)
+  lib: terminal/contour-vt-extensions
+  version: spec
+  symbol: CSI ? 2026 ; Ps $ y
+  source_url: https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
+  evidence_quote: "If you get nothing back (DECRQM not implemented at all)"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: No reply at all is also a valid unsupported signal; a probe needs a timeout. Loom must not block on a missing reply.
+
+- id: term.grapheme-2027
+  area: render
+  feature: Grapheme cluster processing mode (UTS-29), toggled by private mode 2027
+  lib: terminal/contour-terminal-unicode-core
+  version: spec
+  symbol: CSI ? 2027 h / CSI ? 2027 l / CSI ? 2027 $ p
+  source_url: https://github.com/contour-terminal/terminal-unicode-core/blob/master/spec/terminal-unicode-core.tex
+  evidence_quote: "the terminal MUST support grapheme clusters in conformance to algorithm"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Spec is a 2021 draft for Unicode 13 and does not mention wcwidth; widths follow East Asian Width. Foot lists 2027 as "Grapheme cluster processing" (foot-ctlseqs, verified). Compare with measure.DetectZWJMode.
+
+- id: term.theme-query-996
+  area: theme
+  feature: Query current light/dark theme with DSR 996
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI ? 996 n -> CSI ? 997 ; 1|2 n (1 dark, 2 light)
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Query the current (color) theme mode"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Foot doc gives the reply values 1 dark, 2 light. Foot's doc also says the primary theme is considered dark by convention.
+
+- id: term.theme-notify-2031
+  area: theme
+  feature: Unsolicited color-theme change notifications (mode 2031)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI ? 2031 h / CSI ? 2031 l
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Request color theme updates"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Unsolicited report format NOT FETCHED (contour spec URL returned 404). Ghostty and Windows Terminal reportedly send it on theme change, via search snippets only.
+
+- id: term.inband-resize-2048
+  area: events
+  feature: In-band window resize notifications (instead of SIGWINCH)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI ? 2048 h
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "In-band window resize notifications"
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Foot marks the origin as TODO, so there is no settled spec. Report format not fetched. Relevant to SIGWINCH robustness (P1).
+
+- id: term.xtversion
+  area: session
+  feature: Terminal name and version report (XTVERSION)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI > 0 q -> DCS > | name(version) ST
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "report terminal name and version, in the form"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Lets an app identify the terminal from the reply instead of guessing from TERM or env vars. Support across terminals only from search snippets.
+
+- id: term.da1-da2
+  area: session
+  feature: Primary and secondary device attributes (DA1, DA2)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI c (DA1), CSI > c (DA2)
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Send primary device attributes"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Standard probe for feature detection. Use as a barrier for earlier probes is UNVERIFIED (not in fetched text); canary needed.
+
+- id: term.osc52-set-primary
+  area: desktop
+  feature: OSC 52 clipboard write to clipboard (c) or primary selection (p, s)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 52 ; Pc ; Pd ST (Pc = c, s or p; Pd = base64)
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "_Pc_ can be either *c*, *s* or *p*."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Loom writes OSC 52 already. Gap to check: the p/s target for primary selection on Linux.
+
+- id: term.osc52-query
+  area: desktop
+  feature: OSC 52 clipboard read (query with "?")
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 52 ; Pc ; ? ST -> OSC 52 ; Pc ; <base64> ST
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "_Pc_ can be either *c*, *s* or *p*."
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Foot lists the query form; WezTerm reportedly ignores reads (search snippet, not verified). Read needs a user-permission policy, see kitty OSC 5522 row.
+
+- id: term.osc5522-read-permission
+  area: desktop
+  feature: Kitty OSC 5522 clipboard protocol: loc=primary read, permission prompt, EPERM
+  lib: terminal/kitty-spec
+  version: spec
+  symbol: CSI ? 5522 $ p (DECRQM), loc=primary metadata key, EPERM status
+  source_url: https://sw.kovidgoyal.net/kitty/clipboard/
+  evidence_quote: "Terminals should ask the user for permission before allowing a read request."
+  verified: false
+  loom: unknown
+  priority: P3
+  note: Quotes from fetcher summary; page truncated at about 40k of 72k characters. Verify the section text before relying on it.
+
+- id: term.osc133-prompt
+  area: desktop
+  feature: Shell integration semantic prompt marks (prompt start, command output, command end)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 133 ; A ST (prompt start), OSC 133 ; C ST, OSC 133 ; D ST
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Mark start of shell prompt"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Origin FinalTerm. Used for jump-to-prompt and zones in WezTerm and others (search snippets only).
+
+- id: term.osc8-hyperlink
+  area: desktop
+  feature: OSC 8 hyperlinks with optional id
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 8 ; id=ID ; URI ST (empty URI closes)
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Hyperlink (a.k.a HTML-like anchors)."
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Clickable links in cell output; needs cell-to-link mapping in the canvas.
+
+- id: term.osc9-777-notify
+  area: desktop
+  feature: Desktop notification via OSC 9 (iTerm2) and OSC 777 (urxvt)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 9 ; msg ST, OSC 777 ; notify ; title ; msg ST
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "uses *desktop-notifications.command* in *foot.ini*(5)."
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Two competing forms; the terminal decides whether it shows the notification.
+
+- id: term.osc22-pointer
+  area: desktop
+  feature: Set mouse pointer shape by xcursor name
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: OSC 22 ; name ST (empty name resets)
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "Sets the xcursor pointer."
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Lets a widget show a text or hand cursor without a side channel. Check if the pointer resets on exit.
+
+- id: term.sgr-pixel-1016
+  area: events
+  feature: SGR-Pixels mouse mode (pixel coordinates instead of cells)
+  lib: terminal/foot-ctlseqs
+  version: spec
+  symbol: CSI ? 1016 h
+  source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
+  evidence_quote: "SGR-Pixels mouse mode"
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Loom maps mouse to cells today. Pixel coordinates need the cell size; how to get it is UNVERIFIED (not in fetched text). Support per terminal not checked here.
+
+- id: term.kitty-graphics-apc
+  area: render
+  feature: Kitty graphics protocol: APC image transfer, t=d/f/t/s media, Unicode placeholders
+  lib: terminal/kitty-spec
+  version: spec
+  symbol: ESC _G control-data ; payload ESC \ ; U+10EEEE placeholder
+  source_url: https://sw.kovidgoyal.net/kitty/graphics-protocol/#the-graphics-escape-code
+  evidence_quote: "This is a so-called Application Programming Command (APC)."
+  verified: false
+  loom: unknown
+  priority: P3
+  note: Quote from fetcher summary, not checked against page text. Ghostty 1.4 reportedly adds animation (search snippet only).
+
+- id: term.ghostty-kitty-graphics
+  area: render
+  feature: Ghostty supports the kitty graphics protocol
+  lib: terminal/ghostty-features
+  version: spec
+  symbol: kitty graphics (APC G)
+  source_url: https://ghostty.org/docs/features
+  evidence_quote: "Ghostty supports the Kitty graphics protocol, which allows terminal applications to render images directly"
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Ghostty's features page does not list kitty keyboard, mode 2026, mode 2027, OSC 133 or 2031 by name (checked: not present). Absence is not proof of no support.

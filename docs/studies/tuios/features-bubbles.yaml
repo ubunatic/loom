@@ -1,0 +1,498 @@
+# Topic 3: Bubbles (charm.land/bubbles/v2) and Huh (charm.land/huh/v2) widgets and knobs.
+# Source pins: bubbles main 1deada954e6eead9c054837f1cd3d669e912cd4d, huh main ffb6a97195b4a031925a31cc70c62fc1d309e69d
+# Both are Bubble Tea v2 libraries (module lines verified). Line numbers come from raw.githubusercontent.com main, grep -n, at research time.
+# loom column is left unknown for the host to fill.
+
+- id: bubbles.textarea.word-forward
+  area: desktop
+  feature: Alt/Ctrl+Right word jump forward in multi-line textarea
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.KeyMap.WordForward
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L93
+  evidence_quote: 'key.NewBinding(key.WithKeys("alt+right", "ctrl+right", "alt+f"), key.WithHelp("alt+right", "word forward"))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Ctrl+Right and Alt+Right both jump words; Alt+f is the emacs alias.
+
+- id: bubbles.textarea.select-word-forward
+  area: desktop
+  feature: Shift-extended word selection in textarea
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.KeyMap.SelectWordForward
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L120
+  evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+shift+right", "alt+shift+right", "alt+shift+f"), key.WithHelp("alt+shift+right", "select word forward"))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Selection keys exist in the KeyMap (SelectCharacterForward, SelectLineUp/Down, SelectAll). Ctrl+Shift needs kitty keyboard protocol to arrive.
+
+- id: bubbles.textarea.select-all
+  area: desktop
+  feature: Select all in textarea bound to Ctrl+G
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.KeyMap.SelectAll
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L124
+  evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+g"), key.WithHelp("ctrl+g", "select all"))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Ctrl+A is LineStart here (home, ctrl+a), so select-all is not on the desktop key. Differs from loom Ctrl+A.
+
+- id: bubbles.textarea.copy-selection
+  area: desktop
+  feature: Copy selection in textarea bound to Ctrl+Shift+C
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.KeyMap.CopySelection
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L125
+  evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+shift+c"), key.WithHelp("ctrl+shift+c", "copy selection"))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Copy is a KeyMap entry only; whether it writes the clipboard (OSC 52) was not checked. Ctrl+Shift+C needs kitty keyboard.
+
+- id: bubbles.textarea.paste
+  area: input
+  feature: Ctrl+V paste binding in textarea
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.KeyMap.Paste
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L108
+  evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+v"), key.WithHelp("ctrl+v", "paste"))'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Paste is a key action that reads the clipboard through the program; bracketed-paste handling not checked here.
+
+- id: bubbles.textarea.dynamic-height
+  area: render
+  feature: Auto-grow and shrink textarea height to content
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.Model.DynamicHeight
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L318
+  evidence_quote: 'DynamicHeight, when true, causes the textarea to automatically grow'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Clamped by MinHeight and MaxHeight (fields near L312-L324). Relevant to TextEntry auto-size.
+
+- id: bubbles.textarea.virtual-cursor
+  area: render
+  feature: Choose virtual (drawn) cursor or real terminal cursor for textarea
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.Model.SetVirtualCursor
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L496
+  evidence_quote: 'func (m *Model) SetVirtualCursor(v bool) {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Default is virtual (useVirtualCursor true, L164). Textarea.Cursor() (L1751) returns *tea.Cursor for the real cursor. Ties to the cursor placement and IME question.
+
+- id: bubbles.textarea.cursor
+  area: render
+  feature: Real terminal cursor position reported to Bubble Tea v2 renderer
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.Model.Cursor
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L1751
+  evidence_quote: 'func (m Model) Cursor() *tea.Cursor {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The component hands the cursor to the program, so the program decides where to show it. Compare with loom cell-canvas cursor handling.
+
+- id: bubbles.textarea.max-height
+  area: layout
+  feature: Maximum height in rows for textarea
+  lib: bubbles/textarea
+  version: main@1deada9
+  symbol: textarea.Model.MaxHeight
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L312
+  evidence_quote: 'MaxHeight int'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Also MinHeight, MaxContentHeight, MaxWidth fields. Upstream TODO says max lines should become dynamic in v2 (comment seen in fetch, line unknown).
+
+- id: bubbles.textinput.word-forward
+  area: desktop
+  feature: Alt/Ctrl+Right word jump in single-line input
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.KeyMap.WordForward
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L72
+  evidence_quote: 'key.NewBinding(key.WithKeys("alt+right", "ctrl+right", "alt+f"))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Same key set as textarea. No help text is attached in textinput, so the hint must come from the caller.
+
+- id: bubbles.textinput.accept-suggestion-tab
+  area: events
+  feature: Tab accepts an autocomplete suggestion inside a text input
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.KeyMap.AcceptSuggestion
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L83
+  evidence_quote: 'AcceptSuggestion:        key.NewBinding(key.WithKeys("tab")),'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: A widget consuming Tab. The loom Tab policy (focus moves by containers) makes this a conflict to decide, not to copy.
+
+- id: bubbles.textinput.suggestions
+  area: widgets
+  feature: Autocomplete suggestions with next/prev cycling
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.Model.SetSuggestions
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L287
+  evidence_quote: 'func (m *Model) SetSuggestions(suggestions []string) {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: ShowSuggestions bool (L147), NextSuggestion down/ctrl+n, PrevSuggestion up/ctrl+p. Huh Input also has Suggestions (see below).
+
+- id: bubbles.textinput.validate
+  area: widgets
+  feature: Validation callback on text input value
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.Model.Validate
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L141
+  evidence_quote: 'Validate ValidateFunc'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Validator runs on every change and returns an error for display. Error stays in Model.Err (L-line unknown).
+
+- id: bubbles.textinput.echo-mode
+  area: widgets
+  feature: Password echo modes (normal, password with echo char, none)
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.EchoMode
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L96
+  evidence_quote: 'EchoMode      EchoMode'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Three modes (EchoNormal, EchoPassword, EchoNone); EchoCharacter defaults to asterisk.
+
+- id: bubbles.textinput.virtual-cursor
+  area: render
+  feature: Virtual vs real cursor for single-line input
+  lib: bubbles/textinput
+  version: main@1deada9
+  symbol: textinput.Model.SetVirtualCursor
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L183
+  evidence_quote: 'func (m *Model) SetVirtualCursor(v bool) {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Same switch as textarea. Cursor() at textinput.go L916 returns *tea.Cursor.
+
+- id: bubbles.filepicker.allowed-types
+  area: widgets
+  feature: Restrict selectable file types by extension
+  lib: bubbles/filepicker
+  version: main@1deada9
+  symbol: filepicker.Model.AllowedTypes
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/filepicker/filepicker.go#L138
+  evidence_quote: 'AllowedTypes []string'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Empty list means any file. Also DirAllowed and FileAllowed booleans (L145-L146).
+
+- id: bubbles.filepicker.show-size
+  area: widgets
+  feature: Show file size column in file picker
+  lib: bubbles/filepicker
+  version: main@1deada9
+  symbol: filepicker.Model.ShowSize
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/filepicker/filepicker.go#L143
+  evidence_quote: 'ShowSize        bool'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Default true in New (L35). Size column is 7 cells wide (fileSizeWidth, L62).
+
+- id: bubbles.table.virtualised-render
+  area: perf
+  feature: Table renders only the rows around the cursor
+  lib: bubbles/table
+  version: main@1deada9
+  symbol: table.Model.UpdateViewport
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/table/table.go#L267
+  evidence_quote: 'Render only rows from: m.cursor-m.viewport.Height to: m.cursor+m.viewport.Height'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Also caps rendered rows at 2*viewport.Height (L269). No sorting, filtering or column resize found in table.go.
+
+- id: bubbles.list.fuzzy-default-filter
+  area: widgets
+  feature: Fuzzy match and rank filter for list items (sahilm/fuzzy)
+  lib: bubbles/list
+  version: main@1deada9
+  symbol: list.DefaultFilter
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/list/list.go#L98
+  evidence_quote: 'func DefaultFilter(term string, targets []string) []Rank {'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Ranked by fuzzy score (Filter field L166, default at L236). UnsortedFilter at L111 keeps order. Relevant to the fuzzy ranking item.
+
+- id: bubbles.list.filter-state
+  area: widgets
+  feature: Explicit filter state machine (Unfiltered, Filtering, FilterApplied)
+  lib: bubbles/list
+  version: main@1deada9
+  symbol: list.FilterState
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/list/list.go#L128
+  evidence_quote: 'type FilterState int'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Set manually with SetFilterState (L295) and SetFilterText (L280). Filter input is an exported textinput.Model (FilterInput, L185).
+
+- id: bubbles.list.set-filtering-enabled
+  area: widgets
+  feature: Turn filtering on or off for a list
+  lib: bubbles/list
+  version: main@1deada9
+  symbol: list.Model.SetFilteringEnabled
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/list/list.go#L258
+  evidence_quote: 'func (m *Model) SetFilteringEnabled(v bool) {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Companion of SetShowFilter (L314). Items come from SetItems (L380), which returns a tea.Cmd.
+
+- id: bubbles.tree.package
+  area: widgets
+  feature: Tree component with scroll offset, open/closed glyphs and cursor glyph
+  lib: bubbles/tree
+  version: main@1deada9
+  symbol: tree.Model
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/tree/tree.go#L1
+  evidence_quote: '// Package tree provides a tree component for Bubble Tea'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Not listed in the bubbles README component list, but present in the repo tree. Compare directly with loom Tree.
+
+- id: bubbles.tree.scroll-off
+  area: widgets
+  feature: Keep a minimum number of rows visible above and below the selected tree node
+  lib: bubbles/tree
+  version: main@1deada9
+  symbol: tree.Model.SetScrollOff
+  source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/tree/tree.go#L222
+  evidence_quote: 'func (m *Model) SetScrollOff(val int) {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Also SetOpenCharacter (L227), SetClosedCharacter (L232), SetCursorCharacter (L237), SetNodes (L241).
+
+- id: huh.select.filter
+  area: widgets
+  feature: Type / to filter options in a single-choice select (case-insensitive substring)
+  lib: huh/Select
+  version: main@ffb6a97
+  symbol: huh.Select[T] filter (substring match)
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_select.go#L751
+  evidence_quote: 'return strings.Contains(strings.ToLower(option), strings.ToLower(s.filter.Value()))'
+  verified: true
+  loom: unknown
+  priority: P1
+  note: Substring, not fuzzy ranking (contrast bubbles/list DefaultFilter). Filter is an internal bubbles textinput (field_select.go L49). Filtering(bool) at L137.
+
+- id: huh.multiselect.select-all
+  area: widgets
+  feature: Select-all and select-none keys in multi-select
+  lib: huh/MultiSelect
+  version: main@ffb6a97
+  symbol: huh.MultiSelect.keymap.SelectAll / SelectNone
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_multiselect.go#L436
+  evidence_quote: 'case key.Matches(msg, m.keymap.SelectAll, m.keymap.SelectNone) && m.limit <= 0:'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Disabled when a Limit is set (setSelectAllHelp, L719-L729). Concrete key characters are in a keymap file not fetched.
+
+- id: huh.multiselect.limit
+  area: widgets
+  feature: Cap the number of selections in a multi-select
+  lib: huh/MultiSelect
+  version: main@ffb6a97
+  symbol: huh.MultiSelect.Limit
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_multiselect.go#L190
+  evidence_quote: 'func (m *MultiSelect[T]) Limit(limit int) *MultiSelect[T] {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Filterable(bool) at L177 defaults to true per the fetch report.
+
+- id: huh.input.suggestions
+  area: input
+  feature: Static autocomplete suggestions on a Huh input field
+  lib: huh/Input
+  version: main@ffb6a97
+  symbol: huh.Input.Suggestions
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_input.go#L149
+  evidence_quote: 'func (i *Input) Suggestions(suggestions []string) *Input {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Dynamic variant SuggestionsFunc at L166 takes a func and bindings.
+
+- id: huh.input.validate
+  area: input
+  feature: Validation callback on a Huh input field
+  lib: huh/Input
+  version: main@ffb6a97
+  symbol: huh.Input.Validate
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_input.go#L231
+  evidence_quote: 'func (i *Input) Validate(validate func(string) error) *Input {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Form-level error display via WithShowErrors (form.go L256).
+
+- id: huh.text.external-editor
+  area: input
+  feature: Open multi-line Text field in an external editor ($EDITOR)
+  lib: huh/Text
+  version: main@ffb6a97
+  symbol: huh.Text.ExternalEditor
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_text.go#L191
+  evidence_quote: 'func (t *Text) ExternalEditor(enabled bool) *Text {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Launches via tea.ExecProcess on a temp file. Editor(...) at L211 overrides the command.
+
+- id: huh.text.editor-default
+  area: input
+  feature: Fallback editor is nano when EDITOR is unset
+  lib: huh/Text
+  version: main@ffb6a97
+  symbol: huh.defaultEditor
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_text.go#L196
+  evidence_quote: 'const defaultEditor = "nano"'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: EDITOR is read with strings.Fields at L200, so arguments are allowed.
+
+- id: huh.form.layout-columns
+  area: layout
+  feature: Form layout that spreads groups across even columns
+  lib: huh/Form
+  version: main@ffb6a97
+  symbol: huh.LayoutColumns
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/layout.go#L22
+  evidence_quote: 'func LayoutColumns(columns int) Layout {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Other layouts: LayoutDefault (L16, one group at a time), LayoutStack (L19). Set with WithLayout (form.go L365).
+
+- id: huh.form.layout-grid
+  area: layout
+  feature: Form layout that places groups in a rows by columns grid
+  lib: huh/Form
+  version: main@ffb6a97
+  symbol: huh.LayoutGrid
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/layout.go#L27
+  evidence_quote: 'func LayoutGrid(rows int, columns int) Layout {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Composition of groups, not of cells. Compare with loom Form and claim-cell layout.
+
+- id: huh.form.accessible
+  area: a11y
+  feature: Accessible mode that replaces the TUI with plain standard prompts
+  lib: huh/Form
+  version: main@ffb6a97
+  symbol: huh.Form.WithAccessible
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/form.go#L235
+  evidence_quote: 'func (f *Form) WithAccessible(accessible bool) *Form {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: README recommends an ACCESSIBLE env var (fetch report). The accessibility.go path returned 404 in the fetch, so that file is not confirmed.
+
+- id: huh.form.term-dumb
+  area: a11y
+  feature: Form falls back to accessible mode and width 80 when TERM is dumb
+  lib: huh/Form
+  version: main@ffb6a97
+  symbol: huh.NewForm (TERM check)
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/form.go#L129
+  evidence_quote: 'if os.Getenv("TERM") == "dumb" {'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Environment-based degrade. Check what loom does for TERM=dumb.
+
+- id: huh.theme.func
+  area: theme
+  feature: Theme function receives isDark flag and returns styles
+  lib: huh/theme
+  version: main@ffb6a97
+  symbol: huh.ThemeFunc
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/theme.go#L15
+  evidence_quote: 'type ThemeFunc func(isDark bool) *Styles'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: The library passes the dark-background flag to themes. Relevant to the dark/light detection item.
+
+- id: huh.theme.charm
+  area: theme
+  feature: Built-in themes (Charm, Dracula, Catppuccin, Base16, Base) keyed by isDark
+  lib: huh/theme
+  version: main@ffb6a97
+  symbol: huh.ThemeCharm
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/theme.go#L139
+  evidence_quote: 'func ThemeCharm(isDark bool) *Styles {'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: README lists a "Default" theme, but no ThemeDefault identifier was found (ThemeBase at L99 is the nearest, unconfirmed).
+
+- id: huh.filepicker.allowed-types
+  area: widgets
+  feature: Restrict file types in a Huh file picker field
+  lib: huh/FilePicker
+  version: main@ffb6a97
+  symbol: huh.FilePicker.AllowedTypes
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_filepicker.go#L144
+  evidence_quote: 'func (f *FilePicker) AllowedTypes(types []string) *FilePicker {'
+  verified: true
+  loom: unknown
+  priority: P2
+  note: Also CurrentDirectory (L62), ShowHidden (L83), ShowSize (L89, default off per fetch), Picking (L77), Validate. No TitleFunc.
+
+- id: huh.note.field
+  area: widgets
+  feature: Note field (static title and description, with Func variants and height)
+  lib: huh/Note
+  version: main@ffb6a97
+  symbol: huh.Note
+  source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_note.go#L55
+  evidence_quote: 'func (n *Note) Title(title string) *Note {'
+  verified: true
+  loom: unknown
+  priority: P3
+  note: Display-only field. TitleFunc (L68), DescriptionFunc (L101), Height (L108).
