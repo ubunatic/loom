@@ -42,11 +42,15 @@ write a failure report.
 
 | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|
-| implement | jules-implement-477 | 7791606068217650291 | none | failed: stalled in AWAITING_USER_FEEDBACK after 2 replies (auto, then "extend the previous cell"), no PR |
+| implement | jules-implement-477 | 7791606068217650291 | GH #119 | late delivery: PR opened 2026-11-10 20:40 after the run was recorded as stalled; checked by the host and adopted (see below) |
 | implement | owner restart in the Jules UI | unknown | none | not running on 2026-11-10 (owner), no PR |
 | implement | jules-implement-477b | 3034362514808774344 | none | failed: FAILED "Jules was unable to complete the task" after about 4 min, no message, no PR |
 
-Three Jules runs gave nothing; no further Jules runs. Next: local fix by a developer agent from the lead below.
+The first run delivered late as GH #119 (`putCluster` appends a zero-width cluster to the previous
+base cell, stepping back over continuation cells, with the pending-wrap case). Host check: 3 of its
+4 tests fail on main (the VS16 one passes there); a split-every-byte test over 9 streams passes on
+the PR except `❤` + U+FE0F split between the two (cursor 3 vs 2): the width change that VS16 brings
+is not applied when VS16 arrives in a later write.
 
 Lead from the failed run, checked by the host: a mark that starts a new write forms its own zero-width
 cluster, and `putCluster` returns early for `w <= 0` (`vt/vt.go:600-603`), so the mark is dropped.
