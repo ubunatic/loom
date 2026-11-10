@@ -61,4 +61,5 @@ upkeep.
 | 462 | [462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md](462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md) | Pane consumes terminal replies centrally instead of dispatching them as key events | Open |
 | 463 | [463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md](463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md) | TextEntry: completion popup with a suggestion source and key routing | Draft |
 | 464 | [464-text-widgets-share-one-paste-sanitiser-and-richtextedit-accepts-paste.md](464-text-widgets-share-one-paste-sanitiser-and-richtextedit-accepts-paste.md) | Text widgets share one paste sanitiser and RichTextEdit accepts paste | Open |
+| 465 | [465-loom-edit-ctrl-c-v-x-use-the-system-clipboard-safely-with-plain-text-plus-rich-formats.md](465-loom-edit-ctrl-c-v-x-use-the-system-clipboard-safely-with-plain-text-plus-rich-formats.md) | loom edit Ctrl+C/V/X use the system clipboard safely, with plain text plus rich formats | Open |
 <!-- harnez:end issues-active-index -->
