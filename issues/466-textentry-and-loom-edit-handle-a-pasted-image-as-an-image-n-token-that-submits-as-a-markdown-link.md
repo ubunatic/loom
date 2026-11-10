@@ -49,10 +49,10 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
   - **Desktop session detection**: e.g. `WAYLAND_DISPLAY` set and `wl-paste --list-types`
     succeeds (X11 with `xclip`/`xsel` is a later option); not over SSH (`SSH_CONNECTION`).
     Unverified on X11 and inside `loom session`.
-  - **No desktop session (likely a server)**: Ctrl+V cannot reach the user's clipboard, so loom
-    shows a short notice: "Ctrl+V can't read your clipboard here; use Ctrl+Shift+V to paste
-    from your terminal." Open: whether Ctrl+V still pastes loom's own last copy (internal clip)
-    there and shows the notice only when that is empty (recommended), or always shows it.
+  - **No desktop session (likely a server)**: Ctrl+V cannot reach the user's clipboard, so
+    Ctrl+C/X/V fall back to loom's internal copy buffer (owner, 2026-11-10: better than a
+    notice; same rule in 465). Only when that buffer is empty may Ctrl+V show a short hint
+    ("use Ctrl+Shift+V to paste from your terminal").
   - The 465 paste rule (internal rich clip if it still matches the system clipboard) uses this
     Ctrl+V clipboard read.
 - **Represent**: one token per image, label `[Image #n]` (n per widget, counting up), data holds
@@ -69,7 +69,7 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
 ## 3. Implementation & Verification Plan
 /goal In a desktop session, Ctrl+V of an image clip or image file into TextEntry or `loom edit`
 inserts one atomic `[Image #n]` token, and submit or save yields the Markdown image link with the
-surrounding text; without a desktop session Ctrl+V shows the Ctrl+Shift+V notice; terminal
+surrounding text; without a desktop session Ctrl+C/X/V use loom's internal copy buffer; terminal
 (bracketed) pastes stay plain text. Stop and report when blocked on an API or storage decision or a
 denied permission; on a loop or no progress, clear the goal and write a failure report.
 

@@ -26,8 +26,12 @@ Today (checked at `7ecfba5e`):
 - **Copy/cut**: write plain text through the existing Pane OSC 52 path (works over SSH, needs no
   tool), and keep the styled `[]RichLine` internally as today.
 - **Paste**: Ctrl+V pastes the internal rich clip when it still matches the system clipboard,
-  else the system text. Note that most terminals take Ctrl+Shift+V (and some Ctrl+V) themselves
-  and send a bracketed paste, so the 464 paste path is the main route for outside text.
+  else the system text. Ctrl+Shift+V is the terminal's paste (bracketed, 464 path) and stays
+  untouched; Ctrl+V reads the desktop clipboard itself (owner design, 466).
+- **Fallback (owner, 2026-11-10)**: when no system clipboard is available (no desktop session,
+  e.g. a server over SSH), Ctrl+C/X/V fall back to loom's internal copy buffer instead of showing
+  a notice, so copy and paste inside the app keep working. Copy/cut still also send OSC 52, which
+  can reach the user's local clipboard over SSH.
 - **Rich formats (idea, unverified)**: OSC 52 carries one text payload, no MIME types. A
   multi-format clip (text/plain plus text/html, text/markdown or an `.ansi` type) needs a local
   clipboard API: Wayland data-control or `wl-copy --type`, X11 `xclip -t`, macOS pasteboard.
