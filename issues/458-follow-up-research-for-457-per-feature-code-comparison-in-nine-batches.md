@@ -34,7 +34,7 @@ Batches (each writes only its own `report-<batch>.md`):
 9. testing, lifecycle and producer load.
 
 Models: haiku:med fetch and quote; terra:med code comparison (required for 4 and 5, event routing);
-astra:high once for conflicting protocol evidence. Live terminal and clipboard canaries run one at a
+conflicting protocol evidence goes to the host (owner rule: no astra in this repo). Live terminal and clipboard canaries run one at a
 time; one integrator merges results into `features.md`, the `features-*.yaml` loom column and `summary.md`.
 
 ## 3. Implementation & Verification Plan
