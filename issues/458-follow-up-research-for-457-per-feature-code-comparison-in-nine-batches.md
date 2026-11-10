@@ -1,6 +1,6 @@
 # 458 — Follow-up research for 457: per-feature code comparison in nine batches
 
-**Status**: Draft
+**Status**: In Progress — owner: run batch 1 (render) alone to check the flow
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research
