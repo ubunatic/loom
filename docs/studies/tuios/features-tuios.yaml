@@ -25,7 +25,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/program_options.go#L13-L15
   evidence_quote: "ProgramOptions is the one list of Bubble Tea options a tuios client runs"
   verified: true
-  loom: unknown
+  loom: n/a # unchecked: e2236900 pane_run.go:109-115 binds clipboard and ticker; report-session.md does not trace binary option wiring.
   priority: P1
   note: Test at internal/app/program_options_test.go#L30 scans every tea.NewProgram call. Matches the testability priority.
 
@@ -38,7 +38,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/program_options.go#L36-L38
   evidence_quote: "order matters for one option: WithFilter is a single slot, both wish and sip"
   verified: true
-  loom: unknown
+  loom: n/a # e2236900 pane_dispatch.go:14-46 dispatchMouse routes modal and widget tree; report-mouse.md; absence of a separate filter slot unchecked.
   priority: P1
   note: Relevant to cascading event capture. Wish and sip each install their own filter; TUIOS overrides both.
 
@@ -64,7 +64,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/clipboard_osc52.go#L13-L29
   evidence_quote: "The reason for a setting at all is that OSC 52 is output, and any output can"
   verified: true
-  loom: unknown
+  loom: missing # e2236900 internal/session/session.go:755-790 forwards child output; report-session.md.
   priority: P1
   note: 'Default is focused: only the focused pane writes, others ask. A click must wait clipboardAskSettle before it allows a write.'
 
@@ -90,7 +90,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/vt/kitty_keyboard.go#L14-L24
   evidence_quote: "maxKittyKeyboardStack is how many entries one screen's flag stack holds."
   verified: true
-  loom: unknown
+  loom: missing # e2236900 vt/vt.go:798-854 uses one kitty flags value; report-session.md.
   priority: P1
   note: Mirrors kitty and ghostty. A full-screen program that exits without popping cannot change the shell's keyboard mode.
 
@@ -103,7 +103,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/terminal/paste.go#L14-L23
   evidence_quote: "the text without control characters, wrapped in the bracketed"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 text_entry.go:1100-1125 textEntryUnits strips controls; textinput.go:54-61 ConsumePaste does not; report-input.md.
   priority: P1
   note: Every paste path goes through here. No size cap seen in this function; huge-paste handling is in vt.SanitizePaste, not read.
 
@@ -116,7 +116,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/update.go#L715-L721
   evidence_quote: "while a drag is held outside the content area."
   verified: true
-  loom: unknown
+  loom: missing # e2236900 text_entry.go:1237-1255 mouseCaptureTarget captures scrollbar and pan; widget.go:74-119 tick traversal; report-mouse.md selection canary.
   priority: P1
   note: Answers the "drag leaves bounds" question for scrolling. Whether a drag is captured by the pane is not shown here.
 
@@ -129,7 +129,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/config/userconfig.go#L1333
   evidence_quote: 'LeaderKey: "ctrl+b",'
   verified: true
-  loom: unknown
+  loom: n/a # e2236900 text_entry.go:483-537 ConsumeKey handles editing directly; report-widgets.md.
   priority: P1
   note: The main design contrast with loom's desktop keys (Ctrl+C/V/X/Z, no leader). Mode routing is in docs/ARCHITECTURE.md#L159 and #L225-L229.
 
@@ -155,7 +155,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/docs/ARCHITECTURE.md#L23
   evidence_quote: "The daemon (`internal/session`) owns the sessions, the PTYs and one VT emulator per pane,"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 internal/session/session.go:1376-1405 attach snapshots screen; vt/vt.go:299-365 Repaint; report-session.md.
   priority: P1
   note: Main gap for loom session parity. Each pane has a 64 KB ring with stream positions (docs/ARCHITECTURE.md#L75).
 
@@ -181,7 +181,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/vt/mode.go#L51
   evidence_quote: "{ansi.ModeUnicodeCore, ansi.ModePermanentlySet}, // ?2027, see WidthMethod"
   verified: true
-  loom: missing
+  loom: missing  # e2236900 vt/vt.go:735-759 privateModeState returns 0 for untracked 2027; report-width.md V3.
   priority: P1
   note: Compare with loom measure.DetectZWJMode probes. Whether TUIOS detects terminals without 2027 is not read (vt/reports.go not opened).
 
@@ -194,7 +194,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/text_sizing_passthrough.go#L292-L295
   evidence_quote: 'buf = append(buf, "\x1b[?2026h"...)'
   verified: true
-  loom: unknown
+  loom: has # e2236900 canvas.go:576-599 FlushWithConfig wraps configured output; report-render.md.
   priority: P1
   note: Passthrough wrapper proved. Main-frame 2026 is unknown until the Bubble Tea v2.0.10 renderer state and output are traced (458 b1); the earlier grep does not cover Bubble Tea.
 
@@ -207,7 +207,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/internal/app/frame_render.go#L52
   evidence_quote: "s := uv.StyleDiff(from, to)"
   verified: true
-  loom: unknown
+  loom: has # e2236900 canvas.go:519-560 Row emits styles only on transitions; report-render.md.
   priority: P1
   note: Their own renderer, byte-for-byte equal to uv.TrimSpace(uv.Lines(...).Render()) (frame_render.go#L57). go.mod pins a 2026-09 pseudo-version.
 
@@ -259,7 +259,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/cmd/tuios-web/main.go#L517-L520
   evidence_quote: "bubbletea can do. See the note on Wait in the upstream report."
   verified: true
-  loom: unknown
+  loom: partial # e2236900 pane_run.go:130-145 Run recovers panic; pane_terminal.go:190-245 Close restores terminal; report-testing.md C3-C6.
   priority: P1
   note: A real workaround-gap. The upstream report is not fetched, so its number and status are unknown. Relevant to crash restore.
 

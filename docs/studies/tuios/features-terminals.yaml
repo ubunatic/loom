@@ -11,7 +11,7 @@
   source_url: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement
   evidence_quote: "0b1000 (8) Report all keys as escape codes"
   verified: false
-  loom: unknown
+  loom: partial # e2236900 event.go:376-400 decodeCSIu discards extra fields; pane_modes.go:140-165 requests flag 1; report-input.md.
   priority: P1
   note: Loom sends CSI > 1 u only; flags 2/4/8/16, mode bits and a push/pop stack are not covered. Quote from fetcher summary, page truncated.
 
@@ -24,7 +24,7 @@
   source_url: https://sw.kovidgoyal.net/kitty/keyboard-protocol/#disambiguate-escape-codes
   evidence_quote: "The only exceptions are the Enter, Tab and Backspace keys which still generate the same bytes"
   verified: false
-  loom: unknown
+  loom: unknown # unchecked: no merged row isolates kitty legacy exceptions.
   priority: P1
   note: Ctrl+Z handling not stated in fetched text (inferred only). Quote from fetcher summary, page truncated.
 
@@ -37,7 +37,7 @@
   source_url: https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
   evidence_quote: "Use `CSI ? 2026 h` to enable batching output commands into a command queue."
   verified: true
-  loom: unknown
+  loom: has # e2236900 canvas.go:576-599 FlushWithConfig wraps configured output; report-queries.md.
   priority: P1
   note: DECRPM 0 or 4 means unsupported. No consensus on a timeout if ESU is never sent (spec text). Probe with DECRQM before relying on it.
 
@@ -50,7 +50,7 @@
   source_url: https://github.com/contour-terminal/vt-extensions/blob/master/synchronized-output.md
   evidence_quote: "If you get nothing back (DECRQM not implemented at all)"
   verified: true
-  loom: unknown
+  loom: missing # e2236900 canvas.go:576-599 FlushWithConfig uses configuration, not query; report-queries.md.
   priority: P1
   note: No reply at all is also a valid unsupported signal; a probe needs a timeout. Loom must not block on a missing reply.
 
@@ -63,7 +63,7 @@
   source_url: https://github.com/contour-terminal/terminal-unicode-core/blob/master/spec/terminal-unicode-core.tex
   evidence_quote: "the terminal MUST support grapheme clusters in conformance to algorithm"
   verified: true
-  loom: unknown
+  loom: missing # e2236900 vt/vt.go:735-759 privateModeState returns 0 for 2027; report-width.md.
   priority: P1
   note: Spec is a 2021 draft for Unicode 13 and does not mention wcwidth; widths follow East Asian Width. Foot lists 2027 as "Grapheme cluster processing" (foot-ctlseqs, verified). Compare with measure.DetectZWJMode.
 
@@ -102,7 +102,7 @@
   source_url: https://codeberg.org/dnkl/foot/raw/branch/master/doc/foot-ctlseqs.7.scd
   evidence_quote: "In-band window resize notifications"
   verified: true
-  loom: unknown
+  loom: missing # e2236900 vt/vt.go:735-759 privateModeState does not recognize 2048; report-queries.md V6.
   priority: P1
   note: Foot marks the origin as TODO, so there is no settled spec. Report format not fetched. Relevant to SIGWINCH robustness (P1).
 

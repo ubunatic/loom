@@ -12,7 +12,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L93
   evidence_quote: 'key.NewBinding(key.WithKeys("alt+right", "ctrl+right", "alt+f"), key.WithHelp("alt+right", "word forward"))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:483-495 ConsumeKey; TextEntry only, report-widgets.md.
   priority: P1
   note: Ctrl+Right and Alt+Right both jump words; Alt+f is the emacs alias.
 
@@ -25,7 +25,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L120
   evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+shift+right", "alt+shift+right", "alt+shift+f"), key.WithHelp("alt+shift+right", "select word forward"))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:483-495 ConsumeKey; TextEntry only, report-widgets.md.
   priority: P1
   note: Selection keys exist in the KeyMap (SelectCharacterForward, SelectLineUp/Down, SelectAll). Ctrl+Shift needs kitty keyboard protocol to arrive.
 
@@ -38,7 +38,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L124
   evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+g"), key.WithHelp("ctrl+g", "select all"))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:527-531 ConsumeKey; TextEntry only, report-widgets.md.
   priority: P1
   note: Ctrl+A is LineStart here (home, ctrl+a), so select-all is not on the desktop key. Differs from loom Ctrl+A.
 
@@ -51,7 +51,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textarea/textarea.go#L125
   evidence_quote: 'key.NewBinding(key.WithKeys("ctrl+shift+c"), key.WithHelp("ctrl+shift+c", "copy selection"))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:532-537 ConsumeKey; TextEntry only, report-widgets.md.
   priority: P1
   note: Copy is a KeyMap entry only; whether it writes the clipboard (OSC 52) was not checked. Ctrl+Shift+C needs kitty keyboard.
 
@@ -129,7 +129,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L72
   evidence_quote: 'key.NewBinding(key.WithKeys("alt+right", "ctrl+right", "alt+f"))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:483-495 ConsumeKey; TextEntry only, report-widgets.md.
   priority: P1
   note: Same key set as textarea. No help text is attached in textinput, so the hint must come from the caller.
 
@@ -142,7 +142,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/textinput/textinput.go#L83
   evidence_quote: 'AcceptSuggestion:        key.NewBinding(key.WithKeys("tab")),'
   verified: true
-  loom: unknown
+  loom: n/a # e2236900 text_entry.go:465-475 ConsumeKey accepts placeholder only; report-widgets.md.
   priority: P1
   note: A widget consuming Tab. The loom Tab policy (focus moves by containers) makes this a conflict to decide, not to copy.
 
@@ -233,7 +233,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/table/table.go#L267
   evidence_quote: 'Render only rows from: m.cursor-m.viewport.Height to: m.cursor+m.viewport.Height'
   verified: true
-  loom: unknown
+  loom: partial # e2236900 table.go:404 Draw and table.go:241-261 refilter; report-widgets.md.
   priority: P1
   note: Also caps rendered rows at 2*viewport.Height (L269). No sorting, filtering or column resize found in table.go.
 
@@ -246,7 +246,7 @@
   source_url: https://github.com/charmbracelet/bubbles/blob/1deada954e6eead9c054837f1cd3d669e912cd4d/list/list.go#L98
   evidence_quote: 'func DefaultFilter(term string, targets []string) []Rank {'
   verified: true
-  loom: unknown
+  loom: has # e2236900 choice.go:245-283 refilter ranks fuzzy matches; report-widgets.md.
   priority: P1
   note: Ranked by fuzzy score (Filter field L166, default at L236). UnsortedFilter at L111 keeps order. Relevant to the fuzzy ranking item.
 
@@ -311,7 +311,7 @@
   source_url: https://github.com/charmbracelet/huh/blob/ffb6a97195b4a031925a31cc70c62fc1d309e69d/field_select.go#L751
   evidence_quote: 'return strings.Contains(strings.ToLower(option), strings.ToLower(s.filter.Value()))'
   verified: true
-  loom: unknown
+  loom: has # e2236900 choice.go:245-283 refilter; report-widgets.md.
   priority: P1
   note: Substring, not fuzzy ranking (contrast bubbles/list DefaultFilter). Filter is an internal bubbles textinput (field_select.go L49). Filtering(bool) at L137.
 

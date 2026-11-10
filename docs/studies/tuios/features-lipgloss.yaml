@@ -11,7 +11,7 @@
   source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L214-L232
   evidence_quote: '// Sort by absolute z-index (lowest to highest for drawing)'
   verified: true
-  loom: unknown
+  loom: partial # e2236900 canvas.go:325-345 setNew records claims; pane_dispatch.go:14-46 gives modals priority; report-desktop.md.
   priority: P1
   note: Z is absolute per layer after flattening the tree; loom RootOverlays/astra order is the comparison point.
 
@@ -24,7 +24,7 @@
   source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L65-L69
   evidence_quote: 'func (l *Layer) Z(z int) *Layer'
   verified: true
-  loom: unknown
+  loom: partial # e2236900 canvas.go:325-345 setNew records claims; pane_dispatch.go:14-46 gives modals priority; report-desktop.md.
   priority: P1
   note: Chainable X(), Y(), Z() builders; loom has no equivalent value type, so popovers need explicit coordinates.
 
@@ -63,7 +63,7 @@
   source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/layer.go#L277-L292
   evidence_quote: '// Check from highest z to lowest (reverse order)'
   verified: true
-  loom: unknown
+  loom: partial # e2236900 canvas.go:325-345 setNew records claims; pane_dispatch.go:14-46 gives modals priority; report-desktop.md.
   priority: P1
   note: Returns LayerHit{id, layer, bounds}. Compare with loom claim-cell routing (astra); a mouse-first SDK needs this for popover click-through rules.
 
@@ -102,7 +102,7 @@
   source_url: https://raw.githubusercontent.com/charmbracelet/lipgloss/main/examples/canvas/main.go#L76
   evidence_quote: 'comp := lipgloss.NewCompositor(layers...)'
   verified: true
-  loom: unknown
+  loom: partial # e2236900 canvas.go:325-345 setNew records claims; pane_dispatch.go:14-46 gives modals priority; report-desktop.md.
   priority: P1
   note: Canvas example uses only Compositor; Render() output is a plain string, so the caller still writes the frame.
 

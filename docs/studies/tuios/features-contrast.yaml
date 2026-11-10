@@ -37,7 +37,7 @@
   source_url: https://github.com/rivo/tview/blob/master/textarea.go#L154-L159
   evidence_quote: "Ctrl-Q: Copy the selected text into the clipboard, unselect the text."
   verified: true
-  loom: unknown
+  loom: has # e2236900 text_entry.go:532-537 ConsumeKey passes Ctrl+C without selection; report-widgets.md.
   priority: P1
   note: Copy uses a widget-internal clipboard by default. Line 160 says Ctrl-C is the default key to stop the application. loom uses Ctrl+C for copy, so this is a deliberate contrast.
 
@@ -76,7 +76,7 @@
   source_url: https://github.com/rivo/tview/blob/master/application.go#L172-L178
   evidence_quote: "SetMouseCapture sets a function which captures mouse events (consisting of"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 text_entry.go:338-349 SetFocus and modal_mouse.go:46-95 modal capture; report-mouse.md.
   priority: P1
   note: Returning a nil event consumes it and triggers a redraw. This is a global routing point, similar to loom's pane mouse capture; compare the design.
 
@@ -115,7 +115,7 @@
   source_url: https://github.com/rivo/tview/blob/master/application.go#L251-L254
   evidence_quote: "Widgets won't interpret paste events for navigation or selection purposes."
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_run.go:625-695 paste buffering; report-input.md canary confirms no shortcut.
   priority: P1
   note: Paste is for inserting a block of text into InputField or TextArea only. Relevant to loom's bracketed paste and huge paste handling.
 
@@ -141,7 +141,7 @@
   source_url: https://github.com/rivo/tview/blob/master/application.go#L642
   evidence_quote: "func (a *Application) Suspend(f func()) bool {"
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_suspend.go:166-208 Suspend hands off and restores terminal; report-widgets.md.
   priority: P1
   note: Returns false when already suspended, and then does not call f. Compare with loom Pane.Suspend.
 
@@ -154,7 +154,7 @@
   source_url: https://github.com/gdamore/tcell/blob/main/mouse.go#L20-L22
   evidence_quote: "Hence, click drag can be identified by a motion event with the mouse down,"
   verified: true
-  loom: unknown
+  loom: has # e2236900 event.go:525-550 DecodeMouse emits MouseDrag for motion with button; report-mouse.md.
   priority: P1
   note: Some terminals only send press and release, not motion. Drags that leave the bounds depend on this; compare with loom pane drag capture.
 
@@ -167,7 +167,7 @@
   source_url: https://github.com/gdamore/tcell/blob/main/screen.go#L315
   evidence_quote: "MouseMotionEvents = MouseFlags(4) // All mouse events (includes click and drag events)"
   verified: true
-  loom: unknown
+  loom: unknown # unchecked: no merged row compares mouse mode configuration flags.
   priority: P1
   note: Mouse reporting is a set of flags, not a single on/off switch. A MousePixelEvents flag also exists at screen.go#L324.
 
@@ -193,7 +193,7 @@
   source_url: https://github.com/gdamore/tcell/blob/main/screen.go#L133-L134
   evidence_quote: "EnablePaste enables bracketed paste mode, if supported."
   verified: true
-  loom: unknown
+  loom: unknown # unchecked: merged paste rows assess delivery, not default enable policy.
   priority: P1
   note: Implementation is tScreen.EnablePaste at tscreen.go#L1291. Paste is off unless the app calls it.
 
@@ -206,7 +206,7 @@
   source_url: https://github.com/gdamore/tcell/blob/main/tscreen.go#L203-L205
   evidence_quote: "// Technically this pushes"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 pane_modes.go:140-165 setKittyKeyboard pushes flag 1 without query; report-queries.md.
   priority: P1
   note: tcell first queries support, then sends CSI =31u (disambiguation, events, alternate keys, all keys, text). loom uses CSI >1u. Compare the flag sets and the query step.
 
@@ -245,7 +245,7 @@
   source_url: https://github.com/gdamore/tcell/blob/main/cell.go#L60-L63
   evidence_quote: "at the same location.  Note that only the first grapheme in the string"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 canvas.go:360-394 setNew stores clusters and continuations; report-width.md V2.
   priority: P1
   note: Only the first grapheme of the string is written. The doc does not state how many cells a ZWJ emoji takes; compare with loom measure ZWJ probes and test it.
 
@@ -271,7 +271,7 @@
   source_url: https://github.com/jesseduffield/gocui/blob/master/keybinding.go#L279
   evidence_quote: "MouseLeft         = Key(tcell.KeyF63)"
   verified: true
-  loom: unknown
+  loom: unknown # unchecked: no merged row compares key and mouse numeric code domains.
   priority: P1
   note: keybinding.go#L229 has KeyShiftArrowDown = Key(tcell.KeyF63) too, so both share one F-key code. Shows the cost of a single key enum for keys and mouse.
 

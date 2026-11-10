@@ -10,7 +10,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1215-L1220
   evidence_quote: "case p.msgs <- msg:"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 pane_run.go:50-62 Pane.Post locks and appends without waiting for loop; report-testing.md.
   priority: P1
   note: high-rate producers stall on Send; compare with Pane.Post (msgs is make(chan Msg), tea.go#L620).
 
@@ -36,7 +36,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L53-L65
   evidence_quote: "View() View"
   verified: true
-  loom: unknown
+  loom: unknown # unchecked: no equivalent merged row for structured view return.
   priority: P1
   note: declarative mode state, rendered after every Update; loom equivalent is Pane/RootOverlays state (host to check).
 
@@ -140,7 +140,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L561-L594
   evidence_quote: "1. Synchronized output updates are supported. In this case, we want to"
   verified: true
-  loom: unknown
+  loom: has # e2236900 canvas.go:576-599 FlushWithConfig wraps configured output; report-queries.md.
   priority: P1
   note: v2.1.1 wraps non-empty updates when enabled; the cursor-only update is not wrapped (cursed_renderer.go#L561-L570). TUIOS deployment (v2.0.10) behaviour unknown (458 b1).
 
@@ -153,7 +153,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/cursed_renderer.go#L13
   evidence_quote: 'uv "github.com/charmbracelet/ultraviolet"'
   verified: true
-  loom: unknown
+  loom: missing # e2236900 canvas.go:576-599 FlushWithConfig writes every row; report-render.md.
   priority: P1
   note: v2.0.10 (TUIOS dependency) and v2.1.1 are separate; v2.0.10 passes its buffer to UV and flushes (cursed_renderer.go#L477-L496, 458 b1).
 
@@ -296,7 +296,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L586-L587
   evidence_quote: "return SuspendMsg{}"
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_suspend.go:166-208 Suspend hands off and restores terminal; report-widgets.md.
   priority: P1
   note: loom has Pane.Suspend; compare restore behaviour. Loop handles SuspendMsg at tea.go#L799-L801.
 
@@ -322,7 +322,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1365-L1392
   evidence_quote: "ReleaseTerminal restores the original terminal state and cancels the input"
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_suspend.go:166-208 Suspend hands off and restores terminal; report-widgets.md.
   priority: P1
   note: needed for external-program handoff; compare with loom Pane.Suspend and exec paths.
 
@@ -335,7 +335,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L1317
   evidence_quote: "func (p *Program) recoverFromPanic(r interface{}) {"
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_run.go:130-145 Run recovers and closes; report-testing.md.
   priority: P1
   note: crash restore is in the ticket's P1 list; the WithoutCatchPanics option is at options.go#L83.
 
@@ -361,7 +361,7 @@
   source_url: https://github.com/charmbracelet/bubbletea/blob/v2.1.1/tea.go#L709
   evidence_quote: "func (p *Program) handleResize() chan struct{} {"
   verified: true
-  loom: unknown
+  loom: has # e2236900 pane_wait_unix.go:37-40 notifyPaneSignals subscribes to SIGWINCH; pane_screen.go:91 applyWinch re-queries and applies size; report-queries.md V6.
   priority: P1
   note: ticket P1 lists SIGWINCH robustness; RequestWindowSize is at commands.go#L173 (v1 WindowSize renamed, upgrade guide).
 

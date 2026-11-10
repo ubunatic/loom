@@ -13,7 +13,7 @@
   source_url: https://pkg.go.dev/github.com/charmbracelet/ultraviolet
   evidence_quote: "(s) Flush()"
   verified: partial  # 458 b1: index entry only, execution path not traced
-  loom: unknown
+  loom: has # e2236900 canvas.go:576-610 FlushWithConfig buffers when AtomicFlush is set; report-render.md.
   priority: P1
   note: Index lists Render and Flush; the doc prose for Flush was not verbatim-fetched, only the index entry.
 
@@ -26,7 +26,7 @@
   source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_renderer.go (line n/a)
   evidence_quote: "A drift-prone row, or any row when force is set, is repainted; every other row is diffed."
   verified: partial  # 458 b1: hash path not traced to the final write
-  loom: unknown
+  loom: missing # e2236900 canvas.go:576-599 FlushWithConfig writes every row; report-render.md distinguishes UV scroll hashing.
   priority: P1
   note: '"Drift" (rows whose on-screen state may differ from the model, e.g. after wide-character or width mismatches) is the key idea; read the whole function before copying the rule.'
 
@@ -39,7 +39,7 @@
   source_url: https://github.com/charmbracelet/ultraviolet/blob/a45b7c86333f9dfedb95f81064e80259b02937f0/terminal_renderer.go#L890-L949
   evidence_quote: "transformLine diffs row y against the model and writes only what changed,"
   verified: true
-  loom: missing  # 458 b1: canvas.go FlushWithConfig L576-L599 writes every row on a dirty flush (rev 38618963)
+  loom: missing  # e2236900 canvas.go:576-599 FlushWithConfig writes every row; report-render.md. Earlier evidence: rev 38618963.
   priority: P1
   note: Same file as uv.line-hash-diff; baseline for a loom minimal-diff comparison.
 
@@ -52,7 +52,7 @@
   source_url: https://github.com/charmbracelet/ultraviolet/blob/main/terminal_screen.go (line n/a)
   evidence_quote: "buf.WriteString(ansi.SetModeSynchronizedOutput)"
   verified: partial  # 458 b1: Flush not traced
-  loom: unknown
+  loom: has # e2236900 canvas.go:576-599 FlushWithConfig wraps configured output; report-queries.md.
   priority: P1
   note: Setter only stores a bool; the sequence is written in Flush and only when the buffer is non-empty. Default-off is from the code reading, not a doc quote.
 
@@ -91,7 +91,7 @@
   source_url: https://github.com/charmbracelet/ultraviolet (README)
   evidence_quote: "Note: Ultraviolet is in active development. The API may change."
   verified: true
-  loom: unknown
+  loom: n/a # e2236900 pane_run.go:109-115 run binds a widget tree; upstream development status is not a loom feature.
   priority: P1
   note: 'Dependency risk for loom if it were ever to build on uv directly. Pseudo-version seen on pkg.go.dev: v0.0.0-20261023060817-a45b7c86333f (not a release tag).'
 
@@ -117,7 +117,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/ansi/method.go (line n/a)
   evidence_quote: "type Method uint8"
   verified: true
-  loom: unknown
+  loom: missing # e2236900 vt/vt.go:735-759 privateModeState returns 0 for 2027; report-width.md.
   priority: P1
   note: loom measure package uses ZWJ probes; compare the two width rules and where each one is chosen.
 
@@ -130,7 +130,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/ansi/width.go#L64-L80
   evidence_quote: "// StringWidth returns the width of a string in cells. This is the number of"
   verified: true
-  loom: unknown
+  loom: partial # e2236900 measure/measure.go:130-195 nextClusterBoundary segments text; report-width.md V1 canary shows the Indic split.
   priority: P1
   note: Line range is approximate (about L64-L80, from the fetch). Default API is the grapheme rule, so callers must opt into wcwidth explicitly.
 
@@ -143,7 +143,7 @@
   source_url: https://github.com/charmbracelet/x/blob/43427fdbad12fde220b737fc36303291a5ce4602/vt/emulator.go#L161-L167
   evidence_quote: "if e.isModeSet(ansi.ModeUnicodeCore) {"
   verified: true
-  loom: missing
+  loom: missing  # e2236900 vt/vt.go:735-759 privateModeState returns 0 for untracked 2027; report-width.md V3.
   priority: P1
   note: 'Partial (458 batch 2): WidthMethod switches, but flushGrapheme in vt/utf8.go always uses GraphemeWidth, so cursor advance is the same with 2027 off and on. Not a wcwidth oracle.'
 
@@ -156,7 +156,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
   evidence_quote: "// Write writes data to the terminal output buffer."
   verified: true
-  loom: unknown
+  loom: unknown # unchecked: no equivalent merged row assesses the general emulator API.
   priority: P1
   note: 'Direct peer of loom''s internal vt.VT used by loom session. Package doc in vt.go: "a virtual terminal emulator that can be used to emulate a". Status "experimental" not found on the pages read.'
 
@@ -182,7 +182,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
   evidence_quote: "(not verbatim: Scrollback doc says nil in alt screen; body returns scrs[0] regardless)"
   verified: false
-  loom: unknown
+  loom: has # e2236900 vt/vt.go:139-170 SetScrollbackLimit and ScrollbackCells; report-session.md.
   priority: P1
   note: Doc comment and body disagree per subagent reading. Verify in code before citing. Relevant to loom session scrollback parity.
 
@@ -208,7 +208,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/ansi/kitty.go#L8-L90
   evidence_quote: "// Kitty keyboard protocol progressive enhancement flags."
   verified: true
-  loom: unknown
+  loom: partial # e2236900 event.go:376-400 decodeCSIu discards colon fields; pane_modes.go:140-165 requests flag 1; report-input.md.
   priority: P1
   note: Loom sends ESC[>1u. Check whether loom's flags match these named constants (1 = disambiguate). Line range approximate.
 
@@ -221,7 +221,7 @@
   source_url: https://github.com/charmbracelet/x/blob/main/input/parse.go (line n/a)
   evidence_quote: "// parseSequence finds the first recognized event sequence and returns it along with its length."
   verified: true
-  loom: unknown
+  loom: has # e2236900 event.go:608-657 scanKey and pane_run.go:625-695 input buffering; report-input.md.
   priority: P1
   note: Lone ESC (len 1) is returned as KeyEscape at once, per code reading, so a split CSI may become a bare Esc. Canary needed before claiming a bug.
 
