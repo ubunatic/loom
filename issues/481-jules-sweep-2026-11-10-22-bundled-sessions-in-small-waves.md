@@ -142,3 +142,5 @@ progress, clear the goal and write a failure report here.
 | 3 | experiment | jules-ssh | pending | none yet | running (started 22:50 after ansibuffer and routing-tests-a finished) |
 | 3 | research + experiment | jules-tml-declarative | pending | none yet | running (started 22:50) |
 | 3 | implement | jules-perf | pending | none yet | running (started after routing-tests-b finished) |
+| 3 | experiment | jules-uv-trial | pending | none yet | running (started after vt-diff and test-hygiene finished) |
+| 4 | test-draft + implement | jules-session-backpressure | pending | none yet | running (started with uv-trial) |
