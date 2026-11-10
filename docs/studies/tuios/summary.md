@@ -19,7 +19,7 @@ by seven haiku:med searchers. The host checked the P1 rows against loom code at 
 |---|---|---|---|
 | Bubble Tea v2 | cell renderer, mode 2026, kitty flags with reported support, typed mouse and paste messages | `Send` blocks; `teatest` polls with sleeps; v1 to v2 broke most APIs | loom has a richer widget and routing model; Bubble Tea diffs frames, loom does not (cost difference not measured) |
 | ultraviolet | row hash diff, writes changed cells only, grapheme width | marked as in active development, API may change | loom has no diff yet |
-| Bubbles / Huh | pinned, clean sources; virtualised table; fuzzy list; accessible forms; `$EDITOR` | no undo/redo in text inputs; select-all on Ctrl+G; Tab accepts suggestions; table has no sort or filter | loom widgets are more desktop-like (undo, Ctrl+A/C/V/X, mouse) |
+| Bubbles / Huh | pinned, clean sources; virtualised table; fuzzy list; accessible forms; `$EDITOR` | no undo/redo in text inputs; select-all on Ctrl+G; Tab accepts suggestions; table has no sort or filter | loom's TextEntry and RichTextEdit are more desktop-like (undo, Ctrl+A/C/V/X, mouse); TextInput and TextArea have no user selection, undo or cut (458 batch 6) |
 | Lip Gloss v2 | Z-ordered layers, hit test | no focus, click-through or modal handling | loom's claim-cell routing does more |
 | tview / tcell | mature, grapheme cells, kitty query before enabling | Ctrl+Q copy (Ctrl+C quits); mouse off by default | similar scope; loom has finer routing |
 | gocui | small | mouse buttons share key codes; internal clipboard only | loom is ahead |
@@ -60,7 +60,11 @@ breaking changes are P3 notes while loom is alpha.
    type; not ticketed while Pane pushes flag 1 only (458 batch 4).
 7. **Paste sanitising** differs per widget: only TextEntry strips controls, RichTextEdit ignores
    paste (ticket 464). Canvas output drops controls, so the terminal is safe.
-8. **Unchecked P1 rows**: Table virtualisation, cleanup when `Run` fails early,
+8. **Widgets (458 batch 6)**: Form takes Enter, Down and PgDn before a focused TextArea, so
+   multi-line editing in a Form breaks; TextInput and TextArea lack user selection and undo.
+   Table draws only visible rows (about 90 µs at 100 and 100,000 rows), but each filter
+   keystroke scans all rows (6.7 ms at 100,000).
+   **Unchecked P1 rows**: cleanup when `Run` fails early,
    OSC 52 write policy and kitty flag stack in `loom session`.
 9. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
    text input validation, password echo and suggestions, `$EDITOR` hand-off.

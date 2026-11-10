@@ -39,9 +39,11 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | robust | SIGWINCH resize | bt.resize.sigwinch | has | `docs/TuiInput.md:35` |
 | robust | Cleanup when start fails before first frame | tuios.run-before-init-gap | unchecked | check `Pane.Run` error paths |
 | widgets | Fuzzy filter with ranking | bubbles.list.fuzzy-default-filter | has | `Choice.Fuzzy`, FilePicker |
-| widgets | Table renders only visible rows | bubbles.table.virtualised-render | unchecked | Table is sortable and filterable; virtualisation not checked |
+| widgets | Table renders only visible rows | bubbles.table.virtualised-render | partial | Draw is viewport-bounded (about 90 µs at 100 and 100,000 rows); SetRows, widths and each filter keystroke scan all rows (3.4 ms, 6.7 ms at 100,000) (report-widgets.md) |
+| widgets | Container keys do not break a focused multi-line editor | huh form field routing | **missing** | Form takes Tab/Down/PgDn/Enter before the focused TextArea (`form.go:276-297`); canary: Down moves focus, Enter submits (report-widgets.md) |
+| widgets | Selection, undo and cut in every text widget | bubbles.textarea.*, tview textarea | partial | TextEntry and RichTextEdit have them; TextInput and TextArea only `SetSelection` from code, no undo, no cut (report-widgets.md) |
 | widgets | Select filter in forms | huh.select.filter | has | Choice filter |
-| widgets | Word jump, Shift-select, copy, select all in text inputs | bubbles.textarea.*, bubbles.textinput.word-forward | has | TextEntry; loom uses Ctrl+A/C (Bubbles: Ctrl+G, Ctrl+Shift+C) |
+| widgets | Word jump, Shift-select, copy, select all in text inputs | bubbles.textarea.*, bubbles.textinput.word-forward | has | TextEntry only; loom uses Ctrl+A/C (Bubbles: Ctrl+G, Ctrl+Shift+C); in TextArea Ctrl+A is line start |
 | widgets | Tab accepts a suggestion | bubbles.textinput.accept-suggestion-tab | n/a | loom Tab policy; TextEntry accepts placeholder only |
 | compose | Z-ordered layers with hit test | lipgloss.layer.z-order, lipgloss.compositor.hit-test | has | root overlays and claim-cell routing |
 | api | Copy key that does not collide with quit | tview.textarea.copy-is-ctrl-q | has | Ctrl+C copies only with a selection, else passes (`HasSelection`) |
