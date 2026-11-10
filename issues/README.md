@@ -65,4 +65,7 @@ upkeep.
 | 469 | [469-form-lets-a-focused-textarea-handle-enter-down-and-pgdn-before-form-navigation.md](469-form-lets-a-focused-textarea-handle-enter-down-and-pgdn-before-form-navigation.md) | Form lets a focused TextArea handle Enter, Down and PgDn before form navigation | Open |
 | 470 | [470-textinput-and-textarea-get-user-selection-undo-and-cut-like-textentry.md](470-textinput-and-textarea-get-user-selection-undo-and-cut-like-textentry.md) | TextInput and TextArea get user selection, undo and cut like TextEntry | Open |
 | 471 | [471-table-filter-cannot-type-the-sort-flip-character.md](471-table-filter-cannot-type-the-sort-flip-character.md) | Table filter cannot type the sort-flip character | Open |
+| 472 | [472-vt-keeps-kitty-keyboard-flags-as-a-per-screen-stack-and-the-session-restores-the-child-s-flags.md](472-vt-keeps-kitty-keyboard-flags-as-a-per-screen-stack-and-the-session-restores-the-child-s-flags.md) | vt keeps kitty keyboard flags as a per-screen stack and the session restores the child's flags | Open |
+| 473 | [473-session-gates-child-osc-52-clipboard-writes-and-queries.md](473-session-gates-child-osc-52-clipboard-writes-and-queries.md) | session gates child OSC 52 clipboard writes and queries | Open |
+| 474 | [474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md](474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md) | session client that stops reading blocks every tab of its session | Open |
 <!-- harnez:end issues-active-index -->

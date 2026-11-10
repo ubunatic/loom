@@ -49,10 +49,10 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | api | Copy key that does not collide with quit | tview.textarea.copy-is-ctrl-q | has | Ctrl+C copies only with a selection, else passes (`HasSelection`) |
 | api | One filter slot, last wins | tuios.filter-single-slot | n/a | loom routes by widget tree |
 | api | Shared program options across binaries | tuios.program-options-shared | n/a | |
-| session | Daemon with attach/detach, one VT per pane | tuios.session-daemon | partial | `loom session` + `vt.VT`; attach compare open |
-| session | OSC 52 write policy per pane | tuios.osc52-write-policy | unchecked | |
-| session | Kitty flag stack per screen | tuios.kitty-keyboard-stack | unchecked | `vt.VT` |
-| session | VT scrollback API | vt.scrollback-api (UNVER) | has | `Scrollback` in `pane_screen.go` |
+| session | Daemon with attach/detach, one VT per pane | tuios.session-daemon | partial | `loom session` + `vt.VT`; one client, second attach refused; reattach repaints 24 screen rows, no scrollback or byte-offset resume (TUIOS has both); no live-stream gap (report-session.md) |
+| session | OSC 52 write policy per pane | tuios.osc52-write-policy | **missing** | child OSC 52 writes and queries forwarded raw (`internal/session/session.go:764`, `:783`); TUIOS: off/on/ask/focused (ticket 473) |
+| session | Kitty flag stack per screen | tuios.kitty-keyboard-stack | **missing** | one value (`vt/vt.go:58`, `:809-819`), leaks across `?1049`, `=N u` restores the cursor; reattach sends fixed `>1u` (ticket 472) |
+| session | VT scrollback API | vt.scrollback-api | has | `SetScrollbackLimit`/`ScrollbackCells` (`vt/vt.go:139-170`); 5000 rows by spec, bound holds at 100,000 lines (report-session.md) |
 | model | Leader-key modal design | tuios.leader-key-model | n/a | loom is non-modal by design |
 | test | Headless model test harness | bt.test.teatest-wait | has | `loomtest.VT`, `CompareWidget`; teatest polls with sleep, loom forbids that |
 | status | Ultraviolet API still unstable | uv.status-active-dev | n/a | P3 note: API stability is not a goal while loom is alpha |

@@ -5,7 +5,10 @@ by seven haiku:med searchers. The host checked the P1 rows against loom code at 
 
 ## What TUIOS is built on
 
-- Bubble Tea v2, Lip Gloss v2 and ultraviolet. No Bubbles, Huh or Glamour, no forks, no `replace`.
+- Bubble Tea v2, Lip Gloss v2 and ultraviolet. No Bubbles, Huh or Glamour, no `replace` in
+  `go.mod`. TUIOS's own `vt/` package is a derived, heavily extended copy of charmbracelet/x `vt`
+  (its NOTICE says so; `emulator.go` 2173 lines vs 503), so TUIOS VT findings are not x/vt
+  findings (458 batch 7).
 - `tuios.dev/loom` is TUIOS's renderer for its own TML documents, not a widget SDK.
   No import clash with `ubunatic.com/loom`; say "TUIOS loom" when citing it.
 - Workarounds found: Bubble Tea's single `WithFilter` slot (TUIOS sets its own last), the frame
@@ -64,9 +67,13 @@ breaking changes are P3 notes while loom is alpha.
    multi-line editing in a Form breaks; TextInput and TextArea lack user selection and undo.
    Table draws only visible rows (about 90 µs at 100 and 100,000 rows), but each filter
    keystroke scans all rows (6.7 ms at 100,000).
-   **Unchecked P1 rows**: cleanup when `Run` fails early,
-   OSC 52 write policy and kitty flag stack in `loom session`.
-9. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
+   **Unchecked P1 row**: cleanup when `Run` fails early.
+9. **Session and VT (458 batch 7)**: `vt.VT` keeps one kitty flag value, not a per-screen stack,
+   and the session re-sends a fixed flag 1 on reattach (ticket 472); child OSC 52 writes and
+   queries pass to the host unfiltered (ticket 473); a client that stops reading may block all
+   tabs of its session (ticket 474, not yet canaried). Reattach repaints the screen only, so
+   lines that scrolled off while detached stay only in the session's VT history (not ticketed).
+10. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
    text input validation, password echo and suggestions, `$EDITOR` hand-off.
 
 ## Limits of this study
@@ -74,5 +81,6 @@ breaking changes are P3 notes while loom is alpha.
 - 10 of 189 rows are unverified (kitty pages cut off, xterm ctlseqs refused, two 404 pages).
 - Some line numbers are approximate (Lip Gloss rows, ±3), and many low-level rows lack line numbers.
 - P2 and P3 rows were not checked against loom.
-- Not researched: TUIOS session attach code, Bubble Tea issue threads, ratatui.
+- Not researched: Bubble Tea issue threads, ratatui. TUIOS session attach was compared in 458
+  batch 7 (report-session.md).
 - Only the headless render canary was run (report-render.md); mode 2026 and kitty behaviour in real terminals is unmeasured.
