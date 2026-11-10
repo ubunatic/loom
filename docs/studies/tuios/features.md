@@ -16,8 +16,9 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | render | One writer call per canvas frame | uv.render-flush-split | has | `ResizeConfig.AtomicFlush`; Pane ancillary writes separate, unmeasured |
 | render | Mode 2026 synchronized output | bt.sync-output-2026, uv.sync-output-2026, term.sync-output-2026 | has | `ResizeConfig.SynchronizedOutput`: configured output, not capability detection or whole-redraw atomicity |
 | render | Query DECRQM 2026 before using it | term.decrqm-2026-replies | unchecked | config switch only, no query found |
-| width | Mode 2027 grapheme width, queried by DECRQM | term.grapheme-2027, ansi.width-method, vt.widthmethod-mode-2027 (UNVER), tuios.width-mode-2027 | **missing** | no `2027` in loom; `measure` probes ZWJ width by terminal instead |
-| width | Cell buffer stores grapheme clusters | tcell.cell.put-grapheme | has | cluster-aware editing (`text_cluster_edit_test.go`) |
+| width | Mode 2027 grapheme width, queried by DECRQM | term.grapheme-2027, ansi.width-method, vt.widthmethod-mode-2027, tuios.width-mode-2027 | **missing** | no 2027 query or state; loom VT answers DECRQM 2027 with 0 (unknown). `measure` probes only ZWJ width by CPR (`LOOM_ZWJ` override). ultraviolet queries 2027 at start and switches buffer and renderer width (report-width.md V6) |
+| width | Grapheme segmentation matches current Unicode | ansi.stringwidth-grapheme-default, tcell.cell.put-grapheme | partial | loom splits Indic conjunct `क्ष` into two clusters (width 2); x/ansi and tcell v3 keep one cluster (width 1). Flags, marks, ZWJ handled (report-width.md V1) |
+| width | Cell buffer stores grapheme clusters | tcell.cell.put-grapheme | partial | leading cell plus continuations, using loom's own segmentation; a wide glyph crossing the right edge is rejected whole (report-width.md V2) |
 | input | Partial escape stays buffered until complete | input.parsesequence-consumed | has | `esc_key_timeout` 50 ms (`docs/TuiInput.md:56`) |
 | input | Kitty keyboard flags beyond 1 (event types, alternate keys) | ansi.kitty-keyboard-flags, term.kitty-keyboard.flags (UNVER) | partial | loom pushes flag 1 only (`docs/TuiInput.md:96`) |
 | input | Query kitty support (`CSI ? u`) before enabling | tcell.kitty-keyboard.enable | partial | only in `loom-probe keys`, not in `Pane` (opt-in flag) |

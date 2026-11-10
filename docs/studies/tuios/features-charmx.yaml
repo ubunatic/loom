@@ -138,14 +138,14 @@
   area: session
   feature: vt emulator reports GraphemeWidth as its width method when the Unicode core mode (2027) is set
   lib: x/vt
-  version: main@unpinned
+  version: vt v0.1.0@43427fdbad12fde220b737fc36303291a5ce4602
   symbol: vt.Emulator.WidthMethod, ansi.ModeUnicodeCore
-  source_url: https://github.com/charmbracelet/x/blob/main/vt/emulator.go (line n/a)
-  evidence_quote: "(not verbatim: WidthMethod returns ansi.GraphemeWidth when ModeUnicodeCore is set)"
-  verified: false
-  loom: unknown
+  source_url: https://github.com/charmbracelet/x/blob/43427fdbad12fde220b737fc36303291a5ce4602/vt/emulator.go#L161-L167
+  evidence_quote: "if e.isModeSet(ansi.ModeUnicodeCore) {"
+  verified: true
+  loom: missing
   priority: P1
-  note: Read from code by a subagent, no verbatim quote. Verify before relying on it; the 2027 numeric value was not seen.
+  note: 'Partial (458 batch 2): WidthMethod switches, but flushGrapheme in vt/utf8.go always uses GraphemeWidth, so cursor advance is the same with 2027 off and on. Not a wcwidth oracle.'
 
 - id: vt.emulator-api
   area: session

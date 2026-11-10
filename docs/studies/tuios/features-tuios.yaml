@@ -181,7 +181,7 @@
   source_url: https://github.com/Gaurav-Gosain/tuios/blob/6fe2c0df9922b2eec28f392fee4e196efd86be36/vt/mode.go#L51
   evidence_quote: "{ansi.ModeUnicodeCore, ansi.ModePermanentlySet}, // ?2027, see WidthMethod"
   verified: true
-  loom: unknown
+  loom: missing
   priority: P1
   note: Compare with loom measure.DetectZWJMode probes. Whether TUIOS detects terminals without 2027 is not read (vt/reports.go not opened).
 

@@ -39,7 +39,11 @@ breaking changes are P3 notes while loom is alpha.
    and Pane 2269 bytes and Bubble Tea v2.1.1 9 bytes; a bold change 2301 vs 11; a wide cell
    2270 vs 25. Not measured: Pane write calls, replay into a terminal model, real workloads.
 2. **Mode 2027 grapheme width.** Ask the terminal with DECRQM and switch it on when supported,
-   instead of guessing from the terminal name in `measure`. TUIOS forces 2027 on in its emulator.
+   as ultraviolet does at start, in addition to the ZWJ cursor probe in `measure`. One width
+   policy must then drive measure, canvas, renderer and loom's VT (which answers 2027 with 0
+   today). TUIOS's emulator reports 2027 as permanently set. Real-terminal replies are unmeasured
+   (owner check in report-width.md). Separately, loom splits Indic conjuncts (`क्ष`) that current
+   Unicode keeps as one cluster.
 3. **Ask before enabling.** Query DECRQM 2026 and `CSI ? u` (kitty) at start, as tcell does,
    instead of only opt-in switches.
 4. **Drag auto-scroll.** While a captured drag is held outside the content, keep scrolling on a
