@@ -137,3 +137,4 @@ progress, clear the goal and write a failure report here.
 | 1 | test-draft | jules-fuzz | 1079445786546642272 | GH #118 | checked: scope clean (4 fuzz tests, 3 seeds, report); 3 failing seeds reproduced; findings F1-F3 below; tests to adopt in PR A with the measure invariant fixed |
 | 2 | test-draft | jules-routing-tests-a | 7091831739430289177 | none yet | running (rolling start: one wave-2 session per finished wave-1 session, because of the 2026-11-11 cutoff) |
 | 2 | test-draft | jules-routing-tests-b | pending | none yet | running |
+| 2 | implement | jules-test-hygiene | pending | none yet | running |
