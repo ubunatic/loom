@@ -320,7 +320,7 @@ func drainPTY(master *os.File, done <-chan struct{}) {
 				_ = master.SetReadDeadline(time.Now().Add(50 * time.Millisecond))
 				_, err := master.Read(buf)
 				if err != nil {
-					time.Sleep(10 * time.Millisecond)
+					time.Sleep(10 * time.Millisecond) // keep: poll error wait
 				}
 			}
 		}
@@ -538,7 +538,7 @@ func TestCursorEffectsThroughPTY(t *testing.T) {
 			if match(cell) {
 				return cell
 			}
-			time.Sleep(5 * time.Millisecond)
+			time.Sleep(5 * time.Millisecond) // keep: poll loop sleep
 		}
 		cell := cellAt(x, y)
 		t.Fatalf("timed out waiting for %s at (%d,%d): %+v", what, x, y, cell)
@@ -588,7 +588,6 @@ func TestCursorEffectsThroughPTY(t *testing.T) {
 		return cell.Style.BG == ptytest.ColorRGB(255, 255, 255)
 	}, "button pulse origin")
 
-	time.Sleep(SpeccedCursorPressPulse.Lifetime + 30*time.Millisecond)
 	waitCell(2, 1, func(cell ptytest.Cell) bool { return cell.Rune != '✦' }, "expired trail")
 	waitCell(3, 1, func(cell ptytest.Cell) bool {
 		return cell.Style.BG == ptytest.ColorRGB(185, 191, 197)
@@ -608,7 +607,6 @@ func TestCursorEffectsThroughPTY(t *testing.T) {
 	waitCell(3, 1, func(cell ptytest.Cell) bool {
 		return cell.Style.BG == ptytest.ColorRGB(255, 255, 255)
 	}, "key pulse origin")
-	time.Sleep(SpeccedCursorPressPulse.Lifetime + 30*time.Millisecond)
 	waitCell(3, 1, func(cell ptytest.Cell) bool {
 		return cell.Style.BG == ptytest.ColorRGB(185, 191, 197)
 	}, "expired key pulse")
@@ -914,7 +912,7 @@ func TestPaneRunReassemblesSplitEscapeSequence(t *testing.T) {
 	}
 	// Well under the pane's escape-completion timeout (50ms), so the second
 	// write should still be joined onto the pending lone ESC.
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond) // keep: pace input for split reads
 	if _, err := master.Write([]byte("[A")); err != nil {
 		t.Fatalf("write rest: %v", err)
 	}
@@ -984,7 +982,7 @@ func TestPaneRunEscapeThenMouseReadDispatchesBothEvents(t *testing.T) {
 	if _, err := master.Write([]byte{27}); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(5 * time.Millisecond)
+	time.Sleep(5 * time.Millisecond) // keep: pace input for split reads
 	if _, err := master.Write([]byte("\x1b[<0;2;2M")); err != nil {
 		t.Fatal(err)
 	}
@@ -1054,6 +1052,25 @@ func (w *ptyResizeWidget) lastDimensions() (int, int) {
 	return w.lastCol, w.lastRow
 }
 
+// waitDims polls until the widget's last drawn size satisfies ok, and fails
+// the test with what when it does not within the race-scaled deadline.
+func (w *ptyResizeWidget) waitDims(t *testing.T, what string, ok func(cols, rows int) bool) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second * ptytest.RaceFactor)
+	for {
+		c, r := w.lastDimensions()
+		if ok(c, r) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for %s: last size %dx%d", what, c, r)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func cols(want int) func(int, int) bool { return func(c, _ int) bool { return c == want } }
+
 func (w *ptyResizeWidget) history() []Rect {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -1088,7 +1105,7 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 	go func() { errc <- p.Run(w) }()
 
 	// Let the initial frame render
-	time.Sleep(20 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Simulate rapid resize bursts: 80x24 -> 40x20 -> 25x10 -> 60x18 -> 80x24
 	burst := []struct{ cols, rows int }{
@@ -1099,11 +1116,11 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 	}
 	for _, sz := range burst {
 		setPTYSize(t, master, sz.cols, sz.rows)
-		time.Sleep(15 * time.Millisecond)
+		time.Sleep(15 * time.Millisecond) // keep: pace bursts
 	}
 
 	// Wait for coalesced resize handling and width guard restoration
-	time.Sleep(80 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Send 'q' to exit
 	if _, err := master.Write([]byte("q")); err != nil {
@@ -1150,7 +1167,7 @@ func TestPTYResizeModeToggles(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "initial 60 columns", cols(60))
 
 	// Drain output from master
 	buf := make([]byte, 4096)
@@ -1200,11 +1217,11 @@ func TestPTYResizeStaleRowClearing(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Shrink height significantly: 24 -> 12 rows
 	setPTYSize(t, master, 80, 12)
-	time.Sleep(50 * time.Millisecond)
+	w.waitDims(t, "at most 12 rows", func(_, r int) bool { return r <= 12 })
 
 	// Exit
 	master.Write([]byte("q")) //nolint:errcheck
@@ -1244,9 +1261,9 @@ func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 	setPTYSize(t, master, 50, 18)
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "50 columns", cols(50))
 
 	master.Write([]byte("q")) //nolint:errcheck
 	select {
@@ -1416,13 +1433,13 @@ func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 	go func() { errc <- p.Run(w) }()
 
 	// Let the initial frame render (width 80)
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Resize to 60 columns. During active burst, width guard should render at 60 - 1 = 59.
 	setPTYSize(t, master, 60, 20)
 
 	// Wait briefly for the WINCH event to process
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "guarded 59 columns", cols(59))
 
 	burstCols, _ := w.lastDimensions()
 	if burstCols != 59 {
@@ -1430,7 +1447,7 @@ func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 	}
 
 	// Wait for the 80ms guard timer to expire and restore full width 60
-	time.Sleep(120 * time.Millisecond)
+	w.waitDims(t, "60 columns", cols(60))
 
 	restoredCols, _ := w.lastDimensions()
 	if restoredCols != 60 {
@@ -1478,11 +1495,11 @@ func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "initial 80 columns", cols(80))
 
 	// Resize to 70 columns. With n=3, should render at 70 - 3 = 67.
 	setPTYSize(t, master, 70, 20)
-	time.Sleep(30 * time.Millisecond)
+	w.waitDims(t, "guarded 67 columns", cols(67))
 
 	burstCols, _ := w.lastDimensions()
 	if burstCols != 67 {
@@ -1490,7 +1507,7 @@ func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
 	}
 
 	// Wait for restore
-	time.Sleep(120 * time.Millisecond)
+	w.waitDims(t, "70 columns", cols(70))
 	restoredCols, _ := w.lastDimensions()
 	if restoredCols != 70 {
 		t.Fatalf("after burst expiry: cols = %d, want 70", restoredCols)
@@ -1534,11 +1551,11 @@ func TestPTYResizeWidthGuardDisabled(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	time.Sleep(25 * time.Millisecond)
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Resize to 60 columns. With WidthGuard=false, should render at full 60 columns immediately.
 	setPTYSize(t, master, 60, 20)
-	time.Sleep(25 * time.Millisecond)
+	w.waitDims(t, "60 columns", cols(60))
 
 	cols, _ := w.lastDimensions()
 	if cols != 60 {
@@ -1615,13 +1632,13 @@ func TestPaneDebugModePTY(t *testing.T) {
 
 	// Shift-F12 is CSI 24;2~ in VT sequence
 	s.SendRaw([]byte("\x1b[24;2~"))
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond) // keep: wait for pty to process
 
 	// Click terminal coordinate (7, 5) -> relative to 0-based pane startRow (assume startRow=1):
 	// Standard X=6, Y=4. Under debug mode offset (-1, -1), widget receives X=5, Y=3.
 	s.SendRaw([]byte("\x1b[<0;7;5M"))
 	s.SendRaw([]byte("\x1b[<0;7;5m"))
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond) // keep: wait for pty to process
 
 	s.Send("q")
 	if err := s.Wait(3 * time.Second); err != nil {
@@ -1659,7 +1676,7 @@ func TestPanePTYCloseRequestVetoThenQuit(t *testing.T) {
 
 	// Esc is ignored and never asks.
 	_, _ = master.WriteString("\x1b")
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond) // keep: verify negative condition (never asks)
 	select {
 	case r := <-asked:
 		t.Fatalf("Esc asked OnCloseRequest: %v", r)
