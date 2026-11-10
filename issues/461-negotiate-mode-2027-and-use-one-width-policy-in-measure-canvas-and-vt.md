@@ -25,9 +25,13 @@ Evidence: 458 batch 2, `docs/studies/tuios/report-width.md` (V1, V3, V6).
   `LOOM_ZWJ` remain the fallback and override.
 - `vt.VT` should answer and honour 2027 so `loom session` children can negotiate too.
 - x/vt is not a usable oracle: its cursor advance is grapheme-based with 2027 off and on.
-- Real-terminal replies are unmeasured. Before choosing defaults, run the owner manual check in
-  report-width.md ("Owner manual check") in foot, kitty and Ghostty. Coordinate with 458 batch 3
-  (terminal queries), which covers query-before-enable for 2026 and kitty flags.
+- Owner check 2026-11-10 (report-width.md, "Owner manual check results"): foot 1.27.0 answers
+  2027 = 1 (set by default); with 2027 reset the ZWJ family takes 8 cells instead of 2. kitty
+  0.47.1 answers 0 (not recognised) yet uses grapheme widths. So DECRQM is the first step and
+  the CPR probe stays the fallback; extend the probe to the samples where terminals differ
+  (ZWJ family, Indic conjunct: foot 2, kitty 1). Ghostty not checked (not installed).
+- Coordinate with 458 batch 3 (terminal queries), which covers query-before-enable for 2026 and
+  kitty flags.
 
 ## 3. Implementation & Verification Plan
 /goal Pane queries 2027, selects one width policy from the reply, applies it to measure, Canvas

@@ -271,6 +271,27 @@ for result in results:
 PYMANUAL
 ```
 
+## Owner manual check results (run 2026-11-10)
+
+Run by the owner with the script above (edge test moved to the window's last column), Linux,
+no multiplexer. Ghostty is not installed. Cursor advance in cells, from CPR.
+
+| Terminal | DECRQM 2027 | combining | VS15 | VS16 | family | flag | Indic `क्ष` | wide at last column |
+|---|---|---:|---:|---:|---:|---:|---:|---|
+| foot 1.27.0, default (set) | 1 (set) | 1 | 1 | 2 | 2 | 2 | 2 | not at edge (140 cols, test at col 40) |
+| foot 1.27.0, 2027 reset | | 1 | 1 | 2 | **8** | 2 | 2 | not at edge |
+| kitty 0.47.1 | **0** (not recognised) | 1 | 1 | 2 | 2 | 2 | **1** | wraps to next row, col 3 |
+
+Findings:
+- foot reports 2027 set by default, and its reset mode matches Loom `LOOM_ZWJ=split` for the
+  family (8). A DECRQM query would select foot's policy without the CPR probe.
+- kitty does grapheme widths but does not recognise 2027, so the query alone cannot detect it;
+  a CPR fallback stays necessary.
+- The Indic conjunct is 2 cells in foot and 1 in kitty. No single width table fits both; Loom's
+  width 2 matches foot, x/ansi GraphemeWidth matches kitty.
+- kitty wraps a wide glyph written at the last column; Loom Canvas never emits it there (V2).
+- VS16 is 2 in both, matching Loom measure and x/ansi GraphemeWidth, not WcWidth (1).
+
 ## Flow notes
 
 Latest-only re-resolution changed tcell from the initially found v2 line to v3.6.0; the final table uses v3. The historical batch-1 pins were not silently treated as current. Source and runtime evidence are separated, in particular for TUIOS and the terminal draft. No real terminal, visible window, or terminal mode was touched. The canary's finite sample set does not establish complete Unicode conformance or physical terminal behavior; the owner manual check remains outstanding.

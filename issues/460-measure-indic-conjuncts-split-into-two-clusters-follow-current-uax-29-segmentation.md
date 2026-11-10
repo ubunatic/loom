@@ -23,6 +23,9 @@ emoji) is the same kind of gap in the same scanner.
 - Options: extend the scanner with the missing UAX 29 rules (GB9c, and GB9/GB11 cases from 433),
   or generate tables from the Unicode data files. A new dependency needs an explicit decision
   (`docs/Go.md`: avoid deps). Record which Unicode version the tables follow.
+- Real terminals disagree on the width (owner check, report-width.md): foot 1.27.0 advances 2
+  cells for `क्ष`, kitty 0.47.1 advances 1. So one cluster must not imply one fixed width; the
+  width comes from the policy in 461 (CPR probe, since kitty does not answer 2027).
 - Keep the documented overrides (`LOOM_ZWJ`, glyph overrides in the emoji spec).
 
 ## 3. Implementation & Verification Plan
