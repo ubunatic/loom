@@ -54,4 +54,5 @@ upkeep.
 | 441 | [441-textentry-visual-bold-toggle-and-markdown-serialization.md](441-textentry-visual-bold-toggle-and-markdown-serialization.md) | TextEntry visual bold toggle and Markdown serialization | Open |
 | 456 | [456-textentry-passes-through-keys-that-have-no-effect.md](456-textentry-passes-through-keys-that-have-no-effect.md) | TextEntry passes through keys that have no effect | Open |
 | 457 | [457-research-tuios-and-the-charm-stack-against-loom.md](457-research-tuios-and-the-charm-stack-against-loom.md) | Research TUIOS and the Charm stack against loom | In Progress — owner said go; 7 haiku:med searchers started |
+| 458 | [458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md](458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md) | Follow-up research for 457: per-feature code comparison in nine batches | Draft |
 <!-- harnez:end issues-active-index -->
