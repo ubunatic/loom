@@ -59,4 +59,5 @@ upkeep.
 | 460 | [460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md](460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md) | measure: Indic conjuncts split into two clusters, follow current UAX 29 segmentation | Open |
 | 461 | [461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md](461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md) | Negotiate mode 2027 and use one width policy in measure, canvas and VT | Open |
 | 462 | [462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md](462-pane-consumes-terminal-replies-centrally-instead-of-dispatching-them-as-key-events.md) | Pane consumes terminal replies centrally instead of dispatching them as key events | Open |
+| 463 | [463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md](463-textentry-completion-popup-with-a-suggestion-source-and-key-routing.md) | TextEntry: completion popup with a suggestion source and key routing | Draft |
 <!-- harnez:end issues-active-index -->
