@@ -53,10 +53,13 @@ breaking changes are P3 notes while loom is alpha.
    tick (TUIOS: 50 ms). Fits the existing pane capture.
 5. **In-band resize (mode 2048)** in Pane, with SIGWINCH as the fallback.
 6. **Kitty flags 2 and 4** (press/release/repeat, alternate keys), with a report of what the
-   terminal accepted.
-7. **Unchecked P1 rows**: paste sanitising, Table virtualisation, cleanup when `Run` fails early,
+   terminal accepted. Today `decodeCSIu` drops the extra fields and `KeyEvent` has no event
+   type; not ticketed while Pane pushes flag 1 only (458 batch 4).
+7. **Paste sanitising** differs per widget: only TextEntry strips controls, RichTextEdit ignores
+   paste (ticket 464). Canvas output drops controls, so the terminal is safe.
+8. **Unchecked P1 rows**: Table virtualisation, cleanup when `Run` fails early,
    OSC 52 write policy and kitty flag stack in `loom session`.
-8. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
+9. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
    text input validation, password echo and suggestions, `$EDITOR` hand-off.
 
 ## Limits of this study

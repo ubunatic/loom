@@ -30,7 +30,9 @@ This blocks safe capability queries (461 and query-before-enable for 2026 and ki
   XTVERSION `DCS > | … ST`, OSC 10/11 colour replies, `CSI 48 ; … t`, focus `CSI I/O` when enabled.
 - Late fragments: while a query is outstanding, extend the reply window (tcell and TUIOS end the
   startup batch on the DA1 reply, with a 1 s / 300 ms backstop) instead of the 50 ms key timeout.
-  Define what happens to user keys typed during that window (keep, in order).
+  Define what happens to user keys typed during that window (keep, in order). tcell also keeps
+  a bare Esc at 50 ms but waits 1 s for an incomplete sequence (458 batch 4, report-input.md);
+  consider the same split for Pane's escape timeout.
 - Event routing ticket: start on terra:med (project rule).
 
 ## 3. Implementation & Verification Plan

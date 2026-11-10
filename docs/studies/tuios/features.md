@@ -25,8 +25,9 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | input | Kitty keyboard flags beyond 1 (event types, alternate keys) | ansi.kitty-keyboard-flags, term.kitty-keyboard.flags (UNVER) | partial | loom pushes flag 1 only (`docs/TuiInput.md:96`) |
 | input | Query kitty support (`CSI ? u`) before enabling | tcell.kitty-keyboard.enable | partial | only in `loom-probe keys`, not in `Pane` (opt-in flag) |
 | input | In-band resize, mode 2048 | term.inband-resize-2048 | **missing** | Pane uses SIGWINCH; a 2048 report becomes an empty key; loom VT does not recognise 2048. tcell queries, enables, decodes (with pixels) and disables it (report-queries.md V6). Not ticketed: SIGWINCH works |
-| input | Paste sanitised of control chars | tuios.bracketed-paste-sanitize | unchecked | |
-| input | Paste never triggers shortcuts or navigation | tview.application.paste-no-navigation | has | `ConsumePaste` path (TextEntry) |
+| input | Paste sanitised of control chars | tuios.bracketed-paste-sanitize | partial | TextEntry strips controls; TextInput keeps ESC and Ctrl+C, TextArea inserts raw, RichTextEdit ignores paste. Canvas drops controls on output (report-input.md; ticket 464) |
+| input | Paste never triggers shortcuts or navigation | tview.application.paste-no-navigation | has | paste frame separate from keys; no shortcut fired through the Pane route; 1 MiB cap drops overflow (report-input.md) |
+| input | Kitty event types and associated text (flags 2, 4, 8, 16) | ansi.kitty-keyboard-flags | partial | `decodeCSIu` drops fields after `:`; `KeyEvent` has no event type. Unreachable today since Pane pushes flag 1 only; not ticketed (report-input.md) |
 | events | High-rate producers: `Send`/`Post` without blocking | bt.send-blocks | has | `Pane.Post` appends under a mutex and invalidates; no block, but no cap |
 | events | Application-wide mouse capture hook | tview.application.mouse-capture | has | pane drag capture, `ModalTarget` |
 | events | Drag auto-scroll while held outside content | tuios.drag-autoscroll | **missing** | capture exists, no autoscroll tick |
