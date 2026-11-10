@@ -113,4 +113,5 @@ progress, clear the goal and write a failure report here.
 
 | wave | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|---|
-| 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03, only session started; owner asked for one at a time) |
+| 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03) |
+| 1 | implement | jules-unicode-width | pending | none yet | running (started 2026-11-10, owner: slots free) |
