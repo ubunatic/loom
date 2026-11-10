@@ -75,3 +75,16 @@ func TestFrameRenderTrimsTrailingBlanks(t *testing.T) {
 		t.Errorf("expected render to trim trailing blanks, got: %q", render)
 	}
 }
+
+// A wide character takes two terminal columns; its right-half cell must not
+// be emitted as a space, or every later character on the row shifts right.
+func TestFrameRenderWideCharacter(t *testing.T) {
+	child := vt.NewVT(10, 3)
+	child.Write([]byte("界x👍y")) //nolint:errcheck
+
+	render := (&Frame{Child: child}).Render()
+
+	if !strings.Contains(render, "界x👍y") {
+		t.Errorf("expected wide characters without padding, got: %q", render)
+	}
+}

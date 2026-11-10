@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"golang.org/x/sys/unix"
-	"ubunatic.com/loom/internal/ptytest"
 	"os/signal"
+	"ubunatic.com/loom/internal/ptytest"
 )
 
 func TestRelayDuplexAndEINTR(t *testing.T) {

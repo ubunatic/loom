@@ -75,8 +75,8 @@ func (f *Frame) Render() string {
 			curStyle := vt.Style{}
 			for x := 0; x <= last; x++ {
 				cell := row[x]
-				if false {
-					continue
+				if cell.Rune == 0 && cell.Text == "" {
+					continue // right half of a wide character: the terminal already advanced
 				}
 				if cell.Style != curStyle {
 					b.WriteString(cell.Style.SGR())
