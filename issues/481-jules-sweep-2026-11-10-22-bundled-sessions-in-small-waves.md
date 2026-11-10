@@ -126,6 +126,13 @@ progress, clear the goal and write a failure report here.
   Host probe on the PR head: lone U+FE0F 0, `a`+U+FE0F 1, `#`/`❤`+U+FE0F 2, `👍🏽` 1 cluster width 2,
   `a👍🏽b` 3 clusters; `🤷🏽‍♂️` 1 cluster width 4 and the family emoji width 6 follow the default
   `LOOM_ZWJ` split mode (main gives 6 for both), so not a regression.
+- Adoption PR A (Codeberg PR 92, merged; host fixes 3af53556): #120, #118 and #121 are on main;
+  F1, F2 and F4 are fixed; F3 is handled in the fuzz invariants. New at adoption: a ZWJ that
+  joins nothing added 2 columns in join mode (`"0‍"`, also on main before): fixed. Fuzz
+  crashers `"👩‍\x7f0"`, a lone combining mark and the ansibuffer trailing blank were
+  invariant problems, not bugs. `TestWidthTargets` pins the widths. GH #118, #120, #121 closed.
+  Review follow-ups (minor) went to ticket 483.
+- Experiment PRs #124, #126 and #127 are closed; their reports are on main under `reports/jules/`.
 
 ## Jules runs
 
