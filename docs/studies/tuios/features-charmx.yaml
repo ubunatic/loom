@@ -28,7 +28,7 @@
   verified: partial  # 458 b1: hash path not traced to the final write
   loom: unknown
   priority: P1
-  note: "Drift" (rows whose on-screen state may differ from the model, e.g. after wide-character or width mismatches) is the key idea; read the whole function before copying the rule.
+  note: '"Drift" (rows whose on-screen state may differ from the model, e.g. after wide-character or width mismatches) is the key idea; read the whole function before copying the rule.'
 
 - id: uv.transformline-diff
   area: render
@@ -67,7 +67,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: Raw file searched for "2026": no match. Render only fills the internal buffer; Flush does the I/O. Lower-level than uv, so mode 2026 is the caller's job here.
+  note: 'Raw file searched for "2026": no match. Render only fills the internal buffer; Flush does the I/O. Lower-level than uv, so mode 2026 is the caller''s job here.'
 
 - id: cellbuf.render-fills-buffer
   area: render
@@ -93,7 +93,7 @@
   verified: true
   loom: unknown
   priority: P1
-  note: Dependency risk for loom if it were ever to build on uv directly. Pseudo-version seen on pkg.go.dev: v0.0.0-20261023060817-a45b7c86333f (not a release tag).
+  note: 'Dependency risk for loom if it were ever to build on uv directly. Pseudo-version seen on pkg.go.dev: v0.0.0-20261023060817-a45b7c86333f (not a release tag).'
 
 - id: uv.used-by-bubbletea-v2
   area: other
@@ -110,7 +110,7 @@
 
 - id: ansi.width-method
   area: render
-  feature: Two width methods for cell width: WcWidth (classic wcwidth) and GraphemeWidth (grapheme clusters)
+  feature: 'Two width methods for cell width: WcWidth (classic wcwidth) and GraphemeWidth (grapheme clusters)'
   lib: x/ansi
   version: main@unpinned
   symbol: ansi.Method, ansi.WcWidth, ansi.GraphemeWidth
@@ -149,7 +149,7 @@
 
 - id: vt.emulator-api
   area: session
-  feature: vt.Emulator API: NewEmulator, Write, Resize, Render, Scrollback, Paste, SendKeys, SetCallbacks
+  feature: 'vt.Emulator API: NewEmulator, Write, Resize, Render, Scrollback, Paste, SendKeys, SetCallbacks'
   lib: x/vt
   version: main@unpinned
   symbol: vt.NewEmulator, vt.Emulator.Write, Resize, Render, SetCallbacks
@@ -158,7 +158,7 @@
   verified: true
   loom: unknown
   priority: P1
-  note: Direct peer of loom's internal vt.VT used by loom session. Package doc in vt.go: "a virtual terminal emulator that can be used to emulate a". Status "experimental" not found on the pages read.
+  note: 'Direct peer of loom''s internal vt.VT used by loom session. Package doc in vt.go: "a virtual terminal emulator that can be used to emulate a". Status "experimental" not found on the pages read.'
 
 - id: vt.altscreen-1047-1048
   area: session
@@ -175,7 +175,7 @@
 
 - id: vt.scrollback-api
   area: session
-  feature: Scrollback buffer: ScrollbackLen, ScrollbackCellAt, SetScrollbackSize, ClearScrollback
+  feature: 'Scrollback buffer: ScrollbackLen, ScrollbackCellAt, SetScrollbackSize, ClearScrollback'
   lib: x/vt
   version: main@unpinned
   symbol: vt.Emulator.Scrollback, ScrollbackLen, SetScrollbackSize, ClearScrollback
@@ -249,7 +249,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: Line numbers from a rendered view, approximate (Detect L32, colorProfile L72, NO_COLOR branch L85, CLICOLOR_FORCE L92). Not-a-TTY rule: "If output is not a TTY ANSI will be dropped entirely."
+  note: 'Line numbers from a rendered view, approximate (Detect L32, colorProfile L72, NO_COLOR branch L85, CLICOLOR_FORCE L92). Not-a-TTY rule: "If output is not a TTY ANSI will be dropped entirely."'
 
 - id: colorprofile.profile-constants
   area: desktop

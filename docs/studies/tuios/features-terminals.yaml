@@ -30,7 +30,7 @@
 
 - id: term.sync-output-2026
   area: render
-  feature: Synchronized output: batch a frame between BSU and ESU
+  feature: 'Synchronized output: batch a frame between BSU and ESU'
   lib: terminal/contour-vt-extensions
   version: spec
   symbol: CSI ? 2026 h (begin), CSI ? 2026 l (end), CSI ? 2026 $ p (DECRQM)
@@ -143,7 +143,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: Loom writes OSC 52 already. Gap to check: the p/s target for primary selection on Linux.
+  note: 'Loom writes OSC 52 already. Gap to check: the p/s target for primary selection on Linux.'
 
 - id: term.osc52-query
   area: desktop
@@ -160,7 +160,7 @@
 
 - id: term.osc5522-read-permission
   area: desktop
-  feature: Kitty OSC 5522 clipboard protocol: loc=primary read, permission prompt, EPERM
+  feature: 'Kitty OSC 5522 clipboard protocol: loc=primary read, permission prompt, EPERM'
   lib: terminal/kitty-spec
   version: spec
   symbol: CSI ? 5522 $ p (DECRQM), loc=primary metadata key, EPERM status
@@ -238,7 +238,7 @@
 
 - id: term.kitty-graphics-apc
   area: render
-  feature: Kitty graphics protocol: APC image transfer, t=d/f/t/s media, Unicode placeholders
+  feature: 'Kitty graphics protocol: APC image transfer, t=d/f/t/s media, Unicode placeholders'
   lib: terminal/kitty-spec
   version: spec
   symbol: ESC _G control-data ; payload ESC \ ; U+10EEEE placeholder
@@ -260,4 +260,4 @@
   verified: true
   loom: unknown
   priority: P3
-  note: Ghostty's features page does not list kitty keyboard, mode 2026, mode 2027, OSC 133 or 2031 by name (checked: not present). Absence is not proof of no support.
+  note: 'Ghostty''s features page does not list kitty keyboard, mode 2026, mode 2027, OSC 133 or 2031 by name (checked: not present). Absence is not proof of no support.'

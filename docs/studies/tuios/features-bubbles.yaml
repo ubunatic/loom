@@ -404,7 +404,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: Other layouts: LayoutDefault (L16, one group at a time), LayoutStack (L19). Set with WithLayout (form.go L365).
+  note: 'Other layouts: LayoutDefault (L16, one group at a time), LayoutStack (L19). Set with WithLayout (form.go L365).'
 
 - id: huh.form.layout-grid
   area: layout

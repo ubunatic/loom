@@ -55,7 +55,7 @@
 
 - id: bt.view.mouse-mode
   area: events
-  feature: Mouse mode per view: MouseModeNone, MouseModeCellMotion, MouseModeAllMotion
+  feature: 'Mouse mode per view: MouseModeNone, MouseModeCellMotion, MouseModeAllMotion'
   lib: bubbletea
   version: v2
   symbol: tea.View.MouseMode
@@ -94,7 +94,7 @@
 
 - id: bt.kitty.flags
   area: input
-  feature: Kitty flags: disambiguation always on; event types, alternate keys, all-keys-as-escapes, associated text opt-in
+  feature: 'Kitty flags: disambiguation always on; event types, alternate keys, all-keys-as-escapes, associated text opt-in'
   lib: bubbletea
   version: v2
   symbol: tea.KeyboardEnhancements (View.KeyboardEnhancements)
@@ -172,7 +172,7 @@
 
 - id: bt.fps.cap
   area: perf
-  feature: Render rate: default 60 FPS, capped at 120; WithFPS sets it
+  feature: 'Render rate: default 60 FPS, capped at 120; WithFPS sets it'
   lib: bubbletea
   version: v2
   symbol: tea.WithFPS
@@ -445,7 +445,7 @@
 
 - id: bt.test.size-and-profile
   area: test
-  feature: Test-only options: fixed window size and forced colour profile
+  feature: 'Test-only options: fixed window size and forced colour profile'
   lib: bubbletea
   version: v2
   symbol: tea.WithWindowSize, tea.WithColorProfile

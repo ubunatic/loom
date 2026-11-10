@@ -182,7 +182,7 @@
   verified: true
   loom: unknown
   priority: P2
-  note: App requests the background color and re-renders on the message. Cross-lib: Bubble Tea v2 API, see topic 2. Section anchor, line not resolved.
+  note: 'App requests the background color and re-renders on the message. Cross-lib: Bubble Tea v2 API, see topic 2. Section anchor, line not resolved.'
 
 - id: lipgloss.v2.render-full-fidelity
   area: render
@@ -251,7 +251,7 @@
 
 - id: glamour.v2.builtin-styles
   area: theme
-  feature: Built-in Markdown styles: ascii, dark, light, notty, pink, dracula, tokyo-night
+  feature: 'Built-in Markdown styles: ascii, dark, light, notty, pink, dracula, tokyo-night'
   lib: glamour/styles
   version: v2
   symbol: styles.TokyoNightStyle

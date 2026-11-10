@@ -66,7 +66,7 @@
   verified: true
   loom: unknown
   priority: P1
-  note: Default is focused: only the focused pane writes, others ask. A click must wait clipboardAskSettle before it allows a write.
+  note: 'Default is focused: only the focused pane writes, others ask. A click must wait clipboardAskSettle before it allows a write.'
 
 - id: tuios.osc52-query-empty
   area: desktop
@@ -235,11 +235,11 @@
   verified: true
   loom: unknown
   priority: P2
-  note: Their numbers: goldmark about 480 KB, Glamour about 8.8 MB, own package about 94 KB. Not re-measured here.
+  note: 'Their numbers: goldmark about 480 KB, Glamour about 8.8 MB, own package about 94 KB. Not re-measured here.'
 
 - id: tuios.wheel-gesture-axis
   area: input
-  feature: Wheel gesture: 250 ms gap ends a gesture; the majority axis wins, sideways drift is dropped
+  feature: 'Wheel gesture: 250 ms gap ends a gesture; the majority axis wins, sideways drift is dropped'
   lib: tuios (app)
   version: main@6fe2c0df
   symbol: "WheelGestureGap; wheelAxis"
@@ -252,7 +252,7 @@
 
 - id: tuios.run-before-init-gap
   area: session
-  feature: Bubble Tea gap: Run can fail before Init, so the cleanup in tuios-web never runs; waits for upstream
+  feature: 'Bubble Tea gap: Run can fail before Init, so the cleanup in tuios-web never runs; waits for upstream'
   lib: bubbletea
   version: v2
   symbol: "(*tea.Program).Run; programStart"
@@ -278,7 +278,7 @@
 
 - id: tuios.layout-modes
   area: layout
-  feature: Tiling modes: BSP (default), master-stack, scrolling (niri-style), or tiling off; per-workspace layout data
+  feature: 'Tiling modes: BSP (default), master-stack, scrolling (niri-style), or tiling off; per-workspace layout data'
   lib: tuios (app)
   version: main@6fe2c0df
   symbol: "internal/layout (bsp.go, master.go, scrolling.go)"
