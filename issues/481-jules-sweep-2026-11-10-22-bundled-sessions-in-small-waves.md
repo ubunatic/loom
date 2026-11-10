@@ -115,3 +115,5 @@ progress, clear the goal and write a failure report here.
 |---|---|---|---|---|---|
 | 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03) |
 | 1 | implement | jules-unicode-width | pending | none yet | running (started 2026-11-10, owner: slots free) |
+| 1 | implement | jules-ansibuffer | pending | none yet | running (started 2026-11-10; owner made the host the loom Jules manager) |
+| 1 | test-draft | jules-fuzz | pending | none yet | running (started 2026-11-10) |
