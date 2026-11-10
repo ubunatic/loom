@@ -49,8 +49,11 @@ breaking changes are P3 notes while loom is alpha.
    (300 ms) do. First Pane must consume replies itself: today it forwards them to widgets as
    `KeyEvent{Report}`, some reply forms are not even marked, and a late fragment becomes text
    keys (458 batch 3, ticket 462; 2027 part in 461).
-4. **Drag auto-scroll.** While a captured drag is held outside the content, keep scrolling on a
-   tick (TUIOS: 50 ms). Fits the existing pane capture.
+4. **Drag ownership and auto-scroll.** TextEntry selection drags do not capture the pointer,
+   release outside leaves the drag on, and focus loss never ends a capture (an inverted check in
+   `SetFocus`). No auto-scroll while held outside (TUIOS: 50 ms tick). Ticket 467. Horizontal
+   wheel reports arrive as button presses (ticket 468). Nested coordinates and modal capture are
+   correct (458 batch 5).
 5. **In-band resize (mode 2048)** in Pane, with SIGWINCH as the fallback.
 6. **Kitty flags 2 and 4** (press/release/repeat, alternate keys), with a report of what the
    terminal accepted. Today `decodeCSIu` drops the extra fields and `KeyEvent` has no event

@@ -29,8 +29,10 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | input | Paste never triggers shortcuts or navigation | tview.application.paste-no-navigation | has | paste frame separate from keys; no shortcut fired through the Pane route; 1 MiB cap drops overflow (report-input.md) |
 | input | Kitty event types and associated text (flags 2, 4, 8, 16) | ansi.kitty-keyboard-flags | partial | `decodeCSIu` drops fields after `:`; `KeyEvent` has no event type. Unreachable today since Pane pushes flag 1 only; not ticketed (report-input.md) |
 | events | High-rate producers: `Send`/`Post` without blocking | bt.send-blocks | has | `Pane.Post` appends under a mutex and invalidates; no block, but no cap |
-| events | Application-wide mouse capture hook | tview.application.mouse-capture | has | pane drag capture, `ModalTarget` |
-| events | Drag auto-scroll while held outside content | tuios.drag-autoscroll | **missing** | capture exists, no autoscroll tick |
+| events | Gesture ownership after press (drag capture) | tview.application.mouse-capture is an interceptor, not ownership | partial | private Pane capture for scrollbar and pan, `ModalMouseCapture` takes precedence; TextEntry selection does not capture, and `SetFocus(false)` never ends a capture (report-mouse.md; ticket 467) |
+| events | Drag auto-scroll while held outside content | tuios.drag-autoscroll | **missing** | no tick; 0 events over 300 ms held outside (report-mouse.md; ticket 467). TUIOS: 50 ms tick, started by the first outside motion |
+| events | Horizontal wheel (SGR 66/67) | uv, tcell decode both axes | **missing** | decoded as presses of buttons 2 and 3 (report-mouse.md; ticket 468) |
+| events | Child-local 0-based coordinates in nested containers, modal precedence | | has | canary with nested Stacks at nonzero origin and a modal (report-mouse.md) |
 | events | Click-drag as motion while button held | tcell.mouse.drag-motion | has | `MouseDrag` |
 | robust | Panic recovery restores terminal | bt.crash.recover | has | `recover()` in `pane_run.go:137` |
 | robust | Suspend / release terminal for a child | bt.suspend, bt.terminal.release-restore, tview.application.suspend | has | `Pane.Suspend` |
