@@ -34,10 +34,13 @@ PTY canary at `7ecfba5e`) found:
   scroll on a tick and extend the selection; stop on release, re-entry, Esc or focus loss. The
   tick must come from loom's ticker path (`widget.go` `tickTree`), not sleeps; check whether a
   shared helper fits TextArea/RichTextEdit/List later.
-- Real terminals only report outside motion while the button is held under 1002/1003 and the
-  window manager keeps delivering it; the owner script `scratchpad/manual-mouse.py` (batch 5,
-  unrun) checks foot and kitty. Outside the OS window delivery may stop; then the last outside
-  position keeps the tick going until release arrives.
+- Real terminals clamp a drag outside the window to the edge cell (449: kitty, alacritty,
+  ghostty, ptyxis via `loom-probe mouse`). Owner check 2026-11-10 in foot, raw SGR log: drags
+  clamp to x=1 at the left edge; two of three releases outside arrived at the clamped edge, one
+  never arrived (foot logged "stray button release event"); held still at the edge, no report
+  comes for 0.4-0.6 s. So auto-scroll needs the tick, an edge cell counts as "outside" for a
+  widget at the window edge, and a lost release must not leave the drag on: the next hover
+  without a button (cb 35) ends it.
 - Event-routing ticket: start on terra:med (project rule).
 
 ## 3. Implementation & Verification Plan
