@@ -295,7 +295,7 @@ func TestPaneSuspendResizeAppliesOnResume(t *testing.T) {
 			drawsBefore = len(w.draws())
 			mu.Unlock()
 			setPTYSize(t, master, 30, 8)
-			time.Sleep(100 * time.Millisecond) // let SIGWINCH arrive while suspended
+			time.Sleep(100 * time.Millisecond) // keep: let SIGWINCH arrive while suspended
 			mu.Lock()
 			drawsDuring = len(w.draws())
 			mu.Unlock()
@@ -415,7 +415,7 @@ func TestPaneSuspendCloseInsideFn(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("Run did not return after Close inside Suspend")
 	}
-	time.Sleep(50 * time.Millisecond) // let the capture see the last writes
+	time.Sleep(50 * time.Millisecond) // keep: let the capture see the last writes
 	_, after := capture.split(t)
 	if suspendErr != nil {
 		t.Fatalf("Suspend: %v", suspendErr)
