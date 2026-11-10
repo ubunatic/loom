@@ -25,9 +25,19 @@ Audit of `ConsumeKey` (`text_entry.go`, checked against HEAD cc0a3fb1):
 - **Typed text and newline/submit keys** stay captured: an `Enter` that submits is the entry's job even with an empty value (the app's `OnSubmit` decides).
 - Which are worth the change: the ones a parent plausibly binds. `Ctrl+B`, `Left` / `Right` at the edges (a parent could use them to leave the entry, as `Up` / `Down` already do) and `Home` / `End` / `Ctrl+Home` / `Ctrl+End`. Word jumps and select-all are low value. Unverified: how `Pane` / containers route an `Ignored` key (check docs/Widgets.md key routing before changing semantics); this is a behavior change for callers that rely on arrow keys never leaving the entry, so it may need a row in `docs/Upgrading.md`.
 
+## Decision (2026-11-09, host on owner's delegation; revisable)
+
+Rule: a **non-text key that changes nothing** (text, caret, selection, scroll, typing style) returns `Ignored()`. Typed text, Enter/newline and submit keys stay consumed.
+
+- `Ctrl+B` (bold enabled): ignored when the entry is empty and nothing is selected (owner wording). With text present and no selection it still toggles the typing style.
+- `Left` / `Right` / `Ctrl+Left` / `Ctrl+Right` and their `Shift` forms at the text edges.
+- `Home` / `End` at the row edge; `Ctrl+Home` / `Ctrl+End` at the text edge (and `Shift` forms when the selection is unchanged).
+- `Ctrl+A` when everything is already selected; `Ctrl+V` with an empty paste.
+- Implement through one shared before/after state comparison, not per-key guards. Add a `docs/Upgrading.md` row (arrow keys at edges now reach the parent).
+
 ## 3. Implementation & Verification Plan
 - Decide the set (owner), then make each chosen key return `Ignored()` when it would change neither text, caret, selection, scroll nor typing style. Make a shared "did anything change" check, not one-off guards.
 - Tests per key: ineffective case is `Ignored`, effective case is `Consumed`; the gallery demo parent shows a pass-through (for example a status line).
 - Docs: `docs/Widgets.md` TextEntry key table gets an "ignored when" column; `docs/Upgrading.md` if arrow keys change.
 
-/goal Make `TextEntry` return `Ignored()` for the agreed keys when they have no effect, with tests and docs, then stop; or stop and report when blocked on the key set decision or a denied permission.
+/goal Make `TextEntry` return `Ignored()` for the keys in the Decision section when they have no effect, with tests and docs, then stop; or stop and report when blocked on a denied permission.

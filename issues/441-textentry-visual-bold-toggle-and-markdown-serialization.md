@@ -1,6 +1,6 @@
 # 441 — TextEntry visual bold toggle and Markdown serialization
 
-**Status**: Open
+**Status**: Closed — done: bold toggle + MarkdownValue delivered; owner-run q1 PASS
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Feature
@@ -90,3 +90,7 @@ Developer M3 full suite passed. Independent host `make test-q1` failed in a diff
 - Restored legacy non-opt-in selection styling and documented the opt-in distinction. Rebuilt Ctrl+D coverage with actual empty/text/selected/placeholder states plus enabled formatting states, comparing bold state and deep history snapshots.
 - Added exact edit-path and serializer assertions. Gallery TextEntry now opts into bold, advertises Ctrl+B and displays the Markdown produced by its submission callback; widget Value and callback input remain plain.
 - Focused core, gallery and PTY checks pass, including selected/typing cell styles, caret, format undo/redo, retained controls, placeholder interactions and `**sent**` submission. `go vet ./...`, the public API snapshot check and `make install` passed. The single `make test-q1` run failed only at unrelated `internal/session/TestSessionDetachPrefixDAndReattach`; its PTY output showed `BASE_SCREEN` and `DETACHED_OUTPUT` instead of the retained screen and tabs. No q1 rerun was made.
+
+## Final signoff (2026-11-09)
+
+Owner ran `QUOTA_BYPASS=1 HTO=0 make test-q1` on HEAD 3dc3a779: PASS. The host agent sandbox could not run bwrap (`/proc/self/uid_map` write denied), so the host did not rerun it. An earlier owner run, killed by the 60 s `harnez exec` timeout, showed one failure in `internal/editor` `Test303EditPTYTemporaryMouseGrab` (RichTextEdit, outside 441's TextEntry/gallery scope); it did not recur in this PASS. The owner confirmed bold and Markdown submission in the gallery demo. Closing.
