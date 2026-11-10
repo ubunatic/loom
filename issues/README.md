@@ -55,4 +55,5 @@ upkeep.
 | 456 | [456-textentry-passes-through-keys-that-have-no-effect.md](456-textentry-passes-through-keys-that-have-no-effect.md) | TextEntry passes through keys that have no effect | Open |
 | 457 | [457-research-tuios-and-the-charm-stack-against-loom.md](457-research-tuios-and-the-charm-stack-against-loom.md) | Research TUIOS and the Charm stack against loom | In Progress — owner said go; 7 haiku:med searchers started |
 | 458 | [458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md](458-follow-up-research-for-457-per-feature-code-comparison-in-nine-batches.md) | Follow-up research for 457: per-feature code comparison in nine batches | In Progress — owner: run batch 1 (render) alone to check the flow |
+| 459 | [459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md](459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md) | Canvas flush writes only changed cells, measured against Bubble Tea v2 | Open |
 <!-- harnez:end issues-active-index -->
