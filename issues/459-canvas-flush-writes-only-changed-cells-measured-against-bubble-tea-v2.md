@@ -26,6 +26,12 @@ in `loom session` and for frequent small updates (cursor blink, spinners, typing
   explicit `Invalidate`) must force a full repaint, because the terminal state is then unknown.
 - Wide cells and continuation cells must be compared and rewritten as a unit.
 - Not yet measured: Pane write-call count, playback of the stream in a terminal model.
+- Jules uv-trial (481, GH #127, `reports/jules/uv-trial.md`), host rerun agrees: on a 200x60
+  canvas, loom's full `Flush` writes about 12.9 kB for every frame; ultraviolet's
+  `TerminalScreen` writes 3 B for a two-cell change, 403 B for a moved selection and 244 B for a
+  scroll. ultraviolet is about 10x slower on first paint (12.8k allocs vs 436) and allocates
+  4.5x more on scroll, so keep loom's row builder for full repaints and diff only afterwards.
+  The pane loop still calls `FlushWithConfig` for the whole canvas (`pane_run.go:299`).
 
 ## 3. Implementation & Verification Plan
 /goal Canvas keeps the last flushed frame and a dirty flush writes only changed cells or runs,
