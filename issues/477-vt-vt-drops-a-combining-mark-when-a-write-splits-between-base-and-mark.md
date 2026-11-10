@@ -34,3 +34,9 @@ write a failure report.
 - Re-check live code first; port `TestB9Replay` into `vt` tests with the streams it uses plus ZWJ and
   variation-selector cases.
 - `make test-q1`, then `make install`.
+
+## Jules runs
+
+| kind | session name | Jules ID | PR | state |
+|---|---|---|---|---|
+| implement | jules-implement-477 | pending (local b5c944ae) | pending | running, started 2026-11-10 on main `e9026afe` |
