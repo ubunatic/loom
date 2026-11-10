@@ -1,0 +1,4 @@
+go test fuzz v1
+string("\x1b[007m0")
+int(80)
+int(24)
