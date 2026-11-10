@@ -2,6 +2,7 @@ version: 1
 issues:
     tracker: harnez
     merge_driver: true
+    active_cap: 60
 docs:
     studies: true
     copies:
