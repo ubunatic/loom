@@ -1052,6 +1052,25 @@ func (w *ptyResizeWidget) lastDimensions() (int, int) {
 	return w.lastCol, w.lastRow
 }
 
+// waitDims polls until the widget's last drawn size satisfies ok, and fails
+// the test with what when it does not within the race-scaled deadline.
+func (w *ptyResizeWidget) waitDims(t *testing.T, what string, ok func(cols, rows int) bool) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second * ptytest.RaceFactor)
+	for {
+		c, r := w.lastDimensions()
+		if ok(c, r) {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for %s: last size %dx%d", what, c, r)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+}
+
+func cols(want int) func(int, int) bool { return func(c, _ int) bool { return c == want } }
+
 func (w *ptyResizeWidget) history() []Rect {
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -1086,10 +1105,7 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 	go func() { errc <- p.Run(w) }()
 
 	// Let the initial frame render
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Simulate rapid resize bursts: 80x24 -> 40x20 -> 25x10 -> 60x18 -> 80x24
 	burst := []struct{ cols, rows int }{
@@ -1104,10 +1120,7 @@ func TestPTYResizeBurstWideNarrowWide(t *testing.T) {
 	}
 
 	// Wait for coalesced resize handling and width guard restoration
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Send 'q' to exit
 	if _, err := master.Write([]byte("q")); err != nil {
@@ -1154,10 +1167,7 @@ func TestPTYResizeModeToggles(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "initial 60 columns", cols(60))
 
 	// Drain output from master
 	buf := make([]byte, 4096)
@@ -1207,17 +1217,11 @@ func TestPTYResizeStaleRowClearing(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Shrink height significantly: 24 -> 12 rows
 	setPTYSize(t, master, 80, 12)
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "at most 12 rows", func(_, r int) bool { return r <= 12 })
 
 	// Exit
 	master.Write([]byte("q")) //nolint:errcheck
@@ -1257,15 +1261,9 @@ func TestPTYResizeReduceMotionAndTheme(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 	setPTYSize(t, master, 50, 18)
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 50 { break }
-	}
+	w.waitDims(t, "50 columns", cols(50))
 
 	master.Write([]byte("q")) //nolint:errcheck
 	select {
@@ -1435,19 +1433,13 @@ func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 	go func() { errc <- p.Run(w) }()
 
 	// Let the initial frame render (width 80)
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Resize to 60 columns. During active burst, width guard should render at 60 - 1 = 59.
 	setPTYSize(t, master, 60, 20)
 
 	// Wait briefly for the WINCH event to process
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 59 { break }
-	}
+	w.waitDims(t, "guarded 59 columns", cols(59))
 
 	burstCols, _ := w.lastDimensions()
 	if burstCols != 59 {
@@ -1455,10 +1447,7 @@ func TestPTYResizeWidthGuardBurstAndRestore(t *testing.T) {
 	}
 
 	// Wait for the 80ms guard timer to expire and restore full width 60
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 60 { break }
-	}
+	w.waitDims(t, "60 columns", cols(60))
 
 	restoredCols, _ := w.lastDimensions()
 	if restoredCols != 60 {
@@ -1506,17 +1495,11 @@ func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 70 { break }
-	}
+	w.waitDims(t, "initial 80 columns", cols(80))
 
 	// Resize to 70 columns. With n=3, should render at 70 - 3 = 67.
 	setPTYSize(t, master, 70, 20)
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 67 { break }
-	}
+	w.waitDims(t, "guarded 67 columns", cols(67))
 
 	burstCols, _ := w.lastDimensions()
 	if burstCols != 67 {
@@ -1524,10 +1507,7 @@ func TestPTYResizeWidthGuardConfigurableN(t *testing.T) {
 	}
 
 	// Wait for restore
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 70 { break }
-	}
+	w.waitDims(t, "70 columns", cols(70))
 	restoredCols, _ := w.lastDimensions()
 	if restoredCols != 70 {
 		t.Fatalf("after burst expiry: cols = %d, want 70", restoredCols)
@@ -1571,17 +1551,11 @@ func TestPTYResizeWidthGuardDisabled(t *testing.T) {
 	errc := make(chan error, 1)
 	go func() { errc <- p.Run(w) }()
 
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 80 { break }
-	}
+	w.waitDims(t, "80 columns", cols(80))
 
 	// Resize to 60 columns. With WidthGuard=false, should render at full 60 columns immediately.
 	setPTYSize(t, master, 60, 20)
-	for deadline := time.Now().Add(2 * time.Second); time.Now().Before(deadline); time.Sleep(10 * time.Millisecond) {
-		c, _ := w.lastDimensions()
-		if c == 60 { break }
-	}
+	w.waitDims(t, "60 columns", cols(60))
 
 	cols, _ := w.lastDimensions()
 	if cols != 60 {

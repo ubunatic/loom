@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"ubunatic.com/loom/internal/ptytest"
 	"ubunatic.com/loom/measure"
 )
 
@@ -148,11 +149,16 @@ func TestPaneKittyKeyboardAltScreenBalanced(t *testing.T) {
 	_, _ = slave.WriteString(suspendMarker)
 	p.switchAltScreen(false)
 	p.setKittyKeyboard(false)
-	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+	for deadline := time.Now().Add(time.Second * ptytest.RaceFactor); ; time.Sleep(5 * time.Millisecond) {
 		capture.mu.Lock()
 		done := strings.Contains(capture.buf.String(), "\x1b[?1049l")
 		capture.mu.Unlock()
-		if done { break }
+		if done {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatal("timed out waiting for the alt-screen exit in the capture")
+		}
 	}
 	before, after := capture.split(t)
 	enter := strings.SplitN(before, "\x1b[?1049h", 2)
