@@ -18,8 +18,8 @@ type Relay struct {
 	Master *os.File
 	Stdin  *os.File
 	Stdout *os.File
-	DSR    func() []byte // Called to get DSR replies to drain to the child
-	Render func()        // Called when child writes
+	DSR    func() []byte  // Called to get DSR replies to drain to the child
+	Render func(p []byte) // Receives each chunk of child output (feed the VT, then draw); nil copies it to Stdout
 }
 
 // Run starts the event-driven duplex loop.
@@ -87,7 +87,7 @@ func (r *Relay) Run() error {
 				}
 				if nr > 0 {
 					if r.Render != nil {
-						r.Render()
+						r.Render(buf[:nr])
 					} else if r.Stdout != nil {
 						_, _ = r.Stdout.Write(buf[:nr])
 					}

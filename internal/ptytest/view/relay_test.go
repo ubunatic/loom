@@ -8,7 +8,6 @@ package view
 import (
 	"bytes"
 	"os"
-	"sync"
 	"testing"
 	"time"
 
@@ -37,9 +36,7 @@ func TestRelayDuplexAndEINTR(t *testing.T) {
 	defer stdinEnd.Close()
 	defer observerEnd.Close()
 
-	var rendered bool
-	var mu sync.Mutex
-	renderCond := sync.NewCond(&mu)
+	rendered := make(chan []byte, 16)
 
 	dsrCalled := make(chan struct{})
 
@@ -55,11 +52,8 @@ func TestRelayDuplexAndEINTR(t *testing.T) {
 				return []byte("DSR")
 			}
 		},
-		Render: func() {
-			mu.Lock()
-			rendered = true
-			renderCond.Signal()
-			mu.Unlock()
+		Render: func(p []byte) {
+			rendered <- append([]byte(nil), p...)
 		},
 	}
 
@@ -97,23 +91,16 @@ func TestRelayDuplexAndEINTR(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Wait for render (using Condition variable instead of sleep)
-	mu.Lock()
-	done := make(chan struct{})
-	go func() {
-		mu.Lock()
-		defer mu.Unlock()
-		for !rendered {
-			renderCond.Wait()
+	// Render must receive the child's bytes, so the caller can feed its VT.
+	var got []byte
+	deadline := time.After(100 * time.Millisecond * ptytest.RaceFactor)
+	for !bytes.Contains(got, []byte("output")) {
+		select {
+		case p := <-rendered:
+			got = append(got, p...)
+		case <-deadline:
+			t.Fatalf("Render did not receive the child output, got %q", got)
 		}
-		close(done)
-	}()
-	mu.Unlock()
-
-	select {
-	case <-done:
-	case <-time.After(100 * time.Millisecond * ptytest.RaceFactor):
-		t.Errorf("Expected child output to trigger Render()")
 	}
 
 	// 3. Test EINTR survival
