@@ -114,6 +114,6 @@ progress, clear the goal and write a failure report here.
 | wave | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|---|
 | 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03) |
-| 1 | implement | jules-unicode-width | pending | none yet | running (started 2026-11-10, owner: slots free) |
-| 1 | implement | jules-ansibuffer | pending | none yet | running (started 2026-11-10; owner made the host the loom Jules manager) |
-| 1 | test-draft | jules-fuzz | pending | none yet | running (started 2026-11-10) |
+| 1 | implement | jules-unicode-width | 14705779270409174332 | none yet | running (started 2026-11-10, owner: slots free) |
+| 1 | implement | jules-ansibuffer | 13101811809704567128 | none yet | running (started 2026-11-10; owner made the host the loom Jules manager) |
+| 1 | test-draft | jules-fuzz | 1079445786546642272 | none yet | running (started 2026-11-10) |
