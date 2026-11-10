@@ -67,7 +67,6 @@ breaking changes are P3 notes while loom is alpha.
    multi-line editing in a Form breaks; TextInput and TextArea lack user selection and undo.
    Table draws only visible rows (about 90 µs at 100 and 100,000 rows), but each filter
    keystroke scans all rows (6.7 ms at 100,000).
-   **Unchecked P1 row**: cleanup when `Run` fails early.
 9. **Session and VT (458 batch 7)**: `vt.VT` keeps one kitty flag value, not a per-screen stack,
    and the session re-sends a fixed flag 1 on reattach (ticket 472); child OSC 52 writes and
    queries pass to the host unfiltered (ticket 473); a client that stops reading may block all
@@ -79,7 +78,14 @@ breaking changes are P3 notes while loom is alpha.
    draw order only, which is safe because Frame and Stack tile; modal popups take clicks first.
    loom renders no Markdown (Glamour and TUIOS do); with no `TERM` set, loom picks true colour
    where colorprofile says "no TTY" (not ticketed).
-11. **P2**: focus reporting in Pane, OSC 52 read, text input validation, password echo and
+11. **Testing and lifecycle (458 batch 9)**: `vt.VT` (also `loomtest.VT` and session tabs) loses
+   a combining mark when a write splits between base and mark (ticket 477). `Pane.Post` never
+   blocks but has no bound, and keys wait behind whole batches (up to 85,055 posts; latency in ms
+   not yet measured, ticket 478). `Run` restores the terminal on panic; after an error or a signal
+   the caller must call `Close`, and `Close` drops queued posts: both comments say otherwise
+   (ticket 479). Pane PTY tests still use timing sleeps (ticket 480). TUIOS checks its VT against
+   libghostty behind a build tag; teatest polls with a 50 ms sleep.
+12. **P2**: focus reporting in Pane, OSC 52 read, text input validation, password echo and
    suggestions, `$EDITOR` hand-off.
 
 ## Limits of this study

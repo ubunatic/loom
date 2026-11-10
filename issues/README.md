@@ -70,4 +70,8 @@ upkeep.
 | 474 | [474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md](474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md) | session client that stops reading blocks every tab of its session | Open |
 | 475 | [475-closing-a-popup-inside-a-container-strands-focus-on-the-closed-popup.md](475-closing-a-popup-inside-a-container-strands-focus-on-the-closed-popup.md) | Closing a Popup inside a container strands focus on the closed popup | Open |
 | 476 | [476-pane-detects-a-dark-or-light-terminal-background-and-reports-changes.md](476-pane-detects-a-dark-or-light-terminal-background-and-reports-changes.md) | Pane detects a dark or light terminal background and reports changes | Open |
+| 477 | [477-vt-vt-drops-a-combining-mark-when-a-write-splits-between-base-and-mark.md](477-vt-vt-drops-a-combining-mark-when-a-write-splits-between-base-and-mark.md) | vt.VT drops a combining mark when a write splits between base and mark | Open |
+| 478 | [478-measure-and-bound-key-latency-and-memory-under-post-load.md](478-measure-and-bound-key-latency-and-memory-under-post-load.md) | Measure and bound key latency and memory under Post load | Open |
+| 479 | [479-document-post-drop-on-close-and-the-caller-owned-close-contract.md](479-document-post-drop-on-close-and-the-caller-owned-close-contract.md) | Document Post drop-on-Close and the caller-owned Close contract | Open |
+| 480 | [480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md](480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md) | Replace timing sleeps in pane PTY tests with condition waits | Open |
 <!-- harnez:end issues-active-index -->

@@ -28,16 +28,16 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | input | Paste sanitised of control chars | tuios.bracketed-paste-sanitize | partial | TextEntry strips controls; TextInput keeps ESC and Ctrl+C, TextArea inserts raw, RichTextEdit ignores paste. Canvas drops controls on output (report-input.md; ticket 464) |
 | input | Paste never triggers shortcuts or navigation | tview.application.paste-no-navigation | has | paste frame separate from keys; no shortcut fired through the Pane route; 1 MiB cap drops overflow (report-input.md) |
 | input | Kitty event types and associated text (flags 2, 4, 8, 16) | ansi.kitty-keyboard-flags | partial | `decodeCSIu` drops fields after `:`; `KeyEvent` has no event type. Unreachable today since Pane pushes flag 1 only; not ticketed (report-input.md) |
-| events | High-rate producers: `Send`/`Post` without blocking | bt.send-blocks | has | `Pane.Post` appends under a mutex and invalidates; no block, but no cap |
+| events | High-rate producers: `Send`/`Post` without blocking | bt.send-blocks | partial | `Pane.Post` never blocks but has no cap (`pane_run.go:50-62`); keys wait behind whole batches (458 b9 canary A, 478) |
 | events | Gesture ownership after press (drag capture) | tview.application.mouse-capture is an interceptor, not ownership | partial | private Pane capture for scrollbar and pan, `ModalMouseCapture` takes precedence; TextEntry selection does not capture, and `SetFocus(false)` never ends a capture (report-mouse.md; ticket 467) |
 | events | Drag auto-scroll while held outside content | tuios.drag-autoscroll | **missing** | no tick; 0 events over 300 ms held outside (report-mouse.md; ticket 467). TUIOS: 50 ms tick, started by the first outside motion |
 | events | Horizontal wheel (SGR 66/67) | uv, tcell decode both axes | **missing** | decoded as presses of buttons 2 and 3 (report-mouse.md; ticket 468) |
 | events | Child-local 0-based coordinates in nested containers, modal precedence | | has | canary with nested Stacks at nonzero origin and a modal (report-mouse.md) |
 | events | Click-drag as motion while button held | tcell.mouse.drag-motion | has | `MouseDrag` |
-| robust | Panic recovery restores terminal | bt.crash.recover | has | `recover()` in `pane_run.go:137` |
+| robust | Panic recovery restores terminal | bt.crash.recover | has | `recover()`, close, re-panic in `pane_run.go:136-141`; mode bytes balanced (458 b9 canaries C1, C2) |
 | robust | Suspend / release terminal for a child | bt.suspend, bt.terminal.release-restore, tview.application.suspend | has | `Pane.Suspend` |
 | robust | SIGWINCH resize | bt.resize.sigwinch | has | `docs/TuiInput.md:35` |
-| robust | Cleanup when start fails before first frame | tuios.run-before-init-gap | unchecked | check `Pane.Run` error paths |
+| robust | Cleanup when start fails before first frame | tuios.run-before-init-gap | partial | caller must call `Close` after a `Run` error or signal (`RunPane` does); doc says otherwise (458 b9 canaries C3–C6, 479) |
 | widgets | Fuzzy filter with ranking | bubbles.list.fuzzy-default-filter | has | `Choice.Fuzzy`, FilePicker |
 | widgets | Table renders only visible rows | bubbles.table.virtualised-render | partial | Draw is viewport-bounded (about 90 µs at 100 and 100,000 rows); SetRows, widths and each filter keystroke scan all rows (3.4 ms, 6.7 ms at 100,000) (report-widgets.md) |
 | widgets | Container keys do not break a focused multi-line editor | huh form field routing | **missing** | Form takes Tab/Down/PgDn/Enter before the focused TextArea (`form.go:276-297`); canary: Down moves focus, Enter submits (report-widgets.md) |
@@ -56,7 +56,7 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | session | Kitty flag stack per screen | tuios.kitty-keyboard-stack | **missing** | one value (`vt/vt.go:58`, `:809-819`), leaks across `?1049`, `=N u` restores the cursor; reattach sends fixed `>1u` (ticket 472) |
 | session | VT scrollback API | vt.scrollback-api | has | `SetScrollbackLimit`/`ScrollbackCells` (`vt/vt.go:139-170`); 5000 rows by spec, bound holds at 100,000 lines (report-session.md) |
 | model | Leader-key modal design | tuios.leader-key-model | n/a | loom is non-modal by design |
-| test | Headless model test harness | bt.test.teatest-wait | has | `loomtest.VT`, `CompareWidget`; teatest polls with sleep, loom forbids that |
+| test | Headless model test harness | bt.test.teatest-wait | has | `loomtest.VT`, `CompareWidget`; teatest polls with a 50 ms sleep, loom forbids that; VT split bug 477 |
 | status | Ultraviolet API still unstable | uv.status-active-dev | n/a | P3 note: API stability is not a goal while loom is alpha |
 
 ## P2 and P3 highlights (not verified against loom)
