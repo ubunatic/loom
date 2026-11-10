@@ -599,6 +599,19 @@ func (v *VT) put(r rune) {
 
 func (v *VT) putCluster(r rune, text string, w int) {
 	if w <= 0 {
+		if text == "" {
+			return
+		}
+		px, py := v.x-1, v.y
+		if v.x == 0 && v.y > 0 {
+			px, py = v.Cols-1, v.y-1
+		}
+		if px >= 0 {
+			for px > 0 && v.cells[py][px].Rune == 0 {
+				px--
+			}
+			v.cells[py][px].Text += text
+		}
 		return
 	}
 	if v.x+w > v.Cols {
