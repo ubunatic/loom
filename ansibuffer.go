@@ -460,7 +460,13 @@ func (b *AnsiBuffer) Serialize() string {
 				c := b.cells[y][x]
 				writeStyleTransition(c)
 				r := c.Rune
+
+				// Handle uninitialized cells and wide-cell continuations.
+				// If r == 0, it becomes ' ' unless it's a continuation cell.
 				if r == 0 {
+					if x > 0 && measure.RuneWidth(b.cells[y][x-1].Rune) > 1 {
+						continue
+					}
 					r = ' '
 				}
 				buf.WriteRune(r)
@@ -569,12 +575,13 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 		}
 	}
 
-	// Pre-scan CSI positioning sequences (H, f, d, G, r) to ensure the
+	// Pre-scan CSI positioning sequences (A, B, C, D, H, f, d, G, r) to ensure the
 	// buffer is large enough to hold all cursor-addressed content.
 	// This prevents the y < maxRows guard from terminating the parser early
 	// when files use cursor positioning instead of newlines.
 	prescanRS := []rune(content)
 	prescanN := len(prescanRS)
+	vY, vX := 0, 0
 	for pi := 0; pi < prescanN; {
 		if prescanRS[pi] == '\x1b' && pi+1 < prescanN && prescanRS[pi+1] == '[' {
 			pj := pi + 2
@@ -583,25 +590,29 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 			}
 			if pj < prescanN {
 				pparams := string(prescanRS[pi+2 : pj])
-				switch prescanRS[pj] {
+				cmd := prescanRS[pj]
+				switch cmd {
+				case 'A':
+					vY -= parseAnsiCSINum(pparams, 1)
+					if vY < 0 {
+						vY = 0
+					}
+				case 'B':
+					vY += parseAnsiCSINum(pparams, 1)
+				case 'C':
+					vX += parseAnsiCSINum(pparams, 1)
+				case 'D':
+					vX -= parseAnsiCSINum(pparams, 1)
+					if vX < 0 {
+						vX = 0
+					}
 				case 'H', 'f':
 					row, col := parseAnsiCSIPos(pparams)
-					if row > maxRows {
-						maxRows = row
-					}
-					if col > maxCols {
-						maxCols = col
-					}
+					vY, vX = row-1, col-1
 				case 'd':
-					row := parseAnsiCSINum(pparams, 1)
-					if row > maxRows {
-						maxRows = row
-					}
+					vY = parseAnsiCSINum(pparams, 1) - 1
 				case 'G':
-					col := parseAnsiCSINum(pparams, 1)
-					if col > maxCols {
-						maxCols = col
-					}
+					vX = parseAnsiCSINum(pparams, 1) - 1
 				case 'r':
 					// Scroll region: ESC[top;bottomr — bottom defines screen height
 					_, bottom := parseAnsiCSIPos(pparams)
@@ -611,6 +622,35 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 				}
 				pi = pj + 1
 				continue
+			}
+		} else if prescanRS[pi] == '\x1b' && pi+2 < prescanN && prescanRS[pi+1] == '(' {
+			pi += 3
+			continue
+		} else if prescanRS[pi] == '\n' {
+			vY++
+			vX = 0
+		} else if prescanRS[pi] == '\r' {
+			vX = 0
+		} else if prescanRS[pi] >= 0x1F1E6 && prescanRS[pi] <= 0x1F1FF && pi+1 < prescanN && prescanRS[pi+1] >= 0x1F1E6 && prescanRS[pi+1] <= 0x1F1FF {
+			if vY+1 > maxRows {
+				maxRows = vY + 1
+			}
+			vX += measure.StringWidth(string(prescanRS[pi : pi+2]))
+			if vX > maxCols {
+				maxCols = vX
+			}
+			pi += 2
+			continue
+		} else {
+			w := measure.RuneWidth(prescanRS[pi])
+			if w > 0 {
+				if vY+1 > maxRows {
+					maxRows = vY + 1
+				}
+				vX += w
+				if vX > maxCols {
+					maxCols = vX
+				}
 			}
 		}
 		pi++
@@ -645,9 +685,24 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 				switch cmd {
 				case 'm':
 					curStyle = parseAnsiSGR(curStyle, params)
+				case 'A':
+					num := parseAnsiCSINum(params, 1)
+					y -= num
+					if y < 0 {
+						y = 0
+					}
+				case 'B':
+					num := parseAnsiCSINum(params, 1)
+					y += num
 				case 'C':
 					num := parseAnsiCSINum(params, 1)
 					x += num
+				case 'D':
+					num := parseAnsiCSINum(params, 1)
+					x -= num
+					if x < 0 {
+						x = 0
+					}
 				case 'H', 'f':
 					row, col := parseAnsiCSIPos(params)
 					y = row - 1
@@ -730,6 +785,11 @@ func ParseAnsiBuffer(content string, minCols, minRows int) (*AnsiBuffer, error) 
 			cell := curStyle
 			cell.Rune = r
 			buf.cells[y][x] = cell
+			if w > 1 && x+1 < buf.cols {
+				contCell := curStyle
+				contCell.Rune = 0
+				buf.cells[y][x+1] = contCell
+			}
 			x += w
 			printedCols = max(printedCols, x)
 		}
@@ -776,7 +836,25 @@ func parseAnsiSGR(style AnsiCell, params string) AnsiCell {
 		}
 	}
 
-	parts := strings.Split(params, ";")
+	rawParts := strings.Split(params, ";")
+	var parts []string
+	for _, p := range rawParts {
+		if strings.HasPrefix(p, "38:") || strings.HasPrefix(p, "48:") {
+			subParts := strings.Split(p, ":")
+			if len(subParts) >= 3 && subParts[1] == "5" {
+				parts = append(parts, subParts[0], "5", subParts[2])
+			} else if len(subParts) >= 6 && subParts[1] == "2" {
+				parts = append(parts, subParts[0], "2", subParts[3], subParts[4], subParts[5])
+			} else if len(subParts) == 5 && subParts[1] == "2" {
+				parts = append(parts, subParts[0], "2", subParts[2], subParts[3], subParts[4])
+			} else {
+				parts = append(parts, p)
+			}
+		} else {
+			parts = append(parts, p)
+		}
+	}
+
 	for i := 0; i < len(parts); i++ {
 		p := parts[i]
 		code := 0

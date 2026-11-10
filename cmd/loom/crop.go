@@ -34,11 +34,11 @@ func cropCommand() *cobra.Command {
 				return diffExitError{2, fmt.Errorf("crop region exceeds screen bounds (%d rows, %d columns)", buf.Rows(), buf.Cols())}
 			}
 			for y := region.row; y < region.row+region.height; y++ {
-				if region.col > 0 && buf.Get(region.col-1, y).Rune != ' ' && measure.RuneWidth(buf.Get(region.col-1, y).Rune) > 1 && buf.Get(region.col, y).Rune == ' ' {
+				if region.col > 0 && buf.Get(region.col-1, y).Rune != ' ' && measure.RuneWidth(buf.Get(region.col-1, y).Rune) > 1 && (buf.Get(region.col, y).Rune == ' ' || buf.Get(region.col, y).Rune == 0) {
 					return diffExitError{2, fmt.Errorf("crop region starts inside a wide character on row %d", y+1)}
 				}
 				last := buf.Get(region.col+region.width-1, y)
-				if region.col+region.width < buf.Cols() && last.Rune != ' ' && measure.RuneWidth(last.Rune) > 1 && buf.Get(region.col+region.width, y).Rune == ' ' {
+				if region.col+region.width < buf.Cols() && last.Rune != ' ' && measure.RuneWidth(last.Rune) > 1 && (buf.Get(region.col+region.width, y).Rune == ' ' || buf.Get(region.col+region.width, y).Rune == 0) {
 					return diffExitError{2, fmt.Errorf("crop region ends inside a wide character on row %d", y+1)}
 				}
 			}
