@@ -40,12 +40,18 @@ func ZWJClusterWidth(cluster string) int {
 	if s := env(); s.zwjOverrideSet {
 		mode = s.zwjOverride
 	}
-	if mode == zwjJoin {
-		return ActiveEmojiSpec().ZWJDefaultWidth
-	}
-	width := 0
+	width, parts := 0, 0
 	for _, part := range strings.Split(cluster, "\u200D") {
+		// A ZWJ at the start or end, or doubled, joins nothing: the empty
+		// part adds no column.
+		if part == "" {
+			continue
+		}
+		parts++
 		width += ClusterWidth(part)
+	}
+	if mode == zwjJoin && parts > 1 {
+		return ActiveEmojiSpec().ZWJDefaultWidth
 	}
 	return width
 }

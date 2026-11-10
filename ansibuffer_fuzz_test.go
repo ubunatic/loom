@@ -40,6 +40,11 @@ func FuzzAnsiBuffer(f *testing.F) {
 				if y < buf2.Rows() && x < buf2.Cols() {
 					c2 = buf2.Get(x, y)
 				}
+				// Serialize trims trailing blanks, so a blank ' ' may come
+				// back as an unset cell; both are blank.
+				if c1.IsBlank() && c2.IsBlank() {
+					continue
+				}
 				if !reflect.DeepEqual(c1, c2) {
 					t.Fatalf("Cell(%d, %d) mismatch: %#v vs %#v", x, y, c1, c2)
 				}

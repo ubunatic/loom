@@ -1,0 +1,4 @@
+go test fuzz v1
+string("00\xcc ")
+int(0)
+int(24)

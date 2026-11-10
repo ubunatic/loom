@@ -121,7 +121,7 @@ func StringWidthNew(text string) int {
 		} else if hasVS15 {
 			w += 1
 		} else {
-			w += clusterWidth
+			w += clusterWidth + linkedConsonants(text[start:i])
 		}
 	}
 	return w
@@ -276,7 +276,27 @@ func ClusterWidth(cluster string) int {
 	if strings.ContainsRune(cluster, '\uFE0E') {
 		return 1
 	}
-	return RuneWidth(rs[0])
+	return RuneWidth(rs[0]) + linkedConsonants(cluster)
+}
+
+// linkedConsonants counts the Indic consonants joined to a cluster's base by
+// a virama (GB9c conjunct, such as \u0915\u094D\u0937). The cluster stays one unit for
+// cursor moves and deletes, but terminals (VTE, foot, kitty) draw each
+// consonant in its own column, so each adds one column (481 F4).
+func linkedConsonants(cluster string) int {
+	n, linked := 0, false
+	for _, r := range cluster {
+		switch {
+		case isIndicLinker(r):
+			linked = true
+		case linked && isIndicConsonant(r):
+			n++
+			linked = false
+		default:
+			linked = false
+		}
+	}
+	return n
 }
 
 // RuneWidth returns the visual column width of a single rune.

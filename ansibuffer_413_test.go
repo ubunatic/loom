@@ -1,8 +1,8 @@
 package loom
 
 import (
-	"testing"
 	"strings"
+	"testing"
 )
 
 func Test413_ParseAnsiBuffer(t *testing.T) {

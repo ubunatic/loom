@@ -65,17 +65,15 @@ func (c AnsiCell) IsBlank() bool {
 
 // Style converts AnsiCell formatting to Style.
 func (c AnsiCell) Style() Style {
-	fg := c.FG
-	bg := c.BG
-	if c.Invert {
-		fg, bg = bg, fg
-	}
+	// Keep reverse video as SGR 7 instead of swapping FG and BG: with default
+	// colours a swap is a no-op, so the inversion was lost (481 F1).
 	return Style{
-		FG:        fg,
-		BG:        bg,
+		FG:        c.FG,
+		BG:        c.BG,
 		Bold:      c.Bold,
 		Dim:       c.Dim,
 		Underline: c.Underline,
+		Invert:    c.Invert,
 	}
 }
 
