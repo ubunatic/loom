@@ -138,4 +138,4 @@ progress, clear the goal and write a failure report here.
 | 2 | test-draft | jules-routing-tests-a | 7091831739430289177 | none yet | running (rolling start: one wave-2 session per finished wave-1 session, because of the 2026-11-11 cutoff) |
 | 2 | test-draft | jules-routing-tests-b | 10199914946274802065 | none yet | running |
 | 2 | implement | jules-test-hygiene | 14168310180638339112 | none yet | running |
-| 2 | test-draft | jules-vt-diff | pending | none yet | running (started early, before ansibuffer finished, because of the 2026-11-11 cutoff; 5 loom sessions open) |
+| 2 | test-draft | jules-vt-diff | 5267456316068289451 | none yet | running (started early, before ansibuffer finished, because of the 2026-11-11 cutoff; 5 loom sessions open) |
