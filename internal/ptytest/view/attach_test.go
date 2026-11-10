@@ -40,41 +40,55 @@ func TestObserverAttachWithPTY(t *testing.T) {
 
 	slavePath := fmt.Sprintf("/dev/pts/%d", n)
 
-	obs, err := attachFiles(slavePath, os.Stdin)
+	// A separate fd on the slave reads termios after Restore closes the observer's fds.
+	probe, err := os.OpenFile(slavePath, os.O_RDWR|unix.O_NOCTTY, 0)
+	if err != nil {
+		t.Fatalf("open slave probe: %v", err)
+	}
+	defer probe.Close()
+	lflag := func() uint32 {
+		t.Helper()
+		termios, err := unix.IoctlGetTermios(int(probe.Fd()), unix.TCGETS)
+		if err != nil {
+			t.Fatalf("IoctlGetTermios: %v", err)
+		}
+		return termios.Lflag
+	}
+	before := lflag()
+
+	// A non-terminal fallback stdin makes attachFiles read from the slave,
+	// never from the terminal that runs the tests.
+	devnull, err := os.Open(os.DevNull)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer devnull.Close()
+
+	obs, err := attachFiles(slavePath, devnull)
 	if err != nil {
 		t.Fatalf("Attach failed: %v", err)
 	}
 
-	// Verify raw mode flags (ICANON and ECHO cleared, ISIG retained)
-	termios, err := unix.IoctlGetTermios(int(obs.Stdin.Fd()), unix.TCGETS)
-	if err != nil {
-		t.Fatalf("IoctlGetTermios failed: %v", err)
-	}
-	if termios.Lflag&unix.ISIG == 0 {
+	// Raw mode: ICANON and ECHO cleared, ISIG kept.
+	raw := lflag()
+	if raw&unix.ISIG == 0 {
 		t.Error("expected ISIG to be set in raw mode")
 	}
-	if termios.Lflag&unix.ICANON != 0 {
+	if raw&unix.ICANON != 0 {
 		t.Error("expected ICANON to be cleared in raw mode")
 	}
-	if termios.Lflag&unix.ECHO != 0 {
+	if raw&unix.ECHO != 0 {
 		t.Error("expected ECHO to be cleared in raw mode")
 	}
 
-	initialTermios, err := unix.IoctlGetTermios(int(obs.Stdin.Fd()), unix.TCGETS)
-	if err != nil {
-		t.Fatalf("Initial IoctlGetTermios failed: %v", err)
+	obs.Restore()
+	if got := lflag(); got != before {
+		t.Errorf("Lflag after Restore = %#x, want the original %#x", got, before)
 	}
 
-	// Normal exit restore check
+	// Idempotency: a second Restore is a no-op.
 	obs.Restore()
-
-	restoredTermios, err := unix.IoctlGetTermios(int(obs.Stdin.Fd()), unix.TCGETS)
-	if err == nil && restoredTermios != nil && initialTermios != nil {
-		if initialTermios.Lflag == restoredTermios.Lflag {
-			t.Error("Expected termios to be restored on exit")
-		}
+	if got := lflag(); got != before {
+		t.Errorf("Lflag after second Restore = %#x, want %#x", got, before)
 	}
-
-	// Idempotency
-	obs.Restore()
 }
