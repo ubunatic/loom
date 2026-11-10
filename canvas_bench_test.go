@@ -1,0 +1,38 @@
+// SPDX-FileCopyrightText: 2026 Uwe Jugel
+// SPDX-License-Identifier: AGPL-3.0-or-later
+
+package loom_test
+
+import (
+	"bytes"
+	"testing"
+	"ubunatic.com/loom"
+)
+
+func BenchmarkCanvasDraw(b *testing.B) {
+	canvas := loom.NewCanvas(200, 60)
+	rect := loom.Rect{X: 0, Y: 0, W: 200, H: 60}
+	style := loom.Style{}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		canvas.DrawBorder(rect, loom.BoxBorderStyleDouble, style)
+	}
+}
+
+func BenchmarkCanvasFlush(b *testing.B) {
+	canvas := loom.NewCanvas(200, 60)
+	rect := loom.Rect{X: 0, Y: 0, W: 200, H: 60}
+	style := loom.Style{}
+	canvas.DrawBorder(rect, loom.BoxBorderStyleDouble, style)
+
+	var buf bytes.Buffer
+	buf.Grow(200 * 60 * 10)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		buf.Reset()
+		canvas.Flush(&buf, 0)
+	}
+}

@@ -94,6 +94,7 @@ type Table struct {
 	cmdNav     Nav
 	searchBar  *SearchBar
 	query      string
+	lastQuery  string
 	sel        int
 	viewOffset int
 	cellCol    int
@@ -211,6 +212,7 @@ func (t *Table) AddCmd(cmd Cmd) { t.cmd.AddLocal(cmd) }
 // Call this after sorting or refreshing the underlying data.
 func (t *Table) SetRows(rows []Row) {
 	t.Rows = rows
+	t.lastQuery = "" // Reset lastQuery to force full refilter on new rows
 	t.refilter()
 	if t.sel >= len(t.filtered) {
 		t.sel = max(0, len(t.filtered)-1)
@@ -240,11 +242,19 @@ func (t *Table) ContentHeight() int {
 
 func (t *Table) refilter() {
 	q := strings.ToLower(t.query)
+
+	// Determine the input set of rows to filter from
+	inputRows := t.Rows
+	if q != "" && t.lastQuery != "" && strings.HasPrefix(q, t.lastQuery) {
+		inputRows = t.filtered // Incremental filter
+	}
+	t.lastQuery = q
+
 	if q == "" {
 		t.filtered = t.Rows
 	} else {
-		out := make([]Row, 0, len(t.Rows))
-		for _, r := range t.Rows {
+		out := make([]Row, 0, len(inputRows))
+		for _, r := range inputRows {
 			for _, cell := range r.Cells {
 				if strings.Contains(strings.ToLower(cell), q) {
 					out = append(out, r)
