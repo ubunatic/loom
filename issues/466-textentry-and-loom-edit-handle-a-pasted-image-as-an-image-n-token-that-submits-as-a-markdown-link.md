@@ -51,8 +51,11 @@ as one unit (`expandRangeForPills`). TextEntry has no such tokens.
     Unverified on X11 and inside `loom session`.
   - **No desktop session (likely a server)**: Ctrl+V cannot reach the user's clipboard, so
     Ctrl+C/X/V fall back to loom's internal copy buffer (owner, 2026-11-10: better than a
-    notice; same rule in 465). Only when that buffer is empty may Ctrl+V show a short hint
-    ("use Ctrl+Shift+V to paste from your terminal").
+    notice; same rule in 465). When that buffer is empty too, Ctrl+V does nothing visible.
+  - **Where a hint goes (owner)**: a widget never shows pop-ups or notices itself; that is not
+    in TextEntry's contract. The widget only reports the case (e.g. an optional callback or
+    status value, "paste unavailable: use Ctrl+Shift+V"); the app decides whether and where to
+    show it. `loom edit` shows it in its status bar; a plain TextEntry shows nothing.
   - The 465 paste rule (internal rich clip if it still matches the system clipboard) uses this
     Ctrl+V clipboard read.
 - **Represent**: one token per image, label `[Image #n]` (n per widget, counting up), data holds
