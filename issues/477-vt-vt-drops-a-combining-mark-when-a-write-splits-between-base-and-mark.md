@@ -41,7 +41,9 @@ write a failure report.
 |---|---|---|---|---|
 | implement | jules-implement-477 | 7791606068217650291 | none | failed: stalled in AWAITING_USER_FEEDBACK after 2 replies (auto, then "extend the previous cell"), no PR |
 | implement | owner restart in the Jules UI | unknown | none | not running on 2026-11-10 (owner), no PR |
-| implement | jules-implement-477b | pending | none yet | running (started 2026-11-10 by the host as loom Jules manager; prompt states the fix decision) |
+| implement | jules-implement-477b | 3034362514808774344 | none | failed: FAILED "Jules was unable to complete the task" after about 4 min, no message, no PR |
+
+Three Jules runs gave nothing; no further Jules runs. Next: local fix by a developer agent from the lead below.
 
 Lead from the failed run, checked by the host: a mark that starts a new write forms its own zero-width
 cluster, and `putCluster` returns early for `w <= 0` (`vt/vt.go:600-603`), so the mark is dropped.
