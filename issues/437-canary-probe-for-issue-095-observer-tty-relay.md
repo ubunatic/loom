@@ -77,6 +77,15 @@ in `internal/ptytest/view/` (no `ptytest.Session` dependency until milestone 2):
    on normal exit, restored on `SIGINT`, second restore is a no-op, skip path taken when
    `/dev/tty` is unavailable.
 
+### Progress (2026-11-11)
+M1.1-M1.3 landed in `internal/ptytest/view/` (Codeberg PR 95, from Jules PR GH #129 with
+three host fixes: wide continuation cells, `Relay.Render(p []byte)`, real restore check).
+Left open from the review:
+- No `SIGINT` restore test yet (M1.3 asks for one).
+- `Relay.Run` returns on observer-side `POLLHUP`/EOF without draining child output still
+  queued on the master; decide whether a stop should flush first.
+- No `docs/design/095-view-layout.ansi` sketch check yet (M1.1).
+
 Live checks for the owner: run `make canary-095` in a real terminal, type a key (the
 child should echo it back), compare `stty -a` before and after, press Ctrl-C (must stop
 the app, restore the terminal, and interrupt the test child), and check `ls /dev/pts` for
