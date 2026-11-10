@@ -35,3 +35,10 @@ a failure report.
 
 - Re-check live code first; port `TestPopupStack` (scratchpad `b8-canary`) into a loom test per
   container and close path.
+
+## Jules test-draft (GH #123, 2026-11-10)
+Session jules-routing-tests-b added `popup_focus_return_test.go` (`TestPopupFocusReturn`). Host run on
+the PR head: fails as the bug predicts: after the popup closes, a typed `x` never reaches the input
+(value stays empty), because `Popup.ConsumeKey` returns `Ignored()` when closed (`popup.go:79-80`)
+and `Stack.ConsumeKey` keeps the focus on it (`stack.go:143`). References hold. Pick the test from
+`git fetch github pull/123/head`.

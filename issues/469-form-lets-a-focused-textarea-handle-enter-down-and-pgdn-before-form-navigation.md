@@ -35,3 +35,11 @@ write a failure report.
 - Re-check live code first (`form.go` ConsumeKey, field widgets' EventResult).
 - Port the batch 6 canary (`scratchpad/b6-canary`, `TestFormCapturesDownAndEnterInTextArea`)
   into a loom test; table test per key × field type (TextInput, TextArea, Choice).
+
+## Jules test-draft (GH #123, 2026-11-10)
+Session jules-routing-tests-b (Jules ID 10199914946274802065) added `form_field_keys_test.go`
+(`TestFormCapturesDownAndEnterInTextArea`). Host run on the PR head: fails as the bug predicts
+(Enter in a TextArea submits the form instead of inserting a line; Down/PgDn move form focus instead
+of the caret). The Choice subtest's failure message prints the whole widget struct; shorten it when
+adopting. Trace references (`form.go:271-296`) hold. Pick the test from `git fetch github
+pull/123/head`.

@@ -56,3 +56,10 @@ write a failure report.
   release outside, focus change mid-drag, Esc) into Pane tests; add a tick-driven auto-scroll test
   with a fake clock (no sleeps).
 - Owner check in foot and kitty: drag-select out of an entry, hold, release outside.
+
+## Jules test-draft (GH #123, 2026-11-10)
+Session jules-routing-tests-b added `text_entry_drag_capture_test.go`
+(`TestTextEntrySelectionDragCapture`). Host run on the PR head: fails as the bug predicts;
+`mouseCaptureTarget` captures only for `barDrag` or `pan`, not for a selection drag
+(`text_entry.go:1240`). Auto-scroll while held outside was skipped (no test yet). References hold.
+Pick the test from `git fetch github pull/123/head`.
