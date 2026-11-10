@@ -557,7 +557,7 @@ func (v *VT) Write(p []byte) (int, error) {
 						}
 						continue
 					}
-					if nr == 0xFE0F || nr == 0xFE0E || unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !measure.IsFormatRune(nr)) {
+					if extendsCluster(nr) {
 						j += nsz
 						continue
 					}
@@ -565,11 +565,11 @@ func (v *VT) Write(p []byte) (int, error) {
 				}
 			}
 			cluster := string(data[i:j])
-			w := measure.StringWidth(cluster)
-			if measure.ActiveRenderPath() == measure.RenderPathVTE && measure.VTEMode(cluster) == "pad-1" {
-				w = max(1, w-1)
+			if extendsCluster(r) {
+				v.extendCluster(cluster)
+			} else {
+				v.putCluster(r, cluster, clusterCells(cluster))
 			}
-			v.putCluster(r, cluster, w)
 			i = j
 		}
 	}
@@ -597,8 +597,25 @@ func (v *VT) put(r rune) {
 	v.putCluster(r, string(r), measure.RuneWidth(r))
 }
 
+// extendsCluster reports whether r continues the grapheme before it
+// (variation selector, combining mark, or a non-format Cf rune).
+func extendsCluster(r rune) bool {
+	return r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) ||
+		(unicode.Is(unicode.Cf, r) && !measure.IsFormatRune(r))
+}
+
+// clusterCells returns the number of cells a grapheme cluster occupies.
+func clusterCells(cluster string) int {
+	w := measure.StringWidth(cluster)
+	if measure.ActiveRenderPath() == measure.RenderPathVTE && measure.VTEMode(cluster) == "pad-1" {
+		w = max(1, w-1)
+	}
+	return w
+}
+
 func (v *VT) putCluster(r rune, text string, w int) {
 	if w <= 0 {
+		v.extendCluster(text)
 		return
 	}
 	if v.x+w > v.Cols {
@@ -627,6 +644,45 @@ func (v *VT) putCluster(r rune, text string, w int) {
 	if !v.autoWrap {
 		v.x = min(v.x, v.Cols-1)
 	}
+}
+
+// extendCluster appends a zero-width cluster (combining mark, ZWJ tail,
+// variation selector) that starts a new write to the cell before the cursor,
+// so a write split inside a grapheme gives the same screen as one write. At
+// column 0 there is no cell before the cursor and the cluster is dropped.
+// When the extended cluster needs a different width (VS16 after a text-style
+// base), the cell is rewritten in place and the cursor follows.
+func (v *VT) extendCluster(text string) {
+	if text == "" || v.x <= 0 {
+		return
+	}
+	px, py := min(v.x, v.Cols)-1, v.y
+	for px > 0 && v.cells[py][px].Rune == 0 && v.cells[py][px].Text == "" {
+		px--
+	}
+	cell := v.cells[py][px]
+	if cell.Rune == 0 {
+		return
+	}
+	oldW := 1
+	for px+oldW < v.Cols && v.cells[py][px+oldW].Rune == 0 && v.cells[py][px+oldW].Text == "" {
+		oldW++
+	}
+	base := cell.Text
+	if base == "" {
+		base = string(cell.Rune)
+	}
+	joined := base + text
+	newW := clusterCells(joined)
+	if newW == oldW || newW <= 0 || px+oldW != v.x || px+newW > v.Cols {
+		v.cells[py][px].Text = joined
+		return
+	}
+	pen := v.pen
+	v.pen = cell.Style
+	v.x = px
+	v.putCluster(cell.Rune, joined, newW)
+	v.pen = pen
 }
 
 // escape consumes one escape sequence from data. ok is false when data ends
