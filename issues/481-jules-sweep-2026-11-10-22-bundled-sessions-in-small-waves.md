@@ -139,3 +139,5 @@ progress, clear the goal and write a failure report here.
 | 2 | test-draft | jules-routing-tests-b | 10199914946274802065 | none yet | running |
 | 2 | implement | jules-test-hygiene | 14168310180638339112 | none yet | running |
 | 2 | test-draft | jules-vt-diff | 5267456316068289451 | none yet | running (started early, before ansibuffer finished, because of the 2026-11-11 cutoff; 5 loom sessions open) |
+| 3 | experiment | jules-ssh | pending | none yet | running (started 22:50 after ansibuffer and routing-tests-a finished) |
+| 3 | research + experiment | jules-tml-declarative | pending | none yet | running (started 22:50) |
