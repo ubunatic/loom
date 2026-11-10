@@ -24,6 +24,9 @@ width in `measure`); closed 382 covered streaming but not this boundary.
 - A cell's grapheme must stay open until the next non-extending rune arrives: a combining mark, ZWJ
   sequence, variation selector or skin-tone modifier in the next write extends the previous cell.
 - Check the cursor and wrap state when the extension arrives after an auto-wrap at the last column.
+- Related split case from fuzzing (Jules #118 seed, checked by the host): `Write("0\xc2")` leaves
+  the cursor at 0,0, but `Write("0")` then `Write("\xc2")` leaves it at 1,0. The pending UTF-8
+  byte holds back the previous cluster; whole and split writes must agree here too.
 
 ## 3. Implementation & Verification Plan
 /goal Every split of a mixed stream (SGR, CUP, wide chars, combining marks, ZWJ emoji, scroll) gives the

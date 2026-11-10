@@ -21,6 +21,10 @@ The host checked each citation against GitHub `main`:
 ## 3. Implementation & Verification Plan
 /goal `ParseAnsiBuffer` handles CSI A/B/D, colon SGR truecolor and wide-rune continuation cells, and its prescan accounts for relative moves; table tests show each case fails before the fix. Stop and report when blocked on a user decision; on a loop or no progress, write a failure report here.
 
+- Also (fuzz finding F1, 481, checked by the host): `Serialize` loses `Invert` on default colours,
+  because `AnsiCell.Style()` swaps FG and BG instead of setting `ansi.Style.Invert`
+  (`ansibuffer.go:70`); `"\x1b[7m0"` serializes as `"\x1b[0m0"`.
+
 ## Jules runs
 
 | kind | session | Jules ID | PR | state |

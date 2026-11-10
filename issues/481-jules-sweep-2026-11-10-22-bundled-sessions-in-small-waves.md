@@ -109,6 +109,18 @@ with the gate and capture its findings, adopting code through the three themed A
 report when blocked on an owner decision, a denied permission or the Jules cutoff; on a loop or no
 progress, clear the goal and write a failure report here.
 
+## Findings (checked by the host)
+
+- F1 (#118, real bug): `ParseAnsiBuffer("\x1b[7m0")` keeps `Invert`, but `Serialize` writes
+  `\x1b[0m0`: `AnsiCell.Style()` swaps FG and BG instead of setting `ansi.Style.Invert`
+  (`ansibuffer.go:70`), so reverse video on default colours is lost. Fix after the ansibuffer PR
+  (same file): Serialize emits SGR 7 for `Invert`; round-trip seed `"\x1b[007m0"`.
+- F2 (#118, real bug, goes to 477): `vt.Write("0\xc2")` leaves the cursor at 0,0, while
+  `Write("0")` then `Write("\xc2")` leaves it at 1,0: a trailing incomplete UTF-8 byte holds back
+  the cluster before it. The report quotes the wrong input (`"\x1b[31ma"`); the seed is `"0\xc2"`.
+- F3 (#118, not a bug): `measure.Clusters("\b")` is empty because Clusters drops control
+  characters by design; the fuzz invariant must skip them.
+
 ## Jules runs
 
 | wave | kind | session name | Jules ID | PR | state |
@@ -116,4 +128,4 @@ progress, clear the goal and write a failure report here.
 | 1 | implement | jules-render-diff | 13272737396249956342 | none yet | running (started 2026-11-10 20:03) |
 | 1 | implement | jules-unicode-width | 14705779270409174332 | none yet | running (started 2026-11-10, owner: slots free) |
 | 1 | implement | jules-ansibuffer | 13101811809704567128 | none yet | running (started 2026-11-10; owner made the host the loom Jules manager) |
-| 1 | test-draft | jules-fuzz | 1079445786546642272 | none yet | running (started 2026-11-10) |
+| 1 | test-draft | jules-fuzz | 1079445786546642272 | GH #118 | checked: scope clean (4 fuzz tests, 3 seeds, report); 3 failing seeds reproduced; findings F1-F3 below; tests to adopt in PR A with the measure invariant fixed |
