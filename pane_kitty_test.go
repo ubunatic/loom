@@ -148,7 +148,12 @@ func TestPaneKittyKeyboardAltScreenBalanced(t *testing.T) {
 	_, _ = slave.WriteString(suspendMarker)
 	p.switchAltScreen(false)
 	p.setKittyKeyboard(false)
-	time.Sleep(50 * time.Millisecond)
+	for deadline := time.Now().Add(time.Second); time.Now().Before(deadline); time.Sleep(5 * time.Millisecond) {
+		capture.mu.Lock()
+		done := strings.Contains(capture.buf.String(), "\x1b[?1049l")
+		capture.mu.Unlock()
+		if done { break }
+	}
 	before, after := capture.split(t)
 	enter := strings.SplitN(before, "\x1b[?1049h", 2)
 	if len(enter) != 2 || strings.Count(enter[0], kittyKeyboardPush) != 1 || strings.Count(enter[0], kittyKeyboardPop) != 1 ||
