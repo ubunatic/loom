@@ -53,3 +53,14 @@ and report when blocked on an API decision or denied permission, or when no prog
   recording widget: replies 0–4, split, late, interleaved `a`/`b`, kitty, 2048, DA1.
 - Remove the per-widget Report checks once Pane filters, and update `docs/Widgets.md` /
   `docs/TuiInput.md`.
+
+## Jules test-draft (GH #122, 2026-11-10)
+Session jules-routing-tests-a (Jules ID 7091831739430289177) added `pane_reply_route_test.go`
+(`TestPaneReplyRouting`, 12 subtests: DECRPM, DA1, CPR, kitty flags, resize report, OSC 11 BEL/ST,
+focus in/out, 997, interleaved key, split DECRPM; `TestPaneReplyRouting_NormalKey`). Host run on the
+PR head: all fail, as expected for the bug: replies reach the widget as `<report>`/empty keys, and
+OSC 11 is split into `alt-]` plus one key per byte; the interleaved `A` is lost. Each subtest waits
+2 s for a negative result (24 s total), so turn the waits into a condition before adopting the file.
+Trace: 4 of 12 cited lines were off by more than 10 lines (`event.go` DispatchKey is at 823,
+`DecodeMouse` call at 581); use the code, not the trace. Pick the tests from `git fetch github
+pull/122/head`.

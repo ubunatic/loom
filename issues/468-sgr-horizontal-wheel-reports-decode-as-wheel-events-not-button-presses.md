@@ -35,3 +35,10 @@ report.
 - Re-check live code first; decoder table test for 64-67 with Shift/Alt/Ctrl; Pane route test
   that a horizontal report never produces `MousePress`.
 - Owner check: a sideways touchpad swipe in foot and kitty over a wide Table.
+
+## Jules test-draft (GH #122, 2026-11-10)
+Session jules-routing-tests-a added `event_hwheel_test.go`: `TestDecodeMouse_SGRHorizontalWheel`
+(buttons 66/67 with Shift/Alt/Ctrl) and `TestPaneHorizontalWheelRoute`. Host run on the PR head: both
+fail; `DecodeMouse("\x1b[<66;1;1M")` returns `MousePress` with button 2 (`event.go:552`,
+`action = MousePress`), and the Pane delivers it to the widget as a press. The report proposes
+`MouseScrollLeft`/`MouseScrollRight` actions. Pick the tests from `git fetch github pull/122/head`.
