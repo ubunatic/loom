@@ -116,12 +116,12 @@ func StringWidthNew(text string) int {
 			w += ZWJClusterWidth(text[start:i])
 		} else if gw, ok := getGlyphOverride(text[start:i]); ok {
 			w += gw
-		} else if hasVS16 {
+		} else if hasVS16 && isEmojiPresentationBase(r) {
 			w += ActiveEmojiSpec().VS16DefaultWidth
 		} else if hasVS15 {
 			w += 1
 		} else {
-			w += clusterWidth
+			w += clusterWidth + linkedConsonants(text[start:i])
 		}
 	}
 	return w
@@ -147,6 +147,11 @@ func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, ha
 		hasVS16 = true
 	} else if r == 0xFE0E {
 		hasVS15 = true
+	}
+
+	indicState := 0
+	if isIndicConsonant(r) {
+		indicState = 1
 	}
 
 	i += sz
@@ -175,7 +180,15 @@ func nextClusterBoundary(s string, i int) (next int, isFlag, hasZWJ, hasVS16, ha
 			i += nsz
 			continue
 		}
-		if unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !isFormatRune(nr)) {
+		if unicode.Is(unicode.Mn, nr) || unicode.Is(unicode.Me, nr) || (unicode.Is(unicode.Cf, nr) && !isFormatRune(nr)) || isEmojiModifier(nr) {
+			if indicState == 1 && isIndicLinker(nr) {
+				indicState = 2
+			}
+			i += nsz
+			continue
+		}
+		if indicState == 2 && isIndicConsonant(nr) {
+			indicState = 1
 			i += nsz
 			continue
 		}
@@ -255,13 +268,35 @@ func ClusterWidth(cluster string) int {
 	}
 	// VS16 (Variation Selector-16) emoji presentation: width 2
 	if strings.ContainsRune(cluster, '\uFE0F') {
-		return ActiveEmojiSpec().VS16DefaultWidth
+		if isEmojiPresentationBase(rs[0]) {
+			return ActiveEmojiSpec().VS16DefaultWidth
+		}
 	}
 	// VS15 (Variation Selector-15) text presentation: width 1
 	if strings.ContainsRune(cluster, '\uFE0E') {
 		return 1
 	}
-	return RuneWidth(rs[0])
+	return RuneWidth(rs[0]) + linkedConsonants(cluster)
+}
+
+// linkedConsonants counts the Indic consonants joined to a cluster's base by
+// a virama (GB9c conjunct, such as \u0915\u094D\u0937). The cluster stays one unit for
+// cursor moves and deletes, but terminals (VTE, foot, kitty) draw each
+// consonant in its own column, so each adds one column (481 F4).
+func linkedConsonants(cluster string) int {
+	n, linked := 0, false
+	for _, r := range cluster {
+		switch {
+		case isIndicLinker(r):
+			linked = true
+		case linked && isIndicConsonant(r):
+			n++
+			linked = false
+		default:
+			linked = false
+		}
+	}
+	return n
 }
 
 // RuneWidth returns the visual column width of a single rune.
@@ -302,7 +337,7 @@ func ClustersOld(text string) []string {
 	rs := []rune(plain)
 	n := len(rs)
 	for i := 0; i < n; {
-		if (unicode.Is(unicode.Mn, rs[i]) || unicode.Is(unicode.Me, rs[i])) && !isFormatRune(rs[i]) {
+		if (unicode.Is(unicode.Mn, rs[i]) || unicode.Is(unicode.Me, rs[i]) || isEmojiModifier(rs[i])) && !isFormatRune(rs[i]) {
 			if len(result) > 0 {
 				result[len(result)-1] += string(rs[i])
 			}
@@ -315,6 +350,10 @@ func ClustersOld(text string) []string {
 			continue
 		}
 		start := i
+		indicState := 0
+		if isIndicConsonant(rs[i]) {
+			indicState = 1
+		}
 		i++
 		for i < n {
 			r := rs[i]
@@ -325,7 +364,15 @@ func ClustersOld(text string) []string {
 				}
 				continue
 			}
-			if r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) {
+			if r == 0xFE0F || r == 0xFE0E || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || (unicode.Is(unicode.Cf, r) && !isFormatRune(r)) || isEmojiModifier(r) {
+				if indicState == 1 && isIndicLinker(r) {
+					indicState = 2
+				}
+				i++
+				continue
+			}
+			if indicState == 2 && isIndicConsonant(r) {
+				indicState = 1
 				i++
 				continue
 			}
@@ -368,7 +415,7 @@ func ClustersNew(text string) []string {
 	n := len(plain)
 	for i := 0; i < n; {
 		r, _ := utf8.DecodeRuneInString(plain[i:])
-		if (unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r)) && !isFormatRune(r) {
+		if (unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Me, r) || isEmojiModifier(r)) && !isFormatRune(r) {
 			end, _, _, _, _ := nextClusterBoundary(plain, i)
 			if len(result) > 0 {
 				result[len(result)-1] += plain[i:end]
@@ -740,4 +787,114 @@ func plainTerminalLinesNew(s string) []string {
 	}
 	lines = append(lines, current.String())
 	return lines
+}
+
+func isEmojiModifier(r rune) bool {
+	return r >= 0x1F3FB && r <= 0x1F3FF
+}
+
+func isIndicLinker(r rune) bool {
+	switch r {
+	case 0x094D, 0x09CD, 0x0ACD, 0x0B4D, 0x0C4D, 0x0D4D:
+		return true
+	}
+	return false
+}
+
+func isIndicConsonant(r rune) bool {
+	if r >= 0x0915 && r <= 0x0939 {
+		return true
+	}
+	if r >= 0x0958 && r <= 0x095F {
+		return true
+	}
+	if r >= 0x0978 && r <= 0x097F {
+		return true
+	}
+
+	if r >= 0x0995 && r <= 0x09A8 {
+		return true
+	}
+	if r >= 0x09AA && r <= 0x09B0 {
+		return true
+	}
+	if r == 0x09B2 {
+		return true
+	}
+	if r >= 0x09B6 && r <= 0x09B9 {
+		return true
+	}
+	if r >= 0x09DC && r <= 0x09DD {
+		return true
+	}
+	if r == 0x09DF {
+		return true
+	}
+	if r >= 0x09F0 && r <= 0x09F1 {
+		return true
+	}
+
+	if r >= 0x0A95 && r <= 0x0AA8 {
+		return true
+	}
+	if r >= 0x0AAA && r <= 0x0AB0 {
+		return true
+	}
+	if r >= 0x0AB2 && r <= 0x0AB3 {
+		return true
+	}
+	if r >= 0x0AB5 && r <= 0x0AB9 {
+		return true
+	}
+
+	if r >= 0x0B15 && r <= 0x0B28 {
+		return true
+	}
+	if r >= 0x0B2A && r <= 0x0B30 {
+		return true
+	}
+	if r >= 0x0B32 && r <= 0x0B33 {
+		return true
+	}
+	if r >= 0x0B35 && r <= 0x0B39 {
+		return true
+	}
+	if r >= 0x0B5C && r <= 0x0B5D {
+		return true
+	}
+	if r == 0x0B5F {
+		return true
+	}
+	if r == 0x0B71 {
+		return true
+	}
+
+	if r >= 0x0C15 && r <= 0x0C28 {
+		return true
+	}
+	if r >= 0x0C2A && r <= 0x0C39 {
+		return true
+	}
+	if r >= 0x0C58 && r <= 0x0C5A {
+		return true
+	}
+
+	if r >= 0x0D15 && r <= 0x0D3A {
+		return true
+	}
+	if r >= 0x0D7A && r <= 0x0D7F {
+		return true
+	}
+
+	return false
+}
+
+func isEmojiPresentationBase(r rune) bool {
+	if r == '#' || r == '*' || (r >= '0' && r <= '9') {
+		return true
+	}
+	if r > 0x7F && r != 0xFE0F && r != 0xFE0E {
+		return true
+	}
+	return false
 }

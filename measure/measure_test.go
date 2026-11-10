@@ -494,6 +494,12 @@ func TestMeasureOldNewParity(t *testing.T) {
 		"\x1bPpayload",
 		"12界34",
 		"ab界d",
+		"🤷🏽\u200d♂️",
+		"👍🏽",
+		"क्ष",
+		"a\uFE0F",
+		"#\uFE0F",
+		"❤\uFE0F",
 	}
 
 	for i, tc := range testCases {

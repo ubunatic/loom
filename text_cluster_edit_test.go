@@ -11,6 +11,8 @@ var clusterEditCases = []struct{ name, in string }{
 	{"flag", "x🇩🇪"},
 	{"vs16 heart", "x❤️"},
 	{"cjk", "x界"},
+	{"skin tone base", "x👍🏽"},
+	{"skin tone zwj", "x🤷🏽‍♂️"},
 }
 
 func TestTextInputClusterEdit(t *testing.T) {

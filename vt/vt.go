@@ -534,11 +534,10 @@ func (v *VT) Write(p []byte) (int, error) {
 						break
 					}
 					if !utf8.FullRune(data[j:]) {
-						v.pending = append([]byte(nil), data[i:]...)
-						if len(v.pending) > maxPendingBytes {
-							v.pending = nil
-						}
-						return len(p), nil
+						// Write the cluster now and hold only the incomplete
+						// tail: if it turns out to be a mark, extendCluster
+						// attaches it to this cell in the next Write.
+						break
 					}
 					nr, nsz := utf8.DecodeRune(data[j:])
 					if nr == 0x200D {
