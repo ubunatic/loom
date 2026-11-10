@@ -39,4 +39,9 @@ write a failure report.
 
 | kind | session name | Jules ID | PR | state |
 |---|---|---|---|---|
-| implement | jules-implement-477 | pending (local b5c944ae) | pending | running, started 2026-11-10 on main `e9026afe` |
+| implement | jules-implement-477 | 7791606068217650291 | none | failed: stalled in AWAITING_USER_FEEDBACK after 2 replies (auto, then "extend the previous cell"), no PR |
+
+Lead from the failed run, checked by the host: a mark that starts a new write forms its own zero-width
+cluster, and `putCluster` returns early for `w <= 0` (`vt/vt.go:600-603`), so the mark is dropped.
+Fix direction: append an extending cluster to the cell before the cursor (or the last column while a
+wrap is pending).
