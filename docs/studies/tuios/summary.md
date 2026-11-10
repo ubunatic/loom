@@ -23,7 +23,7 @@ by seven haiku:med searchers. The host checked the P1 rows against loom code at 
 | Bubble Tea v2 | cell renderer, mode 2026, kitty flags with reported support, typed mouse and paste messages | `Send` blocks; `teatest` polls with sleeps; v1 to v2 broke most APIs | loom has a richer widget and routing model; Bubble Tea diffs frames, loom does not (cost difference not measured) |
 | ultraviolet | row hash diff, writes changed cells only, grapheme width | marked as in active development, API may change | loom has no diff yet |
 | Bubbles / Huh | pinned, clean sources; virtualised table; fuzzy list; accessible forms; `$EDITOR` | no undo/redo in text inputs; select-all on Ctrl+G; Tab accepts suggestions; table has no sort or filter | loom's TextEntry and RichTextEdit are more desktop-like (undo, Ctrl+A/C/V/X, mouse); TextInput and TextArea have no user selection, undo or cut (458 batch 6) |
-| Lip Gloss v2 | Z-ordered layers, hit test | no focus, click-through or modal handling | loom's claim-cell routing does more |
+| Lip Gloss v2 | Z-ordered layers, hit test returning the top layer's ID | no focus, click-through or modal handling | loom's claim-cell routing does more; loom has no z-index (draw order). v1 and v2 can be required together because their module paths differ (v2 is `charm.land/lipgloss/v2`); a joint build was not tried (458 batch 8) |
 | tview / tcell | mature, grapheme cells, kitty query before enabling | Ctrl+Q copy (Ctrl+C quits); mouse off by default | similar scope; loom has finer routing |
 | gocui | small | mouse buttons share key codes; internal clipboard only | loom is ahead |
 
@@ -73,8 +73,14 @@ breaking changes are P3 notes while loom is alpha.
    queries pass to the host unfiltered (ticket 473); a client that stops reading may block all
    tabs of its session (ticket 474, not yet canaried). Reattach repaints the screen only, so
    lines that scrolled off while detached stay only in the session's VT history (not ticketed).
-10. **P2**: dark/light detection (DSR 996, mode 2031, OSC 11), focus reporting in Pane, OSC 52 read,
-   text input validation, password echo and suggestions, `$EDITOR` hand-off.
+10. **Desktop (458 batch 8)**: closing a Popup inside a container leaves focus on the closed
+   popup, so keys are lost until Tab (ticket 475). An OSC 11 reply is typed into a focused text
+   field as `11;rgb:…` (ticket 462). No dark/light detection (ticket 476, after 462). Overlap is
+   draw order only, which is safe because Frame and Stack tile; modal popups take clicks first.
+   loom renders no Markdown (Glamour and TUIOS do); with no `TERM` set, loom picks true colour
+   where colorprofile says "no TTY" (not ticketed).
+11. **P2**: focus reporting in Pane, OSC 52 read, text input validation, password echo and
+   suggestions, `$EDITOR` hand-off.
 
 ## Limits of this study
 

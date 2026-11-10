@@ -22,6 +22,12 @@ the late-fragment problem. Evidence: 458 batch 3, `docs/studies/tuios/report-que
 
 This blocks safe capability queries (461 and query-before-enable for 2026 and kitty).
 
+458 batch 8 (`docs/studies/tuios/report-desktop.md`, canaries C, C2, `TestScanReplies`): the
+scanner has no OSC state. A complete OSC 11 reply (BEL or ST) becomes `alt-]` plus text keys, and
+a TextEntry ends up with `11;rgb:1e1e/1e1e/1e1e`. Complete `CSI I`, `CSI O` and `CSI ? 997 ; 1 n`
+become empty, unclassified keys. Unsolicited replies count too: a reply loom never asked for
+(e.g. to a query from an earlier program) must not reach widgets either.
+
 ## 2. Technical Specification / Findings
 - Fix the library, not the caller: Pane (the input loop in `pane_run.go`) consumes replies and
   never forwards them to widgets. A typed channel or callback can deliver them to whoever asked

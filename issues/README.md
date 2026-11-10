@@ -68,4 +68,6 @@ upkeep.
 | 472 | [472-vt-keeps-kitty-keyboard-flags-as-a-per-screen-stack-and-the-session-restores-the-child-s-flags.md](472-vt-keeps-kitty-keyboard-flags-as-a-per-screen-stack-and-the-session-restores-the-child-s-flags.md) | vt keeps kitty keyboard flags as a per-screen stack and the session restores the child's flags | Open |
 | 473 | [473-session-gates-child-osc-52-clipboard-writes-and-queries.md](473-session-gates-child-osc-52-clipboard-writes-and-queries.md) | session gates child OSC 52 clipboard writes and queries | Open |
 | 474 | [474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md](474-session-client-that-stops-reading-blocks-every-tab-of-its-session.md) | session client that stops reading blocks every tab of its session | Open |
+| 475 | [475-closing-a-popup-inside-a-container-strands-focus-on-the-closed-popup.md](475-closing-a-popup-inside-a-container-strands-focus-on-the-closed-popup.md) | Closing a Popup inside a container strands focus on the closed popup | Open |
+| 476 | [476-pane-detects-a-dark-or-light-terminal-background-and-reports-changes.md](476-pane-detects-a-dark-or-light-terminal-background-and-reports-changes.md) | Pane detects a dark or light terminal background and reports changes | Open |
 <!-- harnez:end issues-active-index -->

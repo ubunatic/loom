@@ -45,7 +45,9 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 | widgets | Select filter in forms | huh.select.filter | has | Choice filter |
 | widgets | Word jump, Shift-select, copy, select all in text inputs | bubbles.textarea.*, bubbles.textinput.word-forward | has | TextEntry only; loom uses Ctrl+A/C (Bubbles: Ctrl+G, Ctrl+Shift+C); in TextArea Ctrl+A is line start |
 | widgets | Tab accepts a suggestion | bubbles.textinput.accept-suggestion-tab | n/a | loom Tab policy; TextEntry accepts placeholder only |
-| compose | Z-ordered layers with hit test | lipgloss.layer.z-order, lipgloss.compositor.hit-test | has | root overlays and claim-cell routing |
+| compose | Z-ordered layers with hit test | lipgloss.layer.z-order, lipgloss.compositor.hit-test | has | root overlays and claim-cell routing; no z-index, overlap is draw order; modal popups hit first, Frame/Stack tile so siblings never overlap (report-desktop.md) |
+| compose | Focus returns after a popup closes | | **missing** | Popup in a container: focus stays on the closed popup, keys lost until Tab (ticket 475); Pane help overlay is fine |
+| theme | Dark/light background detection (OSC 11, mode 2031) | bt.theme.background-color, lipgloss query | **missing** | no query or report handling; an OSC 11 reply is typed as text (tickets 476, 462) |
 | api | Copy key that does not collide with quit | tview.textarea.copy-is-ctrl-q | has | Ctrl+C copies only with a selection, else passes (`HasSelection`) |
 | api | One filter slot, last wins | tuios.filter-single-slot | n/a | loom routes by widget tree |
 | api | Shared program options across binaries | tuios.program-options-shared | n/a | |
@@ -60,11 +62,15 @@ Legend: **has**, **partial**, **missing**, **n/a** (not wanted for loom's GUI-li
 ## P2 and P3 highlights (not verified against loom)
 
 - Focus in/out reporting (mode 1004): loom enables it only in `internal/session`, not in Pane.
-- Dark/light detection: DSR 996, mode 2031, OSC 11 query; Lip Gloss `HasDarkBackground`.
-- OSC 52 clipboard read and primary selection (loom writes only).
+- Dark/light detection: now a P1 row above (ticket 476).
+- OSC 52 clipboard read and primary selection (loom writes only; checked in 458 batch 8).
+- Markdown display: loom has none (Glamour and TUIOS render it; report-desktop.md canary D).
+- Colour profile from env only in loom, as in colorprofile; empty `TERM` gives true colour in loom
+  and "no TTY" in colorprofile (report-desktop.md canary B).
 - XTVERSION and DA1/DA2 terminal identification (loom: only in `loom-probe` and `vt`).
 - Text input: suggestions, validation, password echo; Huh: external `$EDITOR`, accessible mode,
   grid and column form layouts, multi-select limit.
 - Key press/release and repeat events (kitty flag 2); wheel gesture axis lock (TUIOS).
 - Frame rate cap (Bubble Tea 60 FPS default, 120 max).
-- P3: OSC 8 links, OSC 9/777 notifications, OSC 22 pointer shape, OSC 133, kitty graphics, sixel.
+- P3: OSC 8 links (ticket 259), OSC 9/777 notifications, OSC 22 pointer shape, OSC 133, kitty
+  graphics, sixel. Batch 8 confirmed loom has none of OSC 8, 9/777, 22.
