@@ -73,4 +73,5 @@ upkeep.
 | 479 | [479-document-post-drop-on-close-and-the-caller-owned-close-contract.md](479-document-post-drop-on-close-and-the-caller-owned-close-contract.md) | Document Post drop-on-Close and the caller-owned Close contract | Open |
 | 480 | [480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md](480-replace-timing-sleeps-in-pane-pty-tests-with-condition-waits.md) | Replace timing sleeps in pane PTY tests with condition waits | Open |
 | 481 | [481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md](481-jules-sweep-2026-11-10-22-bundled-sessions-in-small-waves.md) | Jules sweep 2026-11-10: 22 bundled sessions in small waves | In Progress — wave 1 started one session at a time (owner: Jules is busy) |
+| 482 | [482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md](482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md) | vt.VT ignores ICH, DCH, IL, DL, ECH and scroll regions (DECSTBM) | Open |
 <!-- harnez:end issues-active-index -->
