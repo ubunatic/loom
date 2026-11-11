@@ -497,7 +497,11 @@ func (v *VT) Write(p []byte) (int, error) {
 			v.lineFeed()
 			i++
 		case b == '\b':
-			v.x = max(0, v.x-1)
+			if v.x >= v.Cols {
+				v.x = v.Cols - 2
+			} else {
+				v.x = max(0, v.x-1)
+			}
 			i++
 		case b == '\t':
 			v.x = min((v.x/8+1)*8, v.Cols-1)
@@ -905,6 +909,12 @@ func (v *VT) csi(params string, final byte) {
 		if params == ">" || params == ">0" {
 			v.reply("\x1bP>|loom-vt\x1b\\")
 		}
+	case '@':
+		v.insertCharacters(arg(0, 1))
+	case 'P':
+		v.deleteCharacters(arg(0, 1))
+	case 'X':
+		v.eraseCharacters(arg(0, 1))
 	case 'K':
 		v.eraseLine(p[0])
 	case 'J':
@@ -1144,4 +1154,117 @@ func (v *VT) eraseDisplay(mode int) {
 			v.cells[y] = v.blankRow(v.Cols, eraseStyle)
 		}
 	}
+}
+
+func (v *VT) clearWide(x, y int) {
+	if x < 0 || x >= v.Cols || y < 0 || y >= v.Rows {
+		return
+	}
+	// A trailing half of a wide character is Rune: 0, Text: ""
+	// It is only valid if preceded by a base rune (Rune != 0 and Rune != ' ')
+	// A continuation cell is marked by Rune == 0.
+	if v.cells[y][x].Rune == 0 && v.cells[y][x].Text == "" && x > 0 && v.cells[y][x-1].Rune != 0 && v.cells[y][x-1].Rune != ' ' {
+		v.cells[y][x-1] = Cell{Rune: ' ', Style: v.cells[y][x-1].Style}
+		v.cells[y][x] = Cell{Rune: ' ', Style: v.cells[y][x].Style}
+	} else if x+1 < v.Cols && v.cells[y][x+1].Rune == 0 && v.cells[y][x+1].Text == "" && v.cells[y][x].Rune != 0 && v.cells[y][x].Rune != ' ' {
+		v.cells[y][x] = Cell{Rune: ' ', Style: v.cells[y][x].Style}
+		v.cells[y][x+1] = Cell{Rune: ' ', Style: v.cells[y][x+1].Style}
+	}
+}
+
+func (v *VT) insertCharacters(n int) {
+	if v.y < 0 || v.y >= v.Rows {
+		return
+	}
+	if v.x >= v.Cols {
+		v.x = v.Cols - 1
+	}
+	if v.x < 0 {
+		return
+	}
+	if n <= 0 {
+		n = 1
+	}
+	if v.x+n > v.Cols {
+		n = v.Cols - v.x
+	}
+
+	v.clearWide(v.x, v.y)
+	v.clearWide(v.Cols-n, v.y)
+
+	eraseStyle := Style{BG: v.pen.BG}
+
+	tmp := make([]Cell, v.Cols)
+	copy(tmp, v.cells[v.y])
+
+	copy(tmp[v.x+n:], tmp[v.x:])
+	for i := 0; i < n; i++ {
+		tmp[v.x+i] = Cell{Rune: ' ', Style: eraseStyle}
+	}
+	copy(v.cells[v.y], tmp)
+	v.clearWide(v.x, v.y)
+	v.clearWide(v.Cols-1, v.y)
+}
+
+func (v *VT) deleteCharacters(n int) {
+	if v.y < 0 || v.y >= v.Rows {
+		return
+	}
+	if v.x >= v.Cols {
+		v.x = v.Cols - 1
+	}
+	if v.x < 0 {
+		return
+	}
+	if n <= 0 {
+		n = 1
+	}
+	if v.x+n > v.Cols {
+		n = v.Cols - v.x
+	}
+
+	v.clearWide(v.x, v.y)
+	v.clearWide(v.x+n, v.y)
+
+	eraseStyle := Style{BG: v.pen.BG}
+
+	tmp := make([]Cell, v.Cols)
+	copy(tmp, v.cells[v.y])
+
+	copy(tmp[v.x:], tmp[v.x+n:])
+	for i := v.Cols - n; i < v.Cols; i++ {
+		tmp[i] = Cell{Rune: ' ', Style: eraseStyle}
+	}
+
+	copy(v.cells[v.y], tmp)
+}
+
+func (v *VT) eraseCharacters(n int) {
+	if v.y < 0 || v.y >= v.Rows {
+		return
+	}
+	if v.x >= v.Cols {
+		v.x = v.Cols - 1
+	}
+	if v.x < 0 {
+		return
+	}
+	if n <= 0 {
+		n = 1
+	}
+	if v.x+n > v.Cols {
+		n = v.Cols - v.x
+	}
+
+	eraseStyle := Style{BG: v.pen.BG}
+
+	tmp := make([]Cell, v.Cols)
+	copy(tmp, v.cells[v.y])
+	for i := 0; i < n; i++ {
+		tmp[v.x+i] = Cell{Rune: ' ', Style: eraseStyle}
+	}
+
+	copy(v.cells[v.y], tmp)
+	v.clearWide(v.x, v.y)
+	v.clearWide(v.x+n-1, v.y)
 }
