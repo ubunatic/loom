@@ -46,6 +46,8 @@ type RichTextEdit struct {
 	ViewMode bool
 	// BoxMode draws box glyphs into adjacent document cells with arrow keys.
 	BoxMode bool
+	// BoxPushMode makes BoxMode push non-space characters instead of replacing them.
+	BoxPushMode bool
 	// GhostCursorEnabled allows vertical and horizontal navigation into empty
 	// document space. The default comes from spec/defaults.yaml.
 	GhostCursorEnabled bool
