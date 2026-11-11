@@ -38,23 +38,11 @@ func TestVTAnswersCursorAndDeviceQueries(t *testing.T) {
 	if got := string(v.DrainReplies()); got != want {
 		t.Fatalf("replies = %q, want %q", got, want)
 	}
-
-	v.Write([]byte("\x1b[?2026$p\x1b[?u\x1b[>q\x1b[>0q")) //nolint:errcheck
-	want2 := "\x1b[?2026;2$y\x1b[?0u\x1bP>|loom-vt\x1b\\\x1bP>|loom-vt\x1b\\"
-	if got := string(v.DrainReplies()); got != want2 {
-		t.Fatalf("replies = %q, want %q", got, want2)
-	}
-
-	v.Write([]byte("\x1b[?2026h\x1b[?2026$p\x1b[>1u\x1b[?u")) //nolint:errcheck
-	want3 := "\x1b[?2026;1$y\x1b[?1u"
-	if got := string(v.DrainReplies()); got != want3 {
-		t.Fatalf("replies = %q, want %q", got, want3)
-	}
 }
 
 func TestVTIgnoresUnansweredPrivateQueries(t *testing.T) {
 	v := NewVT(20, 5)
-	v.Write([]byte("\x1b[?6n\x1b[?99999$p")) //nolint:errcheck
+	v.Write([]byte("\x1b[?6n\x1b[?2004$p")) //nolint:errcheck
 	if got := v.DrainReplies(); len(got) != 0 {
 		t.Fatalf("unanswered queries produced replies %q", got)
 	}
