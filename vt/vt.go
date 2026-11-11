@@ -1203,7 +1203,6 @@ func (v *VT) insertCharacters(n int) {
 	}
 	copy(v.cells[v.y], tmp)
 	v.clearWide(v.x, v.y)
-	v.clearWide(v.Cols-1, v.y)
 }
 
 func (v *VT) deleteCharacters(n int) {

@@ -31,6 +31,13 @@ func TestRowEditing(t *testing.T) {
 			cx:       1, cy: 0,
 		},
 		{
+			// A wide character shifted into the last two cells stays intact.
+			name:     "ich_wide_fits_at_end",
+			input:    "abcdefg中\x1b[1;1H\x1b[@",
+			expected: []string{" abcdefg中", "", ""},
+			cx:       0, cy: 0,
+		},
+		{
 			name:     "dch_default",
 			input:    "abcdef\x1b[4D\x1b[P",
 			expected: []string{"abdef", "", ""},
