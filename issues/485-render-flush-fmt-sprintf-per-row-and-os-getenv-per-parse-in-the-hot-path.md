@@ -1,6 +1,6 @@
 # 485 — render flush: fmt.Sprintf per row and os.Getenv per parse in the hot path
 
-**Status**: Open
+**Status**: Backlog
 **Priority**: P3 (Low)
 **Severity**: Minor
 **Category**: Enhancement

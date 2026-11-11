@@ -76,5 +76,4 @@ upkeep.
 | 482 | [482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md](482-vt-vt-ignores-ich-dch-il-dl-ech-and-scroll-regions-decstbm.md) | vt.VT ignores ICH, DCH, IL, DL, ECH and scroll regions (DECSTBM) | Open |
 | 483 | [483-measure-vs16-after-a-non-emoji-letter-marks-inside-indic-conjuncts-vt-fuzz-cursor-bound.md](483-measure-vs16-after-a-non-emoji-letter-marks-inside-indic-conjuncts-vt-fuzz-cursor-bound.md) | measure: VS16 after a non-emoji letter, marks inside Indic conjuncts, vt fuzz cursor bound | Open |
 | 484 | [484-session-child-esc-r-resets-the-outer-scroll-region-that-protects-the-session-bar.md](484-session-child-esc-r-resets-the-outer-scroll-region-that-protects-the-session-bar.md) | session: child ESC [ r resets the outer scroll region that protects the session bar | Open |
-| 485 | [485-render-flush-fmt-sprintf-per-row-and-os-getenv-per-parse-in-the-hot-path.md](485-render-flush-fmt-sprintf-per-row-and-os-getenv-per-parse-in-the-hot-path.md) | render flush: fmt.Sprintf per row and os.Getenv per parse in the hot path | Open |
 <!-- harnez:end issues-active-index -->
