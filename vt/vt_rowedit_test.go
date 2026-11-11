@@ -61,6 +61,20 @@ func TestRowEditing(t *testing.T) {
 			cx:       2, cy: 0,
 		},
 		{
+			// Erasing the left half of a wide character blanks both halves.
+			name:     "ech_wide_left_half",
+			input:    "a中b\x1b[3D\x1b[X",
+			expected: []string{"a  b", "", ""},
+			cx:       1, cy: 0,
+		},
+		{
+			// Erasing the right half of a wide character blanks both halves.
+			name:     "ech_wide_right_half",
+			input:    "a中b\x1b[2D\x1b[X",
+			expected: []string{"a  b", "", ""},
+			cx:       2, cy: 0,
+		},
+		{
 			name:     "bs_wrap",
 			input:    "abcdefghij\b\b",
 			expected: []string{"abcdefghij", "", ""},

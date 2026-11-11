@@ -1256,15 +1256,13 @@ func (v *VT) eraseCharacters(n int) {
 		n = v.Cols - v.x
 	}
 
-	eraseStyle := Style{BG: v.pen.BG}
-
-	tmp := make([]Cell, v.Cols)
-	copy(tmp, v.cells[v.y])
-	for i := 0; i < n; i++ {
-		tmp[v.x+i] = Cell{Rune: ' ', Style: eraseStyle}
-	}
-
-	copy(v.cells[v.y], tmp)
+	// Split wide characters at both edges before blanking; afterwards the
+	// cut halves are spaces and clearWide no longer sees them.
 	v.clearWide(v.x, v.y)
 	v.clearWide(v.x+n-1, v.y)
+
+	eraseStyle := Style{BG: v.pen.BG}
+	for i := 0; i < n; i++ {
+		v.cells[v.y][v.x+i] = Cell{Rune: ' ', Style: eraseStyle}
+	}
 }
