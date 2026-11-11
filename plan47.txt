@@ -1,0 +1,5 @@
+Wow! The session bar was NOT cleared!
+Why was it not cleared?
+Because in VT emulator `2J` only clears the scroll region if DECSTBM is set, OR because `loom session` actually redraws it!
+Wait! Let me double check my CPR test.
+Did `TestSessionCPRMisidentification` pass?

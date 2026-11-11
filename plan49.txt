@@ -1,0 +1,53 @@
+Wait! My modification in `session.go` BROKE other tests!
+Look at `TestSessionNewTabCtrlN` and others failing with timeouts!
+Let's see what I modified:
+```go
+	b = bytes.Replace(b, []byte("import (\n"), []byte("import (\n\t\"bytes\"\n"), 1)
+```
+Wait, did I replace `_, _ = out.Write(frame)` with my `sessionBarVisible` logic?
+Yes!
+But look at the replacement:
+```go
+						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+							childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
+							replacement := []byte(fmt.Sprintf("\x1b[1;%dr", childRows))
+							if bytes.Contains(frame, []byte("\x1b[r")) || bytes.Contains(frame, []byte("\x1b[;r")) {
+								frame = bytes.ReplaceAll(frame, []byte("\x1b[r"), replacement)
+								frame = bytes.ReplaceAll(frame, []byte("\x1b[;r"), replacement)
+							}
+						}
+						_, _ = out.Write(frame)
+						syncSessionMouse(out, t)
+```
+Why does this break `TestSessionNewTabCtrlN`?
+Wait! `frame` is a byte slice slice from `t.master.Read(buf)`.
+If I do `bytes.ReplaceAll(frame, ...)`, it ALLOCATES a new slice if it replaces, but if it doesn't replace, it returns the same slice?
+Yes, `bytes.ReplaceAll` returns a new slice if there are replacements.
+Wait, `frame` originally was `pending[:used]` or something.
+No, `frame` is from the child PTY:
+```go
+				n, readErr := t.master.Read(buf)
+				if n > 0 {
+					frame := buf[:n]
+```
+Wait, if it's `buf[:n]`, it's not a big deal.
+Why are tests timing out?
+Let's look at `session.go` around `out.Write(frame)`.
+Did I accidentally remove `sessionMu.Lock()` or `sessionMu.Unlock()`?
+No, my Python script searched for:
+`_, _ = out.Write(frame)\n\t\t\t\t\t\tsyncSessionMouse(out, t)`
+and replaced it.
+Wait, let's look at `TestSessionNewTabCtrlN`.
+It's waiting for "TAB2_RUNNING".
+The screen output shows:
+```
+        printf 'TAB2_RUNNING\n'
+        $ TAB2_RUNNING
+        $
+```
+Wait! The output is THERE!
+Why is it timing out?
+`session.WaitFor("2: ", time.Second*5)` maybe?
+No, the screen shows:
+` 1: bash   2: sh          ⌃B…  Tools  ?  Help  ⌃P  📷  ⌃Q  Quit  ⌃F  Search ▏🖱︎`
+Wait, it was waiting for something else?

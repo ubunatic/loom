@@ -1,0 +1,7 @@
+Ah! Even WITHOUT my modification, those tests are failing!
+Let's see: `HEAD is now at 5c3c603 chore(release): bump version to v0.5.8`.
+Wait, if I just `git reset --hard` and run `go test`, they still fail?
+Wait, if they failed before, that means my changes did NOT break them!
+It's just that `ptytest` is slightly flaky or depends on something I'm missing!
+
+Let's double check if I have ANY modified files.

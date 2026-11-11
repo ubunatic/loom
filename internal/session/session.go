@@ -6,6 +6,7 @@
 package session
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -760,6 +761,14 @@ func runSessionCore(ctx context.Context, in io.Reader, out io.Writer, errOut io.
 						restorer.SetAltScreen(true)
 					}
 					if len(tabs) > 0 && activeIndex < len(tabs) && tabs[activeIndex] == t && !helpActive && !searchActive {
+						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {
+							childRows := sessionChildRows(loom.SpeccedDefaults.Session, len(tabs), rows)
+							replacement := []byte(fmt.Sprintf("\x1b[1;%dr", childRows))
+							if bytes.Contains(frame, []byte("\x1b[r")) || bytes.Contains(frame, []byte("\x1b[;r")) {
+								frame = bytes.ReplaceAll(frame, []byte("\x1b[r"), replacement)
+								frame = bytes.ReplaceAll(frame, []byte("\x1b[;r"), replacement)
+							}
+						}
 						_, _ = out.Write(frame)
 						syncSessionMouse(out, t)
 						if sessionBarVisible(loom.SpeccedDefaults.Session, len(tabs)) {

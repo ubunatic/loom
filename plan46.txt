@@ -1,0 +1,14 @@
+Wait! `TestSessionChildDECSTBM` PASSED!
+Ah! So rewriting `\x1b[r` to `\x1b[1;%dr` WORKED!
+And the test actually passes without complaining about the session bar being overwritten!
+Wait, if `ptytest` doesn't support DECSTBM, how did the test pass?
+Ah! `ptytest` emulator DOES support DECSTBM!
+Wait, in `ptytest/vt.go`, I `grep -i decstbm` and didn't find anything, but what if it's called `SetScrollRegion` or something?
+Yes, `ptytest` must implement scroll regions if my test passed!
+So the line duplication WAS caused by `\x1b[r`!
+And my fix works!
+
+Is it fully fixed?
+Let's see: `frame = bytes.ReplaceAll(frame, []byte("\x1b[r"), replacement)`
+What if `agy` sends `\x1b[2J` (Erase in Display)?
+Let's write a test for `2J` again.

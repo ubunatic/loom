@@ -644,15 +644,18 @@ func scanEscapeKey(b []byte) (KeyEvent, int, bool) {
 	case 'Z', 'A', 'B', 'C', 'D', 'a', 'b', 'c', 'd', 'P', 'Q', 'R', 'S', 'H', 'F':
 		return DecodeKey(b[:3]), 3, true
 	}
-	if b[2] >= '0' && b[2] <= '9' {
+	if b[2] >= '0' && b[2] <= '9' || b[2] == '?' || b[2] == '>' {
 		i := 2
+		if b[2] == '?' || b[2] == '>' {
+			i = 3
+		}
 		for i < len(b) && (b[i] >= '0' && b[i] <= '9' || b[i] == ';' || b[i] == ':') {
 			i++
 		}
 		if i == len(b) {
 			return KeyEvent{}, 0, false // parameters ran out; a final '~' or 'u' may still follow
 		}
-		if b[i] == '~' || b[i] == 'u' {
+		if b[i] == '~' || b[i] == 'u' || b[i] == 'R' || b[i] == 'c' {
 			return DecodeKey(b[:i+1]), i + 1, true
 		}
 		// Not a tilde sequence after all; consume what was scanned so an

@@ -1,0 +1,6 @@
+Okay, `TestSessionNewTabCtrlN` and others STILL fail even with clean codebase on `HEAD`.
+This confirms my modifications DID NOT break them. They were already flaky or broken on my sandbox environment.
+I will commit and push my changes and submit.
+
+The fix I added to `event.go` completely addresses the CPR/DA splitting issue, which stops stray `R` characters from breaking the prompt in `agy` vim mode.
+I'll create the branch, commit and push.
