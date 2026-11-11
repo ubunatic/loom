@@ -44,4 +44,7 @@ progress, clear the goal and write a failure report.
 ### Progress (2026-11-11)
 Part 1 landed (Codeberg PR 96, from Jules GH #134): ICH, DCH, ECH and BS after pending wrap, with
 `vt/vt_rowedit_test.go`. Left: IL, DL, DECSTBM and the `Repaint()` margin re-emit; split-every-byte
-streams for the new sequences were not added.
+streams for the new sequences were not added. Both host fixes in part 1 were wide-character cases
+(ECH on either half, ICH at the right edge): give part 2 tests a wide character at both halves and
+at the right edge, and check reviewer claims against xterm behaviour (2 of 3 flash38 findings in
+part 1 were xterm's own behaviour).

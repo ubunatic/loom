@@ -1,6 +1,6 @@
 # 457 — Research TUIOS and the Charm stack against loom
 
-**Status**: In Progress — owner said go; 7 haiku:med searchers started
+**Status**: Closed — reports, features.md and summary.md in docs/studies/tuios; tickets 459-480 filed after owner go; follow-up 458 closed (see docs/studies/2026-11-11-tuios-research-and-jules-sweep-story.md)
 **Priority**: P2 (Medium)
 **Severity**: Minor
 **Category**: Research

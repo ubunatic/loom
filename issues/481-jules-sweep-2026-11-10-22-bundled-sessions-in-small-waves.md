@@ -109,6 +109,18 @@ with the gate and capture its findings, adopting code through the three themed A
 report when blocked on an owner decision, a denied permission or the Jules cutoff; on a loop or no
 progress, clear the goal and write a failure report here.
 
+### State at session end (2026-11-11)
+- Jules stops taking work on 2026-11-11, so no further waves. The wrap-up study is
+  `docs/studies/2026-11-11-tuios-research-and-jules-sweep-story.md` (it replaces the planned
+  `jules-sweep-2026-11.md`).
+- Still open: jules-ssh (1348299604964268629) was IN_PROGRESS at 07:30 UTC. Resume point:
+  `harnez agent status --model jules --id 1348299604964268629`; if it delivered a PR, run the gate,
+  capture the report under `reports/jules/`, and close the PR; if not, mark it failed.
+- Test-draft PRs GH #122, #123, #131 stay open until the developers of 462/468, 467/469/475 and
+  474 take the tests; close each one then. GH #75 and #78 stay open as leads for 266 and 265.
+- Before closing this ticket, run `gh pr list --repo ubunatic/loom --state open` and
+  account for every open PR, including ones other sessions opened.
+
 ## Findings (checked by the host)
 
 - F1 (#118, real bug): `ParseAnsiBuffer("\x1b[7m0")` keeps `Invert`, but `Serialize` writes

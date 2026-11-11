@@ -50,7 +50,6 @@ upkeep.
 | 436 | [436-ctrl-c-clears-chat-instead-of-copying-selected-text.md](436-ctrl-c-clears-chat-instead-of-copying-selected-text.md) | Ctrl+C clears chat instead of copying selected text | Open |
 | 437 | [437-canary-probe-for-issue-095-observer-tty-relay.md](437-canary-probe-for-issue-095-observer-tty-relay.md) | canary probe for issue 095 observer tty relay | Open |
 | 456 | [456-textentry-passes-through-keys-that-have-no-effect.md](456-textentry-passes-through-keys-that-have-no-effect.md) | TextEntry passes through keys that have no effect | Open |
-| 457 | [457-research-tuios-and-the-charm-stack-against-loom.md](457-research-tuios-and-the-charm-stack-against-loom.md) | Research TUIOS and the Charm stack against loom | In Progress — owner said go; 7 haiku:med searchers started |
 | 459 | [459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md](459-canvas-flush-writes-only-changed-cells-measured-against-bubble-tea-v2.md) | Canvas flush writes only changed cells, measured against Bubble Tea v2 | Open |
 | 460 | [460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md](460-measure-indic-conjuncts-split-into-two-clusters-follow-current-uax-29-segmentation.md) | measure: Indic conjuncts split into two clusters, follow current UAX 29 segmentation | Open |
 | 461 | [461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md](461-negotiate-mode-2027-and-use-one-width-policy-in-measure-canvas-and-vt.md) | Negotiate mode 2027 and use one width policy in measure, canvas and VT | Open |

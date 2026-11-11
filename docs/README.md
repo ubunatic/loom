@@ -94,6 +94,7 @@
 | [studies/2026-11-07-issue-441-textentry-bold-m1.md](studies/2026-11-07-issue-441-textentry-bold-m1.md) | Issue 441: TextEntry visual bold and Markdown submission |
 | [studies/2026-11-07-issue-442-colorpicker-gallery-comparison.md](studies/2026-11-07-issue-442-colorpicker-gallery-comparison.md) | Issue 442: ColorPicker gallery comparison |
 | [studies/2026-11-07-issue-443-colorpicker-faint-subdued.md](studies/2026-11-07-issue-443-colorpicker-faint-subdued.md) | Issue 443: ColorPicker selectable faint text and feasible subdued background |
+| [studies/2026-11-11-tuios-research-and-jules-sweep-story.md](studies/2026-11-11-tuios-research-and-jules-sweep-story.md) | TUIOS research and the Jules sweep (2026-11-10/11) |
 | [studies/issue-439-placeholder-keys.md](studies/issue-439-placeholder-keys.md) | Issue 439: placeholder acceptance keys |
 <!-- harnez:end docs-studies-index -->
 

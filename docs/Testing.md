@@ -54,6 +54,13 @@ independent snapshots. `Screen()` trims trailing spaces; use `Cells()` when blan
 or wide-character continuation cells matter. Coordinates are zero-based. The
 package docs list the supported terminal sequences and limitations.
 
+Code that moves, erases or measures cells (`vt`, `measure`, `ansibuffer.go`, renderers) gets
+wide-character cases in its tests: an operation that starts on the left half, one that starts on
+the right half, and a wide character that ends exactly at the last column. In the 2026-11 Jules
+sweep, three of five adopted changes broke only on these cases
+([story](studies/2026-11-11-tuios-research-and-jules-sweep-story.md)). Check a review claim about
+escape-sequence behaviour against xterm before changing code for it.
+
 `loomtest.CompareWidget(t, reference, width, height, render)` compares every ANSI
 cell rendered by a callback with a checked-in `.ansi` reference. Keep references
 under `testdata/` next to the test, with one file for each meaningful widget
