@@ -40,3 +40,8 @@ progress, clear the goal and write a failure report.
 - Keep `Repaint()` correct for a screen with margins set (re-emit DECSTBM).
 - `make test-q1`, then `make install`; owner check: vim and less in a `loom session` tab, switch tabs
   and back.
+
+### Progress (2026-11-11)
+Part 1 landed (Codeberg PR 96, from Jules GH #134): ICH, DCH, ECH and BS after pending wrap, with
+`vt/vt_rowedit_test.go`. Left: IL, DL, DECSTBM and the `Repaint()` margin re-emit; split-every-byte
+streams for the new sequences were not added.
