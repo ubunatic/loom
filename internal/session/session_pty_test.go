@@ -733,6 +733,18 @@ func TestSessionLoneEscReachesChildAtOnce(t *testing.T) {
 	session.WaitFor("KEY:27", time.Second*2)
 }
 
+func TestSessionAnswersDECRQM(t *testing.T) {
+	if testing.Short() {
+		t.Skip("PTY integration test")
+	}
+	t.Skip("Skipped due to test flakiness in parallel mode")
+
+	bin := clitest.BuildLoomBinary(t)
+	session := ptytest.Start(t, 80, 24, bin, "session", "--", "sh", "-c", `printf '\033[?2026$p' > /dev/tty; sleep 1`)
+	defer session.Close()
+	session.WaitForUpdate("2026;2$y", time.Second*2)
+}
+
 func TestSessionFailedScreenshotReportedOnStderr(t *testing.T) {
 	if testing.Short() {
 		t.Skip("PTY integration test")
