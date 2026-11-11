@@ -1,0 +1,34 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1245,7 +1245,8 @@
+	// Switch back to Tab 1 using prefix 1 (ctrl-b 1) or alt-1 (\x1b1)
+	session.SendRaw([]byte{2, '1'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+-		return session.MouseMode() == 1000
++		vt := session.VT()
++		return vt.MouseMode == 1000
+	})
+
+	vt = session.VT()
+@@ -1533,12 +1534,14 @@
+	session.SendRaw([]byte{'z'})
+	session.WaitFor("HELP_READY", time.Second*5)
+	session.SendRaw([]byte{2, 'm'})
+-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 1000 })
++	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
++		vt := session.VT()
++		return vt.MouseMode == 1000
++	})
+	vt := session.VT()
+	if vt.MouseMode != 1000 || !vt.MouseSGR {
+		t.Fatalf("mouse mode = %d SGR=%v, want enabled", vt.MouseMode, vt.MouseSGR)
+	}
+	session.SendRaw([]byte{2, 'm'})
+-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.MouseMode() == 0 })
++	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
++		vt := session.VT()
++		return vt.MouseMode == 0
++	})
+	vt = session.VT()
+	if vt.MouseMode != 0 {
+		t.Fatalf("mouse mode = %d, want disabled", vt.MouseMode)

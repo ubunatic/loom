@@ -1,0 +1,65 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -783,7 +783,7 @@
+	session.WaitFor("TAB2_RUNNING", time.Second*5)
+
+	// Close tab 2 with ctrl-b x (2, 'x')
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+
+	// Wait for tab bar to disappear (only tab 1 remains)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+@@ -862,7 +862,7 @@
+	session.WaitForUpdate("SCREEN2_CONTENT", time.Second*5)
+
+	// Close tab 2 and finish tab 1
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+@@ -904,7 +904,7 @@
+	session.WaitForUpdate("TAB_TWO_MARKER", time.Second*5)
+
+	// Close tab 2 and finish tab 1
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+@@ -933,7 +933,7 @@
+	session.WaitFor("TAB_TO_CLOSE", time.Second*5)
+
+	// Close tab 2 with prefix x (2, 'x')
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+@@ -1000,7 +1000,7 @@
+	session.WaitForUpdate("ALT_SCREEN_TAB", time.Second*5)
+
+	// Close tab 2 with ctrl-b x
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ")
+	})
+@@ -1087,7 +1087,7 @@
+	session.WaitFor("2: ", time.Second*5)
+
+	// Close tab 2 with ctrl-b x; the configured bar remains with one tab.
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ") && strings.Contains(strings.Join(rows, "\n"), "1: bash")
+	})
+@@ -1286,7 +1286,7 @@
+	})
+
+	// Close Tab 2 with prefix x (ctrl-b x) so only Tab 1 remains
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+
+	// With 1 tab, send alt-2 (\x1b2): must be swallowed and NOT printed to shell

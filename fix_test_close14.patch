@@ -1,0 +1,11 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1282,7 +1282,7 @@
+	})
+
+	// Close Tab 2 with prefix x (ctrl-b x) so only Tab 1 remains
+-	session.SendRaw([]byte{2, 'x'})
++	session.Send("exit\n")
+	session.WaitFor("ORIGINAL_TAB1", time.Second*5)
+
+	// With 1 tab, send alt-2 (\x1b2): must be swallowed and NOT printed to shell

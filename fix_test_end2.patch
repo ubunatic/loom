@@ -1,0 +1,83 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1113,8 +1113,9 @@
+	session.WaitFor("READY", time.Second*5)
+
+	// Child turned tracking on; verify it was active
+-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+-		t.Fatalf("expected child to enable mouse, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
++	vt := session.VT()
++	if vt.MouseMode != 1000 || !vt.MouseSGR {
++		t.Fatalf("expected child to enable mouse, got mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+
+	// Quit with ctrl-q (17)
+@@ -1124,7 +1125,7 @@
+	}
+
+	// The outer VT must have all modes off
+-	vt := session.VT()
++	vt = session.VT()
+	if vt.MouseMode != 0 || vt.MouseSGR {
+		t.Fatalf("outer VT mouse mode left on after ctrl-q: mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+@@ -1225,8 +1226,9 @@
+	session.WaitFor("TAB1_READY", time.Second*5)
+
+	// Tab 1 turned mouse on in outer VT
+-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+-		t.Fatalf("Tab 1 expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
++	vt := session.VT()
++	if vt.MouseMode != 1000 || !vt.MouseSGR {
++		t.Fatalf("Tab 1 expected mouse on, got mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+
+	// Open Tab 2 with ctrl-n (14)
+@@ -1235,16 +1237,18 @@
+
+	// In Tab 2, mouse tracking in outer VT must be OFF
+-	if session.VT().MouseMode != 0 || session.VT().MouseSGR {
+-		t.Fatalf("Tab 2 expected mouse off, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
++	vt = session.VT()
++	if vt.MouseMode != 0 || vt.MouseSGR {
++		t.Fatalf("Tab 2 expected mouse off, got mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+
+	// Switch back to Tab 1 using prefix 1 (ctrl-b 1) or alt-1 (\x1b1)
+	session.SendRaw([]byte{2, '1'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+-		return session.VT().MouseMode == 1000
++		vt := session.VT()
++		return vt.MouseMode == 1000
+	})
+
+-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+-		t.Fatalf("Tab 1 switch-back expected mouse on, got mode=%d sgr=%v", session.VT().MouseMode, session.VT().MouseSGR)
++	vt = session.VT()
++	if vt.MouseMode != 1000 || !vt.MouseSGR {
++		t.Fatalf("Tab 1 switch-back expected mouse on, got mode=%d sgr=%v", vt.MouseMode, vt.MouseSGR)
+	}
+
+	// Quit with ctrl-q
+@@ -1528,12 +1532,14 @@
+	session.SendRaw([]byte{'z'})
+	session.WaitFor("HELP_READY", time.Second*5)
+	session.SendRaw([]byte{2, 'm'})
+-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
+-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
+-		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.VT().MouseMode, session.VT().MouseSGR)
++	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { vt := session.VT(); return vt.MouseMode == 1000 })
++	vt := session.VT()
++	if vt.MouseMode != 1000 || !vt.MouseSGR {
++		t.Fatalf("mouse mode = %d SGR=%v, want enabled", vt.MouseMode, vt.MouseSGR)
+	}
+	session.SendRaw([]byte{2, 'm'})
+-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
+-	if session.VT().MouseMode != 0 {
+-		t.Fatalf("mouse mode = %d, want disabled", session.VT().MouseMode)
++	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { vt := session.VT(); return vt.MouseMode == 0 })
++	vt = session.VT()
++	if vt.MouseMode != 0 {
++		t.Fatalf("mouse mode = %d, want disabled", vt.MouseMode)
+	}
+ }

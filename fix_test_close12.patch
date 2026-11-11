@@ -1,0 +1,11 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1071,7 +1071,7 @@
+	session.SendRaw([]byte{14})
+	session.WaitFor("2: ", time.Second*5)
+
+-	session.SendRaw([]byte{27, '1'})
++	session.SendRaw([]byte{2, '1'})
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return strings.Contains(strings.Join(rows, "\n"), "TAB1_PROMPT")
+	})

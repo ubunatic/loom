@@ -1,0 +1,11 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1172,7 +1172,7 @@
+	session.WaitFor("READY", time.Second*5)
+
+	// Close the only tab with prefix x (ctrl-b x)
+-	session.SendRaw([]byte{2, 'x'})
++	session.SendRaw([]byte{2, 'x', 'y'})
+	_ = session.Wait(time.Second * 5)
+
+	vt := session.VT()

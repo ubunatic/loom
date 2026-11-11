@@ -1,0 +1,11 @@
+--- internal/session/session_pty_test.go
++++ internal/session/session_pty_test.go
+@@ -1087,7 +1087,7 @@
+	session.WaitFor("2: ", time.Second*5)
+
+	// Close tab 2 with ctrl-b x; the configured bar remains with one tab.
+-	session.SendRaw([]byte{2, 'x'})
++	session.Send("exit\n")
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool {
+		return !strings.Contains(strings.Join(rows, "\n"), "2: ") && strings.Contains(strings.Join(rows, "\n"), "1: bash")
+	})

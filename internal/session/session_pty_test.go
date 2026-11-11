@@ -1529,14 +1529,16 @@ func TestSessionPrefixHelpAndMouseToggle(t *testing.T) {
 	session.SendRaw([]byte{'z'})
 	session.WaitFor("HELP_READY", time.Second*5)
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
-	if session.VT().MouseMode != 1000 || !session.VT().MouseSGR {
-		t.Fatalf("mouse mode = %d SGR=%v, want enabled", session.VT().MouseMode, session.VT().MouseSGR)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { vt := session.VT(); return vt.MouseMode == 1000 })
+	vt := session.VT()
+	if vt.MouseMode != 1000 || !vt.MouseSGR {
+		t.Fatalf("mouse mode = %d SGR=%v, want enabled", vt.MouseMode, vt.MouseSGR)
 	}
 	session.SendRaw([]byte{2, 'm'})
-	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 0 })
-	if session.VT().MouseMode != 0 {
-		t.Fatalf("mouse mode = %d, want disabled", session.VT().MouseMode)
+	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { vt := session.VT(); return vt.MouseMode == 0 })
+	vt = session.VT()
+	if vt.MouseMode != 0 {
+		t.Fatalf("mouse mode = %d, want disabled", vt.MouseMode)
 	}
 	session.SendRaw([]byte{2, 'm'})
 	session.WaitForUpdateState(time.Second*5, func(rows []string) bool { return session.VT().MouseMode == 1000 })
