@@ -38,8 +38,6 @@ type VT struct {
 	KeypadApp bool
 	// KittyKeyboard reports whether the Kitty keyboard protocol is active.
 	KittyKeyboard bool
-	// Sync2026 reports whether batch update mode (2026) is active.
-	Sync2026 bool
 	// Frames holds a screen snapshot for every completed ?2026 frame.
 	Frames [][]string
 	// CellFrames holds a cell grid snapshot for every completed ?2026 frame.
@@ -759,115 +757,9 @@ func (v *VT) csi(params string, final byte) {
 		v.y, v.x = min(v.y+arg(0, 1), v.Rows-1), 0
 	case 'F':
 		v.y, v.x = max(v.y-arg(0, 1), 0), 0
-	case 'p':
-		if strings.HasPrefix(params, "?") && strings.HasSuffix(params, "$") {
-			mode, err := strconv.Atoi(params[1 : len(params)-1])
-			if err == nil {
-				val := 0
-				switch mode {
-				case 1:
-					if v.CursorKeysApp {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 7:
-					if v.autoWrap {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 9:
-					if v.MouseMode == 9 {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 25:
-					if v.CursorVisible {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1000:
-					if v.MouseMode == 1000 {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1002:
-					if v.MouseMode == 1002 {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1003:
-					if v.MouseMode == 1003 {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1004:
-					if v.FocusEvents {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1005:
-					if v.MouseUTF8 {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1006:
-					if v.MouseSGR {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 1015:
-					if v.MouseURXVT {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 47, 1049:
-					if v.AltScreen() {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 2004:
-					if v.BracketedPaste {
-						val = 1
-					} else {
-						val = 2
-					}
-				case 2026:
-					if v.Sync2026 {
-						val = 1
-					} else {
-						val = 2
-					}
-				}
-				v.reply(fmt.Sprintf("\x1b[?%d;%d$y", mode, val))
-			}
-		}
-	case 'q':
-		if strings.HasPrefix(params, ">") {
-			v.reply("\x1bP>|loom-vt\x1b\\")
-		}
 	case 's':
 		v.saved = cursorState{v.x, v.y, v.pen}
 	case 'u':
-		if params == "?" {
-			if v.KittyKeyboard {
-				v.reply("\x1b[?1u")
-			} else {
-				v.reply("\x1b[?0u")
-			}
-			return
-		}
 		if strings.HasPrefix(params, ">") {
 			v.KittyKeyboard = true
 			return
